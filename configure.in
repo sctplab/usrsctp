@@ -1,13 +1,22 @@
-AC_INIT(echo_server.c)
+AC_INIT(usrsctplib/netinet/sctp.h)
 AM_INIT_AUTOMAKE(udp_examples, 1.0)
 
 AC_PROG_CC
-
+AC_PROG_LIBTOOL
 AC_CANONICAL_HOST
 
-CFLAGS="$CFLAGS -Wall -ansi -pedantic"
+CFLAGS="$CFLAGS -D__Userspace__ -DSCTP_SIMPLE_ALLOCATOR"
 
 case $host_os in
+darwin*)
+  CFLAGS="$CFLAGS -U__APPLE__ -D__Userspace_os_Darwin"
+  ;;
+linux*)
+  CFLAGS="$CFLAGS -D__Userspace_os_Linux"
+  ;;
+freebsd*)
+  CFLAGS="$CFLAGS -U__FreeBSD__ -D__Userspace_os_FreeBSD"
+  ;;
 solaris*)
   CFLAGS="$CFLAGS -D_XPG4_2"
   ;;
@@ -37,4 +46,4 @@ AC_TRY_COMPILE([#ifdef HAVE_SYS_TYPES_H
                [AC_MSG_RESULT(int)
                 AC_DEFINE(socklen_t, int, [Define a type for socklen_t.])]) 
 
-AC_OUTPUT(Makefile)
+AC_OUTPUT(Makefile usrsctplib/Makefile)
