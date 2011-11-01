@@ -1,5 +1,6 @@
 #! /bin/sh
 set -x
 aclocal
+glibtoolize
 autoconf
 automake --foreign --add-missing --copy
