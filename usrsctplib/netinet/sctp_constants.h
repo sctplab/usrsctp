@@ -1058,7 +1058,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 225635 2011-09-17 08:50:29
 
 #if defined (__Userspace__)
 #define SCTP_GETTIME_TIMEVAL(x)	gettimeofday(x, NULL)
-#define SCTP_GETPTIME_TIMEVAL(x)  /* this doesn't seem to ever be used.. */
+#define SCTP_GETPTIME_TIMEVAL(x) gettimeofday(x, NULL) /* this doesn't seem to ever be used.. */
 #endif
 
 #if defined(_KERNEL)

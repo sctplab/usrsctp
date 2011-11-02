@@ -55,6 +55,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 226168 2011-10-09 14:12:17Z tuex
 #include <netinet/sctp_auth.h>
 #include <netinet/sctp_asconf.h>
 #include <netinet/sctp_bsd_addr.h>
+#include <netinet/sctp_constants.h>
 
 #if defined(__APPLE__)
 #define APPLE_FILE_NO 8

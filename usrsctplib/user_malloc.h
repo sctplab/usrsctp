@@ -198,7 +198,7 @@ Start copy: Copied code for __Userspace__ */
 
 /* End copy: Copied code for __Userspace__ */
 
-
+#if 0
 #ifdef _KERNEL
 #define	MALLOC_DEFINE(type, shortdesc, longdesc)			\
 	struct malloc_type type[1] = {					\
@@ -256,5 +256,6 @@ void	*reallocf(void *addr, unsigned long size, struct malloc_type *type,
 
 
 #endif /* _KERNEL */
+#endif
 
 #endif /* !_SYS_MALLOC_H_ */

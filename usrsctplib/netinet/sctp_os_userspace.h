@@ -56,7 +56,7 @@
 #include <sys/socket.h>
 /* on FreeBSD, this results in a redefintion of SOCK(BUF)_(UN)LOCK and
  *  uknown type of struct mtx for sb_mtx in struct sockbuf */
-#include "user_socketvar.h" /* MALLOC_DECLARE's M_PCB. Replacement for sys/socketvar.h */
+//#include "user_socketvar.h" /* MALLOC_DECLARE's M_PCB. Replacement for sys/socketvar.h */
 /* #include <sys/jail.h> */
 /* #include <sys/sysctl.h> */
 #include <user_resourcevar.h>
@@ -408,7 +408,7 @@ sctp_hashfreedestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask);
  * which is used in the timer related functions such as
  * SCTP_OS_TIMER_INIT etc.
 */
-#include <user_sctp_callout.h>
+#include <netinet/sctp_callout.h>
 
 /* __Userspace__ Creating a receive thread */
 #include <user_recv_thread.h>

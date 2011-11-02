@@ -43,7 +43,7 @@ __FBSDID("$FreeBSD$");
 #ifdef USE_MD5
 #include <crypto/md5.h>
 #else
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined (__Userspace__)
 #include <netinet/sctp_sha1.h>
 #endif
 #endif				/* USE_MD5 */
@@ -67,7 +67,7 @@ sctp_hash_digest(char *key, int key_len, char *text, int text_len,
 	md5_ctxt context;
 
 #else
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined (__Userspace__)
 	SHA1_CTX context;
 #else
 	struct sha1_context context;
@@ -92,7 +92,7 @@ sctp_hash_digest(char *key, int key_len, char *text, int text_len,
 		key = tk;
 		key_len = 16;
 #else
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined (__Userspace__)
 		SHA1_CTX tctx;
 #else
 		struct sha1_context tctx;
@@ -170,7 +170,7 @@ sctp_hash_digest_m(char *key, int key_len, struct mbuf *m, int offset,
 	md5_ctxt context;
 
 #else
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined (__Userspace__)
 	SHA1_CTX context;
 #else
 	struct sha1_context context;
@@ -195,7 +195,7 @@ sctp_hash_digest_m(char *key, int key_len, struct mbuf *m, int offset,
 		key = tk;
 		key_len = 16;
 #else
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined (__Userspace__)
 		SHA1_CTX tctx;
 #else
 		struct sha1_context tctx;

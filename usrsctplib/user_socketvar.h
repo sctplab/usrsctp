@@ -70,6 +70,9 @@ struct proc {
     int stub; /* struct proc is a dummy for __Userspace__ */
 };
 
+MALLOC_DECLARE(M_ACCF);
+MALLOC_DECLARE(M_PCB);
+MALLOC_DECLARE(M_SONAME);
 
 struct socket_args  {
     int	domain;
@@ -94,8 +97,6 @@ struct uio {
 
 /* __Userspace__ */
 
-MALLOC_DECLARE(M_PCB);
-MALLOC_DECLARE(M_SONAME);
 /*
  * Kernel structure per socket.
  * Contains send and receive buffer queues,
@@ -505,12 +506,6 @@ struct accept_filter {
 		(struct socket *so);
 	SLIST_ENTRY(accept_filter) accf_next;
 };
-
-#ifdef MALLOC_DECLARE 
-MALLOC_DECLARE(M_ACCF);
-MALLOC_DECLARE(M_PCB);
-MALLOC_DECLARE(M_SONAME);
-#endif
 
 extern int	maxsockets;
 extern u_long	sb_max;
