@@ -14,7 +14,6 @@ libusrsctp_la_SOURCES  = opt_compat.h \
                          user_recv_thread.c user_recv_thread.h \
                          user_resourcevar.h \
                          user_route.h \
-                         user_sctp_callout.c user_sctp_callout.h \
                          user_sctp_timer_iterate.c \
                          user_socket.c \
                          user_socketvar.h \
