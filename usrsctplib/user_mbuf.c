@@ -946,7 +946,7 @@ m_tag_free_default(struct m_tag *t)
  * chain if necessary.
  */
 void
-m_copyback(struct mbuf *m0, int off, int len, c_caddr_t cp)
+m_copyback(struct mbuf *m0, int off, int len, caddr_t cp)
 {
 	int mlen;
 	struct mbuf *m = m0, *n;
