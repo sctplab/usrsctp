@@ -37,7 +37,7 @@
 /*
  * Callout/Timer routines for OS that doesn't have them
  */
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__Userspace__)
 int ticks = 0;
 #else
 extern int ticks;
