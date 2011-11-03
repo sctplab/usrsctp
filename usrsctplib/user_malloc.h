@@ -181,7 +181,7 @@ Start copy: Copied code for __Userspace__ */
      that the name in SCTP_MALLOC does not have to be used.
 */
 #define	MALLOC_DECLARE(type) \
-	struct malloc_type type[1]
+	extern struct malloc_type type[1]
 
 #define	FREE(addr, type) free((addr))
 
