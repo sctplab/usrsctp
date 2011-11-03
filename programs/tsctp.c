@@ -58,41 +58,6 @@ static int unordered;
 #include <netinet/sctp_pcb.h>
 #include <usrsctp.h>
 
-
-/* Prototypes*/
-extern void sctp_init(void);
-
-
-extern int userspace_bind(struct socket *so, struct sockaddr *name, int namelen);
-extern int userspace_listen(struct socket *so, int backlog);
-extern struct socket * userspace_accept(struct socket *so, struct sockaddr * aname, socklen_t * anamelen);
-extern int userspace_connect(struct socket *so, struct sockaddr *name, int namelen);
-extern	void userspace_close(struct socket *so);
-extern ssize_t userspace_sctp_sendmsg(struct socket *so, 
-									  const void *data,
-									  size_t len,
-									  struct sockaddr *to,
-									  socklen_t tolen,
-									  u_int32_t ppid,
-									  u_int32_t flags,
-									  u_int16_t stream_no,
-									  u_int32_t timetolive,
-									  u_int32_t context);
-
-
-extern ssize_t userspace_sctp_recvmsg(struct socket *so,
-									  void *dbuf,
-									  size_t len,
-									  struct sockaddr *from,
-									  socklen_t * fromlen,
-									  struct sctp_sndrcvinfo *sinfo,
-									  int *msg_flags);
-extern int sctp_setopt(struct socket *so,
-						int optname,
-						void *optval,
-						size_t optsize,
-						void *p);
-
 uint32_t optval=1;
 struct socket *psock = NULL;
 struct socket *conn_sock = NULL;
@@ -533,21 +498,15 @@ int main(int argc, char **argv)
 	for (i = 0; i < nr_local_addr; i++) {
 		local_addr[i].sin_port = htons(local_port);
 	}
-#if defined(SCTP_USERMODE)
-		sctp_init();
-		SCTP_BASE_SYSCTL(sctp_udp_tunneling_for_client_enable)=0; 
-		SCTP_BASE_SYSCTL(sctp_udp_tunneling_port)=9899;
-		SCTP_BASE_SYSCTL(sctp_debug_on)=0xffffffff;
+	sctp_init();
+	SCTP_BASE_SYSCTL(sctp_udp_tunneling_for_client_enable)=0; 
+	SCTP_BASE_SYSCTL(sctp_udp_tunneling_port)=9899;
+	SCTP_BASE_SYSCTL(sctp_debug_on)=0xffffffff;
 
-
-		if( !(psock = userspace_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP)) ){
-			printf("user_socket() returned NULL\n");
-			exit(1);
-		}
-#else	
-	if ((fd = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP)) < 0)
-		perror("socket");
-#endif
+	if( !(psock = userspace_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP)) ){
+		printf("user_socket() returned NULL\n");
+		exit(1);
+	}
 #ifdef SCTP_AUTH_CHUNK
 	for (chunk_number = 0; chunk_number < number_of_chunks_to_auth; chunk_number++) {
 		sac.sauth_chunk = chunk[chunk_number];
@@ -621,7 +580,7 @@ int main(int argc, char **argv)
 			}
 #endif
 			if (verbose)
-				fprintf(stdout,"Connection accepted from %d:%d\n", inet_ntoa(remote_addr.sin_addr), ntohs(remote_addr.sin_port));
+				fprintf(stdout,"Connection accepted from %s:%d\n", inet_ntoa(remote_addr.sin_addr), ntohs(remote_addr.sin_port));
 #if defined (CALLBACK_API)
 			ret = register_recv_cb(conn_sock, handle_receives_cb);
                         free(cfdptr);
