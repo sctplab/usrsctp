@@ -10,6 +10,9 @@
 pthread_mutex_t accept_mtx = PTHREAD_MUTEX_INITIALIZER; 
 pthread_cond_t accept_cond = PTHREAD_COND_INITIALIZER;
 
+MALLOC_DEFINE(M_PCB, "sctp_pcb", "sctp pcb");
+MALLOC_DEFINE(M_SONAME, "sctp_soname", "sctp soname");
+
 /* Prototypes */
 extern int sctp_sosend(struct socket *so, struct sockaddr *addr, struct uio *uio,
                        struct mbuf *top, struct mbuf *control, int flags,

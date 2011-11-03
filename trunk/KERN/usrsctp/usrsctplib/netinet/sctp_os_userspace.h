@@ -56,7 +56,7 @@
 #include <sys/socket.h>
 /* on FreeBSD, this results in a redefintion of SOCK(BUF)_(UN)LOCK and
  *  uknown type of struct mtx for sb_mtx in struct sockbuf */
-//#include "user_socketvar.h" /* MALLOC_DECLARE's M_PCB. Replacement for sys/socketvar.h */
+#include "user_socketvar.h" /* MALLOC_DECLARE's M_PCB. Replacement for sys/socketvar.h */
 /* #include <sys/jail.h> */
 /* #include <sys/sysctl.h> */
 #include <user_resourcevar.h>
