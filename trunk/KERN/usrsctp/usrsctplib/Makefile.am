@@ -48,3 +48,4 @@ libusrsctp_la_SOURCES  = opt_compat.h \
                          netinet/sctp_usrreq.c \
                          netinet/sctp_var.h \
                          netinet/sctputil.c netinet/sctputil.h
+include_HEADERS = usrsctp.h

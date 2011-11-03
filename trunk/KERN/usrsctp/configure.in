@@ -1,5 +1,5 @@
 AC_INIT(usrsctplib/netinet/sctp.h)
-AM_INIT_AUTOMAKE(udp_examples, 1.0)
+AM_INIT_AUTOMAKE(libusrsctp, 0.1)
 
 AC_PROG_CC
 AC_PROG_LIBTOOL
@@ -46,4 +46,4 @@ AC_TRY_COMPILE([#ifdef HAVE_SYS_TYPES_H
                [AC_MSG_RESULT(int)
                 AC_DEFINE(socklen_t, int, [Define a type for socklen_t.])]) 
 
-AC_OUTPUT(Makefile usrsctplib/Makefile)
+AC_OUTPUT(Makefile usrsctplib/Makefile programs/Makefile)

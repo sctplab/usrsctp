@@ -11,18 +11,6 @@
 #include <sys/queue.h>
 /* #include <sys/param.h> This defines MSIZE 256 */
 
-#ifdef IPHONE
-#include <sys/types.h>
-typedef __const char * c_caddr_t;
-#else
-#if defined(__Userspace_os_Linux) || defined(__Userspace_os_Darwin)
-typedef char * caddr_t;
-typedef __const char * c_caddr_t;
-#else
-#include <sys/types.h>
-#endif
-#endif
-
 #define USING_MBUF_CONSTRUCTOR 0
 
 /* For Linux */
@@ -111,7 +99,7 @@ void  mb_free_ext(struct mbuf *);
 void  m_freem(struct mbuf *);
 struct m_tag	*m_tag_alloc(u_int32_t, int, int, int);
 struct mbuf	*m_copym(struct mbuf *, int, int, int);
-void		 m_copyback(struct mbuf *, int, int, c_caddr_t);
+void		 m_copyback(struct mbuf *, int, int, caddr_t);
 struct mbuf	*m_pullup(struct mbuf *, int);
 int		 m_dup_pkthdr(struct mbuf *, struct mbuf *, int);
 struct m_tag	*m_tag_copy(struct m_tag *, int);
