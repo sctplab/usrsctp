@@ -30,6 +30,9 @@
 #ifndef __USRSCTP_H__
 #define __USRSCTP_H__
 
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 #include <netinet/in.h>
 #include <sys/types.h>
@@ -195,5 +198,7 @@ SCTP_USERSPACE_SYSCTL_DECL(sctp_vtag_time_wait)
 #ifdef SCTP_DEBUG
 SCTP_USERSPACE_SYSCTL_DECL(sctp_debug_on)
 #endif
-
+#ifdef  __cplusplus
+}
+#endif
 #endif
