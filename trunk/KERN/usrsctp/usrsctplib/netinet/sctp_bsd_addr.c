@@ -123,6 +123,7 @@ sctp_iterator_thread(void *v)
 #else
 	while ((sctp_it_ctl.iterator_flags & SCTP_ITERATOR_MUST_EXIT) == 0) {
 #endif
+#if !defined(__Userspace__)
 		msleep(&sctp_it_ctl.iterator_running,
 #if defined(__FreeBSD__)
 		       &sctp_it_ctl.ipi_iterator_wq_mtx,
@@ -130,6 +131,7 @@ sctp_iterator_thread(void *v)
 		       sctp_it_ctl.ipi_iterator_wq_mtx,
 #endif
 		       0, "waiting_for_work", 0);
+#endif
 #if !defined(__FreeBSD__)
 		if (sctp_it_ctl.iterator_flags & SCTP_ITERATOR_MUST_EXIT) {
 			break;

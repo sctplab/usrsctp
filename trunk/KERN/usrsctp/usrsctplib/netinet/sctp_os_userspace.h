@@ -776,4 +776,16 @@ sctp_get_mbuf_for_msg(unsigned int space_needed,
 		} while (0)
 #endif
 
+#ifndef timevalsub
+#define timevalsub(tp1, tp2)                       \
+	do {                                       \
+		(tp1)->tv_sec -= (tp2)->tv_sec;    \
+		(tp1)->tv_usec -= (tp2)->tv_usec;  \
+		if ((tp1)->tv_usec < 0) {          \
+			(tp1)->tv_sec--;           \
+			(tp1)->tv_usec += 1000000; \
+		}                                  \
+	} while (0)
+#endif
+
 #endif
