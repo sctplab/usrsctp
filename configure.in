@@ -15,7 +15,7 @@ linux*)
   CFLAGS="$CFLAGS -D__Userspace_os_Linux"
   ;;
 freebsd*)
-  CFLAGS="$CFLAGS -U__FreeBSD__ -D__Userspace_os_FreeBSD"
+  CFLAGS="$CFLAGS -pthread -U__FreeBSD__ -D__Userspace_os_FreeBSD"
   ;;
 solaris*)
   CFLAGS="$CFLAGS -D_XPG4_2"
