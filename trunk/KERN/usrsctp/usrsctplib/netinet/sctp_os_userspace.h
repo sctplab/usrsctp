@@ -663,7 +663,7 @@ static inline int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af) {
 #if defined(HAVE_SHA2)
 #include <crypto/sha2/sha2.h>
 #endif
-
+#if 0
 /*  going to have to port so generic across OS's... */
 #if 1 /* openssl header files on FreeBSD 6.3 on Emulab and libssl-dev for Ubuntu */
 #include <openssl/md5.h>
@@ -681,7 +681,7 @@ typedef SHA_CTX SHA1_CTX;
 #define MD5_Update	MD5Update
 #define MD5_Final	MD5Final
 #endif
-
+#endif
 
 
 /* start OOTB only stuff */
