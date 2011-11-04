@@ -11,3 +11,4 @@ depcomp
 install-sh
 libtool
 missing
+m4

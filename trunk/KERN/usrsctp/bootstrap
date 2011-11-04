@@ -1,6 +1,19 @@
 #! /bin/sh
-set -x
-aclocal
-glibtoolize
+if [ -e /usr/bin/glibtoolize ] ; then
+    glibtoolize --force
+elif [ -e /usr/bin/libtoolize ] ; then
+    libtoolize --force
+elif [ -e /usr/local/bin/libtoolize ] ; then
+    libtoolize --force
+else
+   echo "ERROR: I cannot find libtoolize or glibtoolize!"
+   exit 1
+fi
+
+if [ -e /usr/local/share/aclocal ] ; then
+   aclocal -I /usr/local/share/aclocal
+else
+   aclocal -I /usr/share/aclocal
+fi
 autoconf
 automake --foreign --add-missing --copy
