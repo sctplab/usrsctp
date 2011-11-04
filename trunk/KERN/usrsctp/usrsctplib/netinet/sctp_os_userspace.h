@@ -783,4 +783,15 @@ sctp_get_mbuf_for_msg(unsigned int space_needed,
 	} while (0)
 #endif
 
+#if defined (__Userspace_os_Linux)
+#define TAILQ_FOREACH_SAFE(var, head, field, tvar)             \
+         for ((var) = ((head)->tqh_first);                     \
+              (var) && ((tvar) = TAILQ_NEXT((var), field), 1); \
+              (var) = (tvar))
+
+#define LIST_FOREACH_SAFE(var, head, field, tvar)              \
+         for ((var) = ((head)->lh_first);                      \
+              (var) && ((tvar) = LIST_NEXT((var), field), 1);  \
+              (var) = (tvar))
+#endif
 #endif
