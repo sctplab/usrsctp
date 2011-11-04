@@ -2,7 +2,6 @@ lib_LTLIBRARIES        = libusrsctp.la
 libusrsctp_la_SOURCES  = opt_compat.h \
                          opt_inet.h \
                          opt_inet6.h \
-                         opt_ipsec.h \
                          opt_sctp.h \
                          user_atomic.h \
                          user_environment.c user_environment.h \
