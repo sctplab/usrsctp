@@ -1,7 +1,5 @@
 lib_LTLIBRARIES        = libusrsctp.la
-libusrsctp_la_SOURCES  = opt_inet.h \
-                         opt_inet6.h \
-                         opt_sctp.h \
+libusrsctp_la_SOURCES  = opt_sctp.h \
                          user_atomic.h \
                          user_environment.c user_environment.h \
                          user_inpcb.h \
