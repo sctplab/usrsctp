@@ -41,7 +41,6 @@
 #include <sys/cdefs.h> /* needed? added from old __FreeBSD__ */
 #include <stdio.h>
 #include <string.h>
-#include "opt_sctp.h"
 /* #include <sys/param.h>  in FreeBSD defines MSIZE */
 /* #include <sys/ktr.h> */
 /* #include <sys/systm.h> */
