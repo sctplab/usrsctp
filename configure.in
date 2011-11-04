@@ -6,7 +6,7 @@ AC_PROG_LIBTOOL
 AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([m4])
 
-CFLAGS="$CFLAGS -g -O0 -DINET -DUSE_SCTP_SHA1 -D__Userspace__ -DSCTP_SIMPLE_ALLOCATOR"
+CFLAGS="$CFLAGS -g -O0 -DINET -DSCTP_PROCESS_LEVEL_LOCKS -DUSE_SCTP_SHA1 -D__Userspace__ -DSCTP_SIMPLE_ALLOCATOR"
 
 case $host_os in
 darwin*)
@@ -22,6 +22,14 @@ solaris*)
   CFLAGS="$CFLAGS -D_XPG4_2"
   ;;
 esac
+
+AC_ARG_ENABLE(debug,
+  AC_HELP_STRING( [--enable-debug],
+                  [provide debug information @<:@default=yes@:>@]),
+    enable_debug=$enableval,enable_debug=yes)
+if test x$enable_debug = xyes; then
+        AC_DEFINE(SCTP_DEBUG, 1, [Provide debug information])
+fi
 
 AC_CHECK_TYPE(size_t)
 AC_CHECK_TYPE(ssize_t)
