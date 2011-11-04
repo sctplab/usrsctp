@@ -383,7 +383,9 @@ int main(int argc, char **argv)
 	struct msghdr msghdr;
 	struct iovec iov[1024];
 	int fragpoint = 0;
+#ifdef CALLBACK_API
 	int ret;
+#endif
 	unsigned int runtime = 0;
 	struct sctp_setadaptation ind = {0};
 	int *cfdptr;
@@ -499,7 +501,7 @@ int main(int argc, char **argv)
 		local_addr[i].sin_port = htons(local_port);
 	}
 	sctp_init();
-	SCTP_BASE_SYSCTL(sctp_udp_tunneling_for_client_enable)=0; 
+	SCTP_BASE_SYSCTL(sctp_udp_tunneling_for_client_enable)=0;
 	SCTP_BASE_SYSCTL(sctp_udp_tunneling_port)=9899;
 	SCTP_BASE_SYSCTL(sctp_debug_on)=0xffffffff;
 
@@ -511,9 +513,8 @@ int main(int argc, char **argv)
 	for (chunk_number = 0; chunk_number < number_of_chunks_to_auth; chunk_number++) {
 		sac.sauth_chunk = chunk[chunk_number];
 #if defined(SCTP_USERMODE)
-				/* TODO SCTP_AUTH_CHUNK stuff */
+		/* TODO SCTP_AUTH_CHUNK stuff */
 #else
-
 		if (setsockopt(fd, IPPROTO_SCTP, SCTP_AUTH_CHUNK, &sac, (socklen_t)sizeof(struct sctp_authchunk)) < 0)
 			perror("setsockopt");
 #endif
@@ -544,12 +545,12 @@ int main(int argc, char **argv)
 
 	if (!client) {
 #if defined(SCTP_USERMODE)
-				if(userspace_listen(psock, 10) == -1) {
-					printf("userspace_listen failed.  exiting...\n");
-					exit(1);		
-				}							 
+		if (userspace_listen(psock, 10) == -1) {
+			printf("userspace_listen failed.  exiting...\n");
+			exit(1);
+		}
 
-				/* TODO rcvbufsize stuff */
+		/* TODO rcvbufsize stuff */
 #else
 		if (listen(fd, 1) < 0)
 			perror("listen");
@@ -566,12 +567,12 @@ int main(int argc, char **argv)
 #endif
 		while (1) {
 			memset(&remote_addr, 0, sizeof(remote_addr));
-			addr_len = sizeof(struct sockaddr_in);		
+			addr_len = sizeof(struct sockaddr_in);
 			cfdptr = malloc(sizeof(int));
 #if defined(SCTP_USERMODE)
-			if( (conn_sock = userspace_accept(psock, (struct sockaddr *) &remote_addr, &addr_len))== NULL) {
+			if ((conn_sock = userspace_accept(psock, (struct sockaddr *) &remote_addr, &addr_len))== NULL) {
 				printf("userspace_accept failed.  exiting...\n");
-				continue;		 
+				continue;
 			}
 #else
 			if ((*cfdptr = accept(fd, (struct sockaddr *)&remote_addr, &addr_len)) < 0) {
@@ -589,34 +590,32 @@ int main(int argc, char **argv)
 #endif
 		}
 #if defined(SCTP_USERMODE)
-				userspace_close(psock); 
+		userspace_close(psock);
 #else
 		close(fd);
 #endif
 	} else {
-		remote_addr.sin_family		= AF_INET;
+		remote_addr.sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
-		remote_addr.sin_len			= sizeof(struct sockaddr_in);
+		remote_addr.sin_len = sizeof(struct sockaddr_in);
 #endif
 		remote_addr.sin_addr.s_addr = inet_addr(argv[optind]);
-		remote_addr.sin_port		= htons(remote_port);
+		remote_addr.sin_port = htons(remote_port);
 
 #if defined(SCTP_USERMODE)
-				/* TODO fragpoint stuff */
-				
-				if( userspace_connect(psock, (struct sockaddr *) &remote_addr, sizeof(struct sockaddr_in)) == -1 ) {
-					printf("userspace_connect failed.  exiting...\n");
-					exit(1);		
-				}
-		if (nodelay == 1) {
-					optval=1;
-		} else {
-					optval=0;
+		/* TODO fragpoint stuff */
+		if (userspace_connect(psock, (struct sockaddr *) &remote_addr, sizeof(struct sockaddr_in)) == -1 ) {
+			printf("userspace_connect failed.  exiting...\n");
+			exit(1);
 		}
-				sctp_setopt(psock, SCTP_NODELAY, &optval, sizeof(optval), NULL);
+		if (nodelay == 1) {
+			optval = 1;
+		} else {
+			optval = 0;
+		}
+		userspace_setsockopt(psock, IPPROTO_SCTP, SCTP_NODELAY, &optval, sizeof(optval));
 
-				/* TODO sndbufsize stuff */
-				
+		/* TODO sndbufsize stuff */
 #else
 		if (fragpoint){
 			av.assoc_id = 0;
