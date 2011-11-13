@@ -194,7 +194,6 @@ recv_function_udp(void *arg)
 		ip = mtod(ip_m, struct ip *);
 		bzero((void *)ip, sizeof(struct ip));
 		ip->ip_v = IPVERSION;
-		ip->ip_p = IPPROTO_UDP; /* tells me over UDP */
 		ip->ip_len = n;
 		ip->ip_src = src.sin_addr;
 		ip->ip_dst = dst.sin_addr;
