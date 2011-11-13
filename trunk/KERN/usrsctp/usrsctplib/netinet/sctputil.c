@@ -3417,6 +3417,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 {
 #if defined (CALLBACK_API)
 	struct socket *so;
+	struct sctp_inpcb *inp;
 #endif
 
 	if ((stcb == NULL) ||
@@ -3468,6 +3469,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 #if defined (CALLBACK_API)
 		if (stcb->sctp_socket)  {
 			so = stcb->sctp_socket;
+			inp = (struct sctp_inpcb *) so->so_pcb;
 			atomic_add_int(&stcb->asoc.refcnt, 1);
 			SCTP_TCB_UNLOCK(stcb);
 			inp->recv_callback(so, NULL);
