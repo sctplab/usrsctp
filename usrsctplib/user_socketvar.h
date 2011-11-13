@@ -744,37 +744,12 @@ extern void sowakeup(struct socket *so, struct sockbuf *sb);
 extern void wakeup(void *ident, struct socket *so); /*__Userspace__ */
 extern int uiomove(void *cp, int n, struct uio *uio);
 extern int sbwait(struct sockbuf *sb);
-extern ssize_t userspace_sctp_sendmsg(struct socket *so, 
-                                      const void *data,
-                                      size_t len,
-                                      struct sockaddr *to,
-                                      socklen_t tolen,
-                                      u_int32_t ppid,
-                                      u_int32_t flags,
-                                      u_int16_t stream_no,
-                                      u_int32_t timetolive,
-                                      u_int32_t context);
-
-extern ssize_t userspace_sctp_sendmbuf(struct socket *so, 
-                                       struct mbuf* mbufdata,
-                                       size_t len,
-                                       struct sockaddr *to,
-                                       socklen_t tolen,
-                                       u_int32_t ppid,
-                                       u_int32_t flags,
-                                       u_int16_t stream_no,
-                                       u_int32_t timetolive,
-                                       u_int32_t context);
-
-extern struct socket * userspace_socket(int domain, int type, int protocol);
-extern int userspace_connect(struct socket *so, struct sockaddr *name, int namelen);	
 extern int sodisconnect(struct socket *so);
 extern int soconnect(struct socket *so, struct sockaddr *nam);
 extern int sctp_disconnect(struct socket *so);
 extern int sctp_connect(struct socket *so, struct sockaddr *addr);
 extern struct mbuf* mbufalloc(size_t size, void* data, unsigned char fill);
 extern struct mbuf* mbufallocfromiov(int iovlen, struct iovec *srciov);
-extern void userspace_close(struct socket *so);
 extern void sctp_finish(void);
 
 /* ------------------------------------------------ */

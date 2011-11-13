@@ -31,6 +31,14 @@ if test x$enable_debug = xyes; then
         AC_DEFINE(SCTP_DEBUG, 1, [Provide debug information])
 fi
 
+AC_ARG_ENABLE(debug,
+  AC_HELP_STRING( [--enable-callback-api],
+                  [use callback API @<:@default=yes@:>@]),
+    enable_callback_api=$enableval,enable_callback_api=yes)
+if test x$enable_callback_api = xyes; then
+        AC_DEFINE(CALLBACK_API, 1, [Use callback API])
+fi
+
 AC_CHECK_TYPE(size_t)
 AC_CHECK_TYPE(ssize_t)
 
