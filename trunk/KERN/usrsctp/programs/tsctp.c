@@ -70,8 +70,6 @@ struct socket *conn_sock = NULL;
 #include <errno.h>
 
 #if defined(CALLBACK_API)
-extern int register_recv_cb (struct socket* so, int (*receive_cb)(struct socket* sock, struct sctp_queued_to_read* c));
-extern int register_send_cb (struct socket* so, int sb_threshold, int (*send_cb)(struct socket *sock, uint32_t sb_free));
 static struct timeval start_time;
 static unsigned long messages = 0;
 static unsigned int first_length = 0;
@@ -129,7 +127,8 @@ typedef struct notification_info {
 
 static NI notinfo;
 
-void count_notification(int fd)
+void 
+count_notification(int fd)
 {
 	NI* ninfo = &notinfo;
 	while (ninfo->next != NULL && ninfo->next->fd != fd)
@@ -147,7 +146,8 @@ void count_notification(int fd)
 	ninfo->notifications++;
 }
 
-unsigned long pop_notification_count(int fd)
+unsigned long
+pop_notification_count(int fd)
 {
 	NI* ninfo = &notinfo;
 	NI* delci;
@@ -166,7 +166,8 @@ unsigned long pop_notification_count(int fd)
 	return ret;
 }
 
-void handle_notification(int fd, void *buf)
+void 
+handle_notification(int fd, void *buf)
 {
 	union sctp_notification *snp;
 	struct sctp_paddr_change *spc;
@@ -192,7 +193,8 @@ void stop_sender(int sig)
 }
 
 #if !defined (CALLBACK_API)
-static void* handle_connection(void *arg)
+static void* 
+handle_connection(void *arg)
 {
 	ssize_t n;
 	unsigned long long sum = 0;
@@ -283,7 +285,8 @@ user_print_mbuf_chain(struct mbuf* m)
 			printf("%p: extend_size = %d\n", m, SCTP_BUF_EXTEND_SIZE(m));
 	}
 }*/
-int handle_sends_cb(struct socket *sock, uint32_t sb_free) {
+static int 
+handle_sends_cb(struct socket *sock, uint32_t sb_free) {
 
     while (!done && ((number_of_messages == 0) || (messages < (number_of_messages - 1)))) {
         if (very_verbose)
@@ -314,7 +317,8 @@ int handle_sends_cb(struct socket *sock, uint32_t sb_free) {
     return 1;
 }
 
-int handle_receives_cb(struct socket* sock, struct sctp_queued_to_read *control)
+static int
+receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 {
 	struct timeval now, diff_time;
 	double seconds;
@@ -583,7 +587,7 @@ int main(int argc, char **argv)
 			if (verbose)
 				fprintf(stdout,"Connection accepted from %s:%d\n", inet_ntoa(remote_addr.sin_addr), ntohs(remote_addr.sin_port));
 #if defined (CALLBACK_API)
-			ret = register_recv_cb(conn_sock, handle_receives_cb);
+			ret = register_recv_cb(conn_sock, receive_cb);
                         free(cfdptr);
 #else
 			pthread_create(&tid, NULL, &handle_connection,(void *) cfdptr);
