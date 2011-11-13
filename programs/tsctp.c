@@ -102,24 +102,6 @@ char Usage[] =
 static int verbose, very_verbose;
 static unsigned int done;
 
-void 
-handle_notification(int fd, void *buf)
-{
-	union sctp_notification *snp;
-	struct sctp_paddr_change *spc;
-	struct timeval note_time;
-
-	if (verbose) {
-		gettimeofday(&note_time, NULL);
-		snp = (union sctp_notification*) buf;
-		printf("%04x notification arrived at %f\n", snp->sn_header.sn_type, note_time.tv_sec+(double)note_time.tv_usec/1000000.0);
-		if (snp->sn_header.sn_type==SCTP_PEER_ADDR_CHANGE) {
-			spc = &snp->sn_paddr_change;
-			printf("SCTP_PEER_ADDR_CHANGE: state=%d, error=%d\n",spc->spc_state, spc->spc_error);
-		}
-	}
-}
-
 void stop_sender(int sig)
 {
 	done = 1; 
@@ -375,7 +357,19 @@ int main(int argc, char **argv)
 		}
 
 		while (1) {
+#if defined(CALLBACK_API)
+			struct socket *conn_sock;
+
+			memset(&remote_addr, 0, sizeof(struct sockaddr_in));
+			addr_len = sizeof(struct sockaddr_in);
+			if ((conn_sock = userspace_accept(psock, (struct sockaddr *) &remote_addr, &addr_len))== NULL) {
+				printf("userspace_accept failed.  exiting...\n");
+				continue;
+			}
+			ret = register_recv_cb(conn_sock, receive_cb);
+#else
 			struct socket **conn_sock;
+
 			memset(&remote_addr, 0, sizeof(struct sockaddr_in));
 			addr_len = sizeof(struct sockaddr_in);
 			conn_sock = (struct socket **)malloc(sizeof(struct socket *));
@@ -383,13 +377,10 @@ int main(int argc, char **argv)
 				printf("userspace_accept failed.  exiting...\n");
 				continue;
 			}
-			if (verbose)
-				fprintf(stdout,"Connection accepted from %s:%d\n", inet_ntoa(remote_addr.sin_addr), ntohs(remote_addr.sin_port));
-#if defined (CALLBACK_API)
-			ret = register_recv_cb(conn_sock, receive_cb);
-#else
 			pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock);
 #endif
+			if (verbose)
+				fprintf(stdout,"Connection accepted from %s:%d\n", inet_ntoa(remote_addr.sin_addr), ntohs(remote_addr.sin_port));
 		}
 		userspace_close(psock);
 	} else {
