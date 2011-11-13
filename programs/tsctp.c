@@ -216,8 +216,7 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 	struct timeval now, diff_time;
 	double seconds;
 	
-	if (control==NULL)
-	{
+	if (control == NULL) {
 		gettimeofday(&now, NULL);
 		timersub(&now, &start_time, &diff_time);
 		seconds = diff_time.tv_sec + (double)diff_time.tv_usec/1000000.0;
@@ -229,8 +228,7 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 		messages = 0;
 		return 1;
 	}
-	if (first_length==0)
-	{
+	if (first_length == 0) {
 		first_length = control->length;
 		gettimeofday(&start_time, NULL);
 	}
