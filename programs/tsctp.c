@@ -39,6 +39,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <signal.h>
+#include <errno.h>
 #ifdef LINUX
 #include <getopt.h>
 #endif
@@ -57,7 +58,6 @@ static struct sockaddr_in remote_addr;
 static int unordered;
 uint32_t optval=1;
 struct socket *psock = NULL;
-#include <errno.h>
 
 #if defined(CALLBACK_API)
 static struct timeval start_time;
