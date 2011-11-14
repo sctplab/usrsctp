@@ -58,7 +58,7 @@ __FBSDID("$FreeBSD$");
 #define SCTP_TIMERQ_LOCK_INIT()     (void)pthread_mutex_init(&timer_mtx, NULL)
 #define SCTP_TIMERQ_LOCK_DESTROY()  (void)pthread_mutex_destroy(&timer_mtx)
 
-extern int uticks;
+extern int ticks;
 extern void timer_init();
 extern pthread_mutex_t timer_mtx;
 #endif
