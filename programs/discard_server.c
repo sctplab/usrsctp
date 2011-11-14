@@ -44,7 +44,13 @@ static int
 receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 {
 	if (control) {
-		printf("Message of length %u bytes received.\n", control->length);
+		printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d.\n",
+		       control->length,
+		       inet_ntoa(control->whoFrom->ro._l_addr.sin.sin_addr), ntohs(control->port_from),
+		       control->sinfo_stream,
+		       control->sinfo_ssn,
+		       control->sinfo_tsn,
+		       ntohl(control->sinfo_ppid));
 		m_freem(control->data);
 	}
 	return 1;
@@ -64,7 +70,7 @@ main(int argc, char *argv[])
 
 	sctp_init();
 	SCTP_BASE_SYSCTL(sctp_udp_tunneling_port) = 9898;
-	SCTP_BASE_SYSCTL(sctp_debug_on) = 0xffffffff;
+	SCTP_BASE_SYSCTL(sctp_debug_on) = 0x0;
 
 	if ((sock = userspace_socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP)) == NULL) {
 		perror("userspace_socket");
@@ -95,9 +101,13 @@ main(int argc, char *argv[])
 		flags = 0;
 		n = userspace_sctp_recvmsg(sock, (void*)buffer, BUFFER_SIZE, (struct sockaddr *)&addr, &from_len, &sinfo, &flags);
 		if (n > 0) {
-			printf("Msg of length %d received from %s:%u on stream %d, PPID %d.\n",
-			        n, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port),
-			        sinfo.sinfo_stream, ntohl(sinfo.sinfo_ppid));
+			printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d.\n",
+			        n,
+			        inet_ntoa(addr.sin_addr), ntohs(addr.sin_port),
+			        sinfo.sinfo_stream,
+			        sinfo.sinfo_ssn,
+			        sinfo.sinfo_tsn,
+			        ntohl(sinfo.sinfo_ppid));
 		}
 	}
 #endif
