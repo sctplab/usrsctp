@@ -43,10 +43,7 @@
 #ifdef LINUX
 #include <getopt.h>
 #endif
-#include <netinet/sctp_os.h>
 #include <pthread.h>
-#include <netinet/in_systm.h>
-#include <netinet/ip.h>
 #include <netinet/sctp_pcb.h>
 #include <usrsctp.h>
 
