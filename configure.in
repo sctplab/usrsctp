@@ -31,7 +31,7 @@ if test x$enable_debug = xyes; then
         AC_DEFINE(SCTP_DEBUG, 1, [Provide debug information])
 fi
 
-AC_ARG_ENABLE(debug,
+AC_ARG_ENABLE(callback-api,
   AC_HELP_STRING( [--enable-callback-api],
                   [use callback API @<:@default=yes@:>@]),
     enable_callback_api=$enableval,enable_callback_api=yes)
