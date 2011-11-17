@@ -64,5 +64,6 @@ main(int argc, char *argv[]) {
 	sleep(60);
 	userspace_close(sock);
 	sleep(10);
+	sctp_finish();
 	return(0);
 }
