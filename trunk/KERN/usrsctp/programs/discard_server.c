@@ -39,6 +39,10 @@
 #include <netinet/sctp_pcb.h>
 #include <usrsctp.h>
 
+#if !defined(CALLBACK_API)
+#define BUFFER_SIZE 10240
+#endif
+
 #if defined(CALLBACK_API)
 static int
 receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
@@ -79,6 +83,7 @@ main(int argc, char *argv[])
 	int n, flags;
 	socklen_t from_len;
 	struct sctp_sndrcvinfo sinfo;
+	char buffer[BUFFER_SIZE];
 #endif
 
 	sctp_init();
@@ -124,13 +129,18 @@ main(int argc, char *argv[])
 		flags = 0;
 		n = userspace_sctp_recvmsg(sock, (void*)buffer, BUFFER_SIZE, (struct sockaddr *)&addr, &from_len, &sinfo, &flags);
 		if (n > 0) {
-			printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d.\n",
-			        n,
-			        inet_ntoa(addr.sin_addr), ntohs(addr.sin_port),
-			        sinfo.sinfo_stream,
-			        sinfo.sinfo_ssn,
-			        sinfo.sinfo_tsn,
-			        ntohl(sinfo.sinfo_ppid));
+			if (flags & MSG_NOTIFICATION) {
+				printf("Notification of length %d received.\n", n);
+			} else {
+				printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d, complete %d.\n",
+				        n,
+				        inet_ntoa(addr.sin_addr), ntohs(addr.sin_port),
+				        sinfo.sinfo_stream,
+				        sinfo.sinfo_ssn,
+				        sinfo.sinfo_tsn,
+				        ntohl(sinfo.sinfo_ppid),
+				        (flags & MSG_EOR) ? 1 : 0);
+			}
 		}
 	}
 #endif
