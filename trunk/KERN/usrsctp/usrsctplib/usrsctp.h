@@ -42,16 +42,18 @@ extern "C" {
 #define MSG_NOTIFICATION 0x2000         /* SCTP notification */ 
 #endif
 
-void sctp_init();
+void
+sctp_init(void);
 
-void sctp_finish();
+void
+sctp_finish(void);
 
 struct socket *
 userspace_socket(int domain,
                  int type,
                  int protocol);
 
-int 
+int
 userspace_setsockopt(struct socket *so,
                      int level,
                      int option_name,
@@ -64,7 +66,6 @@ userspace_getsockopt(struct socket *so,
                      int option_name,
                      void *option_value,
                      socklen_t option_len);
-
 
 ssize_t
 userspace_sctp_sendmsg(struct socket *so,
@@ -136,7 +137,7 @@ userspace_connect(struct socket *so,
                   struct sockaddr *name,
                   int namelen);
 
-void 
+void
 userspace_close(struct socket *so);
 
 #define SCTP_USERSPACE_SYSCTL_DECL(__field)           \
