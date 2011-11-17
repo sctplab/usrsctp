@@ -44,13 +44,18 @@ static int
 receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 {
 	if (control) {
-		printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d.\n",
-		       control->length,
-		       inet_ntoa(control->whoFrom->ro._l_addr.sin.sin_addr), ntohs(control->port_from),
-		       control->sinfo_stream,
-		       control->sinfo_ssn,
-		       control->sinfo_tsn,
-		       ntohl(control->sinfo_ppid));
+		if (control->spec_flags & M_NOTIFICATION) {
+			printf("Notification of length %d received.\n", control->length);
+		} else {
+			printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d, complete %d.\n",
+			       control->length,
+			       inet_ntoa(control->whoFrom->ro._l_addr.sin.sin_addr), ntohs(control->port_from),
+			       control->sinfo_stream,
+			       control->sinfo_ssn,
+			       control->sinfo_tsn,
+			       ntohl(control->sinfo_ppid),
+			       control->end_added);
+		}
 		m_freem(control->data);
 	}
 	return 1;
@@ -62,6 +67,14 @@ main(int argc, char *argv[])
 {
 	struct socket *sock;
 	struct sockaddr_in addr;
+	struct sctp_event event;
+	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
+	                          SCTP_PEER_ADDR_CHANGE,
+	                          SCTP_REMOTE_ERROR,
+	                          SCTP_SHUTDOWN_EVENT,
+	                          SCTP_ADAPTATION_INDICATION,
+	                          SCTP_PARTIAL_DELIVERY_EVENT};
+	unsigned int i;
 #if !defined(CALLBACK_API)
 	int n, flags;
 	socklen_t from_len;
@@ -74,6 +87,16 @@ main(int argc, char *argv[])
 
 	if ((sock = userspace_socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP)) == NULL) {
 		perror("userspace_socket");
+	}
+
+	memset(&event, 0, sizeof(event));
+	event.se_assoc_id = SCTP_FUTURE_ASSOC;
+	event.se_on = 1;
+	for (i = 0; i < (unsigned int)(sizeof(event_types)/sizeof(uint16_t)); i++) {
+		event.se_type = event_types[i];
+		if (userspace_setsockopt(sock, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(struct sctp_event)) < 0) {
+			perror("userspace_setsockopt");
+		}
 	}
 	memset((void *)&addr, 0, sizeof(struct sockaddr_in));
 #ifdef HAVE_SIN_LEN
@@ -112,5 +135,6 @@ main(int argc, char *argv[])
 	}
 #endif
 	userspace_close(sock);
+	sctp_finish();
 	return (0);
 }
