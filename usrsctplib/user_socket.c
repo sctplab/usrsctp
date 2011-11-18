@@ -7,7 +7,7 @@
 #include <netinet/udp.h>
 
 /* Statically initializing accept_mtx and accept_cond since there is no call for ACCEPT_LOCK_INIT() */
-pthread_mutex_t accept_mtx = PTHREAD_MUTEX_INITIALIZER; 
+pthread_mutex_t accept_mtx = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t accept_cond = PTHREAD_COND_INITIALIZER;
 
 MALLOC_DEFINE(M_PCB, "sctp_pcb", "sctp pcb");
@@ -36,42 +36,34 @@ extern int sctp_attach(struct socket *so, int proto, uint32_t vrf_id);
 void socantrcvmore_locked(struct socket *so)
 {
 	SOCKBUF_LOCK_ASSERT(&so->so_rcv);
-
 	so->so_rcv.sb_state |= SBS_CANTRCVMORE;
 	sorwakeup_locked(so);
-
 }
 
 void socantrcvmore(struct socket *so)
 {
 	SOCKBUF_LOCK(&so->so_rcv);
 	socantrcvmore_locked(so);
-
 }
 
 void
 socantsendmore_locked(struct socket *so)
 {
-
 	SOCKBUF_LOCK_ASSERT(&so->so_snd);
-
 	so->so_snd.sb_state |= SBS_CANTSENDMORE;
 	sowwakeup_locked(so);
-
 }
 
 void
 socantsendmore(struct socket *so)
 {
-
 	SOCKBUF_LOCK(&so->so_snd);
 	socantsendmore_locked(so);
-
 }
 
 
 
-/* Taken from  usr/src/sys/kern/uipc_sockbuf.c and called within sctp_lower_sosend. 
+/* Taken from  usr/src/sys/kern/uipc_sockbuf.c and called within sctp_lower_sosend.
  */
 int
 sbwait(struct sockbuf *sb)
@@ -2388,4 +2380,3 @@ void sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	}
 	sctp_m_freem(m_orig);
 }
-
