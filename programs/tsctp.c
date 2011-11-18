@@ -327,8 +327,6 @@ int main(int argc, char **argv)
 	local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	sctp_init();
-	SCTP_BASE_SYSCTL(sctp_udp_tunneling_for_client_enable) = 0;
-	SCTP_BASE_SYSCTL(sctp_udp_tunneling_port) = 9899;
 	SCTP_BASE_SYSCTL(sctp_debug_on) = 0xffffffff;
 
 	if (!(psock = userspace_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP)) ){
