@@ -12,3 +12,4 @@ install-sh
 libtool
 missing
 m4
+*.tar.gz
