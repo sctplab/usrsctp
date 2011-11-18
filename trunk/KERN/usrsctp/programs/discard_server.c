@@ -87,7 +87,6 @@ main(int argc, char *argv[])
 #endif
 
 	sctp_init();
-	SCTP_BASE_SYSCTL(sctp_udp_tunneling_port) = 9898;
 	SCTP_BASE_SYSCTL(sctp_debug_on) = 0x0;
 
 	if ((sock = userspace_socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP)) == NULL) {
