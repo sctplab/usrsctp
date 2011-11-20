@@ -278,17 +278,17 @@ recv_thread_init()
 
 	/* use raw socket, create if not initialized */
 	if (userspace_rawsctp == -1) {
-            if ((userspace_rawsctp = socket(AF_INET, SOCK_RAW, IPPROTO_SCTP)) < 0) {
-                perror("raw socket failure. continue with only UDP socket...\n");
-            } else {
-                /* complete setting up the raw SCTP socket */
-                if (setsockopt(userspace_rawsctp, IPPROTO_IP, IP_HDRINCL, &hdrincl, sizeof(int)) < 0) {
-                    perror("raw setsockopt failure\n");
-                    exit(1);
-                }
-                setReceiveBufferSize(userspace_rawsctp, SB_RAW); /* 128K */
-                setSendBufferSize(userspace_rawsctp, SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
-            }
+		if ((userspace_rawsctp = socket(AF_INET, SOCK_RAW, IPPROTO_SCTP)) < 0) {
+			perror("raw socket failure. continue with only UDP socket...\n");
+		} else {
+			/* complete setting up the raw SCTP socket */
+			if (setsockopt(userspace_rawsctp, IPPROTO_IP, IP_HDRINCL, &hdrincl, sizeof(int)) < 0) {
+				perror("raw setsockopt failure\n");
+				exit(1);
+			}
+			setReceiveBufferSize(userspace_rawsctp, SB_RAW); /* 128K */
+			setSendBufferSize(userspace_rawsctp, SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
+		}
 	}
 
 	 /* use UDP socket, create if not initialized */
@@ -311,9 +311,6 @@ recv_thread_init()
 		if (bind(userspace_udpsctp, (const struct sockaddr *)&addr_ipv4, sizeof(struct sockaddr_in)) < 0) {
 			perror("bind");
 			exit(1);
-		}
-		if (userspace_rawsctp == -1) {
-			SCTP_BASE_SYSCTL(sctp_udp_tunneling_for_client_enable) = 1;
 		}
 		setReceiveBufferSize(userspace_udpsctp, SB_RAW); /* 128K */
 		setSendBufferSize(userspace_udpsctp, SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
