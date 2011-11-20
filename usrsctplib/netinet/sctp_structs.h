@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 226222 2011-10-10 16:31:18Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 227755 2011-11-20 15:00:45Z tuexen $");
 #endif
 
 #ifndef __sctp_structs_h__
@@ -1247,6 +1247,7 @@ struct sctp_association {
 	uint8_t sctp_cmt_pf;
 	uint8_t use_precise_time;
 	uint32_t sctp_features;
+	uint16_t port; /* remote UDP encapsulation port */
 	/*
 	 * The mapping array is used to track out of order sequences above
 	 * last_acked_seq. 0 indicates packet missing 1 indicates packet

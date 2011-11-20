@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 224641 2011-08-03 20:21:00Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 227755 2011-11-20 15:00:45Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -134,7 +134,6 @@ sctp_init_sysctls()
 	memset(&SCTP_BASE_SYSCTL(sctp_log), 0, sizeof(struct sctp_log));
 #endif
 #endif
-	SCTP_BASE_SYSCTL(sctp_udp_tunneling_for_client_enable) = SCTPCTL_UDP_TUNNELING_FOR_CLIENT_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_udp_tunneling_port) = SCTPCTL_UDP_TUNNELING_PORT_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_enable_sack_immediately) = SCTPCTL_SACK_IMMEDIATELY_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_inits_include_nat_friendly) = SCTPCTL_NAT_FRIENDLY_INITS_DEFAULT;
@@ -792,10 +791,6 @@ sysctl_sctp_check(SYSCTL_HANDLER_ARGS)
 #elif defined(__FreeBSD__) || defined(SCTP_APPLE_MOBILITY_FASTHANDOFF)
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_mobility_fasthandoff), SCTPCTL_MOBILITY_FASTHANDOFF_MIN, SCTPCTL_MOBILITY_FASTHANDOFF_MAX);
 #endif
-/* XXX: Remove the #if after tunneling over IPv6 works also on FreeBSD. */
-#if !defined(__FreeBSD__) || defined(INET)
-		RANGECHK(SCTP_BASE_SYSCTL(sctp_udp_tunneling_for_client_enable), SCTPCTL_UDP_TUNNELING_FOR_CLIENT_ENABLE_MIN, SCTPCTL_UDP_TUNNELING_FOR_CLIENT_ENABLE_MAX);
-#endif
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_enable_sack_immediately), SCTPCTL_SACK_IMMEDIATELY_ENABLE_MIN, SCTPCTL_SACK_IMMEDIATELY_ENABLE_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_inits_include_nat_friendly), SCTPCTL_NAT_FRIENDLY_INITS_MIN, SCTPCTL_NAT_FRIENDLY_INITS_MAX);
 
@@ -1259,10 +1254,6 @@ SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, clear_trace, CTLTYPE_UINT | CTLFLAG_R
 
 /* XXX: Remove the #if after tunneling over IPv6 works also on FreeBSD. */
 #if !defined(__FreeBSD__) || defined(INET)
-SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, udp_tunneling_for_client_enable, CTLTYPE_UINT|CTLFLAG_RW,
-                 &SCTP_BASE_SYSCTL(sctp_udp_tunneling_for_client_enable), 0, sysctl_sctp_check, "IU",
-                 SCTPCTL_UDP_TUNNELING_FOR_CLIENT_ENABLE_DESC);
-
 SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, udp_tunneling_port, CTLTYPE_UINT|CTLFLAG_RW,
                  &SCTP_BASE_SYSCTL(sctp_udp_tunneling_port), 0, sysctl_sctp_udp_tunneling_check, "IU",
                  SCTPCTL_UDP_TUNNELING_PORT_DESC);
@@ -1585,10 +1576,6 @@ void sysctl_setup_sctp(void)
 	    NULL, 0, sysctl_sctp_cleartrace,
 	    "Clear SCTP Logging buffer");
 #endif
-
-	sysctl_add_oid(&sysctl_oid_top, "udp_tunneling_for_client_enable", CTLTYPE_INT|CTLFLAG_RW,
-            &SCTP_BASE_SYSCTL(sctp_udp_tunneling_for_client_enable), 0, sysctl_sctp_check,
-	    SCTPCTL_UDP_TUNNELING_FOR_CLIENT_ENABLE_DESC);
 
 	sysctl_add_oid(&sysctl_oid_top, "udp_tunneling_port", CTLTYPE_INT|CTLFLAG_RW,
 	    &SCTP_BASE_SYSCTL(sctp_udp_tunneling_port), 0, sysctl_sctp_udp_tunneling_check,

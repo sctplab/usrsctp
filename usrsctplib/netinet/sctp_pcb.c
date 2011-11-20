@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 227655 2011-11-18 09:01:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 227755 2011-11-20 15:00:45Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2891,6 +2891,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 #ifdef INET6
 	m->default_flowlabel = 0;
 #endif
+	m->port = 0; /* encapsulation disabled by default */
 	sctp_auth_set_default_chunks(m->local_auth_chunks);
 	LIST_INIT(&m->shared_keys);
 	/* add default NULL key as key id 0 */
@@ -4426,13 +4427,9 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
  	net->RTO = 0;
 	net->RTO_measured = 0;
 	stcb->asoc.numnets++;
-	*(&net->ref_count) = 1;
+	net->ref_count = 1;
 	net->cwr_window_tsn = net->last_cwr_tsn = stcb->asoc.sending_seq - 1;
-	if (SCTP_BASE_SYSCTL(sctp_udp_tunneling_for_client_enable)) {
-		net->port = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
-	} else {
-		net->port = 0;
-	}
+	net->port = stcb->asoc.port;
 	net->dscp = stcb->asoc.default_dscp;
 #ifdef INET6
 	net->flowlabel = stcb->asoc.default_flowlabel;
