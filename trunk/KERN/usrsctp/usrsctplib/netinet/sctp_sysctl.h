@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.h 224641 2011-08-03 20:21:00Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.h 227755 2011-11-20 15:00:45Z tuexen $");
 #endif
 
 #ifndef __sctp_sysctl_h__
@@ -116,7 +116,6 @@ struct sctp_sysctl {
 	struct sctp_log sctp_log;
 #endif
 #endif
-	uint32_t sctp_udp_tunneling_for_client_enable;
 	uint32_t sctp_udp_tunneling_port;
 	uint32_t sctp_enable_sack_immediately;
 	uint32_t sctp_vtag_time_wait;
@@ -475,12 +474,6 @@ struct sctp_sysctl {
 #define SCTPCTL_MOBILITY_FASTHANDOFF_MIN	0
 #define SCTPCTL_MOBILITY_FASTHANDOFF_MAX	1
 #define SCTPCTL_MOBILITY_FASTHANDOFF_DEFAULT	SCTP_DEFAULT_MOBILITY_FASTHANDOFF
-
-/* Enable SCTP/UDP tunneling for clients*/
-#define SCTPCTL_UDP_TUNNELING_FOR_CLIENT_ENABLE_DESC	"Enable SCTP/UDP tunneling for client"
-#define SCTPCTL_UDP_TUNNELING_FOR_CLIENT_ENABLE_MIN	0
-#define SCTPCTL_UDP_TUNNELING_FOR_CLIENT_ENABLE_MAX	1
-#define SCTPCTL_UDP_TUNNELING_FOR_CLIENT_ENABLE_DEFAULT	SCTPCTL_UDP_TUNNELING_FOR_CLIENT_ENABLE_MIN
 
 /* Enable SCTP/UDP tunneling port */
 #define SCTPCTL_UDP_TUNNELING_PORT_DESC		"Set the SCTP/UDP tunneling port"

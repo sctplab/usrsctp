@@ -44,7 +44,7 @@ main(int argc, char *argv[]) {
 	struct socket *sock;
 	struct sockaddr_in addr;
 
-	sctp_init();
+	sctp_init(9899);
 
 	if ((sock = userspace_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP)) == NULL) {
 		perror("userspace_socket");

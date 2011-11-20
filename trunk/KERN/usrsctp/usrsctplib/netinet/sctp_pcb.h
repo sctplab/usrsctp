@@ -33,7 +33,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 225549 2011-09-14 08:15:21Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 227755 2011-11-20 15:00:45Z tuexen $");
 #endif
 
 #ifndef __sctp_pcb_h__
@@ -384,6 +384,7 @@ struct sctp_pcb {
 	uint8_t default_dscp;
 	char current_secret_number;
 	char last_secret_number;
+	uint16_t port; /* remote UDP encapsulation port */
 };
 
 #ifndef SCTP_ALIGNMENT

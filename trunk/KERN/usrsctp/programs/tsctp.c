@@ -244,12 +244,13 @@ int main(int argc, char **argv)
 	struct sockaddr_in local_addr;
 	struct timeval start_time, now, diff_time;
 	int client;
-	short local_port, remote_port, port;
+	uint16_t local_port, remote_port, port, local_udp_port, remote_udp_port;
 	double seconds;
 	double throughput;
 	int nodelay = 0;
 	unsigned long i;
 	struct sctp_assoc_value av;
+	struct sctp_udpencaps encaps;
 #if !defined (CALLBACK_API)
 	pthread_t tid;
 #endif
@@ -265,13 +266,15 @@ int main(int argc, char **argv)
 	length = DEFAULT_LENGTH;
 	number_of_messages = DEFAULT_NUMBER_OF_MESSAGES;
 	port = DEFAULT_PORT;
+	remote_udp_port = 0;
+	local_udp_port = 9899;
 	verbose = 0;
 	very_verbose = 0;
 
 	memset((void *) &remote_addr, 0, sizeof(struct sockaddr_in));
 	memset((void *) &local_addr, 0, sizeof(struct sockaddr_in));
 
-	while ((c = getopt(argc, argv, "a:p:l:f:n:T:uvVD")) != -1)
+	while ((c = getopt(argc, argv, "a:p:l:E:f:n:T:uU:vVD")) != -1)
 		switch(c) {
 			case 'a':
 				ind.ssb_adaptation_ind = atoi(optarg);
@@ -285,6 +288,9 @@ int main(int argc, char **argv)
 			case 'p':
 				port = atoi(optarg);
 				break;
+			case 'E':
+				local_udp_port = atoi(optarg);
+				break;
 			case 'f':
 				fragpoint = atoi(optarg);
 				break;
@@ -294,6 +300,9 @@ int main(int argc, char **argv)
 				break;
 			case 'u':
 				unordered = 1;
+				break;
+			case 'U':
+				remote_udp_port = atoi(optarg);
 				break;
 			case 'v':
 				verbose = 1;
@@ -326,7 +335,7 @@ int main(int argc, char **argv)
 	local_addr.sin_port = htons(local_port);
 	local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	sctp_init();
+	sctp_init(local_udp_port);
 	SCTP_BASE_SYSCTL(sctp_debug_on) = 0xffffffff;
 
 	if (!(psock = userspace_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP)) ){
@@ -377,6 +386,13 @@ int main(int argc, char **argv)
 		}
 		userspace_close(psock);
 	} else {
+		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
+		encaps.sue_address.ss_family = AF_INET;
+		encaps.sue_port = htons(remote_udp_port);
+		if (userspace_setsockopt(psock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+			perror("setsockopt");
+		}
+
 		remote_addr.sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
 		remote_addr.sin_len = sizeof(struct sockaddr_in);

@@ -33,7 +33,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 225635 2011-09-17 08:50:29Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 227755 2011-11-20 15:00:45Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_H_
@@ -125,6 +125,7 @@ struct sctp_paramhdr {
 #define SCTP_DEFAULT_SNDINFO            0x00000021
 #define SCTP_DEFAULT_PRINFO             0x00000022
 #define SCTP_PEER_ADDR_THLDS            0x00000023
+#define SCTP_REMOTE_UDP_ENCAPS_PORT     0x00000024
 
 /*
  * read-only options

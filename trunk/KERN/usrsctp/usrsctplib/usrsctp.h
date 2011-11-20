@@ -43,7 +43,7 @@ extern "C" {
 #endif
 
 void
-sctp_init(void);
+sctp_init(uint16_t);
 
 void
 sctp_finish(void);
