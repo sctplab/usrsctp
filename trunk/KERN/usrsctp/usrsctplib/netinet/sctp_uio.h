@@ -33,7 +33,7 @@
 /* $KAME: sctp_uio.h,v 1.11 2005/03/06 16:04:18 itojun Exp $	 */
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 227755 2011-11-20 15:00:45Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 227931 2011-11-24 10:58:48Z tuexen $");
 #endif
 
 #ifndef __sctp_uio_h__
@@ -550,8 +550,8 @@ struct sctp_paddrparams {
 #define SPP_IPV4_TOS            SPP_DSCP
 
 struct sctp_paddrthlds {
-	sctp_assoc_t spt_assoc_id;
 	struct sockaddr_storage spt_address;
+	sctp_assoc_t spt_assoc_id;
 	uint16_t spt_pathmaxrxt;
 	uint16_t spt_pathpfthld;
 };
@@ -701,8 +701,8 @@ struct sctp_timeouts {
 };
 
 struct sctp_udpencaps {
-	sctp_assoc_t sue_assoc_id;
 	struct sockaddr_storage sue_address;
+	sctp_assoc_t sue_assoc_id;
 	uint16_t sue_port;
 };
 
