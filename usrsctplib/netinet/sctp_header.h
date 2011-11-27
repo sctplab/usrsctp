@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_header.h 224641 2011-08-03 20:21:00Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_header.h 228031 2011-11-27 17:51:13Z tuexen $");
 #endif
 
 #ifndef __sctp_header_h__
@@ -86,7 +86,7 @@ struct sctp_host_name_param {
 /* supported address type */
 struct sctp_supported_addr_param {
 	struct sctp_paramhdr ph;/* type=SCTP_SUPPORTED_ADDRTYPE */
-	uint16_t addr_type[SCTP_ARRAY_MIN_LEN];	/* array of supported address types */
+	uint16_t addr_type[2];	/* array of supported address types */
 } SCTP_PACKED ;
 
 /* ECN parameter */
