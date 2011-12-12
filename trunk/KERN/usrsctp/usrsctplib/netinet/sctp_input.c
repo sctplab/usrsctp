@@ -5897,7 +5897,9 @@ sctp_input(i_pak, va_alist)
 	/* Open BSD gives us the len in network order, fix it */
 	NTOHS(ip->ip_len);
 #endif
-
+#if defined (__Userspace_os_Linux)
+        ip->ip_len = ntohs(ip->ip_len);
+#endif
 	/* validate mbuf chain length with IP payload length */
 	if (mlen < (SCTP_GET_IPV4_LENGTH(ip) - iphlen)) {
 		SCTP_STAT_INCR(sctps_hdrops);
