@@ -8,6 +8,9 @@
 #include <sys/mutex.h>
 #endif
 #endif
+#if defined (__Userspace_os_Windows)
+#include "netinet/sctp_os_userspace.h"
+#endif
 
 /* maxsockets is used in SCTP_ZONE_INIT call. It refers to
  * kern.ipc.maxsockets kernel environment variable.
@@ -29,11 +32,10 @@ extern int ipport_firstauto, ipport_lastauto;
  */
 extern int nmbclusters;
 
-
-/* __Userspace__ Are min, max defined in some header file? */
+#if !defined (__Userspace_os_Windows)
 #define min(a,b) ((a)>(b)?(b):(a))
 #define max(a,b) ((a)>(b)?(a):(b))
-
+#endif
 
 extern int read_random(void *buf, int count);
 
@@ -73,9 +75,9 @@ extern int ip_defttl;
 #define mtx_assert(arg1,arg2)
 #define MA_OWNED 7 /* sys/mutex.h typically on FreeBSD */
 #if !defined(__Userspace_os_FreeBSD)
-struct mtx {};
-struct selinfo {};
-struct sx {};
+struct mtx {int dummy;};
+struct selinfo {int dummy;};
+struct sx {int dummy;};
 #endif
 
 /* called in sctp_usrreq.c */

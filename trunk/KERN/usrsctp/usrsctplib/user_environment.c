@@ -1,10 +1,13 @@
 /* __Userspace__ */
 
 #include <stdlib.h>
+#if !defined (__Userspace_os_Windows)
 #include <stdint.h>
+#include <sys/sysctl.h>
+#include <netinet/sctp_os_userspace.h>
+#endif
 #include <user_environment.h>
 #include <sys/types.h>
-#include <sys/sysctl.h>
 /* #include <sys/param.h> defines MIN */
 #if !defined(MIN)
 #define MIN(arg1,arg2) ((arg1) < (arg2) ? (arg1) : (arg2))
@@ -26,7 +29,7 @@ u_short ip_id = 0; /*__Userspace__ TODO Should it be initialized to zero? */
 /* used in user_include/user_atomic.h in order to make the operations 
  * defined there truly atomic 
  */
-pthread_mutex_t atomic_mtx;
+userland_mutex_t atomic_mtx;
 
 /* Source: /usr/src/sys/dev/random/harvest.c */
 static int read_random_phony(void *, int);
