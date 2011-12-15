@@ -70,15 +70,6 @@ extern int ip_defttl;
 
 
 /* dummy definitions used (temporarily?) for inpcb userspace port */
-#define mtx_lock(arg1)
-#define mtx_unlock(arg1)
-#define mtx_assert(arg1,arg2)
-#define MA_OWNED 7 /* sys/mutex.h typically on FreeBSD */
-#if !defined(__Userspace_os_FreeBSD)
-struct mtx {int dummy;};
-struct selinfo {int dummy;};
-struct sx {int dummy;};
-#endif
 
 /* called in sctp_usrreq.c */
 #define in6_sin_2_v4mapsin6(arg1, arg2) /* STUB */

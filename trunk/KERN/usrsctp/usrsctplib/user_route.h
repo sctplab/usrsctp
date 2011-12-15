@@ -33,8 +33,6 @@
 #ifndef _NET_ROUTE_H_
 #define _NET_ROUTE_H_
 
-#include <user_environment.h>
-
 /*
  * Kernel resident routing tables.
  *
