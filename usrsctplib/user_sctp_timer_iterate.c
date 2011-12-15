@@ -1,11 +1,12 @@
 #include <sys/types.h> 
+#if !defined (__Userspace_os_Windows)
 #include <sys/wait.h> 
 #include <unistd.h>
+#include <pthread.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h> 
-#include <unistd.h>
-#include <pthread.h>
 #include <errno.h>
 #include <netinet/sctp_pcb.h>
 #include <netinet/sctp_sysctl.h>
@@ -21,21 +22,30 @@ void *user_sctp_timer_iterate(void * threadname);
 void * (*timerFunction)(void *) = {&user_sctp_timer_iterate};
 
 extern int ticks;
-pthread_mutex_t timer_mtx;
+userland_mutex_t timer_mtx;
 
 void 
 timer_init(void) {
-	pthread_t ithread;
+	userland_thread_t ithread;
+#if !defined (__Userspace_os_Windows)
 	int rc;
+#endif
 	char *tn = {"iterator"};
 
 	/* No need to do SCTP_TIMERQ_LOCK_INIT(); here, it is being done in sctp_pcb_init() */
 	/* start one thread here */
+#if defined (__Userspace_os_Windows)
+	if ((ithread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)timerFunction, (void *)tn, 0, NULL))==NULL) {
+		printf("ERROR; Creating ithread failed\n");
+		exit(1);
+	}
+#else
 	rc = pthread_create(&ithread, NULL, timerFunction, (void *)tn);
 	if (rc) {
 		printf("ERROR; return code from pthread_create() is %d\n", rc);
 		exit(1);
 	}
+#endif
 }
 
 void *
@@ -57,9 +67,11 @@ user_sctp_timer_iterate(void *threadname)
 	while(1) {
 		timeout.tv_sec  = 0;
 		timeout.tv_usec = 1000 * TIMEOUT_INTERVAL;
-
+#if defined (__Userspace_os_Windows)
+		Sleep(TIMEOUT_INTERVAL);
+#else
 		select(0, NULL, NULL, NULL, &timeout);
-
+#endif
 		/* update our tick count */
 		ticks += MSEC_TO_TICKS(TIMEOUT_INTERVAL);
 		SCTP_TIMERQ_LOCK();
