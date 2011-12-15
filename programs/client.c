@@ -31,7 +31,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if !defined(__Userspace_os_Windows)
 #include <unistd.h>
+#endif
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
