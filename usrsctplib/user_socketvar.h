@@ -36,6 +36,12 @@
 #define _SYS_SOCKETVAR_H_
 
 #include <sys/queue.h>			/* for TAILQ macros */
+#if defined(__Userspace_os_Darwin)
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
+#endif
+
 /* #include <sys/selinfo.h> */ /*__Userspace__ alternative?*/	/* for struct selinfo */
 /* #include <sys/_lock.h>  was 0 byte file */
 /* #include <sys/_mutex.h> was 0 byte file */
@@ -56,7 +62,9 @@
 #define ERESTART (-1)
 #endif
 
+#if !defined(__Userspace_os_Darwin)
 enum	uio_rw { UIO_READ, UIO_WRITE };
+#endif
 
 /* Segment flag values. */
 enum uio_seg {
@@ -766,6 +774,7 @@ void	socantsendmore(struct socket *so);
 extern void solisten_proto(struct socket *so, int backlog);
 extern int solisten_proto_check(struct socket *so);
 extern int sctp_listen(struct socket *so, int backlog, struct proc *p);
+extern void socantrcvmore_locked(struct socket *so);
 extern int sctp_bind(struct socket *so, struct sockaddr *addr);
 extern int sctp_accept(struct socket *so, struct sockaddr **addr);
 extern int sctp_attach(struct socket *so, int proto, uint32_t vrf_id);
