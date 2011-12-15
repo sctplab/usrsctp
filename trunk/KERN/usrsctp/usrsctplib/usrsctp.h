@@ -24,7 +24,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
  */
 
 #ifndef __USRSCTP_H__
@@ -34,9 +33,11 @@
 extern "C" {
 #endif
 
-#include <netinet/in.h>
 #include <sys/types.h>
+#if !defined(__Userspace_os_Windows)
 #include <sys/socket.h>
+#include <netinet/in.h>
+#endif
 
 #if !defined(MSG_NOTIFICATION)
 #define MSG_NOTIFICATION 0x2000         /* SCTP notification */ 
