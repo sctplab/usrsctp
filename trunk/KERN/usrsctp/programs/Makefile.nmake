@@ -1,0 +1,34 @@
+CFLAGS=/w /I..\usrsctplib
+
+CVARSDLL=-DWIN32 -DSCTP_USERMODE -D__Userspace_os_Windows -DSCTP_DEBUG -DSCTP_SIMPLE_ALLOCATOR -DINET
+CVARSDLL=$(CVARSDLL) -DUSE_SCTP_SHA1 -DSCTP_PROCESS_LEVEL_LOCKS -D__Userspace__ -DCALLBACK_API
+
+LINKFLAGS=/LIBPATH:..\usrsctplib usrsctp.lib
+
+.c.obj::
+	$(CC) $(CVARSDLL) $(CFLAGS) -Fd.\ -c $<
+
+all: \
+	client \
+	discard_server \
+	tsctp
+
+client:
+	$(CC) $(CFLAGS) $(CVARSDLL) -c client.c
+	link -out:client.exe client.obj $(LINKFLAGS)
+
+discard_server:
+	$(CC) $(CFLAGS) $(CVARSDLL) -c discard_server.c
+	link -out:discard_server.exe discard_server.obj $(LINKFLAGS)
+
+tsctp:
+	$(CC) $(CFLAGS) $(CVARSDLL) -c tsctp.c
+	link -out:tsctp.exe tsctp.obj $(LINKFLAGS)
+
+clean:
+	del /F client
+	del /F client.obj
+	del /F discard_server
+	del /F discard_server.obj
+	del /F tsctp
+	del /F tsctp.obj

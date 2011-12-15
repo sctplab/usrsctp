@@ -1,0 +1,15 @@
+all: 
+	cd usrsctplib
+	nmake -f Makefile.nmake
+	cd ..
+	cd programs
+	nmake all -f Makefile.nmake
+	cd ..
+
+clean:
+	cd usrsctplib
+	nmake clean -f Makefile.nmake
+	cd ..
+	cd programs
+	nmake clean -f Makefile.nmake
+	cd ..
