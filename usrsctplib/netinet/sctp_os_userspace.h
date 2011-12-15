@@ -189,7 +189,6 @@ typedef HANDLE userland_thread_t;
 #define EREMOTE                 WSAEREMOTE
 #endif
 
-
 typedef char* caddr_t;
 
 #define getifaddrs(interfaces)  (int)Win_getifaddrs(interfaces)
@@ -251,8 +250,8 @@ typedef char* caddr_t;
 #define BYTE_ORDER LITTLE_ENDIAN
 
 struct iovec {
-	ULONG len;     
-    CHAR FAR *buf; 
+	ULONG len;
+	CHAR FAR *buf;
 };
 
 #define iov_base buf
@@ -276,10 +275,10 @@ struct ifdevmtu {
 
 struct ifkpi {
 	unsigned int  ifk_module_id;
-    unsigned int  ifk_type;
+	unsigned int  ifk_type;
 	union {
-		void      *ifk_ptr;
-		int       ifk_value;
+		void *ifk_ptr;
+		int ifk_value;
 	} ifk_data;
 };
 
@@ -346,7 +345,7 @@ struct ifaddrs {
 
 struct udphdr {
 	unsigned __int16 uh_sport;
-    unsigned __int16 uh_dport;
+	unsigned __int16 uh_dport;
 	unsigned __int16 uh_ulen;
 	unsigned __int16 uh_sum;
 };
@@ -357,6 +356,16 @@ struct udphdr {
 typedef pthread_mutex_t userland_mutex_t;
 typedef pthread_cond_t userland_cond_t;
 typedef pthread_t userland_thread_t;
+#endif
+
+#define mtx_lock(arg1)
+#define mtx_unlock(arg1)
+#define mtx_assert(arg1,arg2)
+#define MA_OWNED 7 /* sys/mutex.h typically on FreeBSD */
+#if !defined(__Userspace_os_FreeBSD)
+struct mtx {int dummy;};
+struct selinfo {int dummy;};
+struct sx {int dummy;};
 #endif
 
 #include <stdio.h>
