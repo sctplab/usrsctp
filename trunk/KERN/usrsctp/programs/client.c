@@ -63,9 +63,17 @@ main(int argc, char *argv[]) {
 	if (userspace_connect(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) < 0)
 		perror("userspace_connect");
 
+#if defined (__Userspace_os_Windows)
+	Sleep(60*1000);
+#else
 	sleep(60);
+#endif
 	userspace_close(sock);
+#if defined (__Userspace_os_Windows)
+	Sleep(10*1000);
+#else
 	sleep(10);
+#endif
 	sctp_finish();
 	return(0);
 }
