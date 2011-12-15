@@ -3,8 +3,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <pthread.h>
-#endif
 #include <sys/uio.h>
+#endif
 #include <netinet/sctp_os.h>
 #include <netinet/sctp_var.h>
 #include <netinet/sctp_pcb.h>
