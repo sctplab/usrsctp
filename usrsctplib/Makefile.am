@@ -39,6 +39,7 @@ libusrsctp_la_SOURCES  = user_atomic.h \
                          netinet/sctp_ss_functions.c \
                          netinet/sctp_structs.h \
                          netinet/sctp_sysctl.c netinet/sctp_sysctl.h \
+                         netinet/sctp_userspace.c \
                          netinet/sctp_timer.c netinet/sctp_timer.h \
                          netinet/sctp_uio.h \
                          netinet/sctp_usrreq.c \
