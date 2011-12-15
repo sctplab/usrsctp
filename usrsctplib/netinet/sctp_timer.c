@@ -56,7 +56,9 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 224641 2011-08-03 20:21:00Z tu
 #include <netinet/sctp_input.h>
 #include <netinet/sctp.h>
 #include <netinet/sctp_uio.h>
+#if !defined (__Userspace_os_Windows)
 #include <netinet/udp.h>
+#endif
 
 #if defined(__APPLE__)
 #define APPLE_FILE_NO 6

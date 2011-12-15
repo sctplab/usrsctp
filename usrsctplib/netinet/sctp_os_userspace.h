@@ -38,7 +38,252 @@
  * All the opt_xxx.h files are placed in the kernel build directory.
  * We will place them in userspace stack build directory.
  */
+#if defined (__Userspace_os_Windows)
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <ws2ipdef.h>
+#include <iphlpapi.h>
+#include <Mswsock.h>
+#include <Windows.h>
+#include "user_environment.h"
+typedef CRITICAL_SECTION userland_mutex_t;
+typedef CONDITION_VARIABLE userland_cond_t;
+typedef HANDLE userland_thread_t;
+#define I_AM_HERE   printf("%s:%d at %s\n", __FILE__, __LINE__ , __FUNCTION__)
+#define ADDRESS_FAMILY	unsigned __int8
+#define IPVERSION  4
+#define MAXTTL     255
+#define uint64_t   unsigned __int64
+#define u_long     unsigned __int64
+#define u_int      unsigned __int32
+#define uint32_t   unsigned __int32
+#define u_int32_t  unsigned __int32
+#define int32_t	   __int32
+#define int16_t	   __int16
+#define uint16_t   unsigned __int16
+#define u_int16_t  unsigned __int16
+#define uint8_t    unsigned __int8
+#define u_int8_t   unsigned __int8
+#define int8_t     __int8
+#define u_char     unsigned char
+#define n_short    unsigned __int16
+#define u_short    unsigned __int16
+#define ssize_t    __int64
+#define size_t     __int32
+#define in_addr_t  unsigned __int32
+#define in_port_t  unsigned __int16
+#define n_time     unsigned __int32
+#define sa_family_t unsigned __int8
+#define IFNAMSIZ   64
+#define __func__	__FUNCTION__
+
+#define EWOULDBLOCK             WSAEWOULDBLOCK
+#define EINPROGRESS             WSAEINPROGRESS
+#define EALREADY                WSAEALREADY
+#define ENOTSOCK                WSAENOTSOCK
+#define EDESTADDRREQ            WSAEDESTADDRREQ
+#define EMSGSIZE                WSAEMSGSIZE
+#define EPROTOTYPE              WSAEPROTOTYPE
+#define ENOPROTOOPT             WSAENOPROTOOPT
+#define EPROTONOSUPPORT         WSAEPROTONOSUPPORT
+#define ESOCKTNOSUPPORT         WSAESOCKTNOSUPPORT
+#define EOPNOTSUPP              WSAEOPNOTSUPP
+#define ENOTSUP                 WSAEOPNOTSUPP
+#define EPFNOSUPPORT            WSAEPFNOSUPPORT
+#define EAFNOSUPPORT            WSAEAFNOSUPPORT
+#define EADDRINUSE              WSAEADDRINUSE
+#define EADDRNOTAVAIL           WSAEADDRNOTAVAIL
+#define ENETDOWN                WSAENETDOWN
+#define ENETUNREACH             WSAENETUNREACH
+#define ENETRESET               WSAENETRESET
+#define ECONNABORTED            WSAECONNABORTED
+#define ECONNRESET              WSAECONNRESET
+#define ENOBUFS                 WSAENOBUFS
+#define EISCONN                 WSAEISCONN
+#define ENOTCONN                WSAENOTCONN
+#define ESHUTDOWN               WSAESHUTDOWN
+#define ETOOMANYREFS            WSAETOOMANYREFS
+#define ETIMEDOUT               WSAETIMEDOUT
+#define ECONNREFUSED            WSAECONNREFUSED
+#define ELOOP                   WSAELOOP
+#define EHOSTDOWN               WSAEHOSTDOWN
+#define EHOSTUNREACH            WSAEHOSTUNREACH
+#define EPROCLIM                WSAEPROCLIM
+#define EUSERS                  WSAEUSERS
+#define EDQUOT                  WSAEDQUOT
+#define ESTALE                  WSAESTALE
+#define EREMOTE                 WSAEREMOTE
+
+
+typedef char* caddr_t;
+
+#define getifaddrs(interfaces)  (int)Win_getifaddrs(interfaces)
+
+#define bzero(buf, len) memset(buf, 0, len)
+#define bcopy(srcKey, dstKey, len) memcpy(dstKey, srcKey, len)
+#define snprintf(data, size, format, name) _snprintf_s(data, size, _TRUNCATE, format, name)
+#define inline __inline
+#define __inline__ __inline
+#define random() rand()
+#define srandom(s) srand(s)
+#define	MSG_EOR		0x8		/* data completes record */
+#if defined (CMSG_DATA)
+#undef CMSG_DATA
+#endif
+#define CMSG_DATA(x)   WSA_CMSG_DATA(x)
+#define CMSG_ALIGN(x)  WSA_CMSGDATA_ALIGN(x)
+
+#define	MSG_DONTWAIT	0x80		/* this message should be nonblocking */
+
+/****  from sctp_os_windows.h ***************/
+#define SCTP_IFN_IS_IFT_LOOP(ifn)	((ifn)->ifn_type == IFT_LOOP)
+#define SCTP_ROUTE_IS_REAL_LOOP(ro) ((ro)->ro_rt && (ro)->ro_rt->rt_ifa && (ro)->ro_rt->rt_ifa->ifa_ifp && (ro)->ro_rt->rt_ifa->ifa_ifp->if_type == IFT_LOOP)
+
+/*
+ * Access to IFN's to help with src-addr-selection
+ */
+/* This could return VOID if the index works but for BSD we provide both. */
+#define SCTP_GET_IFN_VOID_FROM_ROUTE(ro) \
+	((ro)->ro_rt != NULL ? (ro)->ro_rt->rt_ifp : NULL)
+#define SCTP_ROUTE_HAS_VALID_IFN(ro) \
+	((ro)->ro_rt && (ro)->ro_rt->rt_ifp)
+/******************************************/
+
+#define SCTP_GET_IF_INDEX_FROM_ROUTE(ro) 1 /* compiles...  TODO use routing socket to determine */
+
+#define timeradd(tvp, uvp, vvp)   \
+	do {                          \
+	    (vvp)->tv_sec = (tvp)->tv_sec + (uvp)->tv_sec;  \
+		(vvp)->tv_usec = (tvp)->tv_usec + (uvp)->tv_usec;  \
+		if ((vvp)->tv_usec >= 1000000) {                   \
+		    (vvp)->tv_sec++;                        \
+			(vvp)->tv_usec -= 1000000;             \
+		}                         \
+	} while (0)
+
+#define timersub(tvp, uvp, vvp)   \
+	do {                          \
+	    (vvp)->tv_sec = (tvp)->tv_sec - (uvp)->tv_sec;  \
+		(vvp)->tv_usec = (tvp)->tv_usec - (uvp)->tv_usec;  \
+		if ((vvp)->tv_usec < 0) {                   \
+		    (vvp)->tv_sec--;                        \
+			(vvp)->tv_usec += 1000000;             \
+		}                       \
+	} while (0)
+
+#define BIG_ENDIAN 1
+#define LITTLE_ENDIAN 0
+#define BYTE_ORDER LITTLE_ENDIAN
+
+struct iovec {
+	ULONG len;     
+    CHAR FAR *buf; 
+};
+
+#define iov_base buf
+#define iov_len	len
+
+struct ifa_msghdr {
+	unsigned __int16 ifam_msglen;
+	unsigned char    ifam_version;
+	unsigned char    ifam_type;
+	__int32          ifam_addrs;
+	__int32          ifam_flags;
+	unsigned __int16 ifam_index;
+	__int32          ifam_metric;
+};
+
+struct ifdevmtu {
+	int ifdm_current;
+	int ifdm_min;
+	int ifdm_max;
+};
+
+struct ifkpi {
+	unsigned int  ifk_module_id;
+    unsigned int  ifk_type;
+	union {
+		void      *ifk_ptr;
+		int       ifk_value;
+	} ifk_data;
+};
+
+struct ifreq {
+	char    ifr_name[16];
+	union {
+		struct sockaddr ifru_addr;
+		struct sockaddr ifru_dstaddr;
+		struct sockaddr ifru_broadaddr;
+		short  ifru_flags;
+		int ifru_metric;
+		int ifru_mtu;
+		int ifru_phys;
+		int ifru_media;
+		int    ifru_intval;
+		char*  ifru_data;
+		struct ifdevmtu ifru_devmtu;
+		struct ifkpi  ifru_kpi;
+		unsigned __int32 ifru_wake_flags;
+	} ifr_ifru;
+#define ifr_addr        ifr_ifru.ifru_addr
+#define ifr_dstaddr     ifr_ifru.ifru_dstaddr
+#define ifr_broadaddr   ifr_ifru.ifru_broadaddr
+#define ifr_flags       ifr_ifru.ifru_flags[0]
+#define ifr_prevflags   ifr_ifru.ifru_flags[1]
+#define ifr_metric      ifr_ifru.ifru_metric
+#define ifr_mtu         ifr_ifru.ifru_mtu
+#define ifr_phys        ifr_ifru.ifru_phys
+#define ifr_media       ifr_ifru.ifru_media
+#define ifr_data        ifr_ifru.ifru_data
+#define ifr_devmtu      ifr_ifru.ifru_devmtu
+#define ifr_intval      ifr_ifru.ifru_intval
+#define ifr_kpi         ifr_ifru.ifru_kpi
+#define ifr_wake_flags  ifr_ifru.ifru_wake_flags
+};
+
+/*#include <packon.h>
+#pragma pack(push, 1)*/
+struct ip {
+	u_char    ip_hl:4, ip_v:4;
+	u_char    ip_tos;
+	u_short   ip_len;
+	u_short   ip_id;
+	u_short   ip_off;
+#define IP_RP 0x8000
+#define IP_DF 0x4000
+#define IP_MF 0x2000
+#define IP_OFFMASK 0x1fff
+	u_char    ip_ttl;
+	u_char    ip_p;
+	u_short   ip_sum;
+    struct in_addr ip_src, ip_dst;
+};
+
+struct ifaddrs {
+	struct ifaddrs  *ifa_next;
+	char		*ifa_name;
+	unsigned int		 ifa_flags;
+	struct sockaddr	*ifa_addr;
+	struct sockaddr	*ifa_netmask;
+	struct sockaddr	*ifa_dstaddr;
+	void		*ifa_data;
+};
+
+struct udphdr {
+	unsigned __int16 uh_sport;
+    unsigned __int16 uh_dport;
+	unsigned __int16 uh_ulen;
+	unsigned __int16 uh_sum;
+};
+
+#else /* !defined (Userspace_os_Windows) */
 #include <sys/cdefs.h> /* needed? added from old __FreeBSD__ */
+#include <sys/socket.h>
+typedef pthread_mutex_t userland_mutex_t;
+typedef pthread_cond_t userland_cond_t;
+typedef pthread_t userland_thread_t;
+#endif
+
 #include <stdio.h>
 #include <string.h>
 /* #include <sys/param.h>  in FreeBSD defines MSIZE */
@@ -48,7 +293,6 @@
 /* #include <sys/kernel.h> */
 /* #include <sys/sysctl.h> */
 /* #include <sys/protosw.h> */
-#include <sys/socket.h>
 /* on FreeBSD, this results in a redefintion of SOCK(BUF)_(UN)LOCK and
  *  uknown type of struct mtx for sb_mtx in struct sockbuf */
 #include "user_socketvar.h" /* MALLOC_DECLARE's M_PCB. Replacement for sys/socketvar.h */
@@ -76,7 +320,6 @@
 /* was a 0 byte file.  needed for structs if_data(64) and net_event_data */
 #include <net/if_var.h> 
 #endif
-#include <net/if.h>
 #if defined(__Userspace_os_FreeBSD)
 #include <net/if_types.h>
 /* #include <net/if_var.h> was a 0 byte file.  causes struct mtx redefinition */
@@ -85,9 +328,12 @@
  *  userspace as well? */
 /* on FreeBSD, this results in a redefintion of struct route */
 /* #include <net/route.h> */
+#if !defined (__Userspace_os_Windows)
+#include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
+#endif
 /* #include <netinet/in_pcb.h> ported to userspace */
 #include <user_inpcb.h>
 #include <netinet/ip_icmp.h>
@@ -100,6 +346,7 @@
 
 /* for getifaddrs */
 #include <sys/types.h>
+#if !defined (__Userspace_os_Windows)
 #include <ifaddrs.h>
 
 /* for ioctl */
@@ -107,6 +354,7 @@
 
 /* for close, etc. */
 #include <unistd.h>
+#endif
 
 /* lots of errno's used and needed in userspace */
 #include <errno.h>
@@ -114,7 +362,7 @@
 /* for offsetof */
 #include <stddef.h>
 
-#if defined(SCTP_PROCESS_LEVEL_LOCKS)
+#if defined(SCTP_PROCESS_LEVEL_LOCKS) && !defined (__Userspace_os_Windows)
 /* for pthread_mutex_lock, pthread_mutex_unlock, etc. */
 #include <pthread.h>
 #endif
@@ -210,6 +458,7 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 
 #if defined(SCTP_DEBUG)
 #include <netinet/sctp_constants.h>
+#if !defined (__Userspace_os_Windows)
 #define SCTPDBG(level, params...)					\
 {									\
     do {								\
@@ -218,6 +467,16 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 	}								\
     } while (0);							\
 }
+#else
+#define SCTPDBG(level, ...)  \
+{                              \
+    do {    \
+	if (SCTP_BASE_SYSCTL(sctp_debug_on) & level) {  \
+	    printf(__VA_ARGS__);           \
+	}        \
+	} while (0);     \
+}
+#endif
 #define SCTPDBG_ADDR(level, addr)					\
 {									\
     do {								\
@@ -239,7 +498,11 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 #define SCTPDBG_ADDR(level, addr)
 #define SCTPDBG_PKT(level, iph, sh)
 #endif
+#if !defined (__Userspace_os_Windows)
 #define SCTP_PRINTF(params...)	printf(params)
+#else
+#define SCTP_PRINTF(...)   printf(__VA_ARGS__)
+#endif
 
 #ifdef SCTP_LTRACE_CHUNKS
 #define SCTP_LTRACE_CHK(a, b, c, d) if(sctp_logging_level & SCTP_LTRACE_CHUNK_ENABLE) CTR6(KTR_SUBSYS, "SCTP:%d[%d]:%x-%x-%x-%x", SCTP_LOG_CHUNK_PROC, 0, a, b, c, d)
@@ -271,6 +534,7 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 #define SCTP_VRF_IFN_HASH_SIZE	3
 #define	SCTP_INIT_VRF_TABLEID(vrf)
 
+#if !defined (__Userspace_os_Windows)
 #define SCTP_IFN_IS_IFT_LOOP(ifn) (strncmp((ifn)->ifn_name, "lo", 2) == 0)
 /* BSD definition */
 /* #define SCTP_ROUTE_IS_REAL_LOOP(ro) ((ro)->ro_rt && (ro)->ro_rt->rt_ifa && (ro)->ro_rt->rt_ifa->ifa_ifp && (ro)->ro_rt->rt_ifa->ifa_ifp->if_type == IFT_LOOP) */
@@ -282,10 +546,9 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
  */
 /* This could return VOID if the index works but for BSD we provide both. */
 #define SCTP_GET_IFN_VOID_FROM_ROUTE(ro) (void *)ro->ro_rt->rt_ifp
-/* #define SCTP_GET_IF_INDEX_FROM_ROUTE(ro) (ro)->ro_rt->rt_ifp->if_index */
 #define SCTP_GET_IF_INDEX_FROM_ROUTE(ro) 1 /* compiles...  TODO use routing socket to determine */
-/* #define SCTP_GET_IF_INDEX_FROM_ROUTE(ro) if_nametoindex(((struct ifaddrs *) (ro)->ro_rt->rt_ifp)->ifa_name)   to get this to work, need to change type of rt_ifp from struct ifnet* to void* */
 #define SCTP_ROUTE_HAS_VALID_IFN(ro) ((ro)->ro_rt && (ro)->ro_rt->rt_ifp)
+#endif
 
 /*
  * general memory allocation
@@ -318,13 +581,14 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 }
 
 /* __Userspace__ SCTP_ZONE_GET: allocate element from the zone */
-#define SCTP_ZONE_GET(zone, type) \
-        (type *)malloc(zone);
+#define SCTP_ZONE_GET(zone, type)  \
+        (type *)malloc(zone); 
 
 
 /* __Userspace__ SCTP_ZONE_FREE: free element from the zone */
-#define SCTP_ZONE_FREE(zone, element) \
-	free(element);
+#define SCTP_ZONE_FREE(zone, element) { \
+	free(element);  \
+} 
 
 #define SCTP_ZONE_DESTROY(zone)
 #else
@@ -414,8 +678,13 @@ sctp_hashfreedestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask);
 #define sctp_get_tick_count() (ticks)
 
 /* The packed define for 64 bit platforms */
+#if !defined (__Userspace_os_Windows)
 #define SCTP_PACKED __attribute__((packed))
 #define SCTP_UNUSED __attribute__((unused))
+#else
+#define SCTP_PACKED
+#define SCTP_UNUSED
+#endif
 
 /*
  * Functions
@@ -501,22 +770,8 @@ static inline void sctp_userspace_rtfree(struct rtentry *rt) {
 /*************************/
 /*      MTU              */
 /*************************/
-static inline int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af) {
-    struct ifreq ifr;
-    int fd;
-    
-    if_indextoname(if_index, ifr.ifr_name);
-    /* TODO can I use the raw socket here and not have to open a new one with each query? */
-    if((fd = socket(af, SOCK_DGRAM, 0)) < 0)
-        return 0;
-    if(ioctl(fd, SIOCGIFMTU, &ifr) < 0) {
-        close(fd);
-        return 0;
-    }
-        
-    close(fd);
-    return ifr.ifr_mtu;
-}
+int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af);
+
 #define SCTP_GATHER_MTU_FROM_IFN_INFO(ifn, ifn_index, af) sctp_userspace_get_mtu_from_ifn(ifn_index, af)
 
 #define SCTP_GATHER_MTU_FROM_ROUTE(sctp_ifa, sa, rt) ((rt != NULL) ? rt->rt_rmx.rmx_mtu : 0)

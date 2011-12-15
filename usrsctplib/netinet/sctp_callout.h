@@ -53,14 +53,21 @@ __FBSDID("$FreeBSD$");
 #define SCTP_TICKS_PER_FASTTIMO 20	/* called about every 20ms */
 
 #if defined (__Userspace__)
+#if defined (__Userspace_os_Windows)
+#define SCTP_TIMERQ_LOCK()          EnterCriticalSection(&timer_mtx)
+#define SCTP_TIMERQ_UNLOCK()        LeaveCriticalSection(&timer_mtx)
+#define SCTP_TIMERQ_LOCK_INIT()     InitializeCriticalSection(&timer_mtx)
+#define SCTP_TIMERQ_LOCK_DESTROY()  DeleteCriticalSection(&timer_mtx)
+#else
 #define SCTP_TIMERQ_LOCK()          (void)pthread_mutex_lock(&timer_mtx)
 #define SCTP_TIMERQ_UNLOCK()        (void)pthread_mutex_unlock(&timer_mtx)
 #define SCTP_TIMERQ_LOCK_INIT()     (void)pthread_mutex_init(&timer_mtx, NULL)
 #define SCTP_TIMERQ_LOCK_DESTROY()  (void)pthread_mutex_destroy(&timer_mtx)
+#endif
 
 extern int ticks;
 extern void timer_init();
-extern pthread_mutex_t timer_mtx;
+extern userland_mutex_t timer_mtx;
 #endif
 
 TAILQ_HEAD(calloutlist, sctp_callout);

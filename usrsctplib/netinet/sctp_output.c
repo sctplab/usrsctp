@@ -59,7 +59,9 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 228031 2011-11-27 17:51:13Z t
 #if defined(__Userspace_os_Linux)
 #define __FAVOR_BSD    /* (on Ubuntu at least) enables UDP header field names like BSD in RFC 768 */
 #endif
+#if !defined (__Userspace_os_Windows)
 #include <netinet/udp.h>
+#endif
 #if defined(__APPLE__)
 #include <netinet/in.h>
 #endif
@@ -3551,7 +3553,7 @@ sctp_process_cmsgs_for_init(struct sctp_tcb *stcb, struct mbuf *control, int *er
 				}
 				memset(&sin, 0, sizeof(struct sockaddr_in));
 				sin.sin_family = AF_INET;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 				sin.sin_len = sizeof(struct sockaddr_in);
 #endif
 				sin.sin_port = stcb->rport;
@@ -3666,7 +3668,7 @@ sctp_findassociation_cmsgs(struct sctp_inpcb **inp_p,
 				}
 				memset(&sin, 0, sizeof(struct sockaddr_in));
 				sin.sin_family = AF_INET;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 				sin.sin_len = sizeof(struct sockaddr_in);
 #endif
 				sin.sin_port = port;
@@ -4061,7 +4063,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		if (net == NULL) {
 			ro = &iproute;
 			memset(&iproute, 0, sizeof(iproute));
-#if !(defined(__Windows__) ||  defined(__Userspace_os_Linux)) /*__Userspace__ */
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 			memcpy(&ro->ro_dst, to, to->sa_len);
 #else
 			memcpy(&ro->ro_dst, to, sizeof(struct sockaddr_in));
@@ -5033,7 +5035,7 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked
 		}
 		p_len += padval;
 	}
-	SCTPDBG(SCTP_DEBUG_OUTPUT4, "Sending INIT - calls lowlevel_output\n");
+	SCTPDBG(SCTP_DEBUG_OUTPUT4, "Sending INIT - calls lowlevel_chunk_output\n");
 	ret = sctp_lowlevel_chunk_output(inp, stcb, net,
 	                                 (struct sockaddr *)&net->ro._l_addr,
 	                                 m, 0, NULL, 0, 0, 0, NULL, 0,
@@ -5407,14 +5409,14 @@ sctp_are_there_new_addresses(struct sctp_association *asoc,
 #ifdef INET
 	memset(&sin4, 0, sizeof(sin4));
 	sin4.sin_family = AF_INET;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 	sin4.sin_len = sizeof(sin4);
 #endif
 #endif
 #ifdef INET6
 	memset(&sin6, 0, sizeof(sin6));
 	sin6.sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 	sin6.sin6_len = sizeof(sin6);
 #endif
 #endif
@@ -5698,7 +5700,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	case IPVERSION:
 		  to_sin->sin_port = sh->dest_port;
 		  to_sin->sin_family = AF_INET;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 		  to_sin->sin_len = sizeof(struct sockaddr_in);
 #endif
 		  to_sin->sin_addr = iph->ip_dst;
@@ -5728,7 +5730,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		case IPVERSION:
 		{
 			sin->sin_family = AF_INET;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 			sin->sin_len = sizeof(struct sockaddr_in);
 #endif
 			sin->sin_port = sh->src_port;
@@ -11404,7 +11406,7 @@ sctp_send_hb(struct sctp_tcb *stcb, struct sctp_nets *net,int so_locked
 	hb->heartbeat.hb_info.time_value_2 = now.tv_usec;
 	/* Did our user request this one, put it in */
 	hb->heartbeat.hb_info.addr_family = net->ro._l_addr.sa.sa_family;
-#if !(defined(__Windows__) ||  defined(__Userspace_os_Linux)) /*__Userspace__ */
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 	hb->heartbeat.hb_info.addr_len = net->ro._l_addr.sa.sa_len;
 #else
 	hb->heartbeat.hb_info.addr_len = sizeof(struct sockaddr_in);

@@ -50,7 +50,9 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 225676 2011-09-19 21:47:20Z
 #include <netinet/sctp_asconf.h>
 #include <netinet/sctp_sysctl.h>
 #include <netinet/sctp_indata.h>
+#if !defined (__Userspace_os_Windows)
 #include <sys/unistd.h>
+#endif
 
 /* Declare all of our malloc named types */
 #ifndef __Panda__
@@ -107,7 +109,11 @@ void
 sctp_wakeup_iterator(void)
 {
 #if defined(SCTP_PROCESS_LEVEL_LOCKS)
-        pthread_cond_broadcast(&sctp_it_ctl.iterator_wakeup);
+#if defined (__Userspace_os_Windows)
+	WakeAllConditionVariable(&sctp_it_ctl.iterator_wakeup);
+#else
+	pthread_cond_broadcast(&sctp_it_ctl.iterator_wakeup);
+#endif
 #else
 	wakeup(&sctp_it_ctl.iterator_running);
 #endif
@@ -289,7 +295,71 @@ sctp_is_vmware_interface(struct ifnet *ifn)
 }
 #endif
 
-#if defined (__Userspace__)
+#if defined (__Userspace_os_Windows)
+#ifdef MALLOC
+#undef MALLOC
+#define MALLOC(x) HeapAlloc(GetProcessHeap(), 0, (x))
+#endif
+#ifdef FREE
+#undef FREE
+#define FREE(x) HeapFree(GetProcessHeap(), 0, (x))
+#endif
+static void
+sctp_init_ifns_for_vrf(int vrfid)
+{
+	struct ifaddrs *ifa;
+	struct sctp_ifa *sctp_ifa;
+	PIP_ADAPTER_INFO  pAdapterInfo, pAdapt;
+	ULONG ulOutBufLen;
+
+	ulOutBufLen = sizeof (IP_ADAPTER_INFO);
+
+	pAdapterInfo = (PIP_ADAPTER_INFO) MALLOC(sizeof (IP_ADAPTER_INFO));
+	if (pAdapterInfo == NULL) {
+		printf("Error allocating memory needed to call GetAdaptersinfo\n");
+		return;
+	}
+
+	if (GetAdaptersInfo(pAdapterInfo, &ulOutBufLen) == ERROR_BUFFER_OVERFLOW) {
+		FREE(pAdapterInfo);
+		pAdapterInfo = (IP_ADAPTER_INFO *) MALLOC(ulOutBufLen);
+		if (pAdapterInfo == NULL) {
+			printf("Error allocating memory needed to call GetAdaptersinfo\n");
+			return;
+		}
+	}
+
+	if (GetAdaptersInfo(pAdapterInfo, &ulOutBufLen) == NO_ERROR) {
+		for (pAdapt = pAdapterInfo; pAdapt; pAdapt = pAdapt->Next) {
+			ifa = (struct ifaddrs*)malloc(sizeof(struct ifaddrs));
+
+			ifa->ifa_name = (char*)malloc(strlen(pAdapt->AdapterName));
+			strcpy(ifa->ifa_name, pAdapt->AdapterName);
+
+			ifa->ifa_addr = (struct sockaddr*)malloc(sizeof(struct sockaddr));
+			ifa->ifa_addr->sa_family = AF_INET;
+			((struct sockaddr_in*)ifa->ifa_addr)->sin_addr.s_addr = inet_addr(pAdapt->IpAddressList.IpAddress.String);
+
+			ifa->ifa_flags = 0;
+			sctp_ifa = sctp_add_addr_to_vrf(0, 
+											ifa,
+											pAdapt->Index,
+											(pAdapt->Type == IF_TYPE_IEEE80211)?MIB_IF_TYPE_ETHERNET:pAdapt->Type,
+											ifa->ifa_name,
+											(void *)ifa,
+											ifa->ifa_addr,
+											ifa->ifa_flags,
+											0);
+			if (sctp_ifa) {
+				sctp_ifa->localifa_flags &= ~SCTP_ADDR_DEFER_USE;
+			}
+		}
+	}
+	if (pAdapterInfo) {
+		FREE(pAdapterInfo);
+	}
+}
+#elif defined (__Userspace__)
 static void
 sctp_init_ifns_for_vrf(int vrfid)
 {
@@ -426,6 +496,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 }
 #endif
 
+#if !defined (__Userspace_os_Windows)
 #if defined (__FreeBSD__)
 static void
 sctp_init_ifns_for_vrf(int vrfid)
@@ -507,6 +578,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 	}
 	IFNET_RUNLOCK();
 }
+#endif
 #endif
 
 void
