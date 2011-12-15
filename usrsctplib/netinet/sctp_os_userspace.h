@@ -38,6 +38,9 @@
  * All the opt_xxx.h files are placed in the kernel build directory.
  * We will place them in userspace stack build directory.
  */
+
+#include <errno.h>
+
 #if defined (__Userspace_os_Windows)
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -435,7 +438,6 @@ typedef pthread_t userland_thread_t;
 #endif
 
 /* lots of errno's used and needed in userspace */
-#include <errno.h>
 
 /* for offsetof */
 #include <stddef.h>
