@@ -4,14 +4,20 @@
 #if defined(__Userspace_os_Linux)
 #define __FAVOR_BSD    /* (on Ubuntu at least) enables UDP header field names like BSD in RFC 768 */
 #endif
+#if !defined (__Userspace_os_Windows)
 #include <netinet/udp.h>
-
 /* Statically initializing accept_mtx and accept_cond since there is no call for ACCEPT_LOCK_INIT() */
-pthread_mutex_t accept_mtx = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t accept_cond = PTHREAD_COND_INITIALIZER;
+userland_mutex_t accept_mtx = PTHREAD_MUTEX_INITIALIZER;
+userland_cond_t accept_cond = PTHREAD_COND_INITIALIZER;
+#else
+#include <user_socketvar.h>
+CRITICAL_SECTION accept_mtx;
+CONDITION_VARIABLE accept_cond;
+#endif
 
 MALLOC_DEFINE(M_PCB, "sctp_pcb", "sctp pcb");
 MALLOC_DEFINE(M_SONAME, "sctp_soname", "sctp soname");
+#define MAXLEN_MBUF_CHAIN  32
 
 /* Prototypes */
 extern int sctp_sosend(struct socket *so, struct sockaddr *addr, struct uio *uio,
@@ -73,7 +79,14 @@ sbwait(struct sockbuf *sb)
         SOCKBUF_LOCK_ASSERT(sb);
 
 	sb->sb_flags |= SB_WAIT;
-        return (pthread_cond_wait(&(sb->sb_cond), &(sb->sb_mtx)));
+#if defined (__Userspace_os_Windows)
+	if (SleepConditionVariableCS(&(sb->sb_cond), &(sb->sb_mtx), INFINITE))
+		return 0;
+	else
+		return -1;
+#else
+	return (pthread_cond_wait(&(sb->sb_cond), &(sb->sb_mtx)));
+#endif
 
 #else
 	SOCKBUF_LOCK_ASSERT(sb);
@@ -219,29 +232,21 @@ sodealloc(struct socket *so)
 void
 sofree(struct socket *so)
 {
-    /* 	struct protosw *pr = so->so_proto; */
 	struct socket *head;
-        /*printf("%s::%s:%d\n", __FILE__, __FUNCTION__, __LINE__);*/
-    	ACCEPT_LOCK_ASSERT();
-    	        /*printf("%s::%s:%d\n", __FILE__, __FUNCTION__, __LINE__);*/
+
+	ACCEPT_LOCK_ASSERT();
 	SOCK_LOCK_ASSERT(so);
-        /*printf("%s::%s:%d\n", __FILE__, __FUNCTION__, __LINE__);*/
-        /* SS_NOFDREF unset in accept call.  this condition seems irrelevent
-         *  for __Userspace__...
-         */
-	if (/* (so->so_state & SS_NOFDREF) == 0 || */ so->so_count != 0 ||
+	/* SS_NOFDREF unset in accept call.  this condition seems irrelevent
+	 *  for __Userspace__...
+	 */
+	if (so->so_count != 0 ||
 	    (so->so_state & SS_PROTOREF) || (so->so_qstate & SQ_COMP)) {
-	            /*printf("%s::%s:%d\n", __FILE__, __FUNCTION__, __LINE__);*/
 		SOCK_UNLOCK(so);
-		        /*printf("%s::%s:%d\n", __FILE__, __FUNCTION__, __LINE__);*/
 		ACCEPT_UNLOCK();
-		        /*printf("%s::%s:%d\n", __FILE__, __FUNCTION__, __LINE__);*/
 		return;
 	}
 	head = so->so_head;
-	        /*printf("%s::%s:%d\n", __FILE__, __FUNCTION__, __LINE__);*/
 	if (head != NULL) {
-	        /*printf("%s::%s:%d\n", __FILE__, __FUNCTION__, __LINE__);*/
 		KASSERT((so->so_qstate & SQ_COMP) != 0 ||
 		    (so->so_qstate & SQ_INCOMP) != 0,
 		    ("sofree: so_head != NULL, but neither SQ_COMP nor "
@@ -254,7 +259,6 @@ sofree(struct socket *so)
 		so->so_qstate &= ~SQ_INCOMP;
 		so->so_head = NULL;
 	}
-	        /*printf("%s::%s:%d\n", __FILE__, __FUNCTION__, __LINE__);*/
 	KASSERT((so->so_qstate & SQ_COMP) == 0 &&
 	    (so->so_qstate & SQ_INCOMP) == 0,
 	    ("sofree: so_head == NULL, but still SQ_COMP(%d) or SQ_INCOMP(%d)",
@@ -265,14 +269,7 @@ sofree(struct socket *so)
 	}
 	SOCK_UNLOCK(so);
 	ACCEPT_UNLOCK();
-	        /*printf("%s::%s:%d\n", __FILE__, __FUNCTION__, __LINE__);*/
-        /*	if (pr->pr_flags & PR_RIGHTS && pr->pr_domain->dom_dispose != NULL)
-        		(*pr->pr_domain->dom_dispose)(so->so_rcv.sb_mb);
-        	if (pr->pr_usrreqs->pru_detach != NULL)
-        		(*pr->pr_usrreqs->pru_detach)(so);
-         */
-        sctp_close(so); /* was...    sctp_detach(so); */
-                /*printf("%s::%s:%d\n", __FILE__, __FUNCTION__, __LINE__);*/
+	sctp_close(so); /* was...    sctp_detach(so); */
 	/*
 	 * From this point on, we assume that no other references to this
 	 * socket exist anywhere else in the stack.  Therefore, no locks need
@@ -287,13 +284,7 @@ sofree(struct socket *so)
 	 * before calling pru_detach.  This means that protocols shold not
 	 * assume they can perform socket wakeups, etc, in their detach code.
 	 */
-        /*	sbdestroy(&so->so_snd, so);
-        	sbdestroy(&so->so_rcv, so);
-        	knlist_destroy(&so->so_rcv.sb_sel.si_note);
-        	knlist_destroy(&so->so_snd.sb_sel.si_note); */
-        	        /*printf("%s::%s:%d\n", __FILE__, __FUNCTION__, __LINE__);*/
 	sodealloc(so);
-	        /*printf("%s::%s:%d\n", __FILE__, __FUNCTION__, __LINE__);*/
 }
 
 
@@ -365,11 +356,15 @@ soisdisconnecting(struct socket *so)
 void
 wakeup(ident, so)
 	void *ident;
-        struct socket *so;
+	struct socket *so;
 {
-    SOCK_LOCK(so); 
-    pthread_cond_broadcast(&(so)->timeo_cond);
-    SOCK_UNLOCK(so); 
+	SOCK_LOCK(so);
+#if defined (__Userspace_os_Windows)
+	WakeAllConditionVariable(&(so)->timeo_cond);
+#else
+	pthread_cond_broadcast(&(so)->timeo_cond);
+#endif
+	SOCK_UNLOCK(so);
 }
 
 
@@ -382,17 +377,21 @@ void
 wakeup_one(ident)
 	void *ident;
 {
-    /* __Userspace__ Check: We are using accept_cond for wakeup_one.
-       It seems that wakeup_one is only called within
-       soisconnected() and sonewconn() with ident &head->so_timeo
-       head is so->so_head, which is back pointer to listen socket
-       This seems to indicate that the use of accept_cond is correct
-       since socket where accepts occur is so_head in all
-       subsidiary sockets.
-     */
-    ACCEPT_LOCK();
-    pthread_cond_signal(&accept_cond);
-    ACCEPT_UNLOCK();
+	/* __Userspace__ Check: We are using accept_cond for wakeup_one.
+	  It seems that wakeup_one is only called within
+	  soisconnected() and sonewconn() with ident &head->so_timeo
+	  head is so->so_head, which is back pointer to listen socket
+	  This seems to indicate that the use of accept_cond is correct
+	  since socket where accepts occur is so_head in all
+	  subsidiary sockets.
+	 */
+	ACCEPT_LOCK();
+#if defined (__Userspace_os_Windows)
+	WakeConditionVariable(&accept_cond);
+#else
+	pthread_cond_signal(&accept_cond);
+#endif
+	ACCEPT_UNLOCK();
 }
 
 
@@ -418,23 +417,26 @@ soisconnected(struct socket *so)
 			so->so_qstate |= SQ_COMP;
 			ACCEPT_UNLOCK();
 			sorwakeup(head);
-                        wakeup_one(&head->so_timeo);
+			wakeup_one(&head->so_timeo);
 		} else {
 			ACCEPT_UNLOCK();
-                        /*			so->so_upcall =
-                        			    head->so_accf->so_accept_filter->accf_callback;
-                        			so->so_upcallarg = head->so_accf->so_accept_filter_arg; */
+			/*
+			so->so_upcall = head->so_accf->so_accept_filter->accf_callback;
+			so->so_upcallarg = head->so_accf->so_accept_filter_arg;
+			*/
 			so->so_rcv.sb_flags |= SB_UPCALL;
 			so->so_options &= ~SO_ACCEPTFILTER;
 			SOCK_UNLOCK(so);
-                        /*			so->so_upcall(so, so->so_upcallarg, M_DONTWAIT); */
+			/*
+			so->so_upcall(so, so->so_upcallarg, M_DONTWAIT);
+			*/
 		}
 
 		return;
 	}
 	SOCK_UNLOCK(so);
 	ACCEPT_UNLOCK();
-        wakeup(&so->so_timeo, so);
+	wakeup(&so->so_timeo, so);
 	sorwakeup(so);
 	sowwakeup(so);
 
@@ -512,7 +514,7 @@ sonewconn(struct socket *head, int connstatus)
 			sp->so_qstate &= ~SQ_INCOMP;
 			sp->so_head = NULL;
 			ACCEPT_UNLOCK();
-                        soabort(sp);
+			soabort(sp);
 			ACCEPT_LOCK();
 		}
 		TAILQ_INSERT_TAIL(&head->so_incomp, so, so_list);
@@ -522,7 +524,7 @@ sonewconn(struct socket *head, int connstatus)
 	ACCEPT_UNLOCK();
 	if (connstatus) {
 		sorwakeup(head);
-                wakeup_one(&head->so_timeo);
+		wakeup_one(&head->so_timeo);
 	}
 	return (so);
 
@@ -604,7 +606,7 @@ int
 uiomove(void *cp, int n, struct uio *uio)
 {
 	struct iovec *iov;
-	u_int cnt;
+	int cnt;
 	int error = 0;
 	
 	assert(uio->uio_rw == UIO_READ || uio->uio_rw == UIO_WRITE);
@@ -671,7 +673,7 @@ getsockaddr(namp, uaddr, len)
 	if (error) {
 		FREE(sa, M_SONAME);
 	} else {
-#if !defined(__Userspace_os_Linux)
+#if !defined(__Userspace_os_Linux) && !defined (__Userspace_os_Windows)
 		sa->sa_len = len;
 #endif
 		*namp = sa;
@@ -680,276 +682,76 @@ getsockaddr(namp, uaddr, len)
 }
 
 
-
-/* The original implementation of sctp_generic_sendmsg is in /src/sys/kern/uipc_syscalls.c
- * Modifying it for __Userspace__
- */
-#if 0
-static int
-sctp_generic_sendmsg (so, uap, retval)
-        struct socket *so;
-	struct sctp_generic_sendmsg_args /* {
-		int sd, 
-		caddr_t msg, 
-		int mlen, 
-		caddr_t to, 
-		socklen_t tolen, 
-		struct sctp_sndrcvinfo *sinfo, 
-		int flags
-	} */ *uap;
-        int *retval;
-{
-
-	struct sctp_sndrcvinfo sinfo, *u_sinfo = NULL;
-	int error = 0, len;
-	struct sockaddr *to = NULL;
-
-	struct uio auio;
-	struct iovec iov[1];
-
-	if (uap->sinfo) {
-		error = copyin(uap->sinfo, &sinfo, sizeof (sinfo));
-		if (error)
-			return (error);
-		u_sinfo = &sinfo;
-	}
-	if (uap->tolen) {
-		error = getsockaddr(&to, uap->to, uap->tolen);
-		if (error) {
-			to = NULL;
-			goto sctp_bad2;
-		}
-	}
-
-
-	iov[0].iov_base = uap->msg;
-	iov[0].iov_len = uap->mlen;
-
-
-	auio.uio_iov =  iov;
-	auio.uio_iovcnt = 1;
-	auio.uio_segflg = UIO_USERSPACE;
-	auio.uio_rw = UIO_WRITE;
-	auio.uio_offset = 0;			/* XXX */
-	auio.uio_resid = 0;
-	len = auio.uio_resid = uap->mlen;
-	error = sctp_lower_sosend(so, to, &auio,
-		    (struct mbuf *)NULL, (struct mbuf *)NULL,
-		    uap->flags, u_sinfo);
-	if (error == 0)
-		*retval = len - auio.uio_resid;
-        else
-                *retval = (-1);
-sctp_bad2:
-	if (to)
-		FREE(to, M_SONAME);
-	return (error);
-}
-#endif
-
 /* Taken from  /src/lib/libc/net/sctp_sys_calls.c
  * and modified for __Userspace__
  * calling sctp_generic_sendmsg from this function
  */
 ssize_t
 userspace_sctp_sendmsg(struct socket *so, 
-    const void *data,
-    size_t len,
-    struct sockaddr *to,
-    socklen_t tolen,
-    u_int32_t ppid,
-    u_int32_t flags,
-    u_int16_t stream_no,
-    u_int32_t timetolive,
-    u_int32_t context)
+                       const void *data,
+                       size_t len,
+                       struct sockaddr *to,
+                       socklen_t tolen,
+                       u_int32_t ppid,
+                       u_int32_t flags,
+                       u_int16_t stream_no,
+                       u_int32_t timetolive,
+                       u_int32_t context)
 {
-    
-#if 1 /* def SYS_sctp_generic_sendmsg __Userspace__ */
+	struct sctp_sndrcvinfo sndrcvinfo, *sinfo = &sndrcvinfo;
+	struct uio auio;
+	struct iovec iov[1];
+	int error = 0;
+	int uflags = 0;
+	int retvalsendmsg;
 
-    struct sctp_sndrcvinfo sndrcvinfo, *sinfo = &sndrcvinfo;
-    struct uio auio;
-    struct iovec iov[1];
-    int error = 0;
-    int uflags = 0;
-    int retvalsendmsg;
-    
-    sinfo->sinfo_ppid = ppid;
-    sinfo->sinfo_flags = flags;
-    sinfo->sinfo_stream = stream_no;
-    sinfo->sinfo_timetolive = timetolive;
-    sinfo->sinfo_context = context;
-    sinfo->sinfo_assoc_id = 0;
+	sinfo->sinfo_ppid = ppid;
+	sinfo->sinfo_flags = flags;
+	sinfo->sinfo_stream = stream_no;
+	sinfo->sinfo_timetolive = timetolive;
+	sinfo->sinfo_context = context;
+	sinfo->sinfo_assoc_id = 0;
 
-    
-    /* Perform error checks on destination (to) */
-    if (tolen > SOCK_MAXADDRLEN){
-        error = (ENAMETOOLONG);
-        goto sendmsg_return;
-    }
-    if (tolen < offsetof(struct sockaddr, sa_data[0])){
-        error = (EINVAL);
-        goto sendmsg_return;
-    }
-    /* Adding the following as part of defensive programming, in case the application
-       does not do it when preparing the destination address.*/
-#if !defined(__Userspace_os_Linux)
-    to->sa_len = tolen;
+
+	/* Perform error checks on destination (to) */
+	if (tolen > SOCK_MAXADDRLEN){
+		error = (ENAMETOOLONG);
+		goto sendmsg_return;
+	}
+	if (tolen < offsetof(struct sockaddr, sa_data[0])){
+		error = (EINVAL);
+		goto sendmsg_return;
+	}
+	/* Adding the following as part of defensive programming, in case the application
+	   does not do it when preparing the destination address.*/
+#if !defined(__Userspace_os_Linux) && !defined (__Userspace_os_Windows)
+	to->sa_len = tolen;
 #endif
 
-    
-    iov[0].iov_base = (caddr_t)data;
-    iov[0].iov_len = len;
-    
-    auio.uio_iov =  iov;
-    auio.uio_iovcnt = 1;
-    auio.uio_segflg = UIO_USERSPACE;
-    auio.uio_rw = UIO_WRITE;
-    auio.uio_offset = 0;			/* XXX */
-    auio.uio_resid = len;
-    error = sctp_lower_sosend(so, to, &auio,
+	iov[0].iov_base = (caddr_t)data;
+	iov[0].iov_len = len;
+
+	auio.uio_iov =  iov;
+	auio.uio_iovcnt = 1;
+	auio.uio_segflg = UIO_USERSPACE;
+	auio.uio_rw = UIO_WRITE;
+	auio.uio_offset = 0;			/* XXX */
+	auio.uio_resid = len;
+	error = sctp_lower_sosend(so, to, &auio,
                               (struct mbuf *)NULL, (struct mbuf *)NULL,
                               uflags, sinfo);
 sendmsg_return:
-    if (0 == error)
-        retvalsendmsg = len - auio.uio_resid;
-    else if(error == EWOULDBLOCK) {
-        errno = EWOULDBLOCK;
-        retvalsendmsg = (-1);
-    } else {
-        printf("%s: error = %d\n", __func__, error);
-        retvalsendmsg = (-1);
-    }
-
-    return retvalsendmsg;
-    
-    
-#if 0 /* Removed: Old implementation that does unnecessary copying of sinfo and sockaddr */
-    struct sctp_sndrcvinfo sndrcvinfo, *sinfo = &sndrcvinfo;
-    struct sctp_generic_sendmsg_args ua, *uap = &ua;
-    int retval;
-    ssize_t sz;
-    
-    sinfo->sinfo_ppid = ppid;
-    sinfo->sinfo_flags = flags;
-    sinfo->sinfo_stream = stream_no;
-    sinfo->sinfo_timetolive = timetolive;
-    sinfo->sinfo_context = context;
-    sinfo->sinfo_assoc_id = 0;
-    /*__Userspace__ sd field is being arbitrarily set to 0
-     * it appears not to be used later and not passes to
-     * sctp_lower_sosend
-     */
-    uap->sd = 0; 
-        uap->msg = (caddr_t)data;
-        uap->mlen = len;
-        uap->to = (caddr_t)to;
-        uap->tolen = tolen;
-        uap->sinfo = sinfo;
-        uap->flags = 0;
-        
-	sz = sctp_generic_sendmsg(so, uap, &retval);
-        
-        if(sz) /*error*/
-            printf("%s: errno = sz = %d\n", __func__, sz); /* should we exit here in case of error? */
-        
-        return retval;
-#endif
-        
-#else
-
-	ssize_t sz;
-	struct msghdr msg;
-	struct sctp_sndrcvinfo *s_info;
-	struct iovec iov[SCTP_SMALL_IOVEC_SIZE];
-	char controlVector[SCTP_CONTROL_VEC_SIZE_RCV];
-	struct cmsghdr *cmsg;
-	struct sockaddr *who = NULL;
-	union {
-		struct sockaddr_in in;
-		struct sockaddr_in6 in6;
-	}     addr;
-
-/*
-  fprintf(io, "sctp_sendmsg(sd:%d, data:%x, len:%d, to:%x, tolen:%d, ppid:%x, flags:%x str:%d ttl:%d ctx:%x\n",
-  s,
-  (u_int)data,
-  (int)len,
-  (u_int)to,
-  (int)tolen,
-  ppid, flags,
-  (int)stream_no,
-  (int)timetolive,
-  (u_int)context);
-  fflush(io);
-*/
-	if ((tolen > 0) && ((to == NULL) || (tolen < sizeof(struct sockaddr)))) {
-		errno = EINVAL;
-		return -1;
-	}
-	if (to && (tolen > 0)) {
-		if (to->sa_family == AF_INET) {
-			if (tolen != sizeof(struct sockaddr_in)) {
-				errno = EINVAL;
-				return -1;
-			}
-			if ((to->sa_len > 0) && (to->sa_len != sizeof(struct sockaddr_in))) {
-				errno = EINVAL;
-				return -1;
-			}
-			memcpy(&addr, to, sizeof(struct sockaddr_in));
-			addr.in.sin_len = sizeof(struct sockaddr_in);
-		} else if (to->sa_family == AF_INET6) {
-			if (tolen != sizeof(struct sockaddr_in6)) {
-				errno = EINVAL;
-				return -1;
-			}
-			if ((to->sa_len > 0) && (to->sa_len != sizeof(struct sockaddr_in6))) {
-				errno = EINVAL;
-				return -1;
-			}
-			memcpy(&addr, to, sizeof(struct sockaddr_in6));
-			addr.in6.sin6_len = sizeof(struct sockaddr_in6);
-		} else {
-			errno = EAFNOSUPPORT;
-			return -1;
-		}
-		who = (struct sockaddr *)&addr;
-	}
-	iov[0].iov_base = (char *)data;
-	iov[0].iov_len = len;
-	iov[1].iov_base = NULL;
-	iov[1].iov_len = 0;
-
-	if (who) {
-		msg.msg_name = (caddr_t)who;
-		msg.msg_namelen = who->sa_len;
+	if (0 == error)
+		retvalsendmsg = len - auio.uio_resid;
+	else if(error == EWOULDBLOCK) {
+		errno = EWOULDBLOCK;
+		retvalsendmsg = (-1);
 	} else {
-		msg.msg_name = (caddr_t)NULL;
-		msg.msg_namelen = 0;
+		printf("%s: error = %d\n", __func__, error);
+		retvalsendmsg = (-1);
 	}
-	msg.msg_iov = iov;
-	msg.msg_iovlen = 1;
-	msg.msg_control = (caddr_t)controlVector;
 
-	cmsg = (struct cmsghdr *)controlVector;
-
-	cmsg->cmsg_level = IPPROTO_SCTP;
-	cmsg->cmsg_type = SCTP_SNDRCV;
-	cmsg->cmsg_len = CMSG_LEN(sizeof(struct sctp_sndrcvinfo));
-	s_info = (struct sctp_sndrcvinfo *)CMSG_DATA(cmsg);
-
-	s_info->sinfo_stream = stream_no;
-	s_info->sinfo_ssn = 0;
-	s_info->sinfo_flags = flags;
-	s_info->sinfo_ppid = ppid;
-	s_info->sinfo_context = context;
-	s_info->sinfo_assoc_id = 0;
-	s_info->sinfo_timetolive = timetolive;
-	errno = 0;
-	msg.msg_controllen = cmsg->cmsg_len;
-	sz = sendmsg(s, &msg, 0);
-	return (sz);
-#endif
+	return (retvalsendmsg);
 }
 
 
@@ -979,7 +781,12 @@ struct mbuf* mbufalloc(size_t size, void* data, unsigned char fill)
         
         if (data != NULL){
             /* fill in user data */        
+#if defined (__Userspace_os_Windows)
+			char *datap = (char*)data + cpsz;
+			memcpy(mtod(m, caddr_t), (void*)datap, willcpy);
+#else
             memcpy(mtod(m, caddr_t), data+cpsz, willcpy);
+#endif
         }else if (fill != '\0'){
             memset(mtod(m, caddr_t), fill, willcpy);            
         }
@@ -1045,7 +852,7 @@ struct mbuf* mbufallocfromiov(int iovlen, struct iovec *srciov)
      * Skipping space for chunk header. __Userspace__ Is this required?
      */
     SCTP_BUF_RESV_UF(m, resv_upfront);
-    cancpy = M_TRAILINGSPACE(m);
+    cancpy = (int)M_TRAILINGSPACE(m);
     willcpy = min(cancpy, left);
 
     while (left > 0) {        
@@ -1053,7 +860,7 @@ struct mbuf* mbufallocfromiov(int iovlen, struct iovec *srciov)
         mbuffillsz = 0;
         while (mbuffillsz < willcpy) {
             
-            if(cancpy < srciov[cur].iov_len - currdsz) {
+            if(cancpy < (int)srciov[cur].iov_len - currdsz) {
                 /* will fill mbuf before srciov[cur] is completely read */
                 memcpy(SCTP_BUF_AT(m,mbuffillsz), data, cancpy);
                 data += cancpy;
@@ -1149,7 +956,7 @@ userspace_sctp_sendmbuf(struct socket *so,
     }
     /* Adding the following as part of defensive programming, in case the application
        does not do it when preparing the destination address.*/
-#if !defined(__Userspace_os_Linux)
+#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
     to->sa_len = tolen;
 #endif
     
@@ -1347,28 +1154,28 @@ userspace_sctp_recvmsg(struct socket *so,
 {
 #if 1 /* def SYS_sctp_generic_recvmsg __Userspace__ */
 
-    	struct uio auio;
-        struct iovec iov[SCTP_SMALL_IOVEC_SIZE];
+	struct uio auio;
+	struct iovec iov[SCTP_SMALL_IOVEC_SIZE];
 	struct iovec *tiov;
-        int iovlen = 1;
+	int iovlen = 1;
 	int error = 0;
-        int ulen, i, retval;
-        
-        iov[0].iov_base = dbuf;
+	int ulen, i, retval;
+
+	iov[0].iov_base = dbuf;
 	iov[0].iov_len = len;
 
 	auio.uio_iov = iov;
 	auio.uio_iovcnt = iovlen;
-  	auio.uio_segflg = UIO_USERSPACE;
+	auio.uio_segflg = UIO_USERSPACE;
 	auio.uio_rw = UIO_READ;
 	auio.uio_offset = 0;			/* XXX */
 	auio.uio_resid = 0;
 	tiov = iov;
 	for (i = 0; i <iovlen; i++, tiov++) {
 		if ((auio.uio_resid += tiov->iov_len) < 0) {
-                    error = EINVAL;
-                    printf("%s: error = %d\n", __func__, error);
-                    return (-1);
+			error = EINVAL;
+			printf("%s: error = %d\n", __func__, error);
+			return (-1);
 		}
 	}
 	ulen = auio.uio_resid;
@@ -1380,50 +1187,17 @@ userspace_sctp_recvmsg(struct socket *so,
 		if (auio.uio_resid != (int)ulen && (error == ERESTART ||
 		    error == EINTR || error == EWOULDBLOCK))
 			error = 0;
-        }
-        
-        if (0 == error){
-        /* ready return value */
-            retval = (int)ulen - auio.uio_resid;
-            return retval;
-        }else{
-            printf("%s: error = %d\n", __func__, error);
-            return (-1);
-        }
+		}
 
-     
-#if 0 /*  Removed: Old implementation that does unnecessary copying of sinfo and sockaddr */
-
-        struct iovec iov[SCTP_SMALL_IOVEC_SIZE];
-        struct sctp_generic_recvmsg_args ua, *uap = &ua;
-	ssize_t sz;
-        int retval;
-
-	iov[0].iov_base = dbuf;
-	iov[0].iov_len = len;
-
-        uap->sd = 0; 
-        uap->iov = iov; 
-        uap->iovlen = 1;
-        uap->from  = from;
-        uap->fromlenaddr = fromlen;
-        uap->sinfo = sinfo; 
-        uap->msg_flags = msg_flags;
-        
-
-        sz = sctp_generic_recvmsg(so, uap, &retval);
-        if(sz == 0) {
-            /* success */
-            return retval;
-        }
-        
-        /* error */
-        errno = sz;
-        return (-1);
-#endif
-        
+	if (0 == error){
+		/* ready return value */
+		retval = (int)ulen - auio.uio_resid;
+		return (retval);
+	} else {
+		printf("%s: error = %d\n", __func__, error);
+		return (-1);
+	}
 #else
-                
 	struct sctp_sndrcvinfo *s_info;
 	ssize_t sz;
 	int sinfo_found = 0;
@@ -1517,13 +1291,14 @@ socreate(int dom, struct socket **aso, int type, int proto)
 	struct socket *so;
 	int error;
 
-        assert((AF_INET == dom) || (AF_LOCAL == dom));
-        assert((SOCK_STREAM == type) || (SOCK_SEQPACKET == type));
-        assert(IPPROTO_SCTP == proto);
+	assert((AF_INET == dom) || (AF_UNIX == dom));
+	assert((SOCK_STREAM == type) || (SOCK_SEQPACKET == type));
+	assert(IPPROTO_SCTP == proto);
 
 	so = soalloc();
-	if (so == NULL)
+	if (so == NULL) {
 		return (ENOBUFS);
+	}
 
         /*
          * so_incomp represents a queue of connections that
@@ -1630,7 +1405,7 @@ userspace_socket(int domain, int type, int protocol)
 {
 	struct socket *so = NULL;
 	int error;
-        
+
 	error = socreate(domain, &so, type, protocol);
 	if (error) {
 		perror("In user_socket(): socreate failed\n");
@@ -1659,10 +1434,10 @@ static	u_long sb_efficiency = 8;	/* parameter for sbreserve() */
 int
 sbreserve_locked(struct sockbuf *sb, u_long cc, struct socket *so)
 {
-    	SOCKBUF_LOCK_ASSERT(sb);
-	sb->sb_mbmax = min(cc * sb_efficiency, sb_max);
-	if (sb->sb_lowat > sb->sb_hiwat)
-            sb->sb_lowat = sb->sb_hiwat;
+	SOCKBUF_LOCK_ASSERT(sb);
+	sb->sb_mbmax = (u_int)min(cc * sb_efficiency, sb_max);
+	if (sb->sb_lowat > (int)sb->sb_hiwat)
+		sb->sb_lowat = (int)sb->sb_hiwat;
 	return (1);
 }
 #else /* kernel version for reference */
@@ -1708,30 +1483,31 @@ sbreserve_locked(struct sockbuf *sb, u_long cc, struct socket *so,
 int
 soreserve(struct socket *so, u_long sndcc, u_long rcvcc)
 {
+	SOCKBUF_LOCK(&so->so_snd);
+	SOCKBUF_LOCK(&so->so_rcv);
+	so->so_snd.sb_hiwat = (uint32_t)sndcc;
+	so->so_rcv.sb_hiwat = (uint32_t)rcvcc;
 
-    SOCKBUF_LOCK(&so->so_snd);
-    SOCKBUF_LOCK(&so->so_rcv);
-    so->so_snd.sb_hiwat = sndcc;
-    so->so_rcv.sb_hiwat = rcvcc;
-    
-    if (sbreserve_locked(&so->so_snd, sndcc, so) == 0)
-        goto bad;
-    if (sbreserve_locked(&so->so_rcv, rcvcc, so) == 0)
-        goto bad;
-    if (so->so_rcv.sb_lowat == 0)
-        so->so_rcv.sb_lowat = 1;
-    if (so->so_snd.sb_lowat == 0)
-        so->so_snd.sb_lowat = MCLBYTES;
-    if (so->so_snd.sb_lowat > so->so_snd.sb_hiwat)
-        so->so_snd.sb_lowat = so->so_snd.sb_hiwat;
-    SOCKBUF_UNLOCK(&so->so_rcv);
-    SOCKBUF_UNLOCK(&so->so_snd);
-    return (0);
+	if (sbreserve_locked(&so->so_snd, sndcc, so) == 0) {
+		goto bad;
+	}
+	if (sbreserve_locked(&so->so_rcv, rcvcc, so) == 0) {
+		goto bad;
+	}
+	if (so->so_rcv.sb_lowat == 0)
+		so->so_rcv.sb_lowat = 1;
+	if (so->so_snd.sb_lowat == 0)
+		so->so_snd.sb_lowat = MCLBYTES;
+	if (so->so_snd.sb_lowat > so->so_snd.sb_hiwat)
+		so->so_snd.sb_lowat = so->so_snd.sb_hiwat;
+	SOCKBUF_UNLOCK(&so->so_rcv);
+	SOCKBUF_UNLOCK(&so->so_snd);
+	return (0);
 
  bad:
-    SOCKBUF_UNLOCK(&so->so_rcv);
-    SOCKBUF_UNLOCK(&so->so_snd);    
-    return (ENOBUFS);
+	SOCKBUF_UNLOCK(&so->so_rcv);
+	SOCKBUF_UNLOCK(&so->so_snd);    
+	return (ENOBUFS);
 }
 #else /* kernel version for reference */
 int
@@ -1781,10 +1557,14 @@ sowakeup(struct socket *so, struct sockbuf *sb)
 	sb->sb_flags &= ~SB_SEL;
 	if (sb->sb_flags & SB_WAIT) {
 		sb->sb_flags &= ~SB_WAIT;
+#if defined (__Userspace_os_Windows)
+		WakeConditionVariable(&(sb)->sb_cond);
+#else
 		pthread_cond_signal(&(sb)->sb_cond);
+#endif
 	}
 	SOCKBUF_UNLOCK(sb);
-        /*__Userspace__ what todo about so_upcall?*/
+	/*__Userspace__ what todo about so_upcall?*/
 
 }
 #else /* kernel version for reference */
@@ -1988,7 +1768,14 @@ user_accept(struct socket *aso,  struct sockaddr **name, socklen_t *namelen, str
 			head->so_error = ECONNABORTED;
 			break;
 		}
+#if defined (__Userspace_os_Windows)
+		if (SleepConditionVariableCS(&accept_cond, &accept_mtx, INFINITE))
+			error = 0;
+		else
+			error = GetLastError();
+#else
 		error = pthread_cond_wait(&accept_cond, &accept_mtx);
+#endif
 		if (error) {
 			ACCEPT_UNLOCK();
 			goto noconnection;
@@ -2044,18 +1831,17 @@ user_accept(struct socket *aso,  struct sockaddr **name, socklen_t *namelen, str
 		goto done;
 	}
 	if (name) {
-#if !defined(__Userspace_os_Linux)
+#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 		/* check sa_len before it is destroyed */
 		if (*namelen > sa->sa_len)
 			*namelen = sa->sa_len;
 #endif
 		*name = sa;
-		sa = NULL;                    
+		sa = NULL;
 	}
 noconnection:
 	if (sa)
-            FREE(sa, M_SONAME);
-
+		FREE(sa, M_SONAME);
 
 done:
         *ptr_accept_ret_sock = so;
@@ -2081,8 +1867,9 @@ accept1(so, aname, anamelen, ptr_accept_ret_sock)
 	socklen_t namelen;
 	int error;
 
-	if (aname == NULL)
+	if (aname == NULL) {
 		return (user_accept(so, NULL, NULL, ptr_accept_ret_sock));
+	}
 
 	error = copyin(anamelen, &namelen, sizeof (namelen));
 	if (error)
@@ -2101,15 +1888,15 @@ accept1(so, aname, anamelen, ptr_accept_ret_sock)
 	}
 
 	if (error == 0 && name != NULL) {
-            
 		error = copyout(name, aname, namelen);
 	}
-	if (error == 0)
-		error = copyout(&namelen, anamelen,
-		    sizeof(namelen));
+	if (error == 0) {
+		error = copyout(&namelen, anamelen, sizeof(namelen));
+	}
 
-        if(name)
-            FREE(name, M_SONAME);    
+	if(name) {
+		FREE(name, M_SONAME); 
+	}
 	return (error);
 }
 
@@ -2196,7 +1983,14 @@ int user_connect(so, sa)
 
 	SOCK_LOCK(so);
 	while ((so->so_state & SS_ISCONNECTING) && so->so_error == 0) {
+#if defined (__Userspace_os_Windows)
+		if (SleepConditionVariableCS(SOCK_COND(so), SOCK_MTX(so), INFINITE))
+			error = 0;
+		else
+			error = -1;
+#else
 		error = pthread_cond_wait(SOCK_COND(so), SOCK_MTX(so));
+#endif
 		if (error) {
 			if (error == EINTR || error == ERESTART)
 				interrupted = 1;
@@ -2240,11 +2034,9 @@ int userspace_connect(so, name, namelen)
 }
 
 void userspace_close(struct socket *so) {
-        ACCEPT_LOCK();
-        SOCK_LOCK(so);
-        /*printf("%s::%s:%d\n", __FILE__, __FUNCTION__, __LINE__);*/
-        sorele(so);
-        /*printf("%s::%s:%d\n", __FILE__, __FUNCTION__, __LINE__);*/
+	ACCEPT_LOCK();
+	SOCK_LOCK(so);
+	sorele(so);
 }
 
 /* needed from sctp_usrreq.c */
@@ -2254,7 +2046,7 @@ int
 userspace_setsockopt(struct socket *so, int level, int option_name,
                      const void *option_value, socklen_t option_len)
 {
-    return (sctp_setopt(so, option_name, (void *) option_value, option_len, NULL));
+	return (sctp_setopt(so, option_name, (void *) option_value, option_len, NULL));
 }
 
 /* needed from sctp_usrreq.c */
@@ -2272,25 +2064,28 @@ void sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
                                             struct route *ro, void *stcb,
                                             uint32_t vrf_id)
 {
-	const int MAXLEN_MBUF_CHAIN = 32; /* What should this value be? */
-	struct iovec send_iovec[MAXLEN_MBUF_CHAIN];
 	struct mbuf *m;
 	struct mbuf *m_orig;
 	int iovcnt;
 	int send_len;
 	int len;
 	int send_count;
-	int i;
 	struct ip *ip;
 	struct udphdr *udp;
 	int res;
 	struct sockaddr_in dst;
+#if defined (__Userspace_os_Windows)
+	WSAMSG win_msg_hdr;
+	int win_sent_len;
+	WSABUF send_iovec[MAXLEN_MBUF_CHAIN];
+	WSABUF winbuf;
+#else
+	struct iovec send_iovec[MAXLEN_MBUF_CHAIN];
 	struct msghdr msg_hdr;
+#endif
 	int use_udp_tunneling;
 	
 	*result = 0;
-	i=0;
-	iovcnt = 0;
 	send_count = 0;
 
 	m = SCTP_HEADER_TO_CHAIN(o_pak);
@@ -2324,7 +2119,7 @@ void sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 			printf("Why did the SCTP implementation did not choose a source address?\n");
 		}
 		/* TODO need to worry about ro->ro_dst as in ip_output? */
-#if defined(__Userspace_os_Linux)
+#if defined(__Userspace_os_Linux) || defined (__Userspace_os_Windows)
 		/* need to put certain fields into network order for Linux */
 		ip->ip_len = htons(ip->ip_len);
 		ip->ip_tos = htons(ip->ip_tos);
@@ -2335,7 +2130,7 @@ void sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	memset((void *)&dst, 0, sizeof(struct sockaddr_in));
 	dst.sin_family = AF_INET;
 	dst.sin_addr.s_addr = ip->ip_dst.s_addr;
-#if !defined(__Userspace_os_Linux)
+#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 	dst.sin_len = sizeof(struct sockaddr_in);
 #endif
 	if (use_udp_tunneling) {
@@ -2351,15 +2146,24 @@ void sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 
 	send_len = SCTP_HEADER_LEN(m); /* length of entire packet */
 	send_count = 0;
-	do {
-		send_iovec[i].iov_base = (caddr_t)m->m_data;
-		send_iovec[i].iov_len = SCTP_BUF_LEN(m);
-		send_count += send_iovec[i].iov_len;
-		iovcnt++;
-		i++;
-		m = m->m_next;
-	} while(m);
-	assert(send_count == send_len);
+	for (iovcnt = 0; m != NULL && iovcnt < MAXLEN_MBUF_CHAIN; m = m->m_next, iovcnt++) {
+#if !defined (__Userspace_os_Windows)
+		send_iovec[iovcnt].iov_base = (caddr_t)m->m_data;
+		send_iovec[iovcnt].iov_len = SCTP_BUF_LEN(m);
+		send_count += send_iovec[iovcnt].iov_len;
+#else
+		send_iovec[iovcnt].buf = (caddr_t)m->m_data;
+		send_iovec[iovcnt].len = SCTP_BUF_LEN(m);
+		send_count += send_iovec[iovcnt].len;
+#endif
+	}
+
+	if (m != NULL) {
+		printf("mbuf chain couldn't be copied completely\n");
+		goto free_mbuf;
+	}
+
+#if !defined (__Userspace_os_Windows)
 	msg_hdr.msg_name = (struct sockaddr *) &dst;
 	msg_hdr.msg_namelen = sizeof(struct sockaddr_in);
 	msg_hdr.msg_iov = send_iovec;
@@ -2378,5 +2182,31 @@ void sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 			*result = errno;
 		}
 	}
+#else
+	win_msg_hdr.name = (struct sockaddr *) &dst;
+	win_msg_hdr.namelen = sizeof(struct sockaddr_in);
+	win_msg_hdr.lpBuffers = (LPWSABUF)send_iovec;
+	win_msg_hdr.dwBufferCount = iovcnt;
+	winbuf.len = 0;
+	winbuf.buf = NULL;
+	win_msg_hdr.Control = winbuf;
+	win_msg_hdr.dwFlags = 0;
+
+	if ((!use_udp_tunneling) && (userspace_rawsctp > -1)) {
+		if (WSASendMsg(userspace_rawsctp, &win_msg_hdr, 0, &win_sent_len, NULL, NULL) != 0) {
+			*result = WSAGetLastError();
+		} else if (win_sent_len != send_len) {
+			*result = WSAGetLastError();
+		}
+	}
+	if ((use_udp_tunneling) && (userspace_udpsctp > -1)) {
+		if ((res = WSASendMsg(userspace_udpsctp, &win_msg_hdr, 0, &win_sent_len, NULL, NULL)) != 0) {
+			*result = WSAGetLastError();
+		} else if (win_sent_len != send_len) {
+			*result = WSAGetLastError();
+		}
+	}
+#endif
+free_mbuf:
 	sctp_m_freem(m_orig);
 }
