@@ -1,6 +1,3 @@
-/* __Userspace__ */
-#include <sys/queue.h>
-
 #define UMA_ZFLAG_FULL		0x40000000	/* Reached uz_maxpages */
 #define UMA_ALIGN_PTR	(sizeof(void *) - 1)	/* Alignment fit for ptr */
 

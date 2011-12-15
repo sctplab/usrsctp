@@ -46,11 +46,6 @@
 #include "netinet/sctp_os_userspace.h"
 #endif
 
-/* #include <sys/param.h>  on FreeBSD, sets MSIZE to 256 */
-/* #include <sys/queue.h> */
-/* #include <sys/_lock.h> */
-/* #include <sys/_mutex.h> */
-
 #define	MINALLOCSIZE	UMA_SMALLEST_UNIT
 
 /*
