@@ -51,7 +51,9 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 224641 2011-08-03 20:21:00Z tu
 #include <netinet/sctp_bsd_addr.h>
 #include <netinet/sctp_timer.h>
 #include <netinet/sctp_crc32.h>
+#if !defined (__Userspace_os_Windows)
 #include <netinet/udp.h>
+#endif
 #if defined(__FreeBSD__)
 #include <sys/smp.h>
 #endif
@@ -566,7 +568,7 @@ sctp_handle_heartbeat_ack(struct sctp_heartbeat_chunk *cp,
 		if (cp->heartbeat.hb_info.addr_len == sizeof(struct sockaddr_in)) {
 			sin = (struct sockaddr_in *)&store;
 			sin->sin_family = cp->heartbeat.hb_info.addr_family;
-#if ! (defined(__Windows__) || defined(__Userspace_os_Linux))
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux)&& !defined(__Userspace_os_Windows)
 			sin->sin_len = cp->heartbeat.hb_info.addr_len;
 #endif
 			sin->sin_port = stcb->rport;
@@ -2217,7 +2219,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 		sin = (struct sockaddr_in *)initack_src;
 		memset(sin, 0, sizeof(*sin));
 		sin->sin_family = AF_INET;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux)&& !defined(__Userspace_os_Windows)
 		sin->sin_len = sizeof(struct sockaddr_in);
 #endif
 		sin->sin_addr.s_addr = cookie->laddress[0];
@@ -2392,7 +2394,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 		lsin = (struct sockaddr_in *)(localep_sa);
 		memset(lsin, 0, sizeof(*lsin));
 		lsin->sin_family = AF_INET;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 		lsin->sin_len = sizeof(*lsin);
 #endif
 		lsin->sin_port = sh->dest_port;
@@ -2619,7 +2621,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 	case SCTP_IPV4_ADDRESS:
 		memset(&sin, 0, sizeof(sin));
 		sin.sin_family = AF_INET;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 		sin.sin_len = sizeof(sin);
 #endif
 		sin.sin_port = sh->src_port;
@@ -5897,8 +5899,8 @@ sctp_input(i_pak, va_alist)
 	/* Open BSD gives us the len in network order, fix it */
 	NTOHS(ip->ip_len);
 #endif
-#if defined (__Userspace_os_Linux)
-        ip->ip_len = ntohs(ip->ip_len);
+#if defined (__Userspace_os_Linux) || defined (__Userspace_os_Windows)
+	ip->ip_len = ntohs(ip->ip_len);
 #endif
 	/* validate mbuf chain length with IP payload length */
 	if (mlen < (SCTP_GET_IPV4_LENGTH(ip) - iphlen)) {
@@ -6089,8 +6091,8 @@ sctp_input(i_pak, va_alist)
 	length = ip->ip_len + iphlen;
 #elif defined(__Userspace__)
 
-#if defined(__Userspace_os_Linux)
-        length = SCTP_GET_IPV4_LENGTH(ip);
+#if defined(__Userspace_os_Linux) || defined (__Userspace_os_Windows)
+	length = SCTP_GET_IPV4_LENGTH(ip);
 #else
 	length = SCTP_GET_IPV4_LENGTH(ip) + iphlen;
 #endif

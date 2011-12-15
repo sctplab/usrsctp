@@ -1107,7 +1107,7 @@ sctp_cwnd_update_after_packet_dropped(struct sctp_tcb *stcb,
 	int old_cwnd = net->cwnd;
 
 	/* need real RTT in msd for this calc */
-	rtt = net->rtt / 1000;
+	rtt = (int)(net->rtt / 1000);
 	/* get bottle neck bw */
 	*bottle_bw = ntohl(cp->bottle_bw);
 	/* and whats on queue */
@@ -1878,7 +1878,7 @@ measure_achieved_throughput(struct sctp_tcb *stcb, struct sctp_nets *net)
 
 	net->cc_mod.htcp_ca.bytecount += net->net_ack;
 
-#if !defined(__Windows__)
+#if !defined(__Windows__) && !defined (__Userspace_os_Windows)
 	if (net->cc_mod.htcp_ca.bytecount >= net->cwnd - ((net->cc_mod.htcp_ca.alpha>>7? : 1)*net->mtu)
 #else
 	if (net->cc_mod.htcp_ca.bytecount >= net->cwnd - (((net->cc_mod.htcp_ca.alpha >> 7) ? net->cc_mod.htcp_ca.alpha : 1) * net->mtu)
@@ -2259,7 +2259,7 @@ sctp_htcp_cwnd_update_after_ecn_echo(struct sctp_tcb *stcb,
 
 struct sctp_cc_functions sctp_cc_functions[] = {
 {
-#if defined(__Windows__)
+#if defined(__Windows__) || defined (__Userspace_os_Windows)
 	sctp_set_initial_cc_param,
 	sctp_cwnd_update_after_sack,
 	sctp_cwnd_update_exit_pf_common,
@@ -2280,7 +2280,7 @@ struct sctp_cc_functions sctp_cc_functions[] = {
 #endif
 },
 {
-#if defined(__Windows__)
+#if defined(__Windows__) || defined (__Userspace_os_Windows)
 	sctp_set_initial_cc_param,
 	sctp_hs_cwnd_update_after_sack,
 	sctp_cwnd_update_exit_pf_common,
@@ -2301,7 +2301,7 @@ struct sctp_cc_functions sctp_cc_functions[] = {
 #endif
 },
 {
-#if defined(__Windows__)
+#if defined(__Windows__) || defined (__Userspace_os_Windows)
 	sctp_htcp_set_initial_cc_param,
 	sctp_htcp_cwnd_update_after_sack,
 	sctp_cwnd_update_exit_pf_common,
@@ -2322,7 +2322,7 @@ struct sctp_cc_functions sctp_cc_functions[] = {
 #endif
 },
 {
-#if defined(__Windows__)
+#if defined(__Windows__) || defined (__Userspace_os_Windows)
 	sctp_set_rtcc_initial_cc_param,
 	sctp_cwnd_update_rtcc_after_sack,
 	sctp_cwnd_update_exit_pf_common,

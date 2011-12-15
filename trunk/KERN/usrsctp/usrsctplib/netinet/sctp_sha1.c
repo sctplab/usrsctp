@@ -38,7 +38,11 @@ __FBSDID("$FreeBSD$");
 #endif
 
 #include <netinet/sctp_sha1.h>
+#if !defined (__Userspace_os_Windows)
 #include <sys/param.h>
+#else
+#include <winsock2.h>
+#endif
 #if !defined (__Userspace__)
 #include <sys/systm.h>
 #endif

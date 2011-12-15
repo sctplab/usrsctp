@@ -40,6 +40,9 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 228391 2011-12-10 10:52:54
 #ifndef __sctp_constants_h__
 #define __sctp_constants_h__
 
+#if defined (__Userspace_os_Windows)
+extern void getwintimeofday(struct timeval *tv);
+#endif
 /* IANA assigned port number for SCTP over UDP encapsulation */
 #ifdef __FreeBSD__
 /* For freebsd we cannot bind the port at
@@ -1059,8 +1062,13 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 228391 2011-12-10 10:52:54
      (((uint8_t *)&(a)->s_addr)[3] == 1))
 
 #if defined (__Userspace__)
+#if defined (__Userspace_os_Windows)
+#define SCTP_GETTIME_TIMEVAL(x)	getwintimeofday(x)
+#define SCTP_GETPTIME_TIMEVAL(x) getwintimeofday(x) /* this doesn't seem to ever be used.. */
+#else
 #define SCTP_GETTIME_TIMEVAL(x)	gettimeofday(x, NULL)
 #define SCTP_GETPTIME_TIMEVAL(x) gettimeofday(x, NULL) /* this doesn't seem to ever be used.. */
+#endif
 #endif
 
 #if defined(_KERNEL)
