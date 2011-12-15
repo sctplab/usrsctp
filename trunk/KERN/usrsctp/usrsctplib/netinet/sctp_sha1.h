@@ -90,7 +90,7 @@ typedef struct sha1_context SHA1_CTX;
 #endif
 #endif
 
-#if defined(_KERNEL)
+#if defined(_KERNEL) || defined(__Userspace__)
 
 void SHA1_Init(struct sha1_context *);
 void SHA1_Update(struct sha1_context *, const unsigned char *, int);
