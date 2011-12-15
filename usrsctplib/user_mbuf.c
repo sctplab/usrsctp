@@ -8,7 +8,6 @@
 #include <string.h>
 /* #include <sys/param.h> This defines MSIZE 256 */
 #include <assert.h>
-#include <sys/queue.h>
 #if !defined(SCTP_SIMPLE_ALLOCATOR)
 #include "umem.h"
 //#include "user_include/umem_impl.h"
