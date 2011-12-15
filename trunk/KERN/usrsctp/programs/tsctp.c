@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2005 -2009 Michael Tuexen, tuexen@fh-muenster.de,
+ * Copyright (C) 2005 -2011 Michael Tuexen
+ * Copyright (C) 2011 -2011 Irene Ruengeler
  *
  * All rights reserved.
  *
@@ -29,21 +30,27 @@
  */
 
 #include <sys/types.h>
+#if defined(__Userspace_os_Windows)
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+#include <stdlib.h>
+#include <crtdbg.h>
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
-#include <stdio.h>
 #include <unistd.h>
+#include <pthread.h>
+#endif
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 #include <signal.h>
 #include <errno.h>
 #ifdef LINUX
 #include <getopt.h>
 #endif
-#include <pthread.h>
 #include <netinet/sctp_pcb.h>
 #include <usrsctp.h>
 
@@ -137,13 +144,21 @@ handle_connection(void *arg)
 	flags = 0;
 	len = (socklen_t)sizeof(struct sockaddr_in);
 	n = userspace_sctp_recvmsg(conn_sock, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, &sinfo, &flags);
+#if defined (__Userspace_os_Windows)
+	getwintimeofday(&start_time);
+#else
 	gettimeofday(&start_time, NULL);
+#endif
 	first_length = 0;
 	while (n > 0) {
 		recv_calls++;
 		if (flags & MSG_NOTIFICATION) {
 			notifications++;
+#if defined (__Userspace_os_Windows)
+			getwintimeofday(&note_time);
+#else
 			gettimeofday(&note_time, NULL);
+#endif
 			printf("notification arrived at %f\n", note_time.tv_sec+(double)note_time.tv_usec/1000000.0);
 			snp = (union sctp_notification*)&buf;
 			if (snp->sn_header.sn_type==SCTP_PEER_ADDR_CHANGE)
@@ -165,10 +180,14 @@ handle_connection(void *arg)
 	}
 	if (n < 0)
 		perror("sctp_recvmsg");
+#if defined (__Userspace_os_Windows)
+	getwintimeofday(&now);
+#else
 	gettimeofday(&now, NULL);
+#endif
 	timersub(&now, &start_time, &diff_time);
 	seconds = diff_time.tv_sec + (double)diff_time.tv_usec/1000000.0;
-	fprintf(stdout, "%u, %lu, %lu, %lu, %llu, %f, %f\n",
+	printf("%u, %lu, %lu, %lu, %llu, %f, %f\n",
 	        first_length, messages, recv_calls, notifications, sum, seconds, (double)first_length * (double)messages / seconds);
 	fflush(stdout);
 	userspace_close(conn_sock);
@@ -216,10 +235,14 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 	double seconds;
 	
 	if (control == NULL) {
+#if defined (__Userspace_os_Windows)
+		getwintimeofday(&now);
+#else
 		gettimeofday(&now, NULL);
+#endif
 		timersub(&now, &start_time, &diff_time);
 		seconds = diff_time.tv_sec + (double)diff_time.tv_usec/1000000.0;
-		fprintf(stdout, "%u, %lu, %llu, %f, %f\n",
+		printf("%u, %lu, %llu, %f, %f\n",
 			first_length, messages, sum, seconds, (double)first_length * (double)messages / seconds);
 		userspace_close(sock);
 		first_length = 0;
@@ -229,7 +252,11 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 	}
 	if (first_length == 0) {
 		first_length = control->length;
+#if defined (__Userspace_os_Windows)
+		getwintimeofday(&start_time);
+#else
 		gettimeofday(&start_time, NULL);
+#endif
 	}
 	sum += control->length;
 	messages++;
@@ -241,7 +268,7 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 
 int main(int argc, char **argv)
 {
-        char c;
+	char c;
 	socklen_t addr_len;
 	struct sockaddr_in local_addr;
 	struct timeval start_time, now, diff_time;
@@ -262,7 +289,10 @@ int main(int argc, char **argv)
 #endif
 	unsigned int runtime = 0;
 	struct sctp_setadaptation ind = {0};
-	
+#if defined (__Userspace_os_Windows)
+	char *opt;
+	int optind = 0;
+#endif	
 	unordered = 0;
 
 	length = DEFAULT_LENGTH;
@@ -276,6 +306,7 @@ int main(int argc, char **argv)
 	memset((void *) &remote_addr, 0, sizeof(struct sockaddr_in));
 	memset((void *) &local_addr, 0, sizeof(struct sockaddr_in));
 
+#if !defined (__Userspace_os_Windows)
 	while ((c = getopt(argc, argv, "a:p:l:E:f:n:T:uU:vVD")) != -1)
 		switch(c) {
 			case 'a':
@@ -320,7 +351,98 @@ int main(int argc, char **argv)
 				fprintf(stderr, "%s", Usage);
 				exit(1);
 		}
-
+#else
+	for (i = 1; i < argc; i++) {
+		if (argv[i][0] == '-') {
+			switch (argv[i][1]) {
+				case 'a':
+					if (i + 1 >= argc) {
+					printf("%s", Usage);
+					exit(1);
+					}
+					opt = argv[++i];
+					ind.ssb_adaptation_ind = atoi(opt);
+					break;
+				case 'l':
+					if (i + 1 >= argc) {
+						printf("%s", Usage);
+						exit(1);
+					}
+					opt = argv[++i];
+					length = atoi(opt);
+					break;
+				case 'p':
+					if (i + 1 >= argc) {
+						printf("%s", Usage);
+						exit(1);
+					}
+					opt = argv[++i];
+					port = atoi(opt);
+					break;
+				case 'n':
+					if (i + 1 >= argc) {
+						printf("%s", Usage);
+						exit(1);
+					}
+					opt = argv[++i];
+					number_of_messages = atoi(opt);
+					break;
+				case 'f':
+					if (i + 1 >= argc) {
+						printf("%s", Usage);
+						exit(1);
+					}
+					opt = argv[++i];
+					fragpoint = atoi(opt);
+					break;
+				case 'U':
+					if (i + 1 >= argc) {
+						printf("%s", Usage);
+						exit(1);
+					}
+					opt = argv[++i];
+					remote_udp_port = atoi(opt);
+					break;
+				case 'E':
+					if (i + 1 >= argc) {
+						printf("%s", Usage);
+						exit(1);
+					}
+					opt = argv[++i];
+					local_udp_port = atoi(opt);
+					break;
+				case 'T':
+					if (i + 1 >= argc) {
+						printf("%s", Usage);
+						exit(1);
+					}
+					opt = argv[++i];
+					runtime = atoi(opt);
+					number_of_messages = 0;
+					break;
+				case 'u':
+					unordered = 1;
+					break;
+				case 'v':
+					verbose = 1;
+					break;
+				case 'V':
+					verbose = 1;
+					very_verbose = 1;
+					break;
+				case 'D':
+					nodelay = 1;
+					break;
+				default:
+					printf("%s", Usage);
+					exit(1);
+			}
+		} else {
+			break;
+		}
+	}
+	optind = i;
+#endif
 	if (optind == argc) {
 		client = 0;
 		local_port = port;
@@ -384,7 +506,7 @@ int main(int argc, char **argv)
 			pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock);
 #endif
 			if (verbose)
-				fprintf(stdout,"Connection accepted from %s:%d\n", inet_ntoa(remote_addr.sin_addr), ntohs(remote_addr.sin_port));
+				printf("Connection accepted from %s:%d\n", inet_ntoa(remote_addr.sin_addr), ntohs(remote_addr.sin_port));
 		}
 		userspace_close(psock);
 	} else {
@@ -424,8 +546,11 @@ int main(int argc, char **argv)
 
 		buffer = malloc(length);
 		memset(buffer, 0, length);
-
+#if defined (__Userspace_os_Windows)
+		getwintimeofday(&start_time);
+#else
 		gettimeofday(&start_time, NULL);
+#endif
 		if (verbose) {
 			printf("Start sending %ld messages...", (long)number_of_messages);
 			fflush(stdout);
@@ -435,8 +560,13 @@ int main(int argc, char **argv)
 		done = 0;
 
 		if (runtime > 0) {
+#if !defined (__Userspace_os_Windows)
 			signal(SIGALRM, stop_sender);
 			alarm(runtime);
+#else
+			printf("You cannot set the runtime in Windows yet\n");
+			exit(-1);
+#endif
 		}
 
 #if defined(CALLBACK_API)
@@ -468,7 +598,11 @@ int main(int argc, char **argv)
 				} else {
 					/* send until EWOULDBLOCK then sleep until runtime expires.
 					   All sending after initial EWOULDBLOCK done in send callback. */
+#if defined (__Userspace_os_Windows)
+					Sleep(runtime*1000);
+#else
 					sleep(runtime);
+#endif
 					i += messages;
 					continue;
 				}
@@ -500,20 +634,28 @@ int main(int argc, char **argv)
 			break;
 		}
 		i++;
+		free (buffer);
 		if (verbose)
 			printf("done.\n");
 		/* TODO SO_LINGER stuff */
 		userspace_close(psock);
+#if defined (__Userspace_os_Windows)
+		getwintimeofday(&now);
+#else
 		gettimeofday(&now, NULL);
+#endif
 		timersub(&now, &start_time, &diff_time);
 		seconds = diff_time.tv_sec + (double)diff_time.tv_usec/1000000;
-		fprintf(stdout, "%s of %ld messages of length %u took %f seconds.\n",
-				"Sending", i, length, seconds);
+		printf("%s of %ld messages of length %u took %f seconds.\n",
+		       "Sending", i, length, seconds);
 		throughput = (double)i * (double)length / seconds;
-		fprintf(stdout, "Throughput was %f Byte/sec.\n", throughput);
+		printf("Throughput was %f Byte/sec.\n", throughput);
 	}
+#if defined (__Userspace_os_Windows)
+	Sleep(10*1000);
+#else
 	sleep(10);
+#endif
 	sctp_finish();
-	free (buffer);
 	return 0;
 }
