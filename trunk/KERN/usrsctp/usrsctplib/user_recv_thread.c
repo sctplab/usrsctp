@@ -4,9 +4,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #endif
-#if 0
 #include <sys/uio.h>
-#endif
 #include <netinet/sctp_os.h>
 #include <netinet/sctp_var.h>
 #include <netinet/sctp_pcb.h>
@@ -88,7 +86,7 @@ recv_function_raw(void *arg)
 			m_ErrorCode = WSAGetLastError();
 			printf("error: %d\n", m_ErrorCode);
 		}
-	  n = ncounter;
+		n = ncounter;
 #else
 		ncounter = n = readv(userspace_rawsctp, recv_iovec, iovcnt);
 #endif
