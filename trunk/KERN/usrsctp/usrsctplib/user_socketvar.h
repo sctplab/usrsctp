@@ -51,8 +51,7 @@
 #define SS_CANTRCVMORE 0x020 
 #define SS_CANTSENDMORE 0x010
 
-/* Needed for FreeBSD */
-#if defined (__Userspace_os_FreeBSD) || defined(__Userspace_os_Darwin)
+#if defined (__Userspace_os_FreeBSD) || defined(__Userspace_os_Darwin) || defined (__Userspace_os_Windows)
 #define UIO_MAXIOV 1024
 #define ERESTART (-1)
 #endif
@@ -103,6 +102,17 @@ struct uio {
  * handle on protocol and pointer to protocol
  * private data and error information.
  */
+#if defined (__Userspace_os_Windows)
+#define AF_ROUTE  17
+typedef __int32 u_quad_t;
+typedef __int32 pid_t;
+typedef unsigned __int32 uid_t;
+enum sigType {
+	SIGNAL = 0,
+	BROADCAST = 1,
+	MAX_EVENTS = 2
+};
+#endif
 typedef	u_quad_t so_gen_t;
 
 /*-
@@ -145,9 +155,9 @@ struct socket {
 					   connections */
 	u_short	so_qlimit;		/* (e) max number queued connections */
 	short	so_timeo;		/* (g) connection timeout */
-        pthread_cond_t timeo_cond;      /* timeo_cond condition variable being used in wakeup */
+	userland_cond_t timeo_cond;      /* timeo_cond condition variable being used in wakeup */
 
-        u_short	so_error;		/* (f) error affecting connection */
+	u_short	so_error;		/* (f) error affecting connection */
 	struct	sigio *so_sigio;	/* [sg] information for async I/O or
 					   out of band data (SIGURG) */
 	u_long	so_oobmark;		/* (c) chars to oob mark */
@@ -156,17 +166,17 @@ struct socket {
  * Variables for socket buffering.
  */
 	struct sockbuf {
-            /* __Userspace__ Many of these fields may
-             * not be required for the sctp stack.
-             * Commenting out the following.
-             * Including pthread mutex and condition variable to be 
-             * used by sbwait, sorwakeup and sowwakeup.
-             */
-            /*		struct	selinfo sb_sel;*/ /* process selecting read/write */
-            /*		struct	mtx sb_mtx;*/	/* sockbuf lock */
-            /*		struct	sx sb_sx;*/	/* prevent I/O interlacing */
-                pthread_cond_t sb_cond; /* sockbuf condition variable */
-                pthread_mutex_t sb_mtx; /* sockbuf lock associated with sb_cond */
+		/* __Userspace__ Many of these fields may
+		 * not be required for the sctp stack.
+		 * Commenting out the following.
+		 * Including pthread mutex and condition variable to be 
+		 * used by sbwait, sorwakeup and sowwakeup.
+		*/
+		/* struct	selinfo sb_sel;*/ /* process selecting read/write */
+		/* struct	mtx sb_mtx;*/	/* sockbuf lock */
+		/* struct	sx sb_sx;*/	/* prevent I/O interlacing */
+		userland_cond_t sb_cond; /* sockbuf condition variable */
+		userland_mutex_t sb_mtx; /* sockbuf lock associated with sb_cond */
 		short	sb_state;	/* (c/d) socket state on sockbuf */
 #define	sb_startzero	sb_mb
 		struct	mbuf *sb_mb;	/* (c/d) the mbuf chain */
@@ -229,28 +239,52 @@ struct socket {
  * avoid defining a lock order between listen and accept sockets
  * until such time as it proves to be a good idea.
  */
-extern pthread_mutex_t accept_mtx;
+#if defined (__Userspace_os_Windows)
+extern CRITICAL_SECTION accept_mtx;
+extern CONDITION_VARIABLE accept_cond;
+#define ACCEPT_LOCK_ASSERT() 
+#define	ACCEPT_LOCK() do { \
+	EnterCriticalSection(&accept_mtx); \
+} while (0)
+#define	ACCEPT_UNLOCK()	do { \
+	LeaveCriticalSection(&accept_mtx); \
+} while (0)
+#define	ACCEPT_UNLOCK_ASSERT()
+#else
+extern userland_mutex_t accept_mtx;
 #define	ACCEPT_LOCK_ASSERT()		assert(pthread_mutex_trylock(&accept_mtx) == EBUSY)
+#define	ACCEPT_LOCK()			(void)pthread_mutex_lock(&accept_mtx)
+#define	ACCEPT_UNLOCK()			(void)pthread_mutex_unlock(&accept_mtx)
 #define	ACCEPT_UNLOCK_ASSERT()	 do{                                                     \
                                         assert(pthread_mutex_trylock(&accept_mtx) == 0); \
                                         (void)pthread_mutex_unlock(&accept_mtx);         \
 }while (0)
-#define	ACCEPT_LOCK()			(void)pthread_mutex_lock(&accept_mtx)
-#define	ACCEPT_UNLOCK()			(void)pthread_mutex_unlock(&accept_mtx)
+#endif
 
 /*
  * Per-socket buffer mutex used to protect most fields in the socket
  * buffer.
  */
-#define	SOCKBUF_MTX(_sb)		(&(_sb)->sb_mtx)
-#define	SOCKBUF_LOCK_INIT(_sb, _name) \
+#define	SOCKBUF_MTX(_sb) (&(_sb)->sb_mtx)
+#if defined (__Userspace_os_Windows)
+#define SOCKBUF_LOCK_INIT(_sb, _name) \
+	InitializeCriticalSection(SOCKBUF_MTX(_sb))
+#define SOCKBUF_LOCK_DESTROY(_sb) DeleteCriticalSection(SOCKBUF_MTX(_sb))
+#define SOCKBUF_COND_INIT(_sb) InitializeConditionVariable((&(_sb)->sb_cond))
+#define SOCKBUF_COND_DESTROY(_sb)
+#define SOCK_COND_INIT(_so) InitializeConditionVariable((&(_so)->timeo_cond))
+#define SOCK_COND_DESTROY(_so)
+#define SOCK_COND(_so) (&(_so)->timeo_cond)
+#else
+#define SOCKBUF_LOCK_INIT(_sb, _name) \
 	pthread_mutex_init(SOCKBUF_MTX(_sb), NULL)
-#define	SOCKBUF_LOCK_DESTROY(_sb)	pthread_mutex_destroy(SOCKBUF_MTX(_sb))
-#define	SOCKBUF_COND_INIT(_sb)	        pthread_cond_init((&(_sb)->sb_cond), NULL)
-#define	SOCKBUF_COND_DESTROY(_sb)	pthread_cond_destroy((&(_sb)->sb_cond))
-#define	SOCK_COND_INIT(_so)	        pthread_cond_init((&(_so)->timeo_cond), NULL)
-#define	SOCK_COND_DESTROY(_so)	        pthread_cond_destroy((&(_so)->timeo_cond))
-#define	SOCK_COND(_so)	                (&(_so)->timeo_cond)
+#define SOCKBUF_LOCK_DESTROY(_sb) pthread_mutex_destroy(SOCKBUF_MTX(_sb))
+#define SOCKBUF_COND_INIT(_sb) pthread_cond_init((&(_sb)->sb_cond), NULL)
+#define SOCKBUF_COND_DESTROY(_sb) pthread_cond_destroy((&(_sb)->sb_cond))
+#define SOCK_COND_INIT(_so) pthread_cond_init((&(_so)->timeo_cond), NULL)
+#define SOCK_COND_DESTROY(_so) pthread_cond_destroy((&(_so)->timeo_cond))
+#define SOCK_COND(_so) (&(_so)->timeo_cond)
+#endif
 /*__Userspace__ SOCKBUF_LOCK(_sb) is now defined in netinet/sctp_process_lock.h */
 
 /* #define	SOCKBUF_OWNED(_sb)		mtx_owned(SOCKBUF_MTX(_sb)) unused */
