@@ -38,9 +38,13 @@
 
 /*__Userspace__*/
 #include <stdlib.h>
-#include <strings.h>
 #include <sys/types.h>
-#include <stdint.h> /* needed on Linux (at least) */
+#if !defined (__Userspace_os_Windows)
+#include <strings.h>
+#include <stdint.h>
+#else
+#include "netinet/sctp_os_userspace.h"
+#endif
 
 /* #include <sys/param.h>  on FreeBSD, sets MSIZE to 256 */
 /* #include <sys/queue.h> */
