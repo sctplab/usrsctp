@@ -2060,9 +2060,10 @@ userspace_getsockopt(struct socket *so, int level, int option_name,
 	return (sctp_getopt(so, option_name, option_value, (size_t*)&option_len, NULL));
 }
 
-void sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
-                                            struct route *ro, void *stcb,
-                                            uint32_t vrf_id)
+void
+sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
+                         struct route *ro, void *stcb,
+                         uint32_t vrf_id)
 {
 	struct mbuf *m;
 	struct mbuf *m_orig;
