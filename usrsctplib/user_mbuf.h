@@ -8,8 +8,6 @@
 #endif
 #include "user_malloc.h"
 #include "netinet/sctp_os_userspace.h"
-#include <sys/queue.h>
-/* #include <sys/param.h> This defines MSIZE 256 */
 
 #define USING_MBUF_CONSTRUCTOR 0
 

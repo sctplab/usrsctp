@@ -33,10 +33,6 @@
 #ifndef _NETINET_IN_PCB_H_
 #define _NETINET_IN_PCB_H_
 
-#include <sys/queue.h>
-/* #include <sys/_lock.h> was a 0 byte file */
-/* #include <sys/_mutex.h> was a 0 byte file */
-
 #include <user_route.h> /* was <net/route.h> */
 
 #define	in6pcb		inpcb	/* for KAME src sync over BSD*'s */

@@ -45,8 +45,8 @@ usrsctp_HEADERS = \
 	user_route.h \
 	user_socketvar.h \
 	user_uma.h \
-	sys\queue.h  \
-	netinet\ip_icmp.h  \
+	user_queue.h \
+	user_ip_icmp.h \
 	netinet\sctp.h \
 	netinet\sctp_asconf.h \
 	netinet\sctp_auth.h \

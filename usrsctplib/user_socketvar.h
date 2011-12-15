@@ -35,7 +35,6 @@
 #ifndef _SYS_SOCKETVAR_H_
 #define _SYS_SOCKETVAR_H_
 
-#include <sys/queue.h>			/* for TAILQ macros */
 #if defined(__Userspace_os_Darwin)
 #include <sys/types.h>
 #include <sys/uio.h>

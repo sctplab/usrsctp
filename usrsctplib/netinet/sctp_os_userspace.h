@@ -289,6 +289,11 @@ typedef pthread_t userland_thread_t;
 /* #include <sys/param.h>  in FreeBSD defines MSIZE */
 /* #include <sys/ktr.h> */
 /* #include <sys/systm.h> */
+#if defined (__Userspace_os_Windows)
+#include <user_queue.h>
+#else
+#include <sys/queue.h>
+#endif
 #include <user_malloc.h>
 /* #include <sys/kernel.h> */
 /* #include <sys/sysctl.h> */
@@ -313,7 +318,6 @@ typedef pthread_t userland_thread_t;
 #endif
 /* #include <sys/random.h> */
 /* #include <sys/limits.h> */ 
-/* #include <sys/queue.h> */
 /* #include <machine/cpu.h> */
 
 #if defined(__Userspace_os_Darwin)
@@ -333,10 +337,12 @@ typedef pthread_t userland_thread_t;
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
+#include <netinet/ip_icmp.h>
+#else
+#include <user_ip_icmp.h>
 #endif
 /* #include <netinet/in_pcb.h> ported to userspace */
 #include <user_inpcb.h>
-#include <netinet/ip_icmp.h>
 #if defined(__Userspace_os_FreeBSD)
 /* all of these were 0 byte files */
 /* #include <netinet/in_var.h> */
