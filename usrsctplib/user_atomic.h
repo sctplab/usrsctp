@@ -12,14 +12,22 @@
 #include <stdio.h>
 #include <sys/types.h>
 
-#if defined(__Userspace_os_Darwin)
+#if defined(__Userspace_os_Darwin) || defined (__Userspace_os_Windows)
+#if defined (__Userspace_os_Windows)
+#define atomic_add_int(addr, val) InterlockedExchangeAdd((LPLONG)addr, (LONG)val)
+#define atomic_fetchadd_int(addr, val) InterlockedExchangeAdd((LPLONG)addr, (LONG)val)
+#define atomic_subtract_int(addr, val)   InterlockedExchangeAdd((LPLONG)addr,-((LONG)val))
+#define atomic_cmpset_int(dst, exp, src) InterlockedCompareExchange((LPLONG)dst, src, exp)
+#define SCTP_DECREMENT_AND_CHECK_REFCOUNT(addr) (InterlockedExchangeAdd((LPLONG)addr, (-1L)) == 1)
+#else
 #include <libkern/OSAtomic.h>
-#define atomic_add_int(addr, val)	OSAtomicAdd32Barrier(val, (int32_t *)addr)
-#define atomic_fetchadd_int(addr, val)	OSAtomicAdd32Barrier(val, (int32_t *)addr)
-#define atomic_subtract_int(addr, val)	OSAtomicAdd32Barrier(-val, (int32_t *)addr)
+#define atomic_add_int(addr, val) OSAtomicAdd32Barrier(val, (int32_t *)addr)
+#define atomic_fetchadd_int(addr, val) OSAtomicAdd32Barrier(val, (int32_t *)addr)
+#define atomic_subtract_int(addr, val) OSAtomicAdd32Barrier(-val, (int32_t *)addr)
 #define atomic_cmpset_int(dst, exp, src) OSAtomicCompareAndSwapIntBarrier(exp, src, (int *)dst)
-
 #define SCTP_DECREMENT_AND_CHECK_REFCOUNT(addr) (atomic_fetchadd_int(addr, -1) == 0)
+#endif
+
 #if defined(INVARIANTS)
 #define SCTP_SAVE_ATOMIC_DECREMENT(addr, val) \
 { \
@@ -38,7 +46,11 @@
 		*addr = 0; \
 	} \
 }
+#if defined(__Userspace_os_Windows)
+static void atomic_init() {} /* empty when we are not using atomic_mtx */
+#else
 static inline void atomic_init() {} /* empty when we are not using atomic_mtx */
+#endif
 #endif
 
 #else
@@ -129,8 +141,22 @@ static inline void atomic_init() {} /* empty when we are not using atomic_mtx */
 
 #include <pthread.h>
 
+extern userland_mutex_t atomic_mtx;
 
-extern pthread_mutex_t atomic_mtx;
+#if defined (__Userspace_os_Windows)
+static inline void atomic_init() {
+	InitializeCriticalSection(&atomic_mtx);
+}
+static inline void atomic_destroy() {
+	DeleteCriticalSection(&atomic_mtx);
+}
+static inline void atomic_lock() {
+	EnterCriticalSection(&atomic_mtx);
+}
+static inline void atomic_unlock() {
+	LeaveCriticalSection(&atomic_mtx);
+}
+#else
 static inline void atomic_init() {
 	(void)pthread_mutex_init(&atomic_mtx, NULL);
 }
@@ -143,14 +169,13 @@ static inline void atomic_lock() {
 static inline void atomic_unlock() {
 	(void)pthread_mutex_unlock(&atomic_mtx);
 }
-
+#endif
 /*
  * For userland, always use lock prefixes so that the binaries will run
  * on both SMP and !SMP systems.
  */
 
 #define	MPLOCKED	"lock ; "
-
 
 /*
  * Atomically add the value of v to the integer pointed to by p and return
@@ -159,8 +184,8 @@ static inline void atomic_unlock() {
 static __inline u_int
 atomic_fetchadd_int(volatile void *n, u_int v)
 {
-    int *p = (int *) n;
-        atomic_lock(); 
+	int *p = (int *) n;
+	atomic_lock(); 
 	__asm __volatile(
 	"	" MPLOCKED "		"
 	"	xaddl	%0, %1 ;	"
@@ -168,7 +193,7 @@ atomic_fetchadd_int(volatile void *n, u_int v)
 	: "+r" (v),			/* 0 (result) */
 	  "=m" (*p)			/* 1 */
 	: "m" (*p));			/* 2 */
-        atomic_unlock(); 
+	atomic_unlock(); 
 
 	return (v);
 }
@@ -181,7 +206,7 @@ atomic_cmpset_int(volatile u_int *dst, u_int exp, u_int src)
 {
 	u_char res;
 
-        atomic_lock(); 
+	atomic_lock();
 	__asm __volatile(
 	"	pushfl ;		"
 	"	cli ;			"
@@ -198,7 +223,7 @@ atomic_cmpset_int(volatile u_int *dst, u_int exp, u_int src)
 	  "r" (exp),			/* 3 */
 	  "m" (*dst)			/* 4 */
 	: "memory");
-        atomic_unlock(); 
+	atomic_unlock(); 
 
 	return (res);
 }
@@ -208,13 +233,13 @@ atomic_cmpset_int(volatile u_int *dst, u_int exp, u_int src)
 static __inline int
 atomic_cmpset_int(volatile u_int *dst, u_int exp, u_int src)
 {
-        atomic_lock(); 
+	atomic_lock();
 	u_char res;
 
 	__asm __volatile(
 	"	" MPLOCKED "		"
 	"	cmpxchgl %2,%1 ;	"
-	"       sete	%0 ;		"
+	"	sete	%0 ;		"
 	"1:				"
 	"# atomic_cmpset_int"
 	: "=a" (res),			/* 0 */
@@ -223,7 +248,7 @@ atomic_cmpset_int(volatile u_int *dst, u_int exp, u_int src)
 	  "a" (exp),			/* 3 */
 	  "m" (*dst)			/* 4 */
 	: "memory");
-        atomic_unlock(); 
+	atomic_unlock();
 
 	return (res);
 }
