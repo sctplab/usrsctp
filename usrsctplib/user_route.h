@@ -33,6 +33,8 @@
 #ifndef _NET_ROUTE_H_
 #define _NET_ROUTE_H_
 
+#include <user_environment.h>
+
 /*
  * Kernel resident routing tables.
  *
@@ -117,11 +119,11 @@ struct rtentry {
 	caddr_t	rt_llinfo;		/* pointer to link level info cache */
 	struct	rtentry *rt_gwroute;	/* implied entry for gatewayed routes */
 	struct	rtentry *rt_parent; 	/* cloning parent of this route */
-    /* need for __Userspace__ (?) */
-    /* #ifdef _KERNEL */
+	/* need for __Userspace__ (?) */
+	/* #ifdef _KERNEL */
 	/* XXX ugly, user apps use this definition but don't have a mtx def */
 	struct	mtx rt_mtx;		/* mutex for routing entry */
-    /* #endif */
+	/* #endif */
 };
 
 /*
