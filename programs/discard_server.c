@@ -31,11 +31,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/types.h>
+#if !defined(__Userspace_os_Windows)
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#endif
 #include <netinet/sctp_pcb.h>
 #include <usrsctp.h>
 
@@ -118,7 +120,11 @@ main(int argc, char *argv[])
 #if defined(CALLBACK_API)
 	register_recv_cb(sock, receive_cb);
 	while (1) {
+#if defined (__Userspace_os_Windows)
+		Sleep(1*1000);
+#else
 		sleep(1);
+#endif
 	}
 #else
 	while (1) {
