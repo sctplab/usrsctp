@@ -7,11 +7,11 @@
  * modification, are permitted provided that the following conditions are met:
  *
  * a) Redistributions of source code must retain the above copyright notice,
- *   this list of conditions and the following disclaimer.
+ *    this list of conditions and the following disclaimer.
  *
  * b) Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
- *   the documentation and/or other materials provided with the distribution.
+ *    the documentation and/or other materials provided with the distribution.
  *
  * c) Neither the name of Cisco Systems, Inc. nor the names of its
  *    contributors may be used to endorse or promote products derived
@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 225676 2011-09-19 21:47:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 228653 2011-12-17 19:21:40Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -120,12 +120,12 @@ sctp_wakeup_iterator(void)
 }
 
 static void
-sctp_iterator_thread(void *v)
+sctp_iterator_thread(void *v SCTP_UNUSED)
 {
 	SCTP_IPI_ITERATOR_WQ_LOCK();
 	/* In FreeBSD this thread never terminates. */
 #if defined(__FreeBSD__)
-	while (1) {
+	for (;;) {
 #else
 	while ((sctp_it_ctl.iterator_flags & SCTP_ITERATOR_MUST_EXIT) == 0) {
 #endif

@@ -7,11 +7,11 @@
  * modification, are permitted provided that the following conditions are met:
  *
  * a) Redistributions of source code must retain the above copyright notice,
- *   this list of conditions and the following disclaimer.
+ *    this list of conditions and the following disclaimer.
  *
  * b) Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
- *   the documentation and/or other materials provided with the distribution.
+ *    the documentation and/or other materials provided with the distribution.
  *
  * c) Neither the name of Cisco Systems, Inc. nor the names of its
  *    contributors may be used to endorse or promote products derived
@@ -33,7 +33,7 @@
 /* $KAME: sctp_uio.h,v 1.11 2005/03/06 16:04:18 itojun Exp $	 */
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 227931 2011-11-24 10:58:48Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 228653 2011-12-17 19:21:40Z tuexen $");
 #endif
 
 #ifndef __sctp_uio_h__
@@ -45,7 +45,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 227931 2011-11-24 10:58:48Z tuex
 #endif
 #endif
 
-#if !(defined(__Windows__)) && !defined (__Userspace_os_Windows)
+#if !(defined(__Windows__)) && !defined(__Userspace_os_Windows)
 #if ! defined(_KERNEL)
 #include <stdint.h>
 #endif
@@ -62,7 +62,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 227931 2011-11-24 10:58:48Z tuex
 #include <netinet/in.h>
 #endif
 #endif
-#if defined (__Userspace_os_Windows)
+#if defined(__Userspace_os_Windows)
 #define __P(Protos) Protos
 #endif
 

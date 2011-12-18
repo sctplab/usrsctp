@@ -7,11 +7,11 @@
  * modification, are permitted provided that the following conditions are met:
  *
  * a) Redistributions of source code must retain the above copyright notice,
- *   this list of conditions and the following disclaimer.
+ *    this list of conditions and the following disclaimer.
  *
  * b) Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
- *   the documentation and/or other materials provided with the distribution.
+ *    the documentation and/or other materials provided with the distribution.
  *
  * c) Neither the name of Cisco Systems, Inc. nor the names of its
  *    contributors may be used to endorse or promote products derived
@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 224641 2011-08-03 20:21:00Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 228653 2011-12-17 19:21:40Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -51,7 +51,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 224641 2011-08-03 20:21:00Z tu
 #include <netinet/sctp_bsd_addr.h>
 #include <netinet/sctp_timer.h>
 #include <netinet/sctp_crc32.h>
-#if !defined (__Userspace_os_Windows)
+#if !defined(__Userspace_os_Windows)
 #include <netinet/udp.h>
 #endif
 #if defined(__FreeBSD__)
@@ -92,7 +92,7 @@ sctp_stop_all_cookie_timers(struct sctp_tcb *stcb)
 static void
 sctp_handle_init(struct mbuf *m, int iphlen, int offset, struct sctphdr *sh,
     struct sctp_init_chunk *cp, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
-    struct sctp_nets *net, int *abort_no_unlock, uint32_t vrf_id, uint16_t port)
+    int *abort_no_unlock, uint32_t vrf_id, uint16_t port)
 {
 	struct sctp_init *init;
 	struct mbuf *op_err;
@@ -266,8 +266,7 @@ sctp_is_there_unsent_data(struct sctp_tcb *stcb, int so_locked
 }
 
 static int
-sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb,
-    struct sctp_nets *net)
+sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb)
 {
 	struct sctp_init *init;
 	struct sctp_association *asoc;
@@ -408,7 +407,7 @@ sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb,
 	 * removed). Up front when the INIT arrives we will discard it if it
 	 * is a restart and new addresses have been added.
 	 */
-    /* sa_ignore MEMLEAK */
+	/* sa_ignore MEMLEAK */
 	return (0);
 }
 
@@ -442,13 +441,13 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 	asoc = &stcb->asoc;
 	asoc->peer_supports_nat = (uint8_t)nat_friendly;
 	/* process the peer's parameters in the INIT-ACK */
-	retval = sctp_process_init((struct sctp_init_chunk *)cp, stcb, net);
+	retval = sctp_process_init((struct sctp_init_chunk *)cp, stcb);
 	if (retval < 0) {
 		return (retval);
 	}
 	initack_limit = offset + ntohs(cp->ch.chunk_length);
 	/* load all addresses */
-	if ((retval = sctp_load_addresses_from_init(stcb, m, iphlen,
+	if ((retval = sctp_load_addresses_from_init(stcb, m,
 	    (offset + sizeof(struct sctp_init_chunk)), initack_limit, sh,
 	    NULL))) {
 		/* Huh, we should abort */
@@ -531,7 +530,7 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 				mp->resv = 0;
 			}
 			sctp_abort_association(stcb->sctp_ep, stcb, m, iphlen,
-					       sh, op_err, 0, net->port);
+					       sh, op_err, vrf_id, net->port);
 			*abort_no_unlock = 1;
 		}
 		return (retval);
@@ -568,7 +567,7 @@ sctp_handle_heartbeat_ack(struct sctp_heartbeat_chunk *cp,
 		if (cp->heartbeat.hb_info.addr_len == sizeof(struct sockaddr_in)) {
 			sin = (struct sockaddr_in *)&store;
 			sin->sin_family = cp->heartbeat.hb_info.addr_family;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)&& !defined(__Userspace_os_Windows)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 			sin->sin_len = cp->heartbeat.hb_info.addr_len;
 #endif
 			sin->sin_port = stcb->rport;
@@ -696,7 +695,7 @@ sctp_handle_nat_colliding_state(struct sctp_tcb *stcb)
 	if (SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_COOKIE_WAIT) {
 		/* generate a new vtag and send init */
 		LIST_REMOVE(stcb, sctp_asocs);
-		stcb->asoc.my_vtag = sctp_select_a_tag(stcb->sctp_ep, stcb->sctp_ep->sctp_lport, stcb->rport,  1);
+		stcb->asoc.my_vtag = sctp_select_a_tag(stcb->sctp_ep, stcb->sctp_ep->sctp_lport, stcb->rport, 1);
 		head = &SCTP_BASE_INFO(sctp_asochash)[SCTP_PCBHASH_ASOC(stcb->asoc.my_vtag, SCTP_BASE_INFO(hashasocmark))];
 		/* put it in the bucket in the vtag hash of assoc's for the system */
 		LIST_INSERT_HEAD(head, stcb, sctp_asocs);
@@ -875,7 +874,7 @@ sctp_handle_shutdown(struct sctp_shutdown_chunk *cp,
 		/* Shutdown NOT the expected size */
 		return;
 	} else {
-		sctp_update_acked(stcb, cp, net, abort_flag);
+		sctp_update_acked(stcb, cp, abort_flag);
 		if (*abort_flag) {
 			return;
 		}
@@ -954,7 +953,7 @@ sctp_handle_shutdown(struct sctp_shutdown_chunk *cp,
 }
 
 static void
-sctp_handle_shutdown_ack(struct sctp_shutdown_ack_chunk *cp,
+sctp_handle_shutdown_ack(struct sctp_shutdown_ack_chunk *cp SCTP_UNUSED,
                          struct sctp_tcb *stcb,
                          struct sctp_nets *net)
 {
@@ -1408,7 +1407,7 @@ static struct sctp_tcb *
 sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
     struct sctphdr *sh, struct sctp_state_cookie *cookie, int cookie_len,
     struct sctp_inpcb *inp, struct sctp_tcb *stcb, struct sctp_nets **netp,
-    struct sockaddr *init_src, int *notification, sctp_assoc_t * sac_assoc_id,
+    struct sockaddr *init_src, int *notification,
     uint32_t vrf_id,int auth_skipped, uint32_t auth_offset, uint32_t auth_len, uint16_t port)
 {
 	struct sctp_association *asoc;
@@ -1523,7 +1522,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 				 * have the right seq no's.
 				 */
 				/* First we must process the INIT !! */
-				retval = sctp_process_init(init_cp, stcb, net);
+				retval = sctp_process_init(init_cp, stcb);
 				if (retval < 0) {
 					if (how_indx < sizeof(asoc->cookie_how))
 						asoc->cookie_how[how_indx] = 3;
@@ -1609,7 +1608,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		 * somehow abort.. but we do have an existing asoc. This
 		 * really should not fail.
 		 */
-		if (sctp_load_addresses_from_init(stcb, m, iphlen,
+		if (sctp_load_addresses_from_init(stcb, m,
 						  init_offset + sizeof(struct sctp_init_chunk),
 						  initack_offset, sh, init_src)) {
 			if (how_indx < sizeof(asoc->cookie_how))
@@ -1741,13 +1740,13 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 
 		}
 		/* process the INIT info (peer's info) */
-		retval = sctp_process_init(init_cp, stcb, net);
+		retval = sctp_process_init(init_cp, stcb);
 		if (retval < 0) {
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 9;
 			return (NULL);
 		}
-		if (sctp_load_addresses_from_init(stcb, m, iphlen,
+		if (sctp_load_addresses_from_init(stcb, m,
 						  init_offset + sizeof(struct sctp_init_chunk),
 						  initack_offset, sh, init_src)) {
 			if (how_indx < sizeof(asoc->cookie_how))
@@ -1841,7 +1840,6 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		sctp_timer_stop(SCTP_TIMER_TYPE_INIT, inp, stcb, net, SCTP_FROM_SCTP_INPUT+SCTP_LOC_15);
 		sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, inp, stcb, net, SCTP_FROM_SCTP_INPUT+SCTP_LOC_16);
 
-		*sac_assoc_id = sctp_get_associd(stcb);
 		/* notify upper layer */
 		*notification = SCTP_NOTIFY_ASSOC_RESTART;
 		atomic_add_int(&stcb->asoc.refcnt, 1);
@@ -1917,7 +1915,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		SCTP_INP_WUNLOCK(stcb->sctp_ep);
 		SCTP_INP_INFO_WUNLOCK();
 
-		retval = sctp_process_init(init_cp, stcb, net);
+		retval = sctp_process_init(init_cp, stcb);
 		if (retval < 0) {
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 13;
@@ -1930,7 +1928,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		 */
 		net->hb_responded = 1;
 
-		if (sctp_load_addresses_from_init(stcb, m, iphlen,
+		if (sctp_load_addresses_from_init(stcb, m,
 						  init_offset + sizeof(struct sctp_init_chunk),
 						  initack_offset, sh, init_src)) {
 			if (how_indx < sizeof(asoc->cookie_how))
@@ -2123,7 +2121,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 
 	/* process the INIT info (peer's info) */
 	if (netp)
-		retval = sctp_process_init(init_cp, stcb, *netp);
+		retval = sctp_process_init(init_cp, stcb);
 	else
 		retval = 0;
 	if (retval < 0) {
@@ -2141,7 +2139,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 		return (NULL);
 	}
 	/* load all addresses */
-	if (sctp_load_addresses_from_init(stcb, m, iphlen,
+	if (sctp_load_addresses_from_init(stcb, m,
 	    init_offset + sizeof(struct sctp_init_chunk), initack_offset, sh,
 	    init_src)) {
 		atomic_add_int(&stcb->asoc.refcnt, 1);
@@ -2219,7 +2217,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 		sin = (struct sockaddr_in *)initack_src;
 		memset(sin, 0, sizeof(*sin));
 		sin->sin_family = AF_INET;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)&& !defined(__Userspace_os_Windows)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 		sin->sin_len = sizeof(struct sockaddr_in);
 #endif
 		sin->sin_addr.s_addr = cookie->laddress[0];
@@ -2352,7 +2350,6 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 	struct sctp_tcb *l_stcb = *stcb;
 	struct sctp_inpcb *l_inp;
 	struct sockaddr *to;
-	sctp_assoc_t sac_restart_id;
 	struct sctp_pcb *ep;
 	struct mbuf *m_sig;
 	uint8_t calc_sig[SCTP_SIGNATURE_SIZE], tmp_sig[SCTP_SIGNATURE_SIZE];
@@ -2684,7 +2681,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 		had_a_existing_tcb = 1;
 		*stcb = sctp_process_cookie_existing(m, iphlen, offset, sh,
 						     cookie, cookie_len, *inp_p, *stcb, netp, to,
-						     &notification, &sac_restart_id, vrf_id, auth_skipped, auth_offset, auth_len, port);
+						     &notification, vrf_id, auth_skipped, auth_offset, auth_len, port);
 	}
 
 	if (*stcb == NULL) {
@@ -2739,7 +2736,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 				 * For a restart we will keep the same
 				 * socket, no need to do anything. I THINK!!
 				 */
-				sctp_ulp_notify(notification, *stcb, 0, (void *)&sac_restart_id, SCTP_SO_NOT_LOCKED);
+				sctp_ulp_notify(notification, *stcb, 0, NULL, SCTP_SO_NOT_LOCKED);
 				if (send_int_conf) {
 					sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_CONFIRMED,
 			    		                (*stcb), 0, (void *)netl, SCTP_SO_NOT_LOCKED);
@@ -2916,7 +2913,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 }
 
 static void
-sctp_handle_cookie_ack(struct sctp_cookie_ack_chunk *cp,
+sctp_handle_cookie_ack(struct sctp_cookie_ack_chunk *cp SCTP_UNUSED,
     struct sctp_tcb *stcb, struct sctp_nets *net)
 {
 	/* cp must not be used, others call this without a c-ack :-) */
@@ -3179,7 +3176,7 @@ sctp_handle_ecn_cwr(struct sctp_cwr_chunk *cp, struct sctp_tcb *stcb, struct sct
 }
 
 static void
-sctp_handle_shutdown_complete(struct sctp_shutdown_complete_chunk *cp,
+sctp_handle_shutdown_complete(struct sctp_shutdown_complete_chunk *cp SCTP_UNUSED,
     struct sctp_tcb *stcb, struct sctp_nets *net)
 {
 	struct sctp_association *asoc;
@@ -4412,7 +4409,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 				asconf_len = ntohs(asconf_ch->chunk_length);
 				if (asconf_len < sizeof(struct sctp_asconf_paramhdr))
 					break;
-				stcb = sctp_findassociation_ep_asconf(m, iphlen,
+				stcb = sctp_findassociation_ep_asconf(m,
 								      *offset, sh, &inp, netp, vrf_id);
 				if (stcb != NULL)
 					break;
@@ -4669,7 +4666,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 			if (netp) {
 				sctp_handle_init(m, iphlen, *offset, sh,
 						 (struct sctp_init_chunk *)ch, inp,
-						 stcb, *netp, &abort_no_unlock, vrf_id, port);
+						 stcb, &abort_no_unlock, vrf_id, port);
 			}
 			if (abort_no_unlock)
 				return (NULL);
@@ -4800,8 +4797,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 					sctp_express_handle_sack(stcb, cum_ack, a_rwnd, &abort_now, ecne_seen);
 				} else {
 					if (netp && *netp)
-						sctp_handle_sack(m, offset_seg, offset_dup,
-						                 stcb, *netp,
+						sctp_handle_sack(m, offset_seg, offset_dup, stcb,
 								 num_seg, 0, num_dup, &abort_now, flags,
 								 cum_ack, a_rwnd, ecne_seen);
 				}
@@ -4886,8 +4882,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 					                         &abort_now, ecne_seen);
 				} else {
 					if (netp && *netp)
-						sctp_handle_sack(m, offset_seg, offset_dup,
-						                 stcb, *netp,
+						sctp_handle_sack(m, offset_seg, offset_dup, stcb,
 						                 num_seg, num_nr_seg, num_dup, &abort_now, flags,
 						                 cum_ack, a_rwnd, ecne_seen);
 				}
@@ -5531,7 +5526,6 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset,
 	uint32_t high_tsn;
 	int fwd_tsn_seen = 0, data_processed = 0;
 	struct mbuf *m = *mm;
-	int abort_flag = 0;
 	int un_sent;
 	int cnt_ctrl_ready=0;
 
@@ -5577,7 +5571,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset,
  			inp = stcb->sctp_ep;
 			if ((net) && (port)) {
 				if (net->port == 0) {
-					sctp_pathmtu_adjustment(inp, stcb, net, net->mtu - sizeof(struct udphdr));
+					sctp_pathmtu_adjustment(stcb, net->mtu - sizeof(struct udphdr));
 				}
 				net->port = port;
 			}
@@ -5727,11 +5721,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset,
 		}
 		was_a_gap = SCTP_TSN_GT(highest_tsn, stcb->asoc.cumulative_tsn);
 		stcb->asoc.send_sack = 1;
-		sctp_sack_check(stcb, was_a_gap, &abort_flag);
-		if (abort_flag) {
-			/* Again, we aborted so NO UNLOCK needed */
-			goto out_now;
-		}
+		sctp_sack_check(stcb, was_a_gap);
 	} else if (fwd_tsn_seen) {
 		stcb->asoc.send_sack = 1;
 	}
@@ -5899,7 +5889,7 @@ sctp_input(i_pak, va_alist)
 	/* Open BSD gives us the len in network order, fix it */
 	NTOHS(ip->ip_len);
 #endif
-#if defined (__Userspace_os_Linux) || defined (__Userspace_os_Windows)
+#if defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
 	ip->ip_len = ntohs(ip->ip_len);
 #endif
 	/* validate mbuf chain length with IP payload length */
@@ -5976,13 +5966,13 @@ sctp_input(i_pak, va_alist)
 		SCTPDBG(SCTP_DEBUG_INPUT1, "Bad CSUM on SCTP packet calc_check:%x check:%x  m:%p mlen:%d iphlen:%d\n",
 			calc_check, check, m, mlen, iphlen);
 
-		stcb = sctp_findassociation_addr(m, iphlen,
+		stcb = sctp_findassociation_addr(m,
 						 offset - sizeof(*ch),
 						 sh, ch, &inp, &net,
 						 vrf_id);
 		if ((net) && (port)) {
 			if (net->port == 0) {
-				sctp_pathmtu_adjustment(inp, stcb, net, net->mtu - sizeof(struct udphdr));
+				sctp_pathmtu_adjustment(stcb, net->mtu - sizeof(struct udphdr));
 			}
 			net->port = port;
 		}
@@ -6016,11 +6006,11 @@ sctp_input(i_pak, va_alist)
 	 * Locate pcb and tcb for datagram sctp_findassociation_addr() wants
 	 * IP/SCTP/first chunk header...
 	 */
-	stcb = sctp_findassociation_addr(m, iphlen, offset - sizeof(*ch),
+	stcb = sctp_findassociation_addr(m, offset - sizeof(*ch),
 					 sh, ch, &inp, &net, vrf_id);
 	if ((net) && (port)) {
 		if (net->port == 0) {
-			sctp_pathmtu_adjustment(inp, stcb, net, net->mtu - sizeof(struct udphdr));
+			sctp_pathmtu_adjustment(stcb, net->mtu - sizeof(struct udphdr));
 		}
 		net->port = port;
 	}
@@ -6060,7 +6050,7 @@ sctp_input(i_pak, va_alist)
 				sh->v_tag = init_chk->init.initiate_tag;
 		}
 		if (ch->chunk_type == SCTP_SHUTDOWN_ACK) {
-			sctp_send_shutdown_complete2(m, iphlen, sh, vrf_id, port);
+			sctp_send_shutdown_complete2(m, sh, vrf_id, port);
  			goto bad;
 		}
 		if (ch->chunk_type == SCTP_SHUTDOWN_COMPLETE) {
@@ -6091,7 +6081,7 @@ sctp_input(i_pak, va_alist)
 	length = ip->ip_len + iphlen;
 #elif defined(__Userspace__)
 
-#if defined(__Userspace_os_Linux) || defined (__Userspace_os_Windows)
+#if defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
 	length = SCTP_GET_IPV4_LENGTH(ip);
 #else
 	length = SCTP_GET_IPV4_LENGTH(ip) + iphlen;

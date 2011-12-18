@@ -1,5 +1,5 @@
 /*-
- * Copyright (C) 2001-2007 Cisco Systems Inc, All rights reserved.
+ * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2011, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2011, by Michael Tuexen. All rights reserved.
  *

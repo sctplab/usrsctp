@@ -7,11 +7,11 @@
  * modification, are permitted provided that the following conditions are met:
  *
  * a) Redistributions of source code must retain the above copyright notice,
- *   this list of conditions and the following disclaimer.
+ *    this list of conditions and the following disclaimer.
  *
  * b) Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
- *   the documentation and/or other materials provided with the distribution.
+ *    the documentation and/or other materials provided with the distribution.
  *
  * c) Neither the name of Cisco Systems, Inc. nor the names of its
  *    contributors may be used to endorse or promote products derived
@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 228391 2011-12-10 10:52:54Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 228653 2011-12-17 19:21:40Z tuexen $");
 #endif
 #include <netinet/sctp_os.h>
 #ifdef __FreeBSD__
@@ -176,10 +176,7 @@ sctp_finish(void)
 
 
 void
-sctp_pathmtu_adjustment(struct sctp_inpcb *inp,
-    struct sctp_tcb *stcb,
-    struct sctp_nets *net,
-    uint16_t nxtsz)
+sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint16_t nxtsz)
 {
 	struct sctp_tmit_chunk *chk;
 	uint16_t overhead;
@@ -289,11 +286,10 @@ sctp_notify_mbuf(struct sctp_inpcb *inp,
 		if (net->port) {
 			net->mtu -= sizeof(struct udphdr);
 		}
-
 	}
 	/* now what about the ep? */
 	if (stcb->asoc.smallest_mtu > nxtsz) {
-		sctp_pathmtu_adjustment(inp, stcb, net, nxtsz);
+		sctp_pathmtu_adjustment(stcb, nxtsz);
 	}
 	if (tmr_stopped)
 		sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net);
@@ -637,13 +633,13 @@ int
 static int
 #endif
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
-sctp_attach(struct socket *so, int proto, struct thread *p)
+sctp_attach(struct socket *so, int proto SCTP_UNUSED, struct thread *p SCTP_UNUSED)
 #elif defined(__Panda__) || defined(__Userspace__)
-sctp_attach(struct socket *so, int proto, uint32_t vrf_id)
+sctp_attach(struct socket *so, int proto SCTP_UNUSED, uint32_t vrf_id)
 #elif defined(__Windows__)
-sctp_attach(struct socket *so, int proto, PKTHREAD p)
+sctp_attach(struct socket *so, int proto SCTP_UNUSED, PKTHREAD p SCTP_UNUSED)
 #else
-sctp_attach(struct socket *so, int proto, struct proc *p)
+sctp_attach(struct socket *so, int proto SCTP_UNUSED, struct proc *p SCTP_UNUSED)
 #endif
 {
 	struct sctp_inpcb *inp;
@@ -5232,7 +5228,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					if (paddrp->spp_pathmtu > SCTP_DEFAULT_MINSEGMENT) {
 						net->mtu = paddrp->spp_pathmtu + ovh;
 						if (net->mtu < stcb->asoc.smallest_mtu) {
-							sctp_pathmtu_adjustment(inp, stcb, net, net->mtu);
+							sctp_pathmtu_adjustment(stcb, net->mtu);
 						}
 					}
 				}
@@ -5357,7 +5353,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 						if (paddrp->spp_pathmtu > SCTP_DEFAULT_MINSEGMENT) {
 							net->mtu = paddrp->spp_pathmtu + ovh;
 							if (net->mtu < stcb->asoc.smallest_mtu) {
-								sctp_pathmtu_adjustment(inp, stcb, net, net->mtu);
+								sctp_pathmtu_adjustment(stcb, net->mtu);
 							}
 						}
 					}
@@ -5822,7 +5818,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			error = EAFNOSUPPORT;
 			break;
 		}
-		sctp_bindx_delete_address(so, inp, addrs->addr,
+		sctp_bindx_delete_address(inp, addrs->addr,
 					  addrs->sget_assoc_id, vrf_id,
 					  &error);
 		break;
