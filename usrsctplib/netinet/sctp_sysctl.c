@@ -7,11 +7,11 @@
  * modification, are permitted provided that the following conditions are met:
  *
  * a) Redistributions of source code must retain the above copyright notice,
- *   this list of conditions and the following disclaimer.
+ *    this list of conditions and the following disclaimer.
  *
  * b) Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
- *   the documentation and/or other materials provided with the distribution.
+ *    the documentation and/or other materials provided with the distribution.
  *
  * c) Neither the name of Cisco Systems, Inc. nor the names of its
  *    contributors may be used to endorse or promote products derived
@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 227755 2011-11-20 15:00:45Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 228653 2011-12-17 19:21:40Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -169,7 +169,7 @@ sctp_finish_sysctls()
 static unsigned int
 number_of_addresses(struct sctp_inpcb *inp)
 {
-	int cnt;
+	unsigned int cnt;
 	struct sctp_vrf *vrf;
 	struct sctp_ifn *sctp_ifn;
 	struct sctp_ifa *sctp_ifa;
@@ -383,13 +383,16 @@ copy_out_local_addresses(struct sctp_inpcb *inp, struct sctp_tcb *stcb, struct s
 /*
  * sysctl functions
  */
-static int
 #if defined (__APPLE__)
+static int
 sctp_assoclist SYSCTL_HANDLER_ARGS
-#else
-sctp_assoclist(SYSCTL_HANDLER_ARGS)
-#endif
 {
+#pragma unused(oidp, arg1, arg2)
+#else
+static int
+sctp_assoclist(SYSCTL_HANDLER_ARGS)
+{
+#endif
 	unsigned int number_of_endpoints;
 	unsigned int number_of_local_addresses;
 	unsigned int number_of_associations;
@@ -629,13 +632,16 @@ skip:
 
 /* XXX: Remove the #if after tunneling over IPv6 works also on FreeBSD. */
 #if !defined(__FreeBSD__) || defined(INET)
-static int
 #if defined (__APPLE__)
+static int
 sysctl_sctp_udp_tunneling_check SYSCTL_HANDLER_ARGS
-#else
-sysctl_sctp_udp_tunneling_check(SYSCTL_HANDLER_ARGS)
-#endif
 {
+#pragma unused(arg1, arg2)
+#else
+static int
+sysctl_sctp_udp_tunneling_check(SYSCTL_HANDLER_ARGS)
+{
+#endif
 	int error;
 	uint32_t old_sctp_udp_tunneling_port;
 
@@ -676,6 +682,7 @@ int sctp_is_vmware_interface(struct ifnet *);
 static int
 sysctl_sctp_vmware_interfaces_check SYSCTL_HANDLER_ARGS
 {
+#pragma unused(arg1, arg2)
 	int error;
 	uint32_t old_sctp_ignore_vmware_interfaces;
 
@@ -694,13 +701,16 @@ sysctl_sctp_vmware_interfaces_check SYSCTL_HANDLER_ARGS
 }
 #endif
 
-static int
 #if defined (__APPLE__)
+static int
 sysctl_sctp_check SYSCTL_HANDLER_ARGS
-#else
-sysctl_sctp_check(SYSCTL_HANDLER_ARGS)
-#endif
 {
+#pragma unused(arg1, arg2)
+#else
+static int
+sysctl_sctp_check(SYSCTL_HANDLER_ARGS)
+{
+#endif
 	int error;
 
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800056
@@ -963,13 +973,16 @@ sysctl_stat_get(SYSCTL_HANDLER_ARGS)
 #endif
 
 #if defined(SCTP_LOCAL_TRACE_BUF)
-static int
 #if defined (__APPLE__)
+static int
 sysctl_sctp_cleartrace SYSCTL_HANDLER_ARGS
-#else
-sysctl_sctp_cleartrace(SYSCTL_HANDLER_ARGS)
-#endif
 {
+#pragma unused(arg1, arg2, req, oidp)
+#else
+static int
+sysctl_sctp_cleartrace(SYSCTL_HANDLER_ARGS)
+{
+#endif
 	int error = 0;
 #if defined(__Windows__)
 	int value = 0;

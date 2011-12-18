@@ -7,11 +7,11 @@
  * modification, are permitted provided that the following conditions are met:
  *
  * a) Redistributions of source code must retain the above copyright notice,
- *   this list of conditions and the following disclaimer.
+ *    this list of conditions and the following disclaimer.
  *
  * b) Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
- *   the documentation and/or other materials provided with the distribution.
+ *    the documentation and/or other materials provided with the distribution.
  *
  * c) Neither the name of Cisco Systems, Inc. nor the names of its
  *    contributors may be used to endorse or promote products derived
@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_var.h 224641 2011-08-03 20:21:00Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_var.h 228653 2011-12-17 19:21:40Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_VAR_H_
@@ -414,14 +414,14 @@ int sctp6_input_with_port __P((struct mbuf **, int *, uint16_t));
 #ifdef INET
 void sctp_input __P((struct mbuf *, int));
 #endif
-void sctp_pathmtu_adjustment __P((struct sctp_inpcb *, struct sctp_tcb *, struct sctp_nets *, uint16_t));
+void sctp_pathmtu_adjustment __P((struct sctp_tcb *, uint16_t));
 #else
 #if defined(__Panda__)
 void sctp_input __P((pakhandle_type i_pak));
 #elif defined(__Userspace__)
 void sctp_input_with_port __P((struct mbuf *, int, uint16_t));
 void sctp_input __P((struct mbuf *, int));
-void sctp_pathmtu_adjustment __P((struct sctp_inpcb *, struct sctp_tcb *, struct sctp_nets *, uint16_t));
+void sctp_pathmtu_adjustment __P((struct sctp_tcb *, uint16_t));
 #else
 void sctp_input __P((struct mbuf *,...));
 #endif

@@ -7,11 +7,11 @@
  * modification, are permitted provided that the following conditions are met:
  *
  * a) Redistributions of source code must retain the above copyright notice,
- *   this list of conditions and the following disclaimer.
+ *    this list of conditions and the following disclaimer.
  *
  * b) Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
- *   the documentation and/or other materials provided with the distribution.
+ *    the documentation and/or other materials provided with the distribution.
  *
  * c) Neither the name of Cisco Systems, Inc. nor the names of its
  *    contributors may be used to endorse or promote products derived
@@ -35,7 +35,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 222459 2011-05-29 18:41:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 228653 2011-12-17 19:21:40Z tuexen $");
 #endif
 #ifndef __sctputil_h__
 #define __sctputil_h__
@@ -126,7 +126,7 @@ sctp_append_to_readq(struct sctp_inpcb *inp,
 void sctp_iterator_worker(void);
 
 uint32_t sctp_get_prev_mtu(uint32_t);
-uint32_t sctp_get_next_mtu(struct sctp_inpcb *, uint32_t);
+uint32_t sctp_get_next_mtu(uint32_t);
 
 void
 sctp_timeout_handler(void *);
@@ -261,7 +261,7 @@ struct mbuf *sctp_generate_invmanparam(int);
 void sctp_bindx_add_address(struct socket *so, struct sctp_inpcb *inp,
 			    struct sockaddr *sa, sctp_assoc_t assoc_id,
 			    uint32_t vrf_id, int *error, void *p);
-void sctp_bindx_delete_address(struct socket *so, struct sctp_inpcb *inp,
+void sctp_bindx_delete_address(struct sctp_inpcb *inp,
 			       struct sockaddr *sa, sctp_assoc_t assoc_id,
 			       uint32_t vrf_id, int *error);
 
@@ -352,7 +352,6 @@ sctp_misc_ints(uint8_t from, uint32_t a, uint32_t b, uint32_t c, uint32_t d);
 
 void
 sctp_wakeup_log(struct sctp_tcb *stcb,
-    uint32_t cumtsn,
     uint32_t wake_cnt, int from);
 
 void sctp_log_strm_del_alt(struct sctp_tcb *stcb, uint32_t, uint16_t, uint16_t, int);
@@ -378,7 +377,7 @@ void sctp_log_closing(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int16_t loc
 
 void sctp_log_lock(struct sctp_inpcb *inp, struct sctp_tcb *stcb, uint8_t from);
 void sctp_log_maxburst(struct sctp_tcb *stcb, struct sctp_nets *, int, int, uint8_t);
-void sctp_log_block(uint8_t, struct socket *, struct sctp_association *, int);
+void sctp_log_block(uint8_t, struct sctp_association *, int);
 void sctp_log_rwnd(uint8_t, uint32_t, uint32_t, uint32_t);
 void sctp_log_mbcnt(uint8_t, uint32_t, uint32_t, uint32_t, uint32_t);
 void sctp_log_rwnd_set(uint8_t, uint32_t, uint32_t, uint32_t, uint32_t);
