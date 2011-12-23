@@ -37,8 +37,9 @@
 
 #if defined(__Userspace_os_Darwin)
 #include <sys/types.h>
-#include <sys/uio.h>
+#if !defined(__Userspace_os_Windows)
 #include <unistd.h>
+#endif
 #endif
 
 /* #include <sys/selinfo.h> */ /*__Userspace__ alternative?*/	/* for struct selinfo */
