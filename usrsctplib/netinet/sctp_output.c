@@ -2785,10 +2785,8 @@ sctp_select_nth_preferred_addr_from_ifn_boundall(struct sctp_ifn *ifn,
 #endif  /* SCTP_EMBEDDED_V6_SCOPE */
 #endif	/* INET6 */
 
-#if defined(__Userspace__)
-                /* __Userspace avoids IPv6 for now... */
-#endif
-#if defined(__FreeBSD__) || defined(__APPLE__)
+
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Userspace__)
 		/* Check if the IPv6 address matches to next-hop.
 		   In the mobile case, old IPv6 address may be not deleted
 		   from the interface. Then, the interface has previous and
@@ -3009,7 +3007,7 @@ sctp_choose_boundall(struct sctp_tcb *stcb,
                                                                   dest_is_loop, dest_is_priv, fam);
 		SCTPDBG(SCTP_DEBUG_OUTPUT2,
 			"Found ifn:%p %d preferred source addresses\n",
-			ifn, num_preferred);
+			sctp_ifn, num_preferred);
 		if (num_preferred == 0) {
 			/* None on this interface. */
 			SCTPDBG(SCTP_DEBUG_OUTPUT2, "No prefered -- skipping to next\n");
@@ -4284,11 +4282,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 	{
 		uint32_t flowlabel, flowinfo;
 		struct ip6_hdr *ip6h;
-#if defined(__Userspace__)
-		sctp_route_t ip6route;
-#else
 		struct route_in6 ip6route;
-#endif
 #if defined(__Panda__) || defined(__Userspace__)
 		void *ifp;
 #else
@@ -5038,7 +5032,7 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked
 		}
 		p_len += padval;
 	}
-	SCTPDBG(SCTP_DEBUG_OUTPUT4, "Sending INIT - calls lowlevel_output\n");
+	SCTPDBG(SCTP_DEBUG_OUTPUT4, "Sending INIT - calls lowlevel_chunk_output\n");
 	ret = sctp_lowlevel_chunk_output(inp, stcb, net,
 	                                 (struct sockaddr *)&net->ro._l_addr,
 	                                 m, 0, NULL, 0, 0, 0, 0,
@@ -11174,14 +11168,17 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 		break;
 #endif
 #ifdef INET6
-#if !defined(__Userspace__) /* TODO declare ip6_defhlim */
 	case IPV6_VERSION >> 4:
 		ip6 = (struct ip6_hdr *)iph;
 		ip6_out = mtod(mout, struct ip6_hdr *);
 
 		/* Fill in the IPv6 header for the ABORT */
 		ip6_out->ip6_flow = ip6->ip6_flow;
+#if defined(__Userspace__)
+		ip6_out->ip6_hlim = IPv6_HOP_LIMIT;
+#else
 		ip6_out->ip6_hlim = MODULE_GLOBAL(ip6_defhlim);
+#endif
 		if (port) {
 			ip6_out->ip6_nxt = IPPROTO_UDP;
 		} else {
@@ -11196,7 +11193,6 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 		offset_out += sizeof(*ip6_out);
 		comp_cp = (struct sctp_shutdown_complete_msg *)(
 		    (caddr_t)ip6_out + offset_out);
-#endif /* ! __Userspace__ */
 		break;
 #endif /* INET6 */
 	default:
@@ -11291,11 +11287,7 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 #endif
 #ifdef INET6
 	if (ip6_out != NULL) {
-#if defined(__Userspace__)
-		sctp_route_t ro;
-#else
 		struct route_in6 ro;
-#endif
 		int ret;
 #if !defined(__Panda__)
 		struct ifnet *ifp = NULL;
@@ -12203,14 +12195,17 @@ sctp_send_abort(struct mbuf *m, int iphlen, struct sctphdr *sh, uint32_t vtag,
 		break;
 #endif
 #ifdef INET6
-#if !defined(__Userspace__) /* TODO declare ip6_defhlim */
 	case IPV6_VERSION >> 4:
 		ip6 = (struct ip6_hdr *)iph;
 		ip6_out = mtod(mout, struct ip6_hdr *);
 
 		/* Fill in the IP6 header for the ABORT */
 		ip6_out->ip6_flow = ip6->ip6_flow;
+#if defined(__Userspace__)
+		ip6_out->ip6_hlim = IPv6_HOP_LIMIT;
+#else
 		ip6_out->ip6_hlim = MODULE_GLOBAL(ip6_defhlim);
+#endif
 		if (port) {
 			ip6_out->ip6_nxt = IPPROTO_UDP;
 		} else {
@@ -12222,7 +12217,6 @@ sctp_send_abort(struct mbuf *m, int iphlen, struct sctphdr *sh, uint32_t vtag,
 		iphlen_out = sizeof(*ip6_out);
 		abm = (struct sctp_abort_msg *)((caddr_t)ip6_out + iphlen_out);
 		break;
-#endif /* ! __Userspace__ */
 #endif /* INET6 */
 	default:
 		/* Currently not supported */
@@ -12349,11 +12343,7 @@ sctp_send_abort(struct mbuf *m, int iphlen, struct sctphdr *sh, uint32_t vtag,
 #endif
 #ifdef INET6
 	if (ip6_out != NULL) {
-#if defined(__Userspace__)
-		sctp_route_t ro;
-#else
 		struct route_in6 ro;
-#endif
 		int ret;
 #if !defined(__Panda__)
 		struct ifnet *ifp = NULL;
@@ -12363,11 +12353,9 @@ sctp_send_abort(struct mbuf *m, int iphlen, struct sctphdr *sh, uint32_t vtag,
 #if defined(__Panda__)
 		ro._l_addr.sa.sa_family = AF_INET6;
 #endif
-#if !defined(__Userspace__)
 		if (port) {
 			udp->uh_ulen = htons(len - sizeof(struct ip6_hdr));
 		}
-#endif
 		SCTPDBG(SCTP_DEBUG_OUTPUT2, "sctp_send_abort calling ip6_output:\n");
 		SCTPDBG_PKT(SCTP_DEBUG_OUTPUT2, (struct ip *)ip6_out, &abm->sh);
 		ip6_out->ip6_plen = len - sizeof(*ip6_out);
@@ -12523,14 +12511,17 @@ sctp_send_operr_to(struct mbuf *m, int iphlen, struct mbuf *scm, uint32_t vtag,
 		break;
 #endif
 #ifdef INET6
-#if !defined(__Userspace__) /* TODO declare ip6_defhlim */
 	case IPV6_VERSION >> 4:
 		ip6 = (struct ip6_hdr *)iph;
 		ip6_out = mtod(mout, struct ip6_hdr *);
 
 		/* Fill in the IP6 header for the ABORT */
 		ip6_out->ip6_flow = ip6->ip6_flow;
+#if defined(__Userspace__)
+		ip6_out->ip6_hlim = IPv6_HOP_LIMIT;
+#else
 		ip6_out->ip6_hlim = MODULE_GLOBAL(ip6_defhlim);
+#endif
 		if (port) {
 			ip6_out->ip6_nxt = IPPROTO_UDP;
 		} else {
@@ -12542,7 +12533,6 @@ sctp_send_operr_to(struct mbuf *m, int iphlen, struct mbuf *scm, uint32_t vtag,
 		iphlen_out = sizeof(struct ip6_hdr);
 		sh_out = (struct sctphdr *)((caddr_t)ip6_out + iphlen_out);
 		break;
-#endif /* ! __Userspace__ */
 #endif /* INET6 */
 	default:
 		/* Currently not supported */
@@ -12665,11 +12655,7 @@ sctp_send_operr_to(struct mbuf *m, int iphlen, struct mbuf *scm, uint32_t vtag,
 #endif
 #ifdef INET6
 	if (ip6_out != NULL) {
-#if defined(__Userspace__)
-		sctp_route_t ro;
-#else
 		struct route_in6 ro;
-#endif
 		int ret;
 #if !defined(__Panda__)
 		struct ifnet *ifp = NULL;
@@ -12679,11 +12665,9 @@ sctp_send_operr_to(struct mbuf *m, int iphlen, struct mbuf *scm, uint32_t vtag,
 #if defined(__Panda__)
 		ro._l_addr.sa.sa_family = AF_INET6;
 #endif
-#if !defined(__Userspace__)
 		if (port) {
 			udp->uh_ulen = htons(len - sizeof(struct ip6_hdr));
 		}
-#endif
 		ip6_out->ip6_plen = len - sizeof(*ip6_out);
 #ifdef  SCTP_PACKET_LOGGING
 		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING)
@@ -13092,9 +13076,6 @@ sctp_sosend(struct socket *so,
 		}
 	}
 	addr_to_use = addr;
-#if defined(__Userspace__)
-	/* TODO port in6_sin6_2_sin */
-#else
 #if defined(INET) && defined(INET6)
 	if ((addr) && (addr->sa_family == AF_INET6)) {
 		struct sockaddr_in6 *sin6;
@@ -13105,7 +13086,6 @@ sctp_sosend(struct socket *so,
 			addr_to_use = (struct sockaddr *)&sin;
 		}
 	}
-#endif
 #endif
 	error = sctp_lower_sosend(so, addr_to_use, uio, top,
 #ifdef __Panda__

@@ -385,20 +385,16 @@ sctp_init_ifns_for_vrf(int vrfid)
 			/* non inet/inet6 skip */
 			continue;
 		}
-		if (ifa->ifa_addr->sa_family == AF_INET6) {
-			/* skip IPv6 for now.  TODO find correct structs... */
+		if ((ifa->ifa_addr->sa_family == AF_INET6) &&
+		    IN6_IS_ADDR_UNSPECIFIED(&((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_addr)) {
+			/* skip unspecifed addresses */
 			continue;
-		} else {
-			if (((struct sockaddr_in *)ifa->ifa_addr)->sin_addr.s_addr == 0) {
-				continue;
-			}
-			/* ifa type (ifaddrs) differs for __Userspace__ and no if_type field... also,
-			 *  skipping IPv6 items for now...
-			 */
-			/* TODO get the if_index (& mtu?)... */
-
-			ifa_flags = 0;
 		}
+		if (ifa->ifa_addr->sa_family == AF_INET &&
+		    ((struct sockaddr_in *)ifa->ifa_addr)->sin_addr.s_addr == 0) {
+			continue;
+		}
+		ifa_flags = 0;
 		sctp_ifa = sctp_add_addr_to_vrf(vrfid,
 		                                ifa,
 		                                if_nametoindex(ifa->ifa_name),

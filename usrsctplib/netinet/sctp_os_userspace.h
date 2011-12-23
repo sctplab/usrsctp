@@ -353,6 +353,9 @@ struct udphdr {
 #else /* !defined (Userspace_os_Windows) */
 #include <sys/cdefs.h> /* needed? added from old __FreeBSD__ */
 #include <sys/socket.h>
+#if defined(__Userspace_os_FreeBSD)
+#include <pthread.h>
+#endif
 typedef pthread_mutex_t userland_mutex_t;
 typedef pthread_cond_t userland_cond_t;
 typedef pthread_t userland_thread_t;
@@ -942,6 +945,7 @@ int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af);
 
 /* get the v6 hop limit */
 #define SCTP_GET_HLIM(inp, ro) 128 /* As done for __Windows__ */
+#define IPv6_HOP_LIMIT 128
 
 /* is the endpoint v6only? */
 #define SCTP_IPV6_V6ONLY(inp)	(((struct inpcb *)inp)->inp_flags & IN6P_IPV6_V6ONLY)
@@ -1062,8 +1066,16 @@ typedef int SHA512_CTX;
 extern void sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
                                             struct route *ro, void *stcb,
                                             uint32_t vrf_id);
+                                            
+extern void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
+                                      struct route_in6 *ro, void *stcb,
+                                      uint32_t vrf_id);
 
 #define SCTP_IP_OUTPUT(result, o_pak, ro, stcb, vrf_id) sctp_userspace_ip_output(&result, o_pak, ro, stcb, vrf_id);
+
+#if defined (INET6)
+#define SCTP_IP6_OUTPUT(result, o_pak, ro, ifp, stcb, vrf_id) sctp_userspace_ip6_output(&result, o_pak, ro, stcb, vrf_id);
+#endif
 
 
 
@@ -1077,8 +1089,6 @@ extern void sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	else \
 		result = ip6_output(o_pak, NULL, (ro), 0, 0, ifp, NULL); \
 }
-#else
-#define SCTP_IP6_OUTPUT(result, o_pak, ro, ifp, stcb, vrf_id) /*__Userspace__ TODO stub */
 #endif
 
 struct mbuf *
