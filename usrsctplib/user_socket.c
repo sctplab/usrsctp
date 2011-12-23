@@ -6,6 +6,7 @@
 #endif
 #if !defined (__Userspace_os_Windows)
 #include <netinet/udp.h>
+#include <arpa/inet.h>
 /* Statically initializing accept_mtx and accept_cond since there is no call for ACCEPT_LOCK_INIT() */
 userland_mutex_t accept_mtx = PTHREAD_MUTEX_INITIALIZER;
 userland_cond_t accept_cond = PTHREAD_COND_INITIALIZER;
@@ -110,37 +111,40 @@ soalloc(void)
 #if defined(__Userspace__)
 	struct socket *so;
 
-        /*
-         * soalloc() sets of socket layer state for a socket,
-         * called only by socreate() and sonewconn().
-         *
-         * sodealloc() tears down socket layer state for a socket,
-         * called only by sofree() and sonewconn().
-         * __Userspace__ TODO : Make sure so is properly deallocated
-         * when tearing down the connection.
-         */
-        so = malloc(sizeof(struct socket));
+	/*
+	 * soalloc() sets of socket layer state for a socket,
+	 * called only by socreate() and sonewconn().
+	 *
+	 * sodealloc() tears down socket layer state for a socket,
+	 * called only by sofree() and sonewconn().
+	 * __Userspace__ TODO : Make sure so is properly deallocated
+	 * when tearing down the connection.
+	 */
+
+	so = (struct socket *)malloc(sizeof(struct socket));
+
 	if (so == NULL)
 		return (NULL);
-        bzero(so, sizeof(struct socket));
+	bzero(so, sizeof(struct socket));
 
-        /* __Userspace__ Initializing the socket locks here */
+	/* __Userspace__ Initializing the socket locks here */
 	SOCKBUF_LOCK_INIT(&so->so_snd, "so_snd");
 	SOCKBUF_LOCK_INIT(&so->so_rcv, "so_rcv");
-        SOCKBUF_COND_INIT(&so->so_snd);
-        SOCKBUF_COND_INIT(&so->so_rcv);
-        SOCK_COND_INIT(so); /* timeo_cond */
-        /* __Userspace__ Any ref counting required here? Will we have any use for aiojobq?
-         What about gencnt and numopensockets?*/
+	SOCKBUF_COND_INIT(&so->so_snd);
+	SOCKBUF_COND_INIT(&so->so_rcv);
+	SOCK_COND_INIT(so); /* timeo_cond */
+
+	/* __Userspace__ Any ref counting required here? Will we have any use for aiojobq?
+	   What about gencnt and numopensockets?*/
 	TAILQ_INIT(&so->so_aiojobq);
 	return (so);
-        
+
 #else
-        /* Putting the kernel version for reference. The #else
-           should be removed once the __Userspace__
-           version is tested.
-        */
-        struct socket *so;
+	/* Putting the kernel version for reference. The #else
+	   should be removed once the __Userspace__
+	   version is tested.
+	 */
+	struct socket *so;
 
 	so = uma_zalloc(socket_zone, M_NOWAIT | M_ZERO);
 	if (so == NULL)
@@ -295,8 +299,15 @@ soabort(so)
 	struct socket *so;
 {
 	int error;
+	struct sctp_inpcb *inp;
 
-	error = sctp_abort(so);
+	inp = (struct sctp_inpcb *)so->so_pcb;
+	if (inp == NULL)
+		error = sctp_abort(so);
+	else if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6)
+		error = sctp6_abort(so);
+	else
+		error = sctp_abort(so);
 	if (error) {
 		sofree(so);
 		return error;
@@ -470,19 +481,13 @@ sonewconn(struct socket *head, int connstatus)
 	so->so_linger = head->so_linger;
 	so->so_state = head->so_state | SS_NOFDREF;
 	so->so_proto = head->so_proto;
-        /*	so->so_cred = crhold(head->so_cred); */
 #ifdef MAC
 	SOCK_LOCK(head);
 	mac_create_socket_from_socket(head, so);
 	SOCK_UNLOCK(head);
 #endif
-        /*	knlist_init(&so->so_rcv.sb_sel.si_note, SOCKBUF_MTX(&so->so_rcv),
-        	    NULL, NULL, NULL);
-        	knlist_init(&so->so_snd.sb_sel.si_note, SOCKBUF_MTX(&so->so_snd),
-        	    NULL, NULL, NULL); */
 	if (soreserve(so, head->so_snd.sb_hiwat, head->so_rcv.sb_hiwat) ||
-            sctp_attach(so, IPPROTO_SCTP, SCTP_DEFAULT_VRFID) ) {
-            /*  (*so->so_proto->pr_usrreqs->pru_attach)(so, 0, NULL)) { */
+	    sctp_attach(so, IPPROTO_SCTP, SCTP_DEFAULT_VRFID)) {
 		sodealloc(so);
 		return (NULL);
 	}
@@ -1291,7 +1296,7 @@ socreate(int dom, struct socket **aso, int type, int proto)
 	struct socket *so;
 	int error;
 
-	assert((AF_INET == dom) || (AF_UNIX == dom));
+	assert((AF_INET == dom) || (AF_UNIX == dom) || (AF_INET6 == dom));
 	assert((SOCK_STREAM == type) || (SOCK_SEQPACKET == type));
 	assert(IPPROTO_SCTP == proto);
 
@@ -1316,7 +1321,12 @@ socreate(int dom, struct socket **aso, int type, int proto)
 	 * the appropriate flags must be set in the pru_attach function.
          * For __Userspace__ The pru_attach function in this case is sctp_attach.
 	 */
-	error = sctp_attach(so, proto, SCTP_DEFAULT_VRFID);
+
+	if (dom == AF_INET)
+		error = sctp_attach(so, proto, SCTP_DEFAULT_VRFID);
+	else
+		error = sctp6_attach(so, proto, SCTP_DEFAULT_VRFID);
+
 	if (error) {
 		assert(so->so_count == 1);
 		so->so_count = 0;
@@ -1613,8 +1623,10 @@ sowakeup(struct socket *so, struct sockbuf *sb)
 int
 sobind(struct socket *so, struct sockaddr *nam)
 {
-
-	return (sctp_bind(so, nam));
+	if (nam->sa_family == AF_INET)
+		return (sctp_bind(so, nam));
+	else
+		return (sctp6_bind(so, nam, NULL));
 }
 
 
@@ -1953,7 +1965,11 @@ soconnect(struct socket *so, struct sockaddr *nam)
 		 * biting us.
 		 */
 		so->so_error = 0;
-		error = sctp_connect(so, nam);
+		if (nam->sa_family == AF_INET6) {
+		    error = sctp6_connect(so, nam);
+		} else {
+		    error = sctp_connect(so, nam);
+		}
 	}
 
 	return (error);
@@ -1974,8 +1990,9 @@ int user_connect(so, sa)
 	}
 
 	error = soconnect(so, sa);
-	if (error)
+	if (error) {
 		goto bad;
+	}
 	if ((so->so_state & SS_NBIO) && (so->so_state & SS_ISCONNECTING)) {
 		error = EINPROGRESS;
 		goto done1;
@@ -2211,3 +2228,158 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 free_mbuf:
 	sctp_m_freem(m_orig);
 }
+
+#if defined (INET6)
+void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
+                                            struct route_in6 *ro, void *stcb,
+                                            uint32_t vrf_id)
+{
+	struct mbuf *m;
+	struct mbuf *m_orig;
+	int iovcnt;
+	int send_len;
+	int len;
+	int send_count;
+	struct ip6_hdr *ip6;
+	struct udphdr *udp;
+	int res;
+	struct sockaddr_in6 dst;
+#if defined (__Userspace_os_Windows)
+	WSAMSG win_msg_hdr;
+	int win_sent_len;
+	WSABUF send_iovec[MAXLEN_MBUF_CHAIN];
+	WSABUF winbuf;
+#else
+	struct iovec send_iovec[MAXLEN_MBUF_CHAIN];
+	struct msghdr msg_hdr;
+#endif
+	int use_udp_tunneling;
+	
+	*result = 0;
+	send_count = 0;
+
+	m = SCTP_HEADER_TO_CHAIN(o_pak);
+	m_orig = m;
+
+	len = sizeof(struct ip6_hdr);
+
+	if (SCTP_BUF_LEN(m) < len) {
+		if ((m = m_pullup(m, len)) == 0) {
+			printf("Can not get the IP header in the first mbuf.\n");
+			return;
+		}
+	}
+
+	ip6 = mtod(m, struct ip6_hdr *);
+	use_udp_tunneling = (ip6->ip6_nxt == IPPROTO_UDP);
+
+	if (use_udp_tunneling) {
+		len = sizeof(struct ip6_hdr) + sizeof(struct udphdr);
+		if (SCTP_BUF_LEN(m) < len) {
+			if ((m = m_pullup(m, len)) == 0) {
+				printf("Can not get the UDP/IP header in the first mbuf.\n");
+				return;
+			}
+			ip6 = mtod(m, struct ip6_hdr *);
+		}
+		udp = (struct udphdr *)(ip6 + 1);
+	}
+
+	if (!use_udp_tunneling) {
+		if (ip6->ip6_src.s6_addr == in6addr_any.s6_addr) {
+			/* TODO get addr of outgoing interface */
+			printf("Why did the SCTP implementation did not choose a source address?\n");
+		}
+		/* TODO need to worry about ro->ro_dst as in ip_output? */
+#if defined(__Userspace_os_Linux) || defined (__Userspace_os_Windows)
+		/* need to put certain fields into network order for Linux */
+		ip6->ip6_plen = htons(ip6->ip6_plen);
+#endif
+	}
+
+	memset((void *)&dst, 0, sizeof(struct sockaddr_in6));
+	dst.sin6_family = AF_INET6;
+	dst.sin6_addr = ip6->ip6_dst;
+#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+	dst.sin6_len = sizeof(struct sockaddr_in6);
+#endif
+
+	if (use_udp_tunneling) {
+		dst.sin6_port = udp->uh_dport;
+	} else {
+		dst.sin6_port = 0;
+	}
+
+	/* tweak the mbuf chain */
+	if (use_udp_tunneling) {
+		m_adj(m, sizeof(struct ip6_hdr) + sizeof(struct udphdr));
+	} else {
+	  m_adj(m, sizeof(struct ip6_hdr));
+	}
+
+	send_len = SCTP_HEADER_LEN(m); /* length of entire packet */
+	send_count = 0;
+	for (iovcnt = 0; m != NULL && iovcnt < MAXLEN_MBUF_CHAIN; m = m->m_next, iovcnt++) {
+#if !defined (__Userspace_os_Windows)
+		send_iovec[iovcnt].iov_base = (caddr_t)m->m_data;
+		send_iovec[iovcnt].iov_len = SCTP_BUF_LEN(m);
+		send_count += send_iovec[iovcnt].iov_len;
+#else
+		send_iovec[iovcnt].buf = (caddr_t)m->m_data;
+		send_iovec[iovcnt].len = SCTP_BUF_LEN(m);
+		send_count += send_iovec[iovcnt].len;
+#endif
+	} 
+	if (m != NULL) {
+        printf("mbuf chain couldn't be copied completely\n");
+		goto free_mbuf;
+	}	
+	
+#if !defined (__Userspace_os_Windows)
+	msg_hdr.msg_name = (struct sockaddr *) &dst;
+	msg_hdr.msg_namelen = sizeof(struct sockaddr_in6);
+	msg_hdr.msg_iov = send_iovec;
+	msg_hdr.msg_iovlen = iovcnt;
+	msg_hdr.msg_control = NULL;
+	msg_hdr.msg_controllen = 0;
+	msg_hdr.msg_flags = 0;
+
+	if ((!use_udp_tunneling) && (userspace_rawsctp6 > -1)) {
+		if ((res = sendmsg(userspace_rawsctp6, &msg_hdr, MSG_DONTWAIT)) != send_len) {
+			*result = errno;
+		}
+	}
+	if ((use_udp_tunneling) && (userspace_udpsctp6 > -1)) {
+		if ((res = sendmsg(userspace_udpsctp6, &msg_hdr, MSG_DONTWAIT)) != send_len) {
+			*result = errno;
+		}
+	}
+#else
+	win_msg_hdr.name = (struct sockaddr *) &dst;
+	win_msg_hdr.namelen = sizeof(struct sockaddr_in6);
+	win_msg_hdr.lpBuffers = (LPWSABUF)send_iovec;
+	win_msg_hdr.dwBufferCount = iovcnt;
+	winbuf.len = 0;
+	winbuf.buf = NULL;
+	win_msg_hdr.Control = winbuf;
+	win_msg_hdr.dwFlags = 0;
+
+	if ((!use_udp_tunneling) && (userspace_rawsctp6 > -1)) {
+		if (WSASendMsg(userspace_rawsctp6, &win_msg_hdr, 0, &win_sent_len, NULL, NULL) != 0) {
+			*result = WSAGetLastError();
+		} else if (win_sent_len != send_len) {
+			*result = WSAGetLastError();
+		}
+	}
+	if ((use_udp_tunneling) && (userspace_udpsctp6 > -1)) {
+		if ((res = WSASendMsg(userspace_udpsctp6, &win_msg_hdr, 0, &win_sent_len, NULL, NULL)) != 0) {
+			*result = WSAGetLastError();
+		} else if (win_sent_len != send_len) {
+			*result = WSAGetLastError();
+		}
+	}
+#endif
+free_mbuf:
+	sctp_m_freem(m_orig);
+}
+#endif
