@@ -45,8 +45,7 @@
 /* #include <sys/_lock.h>  was 0 byte file */
 /* #include <sys/_mutex.h> was 0 byte file */
 /* #include <sys/_sx.h> */ /*__Userspace__ alternative?*/
-
-
+#include <sys/uio.h>
 /* Source: /src/sys/sys/socket.h */
 #define SOCK_MAXADDRLEN 255
 #if !defined(MSG_NOTIFICATION)
@@ -79,14 +78,6 @@ struct proc {
 MALLOC_DECLARE(M_ACCF);
 MALLOC_DECLARE(M_PCB);
 MALLOC_DECLARE(M_SONAME);
-
-struct socket_args  {
-    int	domain;
-    int	type;
-    int	protocol;
-};
-
-
 
 /* __Userspace__ Are these all the fields we need?
  * Removing struct thread *uio_td;    owner field
@@ -246,7 +237,7 @@ struct socket {
  * avoid defining a lock order between listen and accept sockets
  * until such time as it proves to be a good idea.
  */
-#if defined (__Userspace_os_Windows)
+#if defined(__Userspace_os_Windows)
 extern CRITICAL_SECTION accept_mtx;
 extern CONDITION_VARIABLE accept_cond;
 #define ACCEPT_LOCK_ASSERT() 
@@ -775,9 +766,12 @@ extern int solisten_proto_check(struct socket *so);
 extern int sctp_listen(struct socket *so, int backlog, struct proc *p);
 extern void socantrcvmore_locked(struct socket *so);
 extern int sctp_bind(struct socket *so, struct sockaddr *addr);
+extern int sctp6_bind(struct socket *so, struct sockaddr *addr, void *proc);
 extern int sctp_accept(struct socket *so, struct sockaddr **addr);
 extern int sctp_attach(struct socket *so, int proto, uint32_t vrf_id);
+extern int sctp6_attach(struct socket *so, int proto, uint32_t vrf_id);
 extern int sctp_abort(struct socket *so);
+extern int sctp6_abort(struct socket *so);
 extern void sctp_close(struct socket *so);
 extern int soaccept(struct socket *so, struct sockaddr **nam);
 extern int solisten(struct socket *so, int backlog);
@@ -790,6 +784,7 @@ extern int sodisconnect(struct socket *so);
 extern int soconnect(struct socket *so, struct sockaddr *nam);
 extern int sctp_disconnect(struct socket *so);
 extern int sctp_connect(struct socket *so, struct sockaddr *addr);
+extern int sctp6_connect(struct socket *so, struct sockaddr *addr);
 extern struct mbuf* mbufalloc(size_t size, void* data, unsigned char fill);
 extern struct mbuf* mbufallocfromiov(int iovlen, struct iovec *srciov);
 extern void sctp_finish(void);
