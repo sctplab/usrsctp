@@ -14,7 +14,7 @@ struct in6_pktinfo {
 	int ipi6_ifindex;
 };
 #endif
-
+#if !defined(__Userspace_os_FreeBSD)
 struct ip6_moptions {
 	struct	ifnet *im6o_multicast_ifp; /* ifp for outgoing multicasts */
 	u_char	im6o_multicast_hlim;	/* hoplimit for outgoing multicasts */
@@ -32,7 +32,7 @@ struct route_in6 {
 	int		ro_flags;
 	struct	sockaddr_in6 ro_dst;
 };
-
+#endif
 #define IP6_EXTHDR_GET(val, typ, m, off, len) \
 do {									\
 	struct mbuf *t;							\
