@@ -472,7 +472,7 @@ struct sx {int dummy;};
 #include <netipsec/ipsec6.h>
 #endif
 #include <netinet/ip6.h>
-#if defined(__Userspace_os_Linux) || defined(__Userspace_os_Darwin)
+#if defined(__Userspace_os_Linux) || defined(__Userspace_os_Darwin) || defined(__Userspace_os_FreeBSD)
 #include "user_ip6_var.h"
 #else
 #include <netinet6/ip6_var.h>
