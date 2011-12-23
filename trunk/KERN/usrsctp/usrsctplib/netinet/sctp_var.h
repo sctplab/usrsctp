@@ -406,7 +406,7 @@ int sctp_ctloutput __P((struct socket *, struct sockopt *));
 #ifdef INET
 void sctp_input_with_port __P((struct mbuf *, int, uint16_t));
 #endif
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(__Userspace__)
 #if defined(INET6)
 int sctp6_input_with_port __P((struct mbuf **, int *, uint16_t));
 #endif

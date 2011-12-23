@@ -4176,7 +4176,8 @@ sctp_print_address(struct sockaddr *sa)
 		sin6 = (struct sockaddr_in6 *)sa;
 #if defined(__Panda__) || defined(__Userspace__)
 		SCTP_PRINTF("IPv6 address: %x:%x:%x:%x:%x:%x:%x:%x:port:%d scope:%u \n",
-#if defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Darwin)
+#if defined(__Panda__)
+			     /* XXX this is broken */
 			    (uint32_t)sin6->sin6_addr.s6_addr[0],
 			    (uint32_t)sin6->sin6_addr.s6_addr[1],
 			    (uint32_t)sin6->sin6_addr.s6_addr[2],
@@ -4186,14 +4187,14 @@ sctp_print_address(struct sockaddr *sa)
 			    (uint32_t)sin6->sin6_addr.s6_addr[6],
 			    (uint32_t)sin6->sin6_addr.s6_addr[7],
 #else
-			    (uint32_t)sin6->sin6_addr.s6_addr16[0],
-			    (uint32_t)sin6->sin6_addr.s6_addr16[1],
-			    (uint32_t)sin6->sin6_addr.s6_addr16[2],
-			    (uint32_t)sin6->sin6_addr.s6_addr16[3],
-			    (uint32_t)sin6->sin6_addr.s6_addr16[4],
-			    (uint32_t)sin6->sin6_addr.s6_addr16[5],
-			    (uint32_t)sin6->sin6_addr.s6_addr16[6],
-			    (uint32_t)sin6->sin6_addr.s6_addr16[7],
+			    ntohs(sin6->sin6_addr.s6_addr16[0]),
+			    ntohs(sin6->sin6_addr.s6_addr16[1]),
+			    ntohs(sin6->sin6_addr.s6_addr16[2]),
+			    ntohs(sin6->sin6_addr.s6_addr16[3]),
+			    ntohs(sin6->sin6_addr.s6_addr16[4]),
+			    ntohs(sin6->sin6_addr.s6_addr16[5]),
+			    ntohs(sin6->sin6_addr.s6_addr16[6]),
+			    ntohs(sin6->sin6_addr.s6_addr16[7]),
 #endif
 			    ntohs(sin6->sin6_port),
 			    sin6->sin6_scope_id);
@@ -6843,7 +6844,6 @@ sctp_bindx_add_address(struct socket *so, struct sctp_inpcb *inp,
 #endif
 	addr_touse = sa;
 #ifdef INET6
-#if !defined(__Userspace__) /* TODO port in6_sin6_2_sin */
 	if (sa->sa_family == AF_INET6) {
 		struct sockaddr_in6 *sin6;
 #if !defined(__Windows__) && !defined(__Userspace_os_Linux)
@@ -6872,7 +6872,6 @@ sctp_bindx_add_address(struct socket *so, struct sctp_inpcb *inp,
 			addr_touse = (struct sockaddr *)&sin;
 		}
 	}
-#endif
 #endif
 #ifdef INET
 	if (sa->sa_family == AF_INET) {
@@ -6994,7 +6993,7 @@ sctp_bindx_delete_address(struct sctp_inpcb *inp,
 	}
 #endif
 	addr_touse = sa;
-#if defined(INET6) && !defined(__Userspace__) /* TODO port in6_sin6_2_sin */
+#if defined(INET6)
 	if (sa->sa_family == AF_INET6) {
 		struct sockaddr_in6 *sin6;
 #if !defined(__Windows__) && !defined(__Userspace_os_Linux)
@@ -7143,7 +7142,6 @@ sctp_local_addr_count(struct sctp_tcb *stcb)
 						if (IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
 							continue;
 						}
-#if !defined(__Userspace__) /* ignoring IPv6 for now... */
 						if (IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr)) {
 							if (local_scope == 0)
 								continue;
@@ -7177,7 +7175,6 @@ sctp_local_addr_count(struct sctp_tcb *stcb)
 						    (IN6_IS_ADDR_SITELOCAL(&sin6->sin6_addr))) {
 							continue;
 						}
-#endif /*  !defined(__Userspace__) */
 						/* count this one */
 						count++;
 					}

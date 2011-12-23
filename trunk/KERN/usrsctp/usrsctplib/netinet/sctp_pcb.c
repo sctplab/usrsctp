@@ -57,11 +57,18 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 228653 2011-12-17 19:21:40Z tuex
 #include <sys/unistd.h>
 #endif
 #ifdef INET6
+#if defined(__Userspace__)
+#include "user_ip6_var.h"
+#else
 #include <netinet6/ip6_var.h>
+#endif
 #endif
 #if defined(__FreeBSD__)
 #include <sys/sched.h>
 #include <sys/smp.h>
+#endif
+#if defined(__Userspace__)
+#include <user_socketvar.h>
 #endif
 
 #if defined(__APPLE__)
@@ -130,15 +137,7 @@ SCTP6_ARE_ADDR_EQUAL(struct sockaddr_in6 *a, struct sockaddr_in6 *b)
 	return (IN6_ARE_ADDR_EQUAL(&tmp_a, &tmp_b));
 #endif
 #else
-#if defined(__Userspace__)
-	/* FIX ME: __Userspace__ on FreeBSD 7 complains of struct sockaddr_in6
-         *   having no member named __u6_addr when using IN6_ARE_ADDR_EQUAL...
-         */
-        return 0;
-#else
-	/* FIX ME: we just #define this */
-	return (IN6_ARE_ADDR_EQUAL(a, b));
-#endif
+	return (IN6_ARE_ADDR_EQUAL(&(a->sin6_addr), &(b->sin6_addr)));
 #endif /* SCTP_EMBEDDED_V6_SCOPE */
 }
 #endif
@@ -1185,7 +1184,6 @@ sctp_does_stcb_own_this_addr(struct sctp_tcb *stcb, struct sockaddr *to)
 #endif
 						sin6 = &sctp_ifa->address.sin6;
 						rsin6 = (struct sockaddr_in6 *)to;
-#if !defined(__Userspace__) /* ignoring IPv6 for now... */
 						if (IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr)) {
 							if (local_scope == 0)
 								continue;
@@ -1209,7 +1207,6 @@ sctp_does_stcb_own_this_addr(struct sctp_tcb *stcb, struct sockaddr *to)
 						    (IN6_IS_ADDR_SITELOCAL(&sin6->sin6_addr))) {
 							continue;
 						}
-#endif /*  !defined(__Userspace__) */
 						if (SCTP6_ARE_ADDR_EQUAL(sin6, rsin6)) {
 							SCTP_IPI_ADDR_RUNLOCK();
 							return (1);
@@ -2673,7 +2670,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	/* setup socket pointers */
 	inp->sctp_socket = so;
 	inp->ip_inp.inp.inp_socket = so;
-#ifdef INET6
+#if defined(INET6) && !defined(__Userspace__)
 	if (MODULE_GLOBAL(ip6_auto_flowlabel)) {
 		inp->ip_inp.inp.inp_flags |= IN6P_AUTOFLOWLABEL;
 	}
@@ -3197,8 +3194,6 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
 					return (error);
 				}
-#elif defined(__Userspace__)
-                                /* TODO IPv6 stuff for __Userspace__ */
 #else
 				if (in6_embedscope(&sin6->sin6_addr, sin6) != 0) {
 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
@@ -6572,7 +6567,7 @@ sctp_pcb_init()
 	}
 
 #if defined(SCTP_PROCESS_LEVEL_LOCKS)
-#if defined (__Userspace_os_Windows)
+#if defined(__Userspace_os_Windows)
 	InitializeConditionVariable(&sctp_it_ctl.iterator_wakeup);
 #else
 	(void)pthread_cond_init(&sctp_it_ctl.iterator_wakeup, NULL);
