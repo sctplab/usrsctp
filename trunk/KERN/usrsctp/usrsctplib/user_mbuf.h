@@ -99,6 +99,7 @@ struct m_tag	*m_tag_alloc(u_int32_t, int, int, int);
 struct mbuf	*m_copym(struct mbuf *, int, int, int);
 void		 m_copyback(struct mbuf *, int, int, caddr_t);
 struct mbuf	*m_pullup(struct mbuf *, int);
+struct mbuf	*m_pulldown(struct mbuf *, int off, int len, int *offp);
 int		 m_dup_pkthdr(struct mbuf *, struct mbuf *, int);
 struct m_tag	*m_tag_copy(struct m_tag *, int);
 int		 m_tag_copy_chain(struct mbuf *, struct mbuf *, int);
