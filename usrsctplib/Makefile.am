@@ -44,5 +44,7 @@ libusrsctp_la_SOURCES  = user_atomic.h \
                          netinet/sctp_uio.h \
                          netinet/sctp_usrreq.c \
                          netinet/sctp_var.h \
-                         netinet/sctputil.c netinet/sctputil.h
+                         netinet/sctputil.c netinet/sctputil.h \
+                         netinet6/sctp6_var.h \
+                         netinet6/sctp6_usrreq.c 
 include_HEADERS = usrsctp.h
