@@ -721,7 +721,7 @@ m_pullup(struct mbuf *n, int len)
 	 */
 	if ((n->m_flags & M_EXT) == 0 &&
 	    n->m_data + len < &n->m_dat[MLEN] && n->m_next) {
-            if (n->m_len >= len)
+		if (n->m_len >= len)
 			return (n);
 		m = n;
 		n = n->m_next;
@@ -758,9 +758,204 @@ m_pullup(struct mbuf *n, int len)
 	return (m);
 bad:
 	m_freem(n);
-        mbstat.m_mpfail++;	/* XXX: No consistency. */
+	mbstat.m_mpfail++;	/* XXX: No consistency. */
 	return (NULL);
 }
+
+
+static struct mbuf *
+m_dup1(struct mbuf *m, int off, int len, int wait)
+{
+	struct mbuf *n;
+	int copyhdr;
+
+	if (len > MCLBYTES)
+		return NULL;
+	if (off == 0 && (m->m_flags & M_PKTHDR) != 0)
+		copyhdr = 1;
+	else
+		copyhdr = 0;
+	if (len >= MINCLSIZE) {
+		if (copyhdr == 1)
+			m_clget(n, wait); /* TODO: include code for copying the header */
+			/* n = m_getcl(wait, m->m_type, M_PKTHDR);*/
+		else
+			m_clget(n, wait);
+			/*  n = m_getcl(wait, m->m_type, 0);*/
+	} else {
+		if (copyhdr == 1)
+			n = m_gethdr(wait, m->m_type);
+		else
+			n = m_get(wait, m->m_type);
+	}
+	if (!n)
+		return NULL; /* ENOBUFS */
+
+	if (copyhdr && !m_dup_pkthdr(n, m, wait)) {
+		m_free(n);
+		return NULL;
+	}
+	m_copydata(m, off, len, mtod(n, caddr_t));
+	n->m_len = len;
+	return n;
+}
+
+
+/* Taken from sys/kern/uipc_mbuf2.c */
+struct mbuf *
+m_pulldown(struct mbuf *m, int off, int len, int *offp)
+{
+	struct mbuf *n, *o;
+	int hlen, tlen, olen;
+	int writable;
+
+	/* check invalid arguments. */
+	if (m == NULL)
+		panic("m == NULL in m_pulldown()");
+	if (len > MCLBYTES) {
+		m_freem(m);
+		return NULL;    /* impossible */
+	}
+
+#ifdef PULLDOWN_DEBUG
+	{
+		struct mbuf *t;
+		printf("before:");
+		for (t = m; t; t = t->m_next)
+			printf(" %d", t->m_len);
+		printf("\n");
+	}
+#endif
+	n = m;
+	while (n != NULL && off > 0) {
+		if (n->m_len > off)
+			break;
+		off -= n->m_len;
+		n = n->m_next;
+	}
+	/* be sure to point non-empty mbuf */
+	while (n != NULL && n->m_len == 0)
+		n = n->m_next;
+	if (!n) {
+		m_freem(m);
+		return NULL;    /* mbuf chain too short */
+	}
+
+	writable = 0;
+	if ((n->m_flags & M_EXT) == 0 ||
+	    (n->m_ext.ext_type == EXT_CLUSTER && M_WRITABLE(n)))
+		writable = 1;
+
+	/*
+	 * the target data is on <n, off>.
+	 * if we got enough data on the mbuf "n", we're done.
+	 */
+	if ((off == 0 || offp) && len <= n->m_len - off && writable)
+		goto ok;
+
+	/*
+	 * when len <= n->m_len - off and off != 0, it is a special case.
+	 * len bytes from <n, off> sits in single mbuf, but the caller does
+	 * not like the starting position (off).
+	 * chop the current mbuf into two pieces, set off to 0.
+	 */
+	if (len <= n->m_len - off) {
+		o = m_dup1(n, off, n->m_len - off, M_DONTWAIT);
+		if (o == NULL) {
+			m_freem(m);
+		return NULL;    /* ENOBUFS */
+		}
+		n->m_len = off;
+		o->m_next = n->m_next;
+		n->m_next = o;
+		n = n->m_next;
+		off = 0;
+		goto ok;
+	}
+	/*
+	 * we need to take hlen from <n, off> and tlen from <n->m_next, 0>,
+	 * and construct contiguous mbuf with m_len == len.
+	 * note that hlen + tlen == len, and tlen > 0.
+	 */
+	hlen = n->m_len - off;
+	tlen = len - hlen;
+
+	/*
+	 * ensure that we have enough trailing data on mbuf chain.
+	 * if not, we can do nothing about the chain.
+	 */
+	olen = 0;
+	for (o = n->m_next; o != NULL; o = o->m_next)
+		olen += o->m_len;
+	if (hlen + olen < len) {
+		m_freem(m);
+		return NULL;    /* mbuf chain too short */
+	}
+
+	/*
+	 * easy cases first.
+	 * we need to use m_copydata() to get data from <n->m_next, 0>.
+	 */
+	if ((off == 0 || offp) && M_TRAILINGSPACE(n) >= tlen
+	    && writable) {
+		m_copydata(n->m_next, 0, tlen, mtod(n, caddr_t) + n->m_len);
+		n->m_len += tlen;
+		m_adj(n->m_next, tlen);
+		goto ok;
+	}
+
+	if ((off == 0 || offp) && M_LEADINGSPACE(n->m_next) >= hlen
+	    && writable) {
+		n->m_next->m_data -= hlen;
+		n->m_next->m_len += hlen;
+		bcopy(mtod(n, caddr_t) + off, mtod(n->m_next, caddr_t), hlen);
+		n->m_len -= hlen;
+		n = n->m_next;
+		off = 0;
+		goto ok;
+	}
+
+	/*
+	 * now, we need to do the hard way.  don't m_copy as there's no room
+	 * on both end.
+	 */
+	if (len > MLEN)
+		m_clget(o, M_DONTWAIT);
+		/* o = m_getcl(M_DONTWAIT, m->m_type, 0);*/
+	else
+		o = m_get(M_DONTWAIT, m->m_type);
+	if (!o) {
+		m_freem(m);
+		return NULL;    /* ENOBUFS */
+	}
+	/* get hlen from <n, off> into <o, 0> */
+	o->m_len = hlen;
+	bcopy(mtod(n, caddr_t) + off, mtod(o, caddr_t), hlen);
+	n->m_len -= hlen;
+	/* get tlen from <n->m_next, 0> into <o, hlen> */
+	m_copydata(n->m_next, 0, tlen, mtod(o, caddr_t) + o->m_len);
+	o->m_len += tlen;
+	m_adj(n->m_next, tlen);
+	o->m_next = n->m_next;
+	n->m_next = o;
+	n = o;
+	off = 0;
+ok:
+#ifdef PULLDOWN_DEBUG
+	{
+		struct mbuf *t;
+		printf("after:");
+		for (t = m; t; t = t->m_next)
+			printf("%c%d", t == n ? '*' : ' ', t->m_len);
+		printf(" (off=%d)\n", off);
+	}
+#endif
+	if (offp)
+		*offp = off;
+	return n;
+}
+
+
 
 
 /*
