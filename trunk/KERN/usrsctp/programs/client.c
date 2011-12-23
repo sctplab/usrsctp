@@ -31,49 +31,59 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#if !defined(__Userspace_os_Windows)
 #include <unistd.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#endif
 #include <netinet/sctp_pcb.h>
 #include <usrsctp.h>
 
 int 
-main(int argc, char *argv[]) {
+main(int argc, char *argv[])
+{
 	struct socket *sock;
-	struct sockaddr_in addr;
+	struct sockaddr_in addr4;
+	struct sockaddr_in6 addr6;
+	struct sctp_udpencaps encaps;
 
 	sctp_init(9899);
-
-	if ((sock = userspace_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP)) == NULL) {
-		perror("userspace_socket");
+	SCTP_BASE_SYSCTL(sctp_debug_on) = 0xffffffff;
+	if ((sock = userspace_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP)) == NULL) {
+		perror("userspace_socket ipv6");
 	}
-
-	memset((void *)&addr, 0, sizeof(struct sockaddr_in));
-#ifdef HAVE_SIN_LEN
-	addr.sin_len = sizeof(struct sockaddr_in);
+	if (argc > 3) {
+		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
+		encaps.sue_address.ss_family = AF_INET6;
+		encaps.sue_port = htons(atoi(argv[3]));
+		if (userspace_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+			perror("setsockopt");
+		}
+	}
+	memset((void *)&addr4, 0, sizeof(struct sockaddr_in));
+	memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
+#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+	addr4.sin_len = sizeof(struct sockaddr_in);
+	addr6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(atoi(argv[2]));
-	inet_pton(AF_INET, argv[1], &addr.sin_addr);
-
-	if (userspace_connect(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) < 0)
-		perror("userspace_connect");
-
-#if defined (__Userspace_os_Windows)
-	Sleep(60*1000);
-#else
+	addr4.sin_family = AF_INET;
+	addr6.sin6_family = AF_INET6;
+	addr4.sin_port = htons(atoi(argv[2]));
+	addr6.sin6_port = htons(atoi(argv[2]));
+	if (inet_pton(AF_INET6, argv[1], &addr6.sin6_addr) == 1) {
+		if (userspace_connect(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
+			perror("userspace_connect");
+		}
+	} else if (inet_pton(AF_INET, argv[1], &addr4.sin_addr) == 1) {
+		if (userspace_connect(sock, (struct sockaddr *)&addr4, sizeof(struct sockaddr_in)) < 0) {
+			perror("userspace_connect");
+		}
+	} else {
+		printf("Illegal destination address.\n");
+	}
 	sleep(60);
-#endif
 	userspace_close(sock);
-#if defined (__Userspace_os_Windows)
-	Sleep(10*1000);
-#else
 	sleep(10);
-#endif
 	sctp_finish();
 	return(0);
 }
