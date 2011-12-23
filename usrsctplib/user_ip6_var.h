@@ -7,14 +7,8 @@
 #define s6_addr8  __u6_addr.__u6_addr8
 #define s6_addr16 __u6_addr.__u6_addr16
 #define s6_addr32 __u6_addr.__u6_addr32
-
-/*
-#define IPV6_V6ONLY  27
- */
 #else
-/*
- #define IPPROTO_DONE 257
- */
+#define IPPROTO_DONE 257
 struct in6_pktinfo {
 	struct in6_addr ipi6_addr;
 	int ipi6_ifindex;
