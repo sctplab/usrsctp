@@ -10,7 +10,7 @@ CFLAGS="$CFLAGS -Wall -g -O0 -DINET -DINET6 -DUSE_SCTP_SHA1 -DSCTP_PROCESS_LEVEL
 
 case $host_os in
 darwin*)
-  CFLAGS="$CFLAGS -U__APPLE__ -D__Userspace_os_Darwin"
+  CFLAGS="$CFLAGS -D__APPLE_USE_RFC_2292 -U__APPLE__ -D__Userspace_os_Darwin"
   ;;
 linux*)
   CFLAGS="$CFLAGS -pthread -D__Userspace_os_Linux"
