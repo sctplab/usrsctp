@@ -37,17 +37,16 @@
 
 #if defined(__Userspace_os_Darwin)
 #include <sys/types.h>
-#if !defined(__Userspace_os_Windows)
 #include <unistd.h>
-#endif
 #endif
 
 /* #include <sys/selinfo.h> */ /*__Userspace__ alternative?*/	/* for struct selinfo */
 /* #include <sys/_lock.h>  was 0 byte file */
 /* #include <sys/_mutex.h> was 0 byte file */
 /* #include <sys/_sx.h> */ /*__Userspace__ alternative?*/
+#if !defined(__Userspace_os_Windows)
 #include <sys/uio.h>
-/* Source: /src/sys/sys/socket.h */
+#endif
 #define SOCK_MAXADDRLEN 255
 #if !defined(MSG_NOTIFICATION)
 #define MSG_NOTIFICATION 0x2000         /* SCTP notification */ 
