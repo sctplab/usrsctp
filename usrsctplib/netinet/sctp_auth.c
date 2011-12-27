@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 228653 2011-12-17 19:21:40Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 228907 2011-12-27 10:16:24Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -471,7 +471,6 @@ sctp_compute_hashkey(sctp_key_t *key1, sctp_key_t *key2, sctp_key_t *shared)
 		}
 		if (sctp_get_keylen(key2)) {
 			bcopy(key2->key, key_ptr, key2->keylen);
-			key_ptr += key2->keylen;
 		}
 	} else {
 		/* key is shared + key2 + key1 */
@@ -485,7 +484,6 @@ sctp_compute_hashkey(sctp_key_t *key1, sctp_key_t *key2, sctp_key_t *shared)
 		}
 		if (sctp_get_keylen(key1)) {
 			bcopy(key1->key, key_ptr, key1->keylen);
-			key_ptr += key1->keylen;
 		}
 	}
 	return (new_key);
@@ -718,7 +716,7 @@ sctp_auth_add_hmacid(sctp_hmaclist_t *list, uint16_t hmac_id)
 		return (-1);
 	}
 	/* Now is it already in the list */
-	for (i=0; i<list->num_algo; i++) {
+	for (i = 0; i < list->num_algo; i++) {
 		if (list->hmac[i] == hmac_id) {
 			/* already in list */
 			return (-1);
@@ -1927,8 +1925,8 @@ sctp_validate_init_auth_params(struct mbuf *m, int offset, int limit)
 	int peer_supports_asconf = 0;
 	int peer_supports_auth = 0;
 	int got_random = 0, got_hmacs = 0, got_chklist = 0;
-	uint8_t saw_asconf=0;
-	uint8_t saw_asconf_ack=0;
+	uint8_t saw_asconf = 0;
+	uint8_t saw_asconf_ack = 0;
 
 	/* go through each of the params. */
 	phdr = sctp_get_next_param(m, offset, &parm_buf, sizeof(parm_buf));

@@ -54,8 +54,6 @@ usrsctp_HEADERS = \
 	netinet\sctp_callout.h \
 	netinet\sctp_constants.h \
 	netinet\sctp_crc32.h \
-	netinet\sctp_dtrace_declare.h \
-	netinet\sctp_dtrace_define.h \
 	netinet\sctp_hashdriver.h \
 	netinet\sctp_header.h \
 	netinet\sctp_indata.h \
