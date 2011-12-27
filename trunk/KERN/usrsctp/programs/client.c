@@ -31,11 +31,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if !defined(__Userspace_os_Windows)
 #include <unistd.h>
+#endif
 #include <sys/types.h>
+#if !defined(__Userspace_os_Windows)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#endif
 #include <netinet/sctp_pcb.h>
 #include <usrsctp.h>
 
