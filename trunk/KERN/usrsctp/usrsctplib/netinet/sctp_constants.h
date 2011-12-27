@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 228653 2011-12-17 19:21:40Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 228907 2011-12-27 10:16:24Z tuexen $");
 #endif
 
 #ifndef __sctp_constants_h__
@@ -429,7 +429,7 @@ extern void getwintimeofday(struct timeval *tv);
 /* SCTP chunk types are moved sctp.h for application (NAT, FW) use */
 
 /* align to 32-bit sizes */
-#define SCTP_SIZE32(x)	((((x)+3) >> 2) << 2)
+#define SCTP_SIZE32(x)	((((x) + 3) >> 2) << 2)
 
 #define IS_SCTP_CONTROL(a) ((a)->chunk_type != SCTP_DATA)
 #define IS_SCTP_DATA(a) ((a)->chunk_type == SCTP_DATA)
@@ -979,7 +979,7 @@ extern void getwintimeofday(struct timeval *tv);
 					} else { \
 						gap = (MAX_TSN - mapping_tsn) + tsn + 1; \
 					} \
-                  } while(0)
+                  } while (0)
 
 
 #define SCTP_RETRAN_DONE -1
@@ -1067,7 +1067,7 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_GETPTIME_TIMEVAL(x) getwintimeofday(x) /* this doesn't seem to ever be used.. */
 #else
 #define SCTP_GETTIME_TIMEVAL(x)	gettimeofday(x, NULL)
-#define SCTP_GETPTIME_TIMEVAL(x) gettimeofday(x, NULL) /* this doesn't seem to ever be used.. */
+#define SCTP_GETPTIME_TIMEVAL(x) gettimeofday(x, NULL)
 #endif
 #endif
 
