@@ -85,9 +85,17 @@ main(int argc, char *argv[])
 	} else {
 		printf("Illegal destination address.\n");
 	}
+#if defined (__Userspace_os_Windows)
+	Sleep(60*1000);
+#else
 	sleep(60);
+#endif
 	userspace_close(sock);
+#if defined (__Userspace_os_Windows)
+	Sleep(10*1000);
+#else
 	sleep(10);
+#endif
 	sctp_finish();
 	return(0);
 }
