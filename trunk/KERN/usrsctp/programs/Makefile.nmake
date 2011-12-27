@@ -26,9 +26,6 @@ tsctp:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c tsctp.c
 	link -out:tsctp.exe tsctp.obj $(LINKFLAGS)
 
-tsctp6:
-	$(CC) $(CFLAGS) $(CVARSDLL) -c tsctp6.c
-	link -out:tsctp6.exe tsctp6.obj $(LINKFLAGS)
 clean:
 	del /F client
 	del /F client.obj
@@ -36,5 +33,3 @@ clean:
 	del /F discard_server.obj
 	del /F tsctp
 	del /F tsctp.obj
-	del /F tsctp6
-	del /F tsctp6.obj
