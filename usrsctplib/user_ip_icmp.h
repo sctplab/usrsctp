@@ -55,6 +55,22 @@ struct icmphdr {
 	u_short	icmp_cksum;		/* ones complement cksum of struct */
 };
 
+#if defined(__Userspace_os_Windows)
+struct icmp6_hdr {
+	u_int8_t icmp6_type;
+	u_int8_t icmp6_code;
+	u_int16_t icmp6_cksum;
+	union {
+		u_int32_t icmp6_un_data32[1];
+		u_int16_t icmp6_un_data16[2];
+		u_int8_t icmp6_un_data8[4];
+	} icmp6_dataun;
+} __packed;
+
+#define icmp6_data32 icmp6_dataun.icmp6_un_data32
+#define icmp6_mtu icmp6_data32[0]
+#endif
+
 /*
  * Structure of an icmp packet.
  *
@@ -205,10 +221,5 @@ struct icmp {
 	(type) == ICMP_IREQ || (type) == ICMP_IREQREPLY || \
 	(type) == ICMP_MASKREQ || (type) == ICMP_MASKREPLY)
 
-#ifdef _KERNEL
-void	icmp_error(struct mbuf *, int, int, uint32_t, int);
-void	icmp_input(struct mbuf *, int);
-int	ip_next_mtu(int, int);
-#endif
 
 #endif

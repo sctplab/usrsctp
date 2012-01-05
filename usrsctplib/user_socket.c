@@ -302,12 +302,19 @@ soabort(so)
 	struct sctp_inpcb *inp;
 
 	inp = (struct sctp_inpcb *)so->so_pcb;
-	if (inp == NULL)
-		error = sctp_abort(so);
-	else if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6)
+
+#if defined(INET6)
+	if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6)
 		error = sctp6_abort(so);
+#if defined(INET)
 	else
 		error = sctp_abort(so);
+#endif
+#elif defined(INET)
+	error = sctp_abort(so);
+#else
+	error = EAFNOSUPPORT;
+#endif
 	if (error) {
 		sofree(so);
 		return error;
@@ -1321,11 +1328,20 @@ socreate(int dom, struct socket **aso, int type, int proto)
 	 * the appropriate flags must be set in the pru_attach function.
          * For __Userspace__ The pru_attach function in this case is sctp_attach.
 	 */
-
-	if (dom == AF_INET)
+	switch (dom) {
+#if defined(INET)
+	case AF_INET:
 		error = sctp_attach(so, proto, SCTP_DEFAULT_VRFID);
-	else
+		break;
+#endif
+#if defined(INET6)
+	case AF_INET6:
 		error = sctp6_attach(so, proto, SCTP_DEFAULT_VRFID);
+		break;
+#endif
+	default:
+		error = EAFNOSUPPORT;
+	}
 
 	if (error) {
 		assert(so->so_count == 1);
@@ -1623,10 +1639,18 @@ sowakeup(struct socket *so, struct sockbuf *sb)
 int
 sobind(struct socket *so, struct sockaddr *nam)
 {
-	if (nam->sa_family == AF_INET)
+	switch (nam->sa_family) {
+#if defined(INET)
+	case AF_INET:
 		return (sctp_bind(so, nam));
-	else
+#endif
+#if defined(INET6)
+	case AF_INET6:
 		return (sctp6_bind(so, nam, NULL));
+#endif
+	default:
+		return EAFNOSUPPORT;
+	}
 }
 
 
@@ -1965,10 +1989,19 @@ soconnect(struct socket *so, struct sockaddr *nam)
 		 * biting us.
 		 */
 		so->so_error = 0;
-		if (nam->sa_family == AF_INET6) {
-		    error = sctp6_connect(so, nam);
-		} else {
-		    error = sctp_connect(so, nam);
+		switch (nam->sa_family) {
+#if defined(INET)
+		case AF_INET:
+			error = sctp_connect(so, nam);
+			break;
+#endif
+#if defined(INET6)
+		case AF_INET6:
+			error = sctp6_connect(so, nam);
+			break;
+#endif
+		default:
+			error = EAFNOSUPPORT;
 		}
 	}
 
