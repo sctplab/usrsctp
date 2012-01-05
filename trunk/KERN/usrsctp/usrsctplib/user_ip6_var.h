@@ -3,6 +3,31 @@
 #ifndef _USER_IP6_VAR_H_
 #define _USER_IP6_VAR_H_
 
+#if defined(__Userspace_os_Windows)
+struct ip6_hdr {
+	union {
+		struct ip6_hdrctl {
+			u_int32_t ip6_un1_flow;	/* 20 bits of flow-ID */
+			u_int16_t ip6_un1_plen;	/* payload length */
+			u_int8_t  ip6_un1_nxt;	/* next header */
+			u_int8_t  ip6_un1_hlim;	/* hop limit */
+		} ip6_un1;
+		u_int8_t ip6_un2_vfc;	/* 4 bits version, top 4 bits class */
+	} ip6_ctlun;
+	struct in6_addr ip6_src;	/* source address */
+	struct in6_addr ip6_dst;	/* destination address */
+};
+#define ip6_vfc		ip6_ctlun.ip6_un2_vfc
+#define ip6_flow	ip6_ctlun.ip6_un1.ip6_un1_flow
+#define ip6_plen	ip6_ctlun.ip6_un1.ip6_un1_plen
+#define ip6_nxt		ip6_ctlun.ip6_un1.ip6_un1_nxt
+#define ip6_hlim	ip6_ctlun.ip6_un1.ip6_un1_hlim
+#define ip6_hops	ip6_ctlun.ip6_un1.ip6_un1_hlim
+
+#define IPV6_VERSION		0x60
+#endif
+
+#if !defined(__Userspace_os_Windows)
 #if !defined(__Userspace_os_Linux)
 #define s6_addr8  __u6_addr.__u6_addr8
 #define s6_addr16 __u6_addr.__u6_addr16
@@ -14,6 +39,11 @@ struct in6_pktinfo {
 	int ipi6_ifindex;
 };
 #endif
+#else
+#define IPPROTO_DONE 257
+#define s6_addr16 u.Word
+#endif
+
 #if !defined(__Userspace_os_FreeBSD)
 struct ip6_moptions {
 	struct	ifnet *im6o_multicast_ifp; /* ifp for outgoing multicasts */
