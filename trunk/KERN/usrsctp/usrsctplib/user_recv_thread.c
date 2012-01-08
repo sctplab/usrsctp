@@ -50,7 +50,7 @@ recv_function_raw(void *arg)
 	WSABUF recv_iovec[MAXLEN_MBUF_CHAIN];
 	int nResult, m_ErrorCode;
 	DWORD flags;
-	struct sockaddr from;
+	struct sockaddr_in from;
 	int fromlen;
 #endif
 
@@ -84,10 +84,10 @@ recv_function_raw(void *arg)
 #if defined(__Userspace_os_Windows)
 		flags = 0;
 		ncounter = 0;
-		fromlen = sizeof(struct sockaddr);
-		bzero((void *)&from, sizeof(struct sockaddr));
+		fromlen = sizeof(struct sockaddr_in);
+		bzero((void *)&from, sizeof(struct sockaddr_in));
 
-		nResult = WSARecvFrom(userspace_rawsctp, recv_iovec, MAXLEN_MBUF_CHAIN, (LPDWORD)&ncounter, (LPDWORD)&flags, &from, &fromlen, NULL, NULL);
+		nResult = WSARecvFrom(userspace_rawsctp, recv_iovec, MAXLEN_MBUF_CHAIN, (LPDWORD)&ncounter, (LPDWORD)&flags, (struct sockaddr*)&from, &fromlen, NULL, NULL);
 		if (nResult != 0) {
 			m_ErrorCode = WSAGetLastError();
 			printf("error: %d\n", m_ErrorCode);
@@ -136,20 +136,25 @@ recv_function_raw6(void *arg)
 #if !defined(__Userspace_os_Windows)
 	struct iovec recv_iovec[MAXLEN_MBUF_CHAIN];
 	int iovcnt = MAXLEN_MBUF_CHAIN;
-	int offset;
 	struct msghdr msg;
 	struct cmsghdr *cmsgptr;
-	struct sockaddr_in6 src, dst;
-	struct mbuf *ip6_m;
-	struct ip6_hdr *ip6;
 	char cmsgbuf[CMSG_SPACE(sizeof (struct in6_pktinfo))];
 #else
 	WSABUF recv_iovec[MAXLEN_MBUF_CHAIN];
 	int nResult, m_ErrorCode;
 	DWORD flags;
-	struct sockaddr6 from;
+	struct sockaddr_in6 from;
 	int fromlen;
+	GUID WSARecvMsg_GUID = WSAID_WSARECVMSG;
+	LPFN_WSARECVMSG WSARecvMsg;
+	WSACMSGHDR *pCMsgHdr;
+	WSAMSG win_msg;
+	char ControlBuffer[1024];
 #endif
+	struct mbuf *ip6_m;
+	struct ip6_hdr *ip6;
+	struct sockaddr_in6 src, dst;
+	int offset;
 
 	/*Initially the entire set of mbufs is to be allocated.
 	  to_fill indicates this amount. */
@@ -181,13 +186,26 @@ recv_function_raw6(void *arg)
 #if defined(__Userspace_os_Windows)
 		flags = 0;
 		ncounter = 0;
-		fromlen = sizeof(struct sockaddr);
-		bzero((void *)&from, sizeof(struct sockaddr));
-
-		nResult = WSARecvFrom(userspace_rawsctp6, recv_iovec, MAXLEN_MBUF_CHAIN, (LPDWORD)&ncounter, (LPDWORD)&flags, &from, &fromlen, NULL, NULL);
+		fromlen = sizeof(struct sockaddr_in6);
+		bzero((void *)&from, sizeof(struct sockaddr_in6));
+		nResult = WSAIoctl(userspace_rawsctp6, SIO_GET_EXTENSION_FUNCTION_POINTER,
+		                   &WSARecvMsg_GUID, sizeof WSARecvMsg_GUID,
+		                   &WSARecvMsg, sizeof WSARecvMsg,
+		                   &ncounter, NULL, NULL);
+		if (nResult == SOCKET_ERROR) {
+			m_ErrorCode = WSAGetLastError();
+			WSARecvMsg = NULL;
+		}
+		win_msg.name = (void *)&src;
+		win_msg.namelen = sizeof(struct sockaddr_in6);
+		win_msg.lpBuffers = recv_iovec;
+		win_msg.dwBufferCount = MAXLEN_MBUF_CHAIN;
+		win_msg.Control.len = sizeof ControlBuffer;
+		win_msg.Control.buf = ControlBuffer;
+		win_msg.dwFlags = 0;
+		nResult = WSARecvMsg(userspace_rawsctp6, &win_msg, &ncounter, NULL, NULL);
 		if (nResult != 0) {
 			m_ErrorCode = WSAGetLastError();
-			printf("error: %d\n", m_ErrorCode);
 		}
 		n = ncounter;
 #else
@@ -230,12 +248,13 @@ recv_function_raw6(void *arg)
 #if !defined(__Userspace_os_Windows)
 		for (cmsgptr = CMSG_FIRSTHDR(&msg); cmsgptr != NULL; cmsgptr = CMSG_NXTHDR(&msg, cmsgptr)) {
 			if ((cmsgptr->cmsg_level == IPPROTO_IPV6) && (cmsgptr->cmsg_type == IPV6_PKTINFO)) {
-				dst.sin6_family = AF_INET6;
-#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
-				dst.sin6_len = sizeof(struct sockaddr_in6);
-#endif
-				dst.sin6_port = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
 				memcpy((void *)&dst.sin6_addr, (const void *) (&((struct in6_pktinfo *)CMSG_DATA(cmsgptr))->ipi6_addr), sizeof(struct in6_addr));
+			}
+		}
+#else
+		for (pCMsgHdr = WSA_CMSG_FIRSTHDR(&win_msg); pCMsgHdr != NULL; pCMsgHdr = WSA_CMSG_NXTHDR(&win_msg, pCMsgHdr)) {
+			if ((pCMsgHdr->cmsg_level == IPPROTO_IPV6) && (pCMsgHdr->cmsg_type == IPV6_PKTINFO)) {
+				memcpy((void *)&dst.sin6_addr, (const void *) dstaddr(pCMsgHdr), sizeof(struct in6_addr));
 			}
 		}
 #endif
@@ -256,7 +275,7 @@ recv_function_raw6(void *arg)
 		SCTPDBG(SCTP_DEBUG_INPUT1, " - calling sctp6_input with off=%d\n", (int)sizeof(struct ip6_hdr));
 
 		offset = sizeof(struct ip6_hdr);
-		sctp6_input_with_port(&ip6_m, &offset, src.sin6_port);
+		sctp6_input_with_port(&ip6_m, &offset, 0);
 	}
 	return NULL;
 }
@@ -469,7 +488,7 @@ recv_function_udp6(void *arg)
 			iov[i].iov_len = iovlen;
 #else
 			iov[i].buf = (caddr_t)udprecvmbuf6[i]->m_data;
-      iov[i].len = iovlen;
+			iov[i].len = iovlen;
 #endif
 		}
 		to_fill = 0;
@@ -503,7 +522,7 @@ recv_function_udp6(void *arg)
 			WSARecvMsg = NULL;
 		}
 		win_msg.name = (void *)&src;
-		win_msg.namelen = sizeof(struct sockaddr_in);
+		win_msg.namelen = sizeof(struct sockaddr_in6);
 		win_msg.lpBuffers = iov;
 		win_msg.dwBufferCount = MAXLEN_MBUF_CHAIN;
 		win_msg.Control.len = sizeof ControlBuffer;
@@ -541,7 +560,7 @@ recv_function_udp6(void *arg)
 		for (cmsgptr = CMSG_FIRSTHDR(&msg); cmsgptr != NULL; cmsgptr = CMSG_NXTHDR(&msg, cmsgptr)) {
 			if ((cmsgptr->cmsg_level == IPPROTO_IPV6) && (cmsgptr->cmsg_type == IPV6_PKTINFO)) {
 				dst.sin6_family = AF_INET6;
-#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#if !defined(__Userspace_os_Linux)
 				dst.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 				dst.sin6_port = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
@@ -550,7 +569,7 @@ recv_function_udp6(void *arg)
 		}
 #else
     for (pCMsgHdr = WSA_CMSG_FIRSTHDR(&win_msg); pCMsgHdr != NULL; pCMsgHdr = WSA_CMSG_NXTHDR(&win_msg, pCMsgHdr)) {
-			if ((pCMsgHdr->cmsg_level == IPPROTO_IP) && (pCMsgHdr->cmsg_type == DSTADDR_SOCKOPT)) {
+			if ((pCMsgHdr->cmsg_level == IPPROTO_IPV6) && (pCMsgHdr->cmsg_type == IPV6_PKTINFO)) {
 				dst.sin6_family = AF_INET6;
 				dst.sin6_port = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
 				memcpy((void *)&dst.sin6_addr, (const void *) dstaddr(pCMsgHdr), sizeof(struct in6_addr));
@@ -564,12 +583,6 @@ recv_function_udp6(void *arg)
 		bzero((void *)ip6, sizeof(struct ip6_hdr));
 		ip6->ip6_vfc = IPV6_VERSION;
 		ip6->ip6_plen = htons(n);
-#if defined(__Userspace_os_Windows)
-		ip6->ip6_plen += sizeof(struct ip6_hdr);
-#endif
-#if defined(__Userspace_os_Windows)
-		ip6->ip6_plen = htons(ip6->ip6_plen);
-#endif
 		ip6->ip6_src = src.sin6_addr;
 		ip6->ip6_dst = dst.sin6_addr;
 		SCTP_HEADER_LEN(ip6_m) = (int)sizeof(struct ip6_hdr) + n;
@@ -633,18 +646,17 @@ recv_thread_init()
 				exit(1);
 			}
 
-		memset((void *)&addr_ipv4, 0, sizeof(struct sockaddr_in));
+			memset((void *)&addr_ipv4, 0, sizeof(struct sockaddr_in));
 #ifdef HAVE_SIN_LEN
-		addr_ipv4.sin_len         = sizeof(struct sockaddr_in);
+			addr_ipv4.sin_len         = sizeof(struct sockaddr_in);
 #endif
-		addr_ipv4.sin_family      = AF_INET;
-		addr_ipv4.sin_port        = htons(0);
-		/*inet_pton(AF_INET, "10.0.1.115", &addr_ipv4.sin_addr.s_addr);*/
-		addr_ipv4.sin_addr.s_addr = htonl(INADDR_ANY);
-		if (bind(userspace_rawsctp, (const struct sockaddr *)&addr_ipv4, sizeof(struct sockaddr_in)) < 0) {
-			perror("bind");
-			exit(1);
-		}
+			addr_ipv4.sin_family      = AF_INET;
+			addr_ipv4.sin_port        = htons(0);
+			addr_ipv4.sin_addr.s_addr = htonl(INADDR_ANY);
+			if (bind(userspace_rawsctp, (const struct sockaddr *)&addr_ipv4, sizeof(struct sockaddr_in)) < 0) {
+				perror("bind");
+				exit(1);
+			}
 
 			setReceiveBufferSize(userspace_rawsctp, SB_RAW); /* 128K */
 			setSendBufferSize(userspace_rawsctp, SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
@@ -678,7 +690,7 @@ recv_thread_init()
 #if defined(INET6)
 	if (userspace_rawsctp6 == -1) {
 		if ((userspace_rawsctp6 = socket(AF_INET6, SOCK_RAW, IPPROTO_SCTP)) < 0) {
-			perror("raw ipv6 socket failure. continue with only UDP socket...\n");
+			perror("raw ipv6 socket failure. continue with only UDP6 socket...\n");
 		} else {
 			/* complete setting up the raw SCTP socket */
 #if defined(__Userspace_os_Linux)
@@ -738,7 +750,7 @@ recv_thread_init()
 #endif
 		addr_ipv6.sin6_family      = AF_INET6;
 		addr_ipv6.sin6_port        = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
-		addr_ipv6.sin6_addr       = in6addr_any;
+		addr_ipv6.sin6_addr        = in6addr_any;
 		if (bind(userspace_udpsctp6, (const struct sockaddr *)&addr_ipv6, sizeof(struct sockaddr_in6)) < 0) {
 			perror("bind");
 			exit(1);
@@ -792,6 +804,18 @@ recv_thread_init()
 	if (userspace_udpsctp != -1) {
 		if ((recvthreadudp = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_udp, NULL, 0, NULL))==NULL) {
 			printf("ERROR; Creating recvthreadudp failed\n");
+			exit(1);
+		}
+	}
+	if (userspace_rawsctp6 != -1) {
+		if ((recvthreadraw6 = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_raw6, NULL, 0, NULL))==NULL) {
+			printf("ERROR; Creating recvthreadraw6 failed\n");
+			exit(1);
+		}
+	}
+	if (userspace_udpsctp6 != -1) {
+		if ((recvthreadudp6 = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_udp6, NULL, 0, NULL))==NULL) {
+			printf("ERROR; Creating recvthreadudp6 failed\n");
 			exit(1);
 		}
 	}

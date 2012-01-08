@@ -47,6 +47,7 @@ usrsctp_HEADERS = \
 	user_uma.h \
 	user_queue.h \
 	user_ip_icmp.h \
+	user_ip6_var.h \
 	netinet\sctp.h \
 	netinet\sctp_asconf.h \
 	netinet\sctp_auth.h \
@@ -147,6 +148,9 @@ sctp_usrreq.obj : netinet\sctp_usrreq.c $(usrsctp_HEADERS)
 
 sctputil.obj : netinet\sctputil.c $(usrsctp_HEADERS)
 	cl $(CVARSDLL) $(CFLAGS) -c netinet\sctputil.c
+
+sctp6_usrreq.obj : netinet6\sctp6_usrreq.c $(usrsctp_HEADERS)
+	cl $(CVARSDLL) $(CFLAGS) -c netinet6\sctp6_usrreq.c
 
 clean:
 	del *.obj
