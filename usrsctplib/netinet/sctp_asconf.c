@@ -98,7 +98,7 @@ sctp_asconf_get_source_ip(struct mbuf *m, struct sockaddr *sa)
 		sin6 = (struct sockaddr_in6 *)sa;
 		bzero(sin6, sizeof(*sin6));
 		sin6->sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 		sin6->sin6_len = sizeof(struct sockaddr_in6);
 #endif
 		sin6->sin6_port = 0;
@@ -268,7 +268,7 @@ sctp_process_asconf_add_ip(struct mbuf *m, struct sctp_asconf_paramhdr *aph,
 		sin6 = (struct sockaddr_in6 *)&sa_store;
 		bzero(sin6, sizeof(*sin6));
 		sin6->sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 		sin6->sin6_len = sizeof(struct sockaddr_in6);
 #endif
 		sin6->sin6_port = stcb->rport;
@@ -418,7 +418,7 @@ sctp_process_asconf_delete_ip(struct mbuf *m, struct sctp_asconf_paramhdr *aph,
 		sin6 = (struct sockaddr_in6 *)&sa_store;
 		bzero(sin6, sizeof(*sin6));
 		sin6->sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 		sin6->sin6_len = sizeof(struct sockaddr_in6);
 #endif
 		sin6->sin6_port = stcb->rport;
@@ -548,7 +548,7 @@ sctp_process_asconf_set_primary(struct mbuf *m,
 		sin6 = (struct sockaddr_in6 *)&sa_store;
 		bzero(sin6, sizeof(*sin6));
 		sin6->sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 		sin6->sin6_len = sizeof(struct sockaddr_in6);
 #endif
 		memcpy((caddr_t)&sin6->sin6_addr, v6addr->addr,
@@ -913,7 +913,7 @@ sctp_handle_asconf(struct mbuf *m, unsigned int offset,
 			from6 = (struct sockaddr_in6 *)&from_store;
 			bzero(from6, sizeof(*from6));
 			from6->sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 			from6->sin6_len = sizeof(struct sockaddr_in6);
 #endif
 			from6->sin6_addr = ip6->ip6_src;
@@ -2924,7 +2924,7 @@ sctp_process_initack_addresses(struct sctp_tcb *stcb, struct mbuf *m,
 #ifdef INET6
 	bzero(&sin6, sizeof(sin6));
 	sin6.sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 	sin6.sin6_len = sizeof(sin6);
 #endif
 	sin6.sin6_port = stcb->rport;

@@ -310,55 +310,110 @@ sctp_init_ifns_for_vrf(int vrfid)
 {
 	struct ifaddrs *ifa;
 	struct sctp_ifa *sctp_ifa;
-	PIP_ADAPTER_INFO  pAdapterInfo, pAdapt;
-	ULONG ulOutBufLen;
+	DWORD Err, AdapterAddrsSize;
+	PIP_ADAPTER_ADDRESSES pAdapterAddrs, pAdapterAddrs6, pAdapt;
+	PIP_ADAPTER_UNICAST_ADDRESS pUnicast;
 
-	ulOutBufLen = sizeof (IP_ADAPTER_INFO);
+#if defined(INET)
+	struct sockaddr_in *addr;
+#endif
+#if defined(INET6)
+	struct sockaddr_in6 *addr6;
+#endif
+#if defined(INET)
+	AdapterAddrsSize = 0;
 
-	pAdapterInfo = (PIP_ADAPTER_INFO) MALLOC(sizeof (IP_ADAPTER_INFO));
-	if (pAdapterInfo == NULL) {
-		printf("Error allocating memory needed to call GetAdaptersinfo\n");
-		return;
-	}
-
-	if (GetAdaptersInfo(pAdapterInfo, &ulOutBufLen) == ERROR_BUFFER_OVERFLOW) {
-		FREE(pAdapterInfo);
-		pAdapterInfo = (IP_ADAPTER_INFO *) MALLOC(ulOutBufLen);
-		if (pAdapterInfo == NULL) {
-			printf("Error allocating memory needed to call GetAdaptersinfo\n");
+	if ((Err = GetAdaptersAddresses(AF_INET, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
+		if ((Err != ERROR_BUFFER_OVERFLOW) && (Err != ERROR_INSUFFICIENT_BUFFER)) {
+			printf("GetAdaptersV4Addresses() sizing failed with error code %d\n", Err);
+			printf("err = %d; AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
 			return;
 		}
 	}
 
-	if (GetAdaptersInfo(pAdapterInfo, &ulOutBufLen) == NO_ERROR) {
-		for (pAdapt = pAdapterInfo; pAdapt; pAdapt = pAdapt->Next) {
+	/* Allocate memory from sizing information */
+	if ((pAdapterAddrs = (PIP_ADAPTER_ADDRESSES) GlobalAlloc(GPTR, AdapterAddrsSize)) == NULL) {
+		printf("Memory allocation error!\n");
+		return;
+	}
+	/* Get actual adapter information */
+	if ((Err = GetAdaptersAddresses(AF_INET, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
+		printf("GetAdaptersV4Addresses() failed with error code %d\n", Err);
+		return;
+	}
+	/* Enumerate through each returned adapter and save its information */
+	for (pAdapt = pAdapterAddrs; pAdapt; pAdapt = pAdapt->Next) {
+		if (pAdapt->IfType == IF_TYPE_IEEE80211 || pAdapt->IfType == IF_TYPE_ETHERNET_CSMACD) {
 			ifa = (struct ifaddrs*)malloc(sizeof(struct ifaddrs));
+			ifa->ifa_name = strdup(pAdapt->AdapterName);
+			ifa->ifa_flags = pAdapt->Flags;
+			ifa->ifa_addr = (struct sockaddr *)malloc(sizeof(struct sockaddr_in));
+			memcpy(ifa->ifa_addr, pAdapt->FirstUnicastAddress->Address.lpSockaddr, sizeof(struct sockaddr_in));
 
-			ifa->ifa_name = (char*)malloc(strlen(pAdapt->AdapterName));
-			strcpy(ifa->ifa_name, pAdapt->AdapterName);
-
-			ifa->ifa_addr = (struct sockaddr*)malloc(sizeof(struct sockaddr));
-			ifa->ifa_addr->sa_family = AF_INET;
-			((struct sockaddr_in*)ifa->ifa_addr)->sin_addr.s_addr = inet_addr(pAdapt->IpAddressList.IpAddress.String);
-
-			ifa->ifa_flags = 0;
-			sctp_ifa = sctp_add_addr_to_vrf(0, 
-											ifa,
-											pAdapt->Index,
-											(pAdapt->Type == IF_TYPE_IEEE80211)?MIB_IF_TYPE_ETHERNET:pAdapt->Type,
-											ifa->ifa_name,
-											(void *)ifa,
-											ifa->ifa_addr,
-											ifa->ifa_flags,
-											0);
+			sctp_ifa = sctp_add_addr_to_vrf(0,
+			                                ifa,
+			                                pAdapt->IfIndex,
+			                                (pAdapt->IfType == IF_TYPE_IEEE80211)?MIB_IF_TYPE_ETHERNET:pAdapt->IfType,
+			                                ifa->ifa_name,
+			                                (void *)ifa,
+			                                ifa->ifa_addr,
+			                                ifa->ifa_flags,
+			                                0);
 			if (sctp_ifa) {
 				sctp_ifa->localifa_flags &= ~SCTP_ADDR_DEFER_USE;
 			}
 		}
 	}
-	if (pAdapterInfo) {
-		FREE(pAdapterInfo);
+	if (pAdapterAddrs)
+		FREE(pAdapterAddrs);
+#endif
+#if defined(INET6)
+	AdapterAddrsSize = 0;
+
+	if ((Err = GetAdaptersAddresses(AF_INET6, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
+		if ((Err != ERROR_BUFFER_OVERFLOW) && (Err != ERROR_INSUFFICIENT_BUFFER)) {
+			printf("GetAdaptersV6Addresses() sizing failed with error code %d\n", Err);
+			printf("err = %d; AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
+			return;
+		}
 	}
+	/* Allocate memory from sizing information */
+	if ((pAdapterAddrs6 = (PIP_ADAPTER_ADDRESSES) GlobalAlloc(GPTR, AdapterAddrsSize)) == NULL) {
+		printf("Memory allocation error!\n");
+		return;
+	}
+	/* Get actual adapter information */
+	if ((Err = GetAdaptersAddresses(AF_INET6, 0, NULL, pAdapterAddrs6, &AdapterAddrsSize)) != ERROR_SUCCESS) {
+		printf("GetAdaptersV6Addresses() failed with error code %d\n", Err);
+		return;
+	}
+	/* Enumerate through each returned adapter and save its information */
+	for (pAdapt = pAdapterAddrs6; pAdapt; pAdapt = pAdapt->Next) {
+		if (pAdapt->IfType == IF_TYPE_IEEE80211 || pAdapt->IfType == IF_TYPE_ETHERNET_CSMACD) {
+			for (pUnicast = pAdapt->FirstUnicastAddress; pUnicast; pUnicast = pUnicast->Next) {
+				ifa = (struct ifaddrs*)malloc(sizeof(struct ifaddrs));
+				ifa->ifa_name = strdup(pAdapt->AdapterName);
+				ifa->ifa_flags = pAdapt->Flags;
+				ifa->ifa_addr = (struct sockaddr *)malloc(sizeof(struct sockaddr_in6));
+				memcpy(ifa->ifa_addr, pUnicast->Address.lpSockaddr, sizeof(struct sockaddr_in6));
+				sctp_ifa = sctp_add_addr_to_vrf(0,
+				                                ifa,
+				                                pAdapt->Ipv6IfIndex,
+				                                (pAdapt->IfType == IF_TYPE_IEEE80211)?MIB_IF_TYPE_ETHERNET:pAdapt->IfType,
+				                                ifa->ifa_name,
+				                                (void *)ifa,
+				                                ifa->ifa_addr,
+				                                ifa->ifa_flags,
+				                                0);
+				if (sctp_ifa) {
+					sctp_ifa->localifa_flags &= ~SCTP_ADDR_DEFER_USE;
+				}
+			}
+		}
+	}
+	if (pAdapterAddrs6)
+		FREE(pAdapterAddrs6);
+#endif
 }
 #elif defined (__Userspace__)
 static void
@@ -513,7 +568,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 
 	IFNET_RLOCK();
 	TAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_list) {
-		IF_ADDR_LOCK(ifn);
+		IF_ADDR_RLOCK(ifn);
 		TAILQ_FOREACH(ifa, &ifn->if_addrlist, ifa_list) {
 			if (ifa->ifa_addr == NULL) {
 				continue;
@@ -571,7 +626,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 				sctp_ifa->localifa_flags &= ~SCTP_ADDR_DEFER_USE;
 			}
 		}
-		IF_ADDR_UNLOCK(ifn);
+		IF_ADDR_RUNLOCK(ifn);
 	}
 	IFNET_RUNLOCK();
 }

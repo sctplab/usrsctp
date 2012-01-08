@@ -471,13 +471,15 @@ struct sx {int dummy;};
 #ifdef IPSEC
 #include <netipsec/ipsec6.h>
 #endif
+#if !defined(__Userspace_os_Windows)
 #include <netinet/ip6.h>
-#if defined(__Userspace_os_Linux) || defined(__Userspace_os_Darwin) || defined(__Userspace_os_FreeBSD)
+#include <netinet/icmp6.h>
+#endif
+#if defined(__Userspace_os_Linux) || defined(__Userspace_os_Darwin) || defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Windows)
 #include "user_ip6_var.h"
 #else
 #include <netinet6/ip6_var.h>
 #endif
-#include <netinet/icmp6.h>
 #if defined(__Userspace_os_FreeBSD)
 #include <netinet6/in6_pcb.h>
 #include <netinet6/ip6protosw.h>
@@ -590,7 +592,7 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 #define SCTPDBG_ADDR(level, addr)
 #define SCTPDBG_PKT(level, iph, sh)
 #endif
-#if !defined (__Userspace_os_Windows)
+#if !defined(__Userspace_os_Windows)
 #define SCTP_PRINTF(params...)	printf(params)
 #else
 #define SCTP_PRINTF(...)   printf(__VA_ARGS__)

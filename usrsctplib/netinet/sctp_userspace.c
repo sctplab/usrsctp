@@ -61,7 +61,7 @@ sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)
 	DWORD AdapterAddrsSize, Err;
 
 	AdapterAddrsSize = 0;
-	if ((Err = GetAdaptersAddresses(AF_INET, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
+	if ((Err = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
 		if ((Err != ERROR_BUFFER_OVERFLOW) && (Err != ERROR_INSUFFICIENT_BUFFER)) {
 			printf("GetAdaptersAddresses() sizing failed with error code %d\n", Err);
 			printf("err = %d; AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
@@ -72,7 +72,7 @@ sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)
 		printf("Memory allocation error!\n");
 		return (-1);
 	}
-	if ((Err = GetAdaptersAddresses(AF_INET, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
+	if ((Err = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
 		printf("GetAdaptersAddresses() failed with error code %d\n", Err);
 		return (-1);
 	}
@@ -100,12 +100,18 @@ Win_getifaddrs(struct ifaddrs** interfaces)
 	int count;
 	PIP_ADAPTER_ADDRESSES pAdapterAddrs, pAdapt;
 	struct ifaddrs *ifa;
+#if defined(INET)
 	struct sockaddr_in *addr;
-
+#endif
+#if defined(INET6)
+	struct sockaddr_in6 *addr6;
+#endif
+	count = 0;
+#if defined(INET)
 	AdapterAddrsSize = 0;
 	if ((Err = GetAdaptersAddresses(AF_INET, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
 		if ((Err != ERROR_BUFFER_OVERFLOW) && (Err != ERROR_INSUFFICIENT_BUFFER)) {
-			printf("GetAdaptersAddresses() sizing failed with error code %d\n", Err);
+			printf("GetAdaptersV4Addresses() sizing failed with error code %d\n", Err);
 			printf("err = %d; AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
 			return (-1);
 		}
@@ -117,11 +123,11 @@ Win_getifaddrs(struct ifaddrs** interfaces)
 	}
 	/* Get actual adapter information */
 	if ((Err = GetAdaptersAddresses(AF_INET, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
-		printf("GetAdaptersAddresses() failed with error code %d\n", Err);
+		printf("GetAdaptersV4Addresses() failed with error code %d\n", Err);
 		return (-1);
 	}
 	/* Enumerate through each returned adapter and save its information */
-	for (pAdapt = pAdapterAddrs, count = 0; pAdapt; pAdapt = pAdapt->Next, count++) {
+	for (pAdapt = pAdapterAddrs, count; pAdapt; pAdapt = pAdapt->Next, count++) {
 		addr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
 		ifa = (struct ifaddrs *)malloc(sizeof(struct ifaddrs));
 		if ((addr == NULL) || (ifa == NULL)) {
@@ -134,6 +140,41 @@ Win_getifaddrs(struct ifaddrs** interfaces)
 		memcpy(&addr, &pAdapt->FirstUnicastAddress->Address.lpSockaddr, sizeof(struct sockaddr_in));
 		interfaces[count] = ifa;
 	}
+#endif
+#if defined(INET6)
+	AdapterAddrsSize = 0;
+	if ((Err = GetAdaptersAddresses(AF_INET6, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
+		if ((Err != ERROR_BUFFER_OVERFLOW) && (Err != ERROR_INSUFFICIENT_BUFFER)) {
+			printf("GetAdaptersV6Addresses() sizing failed with error code %d\n", Err);
+			printf("err = %d; AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
+			return (-1);
+		}
+	}
+	/* Allocate memory from sizing information */
+	if ((pAdapterAddrs = (PIP_ADAPTER_ADDRESSES) GlobalAlloc(GPTR, AdapterAddrsSize)) == NULL) {
+		printf("Memory allocation error!\n");
+		return (-1);
+	}
+	/* Get actual adapter information */
+	if ((Err = GetAdaptersAddresses(AF_INET6, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
+		printf("GetAdaptersV6Addresses() failed with error code %d\n", Err);
+		return (-1);
+	}
+	/* Enumerate through each returned adapter and save its information */
+	for (pAdapt = pAdapterAddrs, count; pAdapt; pAdapt = pAdapt->Next, count++) {
+		addr6 = (struct sockaddr_in6 *)malloc(sizeof(struct sockaddr_in6));
+		ifa = (struct ifaddrs *)malloc(sizeof(struct ifaddrs));
+		if ((addr6 == NULL) || (ifa == NULL)) {
+			printf("Can't allocate memory\n");
+			return (-1);
+		}
+		ifa->ifa_name = strdup(pAdapt->AdapterName);
+		ifa->ifa_flags = pAdapt->Flags;
+		ifa->ifa_addr = (struct sockaddr *)addr6;
+		memcpy(&addr6, &pAdapt->FirstUnicastAddress->Address.lpSockaddr, sizeof(struct sockaddr_in6));
+		interfaces[count] = ifa;
+	}
+#endif
 	return (0);
 }
 #endif

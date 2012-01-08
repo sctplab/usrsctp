@@ -3321,8 +3321,12 @@ sctp_source_address_selection(struct sctp_inpcb *inp,
 #ifdef INET6
 	case AF_INET6:
 		/* Scope based on outbound address */
+#if defined(__Userspace_os_Windows)
+		if (IN6_IS_ADDR_LOOPBACK(&to6->sin6_addr)) {
+#else
 		if (IN6_IS_ADDR_LOOPBACK(&to6->sin6_addr) ||
 		    SCTP_ROUTE_IS_REAL_LOOP(ro)) {
+#endif
 			/*
 			 * If the address is a loopback address, which
 			 * consists of "::1" OR "fe80::1%lo0", we are loopback
@@ -3574,7 +3578,7 @@ sctp_process_cmsgs_for_init(struct sctp_tcb *stcb, struct mbuf *control, int *er
 				}
 				memset(&sin6, 0, sizeof(struct sockaddr_in6));
 				sin6.sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 				sin6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 				sin6.sin6_port = stcb->rport;
@@ -3679,7 +3683,7 @@ sctp_findassociation_cmsgs(struct sctp_inpcb **inp_p,
 				}
 				memset(&sin6, 0, sizeof(struct sockaddr_in6));
 				sin6.sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 				sin6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 				sin6.sin6_port = port;
@@ -4365,7 +4369,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		if (net == NULL) {
 			memset(&ip6route, 0, sizeof(ip6route));
 			ro = (sctp_route_t *)&ip6route;
-#if !(defined(__Windows__) ||  defined(__Userspace_os_Linux)) /*__Userspace__ */
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows) /*__Userspace__ */
 			memcpy(&ro->ro_dst, sin6, sin6->sin6_len);
 #else
 			memcpy(&ro->ro_dst, sin6, sizeof(struct sockaddr_in6));
@@ -4411,7 +4415,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		 */
 		bzero(&lsa6_tmp, sizeof(lsa6_tmp));
 		lsa6_tmp.sin6_family = AF_INET6;
-#if !(defined(__Windows__) ||  defined(__Userspace_os_Linux)) /*__Userspace__ */
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows) /*__Userspace__ */
 		lsa6_tmp.sin6_len = sizeof(lsa6_tmp);
 #endif
 		lsa6 = &lsa6_tmp;
@@ -5706,7 +5710,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		  to_sin6->sin6_scope_id = 0;
 		  to_sin6->sin6_port = sh->dest_port;
 		  to_sin6->sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 		  to_sin6->sin6_len = sizeof(struct sockaddr_in6);
 #endif
 		  break;
@@ -5764,7 +5768,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		{
 			ip6 = mtod(init_pkt, struct ip6_hdr *);
 			sin6->sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 			sin6->sin6_len = sizeof(struct sockaddr_in6);
 #endif
 			sin6->sin6_port = sh->src_port;
