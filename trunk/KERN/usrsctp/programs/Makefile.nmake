@@ -11,8 +11,7 @@ LINKFLAGS=/LIBPATH:..\usrsctplib usrsctp.lib
 all: \
 	client \
 	discard_server \
-	tsctp \
-	tsctp6
+	tsctp
 
 client:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c client.c
