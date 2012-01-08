@@ -762,6 +762,7 @@ recv_thread_init()
 
 	/* start threads here for receiving incoming messages */
 #if !defined(__Userspace_os_Windows)
+#if defined(INET)
 	if (userspace_rawsctp != -1) {
 		int rc;
 
@@ -778,6 +779,8 @@ recv_thread_init()
 			exit(1);
 		}
 	}
+#endif
+#if defined(INET6)
 	if (userspace_rawsctp6 != -1) {
 		int rc;
 
@@ -794,7 +797,9 @@ recv_thread_init()
 			exit(1);
 		}
 	}
+#endif
 #else
+#if defined(INET)
 	if (userspace_rawsctp != -1) {
 		if ((recvthreadraw = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_raw, NULL, 0, NULL))==NULL) {
 			printf("ERROR; Creating recvthreadraw failed\n");
@@ -807,6 +812,8 @@ recv_thread_init()
 			exit(1);
 		}
 	}
+#endif
+#if defined(INET6)
 	if (userspace_rawsctp6 != -1) {
 		if ((recvthreadraw6 = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_raw6, NULL, 0, NULL))==NULL) {
 			printf("ERROR; Creating recvthreadraw6 failed\n");
@@ -819,6 +826,7 @@ recv_thread_init()
 			exit(1);
 		}
 	}
+#endif
 #endif
 }
 
