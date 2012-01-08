@@ -11281,7 +11281,7 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 	if (ip6_out != NULL) {
 		struct route_in6 ro;
 		int ret;
-#if !defined(__Panda__)
+#if !defined(__Panda__) && !defined(__Userspace__)
 		struct ifnet *ifp = NULL;
 #endif
 
@@ -12337,7 +12337,7 @@ sctp_send_abort(struct mbuf *m, int iphlen, struct sctphdr *sh, uint32_t vtag,
 	if (ip6_out != NULL) {
 		struct route_in6 ro;
 		int ret;
-#if !defined(__Panda__)
+#if !defined(__Panda__) && !defined(__Userspace__)
 		struct ifnet *ifp = NULL;
 #endif
 		/* zap the stack pointer to the route */
@@ -12649,7 +12649,7 @@ sctp_send_operr_to(struct mbuf *m, int iphlen, struct mbuf *scm, uint32_t vtag,
 	if (ip6_out != NULL) {
 		struct route_in6 ro;
 		int ret;
-#if !defined(__Panda__)
+#if !defined(__Panda__) && !defined(__Userspace__)
 		struct ifnet *ifp = NULL;
 #endif
 		/* zap the stack pointer to the route */
