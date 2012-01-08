@@ -30,7 +30,8 @@ usrsctp_OBJECTS = \
 	sctp_timer.obj \
 	sctp_userspace.obj  \
 	sctp_usrreq.obj \
-	sctputil.obj
+	sctputil.obj \
+	sctp6_usrreq.obj
 
 usrsctp_HEADERS = \
 	user_atomic.h \
@@ -72,7 +73,8 @@ usrsctp_HEADERS = \
 	netinet\sctp_timer.h \
 	netinet\sctp_uio.h \
 	netinet\sctp_var.h \
-	netinet\sctputil.h
+	netinet\sctputil.h \
+	netinet6\sctp6_var.h
 
 usrsctp.lib : $(usrsctp_OBJECTS)
 	lib /out:usrsctp.lib $(LINKFLAGS) $(usrsctp_OBJECTS)
