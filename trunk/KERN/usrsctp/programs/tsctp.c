@@ -461,6 +461,7 @@ int main(int argc, char **argv)
 
 	sctp_init(local_udp_port);
 	SCTP_BASE_SYSCTL(sctp_debug_on) = 0xffffffff;
+	SCTP_BASE_SYSCTL(sctp_blackhole) = 2;
 
 	if (!(psock = userspace_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP)) ){
 		printf("user_socket() returned NULL\n");
