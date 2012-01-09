@@ -224,6 +224,7 @@ sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint16_t nxtsz)
 }
 
 #ifdef INET
+#if !defined(__Userspace__)
 #if defined(__Panda__) || defined(__Windows__)
 void
 #else
@@ -297,6 +298,7 @@ sctp_notify_mbuf(struct sctp_inpcb *inp,
 
 	SCTP_TCB_UNLOCK(stcb);
 }
+#endif
 #endif
 
 void

@@ -68,6 +68,9 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 228966 2011-12-29 18:25:18Z j
 #if defined(__FreeBSD__)
 #include <machine/in_cksum.h>
 #endif
+#if defined(__Userspace__) && defined(INET6)
+#include <netinet6/sctp6_var.h>
+#endif 
 
 #if defined(__APPLE__)
 #define APPLE_FILE_NO 3
@@ -11323,7 +11326,11 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 #endif
 #endif
 		}
+#if !defined(__Userspace__)
 		SCTP_IP6_OUTPUT(ret, o_pak, &ro, &ifp, NULL, vrf_id);
+#else
+		SCTP_IP6_OUTPUT(ret, o_pak, &ro, NULL, NULL, vrf_id);
+#endif
 
 		/* Free the route if we got one back */
 		if (ro.ro_rt)
@@ -12384,8 +12391,12 @@ sctp_send_abort(struct mbuf *m, int iphlen, struct sctphdr *sh, uint32_t vtag,
 #endif
 #endif
 		}
-		SCTP_IP6_OUTPUT(ret, o_pak, &ro, &ifp, NULL, vrf_id);
 
+#if !defined(__Userspace__)
+		SCTP_IP6_OUTPUT(ret, o_pak, &ro, &ifp, NULL, vrf_id);
+#else
+		SCTP_IP6_OUTPUT(ret, o_pak, &ro, NULL, NULL, vrf_id);
+#endif
 		/* Free the route if we got one back */
 		if (ro.ro_rt)
 			RTFREE(ro.ro_rt);
@@ -12694,8 +12705,12 @@ sctp_send_operr_to(struct mbuf *m, int iphlen, struct mbuf *scm, uint32_t vtag,
 #endif
 #endif
 		}
-		SCTP_IP6_OUTPUT(ret, o_pak, &ro, &ifp, NULL, vrf_id);
 
+#if !defined(__Userspace__)
+		SCTP_IP6_OUTPUT(ret, o_pak, &ro, &ifp, NULL, vrf_id);
+#else
+		SCTP_IP6_OUTPUT(ret, o_pak, &ro, NULL, NULL, vrf_id);
+#endif
 		/* Free the route if we got one back */
 		if (ro.ro_rt)
 			RTFREE(ro.ro_rt);

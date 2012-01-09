@@ -43,7 +43,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 229805 2012-01-08 09:56:24Z tuex
 #include <netinet/sctp_var.h>
 #include <netinet/sctp_sysctl.h>
 #ifdef INET6
-#if defined(__Userspace_os_FreeBSD)
+#if defined(__Userspace__)
 #include <netinet6/sctp6_var.h>
 #endif
 #endif
