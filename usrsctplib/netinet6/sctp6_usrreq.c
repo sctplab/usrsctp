@@ -1094,9 +1094,11 @@ sctp6_bind(struct socket *so, struct mbuf *nam, struct proc *p)
 	return (error);
 }
 
-#if (defined(__FreeBSD__) && __FreeBSD_version > 690000) || defined(__Windows__)
-
-static void
+#if (defined(__FreeBSD__) && __FreeBSD_version > 690000) || defined(__Windows__) || defined(__Userspace__)
+#if !defined(__Userspace__)
+static 
+#endif
+void
 sctp6_close(struct socket *so)
 {
 	sctp_close(so);
@@ -1121,7 +1123,7 @@ sctp6_detach(struct socket *so)
 
 #endif
 
-#if !defined(__Panda__)
+#if !defined(__Panda__) && !defined(__Userspace__)
 static
 #endif
 int
@@ -1142,7 +1144,7 @@ sctp_sendm(struct socket *so, int flags, struct mbuf *m, struct sockaddr *addr,
 
 #endif
 
-#if !(defined(__Panda__) || defined(__Windows__))
+#if !defined(__Panda__) && !defined(__Windows__) && !defined(__Userspace__)
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
 static int
 sctp6_send(struct socket *so, int flags, struct mbuf *m, struct sockaddr *addr,
@@ -1696,6 +1698,13 @@ int
 sctp6_in6getaddr(struct socket *so, struct sockaddr *nam, uint32_t *namelen)
 {
 	struct sockaddr *addr = nam;
+#elif defined(__Userspace__)
+int
+sctp6_in6getaddr(struct socket *so, struct mbuf *nam)
+{
+#if defined(INET)
+	struct sockaddr *addr = mtod(nam, struct sockaddr *);
+#endif
 #else
 static int
 sctp6_in6getaddr(struct socket *so, struct mbuf *nam)
@@ -1752,8 +1761,16 @@ int
 sctp6_getpeeraddr(struct socket *so, struct sockaddr *nam, uint32_t *namelen)
 {
 	struct sockaddr *addr = (struct sockaddr *)nam;
+#elif defined(__Userspace__)
+int
+sctp6_getpeeraddr(struct socket *so, struct mbuf *nam)
+{
+#if defined(INET)
+	struct sockaddr *addr = mtod(nam, struct sockaddr *);
+#endif
 #else
-static int
+static
+int
 sctp6_getpeeraddr(struct socket *so, struct mbuf *nam)
 {
 #if defined(INET)
