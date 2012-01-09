@@ -135,7 +135,6 @@ recv_function_raw6(void *arg)
 {
 #if !defined(__Userspace_os_Windows)
 	struct iovec recv_iovec[MAXLEN_MBUF_CHAIN];
-	int iovcnt = MAXLEN_MBUF_CHAIN;
 	struct msghdr msg;
 	struct cmsghdr *cmsgptr;
 	char cmsgbuf[CMSG_SPACE(sizeof (struct in6_pktinfo))];

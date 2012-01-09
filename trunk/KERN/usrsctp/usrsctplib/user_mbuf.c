@@ -955,9 +955,6 @@ ok:
 	return n;
 }
 
-
-
-
 /*
  * Attach the the cluster from *m to *n, set up m_ext in *n
  * and bump the refcount of the cluster.
@@ -1422,18 +1419,20 @@ extpacket:
 
 
 
-int pack_send_buffer(caddr_t buffer, struct mbuf* mb){
+int
+pack_send_buffer(caddr_t buffer, struct mbuf* mb){
 
-    int count_to_copy;
-    int total_count_copied = 0;
-    int offset = 0;
-    do{
-        count_to_copy = mb->m_len;
-        bcopy(mtod(mb, caddr_t), buffer+offset, count_to_copy);
-        offset += count_to_copy;
-        total_count_copied += count_to_copy;
-        mb = mb->m_next;
-    }while(mb);
+	int count_to_copy;
+	int total_count_copied = 0;
+	int offset = 0;
 
-    return (total_count_copied);
+	do{
+		count_to_copy = mb->m_len;
+		bcopy(mtod(mb, caddr_t), buffer+offset, count_to_copy);
+		offset += count_to_copy;
+		total_count_copied += count_to_copy;
+		mb = mb->m_next;
+	}while(mb);
+
+	return (total_count_copied);
 }
