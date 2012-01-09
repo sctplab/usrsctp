@@ -238,16 +238,10 @@ sctp_gather_internal_ifa_flags(struct sctp_ifa *ifa)
 #endif /* INET6 */
 
 
+#if !defined(__Userspace__)
 static uint32_t
 sctp_is_desired_interface_type(struct ifaddr *ifa)
 {
-#if defined (__Userspace__)
-	/* __Userspace__ TODO struct ifaddr is defined in net/if_var.h
-	 * This struct contains struct ifnet, which is also defined in
-	 * net/if_var.h. Currently a zero byte if_var.h file is present for Linux boxes
-	 */
-	return (1); /* __Userspace__ Is this what we want for ms1? */
-#else
 	int result;
 
 	/* check the interface type to see if it's one we care about */
@@ -285,8 +279,8 @@ sctp_is_desired_interface_type(struct ifaddr *ifa)
 	}
 
 	return (result);
-#endif /* #else of defined(__Userspace__) */
 }
+#endif
 
 #if defined(__APPLE__)
 int
@@ -548,7 +542,6 @@ sctp_init_ifns_for_vrf(int vrfid)
 }
 #endif
 
-#if !defined (__Userspace_os_Windows)
 #if defined (__FreeBSD__)
 static void
 sctp_init_ifns_for_vrf(int vrfid)
@@ -630,7 +623,6 @@ sctp_init_ifns_for_vrf(int vrfid)
 	}
 	IFNET_RUNLOCK();
 }
-#endif
 #endif
 
 void

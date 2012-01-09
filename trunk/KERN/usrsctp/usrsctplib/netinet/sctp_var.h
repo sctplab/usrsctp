@@ -421,6 +421,9 @@ void sctp_pathmtu_adjustment __P((struct sctp_tcb *, uint16_t));
 void sctp_input __P((pakhandle_type i_pak));
 #elif defined(__Userspace__)
 void sctp_input_with_port __P((struct mbuf *, int, uint16_t));
+#if defined(INET6)
+int sctp6_input_with_port __P((struct mbuf **, int *, uint16_t));
+#endif
 void sctp_input __P((struct mbuf *, int));
 void sctp_pathmtu_adjustment __P((struct sctp_tcb *, uint16_t));
 #else
