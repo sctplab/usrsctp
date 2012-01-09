@@ -666,7 +666,6 @@ recv_thread_init()
 	if (userspace_udpsctp == -1) {
 		if ((userspace_udpsctp = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 			perror("UDP socket failure");
-			exit(1);
 		}
 		if (setsockopt(userspace_udpsctp, IPPROTO_IP, DSTADDR_SOCKOPT, (const void *)&on, (int)sizeof(int)) < 0) {
 			perror("setsockopt: DSTADDR_SOCKOPT");
@@ -681,7 +680,6 @@ recv_thread_init()
 		addr_ipv4.sin_addr.s_addr = htonl(INADDR_ANY);
 		if (bind(userspace_udpsctp, (const struct sockaddr *)&addr_ipv4, sizeof(struct sockaddr_in)) < 0) {
 			perror("bind");
-			exit(1);
 		}
 		setReceiveBufferSize(userspace_udpsctp, SB_RAW); /* 128K */
 		setSendBufferSize(userspace_udpsctp, SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
@@ -727,7 +725,6 @@ recv_thread_init()
 	if (userspace_udpsctp6 == -1) {
 		if ((userspace_udpsctp6 = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 			perror("UDP ipv6 socket failure");
-			exit(1);
 		}
 #if defined(__Userspace_os_Linux)
 		if (setsockopt(userspace_udpsctp6, IPPROTO_IPV6, IPV6_RECVPKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
@@ -752,7 +749,6 @@ recv_thread_init()
 		addr_ipv6.sin6_addr        = in6addr_any;
 		if (bind(userspace_udpsctp6, (const struct sockaddr *)&addr_ipv6, sizeof(struct sockaddr_in6)) < 0) {
 			perror("bind");
-			exit(1);
 		}
 		setReceiveBufferSize(userspace_udpsctp6, SB_RAW); /* 128K */
 		setSendBufferSize(userspace_udpsctp6, SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
