@@ -31,6 +31,7 @@
  */
 /*	$KAME: sctp6_usrreq.c,v 1.38 2005/08/24 08:08:56 suz Exp $	*/
 
+#if defined(INET6)
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 229805 2012-01-08 09:56:24Z tuexen $");
@@ -456,6 +457,7 @@ sctp6_input(struct mbuf **i_pak, int *offp)
 }
 #endif
 
+#if !defined(__Userspace__)
 #if defined(__Panda__)
 void
 #else
@@ -535,7 +537,7 @@ out:
 		SCTP_TCB_UNLOCK(stcb);
 	}
 }
-
+#endif
 
 void
 sctp6_notify(struct sctp_inpcb *inp,
@@ -1698,7 +1700,9 @@ sctp6_in6getaddr(struct socket *so, struct sockaddr *nam, uint32_t *namelen)
 static int
 sctp6_in6getaddr(struct socket *so, struct mbuf *nam)
 {
+#if defined(INET)
 	struct sockaddr *addr = mtod(nam, struct sockaddr *);
+#endif
 #endif
 	struct in6pcb *inp6 = sotoin6pcb(so);
 	int error;
@@ -1752,7 +1756,9 @@ sctp6_getpeeraddr(struct socket *so, struct sockaddr *nam, uint32_t *namelen)
 static int
 sctp6_getpeeraddr(struct socket *so, struct mbuf *nam)
 {
+#if defined(INET)
 	struct sockaddr *addr = mtod(nam, struct sockaddr *);
+#endif
 
 #endif
 	struct in6pcb *inp6 = sotoin6pcb(so);
@@ -1969,4 +1975,5 @@ sctp6_usrreq(so, req, m, nam, control, p)
 	}
 	return (error);
 }
+#endif
 #endif
