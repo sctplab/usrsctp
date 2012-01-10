@@ -29,7 +29,7 @@
 #include <netinet/sctp_os_userspace.h>
 #if defined (__Userspace_os_Windows)
 #include <sys/timeb.h>
-#include <iphlpapi.h>*/
+#include <iphlpapi.h>
 #pragma comment(lib, "IPHLPAPI.lib")
 #endif
 
@@ -87,10 +87,14 @@ void
 getwintimeofday(struct timeval *tv)
 {
 	struct timeb tb;
+	LARGE_INTEGER tickPerSecond;
+ 	LARGE_INTEGER tick;
 
 	ftime(&tb);
 	tv->tv_sec = tb.time;
-	tv->tv_usec = tb.millitm * 1000;
+ 	QueryPerformanceFrequency(&tickPerSecond);
+ 	QueryPerformanceCounter(&tick);
+ 	tv->tv_usec = (tick.QuadPart % tickPerSecond.QuadPart);
 }
 
 int

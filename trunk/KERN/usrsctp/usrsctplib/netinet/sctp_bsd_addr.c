@@ -119,7 +119,11 @@ sctp_wakeup_iterator(void)
 #endif
 }
 
+#if defined(__Userspace__)
+static void *
+#else
 static void
+#endif
 sctp_iterator_thread(void *v SCTP_UNUSED)
 {
 	SCTP_IPI_ITERATOR_WQ_LOCK();
@@ -133,10 +137,16 @@ sctp_iterator_thread(void *v SCTP_UNUSED)
 		msleep(&sctp_it_ctl.iterator_running,
 #if defined(__FreeBSD__)
 		       &sctp_it_ctl.ipi_iterator_wq_mtx,
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) || defined(__Userspace_os_Darwin)
 		       sctp_it_ctl.ipi_iterator_wq_mtx,
 #endif
 		       0, "waiting_for_work", 0);
+#else
+#if defined(__Userspace_os_Windows)
+		SleepConditionVariableCS(&sctp_it_ctl.iterator_wakeup, &sctp_it_ctl.ipi_iterator_wq_mtx, INFINITE);
+#else
+		pthread_cond_wait(&sctp_it_ctl.iterator_wakeup, &sctp_it_ctl.ipi_iterator_wq_mtx); 
+#endif
 #endif
 #if !defined(__FreeBSD__)
 		if (sctp_it_ctl.iterator_flags & SCTP_ITERATOR_MUST_EXIT) {
@@ -146,14 +156,24 @@ sctp_iterator_thread(void *v SCTP_UNUSED)
 		sctp_iterator_worker();
 	}
 #if !defined(__FreeBSD__)
-#if !defined(__Userspace__)
 	/* Now this thread needs to be terminated */
 	sctp_cleanup_itqueue();
 	sctp_it_ctl.iterator_flags |= SCTP_ITERATOR_EXITED;
 	SCTP_IPI_ITERATOR_WQ_UNLOCK();
+#if defined(__Userspace__)
+	sctp_wakeup_iterator();
+#if !defined(__Userspace_os_Windows)
+	pthread_exit(pthread_self());
+#else
+	ExitThread(0);
+#endif
+#else
 	wakeup(&sctp_it_ctl.iterator_flags);
 	thread_terminate(current_thread());
+#endif
 	panic("Hmm. thread_terminate() continues...");
+#if defined(__Userspace__)
+	return NULL;
 #endif
 #endif
 }
@@ -162,7 +182,7 @@ void
 sctp_startup_iterator(void)
 {
 	static int called = 0;
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || (defined(__Userspace__) && !defined(__Userspace_os_Windows))
 	int ret;
 #endif
 
@@ -192,7 +212,17 @@ sctp_startup_iterator(void)
 #elif defined(__APPLE__)
         (void)kernel_thread_start((thread_continue_t)sctp_iterator_thread, NULL, &sctp_it_ctl.thread_proc);
 #elif defined(__Userspace__)
-	/* TODO pthread_create or alternative to create a thread? */
+#if defined(__Userspace_os_Windows)
+	if ((sctp_it_ctl.thread_proc = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&sctp_iterator_thread, NULL, 0, NULL))==NULL) {
+		printf("ERROR; Creating sctp_iterator_thread failed\n");
+		exit(1);
+	}
+#else
+	if ((ret = pthread_create(&sctp_it_ctl.thread_proc, NULL, &sctp_iterator_thread, NULL))) {
+		printf("ERROR; return code from sctp_iterator_thread pthread_create() is %d\n", ret);
+		exit(1);
+	}
+#endif
 #endif
 }
 
@@ -308,12 +338,6 @@ sctp_init_ifns_for_vrf(int vrfid)
 	PIP_ADAPTER_ADDRESSES pAdapterAddrs, pAdapterAddrs6, pAdapt;
 	PIP_ADAPTER_UNICAST_ADDRESS pUnicast;
 
-#if defined(INET)
-	struct sockaddr_in *addr;
-#endif
-#if defined(INET6)
-	struct sockaddr_in6 *addr6;
-#endif
 #if defined(INET)
 	AdapterAddrsSize = 0;
 

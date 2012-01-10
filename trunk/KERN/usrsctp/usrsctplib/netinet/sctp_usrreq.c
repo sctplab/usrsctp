@@ -86,7 +86,6 @@ sctp_init(void)
 #if defined(__Userspace_os_Windows)
 	WSADATA wsaData;
 	int Ret;
-	struct sockaddr_in6 *a6;
 
 	if ((Ret = WSAStartup(MAKEWORD(2,2), &wsaData))!=0) {
 		printf("WSAStartup failed\n");

@@ -191,11 +191,11 @@ struct iterator_control {
 	lck_mtx_t *it_mtx;
 #elif defined(SCTP_PROCESS_LEVEL_LOCKS)
 #if defined (__Userspace__)
-  	userland_mutex_t ipi_iterator_wq_mtx;
+	userland_mutex_t ipi_iterator_wq_mtx;
 	userland_mutex_t it_mtx;
 	userland_cond_t iterator_wakeup;
 #else
-  	pthread_mutex_t ipi_iterator_wq_mtx;
+	pthread_mutex_t ipi_iterator_wq_mtx;
 	pthread_mutex_t it_mtx;
 	pthread_cond_t iterator_wakeup;
 #endif
@@ -208,7 +208,11 @@ struct iterator_control {
 	void *it_mtx;
 #endif  
 #if !defined(__Windows__)
+#if !defined(__Userspace__)
 	SCTP_PROCESS_STRUCT thread_proc;
+#else
+	userland_thread_t thread_proc;
+#endif
 #endif
 	struct sctpiterators iteratorhead;
 	struct sctp_iterator *cur_it;
