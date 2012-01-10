@@ -831,11 +831,17 @@ recv_thread_destroy_raw(void *parm)
 	int i;
 
 	/* close sockets if they are open */
+#if defined(__Userspace_os_Windows)
+	if (userspace_route != -1)
+		closesocket(userspace_route);
+	if (userspace_rawsctp != -1)
+		closesocket(userspace_rawsctp);
+#else
 	if (userspace_route != -1)
 		close(userspace_route);
 	if (userspace_rawsctp != -1)
 		close(userspace_rawsctp);
-
+#endif
 	/*
 	 *  call m_free on contents of recvmbuf array
 	*/
