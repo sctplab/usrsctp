@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 228907 2011-12-27 10:16:24Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 230104 2012-01-14 09:10:20Z tuexen $");
 #endif
 #include <netinet/sctp_os.h>
 #ifdef __FreeBSD__
@@ -3416,7 +3416,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			error = EINVAL;
 		} else {
-			SCTP_INP_RUNLOCK(inp);
+			SCTP_INP_RLOCK(inp);
 			onoff = sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVRCVINFO);
 			SCTP_INP_RUNLOCK(inp);
 		}
@@ -3435,7 +3435,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			error = EINVAL;
 		} else {
-			SCTP_INP_RUNLOCK(inp);
+			SCTP_INP_RLOCK(inp);
 			onoff = sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVNXTINFO);
 			SCTP_INP_RUNLOCK(inp);
 		}
