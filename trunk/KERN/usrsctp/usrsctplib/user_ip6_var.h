@@ -44,6 +44,11 @@ struct in6_pktinfo {
 #define s6_addr16 u.Word
 #endif
 
+#if defined(__Userspace_os_FreeBSD)
+#if !defined(IPV6_2292PKTINFO)
+#define IPV6_2292PKTINFO 19
+#endif
+#endif
 #if !defined(__Userspace_os_FreeBSD)
 struct ip6_moptions {
 	struct	ifnet *im6o_multicast_ifp; /* ifp for outgoing multicasts */
