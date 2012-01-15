@@ -163,7 +163,7 @@ sctp_iterator_thread(void *v SCTP_UNUSED)
 #if defined(__Userspace__)
 	sctp_wakeup_iterator();
 #if !defined(__Userspace_os_Windows)
-	pthread_exit(pthread_self());
+	pthread_exit(NULL);
 #else
 	ExitThread(0);
 #endif
