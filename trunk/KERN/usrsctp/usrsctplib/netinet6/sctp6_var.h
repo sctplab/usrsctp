@@ -36,14 +36,12 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_var.h 228653 2011-12-17 19:21:40Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_var.h 230138 2012-01-15 14:03:05Z tuexen $");
 #endif
 
 #if defined(__Userspace__)
 extern void in6_sin6_2_sin(struct sockaddr_in *, struct sockaddr_in6 *sin6);
 #endif
-
-/* TODO __Userspace__ IPv6 stuff... */
 #if defined(_KERNEL)
 
 #if defined(__FreeBSD__) || (__APPLE__) || defined(__Windows__)

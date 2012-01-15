@@ -31,7 +31,6 @@
  */
 /*	$KAME: sctp6_usrreq.c,v 1.38 2005/08/24 08:08:56 suz Exp $	*/
 
-#if defined(INET6)
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 229805 2012-01-08 09:56:24Z tuexen $");
@@ -538,6 +537,7 @@ out:
 	}
 }
 #endif
+
 
 void
 sctp6_notify(struct sctp_inpcb *inp,
@@ -1094,11 +1094,13 @@ sctp6_bind(struct socket *so, struct mbuf *nam, struct proc *p)
 	return (error);
 }
 
+
 #if (defined(__FreeBSD__) && __FreeBSD_version > 690000) || defined(__Windows__) || defined(__Userspace__)
 #if !defined(__Userspace__)
-static 
-#endif
+static void
+#else
 void
+#endif
 sctp6_close(struct socket *so)
 {
 	sctp_close(so);
@@ -1992,5 +1994,4 @@ sctp6_usrreq(so, req, m, nam, control, p)
 	}
 	return (error);
 }
-#endif
 #endif

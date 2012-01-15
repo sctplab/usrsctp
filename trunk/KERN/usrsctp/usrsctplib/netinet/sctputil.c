@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 229805 2012-01-08 09:56:24Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 230136 2012-01-15 13:35:55Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -55,7 +55,9 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 229805 2012-01-08 09:56:24Z tuex
 #include <netinet/sctp_auth.h>
 #include <netinet/sctp_asconf.h>
 #include <netinet/sctp_bsd_addr.h>
+#if defined(__Userspace__)
 #include <netinet/sctp_constants.h>
+#endif
 
 #if defined(__APPLE__)
 #define APPLE_FILE_NO 8
@@ -3423,8 +3425,8 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 #if defined (CALLBACK_API)
 	struct socket *so;
 	struct sctp_inpcb *inp;
-#endif
 
+#endif
 	if ((stcb == NULL) ||
 	    (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) ||
 	    (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) ||
