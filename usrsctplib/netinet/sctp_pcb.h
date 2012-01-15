@@ -561,8 +561,8 @@ struct sctp_inpcb {
 #if defined (CALLBACK_API)
 int register_recv_cb (struct socket*, int (*)(struct socket *, struct sctp_queued_to_read*));
 int register_send_cb (struct socket*, uint32_t, int (*)(struct socket *, uint32_t));
-#endif
 
+#endif
 struct sctp_tcb {
 	struct socket *sctp_socket;	/* back pointer to socket */
 	struct sctp_inpcb *sctp_ep;	/* back pointer to ep */

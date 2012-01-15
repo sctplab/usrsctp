@@ -32,7 +32,9 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_ss_functions.c 228907 2011-12-27 10:16
 #endif
 
 #include <netinet/sctp_pcb.h>
+#if defined(__Userspace__)
 #include <netinet/sctp_os_userspace.h>
+#endif
 
 /*
  * Default simple round-robin algorithm.

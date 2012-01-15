@@ -56,7 +56,6 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 228907 2011-12-27 10:16:24Z tuex
 #endif
 #if !defined(__Userspace_os_Windows)
 #include <netinet/udp.h>
-#include <sys/unistd.h>
 #endif
 #ifdef INET6
 #if defined(__Userspace__)
@@ -68,8 +67,12 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 228907 2011-12-27 10:16:24Z tuex
 #if defined(__FreeBSD__)
 #include <sys/sched.h>
 #include <sys/smp.h>
+#include <sys/unistd.h>
 #endif
 #if defined(__Userspace__)
+#if !defined(__Userspace_os_Windows)
+#include <sys/unistd.h>
+#endif
 #include <user_socketvar.h>
 #endif
 
@@ -2675,10 +2678,12 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	/* setup socket pointers */
 	inp->sctp_socket = so;
 	inp->ip_inp.inp.inp_socket = so;
-#if defined(INET6) && !defined(__Userspace__)
+#ifdef INET6
+#if !defined(__Userspace__)
 	if (MODULE_GLOBAL(ip6_auto_flowlabel)) {
 		inp->ip_inp.inp.inp_flags |= IN6P_AUTOFLOWLABEL;
 	}
+#endif
 #endif
 	inp->sctp_associd_counter = 1;
 	inp->partial_delivery_point = SCTP_SB_LIMIT_RCV(so) >> SCTP_PARTIAL_DELIVERY_SHIFT;
