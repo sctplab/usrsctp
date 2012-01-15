@@ -776,13 +776,11 @@ m_dup1(struct mbuf *m, int off, int len, int wait)
 	else
 		copyhdr = 0;
 	if (len >= MINCLSIZE) {
-		if (copyhdr == 1)
-			/*m_clget(n, wait);*/ /* TODO: include code for copying the header */
-			 n = m_getcl(wait, m->m_type, M_PKTHDR);
-			 m_dup_pkthdr(n, m, wait);
-		else
-			/*m_clget(n, wait);*/
-			  n = m_getcl(wait, m->m_type, 0);
+		if (copyhdr == 1) {
+			m_clget(n, wait); /* TODO: include code for copying the header */
+			m_dup_pkthdr(n, m, wait);
+		} else
+			m_clget(n, wait);
 	} else {
 		if (copyhdr == 1)
 			n = m_gethdr(wait, m->m_type);
