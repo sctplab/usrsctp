@@ -363,4 +363,34 @@ int	 rtrequest1(int, struct rt_addrinfo *, struct rtentry **);
 int	 rt_check(struct rtentry **, struct rtentry **, struct sockaddr *);
 /* #endif */
 
+#if defined(__Userspace_os_Linux)
+#undef RTM_NEWADDR
+#define RTM_NEWADDR 20
+#undef RTM_DELADDR
+#define RTM_DELADDR 21
+#define RTMGRP_IPV4_IFADDR 0x10
+#define RTMGRP_IPV6_IFADDR 0x100
+#define RTA_ALIGNTO 4
+#define RTA_ALIGN(len) ( ((len)+RTA_ALIGNTO-1) & ~(RTA_ALIGNTO-1) )
+#define RTA_LENGTH(len) (RTA_ALIGN(sizeof(struct rtattr)) + (len))
+#define RTA_SPACE(len)  RTA_ALIGN(RTA_LENGTH(len))
+#define RTA_DATA(rta)   ((void*)(((char*)(rta)) + RTA_LENGTH(0)))
+#define RTA_PAYLOAD(rta) ((int)((rta)->rta_len) - RTA_LENGTH(0))
+struct ifa_msghdr {
+	unsigned short  ifam_msglen;
+	unsigned char   ifam_version;
+	unsigned char   ifam_type;
+	int             ifam_addrs;
+	int             ifam_flags;
+	unsigned short  ifam_index;
+	int             ifam_metric;
+};
+
+struct rtattr
+{
+	unsigned short  rta_len;
+	unsigned short  rta_type;
+};
+#endif
+
 #endif
