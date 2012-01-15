@@ -167,6 +167,9 @@ sctp_finish(void)
 	sctp_address_monitor_stop();
 	sctp_stop_main_timer();
 #endif
+#if defined(__Userspace__)
+	recv_thread_destroy();
+#endif
 	sctp_pcb_finish();
 #if defined(__Windows__)
 	sctp_finish_sysctls();
