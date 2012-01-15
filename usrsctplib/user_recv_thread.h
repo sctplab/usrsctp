@@ -13,7 +13,8 @@ extern int userspace_udpsctp6;
 /* routing socket used for route lookups */
 extern int userspace_route;
 
-void recv_thread_init();
+void recv_thread_init(void);
+void recv_thread_destroy(void);
 
 #define RECV_THREAD_INIT    recv_thread_init
 
