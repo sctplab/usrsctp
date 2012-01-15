@@ -5,12 +5,17 @@
 #include <pthread.h>
 #if !defined(__Userspace_os_FreeBSD)
 #include <sys/uio.h>
+#else
+#include <user_ip6_var.h>
 #endif
 #endif
 #include <netinet/sctp_os.h>
 #include <netinet/sctp_var.h>
 #include <netinet/sctp_pcb.h>
-
+#if defined(__Userspace_os_Linux)
+#include <linux/netlink.h>
+#include <linux/if_addr.h>
+#endif
 /* extern __Userspace__ variable in user_recv_thread.h */
 int userspace_rawsctp = -1; /* needs to be declared = -1 */
 int userspace_udpsctp = -1;
@@ -33,9 +38,205 @@ int userspace_route = -1;
 # error "can't determine socket option to use to get UDP IP"
 #endif
 
-void recv_thread_destroy_udp(void *);
-void recv_thread_destroy_raw(void *);
+void recv_thread_destroy(void);
 #define MAXLEN_MBUF_CHAIN 32 /* What should this value be? */
+#define ROUNDUP(a, size) (((a) & ((size)-1)) ? (1 + ((a) | ((size)-1))) : (a))
+#if !defined(__Userspace_os_Windows)
+#define NEXT_SA(ap) ap = (struct sockaddr *) \
+	((caddr_t) ap + (ap->sa_len ? ROUNDUP(ap->sa_len, sizeof (uint32_t)) : sizeof(uint32_t)))
+#endif
+
+#if !defined(__Userspace_os_Windows) && !defined(__Userspace_os_Linux)
+static void
+sctp_get_rtaddrs(int addrs, struct sockaddr *sa, struct sockaddr **rti_info)
+{
+	int i;
+
+	for (i = 0; i < RTAX_MAX; i++) {
+		if (addrs & (1 << i)) {
+			rti_info[i] = sa;
+			NEXT_SA(sa);
+		} else {
+			rti_info[i] = NULL;
+		}
+	}
+}
+#endif
+
+static void
+sctp_handle_ifamsg(unsigned char type, unsigned short index, struct sockaddr *sa)
+{
+	int rc;
+	struct ifaddrs *ifa, *found_ifa = NULL;
+
+	/* handle only the types we want */
+	if ((type != RTM_NEWADDR) && (type != RTM_DELADDR)) {
+		return;
+	}
+
+	rc = getifaddrs(&g_interfaces);
+	if (rc != 0) {
+		printf("getifaddrs failed\n");
+		return;
+	}
+	for (ifa = g_interfaces; ifa; ifa = ifa->ifa_next) {
+		if (index == if_nametoindex(ifa->ifa_name)) {
+			found_ifa = ifa;
+			break;
+		}
+	}
+	if (found_ifa == NULL) {
+		/* TSNH */
+		printf("ifa not found?!\n");
+		return;
+	}
+
+	switch (sa->sa_family) {
+#ifdef INET
+	case AF_INET:
+		ifa->ifa_addr = (struct sockaddr *)malloc(sizeof(struct sockaddr_in));
+		memcpy(ifa->ifa_addr, sa, sizeof(struct sockaddr_in));
+		break;
+#endif
+#ifdef INET6
+	case AF_INET6:
+		ifa->ifa_addr = (struct sockaddr *)malloc(sizeof(struct sockaddr_in6));
+		memcpy(ifa->ifa_addr, sa, sizeof(struct sockaddr_in6));
+		break;
+#endif
+	default:
+		printf("Address family not supported\n");
+	}
+
+	/* relay the appropriate address change to the base code */
+	if (type == RTM_NEWADDR) {
+		(void)sctp_add_addr_to_vrf(SCTP_DEFAULT_VRFID, ifa, if_nametoindex(ifa->ifa_name),
+		                           0,
+		                           ifa->ifa_name,
+		                           (void *)ifa,
+		                           ifa->ifa_addr,
+		                           0,
+		                           1);
+	} else {
+		sctp_del_addr_from_vrf(SCTP_DEFAULT_VRFID, ifa->ifa_addr,
+		                       if_nametoindex(ifa->ifa_name),
+		                       ifa->ifa_name);
+	}
+}
+
+#if !defined(__Userspace_os_Windows)
+#if !defined(__Userspace_os_Linux)
+static void *
+recv_function_route(void *arg)
+{
+	ssize_t ret;
+	struct ifa_msghdr *ifa;
+	char rt_buffer[1024];
+	struct sockaddr *sa, *rti_info[RTAX_MAX];
+
+	while(1) {
+		bzero(rt_buffer, sizeof(rt_buffer));
+		ret = recv(userspace_route, rt_buffer, sizeof(rt_buffer), 0);
+
+		if (ret > 0) {
+			ifa = (struct ifa_msghdr *) rt_buffer;
+			if (ifa->ifam_type != RTM_DELADDR && ifa->ifam_type != RTM_NEWADDR) {
+				continue;
+			}
+			sa = (struct sockaddr *) (ifa + 1);
+			sctp_get_rtaddrs(ifa->ifam_addrs, sa, rti_info);
+			switch (ifa->ifam_type) {
+			case RTM_DELADDR:
+			case RTM_NEWADDR:
+				sctp_handle_ifamsg(ifa->ifam_type, ifa->ifam_index, rti_info[RTAX_IFA]);
+				break;
+			default:
+				/* ignore this routing event */
+				break;
+			}
+		}
+	}
+	return NULL;
+}
+#else /*Userspace_os_Linux*/
+static void *
+recv_function_route(void *arg)
+{
+	int fd;
+	int len;
+	char buf[4096];
+	struct iovec iov = { buf, sizeof(buf) };
+	struct msghdr msg;
+	struct nlmsghdr *nh;
+	struct sockaddr_nl sanl;
+	struct ifaddrmsg *rtmsg;
+	struct rtattr *rtatp; 
+	struct in_addr *inp;
+#ifdef INET
+	struct sockaddr_in *sa;
+#endif
+#ifdef INET6
+	struct sockaddr_in6 *sa6;
+#endif
+	memset(&sanl, 0, sizeof(sanl));
+	sanl.nl_family = AF_NETLINK;
+	sanl.nl_groups = RTMGRP_IPV6_IFADDR | RTMGRP_IPV4_IFADDR;
+
+	fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
+	bind(fd, (struct sockaddr *) &sanl, sizeof(sanl));
+
+	while (1) {
+		memset(&msg, 0, sizeof(struct msghdr));
+		msg.msg_name = (void *)&sanl;
+		msg.msg_namelen = sizeof(sanl);
+		msg.msg_iov = &iov;
+		msg.msg_iovlen = 1;
+		msg.msg_control = NULL;
+		msg.msg_controllen = 0;
+
+		len = recvmsg(fd, &msg, 0);
+
+		for (nh = (struct nlmsghdr *) buf; NLMSG_OK (nh, len);
+			nh = NLMSG_NEXT (nh, len)) {
+			if (nh->nlmsg_type == NLMSG_DONE)
+				return NULL;
+
+			if (nh->nlmsg_type == RTM_NEWADDR || nh->nlmsg_type == RTM_DELADDR) {
+				rtmsg = (struct ifaddrmsg *)NLMSG_DATA(nh);
+				rtatp = (struct rtattr *)IFA_RTA(rtmsg);
+				if(rtatp->rta_type == IFA_ADDRESS) {
+					inp = (struct in_addr *)RTA_DATA(rtatp);
+					switch (rtmsg->ifa_family) {
+#ifdef INET
+					case AF_INET:
+						sa = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
+						sa->sin_family = rtmsg->ifa_family;
+						sa->sin_port = 0;
+						memcpy(&sa->sin_addr, inp, sizeof(struct in_addr));
+						sctp_handle_ifamsg(nh->nlmsg_type, rtmsg->ifa_index, (struct sockaddr *)sa);
+						break;
+#endif
+#ifdef INET6
+					case AF_INET6:
+						sa6 = (struct sockaddr_in6 *)malloc(sizeof(struct sockaddr_in6));
+						sa6->sin6_family = rtmsg->ifa_family;
+						sa6->sin6_port = 0;
+						memcpy(&sa6->sin6_addr, inp, sizeof(struct in6_addr));
+						sctp_handle_ifamsg(nh->nlmsg_type, rtmsg->ifa_index, (struct sockaddr *)sa6);
+						break;
+#endif
+					default:
+						printf("Address family not supported\n");
+					}
+				}
+			}
+		}
+	}
+	pthread_exit(NULL);
+	return NULL;
+}
+#endif
+#endif
 
 /* need ref to this for destroy... */
 struct mbuf **recvmbuf;
@@ -623,7 +824,7 @@ setSendBufferSize(int sfd, int new_size)
 }
 
 void 
-recv_thread_init()
+recv_thread_init(void)
 {
 	userland_thread_t recvthreadraw , recvthreadudp;
 	const int hdrincl = 1;
@@ -634,6 +835,15 @@ recv_thread_init()
 	struct sockaddr_in6 addr_ipv6;
 #endif
 
+#if !defined(__Userspace_os_Windows)
+	userland_thread_t recvthreadroute;
+
+	if (userspace_route == -1) {
+		if ((userspace_route = socket(AF_ROUTE, SOCK_RAW, 0)) < 0) {
+			perror("routing socket failure\n");
+		}
+	}
+#endif
 	/* use raw socket, create if not initialized */
 	if (userspace_rawsctp == -1) {
 		if ((userspace_rawsctp = socket(AF_INET, SOCK_RAW, IPPROTO_SCTP)) < 0) {
@@ -695,6 +905,11 @@ recv_thread_init()
 				perror("raw6 setsockopt: IPV6_RECVPKTINFO");
 				exit(1);
 			}
+#elif defined(__Userspace_os_FreeBSD)
+			if (setsockopt(userspace_rawsctp6, IPPROTO_IPV6, IPV6_2292PKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
+				perror("raw6 setsockopt: IPV6_2922PKTINFO");
+				exit(1);
+			}
 #else
 			if (setsockopt(userspace_rawsctp6, IPPROTO_IPV6, IPV6_PKTINFO,(const void*)&on, sizeof(on)) < 0) {
 				perror("raw6 setsockopt: IPV6_PKTINFO\n");
@@ -731,6 +946,11 @@ recv_thread_init()
 			perror("udp6 setsockopt: IPV6_RECVPKTINFO");
 			exit(1);
 		}
+#elif defined(__Userspace_os_FreeBSD)
+		if (setsockopt(userspace_udpsctp6, IPPROTO_IPV6, IPV6_2292PKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
+			perror("udp6 setsockopt: IPV6_2922PKTINFO");
+			exit(1);
+		}
 #else
 		if (setsockopt(userspace_udpsctp6, IPPROTO_IPV6, IPV6_PKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
 			perror("udp6 setsockopt: IPV6_PKTINFO");
@@ -757,6 +977,14 @@ recv_thread_init()
 
 	/* start threads here for receiving incoming messages */
 #if !defined(__Userspace_os_Windows)
+	if (userspace_route != -1) {
+		int rc;
+
+		if ((rc = pthread_create(&recvthreadroute, NULL, &recv_function_route, NULL))) {
+			printf("ERROR; return code from recvthread route pthread_create() is %d\n", rc);
+			exit(1);
+		}
+	}
 #if defined(INET)
 	if (userspace_rawsctp != -1) {
 		int rc;
@@ -826,49 +1054,65 @@ recv_thread_init()
 }
 
 void
-recv_thread_destroy_raw(void *parm)
+recv_thread_destroy(void)
 {
 	int i;
 
-	/* close sockets if they are open */
+	if (userspace_route != -1) {
 #if defined(__Userspace_os_Windows)
-	if (userspace_route != -1)
 		closesocket(userspace_route);
-	if (userspace_rawsctp != -1)
+#else
+		close(userspace_route);
+#endif
+	}
+	if (userspace_rawsctp != -1) {
+#if defined(__Userspace_os_Windows)
 		closesocket(userspace_rawsctp);
 #else
-	if (userspace_route != -1)
-		close(userspace_route);
-	if (userspace_rawsctp != -1)
 		close(userspace_rawsctp);
 #endif
-	/*
-	 *  call m_free on contents of recvmbuf array
-	*/
-	for(i=0; i < MAXLEN_MBUF_CHAIN; i++) {
-		m_free(recvmbuf[i]);
+		for(i=0; i < MAXLEN_MBUF_CHAIN; i++) {
+			m_free(recvmbuf[i]);
+		}
+		/* free the array itself */
+		free(recvmbuf);
 	}
-
-	/* free the array itself */
-	free(recvmbuf);
-}
-
-void
-recv_thread_destroy_udp(void *parm)
-{
-	int i;
-
-	/* socket closed in 
-	void sctp_over_udp_stop(void)
-	*/
-
-	/*
-	 *   call m_free on contents of udprecvmbuf array
-	 */
-	for(i=0; i < MAXLEN_MBUF_CHAIN; i++) {
-		m_free(udprecvmbuf[i]);
+	if (userspace_udpsctp != -1) {
+#if defined(__Userspace_os_Windows)
+		closesocket(userspace_udpsctp);
+#else
+		close(userspace_udpsctp);
+#endif
+		for (i = 0; i < MAXLEN_MBUF_CHAIN; i++) {
+			m_free(udprecvmbuf[i]);
+		}
+		/* free the array itself */
+		free(udprecvmbuf);
 	}
-
-	/* free the array itself */
-	free(udprecvmbuf);
+#if defined(INET6)
+	if (userspace_rawsctp6 != -1) {
+#if defined(__Userspace_os_Windows)
+		closesocket(userspace_rawsctp6);
+#else
+		close(userspace_rawsctp6);
+#endif
+		for (i = 0; i < MAXLEN_MBUF_CHAIN; i++) {
+			m_free(recvmbuf6[i]);
+		}
+		/* free the array itself */
+		free(recvmbuf6);
+	}
+	if (userspace_udpsctp6 != -1) {
+#if defined(__Userspace_os_Windows)
+		closesocket(userspace_udpsctp6);
+#else
+		close(userspace_udpsctp6);
+#endif
+		for (i = 0; i < MAXLEN_MBUF_CHAIN; i++) {
+			m_free(udprecvmbuf6[i]);
+		}
+		/* free the array itself */
+		free(udprecvmbuf6);
+	}
+#endif
 }
