@@ -900,14 +900,9 @@ recv_thread_init(void)
 			perror("raw ipv6 socket failure. continue with only UDP6 socket...\n");
 		} else {
 			/* complete setting up the raw SCTP socket */
-#if defined(__Userspace_os_Linux)
+#if defined(IPV6_RECVPKTINFO)
 			if (setsockopt(userspace_rawsctp6, IPPROTO_IPV6, IPV6_RECVPKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
 				perror("raw6 setsockopt: IPV6_RECVPKTINFO");
-				exit(1);
-			}
-#elif defined(__Userspace_os_FreeBSD)
-			if (setsockopt(userspace_rawsctp6, IPPROTO_IPV6, IPV6_2292PKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
-				perror("raw6 setsockopt: IPV6_2922PKTINFO");
 				exit(1);
 			}
 #else
@@ -941,14 +936,9 @@ recv_thread_init(void)
 		if ((userspace_udpsctp6 = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 			perror("UDP ipv6 socket failure");
 		}
-#if defined(__Userspace_os_Linux)
+#if defined(IPV6_RECVPKTINFO)
 		if (setsockopt(userspace_udpsctp6, IPPROTO_IPV6, IPV6_RECVPKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
 			perror("udp6 setsockopt: IPV6_RECVPKTINFO");
-			exit(1);
-		}
-#elif defined(__Userspace_os_FreeBSD)
-		if (setsockopt(userspace_udpsctp6, IPPROTO_IPV6, IPV6_2292PKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
-			perror("udp6 setsockopt: IPV6_2922PKTINFO");
 			exit(1);
 		}
 #else
