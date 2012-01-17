@@ -1,3 +1,4 @@
+EXTRA_DIST             = Makefile.nmake
 lib_LTLIBRARIES        = libusrsctp.la
 libusrsctp_la_SOURCES  = user_atomic.h \
                          user_environment.c user_environment.h \
