@@ -3,10 +3,12 @@ lib_LTLIBRARIES        = libusrsctp.la
 libusrsctp_la_SOURCES  = user_atomic.h \
                          user_environment.c user_environment.h \
                          user_inpcb.h \
+                         user_ip_icmp.h \
                          user_ip6_var.h \
                          user_malloc.h \
                          user_mbuf.c \
                          user_mbuf.h \
+                         user_queue.h \
                          user_radix.h \
                          user_recv_thread.c user_recv_thread.h \
                          user_resourcevar.h \
