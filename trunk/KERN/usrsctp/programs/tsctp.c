@@ -268,7 +268,9 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 
 int main(int argc, char **argv)
 {
+#if !defined (__Userspace_os_Windows)
 	char c;
+#endif
 	socklen_t addr_len;
 	struct sockaddr_in local_addr;
 	struct timeval start_time, now, diff_time;
@@ -292,6 +294,7 @@ int main(int argc, char **argv)
 #if defined (__Userspace_os_Windows)
 	char *opt;
 	int optind = 0;
+	int j;
 #endif	
 	unordered = 0;
 
@@ -352,71 +355,71 @@ int main(int argc, char **argv)
 				exit(1);
 		}
 #else
-	for (i = 1; i < argc; i++) {
-		if (argv[i][0] == '-') {
-			switch (argv[i][1]) {
+	for (j = 1; j < argc; j++) {
+		if (argv[j][0] == '-') {
+			switch (argv[j][1]) {
 				case 'a':
-					if (i + 1 >= argc) {
+					if (j + 1 >= argc) {
 					printf("%s", Usage);
 					exit(1);
 					}
-					opt = argv[++i];
+					opt = argv[++j];
 					ind.ssb_adaptation_ind = atoi(opt);
 					break;
 				case 'l':
-					if (i + 1 >= argc) {
+					if (j + 1 >= argc) {
 						printf("%s", Usage);
 						exit(1);
 					}
-					opt = argv[++i];
+					opt = argv[++j];
 					length = atoi(opt);
 					break;
 				case 'p':
-					if (i + 1 >= argc) {
+					if (j + 1 >= argc) {
 						printf("%s", Usage);
 						exit(1);
 					}
-					opt = argv[++i];
+					opt = argv[++j];
 					port = atoi(opt);
 					break;
 				case 'n':
-					if (i + 1 >= argc) {
+					if (j + 1 >= argc) {
 						printf("%s", Usage);
 						exit(1);
 					}
-					opt = argv[++i];
+					opt = argv[++j];
 					number_of_messages = atoi(opt);
 					break;
 				case 'f':
-					if (i + 1 >= argc) {
+					if (j + 1 >= argc) {
 						printf("%s", Usage);
 						exit(1);
 					}
-					opt = argv[++i];
+					opt = argv[++j];
 					fragpoint = atoi(opt);
 					break;
 				case 'U':
-					if (i + 1 >= argc) {
+					if (j + 1 >= argc) {
 						printf("%s", Usage);
 						exit(1);
 					}
-					opt = argv[++i];
+					opt = argv[++j];
 					remote_udp_port = atoi(opt);
 					break;
 				case 'E':
-					if (i + 1 >= argc) {
+					if (j + 1 >= argc) {
 						printf("%s", Usage);
 						exit(1);
 					}
-					opt = argv[++i];
+					opt = argv[++j];
 					local_udp_port = atoi(opt);
 					break;
 				case 'T':
-					if (i + 1 >= argc) {
+					if (j + 1 >= argc) {
 						printf("%s", Usage);
 						exit(1);
 					}
-					opt = argv[++i];
+					opt = argv[++j];
 					runtime = atoi(opt);
 					number_of_messages = 0;
 					break;
@@ -441,7 +444,7 @@ int main(int argc, char **argv)
 			break;
 		}
 	}
-	optind = i;
+	optind = j;
 #endif
 	if (optind == argc) {
 		client = 0;
