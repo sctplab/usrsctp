@@ -50,6 +50,7 @@ main(int argc, char *argv[])
 	struct sockaddr_in addr4;
 	struct sockaddr_in6 addr6;
 	struct sctp_udpencaps encaps;
+	char buffer[80];
 
 	sctp_init(9899);
 	SCTP_BASE_SYSCTL(sctp_debug_on) = 0xffffffff;
@@ -85,16 +86,17 @@ main(int argc, char *argv[])
 	} else {
 		printf("Illegal destination address.\n");
 	}
-#if defined (__Userspace_os_Windows)
-	Sleep(60*1000);
-#else
-	sleep(60);
-#endif
+	while (fgets(buffer, sizeof(buffer), stdin) != NULL) {
+		ssize_t n;
+
+		n = userspace_sctp_sendmsg(sock, buffer, strlen(buffer), NULL, 0, 0, 0, 0, 0, 0);
+		printf("userspace_sctp_sendmsg() returned %ld, len = %d\n", n, strlen(buffer));
+	}
 	userspace_close(sock);
 #if defined (__Userspace_os_Windows)
-	Sleep(10*1000);
+	Sleep(1*1000);
 #else
-	sleep(10);
+	sleep(1);
 #endif
 	sctp_finish();
 	return(0);
