@@ -730,14 +730,17 @@ userspace_sctp_sendmsg(struct socket *so,
 		error = (ENAMETOOLONG);
 		goto sendmsg_return;
 	}
-	if (tolen < offsetof(struct sockaddr, sa_data[0])){
-		error = (EINVAL);
+	if ((tolen > 0) &&
+	    ((to == NULL) || (tolen < sizeof(struct sockaddr)))) {
+		errno = EINVAL;
 		goto sendmsg_return;
 	}
 	/* Adding the following as part of defensive programming, in case the application
 	   does not do it when preparing the destination address.*/
 #if !defined(__Userspace_os_Linux) && !defined (__Userspace_os_Windows)
-	to->sa_len = tolen;
+	if (to != NULL) {
+		to->sa_len = tolen;
+	}
 #endif
 
 	iov[0].iov_base = (caddr_t)data;
