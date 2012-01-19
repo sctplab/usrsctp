@@ -76,7 +76,7 @@ main(int argc, char *argv[])
 			continue;
 		}
 		time(&now);
-		ctime_r(&now, buffer);
+		strcpy(buffer, ctime(&now));
 		userspace_sctp_sendmsg(conn_sock, buffer, strlen(buffer), NULL, 0, 0, 0, 0, 0, 0);
 		userspace_close(conn_sock);
 	}
