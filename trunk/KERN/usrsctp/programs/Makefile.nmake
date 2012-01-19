@@ -10,12 +10,17 @@ LINKFLAGS=/LIBPATH:..\usrsctplib usrsctp.lib
 
 all: \
 	client \
+	daytime_server \
 	discard_server \
 	tsctp
 
 client:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c client.c
 	link -out:client.exe client.obj $(LINKFLAGS)
+
+daytime_server:
+	$(CC) $(CFLAGS) $(CVARSDLL) -c daytime_server.c
+	link -out:daytime_server.exe daytime_server.obj $(LINKFLAGS)
 
 discard_server:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c discard_server.c
@@ -28,6 +33,8 @@ tsctp:
 clean:
 	del /F client
 	del /F client.obj
+	del /F daytime_server
+	del /F daytime_server.obj
 	del /F discard_server
 	del /F discard_server.obj
 	del /F tsctp
