@@ -1943,16 +1943,17 @@ accept1(so, aname, anamelen, ptr_accept_ret_sock)
 
 struct socket *
 userspace_accept(so, aname, anamelen)
-     struct socket *so;	
-     struct sockaddr * aname; 
-     socklen_t * anamelen;
+	struct socket *so;
+	struct sockaddr *aname;
+	socklen_t * anamelen;
 {
-    int error;
-    struct socket *accept_return_sock;
-    error = accept1(so, aname, anamelen, &accept_return_sock);
-    if(error)
-        printf("%s: error=%d\n",__func__, error); /* should we exit here in case of error? */
-    return (accept_return_sock);
+	int error;
+	struct socket *accept_return_sock;
+
+	error = accept1(so, aname, anamelen, &accept_return_sock);
+	if (error)
+		printf("%s: error=%d\n",__func__, error); /* should we exit here in case of error? */
+	return (accept_return_sock);
 }
 
 
