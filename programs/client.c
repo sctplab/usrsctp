@@ -43,6 +43,25 @@
 #include <netinet/sctp_pcb.h>
 #include <usrsctp.h>
 
+int done = 0;
+
+static int
+receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
+{
+	struct mbuf *m;
+
+	if (control == NULL) {
+		done = 1;
+		userspace_close(sock);
+	} else {
+		for (m = control->data; m; m = m->m_next) {
+			printf("%s", m->m_data);
+		}
+		m_freem(control->data);
+	}
+	return 1;
+}
+
 int 
 main(int argc, char *argv[])
 {
@@ -53,10 +72,11 @@ main(int argc, char *argv[])
 	char buffer[80];
 
 	sctp_init(9899);
-	SCTP_BASE_SYSCTL(sctp_debug_on) = 0xffffffff;
+	SCTP_BASE_SYSCTL(sctp_debug_on) = 0x0;
 	if ((sock = userspace_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP)) == NULL) {
 		perror("userspace_socket ipv6");
 	}
+	register_recv_cb(sock, receive_cb);
 	if (argc > 3) {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET6;
@@ -86,18 +106,19 @@ main(int argc, char *argv[])
 	} else {
 		printf("Illegal destination address.\n");
 	}
-	while (fgets(buffer, sizeof(buffer), stdin) != NULL) {
-		ssize_t n;
-
-		n = userspace_sctp_sendmsg(sock, buffer, strlen(buffer), NULL, 0, 0, 0, 0, 0, 0);
-		printf("userspace_sctp_sendmsg() returned %ld, len = %d\n", n, strlen(buffer));
+	while ((fgets(buffer, sizeof(buffer), stdin) != NULL) && !done) {
+		userspace_sctp_sendmsg(sock, buffer, strlen(buffer), NULL, 0, 0, 0, 0, 0, 0);
 	}
-	userspace_close(sock);
+	if (!done) {
+		userspace_shutdown(sock, SHUT_WR);
+	}
+	while (!done) {
 #if defined (__Userspace_os_Windows)
-	Sleep(1*1000);
+		Sleep(1*1000);
 #else
-	sleep(1);
+		sleep(1);
 #endif
+	}
 	sctp_finish();
 	return(0);
 }
