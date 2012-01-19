@@ -1190,7 +1190,7 @@ sctp_disconnect(struct socket *so)
 	}
 }
 
-#if defined(__FreeBSD__) || defined(__Windows__)
+#if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)
 int
 sctp_flush(struct socket *so, int how)
 {
@@ -1221,7 +1221,7 @@ sctp_flush(struct socket *so, int how)
 		 */
 		SCTP_INP_WLOCK(inp);
 		SCTP_INP_READ_LOCK(inp);
-		inp->sctp_flags |= SCTP_PCB_FLAGS_SOCKET_CANT_READ;	
+		inp->sctp_flags |= SCTP_PCB_FLAGS_SOCKET_CANT_READ;
 		SCTP_INP_READ_UNLOCK(inp);
 		SCTP_INP_WUNLOCK(inp);
 		so->so_rcv.sb_cc = 0;
