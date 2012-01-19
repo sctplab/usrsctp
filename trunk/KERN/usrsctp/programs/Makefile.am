@@ -1,7 +1,9 @@
-EXTRA_DIST = Makefile.nmake tsctp.c discard_server.c client.c
-noinst_PROGRAMS = tsctp discard_server client 
+EXTRA_DIST = Makefile.nmake tsctp.c daytime_server.c discard_server.c client.c
+noinst_PROGRAMS = tsctp daytime_server discard_server client 
 tsctp_SOURCES = tsctp.c
 tsctp_LDADD = ../usrsctplib/libusrsctp.la
+daytime_server_SOURCES = daytime_server.c
+daytime_server_LDADD = ../usrsctplib/libusrsctp.la
 discard_server_SOURCES = discard_server.c
 discard_server_LDADD = ../usrsctplib/libusrsctp.la
 client_SOURCES = client.c

@@ -88,7 +88,7 @@ main(int argc, char *argv[])
 	char buffer[BUFFER_SIZE];
 #endif
 
-	sctp_init(9899);
+	sctp_init(9999);
 	SCTP_BASE_SYSCTL(sctp_debug_on) = 0x0;
 
 	if ((sock = userspace_socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP)) == NULL) {
