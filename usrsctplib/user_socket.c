@@ -1,6 +1,8 @@
 #include <netinet/sctp_os.h>
 #include <netinet/sctp_pcb.h>
 #include <netinet/sctputil.h>
+#include <netinet/sctp_var.h>
+
 #if defined(__Userspace_os_Linux)
 #define __FAVOR_BSD    /* (on Ubuntu at least) enables UDP header field names like BSD in RFC 768 */
 #endif
@@ -1951,9 +1953,11 @@ userspace_accept(so, aname, anamelen)
 	struct socket *accept_return_sock;
 
 	error = accept1(so, aname, anamelen, &accept_return_sock);
-	if (error)
-		printf("%s: error=%d\n",__func__, error); /* should we exit here in case of error? */
-	return (accept_return_sock);
+	if (error) {
+		return (NULL);
+	} else {
+		return (accept_return_sock);
+	}
 }
 
 
@@ -2087,11 +2091,31 @@ int userspace_connect(so, name, namelen)
 
 }
 
-void userspace_close(struct socket *so) {
+void
+userspace_close(struct socket *so) {
 	ACCEPT_LOCK();
 	SOCK_LOCK(so);
 	sorele(so);
 }
+
+int
+userspace_shutdown(struct socket *so, int how)
+{
+	int error;
+
+	if (!(how == SHUT_RD || how == SHUT_WR || how == SHUT_RDWR))
+		return (EINVAL);
+
+	sctp_flush(so, how);
+	if (how != SHUT_WR)
+		 socantrcvmore(so);
+	if (how != SHUT_RD) {
+		error = sctp_shutdown(so);
+		return (error);
+	}
+	return (0);
+}
+
 
 /* needed from sctp_usrreq.c */
 int

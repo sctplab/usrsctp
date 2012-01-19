@@ -141,6 +141,9 @@ userspace_connect(struct socket *so,
 void
 userspace_close(struct socket *so);
 
+int
+userspace_shutdown(struct socket *so, int how);
+
 #define SCTP_USERSPACE_SYSCTL_DECL(__field)           \
 void userspace_sysctl_set_ ## __field(uint32_t value);\
 uint32_t userspace_sysctl_get_ ## __field(void);
