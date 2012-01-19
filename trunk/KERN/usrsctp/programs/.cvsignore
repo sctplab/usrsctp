@@ -4,4 +4,5 @@ Makefile
 Makefile.in
 tsctp
 client
+daytime_server
 discard_server
