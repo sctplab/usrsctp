@@ -28,6 +28,10 @@
  * SUCH DAMAGE.
  */
 
+/*
+ * Usage: discard_server [local_encaps_port] [remote_encaps_port]
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -73,6 +77,7 @@ main(int argc, char *argv[])
 {
 	struct socket *sock;
 	struct sockaddr_in addr;
+	struct sctp_udpencaps encaps;
 	struct sctp_event event;
 	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
 	                          SCTP_PEER_ADDR_CHANGE,
@@ -88,13 +93,25 @@ main(int argc, char *argv[])
 	char buffer[BUFFER_SIZE];
 #endif
 
-	sctp_init(9999);
+	if (argc > 1) {
+		sctp_init(atoi(argv[1]));
+	} else {
+		sctp_init(9899);
+	}
 	SCTP_BASE_SYSCTL(sctp_debug_on) = 0x0;
+	SCTP_BASE_SYSCTL(sctp_blackhole) = 2;
 
 	if ((sock = userspace_socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP)) == NULL) {
 		perror("userspace_socket");
 	}
-
+	if (argc > 2) {
+		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
+		encaps.sue_address.ss_family = AF_INET;
+		encaps.sue_port = htons(atoi(argv[2]));
+		if (userspace_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+			perror("setsockopt");
+		}
+	}
 	memset(&event, 0, sizeof(event));
 	event.se_assoc_id = SCTP_FUTURE_ASSOC;
 	event.se_on = 1;
