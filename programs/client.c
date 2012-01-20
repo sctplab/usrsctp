@@ -28,6 +28,10 @@
  * SUCH DAMAGE.
  */
 
+/*
+ * Usage: client remote_addr remote_port [local_encaps_port] [remote_encaps_port]
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -71,16 +75,21 @@ main(int argc, char *argv[])
 	struct sctp_udpencaps encaps;
 	char buffer[80];
 
-	sctp_init(9899);
+	if (argc > 3) {
+		sctp_init(atoi(argv[3]));
+	} else {
+		sctp_init(9899);
+	}
 	SCTP_BASE_SYSCTL(sctp_debug_on) = 0x0;
+	SCTP_BASE_SYSCTL(sctp_blackhole) = 2;
 	if ((sock = userspace_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP)) == NULL) {
 		perror("userspace_socket ipv6");
 	}
 	register_recv_cb(sock, receive_cb);
-	if (argc > 3) {
+	if (argc > 4) {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET6;
-		encaps.sue_port = htons(atoi(argv[3]));
+		encaps.sue_port = htons(atoi(argv[4]));
 		if (userspace_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
 			perror("setsockopt");
 		}

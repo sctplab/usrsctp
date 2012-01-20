@@ -27,6 +27,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+
+/*
+ * Usage: daytime_server [local_encaps_port] [remote_encaps_port]
+ */
+
 #if defined(__Userspace_os_Windows)
 #define _CRT_SECURE_NO_WARNINGS
 #endif
@@ -49,15 +54,29 @@ main(int argc, char *argv[])
 {
 	struct socket *sock, *conn_sock;
 	struct sockaddr_in addr;
+	struct sctp_udpencaps encaps;
 	socklen_t addr_len;
 	char buffer[80];
 	time_t now;
 
-	sctp_init(9999);
+	if (argc > 1) {
+		sctp_init(atoi(argv[1]));
+	} else {
+		sctp_init(9899);
+	}
 	SCTP_BASE_SYSCTL(sctp_debug_on) = 0x0;
+	SCTP_BASE_SYSCTL(sctp_blackhole) = 2;
 
 	if ((sock = userspace_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP)) == NULL) {
 		perror("userspace_socket");
+	}
+	if (argc > 2) {
+		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
+		encaps.sue_address.ss_family = AF_INET;
+		encaps.sue_port = htons(atoi(argv[2]));
+		if (userspace_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+			perror("setsockopt");
+		}
 	}
 	memset((void *)&addr, 0, sizeof(struct sockaddr_in));
 #ifdef HAVE_SIN_LEN

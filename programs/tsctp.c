@@ -461,7 +461,7 @@ int main(int argc, char **argv)
 	local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	sctp_init(local_udp_port);
-	SCTP_BASE_SYSCTL(sctp_debug_on) = 0xffffffff;
+	SCTP_BASE_SYSCTL(sctp_debug_on) = 0x0;
 	SCTP_BASE_SYSCTL(sctp_blackhole) = 2;
 
 	if (!(psock = userspace_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP)) ){
