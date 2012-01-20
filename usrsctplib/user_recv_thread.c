@@ -296,6 +296,9 @@ recv_function_raw(void *arg)
 		n = ncounter;
 #else
 		ncounter = n = readv(userspace_rawsctp, recv_iovec, iovcnt);
+		if (n < 0) {
+			continue;
+		}
 #endif
 		assert (n <= (MAXLEN_MBUF_CHAIN * iovlen));
 		SCTP_HEADER_LEN(recvmbuf[0]) = n; /* length of total packet */
@@ -422,6 +425,9 @@ recv_function_raw6(void *arg)
 		msg.msg_flags = 0;
 
 		ncounter = n = recvmsg(userspace_rawsctp6, &msg, 0);
+		if (n < 0) {
+			continue;
+		}
 #endif
 		assert (n <= (MAXLEN_MBUF_CHAIN * iovlen));
 		SCTP_HEADER_LEN(recvmbuf6[0]) = n; /* length of total packet */
@@ -550,6 +556,9 @@ recv_function_udp(void *arg)
 		msg.msg_flags = 0;
 
 		ncounter = n = recvmsg(userspace_udpsctp, &msg, 0);
+		if (n < 0) {
+			continue;
+		}
 #else
 		nResult = WSAIoctl(userspace_udpsctp, SIO_GET_EXTENSION_FUNCTION_POINTER,
 		 &WSARecvMsg_GUID, sizeof WSARecvMsg_GUID,
@@ -712,6 +721,9 @@ recv_function_udp6(void *arg)
 		msg.msg_flags = 0;
 
 		ncounter = n = recvmsg(userspace_udpsctp6, &msg, 0);
+		if (n < 0) {
+			continue;
+		}
 #else
 		nResult = WSAIoctl(userspace_udpsctp6, SIO_GET_EXTENSION_FUNCTION_POINTER,
 		                   &WSARecvMsg_GUID, sizeof WSARecvMsg_GUID,
@@ -890,9 +902,12 @@ recv_thread_init(void)
 		addr_ipv4.sin_addr.s_addr = htonl(INADDR_ANY);
 		if (bind(userspace_udpsctp, (const struct sockaddr *)&addr_ipv4, sizeof(struct sockaddr_in)) < 0) {
 			perror("bind");
+			close(userspace_udpsctp);
+			userspace_udpsctp = -1;
+		} else {
+			setReceiveBufferSize(userspace_udpsctp, SB_RAW); /* 128K */
+			setSendBufferSize(userspace_udpsctp, SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
 		}
-		setReceiveBufferSize(userspace_udpsctp, SB_RAW); /* 128K */
-		setSendBufferSize(userspace_udpsctp, SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
 	}
 #if defined(INET6)
 	if (userspace_rawsctp6 == -1) {
@@ -959,9 +974,12 @@ recv_thread_init(void)
 		addr_ipv6.sin6_addr        = in6addr_any;
 		if (bind(userspace_udpsctp6, (const struct sockaddr *)&addr_ipv6, sizeof(struct sockaddr_in6)) < 0) {
 			perror("bind");
+			close(userspace_udpsctp6);
+			userspace_udpsctp6 = -1;
+		} else {
+			setReceiveBufferSize(userspace_udpsctp6, SB_RAW); /* 128K */
+			setSendBufferSize(userspace_udpsctp6, SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
 		}
-		setReceiveBufferSize(userspace_udpsctp6, SB_RAW); /* 128K */
-		setSendBufferSize(userspace_udpsctp6, SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
 	}
 #endif
 
