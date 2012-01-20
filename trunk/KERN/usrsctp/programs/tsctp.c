@@ -293,8 +293,7 @@ int main(int argc, char **argv)
 	struct sctp_setadaptation ind = {0};
 #if defined (__Userspace_os_Windows)
 	char *opt;
-	int optind = 0;
-	int j;
+	int optind;
 #endif	
 	unordered = 0;
 
@@ -355,71 +354,71 @@ int main(int argc, char **argv)
 				exit(1);
 		}
 #else
-	for (j = 1; j < argc; j++) {
-		if (argv[j][0] == '-') {
-			switch (argv[j][1]) {
+	for (optind = 1; optind < argc; optind++) {
+		if (argv[optind][0] == '-') {
+			switch (argv[optind][1]) {
 				case 'a':
-					if (j + 1 >= argc) {
+					if (++optind >= argc) {
 					printf("%s", Usage);
 					exit(1);
 					}
-					opt = argv[++j];
+					opt = argv[optind];
 					ind.ssb_adaptation_ind = atoi(opt);
 					break;
 				case 'l':
-					if (j + 1 >= argc) {
+					if (++optind >= argc) {
 						printf("%s", Usage);
 						exit(1);
 					}
-					opt = argv[++j];
+					opt = argv[optind];
 					length = atoi(opt);
 					break;
 				case 'p':
-					if (j + 1 >= argc) {
+					if (++optind >= argc) {
 						printf("%s", Usage);
 						exit(1);
 					}
-					opt = argv[++j];
+					opt = argv[optind];
 					port = atoi(opt);
 					break;
 				case 'n':
-					if (j + 1 >= argc) {
+					if (++optind >= argc) {
 						printf("%s", Usage);
 						exit(1);
 					}
-					opt = argv[++j];
+					opt = argv[optind];
 					number_of_messages = atoi(opt);
 					break;
 				case 'f':
-					if (j + 1 >= argc) {
+					if (++optind >= argc) {
 						printf("%s", Usage);
 						exit(1);
 					}
-					opt = argv[++j];
+					opt = argv[optind];
 					fragpoint = atoi(opt);
 					break;
 				case 'U':
-					if (j + 1 >= argc) {
+					if (++optind >= argc) {
 						printf("%s", Usage);
 						exit(1);
 					}
-					opt = argv[++j];
+					opt = argv[optind];
 					remote_udp_port = atoi(opt);
 					break;
 				case 'E':
-					if (j + 1 >= argc) {
+					if (++optind >= argc) {
 						printf("%s", Usage);
 						exit(1);
 					}
-					opt = argv[++j];
+					opt = argv[optind];
 					local_udp_port = atoi(opt);
 					break;
 				case 'T':
-					if (j + 1 >= argc) {
+					if (++optind >= argc) {
 						printf("%s", Usage);
 						exit(1);
 					}
-					opt = argv[++j];
+					opt = argv[optind];
 					runtime = atoi(opt);
 					number_of_messages = 0;
 					break;
@@ -444,7 +443,6 @@ int main(int argc, char **argv)
 			break;
 		}
 	}
-	optind = j;
 #endif
 	if (optind == argc) {
 		client = 0;
