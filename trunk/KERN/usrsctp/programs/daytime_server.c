@@ -27,7 +27,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
+#if defined(__Userspace_os_Windows)
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -77,7 +79,6 @@ main(int argc, char *argv[])
 		}
 		time(&now);
 		snprintf(buffer, sizeof(buffer), "%s", ctime(&now));
-		/*strcpy(buffer, ctime(&now));*/
 		userspace_sctp_sendmsg(conn_sock, buffer, strlen(buffer), NULL, 0, 0, 0, 0, 0, 0);
 		userspace_close(conn_sock);
 	}
