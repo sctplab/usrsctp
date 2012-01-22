@@ -1076,7 +1076,7 @@ struct sctp_association {
 	unsigned int cnt_on_all_streams;
 
 	/* Heart Beat delay in ms */
-      	uint32_t heart_beat_delay;
+	uint32_t heart_beat_delay;
 
 	/* autoclose */
 	unsigned int sctp_autoclose_ticks;
