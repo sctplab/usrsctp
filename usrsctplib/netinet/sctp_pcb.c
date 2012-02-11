@@ -51,7 +51,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 228907 2011-12-27 10:16:24Z tuex
 #include <netinet/sctp_output.h>
 #include <netinet/sctp_timer.h>
 #include <netinet/sctp_bsd_addr.h>
-#if defined(__FreeBSD__) && __FreeBSD_version >= 900000
+#if defined(__FreeBSD__) && __FreeBSD_version >= 803000
 #include <netinet/sctp_dtrace_define.h>
 #endif
 #if !defined(__Userspace_os_Windows)
@@ -2728,7 +2728,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 
 	so->so_pcb = (caddr_t)inp;
 
-#if defined(__FreeBSD__) && __FreeBSD_version < 900000
+#if defined(__FreeBSD__) && __FreeBSD_version < 803000
 	if ((SCTP_SO_TYPE(so) == SOCK_DGRAM) ||
 	    (SCTP_SO_TYPE(so) == SOCK_SEQPACKET)) {
 #else
@@ -4136,7 +4136,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 		ip_pcb->inp_route.ro_rt = 0;
 	}
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_version < 900000
+#if defined(__FreeBSD__) && __FreeBSD_version < 803000
 #ifdef INET
 	if (ip_pcb->inp_moptions) {
 		inp_freemoptions(ip_pcb->inp_moptions);
