@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 230104 2012-01-14 09:10:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 231895 2012-02-18 16:06:15Z tuexen $");
 #endif
 #include <netinet/sctp_os.h>
 #ifdef __FreeBSD__
@@ -7078,7 +7078,7 @@ int
 #if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
 sctp_peeraddr(struct socket *so, struct sockaddr **addr)
 {
-	struct sockaddr_in *sin = (struct sockaddr_in *)*addr;
+	struct sockaddr_in *sin;
 #elif defined(__Panda__)
 sctp_peeraddr(struct socket *so, struct sockaddr *addr)
 {
