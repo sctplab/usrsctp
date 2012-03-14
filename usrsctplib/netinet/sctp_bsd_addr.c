@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 232724 2012-03-09 13:15:40Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 232866 2012-03-12 15:05:17Z rrs $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -301,6 +301,7 @@ sctp_is_desired_interface_type(struct ifaddr *ifa)
 	case IFT_IP:
 	case IFT_IPOVERCDLC:
 	case IFT_IPOVERCLAW:
+	case IFT_PROPVIRTUAL: /* NetGraph Virtual too */
 	case IFT_VIRTUALIPADDRESS:
 #endif
 		result = 1;
