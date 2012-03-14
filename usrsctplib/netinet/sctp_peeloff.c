@@ -64,11 +64,13 @@ sctp_can_peel_off(struct socket *head, sctp_assoc_t assoc_id)
 		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_PEELOFF, EBADF);
 		return (EBADF);		
 	}
+#if !defined(__Userspace__)
 	if ((head->so_proto->pr_protocol != IPPROTO_SCTP) ||
 	    (head->so_type != SOCK_SEQPACKET)) {
 		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_PEELOFF, EOPNOTSUPP);
 		return (EOPNOTSUPP);		
 	}
+#endif
 	inp = (struct sctp_inpcb *)head->so_pcb;
 	if (inp == NULL) {
 		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_PEELOFF, EFAULT);
