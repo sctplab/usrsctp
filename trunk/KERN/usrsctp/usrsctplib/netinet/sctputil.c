@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 230136 2012-01-15 13:35:55Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 233311 2012-03-22 16:22:16Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2751,8 +2751,8 @@ sctp_notify_assoc_change(uint32_t event, struct sctp_tcb *stcb,
 	control->spec_flags = M_NOTIFICATION;
 	sctp_add_to_readq(stcb->sctp_ep, stcb,
 			  control,
-					  &stcb->sctp_socket->so_rcv, 1, SCTP_READ_LOCK_NOT_HELD,
-					  so_locked);
+	                  &stcb->sctp_socket->so_rcv, 1, SCTP_READ_LOCK_NOT_HELD,
+	                  so_locked);
 	if (event == SCTP_COMM_LOST) {
 		/* Wake up any sleeper */
 #if defined (__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
@@ -5767,46 +5767,52 @@ sctp_sorecvmsg(struct socket *so,
 	}
 #endif
 	if (fromlen && from) {
-		struct sockaddr *to;
-
-#ifdef INET
 #if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
-		cp_len = min((size_t)fromlen, (size_t)control->whoFrom->ro._l_addr.sin.sin_len);
-#else
-		cp_len = sizeof(struct sockaddr_in);
+		cp_len = min((size_t)fromlen, (size_t)control->whoFrom->ro._l_addr.sa.sa_len);
 #endif
+		switch (control->whoFrom->ro._l_addr.sa.sa_family) {
+#ifdef INET6
+			case AF_INET6:
+#if defined(__Windows__) || defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
+				cp_len = min((size_t)fromlen, sizeof(struct sockaddr_in6));
+#endif
+				((struct sockaddr_in6 *)from)->sin6_port = control->port_from;
+				break;
+#endif
+#ifdef INET
+			case AF_INET:
+#if defined(__Windows__) || defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
+				cp_len = min((size_t)fromlen, sizeof(struct sockaddr_in));
+#endif
+				((struct sockaddr_in *)from)->sin_port = control->port_from;
+				break;
+#endif
+			default:
+#if defined(__Windows__) || defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
+				cp_len = min((size_t)fromlen, sizeof(struct sockaddr));
+#endif
+				break;
+		}
 		memcpy(from, &control->whoFrom->ro._l_addr, cp_len);
-		((struct sockaddr_in *)from)->sin_port = control->port_from;
-#else
-		/* No AF_INET use AF_INET6 */
-#if !defined(__Windows__) && !defined(__Userspace_os_Windows)
-		cp_len = min((size_t)fromlen, (size_t)control->whoFrom->ro._l_addr.sin6.sin6_len);
-#else
-		cp_len = sizeof(struct sockaddr_in6);
-#endif
-		memcpy(from, &control->whoFrom->ro._l_addr, cp_len);
-		((struct sockaddr_in6 *)from)->sin6_port = control->port_from;
-#endif
 
-		to = from;
 #if defined(INET) && defined(INET6)
 		if ((sctp_is_feature_on(inp,SCTP_PCB_FLAGS_NEEDS_MAPPED_V4)) &&
-		    (to->sa_family == AF_INET) &&
+		    (from->sa_family == AF_INET) &&
 		    ((size_t)fromlen >= sizeof(struct sockaddr_in6))) {
 			struct sockaddr_in *sin;
 			struct sockaddr_in6 sin6;
 
-			sin = (struct sockaddr_in *)to;
+			sin = (struct sockaddr_in *)from;
 			bzero(&sin6, sizeof(sin6));
 			sin6.sin6_family = AF_INET6;
 #if !defined(__Windows__) && !defined (__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 			sin6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 #if defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Darwin) || defined(__Userspace_os_Windows)
-			sin6.sin6_addr.s6_addr[2] = (uint8_t) 0xffff;
+			((uint32_t *)&sin6.sin6_addr)[2] = htonl(0xffff);
 			bcopy(&sin->sin_addr,
-			      &sin6.sin6_addr.s6_addr[3],
-			      sizeof(sin6.sin6_addr.s6_addr[3]));
+			      &(((uint32_t *)&sin6.sin6_addr)[3]),
+			      sizeof(uint32_t));
 #elif defined(__Windows__)
 			((uint32_t *)&sin6.sin6_addr)[2] = htonl(0xffff);
 			bcopy(&sin->sin_addr,
@@ -5819,15 +5825,16 @@ sctp_sorecvmsg(struct socket *so,
 			      sizeof(sin6.sin6_addr.s6_addr32[3]));
 #endif
 			sin6.sin6_port = sin->sin_port;
-			memcpy(from, (caddr_t)&sin6, sizeof(sin6));
+			memcpy(from, &sin6, sizeof(struct sockaddr_in6));
 		}
 #endif
 #if defined(SCTP_EMBEDDED_V6_SCOPE)
 #if defined(INET6)
 		{
-			struct sockaddr_in6 lsa6, *to6;
-			to6 = (struct sockaddr_in6 *)to;
-			sctp_recover_scope_mac(to6, (&lsa6));
+			struct sockaddr_in6 lsa6, *from6;
+
+			from6 = (struct sockaddr_in6 *)from;
+			sctp_recover_scope_mac(from6, (&lsa6));
 		}
 #endif
 #endif
