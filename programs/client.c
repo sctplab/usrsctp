@@ -49,6 +49,7 @@
 
 int done = 0;
 
+#if defined(CALLBACK_API)
 static int
 receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 {
@@ -65,6 +66,7 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 	}
 	return 1;
 }
+#endif
 
 int 
 main(int argc, char *argv[])
@@ -85,7 +87,9 @@ main(int argc, char *argv[])
 	if ((sock = userspace_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP)) == NULL) {
 		perror("userspace_socket ipv6");
 	}
+#if defined(CALLBACK_API)
 	register_recv_cb(sock, receive_cb);
+#endif
 	if (argc > 4) {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET6;
