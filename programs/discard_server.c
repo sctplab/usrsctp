@@ -53,13 +53,18 @@
 static int
 receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 {
+	char name[INET6_ADDRSTRLEN];
+
 	if (control) {
 		if (control->spec_flags & M_NOTIFICATION) {
 			printf("Notification of length %d received.\n", control->length);
 		} else {
 			printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d, complete %d.\n",
 			       control->length,
-			       inet_ntoa(control->whoFrom->ro._l_addr.sin.sin_addr), ntohs(control->port_from),
+			       control->whoFrom->ro._l_addr.sa.sa_family == AF_INET ?
+			           inet_ntop(AF_INET, &control->whoFrom->ro._l_addr.sin.sin_addr, name, INET6_ADDRSTRLEN):
+			           inet_ntop(AF_INET6, &control->whoFrom->ro._l_addr.sin6.sin6_addr, name, INET6_ADDRSTRLEN),
+			       ntohs(control->port_from),
 			       control->sinfo_stream,
 			       control->sinfo_ssn,
 			       control->sinfo_tsn,
@@ -76,7 +81,7 @@ int
 main(int argc, char *argv[])
 {
 	struct socket *sock;
-	struct sockaddr_in addr;
+	struct sockaddr_in6 addr;
 	struct sctp_udpencaps encaps;
 	struct sctp_event event;
 	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
@@ -87,10 +92,12 @@ main(int argc, char *argv[])
 	                          SCTP_PARTIAL_DELIVERY_EVENT};
 	unsigned int i;
 #if !defined(CALLBACK_API)
+	const int on = 1;
 	int n, flags;
 	socklen_t from_len;
 	struct sctp_sndrcvinfo sinfo;
 	char buffer[BUFFER_SIZE];
+	char name[INET6_ADDRSTRLEN];
 #endif
 
 	if (argc > 1) {
@@ -101,12 +108,17 @@ main(int argc, char *argv[])
 	SCTP_BASE_SYSCTL(sctp_debug_on) = 0x0;
 	SCTP_BASE_SYSCTL(sctp_blackhole) = 2;
 
-	if ((sock = userspace_socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP)) == NULL) {
+	if ((sock = userspace_socket(AF_INET6, SOCK_SEQPACKET, IPPROTO_SCTP)) == NULL) {
 		perror("userspace_socket");
 	}
+#if !defined(CALLBACK_API)
+	if (userspace_setsockopt(sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, (const void*)&on, (socklen_t)sizeof(int)) < 0) {
+		perror("setsockopt");
+	}
+#endif
 	if (argc > 2) {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
-		encaps.sue_address.ss_family = AF_INET;
+		encaps.sue_address.ss_family = AF_INET6;
 		encaps.sue_port = htons(atoi(argv[2]));
 		if (userspace_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
 			perror("setsockopt");
@@ -121,14 +133,14 @@ main(int argc, char *argv[])
 			perror("userspace_setsockopt");
 		}
 	}
-	memset((void *)&addr, 0, sizeof(struct sockaddr_in));
+	memset((void *)&addr, 0, sizeof(struct sockaddr_in6));
 #ifdef HAVE_SIN_LEN
-	addr.sin_len = sizeof(struct sockaddr_in);
+	addr.sin6_len = sizeof(struct sockaddr_in6);
 #endif
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(9);
-	addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	if (userspace_bind(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) < 0) {
+	addr.sin6_family = AF_INET6;
+	addr.sin6_port = htons(9);
+	addr.sin6_addr = in6addr_any;
+	if (userspace_bind(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in6)) < 0) {
 		perror("userspace_bind");
 	}
 	if (userspace_listen(sock, 1) < 0) {
@@ -145,9 +157,9 @@ main(int argc, char *argv[])
 	}
 #else
 	while (1) {
-		memset((void *)&addr, 0, sizeof(struct sockaddr_in));
+		memset((void *)&addr, 0, sizeof(struct sockaddr_in6));
 		memset((void *)&sinfo, 0, sizeof(struct sctp_sndrcvinfo));
-		from_len = (socklen_t)sizeof(struct sockaddr_in);
+		from_len = (socklen_t)sizeof(struct sockaddr_in6);
 		flags = 0;
 		n = userspace_sctp_recvmsg(sock, (void*)buffer, BUFFER_SIZE, (struct sockaddr *)&addr, &from_len, &sinfo, &flags);
 		if (n > 0) {
@@ -156,7 +168,7 @@ main(int argc, char *argv[])
 			} else {
 				printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d, complete %d.\n",
 				        n,
-				        inet_ntoa(addr.sin_addr), ntohs(addr.sin_port),
+				        inet_ntop(AF_INET6, &addr.sin6_addr, name, INET6_ADDRSTRLEN), ntohs(addr.sin6_port),
 				        sinfo.sinfo_stream,
 				        sinfo.sinfo_ssn,
 				        sinfo.sinfo_tsn,
