@@ -59,7 +59,7 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 		if (control->spec_flags & M_NOTIFICATION) {
 			printf("Notification of length %d received.\n", control->length);
 		} else {
-			printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d, complete %d.\n",
+			printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d, context %u, complete %d.\n",
 			       control->length,
 			       control->whoFrom->ro._l_addr.sa.sa_family == AF_INET ?
 			           inet_ntop(AF_INET, &control->whoFrom->ro._l_addr.sin.sin_addr, name, INET6_ADDRSTRLEN):
@@ -69,6 +69,7 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 			       control->sinfo_ssn,
 			       control->sinfo_tsn,
 			       ntohl(control->sinfo_ppid),
+			       control->sinfo_context,
 			       control->end_added);
 		}
 		m_freem(control->data);
@@ -91,6 +92,7 @@ main(int argc, char *argv[])
 	                          SCTP_ADAPTATION_INDICATION,
 	                          SCTP_PARTIAL_DELIVERY_EVENT};
 	unsigned int i;
+	struct sctp_assoc_value av;
 #if !defined(CALLBACK_API)
 	const int on = 1;
 	int n, flags;
@@ -116,6 +118,13 @@ main(int argc, char *argv[])
 		perror("setsockopt");
 	}
 #endif
+	memset(&av, 0, sizeof(struct sctp_assoc_value));
+	av.assoc_id = SCTP_ALL_ASSOC;
+	av.assoc_value = 47;
+	
+	if (userspace_setsockopt(sock, IPPROTO_SCTP, SCTP_CONTEXT, (const void*)&av, (socklen_t)sizeof(struct sctp_assoc_value)) < 0) {
+		perror("setsockopt");
+	}
 	if (argc > 2) {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET6;
@@ -166,13 +175,14 @@ main(int argc, char *argv[])
 			if (flags & MSG_NOTIFICATION) {
 				printf("Notification of length %d received.\n", n);
 			} else {
-				printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d, complete %d.\n",
+				printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d, context %u, complete %d.\n",
 				        n,
 				        inet_ntop(AF_INET6, &addr.sin6_addr, name, INET6_ADDRSTRLEN), ntohs(addr.sin6_port),
 				        sinfo.sinfo_stream,
 				        sinfo.sinfo_ssn,
 				        sinfo.sinfo_tsn,
 				        ntohl(sinfo.sinfo_ppid),
+				        sinfo.sinfo_context,
 				        (flags & MSG_EOR) ? 1 : 0);
 			}
 		}
