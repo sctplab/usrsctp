@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 231074 2012-02-06 10:47:12Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 233660 2012-03-29 13:36:53Z rrs $");
 #endif
 
 #ifndef __sctp_structs_h__
@@ -1139,6 +1139,7 @@ struct sctp_association {
 	uint16_t streamincnt;
 	uint16_t streamoutcnt;
 	uint16_t strm_realoutsize;
+	uint16_t strm_pending_add_size;
 	/* my maximum number of retrans of INIT and SEND */
 	/* copied from SCTP but should be individually setable */
 	uint16_t max_init_times;
@@ -1200,6 +1201,9 @@ struct sctp_association {
 	/* Flag to tell if ECN is allowed */
 	uint8_t ecn_allowed;
 
+	/* Did the peer make the stream config (add out) request */
+	uint8_t peer_req_out;
+
 	/* flag to indicate if peer can do asconf */
 	uint8_t peer_supports_asconf;
 	/* EY - flag to indicate if peer can do nr_sack*/
@@ -1210,6 +1214,7 @@ struct sctp_association {
 	uint8_t peer_supports_auth;
 	/* stream resets are supported by the peer */
 	uint8_t peer_supports_strreset;
+	uint8_t local_strreset_support;
 
         uint8_t peer_supports_nat;
 	/*
