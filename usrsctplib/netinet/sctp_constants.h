@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 228907 2011-12-27 10:16:24Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 233660 2012-03-29 13:36:53Z rrs $");
 #endif
 
 #ifndef __sctp_constants_h__
@@ -451,7 +451,8 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_STR_RESET_IN_REQUEST	0x000e
 #define SCTP_STR_RESET_TSN_REQUEST	0x000f
 #define SCTP_STR_RESET_RESPONSE		0x0010
-#define SCTP_STR_RESET_ADD_STREAMS	0x0011
+#define SCTP_STR_RESET_ADD_OUT_STREAMS	0x0011
+#define SCTP_STR_RESET_ADD_IN_STREAMS   0x0012
 
 #define SCTP_MAX_RESET_PARAMS 2
 #define SCTP_STREAM_RESET_TSN_DELTA    0x1000
