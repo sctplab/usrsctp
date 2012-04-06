@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 233660 2012-03-29 13:36:53Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 233940 2012-04-06 09:03:02Z tuexen $");
 #endif
 #include <netinet/sctp_os.h>
 #ifdef __FreeBSD__
@@ -3981,7 +3981,6 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 
 		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
 		if ((av->assoc_value != SCTP_SS_DEFAULT) &&
-		    (av->assoc_value != SCTP_SS_DEFAULT) &&
 		    (av->assoc_value != SCTP_SS_ROUND_ROBIN) &&
 		    (av->assoc_value != SCTP_SS_ROUND_ROBIN_PACKET) &&
 		    (av->assoc_value != SCTP_SS_PRIORITY) &&
