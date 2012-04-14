@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 234296 2012-04-14 20:22:01Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 234297 2012-04-14 21:01:44Z tuexen $");
 #endif
 
 #define _IP_VHL
@@ -1461,7 +1461,8 @@ sctp_heartbeat_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		} else {
 			ms_gone_by = 0xffffffff;
 		}
-		if (ms_gone_by >= net->heart_beat_delay) {
+		if ((ms_gone_by >= net->heart_beat_delay) ||
+		    (net->dest_state & SCTP_ADDR_PF)) {
 			sctp_send_hb(stcb, net, SCTP_SO_NOT_LOCKED);
 		}
 	}
