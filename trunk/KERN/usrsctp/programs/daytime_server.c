@@ -102,6 +102,12 @@ main(int argc, char *argv[])
 		userspace_close(conn_sock);
 	}
 	userspace_close(sock);
-	sctp_finish();
+	while (userspace_finish() != 0) {
+#if defined (__Userspace_os_Windows)
+		Sleep(1000);
+#else
+		sleep(1);
+#endif
+	}
 	return (0);
 }

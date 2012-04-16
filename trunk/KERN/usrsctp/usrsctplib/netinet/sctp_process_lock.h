@@ -3,30 +3,30 @@
  * Copyright (c) 2008-2011, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2011, by Michael Tuexen. All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
+ * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
- * a) Redistributions of source code must retain the above copyright notice, 
+ *
+ * a) Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
  *
- * b) Redistributions in binary form must reproduce the above copyright 
- *    notice, this list of conditions and the following disclaimer in 
+ * b) Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
  *   the documentation and/or other materials provided with the distribution.
  *
- * c) Neither the name of Cisco Systems, Inc. nor the names of its 
- *    contributors may be used to endorse or promote products derived 
+ * c) Neither the name of Cisco Systems, Inc. nor the names of its
+ *    contributors may be used to endorse or promote products derived
  *    from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 #ifndef __sctp_process_lock_h__
@@ -56,8 +56,8 @@
 #define SCTP_INP_INFO_LOCK_INIT() \
 	InitializeCriticalSection(&SCTP_BASE_INFO(ipi_ep_mtx))
 #define SCTP_INP_INFO_RLOCK()
-#define SCTP_INP_INFO_RUNLOCK() 
-#define SCTP_INP_INFO_WLOCK() 
+#define SCTP_INP_INFO_RUNLOCK()
+#define SCTP_INP_INFO_WLOCK()
 #define SCTP_INP_INFO_WUNLOCK()
 #define SCTP_INP_INFO_LOCK_DESTROY() \
 	DeleteCriticalSection(&SCTP_BASE_INFO(ipi_ep_mtx))
@@ -69,8 +69,8 @@
 #define SCTP_INP_INFO_LOCK_INIT() \
 	(void)pthread_mutex_init(&SCTP_BASE_INFO(ipi_ep_mtx), NULL)
 #define SCTP_INP_INFO_RLOCK()
-#define SCTP_INP_INFO_RUNLOCK() 
-#define SCTP_INP_INFO_WLOCK() 
+#define SCTP_INP_INFO_RUNLOCK()
+#define SCTP_INP_INFO_WLOCK()
 #define SCTP_INP_INFO_WUNLOCK()
 #define SCTP_INP_INFO_LOCK_DESTROY() \
 	(void)pthread_mutex_destroy(&SCTP_BASE_INFO(ipi_ep_mtx))
@@ -123,43 +123,36 @@
 
 #if defined (__Userspace_os_Windows)
 #define SCTP_WQ_ADDR_INIT() \
-    InitializeCriticalSection(&SCTP_BASE_INFO(wq_addr_mtx))
+        InitializeCriticalSection(&SCTP_BASE_INFO(wq_addr_mtx))
 #define SCTP_WQ_ADDR_DESTROY() \
 	DeleteCriticalSection(&SCTP_BASE_INFO(wq_addr_mtx))
-#define SCTP_WQ_ADDR_LOCK() EnterCriticalSection(&SCTP_BASE_INFO(wq_addr_mtx))
-#define SCTP_WQ_ADDR_UNLOCK()  LeaveCriticalSection(&SCTP_BASE_INFO(wq_addr_mtx))
+#define SCTP_WQ_ADDR_LOCK() \
+        EnterCriticalSection(&SCTP_BASE_INFO(wq_addr_mtx))
+#define SCTP_WQ_ADDR_UNLOCK() \
+        LeaveCriticalSection(&SCTP_BASE_INFO(wq_addr_mtx))
 
 
 #define SCTP_INP_INFO_LOCK_INIT() \
 	InitializeCriticalSection(&SCTP_BASE_INFO(ipi_ep_mtx))
-
-#define SCTP_INP_INFO_RLOCK()	do { 					\
-	EnterCriticalSection(&SCTP_BASE_INFO(ipi_ep_mtx));		\
-} while (0)
-
-#define SCTP_INP_INFO_WLOCK()	do { 					\
-	EnterCriticalSection(&SCTP_BASE_INFO(ipi_ep_mtx));		\
-} while (0)
-
-
+#define SCTP_INP_INFO_RLOCK() \
+	EnterCriticalSection(&SCTP_BASE_INFO(ipi_ep_mtx))
+#define SCTP_INP_INFO_TRYLOCK()	\
+        TryEnterCriticalSection(&SCTP_BASE_INFO(ipi_ep_mtx))
+#define SCTP_INP_INFO_WLOCK() \
+	EnterCriticalSection(&SCTP_BASE_INFO(ipi_ep_mtx))
+#define SCTP_INP_INFO_RUNLOCK() \
+ 	LeaveCriticalSection(&SCTP_BASE_INFO(ipi_ep_mtx))
+#define SCTP_INP_INFO_WUNLOCK()	\
+	LeaveCriticalSection(&SCTP_BASE_INFO(ipi_ep_mtx))
 
 #define SCTP_IP_PKTLOG_INIT() \
-    InitializeCriticalSection(&SCTP_BASE_INFO(ipi_pktlog_mtx))
-
-
-#define SCTP_IP_PKTLOG_LOCK()	do { 			\
-    EnterCriticalSection(&SCTP_BASE_INFO(ipi_pktlog_mtx));     \
-} while (0)
-
-#define SCTP_IP_PKTLOG_UNLOCK()	(void)pthread_mutex_unlock(&SCTP_BASE_INFO(ipi_pktlog_mtx))
-
-#define SCTP_IP_PKTLOG_DESTROY() \
+        InitializeCriticalSection(&SCTP_BASE_INFO(ipi_pktlog_mtx))
+#define SCTP_IP_PKTLOG_DESTROY () \
 	DeleteCriticalSection(&SCTP_BASE_INFO(ipi_pktlog_mtx))
-
-
-
-#define SCTP_INP_INFO_RUNLOCK()		LeaveCriticalSection(&SCTP_BASE_INFO(ipi_ep_mtx))
-#define SCTP_INP_INFO_WUNLOCK()		LeaveCriticalSection(&SCTP_BASE_INFO(ipi_ep_mtx))
+#define SCTP_IP_PKTLOG_LOCK() \
+    	EnterCriticalSection(&SCTP_BASE_INFO(ipi_pktlog_mtx))
+#define SCTP_IP_PKTLOG_UNLOCK() \
+	LeaveCriticalSection(&SCTP_BASE_INFO(ipi_pktlog_mtx))
 
 /*
  * The INP locks we will use for locking an SCTP endpoint, so for example if
@@ -168,15 +161,10 @@
  */
 #define SCTP_INP_READ_INIT(_inp) \
 	InitializeCriticalSection(&(_inp)->inp_rdata_mtx)
-
 #define SCTP_INP_READ_DESTROY(_inp) \
 	DeleteCriticalSection(&(_inp)->inp_rdata_mtx)
-
-#define SCTP_INP_READ_LOCK(_inp)	do { \
-	EnterCriticalSection(&(_inp)->inp_rdata_mtx);    \
-} while (0)
-
-
+#define SCTP_INP_READ_LOCK(_inp) \
+	EnterCriticalSection(&(_inp)->inp_rdata_mtx)
 #define SCTP_INP_READ_UNLOCK(_inp) \
 	LeaveCriticalSection(&(_inp)->inp_rdata_mtx)
 
@@ -287,40 +275,35 @@
         (void)pthread_mutex_init(&SCTP_BASE_INFO(wq_addr_mtx), NULL)
 #define SCTP_WQ_ADDR_DESTROY() \
 	(void)pthread_mutex_destroy(&SCTP_BASE_INFO(wq_addr_mtx))
-#define SCTP_WQ_ADDR_LOCK() (void)pthread_mutex_lock(&SCTP_BASE_INFO(wq_addr_mtx))
-#define SCTP_WQ_ADDR_UNLOCK()  (void)pthread_mutex_unlock(&SCTP_BASE_INFO(wq_addr_mtx))
+#define SCTP_WQ_ADDR_LOCK() \
+        (void)pthread_mutex_lock(&SCTP_BASE_INFO(wq_addr_mtx))
+#define SCTP_WQ_ADDR_UNLOCK() \
+        (void)pthread_mutex_unlock(&SCTP_BASE_INFO(wq_addr_mtx))
 
 
 #define SCTP_INP_INFO_LOCK_INIT() \
 	(void)pthread_mutex_init(&SCTP_BASE_INFO(ipi_ep_mtx), NULL)
-
-#define SCTP_INP_INFO_RLOCK()	do { 					\
-	(void)pthread_mutex_lock(&SCTP_BASE_INFO(ipi_ep_mtx));		\
-} while (0)
-
-#define SCTP_INP_INFO_WLOCK()	do { 					\
-	(void)pthread_mutex_lock(&SCTP_BASE_INFO(ipi_ep_mtx));		\
-} while (0)
-
-
+#define SCTP_INP_INFO_RLOCK() \
+	(void)pthread_mutex_lock(&SCTP_BASE_INFO(ipi_ep_mtx))
+#define SCTP_INP_INFO_TRYLOCK()	\
+        (!(pthread_mutex_trylock(&SCTP_BASE_INFO(ipi_ep_mtx))))
+#define SCTP_INP_INFO_WLOCK() \
+	(void)pthread_mutex_lock(&SCTP_BASE_INFO(ipi_ep_mtx))
+#define SCTP_INP_INFO_RUNLOCK()	\
+	(void)pthread_mutex_unlock(&SCTP_BASE_INFO(ipi_ep_mtx))
+#define SCTP_INP_INFO_WUNLOCK()	\
+	(void)pthread_mutex_unlock(&SCTP_BASE_INFO(ipi_ep_mtx))
 
 #define SCTP_IP_PKTLOG_INIT() \
         (void)pthread_mutex_init(&SCTP_BASE_INFO(ipi_pktlog_mtx), NULL)
-
-
-#define SCTP_IP_PKTLOG_LOCK()	do { 			\
-             (void)pthread_mutex_lock(&SCTP_BASE_INFO(ipi_pktlog_mtx));     \
-} while (0)
-
-#define SCTP_IP_PKTLOG_UNLOCK()	(void)pthread_mutex_unlock(&SCTP_BASE_INFO(ipi_pktlog_mtx))
-
 #define SCTP_IP_PKTLOG_DESTROY() \
 	(void)pthread_mutex_destroy(&SCTP_BASE_INFO(ipi_pktlog_mtx))
+#define SCTP_IP_PKTLOG_LOCK() \
+        (void)pthread_mutex_lock(&SCTP_BASE_INFO(ipi_pktlog_mtx))
+#define SCTP_IP_PKTLOG_UNLOCK()	\
+        (void)pthread_mutex_unlock(&SCTP_BASE_INFO(ipi_pktlog_mtx))
 
 
-
-#define SCTP_INP_INFO_RUNLOCK()		(void)pthread_mutex_unlock(&SCTP_BASE_INFO(ipi_ep_mtx))
-#define SCTP_INP_INFO_WUNLOCK()		(void)pthread_mutex_unlock(&SCTP_BASE_INFO(ipi_ep_mtx))
 
 /*
  * The INP locks we will use for locking an SCTP endpoint, so for example if
@@ -460,7 +443,7 @@
 
 #if defined(__Userspace_)
 #if defined(__Userspace_os_Windows)
-#define SOCKBUF_LOCK_ASSERT(_so_buf) 
+#define SOCKBUF_LOCK_ASSERT(_so_buf)
 #define SOCKBUF_LOCK(_so_buf) EnterCriticalSection(_so_buf->sb_mtx)
 #define SOCKBUF_UNLOCK(_so_buf) LeaveCriticalSection(_so_buf->sb_mtx)
 #define SOCK_LOCK(_so)  SOCKBUF_LOCK(&(_so)->so_rcv)
@@ -480,7 +463,7 @@
 #define SOCKBUF_LOCK_ASSERT(_so_buf)
 #endif
 
-#define SCTP_STATLOG_INIT_LOCK() 
+#define SCTP_STATLOG_INIT_LOCK()
 #define SCTP_STATLOG_LOCK()
 #define SCTP_STATLOG_UNLOCK()
 #define SCTP_STATLOG_DESTROY()

@@ -178,7 +178,7 @@ static void
 sodealloc(struct socket *so)
 {
 
-	assert(so->so_count == 0); 
+	assert(so->so_count == 0);
 	assert(so->so_pcb == NULL);
 
 	SOCKBUF_LOCK_DESTROY(&so->so_snd);
@@ -188,7 +188,7 @@ sodealloc(struct socket *so)
 	SOCKBUF_COND_DESTROY(&so->so_rcv);
 
         SOCK_COND_DESTROY(so);
-        
+
 	free(so);
 }
 
@@ -546,9 +546,9 @@ sonewconn(struct socket *head, int connstatus)
 
 /* From /src/sys/sys/sysproto.h */
 struct sctp_generic_sendmsg_args {
-	int sd; 
-	caddr_t msg; 
-	int mlen; 
+	int sd;
+	caddr_t msg;
+	int mlen;
 	caddr_t to;
         socklen_t tolen;  /* was __socklen_t */
 	struct sctp_sndrcvinfo * sinfo;
@@ -556,12 +556,12 @@ struct sctp_generic_sendmsg_args {
 };
 
 struct sctp_generic_recvmsg_args {
-        int sd; 
-        struct iovec *iov; 
+        int sd;
+        struct iovec *iov;
         int iovlen;
         struct sockaddr *from;
         socklen_t *fromlenaddr; /* was __socklen_t */
-        struct sctp_sndrcvinfo *sinfo; 
+        struct sctp_sndrcvinfo *sinfo;
         int *msg_flags;
 };
 
@@ -622,7 +622,7 @@ uiomove(void *cp, int n, struct uio *uio)
 	struct iovec *iov;
 	int cnt;
 	int error = 0;
-	
+
 	assert(uio->uio_rw == UIO_READ || uio->uio_rw == UIO_WRITE);
 
 	while (n > 0 && uio->uio_resid) {
@@ -701,7 +701,7 @@ getsockaddr(namp, uaddr, len)
  * calling sctp_generic_sendmsg from this function
  */
 ssize_t
-userspace_sctp_sendmsg(struct socket *so, 
+userspace_sctp_sendmsg(struct socket *so,
                        const void *data,
                        size_t len,
                        struct sockaddr *to,
@@ -779,7 +779,7 @@ struct mbuf* mbufalloc(size_t size, void* data, unsigned char fill)
     int cancpy, willcpy;
     struct mbuf *m, *head;
     int cpsz=0;
-    
+
     /* First one gets a header equal to sizeof(struct sctp_data_chunk) */
     left = size;
     head = m = sctp_get_mbuf_for_msg((left + resv_upfront), 1, M_WAIT, 0, MT_DATA);
@@ -795,9 +795,9 @@ struct mbuf* mbufalloc(size_t size, void* data, unsigned char fill)
     willcpy = min(cancpy, left);
 
     while (left > 0) {
-        
+
         if (data != NULL){
-            /* fill in user data */        
+            /* fill in user data */
 #if defined (__Userspace_os_Windows)
 			char *datap = (char*)data + cpsz;
 			memcpy(mtod(m, caddr_t), (void*)datap, willcpy);
@@ -805,7 +805,7 @@ struct mbuf* mbufalloc(size_t size, void* data, unsigned char fill)
             memcpy(mtod(m, caddr_t), data+cpsz, willcpy);
 #endif
         }else if (fill != '\0'){
-            memset(mtod(m, caddr_t), fill, willcpy);            
+            memset(mtod(m, caddr_t), fill, willcpy);
         }
 
         SCTP_BUF_LEN(m) = willcpy;
@@ -858,7 +858,7 @@ struct mbuf* mbufallocfromiov(int iovlen, struct iovec *srciov)
         }
     }
     total = left;
-    
+
     /* First one gets a header equal to sizeof(struct sctp_data_chunk) */
     head = m = sctp_get_mbuf_for_msg((left + resv_upfront), 1, M_WAIT, 0, MT_DATA);
     if (m == NULL) {
@@ -872,11 +872,11 @@ struct mbuf* mbufallocfromiov(int iovlen, struct iovec *srciov)
     cancpy = (int)M_TRAILINGSPACE(m);
     willcpy = min(cancpy, left);
 
-    while (left > 0) {        
+    while (left > 0) {
         /* fill in user data */
         mbuffillsz = 0;
         while (mbuffillsz < willcpy) {
-            
+
             if(cancpy < (int)srciov[cur].iov_len - currdsz) {
                 /* will fill mbuf before srciov[cur] is completely read */
                 memcpy(SCTP_BUF_AT(m,mbuffillsz), data, cancpy);
@@ -936,7 +936,7 @@ struct mbuf* mbufallocfromiov(int iovlen, struct iovec *srciov)
 
 
 ssize_t
-userspace_sctp_sendmbuf(struct socket *so, 
+userspace_sctp_sendmbuf(struct socket *so,
     struct mbuf* mbufdata,
     size_t len,
     struct sockaddr *to,
@@ -947,21 +947,21 @@ userspace_sctp_sendmbuf(struct socket *so,
     u_int32_t timetolive,
     u_int32_t context)
 {
-    
+
     struct sctp_sndrcvinfo sndrcvinfo, *sinfo = &sndrcvinfo;
     /*    struct uio auio;
           struct iovec iov[1]; */
     int error = 0;
     int uflags = 0;
     int retvalsendmsg;
-    
+
     sinfo->sinfo_ppid = ppid;
     sinfo->sinfo_flags = flags;
     sinfo->sinfo_stream = stream_no;
     sinfo->sinfo_timetolive = timetolive;
     sinfo->sinfo_context = context;
     sinfo->sinfo_assoc_id = 0;
-    
+
     /* Perform error checks on destination (to) */
     if (tolen > SOCK_MAXADDRLEN){
         error = (ENAMETOOLONG);
@@ -976,7 +976,7 @@ userspace_sctp_sendmbuf(struct socket *so,
 #if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
     to->sa_len = tolen;
 #endif
-    
+
     error = sctp_lower_sosend(so, to, NULL/*uio*/,
                               (struct mbuf *)mbufdata, (struct mbuf *)NULL,
                               uflags, sinfo);
@@ -993,7 +993,7 @@ sendmsg_return:
         retvalsendmsg = (-1);
     }
     return retvalsendmsg;
-    
+
 }
 
 #if 0 /* Old version: To be removed */
@@ -1004,7 +1004,7 @@ ssize_t userspace_sctp_sendmbuf(struct socket *so, const void *message, size_t l
     struct mbuf * m;
     struct mbuf * control = NULL;
     struct proc *p = NULL;
-        
+
     if (so == NULL) {
         perror("sockset so passed to userspace_sctp_sendmbuf is NULL\n");
         exit(1);
@@ -1016,7 +1016,7 @@ ssize_t userspace_sctp_sendmbuf(struct socket *so, const void *message, size_t l
      * in sctp_lowlevel_chunk_output which attaches ip header
      */
 
-    m = sctp_get_mbuf_for_msg(MHLEN, 0, M_DONTWAIT, 0, MT_DATA); 
+    m = sctp_get_mbuf_for_msg(MHLEN, 0, M_DONTWAIT, 0, MT_DATA);
 
     if (m == NULL){
         perror("out of memory in userspace_sctp_sendmbuf\n");
@@ -1025,7 +1025,7 @@ ssize_t userspace_sctp_sendmbuf(struct socket *so, const void *message, size_t l
 
     bcopy((caddr_t)message, m->m_data, length);
     SCTP_HEADER_LEN(m) = SCTP_BUF_LEN(m) = length;
-    
+
     return (sctp_sosend(so,
                         (struct sockaddr *) dest_addr,
                         (struct uio *)NULL,
@@ -1047,12 +1047,12 @@ static int
 sctp_generic_recvmsg(so, uap, retval)
 	struct socket *so;
 	struct sctp_generic_recvmsg_args /* {
-		int sd, 
-		struct iovec *iov, 
+		int sd,
+		struct iovec *iov,
 		int iovlen,
-		struct sockaddr *from, 
+		struct sockaddr *from,
 		socklen_t *fromlenaddr,
-		struct sctp_sndrcvinfo *sinfo, 
+		struct sctp_sndrcvinfo *sinfo,
 		int *msg_flags
 	} */ *uap;
         int *retval;
@@ -1155,7 +1155,7 @@ out:
 
 /* taken from usr.lib/sctp_sys_calls.c and needed here */
 #define        SCTP_SMALL_IOVEC_SIZE 2
-        
+
 /* Taken from  /src/lib/libc/net/sctp_sys_calls.c
  * and modified for __Userspace__
  * calling sctp_generic_recvmsg from this function
@@ -1537,7 +1537,7 @@ soreserve(struct socket *so, u_long sndcc, u_long rcvcc)
 
  bad:
 	SOCKBUF_UNLOCK(&so->so_rcv);
-	SOCKBUF_UNLOCK(&so->so_snd);    
+	SOCKBUF_UNLOCK(&so->so_snd);
 	return (ENOBUFS);
 }
 #else /* kernel version for reference */
@@ -1682,7 +1682,7 @@ userspace_bind(so, name, namelen)
      struct socket *so;
      struct sockaddr *name;
      int	namelen;
-    
+
 {
 	struct sockaddr *sa;
 	int error;
@@ -1751,7 +1751,7 @@ userspace_listen(so, backlog)
 	int error;
 
         error = solisten(so, backlog);
-        
+
 	return(error);
 }
 
@@ -1785,7 +1785,7 @@ user_accept(struct socket *aso,  struct sockaddr **name, socklen_t *namelen, str
 	int error;
 	struct socket *head = aso;
         struct socket *so;
-	
+
 
 	if (name) {
 		*name = NULL;
@@ -1900,7 +1900,7 @@ done:
 static int
 accept1(so, aname, anamelen, ptr_accept_ret_sock)
      struct socket *so;
-     struct sockaddr * aname; 
+     struct sockaddr * aname;
      socklen_t * anamelen;
      struct socket **ptr_accept_ret_sock;
 {
@@ -1936,7 +1936,7 @@ accept1(so, aname, anamelen, ptr_accept_ret_sock)
 	}
 
 	if(name) {
-		FREE(name, M_SONAME); 
+		FREE(name, M_SONAME);
 	}
 	return (error);
 }
@@ -2116,6 +2116,21 @@ userspace_shutdown(struct socket *so, int how)
 	return (0);
 }
 
+int
+userspace_finish(void)
+{
+
+	if (SCTP_INP_INFO_TRYLOCK()) {
+		if (!LIST_EMPTY(&SCTP_BASE_INFO(listhead))) {
+			SCTP_INP_INFO_RUNLOCK();
+			return (-1);
+		}
+	} else {
+		return -1;
+	}
+	sctp_finish();
+	return (0);
+}
 
 /* needed from sctp_usrreq.c */
 int
@@ -2163,7 +2178,7 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	struct msghdr msg_hdr;
 #endif
 	int use_udp_tunneling;
-	
+
 	*result = 0;
 	send_count = 0;
 
@@ -2315,7 +2330,7 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	struct msghdr msg_hdr;
 #endif
 	int use_udp_tunneling;
-	
+
 	*result = 0;
 	send_count = 0;
 
@@ -2390,12 +2405,12 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 		send_iovec[iovcnt].len = SCTP_BUF_LEN(m);
 		send_count += send_iovec[iovcnt].len;
 #endif
-	} 
+	}
 	if (m != NULL) {
         printf("mbuf chain couldn't be copied completely\n");
 		goto free_mbuf;
-	}	
-	
+	}
+
 #if !defined (__Userspace_os_Windows)
 	msg_hdr.msg_name = (struct sockaddr *) &dst;
 	msg_hdr.msg_namelen = sizeof(struct sockaddr_in6);
