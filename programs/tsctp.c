@@ -110,11 +110,11 @@ static unsigned int done;
 
 void stop_sender(int sig)
 {
-	done = 1; 
+	done = 1;
 }
 
 #if !defined (CALLBACK_API)
-static void* 
+static void*
 handle_connection(void *arg)
 {
 	ssize_t n;
@@ -135,7 +135,7 @@ handle_connection(void *arg)
 	union sctp_notification *snp;
 	struct sctp_paddr_change *spc;
 	struct timeval note_time;
-	
+
 	conn_sock = *(struct socket **)arg;
 	tid = pthread_self();
 	pthread_detach(tid);
@@ -196,7 +196,7 @@ handle_connection(void *arg)
 }
 #else
 #if defined(SCTP_USERSPACE_SEND_CALLBACK_USE_THRESHOLD)
-static int 
+static int
 send_cb(struct socket *sock, uint32_t sb_free) {
 
 	while (!done && ((number_of_messages == 0) || (messages < (number_of_messages - 1)))) {
@@ -233,7 +233,7 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 {
 	struct timeval now, diff_time;
 	double seconds;
-	
+
 	if (control == NULL) {
 #if defined (__Userspace_os_Windows)
 		getwintimeofday(&now);
@@ -294,7 +294,7 @@ int main(int argc, char **argv)
 #if defined (__Userspace_os_Windows)
 	char *opt;
 	int optind;
-#endif	
+#endif
 	unordered = 0;
 
 	length = DEFAULT_LENGTH;
@@ -653,11 +653,13 @@ int main(int argc, char **argv)
 		throughput = (double)i * (double)length / seconds;
 		printf("Throughput was %f Byte/sec.\n", throughput);
 	}
+
+	while (userspace_finish() != 0) {
 #if defined (__Userspace_os_Windows)
-	Sleep(10*1000);
+		Sleep(1000);
 #else
-	sleep(10);
+		sleep(1);
 #endif
-	sctp_finish();
+	}
 	return 0;
 }

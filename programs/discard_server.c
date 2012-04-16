@@ -121,7 +121,7 @@ main(int argc, char *argv[])
 	memset(&av, 0, sizeof(struct sctp_assoc_value));
 	av.assoc_id = SCTP_ALL_ASSOC;
 	av.assoc_value = 47;
-	
+
 	if (userspace_setsockopt(sock, IPPROTO_SCTP, SCTP_CONTEXT, (const void*)&av, (socklen_t)sizeof(struct sctp_assoc_value)) < 0) {
 		perror("setsockopt");
 	}
@@ -189,6 +189,12 @@ main(int argc, char *argv[])
 	}
 #endif
 	userspace_close(sock);
-	sctp_finish();
+	while (userspace_finish() != 0) {
+#if defined (__Userspace_os_Windows)
+		Sleep(1000);
+#else
+		sleep(1);
+#endif
+	}
 	return (0);
 }

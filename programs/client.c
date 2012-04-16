@@ -68,7 +68,7 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 }
 #endif
 
-int 
+int
 main(int argc, char *argv[])
 {
 	struct socket *sock;
@@ -132,6 +132,12 @@ main(int argc, char *argv[])
 		sleep(1);
 #endif
 	}
-	sctp_finish();
+	while (userspace_finish() != 0) {
+#if defined (__Userspace_os_Windows)
+		Sleep(1000);
+#else
+		sleep(1);
+#endif
+	}
 	return(0);
 }

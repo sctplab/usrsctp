@@ -122,7 +122,7 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
           control->data = m; // used by m_freem()
         }
         msg = mtod(m, struct rtcweb_datachannel_msg *);
-        
+
         printf("rtcweb_datachannel_msg = \n"
                "  type\t\t\t%u\n"
                "  channel_type\t\t%u\n"
@@ -401,7 +401,7 @@ main(int argc, char *argv[])
     */
       {
         char inputline[MAX_INPUT_LINE];
-        if (fgets(inputline, MAX_INPUT_LINE, stdin) == NULL) { 
+        if (fgets(inputline, MAX_INPUT_LINE, stdin) == NULL) {
           /* exit on ^d */
           printf("exiting..\n");
           exit(0);
@@ -497,6 +497,12 @@ main(int argc, char *argv[])
 		userspace_close(conn_sock);
 	}
 	userspace_close(sock);
-	sctp_finish();
+	while (userspace_finish() != 0) {
+#if defined (__Userspace_os_Windows)
+		Sleep(1000);
+#else
+		sleep(1);
+#endif
+	}
 	return (0);
 }
