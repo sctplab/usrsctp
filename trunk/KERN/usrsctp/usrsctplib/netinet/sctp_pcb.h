@@ -551,7 +551,7 @@ struct sctp_inpcb {
 	struct sctp_pcbtsn_rlog readlog[SCTP_READ_LOG_SIZE];
 	uint32_t readlog_index;
 #endif
-#if defined (CALLBACK_API)
+#if defined(__Userspace__)
 	int (*recv_callback)(struct socket*, struct sctp_queued_to_read*);
 	uint32_t send_sb_threshold;
 	uint32_t prev_send_sb_free;
@@ -559,7 +559,7 @@ struct sctp_inpcb {
 #endif
 };
 
-#if defined (CALLBACK_API)
+#if defined(__Userspace__)
 int register_recv_cb (struct socket*, int (*)(struct socket *, struct sctp_queued_to_read*));
 int register_send_cb (struct socket*, uint32_t, int (*)(struct socket *, uint32_t));
 

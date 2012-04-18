@@ -773,7 +773,7 @@ sctp_add_addr_to_vrf(uint32_t vrf_id, void *ifn, uint32_t ifn_index,
 		(void)SCTP_GETTIME_TIMEVAL(&wi->start_time);
 		wi->ifa = sctp_ifap;
 		wi->action = SCTP_ADD_IP_ADDRESS;
-		
+
 		SCTP_WQ_ADDR_LOCK();
 		LIST_INSERT_HEAD(&SCTP_BASE_INFO(addr_wq), wi, sctp_nxt_addr);
 		SCTP_WQ_ADDR_UNLOCK();
@@ -1042,12 +1042,12 @@ sctp_tcb_special_locate(struct sctp_inpcb **inp_p, struct sockaddr *from,
 		SCTP_TCB_LOCK(stcb);
 		if (stcb->rport != rport) {
 			/* remote port does not match. */
-			SCTP_TCB_UNLOCK(stcb);	
+			SCTP_TCB_UNLOCK(stcb);
 			SCTP_INP_RUNLOCK(inp);
 			continue;
 		}
 		if (stcb->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED) {
-			SCTP_TCB_UNLOCK(stcb);	
+			SCTP_TCB_UNLOCK(stcb);
 			SCTP_INP_RUNLOCK(inp);
 			continue;
 		}
@@ -1227,7 +1227,7 @@ sctp_does_stcb_own_this_addr(struct sctp_tcb *stcb, struct sockaddr *to)
 
 		LIST_FOREACH(laddr, &stcb->sctp_ep->sctp_addr_list, sctp_nxt_addr) {
 			if (sctp_is_addr_restricted(stcb, laddr->ifa) &&
-			    (!sctp_is_addr_pending(stcb, laddr->ifa))) {	
+			    (!sctp_is_addr_pending(stcb, laddr->ifa))) {
 				/* We allow pending addresses, where we
 				 * have sent an asconf-add to be considered
 				 * valid.
@@ -1265,7 +1265,7 @@ sctp_does_stcb_own_this_addr(struct sctp_tcb *stcb, struct sockaddr *to)
 				}
 				break;
 			}
-			
+
 #endif
 			default:
 				/* TSNH */
@@ -1382,7 +1382,7 @@ sctp_findassociation_ep_addr(struct sctp_inpcb **inp_p, struct sockaddr *remote,
 				goto null_return;
 			}
 			if (stcb->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED) {
-				SCTP_TCB_UNLOCK(stcb);	
+				SCTP_TCB_UNLOCK(stcb);
 				goto null_return;
 			}
 			if (local && !sctp_does_stcb_own_this_addr(stcb, local)) {
@@ -1690,7 +1690,7 @@ sctp_endpoint_probe(struct sockaddr *nam, struct sctppcbhead *head,
 
 	if (head == NULL)
 		return (NULL);
-	
+
 	LIST_FOREACH(inp, head, sctp_hash) {
 		SCTP_INP_RLOCK(inp);
 		if (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) {
@@ -2690,6 +2690,12 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	inp->sctp_frag_point = SCTP_DEFAULT_MAXSEGMENT;
 	inp->sctp_cmt_on_off = SCTP_BASE_SYSCTL(sctp_cmt_on_off);
 	inp->sctp_ecn_enable = SCTP_BASE_SYSCTL(sctp_ecn_enable);
+#if defined(__Userspace__)
+	inp->recv_callback = NULL;
+	inp->send_callback = NULL;
+	inp->send_sb_threshold = 0;
+	inp->prev_send_sb_free = 0;
+#endif
 	/* init the small hash table we use to track asocid <-> tcb */
 	inp->sctp_asocidhash = SCTP_HASH_INIT(SCTP_STACK_VTAG_HASH_SIZE, &inp->hashasocidmark);
 	if (inp->sctp_asocidhash == NULL) {
@@ -3653,7 +3659,7 @@ sctp_iterator_inp_being_freed(struct sctp_inpcb *inp)
 #if defined(__FreeBSD__) && __FreeBSD_version >= 801000
 		if (it->vn != curvnet) {
 			continue;
-		}	
+		}
 #endif
 		if (it->inp == inp) {
 			/* This one points to me is it inp specific? */
@@ -4529,7 +4535,7 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
  				net->mtu = rmtu;
 			}
 	        }
-	} 
+	}
 	if (net->mtu == 0) {
 		switch (newaddr->sa_family) {
 #ifdef INET
@@ -4571,7 +4577,7 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 #endif
 
 	/* JRS - Use the congestion control given in the CC module */
-	if (stcb->asoc.cc_functions.sctp_set_initial_cc_param != NULL) 
+	if (stcb->asoc.cc_functions.sctp_set_initial_cc_param != NULL)
 		(*stcb->asoc.cc_functions.sctp_set_initial_cc_param)(stcb, net);
 
 	/*
@@ -6331,7 +6337,7 @@ sctp_startup_mcore_threads(void)
 		/* TSNH I hope */
 		return;
 	}
-	memset(sctp_mcore_workers, 0 , ((mp_maxid+1) * 
+	memset(sctp_mcore_workers, 0 , ((mp_maxid+1) *
 					sizeof(struct sctp_mcore_ctrl)));
 	/* Init the structures */
 	for (i = 0; i<=mp_maxid; i++) {
@@ -6369,7 +6375,7 @@ sctp_startup_mcore_threads(void)
 				   SCTP_KTHREAD_PAGES,
 				   SCTP_MCORE_NAME);
 #endif
-			     
+
 	}
 }
 #endif
@@ -6637,7 +6643,7 @@ sctp_pcb_finish(void)
 		TAILQ_FOREACH_SAFE(it, &sctp_it_ctl.iteratorhead, sctp_nxt_itr, nit) {
 			if (it->vn != curvnet) {
 				continue;
-			}	
+			}
 			TAILQ_REMOVE(&sctp_it_ctl.iteratorhead, it, sctp_nxt_itr);
 			if (it->function_atend != NULL) {
 				(*it->function_atend) (it->pointer, it->val);
@@ -6693,7 +6699,7 @@ sctp_pcb_finish(void)
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_laddr), wi);
 	}
 	SCTP_WQ_ADDR_UNLOCK();
-	
+
 	/*
 	 * free the vrf/ifn/ifa lists and hashes (be sure address monitor
 	 * is destroyed first).
@@ -6757,9 +6763,9 @@ sctp_pcb_finish(void)
 #if !defined(__Userspace__)
 	SCTP_INP_INFO_LOCK_DESTROY();
 #endif
-	
+
 	SCTP_WQ_ADDR_DESTROY();
-	
+
 #if defined(__APPLE__)
 	lck_grp_attr_free(SCTP_BASE_INFO(mtx_grp_attr));
 	lck_grp_free(SCTP_BASE_INFO(mtx_grp));
@@ -6790,7 +6796,7 @@ sctp_pcb_finish(void)
 	if (SCTP_BASE_INFO(sctp_tcpephash) != NULL)
 		SCTP_HASH_FREE(SCTP_BASE_INFO(sctp_tcpephash), SCTP_BASE_INFO(hashtcpmark));
 #if defined(__FreeBSD__) && defined(SMP) && defined(SCTP_USE_PERCPU_STAT)
-	SCTP_FREE(SCTP_BASE_STATS, SCTP_M_MCORE);	
+	SCTP_FREE(SCTP_BASE_STATS, SCTP_M_MCORE);
 #endif
 }
 
@@ -7384,7 +7390,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 				break;
 			}
 		}
-	
+
 	next_param:
 		offset += SCTP_SIZE32(plen);
 		if (offset >= limit) {
@@ -7731,7 +7737,7 @@ sctp_drain()
 			continue;
 #else
 			return;
-#endif			
+#endif
 		}
 #endif
 		SCTP_INP_INFO_RLOCK();
@@ -7804,7 +7810,7 @@ sctp_initiate_iterator(inp_func inpf,
 	it->no_chunk_output = chunk_output_off;
 #if defined(__FreeBSD__) && __FreeBSD_version >= 801000
 	it->vn = curvnet;
-#endif	
+#endif
 	if (s_inp) {
 		/* Assume lock is held here */
 		it->inp = s_inp;
