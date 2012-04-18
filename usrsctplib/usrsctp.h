@@ -54,6 +54,12 @@ userspace_socket(int domain,
                  int type,
                  int protocol);
 
+struct socket *
+usrsctp_socket(int domain, int type, int protocol, 
+  int (*receive_cb)(struct socket *sock, struct sctp_queued_to_read* c), 
+  int (*send_cb)(struct socket *sock, uint32_t sb_free), 
+  uint32_t sb_threshold);
+
 int
 userspace_setsockopt(struct socket *so,
                      int level,

@@ -1440,13 +1440,40 @@ userspace_socket(int domain, int type, int protocol)
 	error = socreate(domain, &so, type, protocol);
 	if (error) {
 		perror("In user_socket(): socreate failed\n");
-                exit(1);
+		exit(1);
 	}
 	/*
-         * The original socket call returns the file descriptor fd.
-         * td->td_retval[0] = fd.
-         * We are returning struct socket *so.
-         */
+	 * The original socket call returns the file descriptor fd.
+	 * td->td_retval[0] = fd.
+	 * We are returning struct socket *so.
+	 */
+	return (so);
+}
+
+struct socket *
+usrsctp_socket(int domain, int type, int protocol,
+	int (*receive_cb)(struct socket *sock, struct sctp_queued_to_read* c),
+	int (*send_cb)(struct socket *sock, uint32_t sb_free),
+	uint32_t sb_threshold)
+{
+	struct socket *so = NULL;
+	int error;
+
+	if ((receive_cb == NULL) && ((send_cb != NULL) || (sb_threshold != 0))) {
+		errno = EINVAL;
+		return (NULL);
+	}
+	error = socreate(domain, &so, type, protocol);
+	if (error) {
+		return (NULL);
+	}
+	/*
+	 * The original socket call returns the file descriptor fd.
+	 * td->td_retval[0] = fd.
+	 * We are returning struct socket *so.
+	 */
+	register_recv_cb(so, receive_cb);
+	register_send_cb(so, sb_threshold, send_cb);
 	return (so);
 }
 
@@ -1845,7 +1872,6 @@ user_accept(struct socket *aso,  struct sockaddr **name, socklen_t *namelen, str
 	so->so_state |= (head->so_state & SS_NBIO);
 	so->so_qstate &= ~SQ_COMP;
 	so->so_head = NULL;
-
 	SOCK_UNLOCK(so);
 	ACCEPT_UNLOCK();
 
