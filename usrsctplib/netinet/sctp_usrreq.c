@@ -7404,14 +7404,19 @@ sctp_usrreq(so, req, m, nam, control)
 #endif
 #endif
 
-#if defined (CALLBACK_API)
+#if defined(__Userspace__)
 int
 register_recv_cb (struct socket* so, int (*receive_cb)(struct socket *sock, struct sctp_queued_to_read* c))
 {
 	struct sctp_inpcb* inp;
 
 	inp = (struct sctp_inpcb *) so->so_pcb;
+	if (inp == NULL) {
+		return (0);
+	}
+	SCTP_INP_WLOCK(inp);
 	inp->recv_callback = receive_cb;
+	SCTP_INP_WUNLOCK(inp);
 	return 1;
 }
 
@@ -7421,9 +7426,14 @@ register_send_cb (struct socket* so, uint32_t sb_threshold, int (*send_cb)(struc
 	struct sctp_inpcb* inp;
 
 	inp = (struct sctp_inpcb *) so->so_pcb;
+	if (inp == NULL) {
+		return (0);
+	}
+	SCTP_INP_WLOCK(inp);
 	inp->send_callback = send_cb;
 	inp->send_sb_threshold = sb_threshold;
 	inp->prev_send_sb_free = 0;
+	SCTP_INP_WUNLOCK(inp);
 	/* FIXME change to current amount free. This will be the full buffer
 	 * the first time this is registered but it could be only a portion
 	 * of the send buffer if this is called a second time e.g. if the
@@ -7431,5 +7441,4 @@ register_send_cb (struct socket* so, uint32_t sb_threshold, int (*send_cb)(struc
 	 */
 	return 1;
 }
-
 #endif

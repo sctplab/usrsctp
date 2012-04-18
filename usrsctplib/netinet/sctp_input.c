@@ -352,7 +352,7 @@ sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb)
 	}
 	/* This is the next one we expect */
 	asoc->str_reset_seq_in = asoc->asconf_seq_in + 1;
-	
+
 	asoc->mapping_array_base_tsn = ntohl(init->initial_tsn);
 	asoc->tsn_last_delivered = asoc->cumulative_tsn = asoc->asconf_seq_in;
 
@@ -496,7 +496,7 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 	    asoc->primary_destination, SCTP_FROM_SCTP_INPUT+SCTP_LOC_4);
 
 	/* calculate the RTO */
-	net->RTO = sctp_calculate_rto(stcb, asoc, net, &asoc->time_entered, sctp_align_safe_nocopy, 
+	net->RTO = sctp_calculate_rto(stcb, asoc, net, &asoc->time_entered, sctp_align_safe_nocopy,
 				      SCTP_RTT_FROM_NON_DATA);
 
 	retval = sctp_send_cookie_echo(m, offset, stcb, net);
@@ -635,7 +635,7 @@ sctp_handle_heartbeat_ack(struct sctp_heartbeat_chunk *cp,
 	tv.tv_sec = cp->heartbeat.hb_info.time_value_1;
 	tv.tv_usec = cp->heartbeat.hb_info.time_value_2;
 	/* Now lets do a RTO with this */
-	r_net->RTO = sctp_calculate_rto(stcb, &stcb->asoc, r_net, &tv, sctp_align_safe_nocopy, 
+	r_net->RTO = sctp_calculate_rto(stcb, &stcb->asoc, r_net, &tv, sctp_align_safe_nocopy,
 					SCTP_RTT_FROM_NON_DATA);
 	if (!(r_net->dest_state & SCTP_ADDR_REACHABLE)) {
 		r_net->dest_state |= SCTP_ADDR_REACHABLE;
@@ -761,7 +761,7 @@ sctp_handle_abort(struct sctp_abort_chunk *cp,
 		struct sctp_abort_chunk *cpnext;
 		struct sctp_missing_nat_state *natc;
 		uint16_t cause;
-		
+
 		cpnext = cp;
 		cpnext++;
 		natc = (struct sctp_missing_nat_state *)cpnext;
@@ -843,8 +843,8 @@ sctp_start_net_timers(struct sctp_tcb *stcb)
 		}
 	}
 	if (cnt_hb_sent) {
-		sctp_chunk_output(stcb->sctp_ep, stcb, 
-				  SCTP_OUTPUT_FROM_COOKIE_ACK, 
+		sctp_chunk_output(stcb->sctp_ep, stcb,
+				  SCTP_OUTPUT_FROM_COOKIE_ACK,
 				  SCTP_SO_NOT_LOCKED);
 	}
 }
@@ -1418,7 +1418,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 	int retval;
 	int spec_flag = 0;
 	uint32_t how_indx;
-	
+
 	net = *netp;
 	/* I know that the TCB is non-NULL from the caller */
 	asoc = &stcb->asoc;
@@ -1580,8 +1580,8 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 				 */
 				net->hb_responded = 1;
 				net->RTO = sctp_calculate_rto(stcb, asoc, net,
-							      &cookie->time_entered, 
-							      sctp_align_unsafe_makecopy, 
+							      &cookie->time_entered,
+							      sctp_align_unsafe_makecopy,
 							      SCTP_RTT_FROM_NON_DATA);
 
 				if (stcb->asoc.sctp_autoclose_ticks &&
@@ -1617,7 +1617,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			asoc->cookie_how[how_indx] = 5;
 		return (stcb);
 	}
-	
+
 	if (ntohl(initack_cp->init.initiate_tag) != asoc->my_vtag &&
 	    ntohl(init_cp->init.initiate_tag) == asoc->peer_vtag &&
 	    cookie->tie_tag_my_vtag == 0 &&
@@ -2292,7 +2292,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 	(void)SCTP_GETTIME_TIMEVAL(&stcb->asoc.time_entered);
 	if ((netp) && (*netp)) {
 		(*netp)->RTO = sctp_calculate_rto(stcb, asoc, *netp,
-						  &cookie->time_entered, sctp_align_unsafe_makecopy, 
+						  &cookie->time_entered, sctp_align_unsafe_makecopy,
 						  SCTP_RTT_FROM_NON_DATA);
 	}
 	/* respond with a COOKIE-ACK */
@@ -2659,7 +2659,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 	if (to == NULL) {
 		return (NULL);
 	}
-	
+
 	cookie_len -= SCTP_SIGNATURE_SIZE;
 	if (*stcb == NULL) {
 		/* this is the "normal" case... get a new TCB */
@@ -2816,6 +2816,12 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 			inp->sctp_context = (*inp_p)->sctp_context;
 			inp->local_strreset_support = (*inp_p)->local_strreset_support;
 			inp->inp_starting_point_for_iterator = NULL;
+#if defined(__Userspace__)
+			inp->recv_callback = (*inp_p)->recv_callback;
+			inp->send_callback = (*inp_p)->send_callback;
+			inp->send_sb_threshold = (*inp_p)->send_sb_threshold;
+			inp->prev_send_sb_free = (*inp_p)->prev_send_sb_free;
+#endif
 			/*
 			 * copy in the authentication parameters from the
 			 * original endpoint
@@ -2934,7 +2940,7 @@ sctp_handle_cookie_ack(struct sctp_cookie_ack_chunk *cp SCTP_UNUSED,
 		SCTP_STAT_INCR_GAUGE32(sctps_currestab);
 		if (asoc->overall_error_count == 0) {
 			net->RTO = sctp_calculate_rto(stcb, asoc, net,
-					             &asoc->time_entered, sctp_align_safe_nocopy, 
+					             &asoc->time_entered, sctp_align_safe_nocopy,
 						      SCTP_RTT_FROM_NON_DATA);
 		}
 		(void)SCTP_GETTIME_TIMEVAL(&asoc->time_entered);
@@ -3059,7 +3065,7 @@ sctp_handle_ecn_echo(struct sctp_ecne_chunk *cp,
 		}
 	}
 	if (net == NULL) {
-		/* 
+		/*
 		 * What to do. A previous send of a
 		 * CWR was possibly lost. See how old it is, we
 		 * may have it marked on the actual net.
@@ -3071,7 +3077,7 @@ sctp_handle_ecn_echo(struct sctp_ecne_chunk *cp,
 			}
 		}
 		if (net == NULL) {
-			/* 
+			/*
 			 * If we reach here, we need to send a special
 			 * CWR that says hey, we did this a long time
 			 * ago and you lost the response.
@@ -3626,7 +3632,7 @@ sctp_handle_stream_reset_response(struct sctp_tcb *stcb,
 				if (asoc->stream_reset_outstanding)
 					asoc->stream_reset_outstanding--;
 				if (action != SCTP_STREAM_RESET_PERFORMED) {
-					sctp_ulp_notify(SCTP_NOTIFY_STR_RESET_FAILED_IN, stcb, 
+					sctp_ulp_notify(SCTP_NOTIFY_STR_RESET_FAILED_IN, stcb,
 							number_entries, srparam->list_of_streams, SCTP_SO_NOT_LOCKED);
 				}
 			} else if (type == SCTP_STR_RESET_ADD_OUT_STREAMS) {
@@ -3646,14 +3652,14 @@ sctp_handle_stream_reset_response(struct sctp_tcb *stcb,
 					stcb->asoc.streamoutcnt += num_stream;
 					sctp_notify_stream_reset_add(stcb, stcb->asoc.streamincnt, stcb->asoc.streamoutcnt, 0);
 				} else {
-					sctp_notify_stream_reset_add(stcb, stcb->asoc.streamincnt, stcb->asoc.streamoutcnt, 
+					sctp_notify_stream_reset_add(stcb, stcb->asoc.streamincnt, stcb->asoc.streamoutcnt,
 								     SCTP_STREAM_CHANGED_DENIED);
 				}
 			} else if (type == SCTP_STR_RESET_ADD_IN_STREAMS) {
 				if (asoc->stream_reset_outstanding)
 					asoc->stream_reset_outstanding--;
 				if (action != SCTP_STREAM_RESET_PERFORMED) {
-					sctp_notify_stream_reset_add(stcb, stcb->asoc.streamincnt, stcb->asoc.streamoutcnt, 
+					sctp_notify_stream_reset_add(stcb, stcb->asoc.streamincnt, stcb->asoc.streamoutcnt,
 								     SCTP_STREAM_CHANGED_DENIED);
 				}
 			} else if (type == SCTP_STR_RESET_TSN_REQUEST) {
@@ -3687,10 +3693,10 @@ sctp_handle_stream_reset_response(struct sctp_tcb *stcb,
 					stcb->asoc.tsn_last_delivered = stcb->asoc.cumulative_tsn = stcb->asoc.highest_tsn_inside_map;
 					stcb->asoc.mapping_array_base_tsn = ntohl(resp->senders_next_tsn);
 					memset(stcb->asoc.mapping_array, 0, stcb->asoc.mapping_array_size);
-					
+
 					stcb->asoc.highest_tsn_inside_nr_map = stcb->asoc.highest_tsn_inside_map;
 					memset(stcb->asoc.nr_mapping_array, 0, stcb->asoc.mapping_array_size);
-					
+
 					stcb->asoc.sending_seq = ntohl(resp->receivers_next_tsn);
 					stcb->asoc.last_acked_seq = stcb->asoc.cumulative_tsn;
 
@@ -3698,7 +3704,7 @@ sctp_handle_stream_reset_response(struct sctp_tcb *stcb,
 					sctp_reset_in_stream(stcb, 0, (uint16_t *) NULL);
 					sctp_notify_stream_reset_tsn(stcb, stcb->asoc.sending_seq, (stcb->asoc.mapping_array_base_tsn+1), 0);
 				} else {
-					sctp_notify_stream_reset_tsn(stcb, stcb->asoc.sending_seq, (stcb->asoc.mapping_array_base_tsn+1), 
+					sctp_notify_stream_reset_tsn(stcb, stcb->asoc.sending_seq, (stcb->asoc.mapping_array_base_tsn+1),
 								     SCTP_STREAM_RESET_FAILED);
 				}
 			}
@@ -6199,7 +6205,7 @@ sctp_input(struct mbuf *m, int off)
 		cpu_to_use = sctp_cpuarry[flowid % mp_ncpus];
 		sctp_queue_to_mcore(m, off, cpu_to_use);
 		return;
-	} 
+	}
 #endif
 	sctp_input_with_port(m, off, 0);
 }
