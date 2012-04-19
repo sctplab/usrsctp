@@ -49,7 +49,6 @@
 
 int done = 0;
 
-#if defined(CALLBACK_API)
 static int
 receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 {
@@ -66,7 +65,6 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 	}
 	return 1;
 }
-#endif
 
 int
 main(int argc, char *argv[])
@@ -84,7 +82,7 @@ main(int argc, char *argv[])
 	}
 	SCTP_BASE_SYSCTL(sctp_debug_on) = 0x0;
 	SCTP_BASE_SYSCTL(sctp_blackhole) = 2;
-	if ((sock = userspace_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP)) == NULL) {
+	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0)) == NULL) {
 		perror("userspace_socket ipv6");
 	}
 #if defined(CALLBACK_API)

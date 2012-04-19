@@ -67,7 +67,7 @@ main(int argc, char *argv[])
 	SCTP_BASE_SYSCTL(sctp_debug_on) = 0x0;
 	SCTP_BASE_SYSCTL(sctp_blackhole) = 2;
 
-	if ((sock = userspace_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP)) == NULL) {
+	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0)) == NULL) {
 		perror("userspace_socket");
 	}
 	if (argc > 2) {
