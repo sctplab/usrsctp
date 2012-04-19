@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 233660 2012-03-29 13:36:53Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 234459 2012-04-19 12:43:19Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5473,22 +5473,26 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 					phd->param_type =  htons(SCTP_CAUSE_UNRECOG_CHUNK);
 					phd->param_length = htons(chk_length + sizeof(*phd));
 					SCTP_BUF_LEN(mm) = sizeof(*phd);
-					SCTP_BUF_NEXT(mm) = SCTP_M_COPYM(m, *offset, SCTP_SIZE32(chk_length),
-									 M_DONTWAIT);
+					SCTP_BUF_NEXT(mm) = SCTP_M_COPYM(m, *offset, chk_length, M_DONTWAIT);
 					if (SCTP_BUF_NEXT(mm)) {
+						if (sctp_pad_lastmbuf(SCTP_BUF_NEXT(mm), SCTP_SIZE32(chk_length) - chk_length, NULL)) {
+							sctp_m_freem(mm);
+						} else {
 #ifdef SCTP_MBUF_LOGGING
-						if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_MBUF_LOGGING_ENABLE) {
-							struct mbuf *mat;
-							mat = SCTP_BUF_NEXT(mm);
-							while (mat) {
-								if (SCTP_BUF_IS_EXTENDED(mat)) {
-									sctp_log_mb(mat, SCTP_MBUF_ICOPY);
+							if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_MBUF_LOGGING_ENABLE) {
+								struct mbuf *mat;
+
+								mat = SCTP_BUF_NEXT(mm);
+								while (mat) {
+									if (SCTP_BUF_IS_EXTENDED(mat)) {
+										sctp_log_mb(mat, SCTP_MBUF_ICOPY);
+									}
+									mat = SCTP_BUF_NEXT(mat);
 								}
-								mat = SCTP_BUF_NEXT(mat);
 							}
-						}
 #endif
-						sctp_queue_op_err(stcb, mm);
+							sctp_queue_op_err(stcb, mm);
+						}
 					} else {
 						sctp_m_freem(mm);
 					}
