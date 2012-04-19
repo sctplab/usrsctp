@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 234459 2012-04-19 12:43:19Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 234461 2012-04-19 13:11:17Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2455,12 +2455,11 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 #ifdef SCTP_MBUF_LOGGING
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_MBUF_LOGGING_ENABLE) {
 		struct mbuf *mat;
-		mat = m_sig;
-		while (mat) {
+
+		for (mat = m_sig; mat; mat = SCTP_BUF_NEXT(mat)) {
 			if (SCTP_BUF_IS_EXTENDED(mat)) {
 				sctp_log_mb(mat, SCTP_MBUF_SPLIT);
 			}
-			mat = SCTP_BUF_NEXT(mat);
 		}
 	}
 #endif
@@ -5482,12 +5481,10 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 							if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_MBUF_LOGGING_ENABLE) {
 								struct mbuf *mat;
 
-								mat = SCTP_BUF_NEXT(mm);
-								while (mat) {
+								for (mat = SCTP_BUF_NEXT(mm); mat; mat = SCTP_BUF_NEXT(mat)) {
 									if (SCTP_BUF_IS_EXTENDED(mat)) {
 										sctp_log_mb(mat, SCTP_MBUF_ICOPY);
 									}
-									mat = SCTP_BUF_NEXT(mat);
 								}
 							}
 #endif
@@ -5839,9 +5836,6 @@ sctp_input(i_pak, va_alist)
 #endif
 #endif
 {
-#ifdef SCTP_MBUF_LOGGING
-	struct mbuf *mat;
-#endif
 	struct mbuf *m;
 	int iphlen;
 #ifdef __Panda__
@@ -5903,7 +5897,9 @@ sctp_input(i_pak, va_alist)
 #ifdef SCTP_MBUF_LOGGING
 	/* Log in any input mbufs */
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_MBUF_LOGGING_ENABLE) {
-		for (mat =m; mat; mat = SCTP_BUF_NEXT(mat)) {
+		struct mbuf *mat;
+
+		for (mat = m; mat; mat = SCTP_BUF_NEXT(mat)) {
 			if (SCTP_BUF_IS_EXTENDED(mat)) {
 				sctp_log_mb(mat, SCTP_MBUF_INPUT);
 			}
