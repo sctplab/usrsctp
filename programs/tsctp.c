@@ -199,7 +199,7 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 
 	while (!done && ((number_of_messages == 0) || (messages < (number_of_messages - 1)))) {
 		if (very_verbose)
-			printf("Sending message number %lu.\n", messages);
+			printf("Sending message number %lu.\n", messages + 1);
 
 		if (userspace_sctp_sendmsg(psock /* struct socket *so */,
 		                           buffer /* const void *data */,
@@ -211,15 +211,39 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 		                           0 /* u_int16_t stream_no */,
 		                           0 /* u_int32_t timetolive */,
 		                           0 /* u_int32_t context */) < 0) {
-		if (errno != EWOULDBLOCK && errno != EAGAIN) {
-			perror("userspace_sctp_sendmsg (cb) returned < 0");
-			exit(1);
-		} else {
-			/* send until EWOULDBLOCK then exit callback. */
-			return 1;
+			if (errno != EWOULDBLOCK && errno != EAGAIN) {
+				perror("userspace_sctp_sendmsg (cb) returned < 0");
+				exit(1);
+			} else {
+				/* send until EWOULDBLOCK then exit callback. */
+				return 1;
+			}
 		}
+		messages++;
 	}
-	messages++;
+	if ((done == 1) || (messages == (number_of_messages - 1))) {
+		if (very_verbose)
+			printf("Sending final message number %lu.\n", messages + 1);
+		if (userspace_sctp_sendmsg(psock /* struct socket *so */,
+		                           buffer /* const void *data */,
+		                           length /* size_t len */,
+		                           (struct sockaddr *) &remote_addr /* const struct sockaddr *to */,
+		                           sizeof(struct sockaddr_in) /* socklen_t tolen */,
+		                           0 /* u_int32_t ppid */,
+		                           unordered?(SCTP_UNORDERED|SCTP_EOF):SCTP_EOF /* u_int32_t flags */,
+		                           0 /* u_int16_t stream_no */,
+		                           0 /* u_int32_t timetolive */,
+		                           0 /* u_int32_t context */) < 0) {
+			if (errno != EWOULDBLOCK && errno != EAGAIN) {
+				perror("userspace_sctp_sendmsg (cb) returned < 0");
+				exit(1);
+			} else {
+				/* send until EWOULDBLOCK then exit callback. */
+				return 1;
+			}
+		}
+		messages++;
+		done = 2;
 	}
 
 	return 1;
@@ -275,7 +299,6 @@ int main(int argc, char **argv)
 	double seconds;
 	double throughput;
 	int nodelay = 0;
-	unsigned long i;
 	struct sctp_assoc_value av;
 	struct sctp_udpencaps encaps;
 	pthread_t tid;
@@ -569,11 +592,10 @@ int main(int argc, char **argv)
 		gettimeofday(&start_time, NULL);
 #endif
 		if (verbose) {
-			printf("Start sending %ld messages...", (long)number_of_messages);
+			printf("Start sending %ld messages...\n", (long)number_of_messages);
 			fflush(stdout);
 		}
 
-		i = 0;
 		done = 0;
 
 		if (runtime > 0) {
@@ -587,10 +609,9 @@ int main(int argc, char **argv)
 		}
 
 		messages = 0;
-		while (!done && ((number_of_messages == 0) || (i < (number_of_messages - 1)))) {
+		if (use_cb) {
 			if (very_verbose)
-				printf("Sending message number %lu.\n", i);
-
+				printf("Sending message number %lu.\n", messages);
 			if (userspace_sctp_sendmsg(psock /* struct socket *so */,
 			                           buffer /* const void *data */,
 			                           length /* size_t len */,
@@ -601,30 +622,38 @@ int main(int argc, char **argv)
 			                           0 /* u_int16_t stream_no */,
 			                           0 /* u_int32_t timetolive */,
 			                           0 /* u_int32_t context */) < 0) {
-			        if (use_cb) {
-					if (errno != EWOULDBLOCK && errno != EAGAIN) {
-						perror("userspace_sctp_sendmsg returned < 0");
-						exit(1);
-					} else {
-						/* send until EWOULDBLOCK then sleep until runtime expires.
-						   All sending after initial EWOULDBLOCK done in send callback. */
+				perror("userspace_sctp_sendmsg returned < 0");
+				exit(1);
+			}
+			while (!done && (messages < (number_of_messages - 1))) {
 #if defined (__Userspace_os_Windows)
-						Sleep(runtime*1000);
+				Sleep(1000);
 #else
-						sleep(runtime);
+				sleep(1);
 #endif
-						i += messages;
-						continue;
-					}
-				} else {
+			}
+		} else {
+			while (!done && ((number_of_messages == 0) || (messages < (number_of_messages - 1)))) {
+				if (very_verbose)
+					printf("Sending message number %lu.\n", messages + 1);
+
+				if (userspace_sctp_sendmsg(psock /* struct socket *so */,
+				                           buffer /* const void *data */,
+				                           length /* size_t len */,
+				                           (struct sockaddr *) &remote_addr /* const struct sockaddr *to */,
+				                           sizeof(struct sockaddr_in) /* socklen_t tolen */,
+				                           0 /* u_int32_t ppid */,
+				                           unordered?SCTP_UNORDERED:0 /* u_int32_t flags */,
+				                           0 /* u_int16_t stream_no */,
+				                           0 /* u_int32_t timetolive */,
+				                           0 /* u_int32_t context */) < 0) {
 					perror("userspace_sctp_sendmsg returned < 0");
 					exit(1);
 				}
+				messages++;
 			}
-
-			i++;
-		}
-		while (1) {
+			if (very_verbose)
+				printf("Sending message number %lu.\n", messages + 1);
 			if ((userspace_sctp_sendmsg(psock /* struct socket *so */,
 			                            buffer /* const void *data */,
 			                            length /* size_t len */,
@@ -635,15 +664,11 @@ int main(int argc, char **argv)
 			                            0 /* u_int16_t stream_no */,
 			                            0 /* u_int32_t timetolive */,
 			                            0 /* u_int32_t context */)) < 0) {
-				if (errno != EWOULDBLOCK && errno != EAGAIN) {
-					perror("final userspace_sctp_sendmsg returned\n");
-					exit(1);
-				} else
-					continue;
+				perror("final userspace_sctp_sendmsg returned\n");
+				exit(1);
 			}
-			break;
+			messages++;
 		}
-		i++;
 		free (buffer);
 		if (verbose)
 			printf("done.\n");
@@ -657,8 +682,8 @@ int main(int argc, char **argv)
 		timersub(&now, &start_time, &diff_time);
 		seconds = diff_time.tv_sec + (double)diff_time.tv_usec/1000000;
 		printf("%s of %ld messages of length %u took %f seconds.\n",
-		       "Sending", i, length, seconds);
-		throughput = (double)i * (double)length / seconds;
+		       "Sending", messages, length, seconds);
+		throughput = (double)messages * (double)length / seconds;
 		printf("Throughput was %f Byte/sec.\n", throughput);
 	}
 
