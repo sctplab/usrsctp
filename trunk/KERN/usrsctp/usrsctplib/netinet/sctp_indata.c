@@ -4016,8 +4016,6 @@ sctp_express_handle_sack(struct sctp_tcb *stcb, uint32_t cumack,
 			sb_free_now = SCTP_SB_LIMIT_SND(so) - (inqueue_bytes + stcb->asoc.sb_send_resv);
 		}
 	}
-	/* update the amount free in the send socket buffer for next time */
-	inp->prev_send_sb_free = sb_free_now;
 #else
 	/* sa_ignore NO_NULL_CHK */
 	if (stcb->sctp_socket) {
@@ -4790,8 +4788,6 @@ sctp_handle_sack(struct mbuf *m, int offset_seg, int offset_dup,
 			sb_free_now = SCTP_SB_LIMIT_SND(so) - (inqueue_bytes + stcb->asoc.sb_send_resv);
 		}
 	}
-	/* update the amount free in the send socket buffer for next time */
-	inp->prev_send_sb_free = sb_free_now;
 #else
 	/* sa_ignore NO_NULL_CHK */
 	if ((wake_him) && (stcb->sctp_socket)) {

@@ -554,7 +554,6 @@ struct sctp_inpcb {
 #if defined(__Userspace__)
 	int (*recv_callback)(struct socket*, struct sctp_queued_to_read*);
 	uint32_t send_sb_threshold;
-	uint32_t prev_send_sb_free;
 	int (*send_callback)(struct socket*, uint32_t);
 #endif
 };

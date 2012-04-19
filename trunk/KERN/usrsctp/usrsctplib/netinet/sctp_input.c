@@ -2819,7 +2819,6 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 			inp->recv_callback = (*inp_p)->recv_callback;
 			inp->send_callback = (*inp_p)->send_callback;
 			inp->send_sb_threshold = (*inp_p)->send_sb_threshold;
-			inp->prev_send_sb_free = (*inp_p)->prev_send_sb_free;
 #endif
 			/*
 			 * copy in the authentication parameters from the

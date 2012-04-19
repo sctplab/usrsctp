@@ -7432,7 +7432,6 @@ register_send_cb (struct socket* so, uint32_t sb_threshold, int (*send_cb)(struc
 	SCTP_INP_WLOCK(inp);
 	inp->send_callback = send_cb;
 	inp->send_sb_threshold = sb_threshold;
-	inp->prev_send_sb_free = 0;
 	SCTP_INP_WUNLOCK(inp);
 	/* FIXME change to current amount free. This will be the full buffer
 	 * the first time this is registered but it could be only a portion
