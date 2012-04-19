@@ -4767,7 +4767,7 @@ sctp_handle_sack(struct mbuf *m, int offset_seg, int offset_dup,
 
 			inp = stcb->sctp_ep;
 			inqueue_bytes = stcb->asoc.total_output_queue_size - (stcb->asoc.chunks_on_out_queue * sizeof(struct sctp_data_chunk));
-			sb_free_now = SCTP_SB_LIMIT_SND(so) - (inqueue_bytes + stcb->asoc.sb_send_resv);
+			sb_free_now = SCTP_SB_LIMIT_SND(stcb->sctp_socket) - (inqueue_bytes + stcb->asoc.sb_send_resv);
 
 			/* check if the amount free in the send socket buffer crossed the threshold */
 			if (inp->send_callback &&
