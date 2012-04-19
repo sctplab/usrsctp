@@ -119,7 +119,7 @@ struct sctp_initmsg {
 #else
 	uint16_t sinit_num_ostreams;
 	uint16_t sinit_max_instreams;
-#endif	
+#endif
 	uint16_t sinit_max_attempts;
 	uint16_t sinit_max_init_timeo;
 };
@@ -986,7 +986,7 @@ struct sctpstat {
 	uint32_t  sctps_recvnocrc;
 	uint32_t  sctps_recvswcrc;
 	uint32_t  sctps_recvhwcrc;
-	
+
 	/* output statistics: */
 	uint32_t  sctps_sendpackets;         /* total output packets       */
 	uint32_t  sctps_sendsacks;           /* total output SACKs         */
@@ -1277,7 +1277,7 @@ sctp_lower_sosend(struct socket *so,
 #endif
     int flags,
     struct sctp_sndrcvinfo *srcv
-#if !(defined(__Panda__) || defined (__Userspace__)) 
+#if !(defined(__Panda__) || defined (__Userspace__))
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
     ,struct thread *p
 #elif defined(__Windows__)

@@ -63,7 +63,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 234460 2012-04-19 12:47:18Z tuex
 #define APPLE_FILE_NO 8
 #endif
 
-#if defined(__Windows__) 
+#if defined(__Windows__)
 #if !defined(SCTP_LOCAL_TRACE_BUF)
 #include "eventrace_netinet.h"
 #include "sctputil.tmh" /* this is the file that will be auto generated */
@@ -1104,7 +1104,7 @@ sctp_init_asoc(struct sctp_inpcb *m, struct sctp_tcb *stcb,
 		SCTP_LTRACE_ERR_RET(NULL, stcb, NULL, SCTP_FROM_SCTPUTIL, ENOMEM);
 		return (ENOMEM);
 	}
-	memset(asoc->mapping_array, 0, asoc->mapping_array_size);	
+	memset(asoc->mapping_array, 0, asoc->mapping_array_size);
 	SCTP_MALLOC(asoc->nr_mapping_array, uint8_t *, asoc->mapping_array_size,
 	    SCTP_M_MAP);
 	if (asoc->nr_mapping_array == NULL) {
@@ -1226,7 +1226,7 @@ sctp_iterator_work(struct sctp_iterator *it)
 	int inp_skip = 0;
 	int first_in = 1;
 	struct sctp_inpcb *tinp;
-	
+
 	SCTP_INP_INFO_RLOCK();
 	SCTP_ITERATOR_LOCK();
  	if (it->inp) {
@@ -2477,7 +2477,7 @@ sctp_calculate_rto(struct sctp_tcb *stcb,
 			net->lan_type = SCTP_LAN_INTERNET;
 		} else {
 			net->lan_type = SCTP_LAN_LOCAL;
-		} 
+		}
 	}
 
 	/***************************/
@@ -3040,7 +3040,7 @@ sctp_notify_adaptation_layer(struct sctp_tcb *stcb)
 		/* event not enabled */
 		return;
 	}
-	
+
 	m_notify = sctp_get_mbuf_for_msg(sizeof(struct sctp_adaption_event), 0, M_DONTWAIT, 1, MT_DATA);
 	if (m_notify == NULL)
 		/* no space left */
@@ -3096,7 +3096,7 @@ sctp_notify_partial_delivery_indication(struct sctp_tcb *stcb, uint32_t error,
 	if (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_CANT_READ) {
 		return;
 	}
-	
+
 	m_notify = sctp_get_mbuf_for_msg(sizeof(struct sctp_pdapi_event), 0, M_DONTWAIT, 1, MT_DATA);
 	if (m_notify == NULL)
 		/* no space left */
@@ -3186,7 +3186,7 @@ sctp_notify_shutdown_event(struct sctp_tcb *stcb)
 		/* mark socket closed for read/write and wakeup! */
 #if defined (__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 		struct socket *so;
-		
+
 		so = SCTP_INP_SO(stcb->sctp_ep);
 		atomic_add_int(&stcb->asoc.refcnt, 1);
 		SCTP_TCB_UNLOCK(stcb);
@@ -3196,7 +3196,7 @@ sctp_notify_shutdown_event(struct sctp_tcb *stcb)
 		if (stcb->asoc.state & SCTP_STATE_CLOSED_SOCKET) {
 			SCTP_SOCKET_UNLOCK(so, 1);
 			return;
-		}		
+		}
 #endif
 		socantsendmore(stcb->sctp_socket);
 #if defined (__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
@@ -3207,7 +3207,7 @@ sctp_notify_shutdown_event(struct sctp_tcb *stcb)
 		/* event not enabled */
 		return;
 	}
-	
+
 	m_notify = sctp_get_mbuf_for_msg(sizeof(struct sctp_shutdown_event), 0, M_DONTWAIT, 1, MT_DATA);
 	if (m_notify == NULL)
 		/* no space left */
@@ -3256,7 +3256,7 @@ sctp_notify_sender_dry_event(struct sctp_tcb *stcb,
 		/* event not enabled */
 		return;
 	}
-	
+
 	m_notify = sctp_get_mbuf_for_msg(sizeof(struct sctp_sender_dry_event), 0, M_DONTWAIT, 1, MT_DATA);
 	if (m_notify == NULL) {
 		/* no space left */
@@ -3420,7 +3420,7 @@ sctp_notify_stream_reset(struct sctp_tcb *stcb,
 		/* event not enabled */
 		return;
 	}
-	
+
 	m_notify = sctp_get_mbuf_for_msg(MCLBYTES, 0, M_DONTWAIT, 1, MT_DATA);
 	if (m_notify == NULL)
 		/* no space left */
@@ -3526,7 +3526,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		sctp_notify_assoc_change(SCTP_SHUTDOWN_COMP, stcb, error, so_locked);
 #if defined (__Userspace__)
 		if (stcb->sctp_ep->recv_callback) {
-			if (stcb->sctp_socket) {				
+			if (stcb->sctp_socket) {
 				atomic_add_int(&stcb->asoc.refcnt, 1);
 				SCTP_TCB_UNLOCK(stcb);
 				inp->recv_callback(stcb->sctp_socket, NULL);
@@ -3609,11 +3609,11 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		sctp_notify_stream_reset(stcb, error, ((uint16_t *) data), SCTP_STREAM_RESET_OUTGOING);
 		break;
 	case SCTP_NOTIFY_STR_RESET_FAILED_OUT:
-		sctp_notify_stream_reset(stcb, error, ((uint16_t *) data), 
+		sctp_notify_stream_reset(stcb, error, ((uint16_t *) data),
 					 (SCTP_STREAM_RESET_OUTGOING|SCTP_STREAM_RESET_INCOMING));
 		break;
 	case SCTP_NOTIFY_STR_RESET_FAILED_IN:
-		sctp_notify_stream_reset(stcb, error, ((uint16_t *) data), 
+		sctp_notify_stream_reset(stcb, error, ((uint16_t *) data),
 					 (SCTP_STREAM_RESET_OUTGOING|SCTP_STREAM_RESET_INCOMING));
 		break;
 	case SCTP_NOTIFY_ASCONF_ADD_IP:
@@ -4177,7 +4177,7 @@ sctp_cmpaddr(struct sockaddr *sa1, struct sockaddr *sa2)
 	/* must be the same family */
 	if (sa1->sa_family != sa2->sa_family)
 		return (0);
-	
+
 	switch (sa1->sa_family) {
 #ifdef INET6
 	case AF_INET6:
@@ -4214,8 +4214,8 @@ sctp_print_address(struct sockaddr *sa)
 #ifdef INET6
 	char ip6buf[INET6_ADDRSTRLEN];
 	ip6buf[0] = 0;
-#endif	
-	
+#endif
+
 	switch (sa->sa_family) {
 #ifdef INET6
 	case AF_INET6:
@@ -5263,7 +5263,7 @@ sctp_user_rcvd(struct sctp_tcb *stcb, uint32_t *freed_so_far, int hold_rlock,
 		}
 		SCTP_STAT_INCR(sctps_wu_sacks_sent);
 		sctp_send_sack(stcb, SCTP_SO_LOCKED);
-		
+
 		sctp_chunk_output(stcb->sctp_ep, stcb,
 				  SCTP_OUTPUT_FROM_USR_RCVD, SCTP_SO_LOCKED);
 		/* make sure no timer is running */
@@ -6832,7 +6832,7 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 			}
 #endif
 			break;
-		} 
+		}
 #endif
 		default:
 			*totaddr = i;
@@ -7262,7 +7262,7 @@ sctp_local_addr_count(struct sctp_tcb *stcb)
 
 void
 sctp_log_trace(uint32_t subsys, const char *str SCTP_UNUSED, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e, uint32_t f)
-{	
+{
 	uint32_t saveindex, newindex;
 
 #if defined(__Windows__)
@@ -7418,7 +7418,7 @@ sctp_recv_udp_tunneled_packet(struct mbuf *m, int off, struct inpcb *ignored)
 }
 #endif
 
-void 
+void
 sctp_over_udp_stop(void)
 {
 	struct socket *sop;

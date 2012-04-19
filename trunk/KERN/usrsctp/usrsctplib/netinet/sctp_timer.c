@@ -183,7 +183,7 @@ sctp_threshold_management(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	return (0);
 }
 
-/* 
+/*
  * sctp_find_alternate_net() returns a non-NULL pointer as long
  * the argument net is non-NULL.
  */
@@ -761,7 +761,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 		cnt_mk++;
 		could_be_sent->sent = SCTP_DATAGRAM_RESEND;
 	}
-#endif	
+#endif
 	if (stcb->asoc.sent_queue_retran_cnt != cnt_mk) {
 #ifdef INVARIANTS
 		SCTP_PRINTF("Local Audit says there are %d for retran asoc cnt:%d we marked:%d this time\n",
@@ -903,14 +903,14 @@ sctp_t3rxt_timer(struct sctp_inpcb *inp,
 
 	num_mk = 0;
 	num_abandoned = 0;
-	(void)sctp_mark_all_for_resend(stcb, net, alt, win_probe, 
+	(void)sctp_mark_all_for_resend(stcb, net, alt, win_probe,
 				      &num_mk, &num_abandoned);
 	/* FR Loss recovery just ended with the T3. */
 	stcb->asoc.fast_retran_loss_recovery = 0;
 
 	/* CMT FR loss recovery ended with the T3 */
 	net->fast_retran_loss_recovery = 0;
-	if ((stcb->asoc.cc_functions.sctp_cwnd_new_transmission_begins) && 
+	if ((stcb->asoc.cc_functions.sctp_cwnd_new_transmission_begins) &&
 	    (net->flight_size == 0)) {
 		(*stcb->asoc.cc_functions.sctp_cwnd_new_transmission_begins)(stcb, net);
 	}
@@ -1447,7 +1447,7 @@ sctp_heartbeat_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		    (net->last_sent_time.tv_usec > 0)) {
 #ifdef __FreeBSD__
 			struct timeval diff;
-			
+
 			SCTP_GETTIME_TIMEVAL(&diff);
 			timevalsub(&diff, &net->last_sent_time);
 #else

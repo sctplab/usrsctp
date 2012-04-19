@@ -86,7 +86,7 @@ static void
 sctp_cleanup_itqueue(void)
 {
 	struct sctp_iterator *it, *nit;
-	
+
 	TAILQ_FOREACH_SAFE(it, &sctp_it_ctl.iteratorhead, sctp_nxt_itr, nit) {
 		if (it->function_atend != NULL) {
 			(*it->function_atend) (it->pointer, it->val);
@@ -145,7 +145,7 @@ sctp_iterator_thread(void *v SCTP_UNUSED)
 #if defined(__Userspace_os_Windows)
 		SleepConditionVariableCS(&sctp_it_ctl.iterator_wakeup, &sctp_it_ctl.ipi_iterator_wq_mtx, INFINITE);
 #else
-		pthread_cond_wait(&sctp_it_ctl.iterator_wakeup, &sctp_it_ctl.ipi_iterator_wq_mtx); 
+		pthread_cond_wait(&sctp_it_ctl.iterator_wakeup, &sctp_it_ctl.ipi_iterator_wq_mtx);
 #endif
 #endif
 #if !defined(__FreeBSD__)
@@ -684,7 +684,7 @@ sctp_addr_change(struct ifaddr *ifa, int cmd)
 		SCTP_BASE_VAR(first_time) = 1;
 		sctp_init_ifns_for_vrf(SCTP_DEFAULT_VRFID);
 	}
-	
+
 	if ((cmd != RTM_ADD) && (cmd != RTM_DELETE)) {
 		/* don't know what to do with this */
 		return;
@@ -831,7 +831,7 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header,
 		if (m == NULL) {
 			return (NULL);
 		}
-		
+
 		if (SCTP_BUF_IS_EXTENDED(m) == 0) {
 		  sctp_m_freem(m);
 		  return (NULL);

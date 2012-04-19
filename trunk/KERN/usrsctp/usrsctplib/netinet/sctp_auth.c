@@ -584,10 +584,10 @@ void
 sctp_auth_key_acquire(struct sctp_tcb *stcb, uint16_t key_id)
 {
 	sctp_sharedkey_t *skey;
-	
+
 	/* find the shared key */
 	skey = sctp_find_sharedkey(&stcb->asoc.shared_keys, key_id);
- 	
+
 	/* bump the ref count */
 	if (skey) {
 		atomic_add_int(&skey->refcount, 1);
@@ -605,10 +605,10 @@ sctp_auth_key_release(struct sctp_tcb *stcb, uint16_t key_id, int so_locked
 )
 {
 	sctp_sharedkey_t *skey;
-	
+
 	/* find the shared key */
 	skey = sctp_find_sharedkey(&stcb->asoc.shared_keys, key_id);
-	
+
 	/* decrement the ref count */
 	if (skey) {
 		sctp_free_sharedkey(skey);

@@ -1860,7 +1860,7 @@ sctp_do_connect_x(struct socket *so, struct sctp_inpcb *inp, void *optval,
 
 	/* FIX ME: do we want to pass in a vrf on the connect call? */
 	vrf_id = inp->def_vrf_id;
-	
+
 
 	/* We are GOOD to go */
 	stcb = sctp_aloc_assoc(inp, sa, &error, 0, vrf_id,
@@ -2264,7 +2264,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 	{
 		struct sctp_assoc_ids *ids;
 		unsigned int at, limit;
-		
+
 		SCTP_CHECK_AND_CAST(ids, optval, struct sctp_assoc_ids, *optsize);
 		at = 0;
 		limit = (*optsize-sizeof(uint32_t))/ sizeof(sctp_assoc_t);
@@ -3126,7 +3126,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			} else {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 				error = EINVAL;
-			}			
+			}
 		}
 		if (error == 0) {
 			*optsize = sizeof(struct sctp_sndrcvinfo);
@@ -3350,34 +3350,34 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		switch (event->se_type) {
 		case SCTP_ASSOC_CHANGE:
 			event_type = SCTP_PCB_FLAGS_RECVASSOCEVNT;
-			break;				
+			break;
 		case SCTP_PEER_ADDR_CHANGE:
 			event_type = SCTP_PCB_FLAGS_RECVPADDREVNT;
-			break;				
+			break;
 		case SCTP_REMOTE_ERROR:
 			event_type = SCTP_PCB_FLAGS_RECVPEERERR;
-			break;				
+			break;
 		case SCTP_SEND_FAILED:
 			event_type = SCTP_PCB_FLAGS_RECVSENDFAILEVNT;
-			break;				
+			break;
 		case SCTP_SHUTDOWN_EVENT:
 			event_type = SCTP_PCB_FLAGS_RECVSHUTDOWNEVNT;
-			break;				
+			break;
 		case SCTP_ADAPTATION_INDICATION:
 			event_type = SCTP_PCB_FLAGS_ADAPTATIONEVNT;
-			break;				
+			break;
 		case SCTP_PARTIAL_DELIVERY_EVENT:
 			event_type = SCTP_PCB_FLAGS_PDAPIEVNT;
-			break;				
+			break;
 		case SCTP_AUTHENTICATION_EVENT:
 			event_type = SCTP_PCB_FLAGS_AUTHEVNT;
-			break;				
+			break;
 		case SCTP_STREAM_RESET_EVENT:
 			event_type = SCTP_PCB_FLAGS_STREAM_RESETEVNT;
-			break;				
+			break;
 		case SCTP_SENDER_DRY_EVENT:
 			event_type = SCTP_PCB_FLAGS_DRYEVNT;
-			break;				
+			break;
 		case SCTP_NOTIFICATIONS_STOPPED_EVENT:
 			event_type = 0;
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOTSUP);
@@ -3590,7 +3590,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 				/* Use endpoint defaults */
 				SCTP_INP_RLOCK(inp);
 				thlds->spt_pathmaxrxt = inp->sctp_ep.def_net_failure;
-				thlds->spt_pathpfthld = inp->sctp_ep.def_net_pf_threshold;				
+				thlds->spt_pathpfthld = inp->sctp_ep.def_net_pf_threshold;
 				SCTP_INP_RUNLOCK(inp);
 			} else {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
@@ -3606,7 +3606,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 	{
 		struct sctp_udpencaps *encaps;
 		struct sctp_nets *net;
-			
+
 		SCTP_CHECK_AND_CAST(encaps, optval, struct sctp_udpencaps, *optsize);
 		SCTP_FIND_STCB(inp, stcb, encaps->sue_assoc_id);
 
@@ -3626,7 +3626,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		}
 		if (stcb && (net == NULL)) {
 			struct sockaddr *sa;
-				
+
 			sa = (struct sockaddr *)&encaps->sue_address;
 #ifdef INET
 			if (sa->sa_family == AF_INET) {
@@ -3862,7 +3862,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 				error = EINVAL;
 				break;
-			} 
+			}
 			SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 			if (stcb) {
 				stcb->asoc.sctp_cmt_on_off = av->assoc_value;
@@ -3968,7 +3968,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if (stcb->asoc.cc_functions.sctp_cwnd_socket_option == NULL) {
 				error = ENOTSUP;
 			} else {
-				error = (*stcb->asoc.cc_functions.sctp_cwnd_socket_option)(stcb, 1, 
+				error = (*stcb->asoc.cc_functions.sctp_cwnd_socket_option)(stcb, 1,
 											   cc_opt);
 			}
 			SCTP_TCB_UNLOCK(stcb);
@@ -4047,7 +4047,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					SCTP_TCB_UNLOCK(stcb);
 				}
 				SCTP_INP_RUNLOCK(inp);
-		
+
 			} else {
 				/* Can't set stream value without association */
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
@@ -4435,7 +4435,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			error = EINVAL;
 			break;
 		}
-		
+
 		hmaclist = sctp_alloc_hmaclist(shmac->shmac_number_of_idents);
 		if (hmaclist == NULL) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOMEM);
@@ -4635,7 +4635,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 	}
 	case SCTP_RESET_STREAMS:
 	{
-		struct sctp_reset_streams *strrst; 
+		struct sctp_reset_streams *strrst;
 		int i,send_out=0;
 		int send_in=0;
 
@@ -5565,7 +5565,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			} else {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 				error = EINVAL;
-			}				
+			}
 		}
 		break;
 	}
@@ -5604,7 +5604,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			} else {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 				error = EINVAL;
-			}				
+			}
 		}
 		break;
 	}
@@ -5658,7 +5658,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			    (!(net->dest_state & SCTP_ADDR_UNCONFIRMED))) {
 				/* Ok we need to set it */
 				if (sctp_set_primary_addr(stcb, (struct sockaddr *)NULL, net) == 0) {
-					if ((stcb->asoc.alternate) && 
+					if ((stcb->asoc.alternate) &&
 					    (!(net->dest_state & SCTP_ADDR_PF)) &&
 					    (net->dest_state & SCTP_ADDR_REACHABLE)) {
 						sctp_free_remote_addr(stcb->asoc.alternate);
@@ -5905,34 +5905,34 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		switch (event->se_type) {
 		case SCTP_ASSOC_CHANGE:
 			event_type = SCTP_PCB_FLAGS_RECVASSOCEVNT;
-			break;				
+			break;
 		case SCTP_PEER_ADDR_CHANGE:
 			event_type = SCTP_PCB_FLAGS_RECVPADDREVNT;
-			break;				
+			break;
 		case SCTP_REMOTE_ERROR:
 			event_type = SCTP_PCB_FLAGS_RECVPEERERR;
-			break;				
+			break;
 		case SCTP_SEND_FAILED:
 			event_type = SCTP_PCB_FLAGS_RECVSENDFAILEVNT;
-			break;				
+			break;
 		case SCTP_SHUTDOWN_EVENT:
 			event_type = SCTP_PCB_FLAGS_RECVSHUTDOWNEVNT;
-			break;				
+			break;
 		case SCTP_ADAPTATION_INDICATION:
 			event_type = SCTP_PCB_FLAGS_ADAPTATIONEVNT;
-			break;				
+			break;
 		case SCTP_PARTIAL_DELIVERY_EVENT:
 			event_type = SCTP_PCB_FLAGS_PDAPIEVNT;
-			break;				
+			break;
 		case SCTP_AUTHENTICATION_EVENT:
 			event_type = SCTP_PCB_FLAGS_AUTHEVNT;
-			break;				
+			break;
 		case SCTP_STREAM_RESET_EVENT:
 			event_type = SCTP_PCB_FLAGS_STREAM_RESETEVNT;
-			break;				
+			break;
 		case SCTP_SENDER_DRY_EVENT:
 			event_type = SCTP_PCB_FLAGS_DRYEVNT;
-			break;				
+			break;
 		case SCTP_NOTIFICATIONS_STOPPED_EVENT:
 			event_type = 0;
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOTSUP);
@@ -5967,7 +5967,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((event_type == SCTP_PCB_FLAGS_DRYEVNT) &&
 				    ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) == 0) &&
 				    ((inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) == 0) &&
-				    ((event->se_assoc_id == SCTP_ALL_ASSOC) || 
+				    ((event->se_assoc_id == SCTP_ALL_ASSOC) ||
 				     (event->se_assoc_id == SCTP_CURRENT_ASSOC))) {
 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOTSUP);
 					error = ENOTSUP;
@@ -6290,7 +6290,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		if (stcb && (net == NULL)) {
 			struct sockaddr *sa;
-				
+
 			sa = (struct sockaddr *)&encaps->sue_address;
 #ifdef INET
 			if (sa->sa_family == AF_INET) {
@@ -6653,7 +6653,7 @@ sctp_listen(struct socket *so, struct proc *p)
 
 	int error = 0;
 	struct sctp_inpcb *inp;
-	
+
 	inp = (struct sctp_inpcb *)so->so_pcb;
 	if (inp == NULL) {
 		/* I made the same as TCP since we are not setup? */
@@ -6790,7 +6790,7 @@ sctp_listen(struct socket *so, struct proc *p)
 			return (error);
 		}
 		SOCK_LOCK(so);
-	}	
+	}
 #if (defined(__FreeBSD__) && __FreeBSD_version > 500000) || defined(__Windows__) || defined(__Userspace__)
 #if __FreeBSD_version >= 700000 || defined(__Windows__) || defined(__Userspace__)
 	/* It appears for 7.0 and on, we must always call this. */

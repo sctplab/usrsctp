@@ -96,7 +96,7 @@ in6_sin6_2_sin(struct sockaddr_in *sin, struct sockaddr_in6 *sin6)
 	temp = temp << 16;
 	temp = temp | sin6->sin6_addr.s6_addr16[6];
 	sin->sin_addr.s_addr = temp;
-	sctp_print_address((struct sockaddr*)sin); 
+	sctp_print_address((struct sockaddr*)sin);
 #else
 	sin->sin_addr.s_addr = sin6->sin6_addr.s6_addr32[3];
 #endif
@@ -564,7 +564,7 @@ sctp6_notify(struct sctp_inpcb *inp,
 		 * it a OOTB abort.
 		 */
 		if (net->dest_state & SCTP_ADDR_REACHABLE) {
-			/* Ok that destination is NOT reachable */			
+			/* Ok that destination is NOT reachable */
 			net->dest_state &= ~SCTP_ADDR_REACHABLE;
 			net->dest_state &= ~SCTP_ADDR_PF;
 			sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_DOWN,
@@ -1801,7 +1801,7 @@ struct pr_usrreqs sctp6_usrreqs = {
 	.pru_close = sctp6_close,
 	.pru_detach = sctp6_close,
 	.pru_sopoll = sopoll_generic,
-	.pru_flush = sctp_flush,	
+	.pru_flush = sctp_flush,
 #else
 	.pru_detach = sctp6_detach,
 	.pru_sopoll = sopoll,
