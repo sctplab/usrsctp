@@ -5094,7 +5094,7 @@ sctp_arethere_unrecognized_parameters(struct mbuf *in_initpkt,
 	while ((phdr != NULL) && ((size_t)limit >= sizeof(struct sctp_paramhdr))) {
 		ptype = ntohs(phdr->param_type);
 		plen = ntohs(phdr->param_length);
-		if ((plen > limit) || (plen < sizeof(struct sctp_paramhdr)))  {
+		if ((plen > limit) || (plen < sizeof(struct sctp_paramhdr))) {
 			/* wacked parameter */
 			SCTPDBG(SCTP_DEBUG_OUTPUT1, "Invalid size - error %d\n", plen);
 			goto invalid_size;
@@ -5120,7 +5120,7 @@ sctp_arethere_unrecognized_parameters(struct mbuf *in_initpkt,
 			/* Param's with variable size within a range */
 		case SCTP_CHUNK_LIST:
 		case SCTP_SUPPORTED_CHUNK_EXT:
-			if (padded_size > (sizeof(struct sctp_supported_chunk_types_param) + (sizeof(uint8_t) * SCTP_MAX_SUPPORTED_EXT)))  {
+			if (padded_size > (sizeof(struct sctp_supported_chunk_types_param) + (sizeof(uint8_t) * SCTP_MAX_SUPPORTED_EXT))) {
 				SCTPDBG(SCTP_DEBUG_OUTPUT1, "Invalid size - error chklist %d\n", plen);
 				goto invalid_size;
 			}
@@ -7446,7 +7446,7 @@ sctp_move_to_outqueue(struct sctp_tcb *stcb,
 		to_move = min(length, frag_point);
 		if (to_move == length) {
 			/* All of it fits in the MTU */
-			if (sp->some_taken)  {
+			if (sp->some_taken) {
 				rcv_flags |= SCTP_DATA_LAST_FRAG;
 				sp->put_last_out = 1;
 			} else {
@@ -13685,8 +13685,10 @@ sctp_lower_sosend(struct socket *so,
 			goto out_unlocked;
 		}
 	}
-#if defined(CALLBACK_API)
-	non_blocking = 1;
+#if defined(__Userspace__)
+	if (inp->recv_callback) {
+		non_blocking = 1;
+	}
 #else
 	if (SCTP_SO_IS_NBIO(so)
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000

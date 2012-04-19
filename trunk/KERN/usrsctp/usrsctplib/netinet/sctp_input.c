@@ -5426,7 +5426,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 			}
 			if ((chk_length < (sizeof(struct sctp_auth_chunk))) ||
 			    (chk_length > (sizeof(struct sctp_auth_chunk) +
-					   SCTP_AUTH_DIGEST_LEN_MAX)))  {
+					   SCTP_AUTH_DIGEST_LEN_MAX))) {
 				/* Its not ours */
 				if (locked_tcb) {
 					SCTP_TCB_UNLOCK(locked_tcb);

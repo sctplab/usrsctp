@@ -3592,7 +3592,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		inp->laddr_count++;
 	}
 	/* find the bucket */
-	if (port_reuse_active)  {
+	if (port_reuse_active) {
 		/* Put it into tcp 1-2-1 hash */
 		head = &SCTP_BASE_INFO(sctp_tcpephash)[SCTP_PCBHASH_ALLADDR(lport, SCTP_BASE_INFO(hashtcpmark))];
 		inp->sctp_flags |= SCTP_PCB_FLAGS_IN_TCPPOOL;

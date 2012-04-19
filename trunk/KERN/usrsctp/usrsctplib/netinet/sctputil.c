@@ -3478,11 +3478,6 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 #endif
     )
 {
-#if defined (CALLBACK_API)
-	struct socket *so;
-	struct sctp_inpcb *inp;
-
-#endif
 	if ((stcb == NULL) ||
 	    (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) ||
 	    (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) ||
@@ -3529,15 +3524,15 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		break;
 	case SCTP_NOTIFY_ASSOC_DOWN:
 		sctp_notify_assoc_change(SCTP_SHUTDOWN_COMP, stcb, error, so_locked);
-#if defined (CALLBACK_API)
-		if (stcb->sctp_socket)  {
-			so = stcb->sctp_socket;
-			inp = (struct sctp_inpcb *) so->so_pcb;
-			atomic_add_int(&stcb->asoc.refcnt, 1);
-			SCTP_TCB_UNLOCK(stcb);
-			inp->recv_callback(so, NULL);
-			SCTP_TCB_LOCK(stcb);
-			atomic_subtract_int(&stcb->asoc.refcnt, 1);
+#if defined (__Userspace__)
+		if (stcb->sctp_ep->recv_callback) {
+			if (stcb->sctp_socket) {				
+				atomic_add_int(&stcb->asoc.refcnt, 1);
+				SCTP_TCB_UNLOCK(stcb);
+				inp->recv_callback(stcb->sctp_socket, NULL);
+				SCTP_TCB_LOCK(stcb);
+				atomic_subtract_int(&stcb->asoc.refcnt, 1);
+			}
 		}
 #endif
 		break;
@@ -4528,27 +4523,30 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 	if (end) {
 		control->end_added = 1;
 	}
-#if defined(CALLBACK_API)
-	if (inp_read_lock_held == 0)
-		SCTP_INP_READ_UNLOCK(inp);
-	if (control->end_added == 1)  {
-		struct socket *so;
-		struct mbuf *m;
+#if defined(__Userspace__)
+	if (inp->recv_callback) {
+		if (inp_read_lock_held == 0)
+			SCTP_INP_READ_UNLOCK(inp);
+		if (control->end_added == 1) {
+			struct socket *so;
+			struct mbuf *m;
 
-		so = inp->sctp_socket;
-		for (m = control->data; m; m = SCTP_BUF_NEXT(m)) {
-			sctp_sbfree(control, control->stcb, &so->so_rcv, m);
+			so = inp->sctp_socket;
+			for (m = control->data; m; m = SCTP_BUF_NEXT(m)) {
+				sctp_sbfree(control, control->stcb, &so->so_rcv, m);
+			}
+			atomic_add_int(&stcb->asoc.refcnt, 1);
+			SCTP_TCB_UNLOCK(stcb);
+			inp->recv_callback(so, control);
+			SCTP_TCB_LOCK(stcb);
+			atomic_subtract_int(&stcb->asoc.refcnt, 1);
+			control->data = NULL;
+			control->length = 0;
+			sctp_free_a_readq(stcb, control);
 		}
-		atomic_add_int(&stcb->asoc.refcnt, 1);
-		SCTP_TCB_UNLOCK(stcb);
-		inp->recv_callback(so, control);
-		SCTP_TCB_LOCK(stcb);
-		atomic_subtract_int(&stcb->asoc.refcnt, 1);
-		control->data = NULL;
-		control->length = 0;
-		sctp_free_a_readq(stcb, control);
+		return;
 	}
-#else
+#endif
 	TAILQ_INSERT_TAIL(&inp->read_queue, control, next);
 	if (inp_read_lock_held == 0)
 		SCTP_INP_READ_UNLOCK(inp);
@@ -4584,7 +4582,6 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 #endif
 		}
 	}
-#endif
 }
 
 
@@ -4704,26 +4701,29 @@ sctp_append_to_readq(struct sctp_inpcb *inp,
 	 * is populated in the outbound sinfo structure from the true cumack
 	 * if the association exists...
 	 */
-#if defined(CALLBACK_API)
-	if (control->end_added == 1)  {
-		struct socket *so;
+#if defined(__Userspace__)
+	if (inp->recv_callback) {
+		if (control->end_added == 1) {
+			struct socket *so;
 
-		so = inp->sctp_socket;
-		for (m = control->data; m; m = SCTP_BUF_NEXT(m)) {
-			sctp_sbfree(control, control->stcb, &so->so_rcv, m);
+			so = inp->sctp_socket;
+			for (m = control->data; m; m = SCTP_BUF_NEXT(m)) {
+				sctp_sbfree(control, control->stcb, &so->so_rcv, m);
+			}
+			atomic_add_int(&stcb->asoc.refcnt, 1);
+			SCTP_TCB_UNLOCK(stcb);
+			inp->recv_callback(so, control);
+			SCTP_TCB_LOCK(stcb);
+			atomic_subtract_int(&stcb->asoc.refcnt, 1);
+			control->data = NULL;
+			control->length = 0;
+			sctp_free_a_readq(stcb, control);
 		}
-		atomic_add_int(&stcb->asoc.refcnt, 1);
-		SCTP_TCB_UNLOCK(stcb);
-		inp->recv_callback(so, control);
-		SCTP_TCB_LOCK(stcb);
-		atomic_subtract_int(&stcb->asoc.refcnt, 1);
-		control->data = NULL;
-		control->length = 0;
-		sctp_free_a_readq(stcb, control);
+		if (inp)
+			SCTP_INP_READ_UNLOCK(inp);
+		return (0);
 	}
-	if (inp)
-		SCTP_INP_READ_UNLOCK(inp);
-#else
+#endif
 	control->sinfo_tsn = control->sinfo_cumtsn = ctls_cumack;
 	if (inp) {
 		SCTP_INP_READ_UNLOCK(inp);
@@ -4756,7 +4756,6 @@ sctp_append_to_readq(struct sctp_inpcb *inp,
 #endif
 		}
 	}
-#endif
 	return (0);
 }
 
