@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_var.h 228907 2011-12-27 10:16:24Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_var.h 234464 2012-04-19 15:30:15Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_VAR_H_
@@ -161,7 +161,7 @@ extern struct pr_usrreqs sctp_usrreqs;
 }
 
 #define sctp_alloc_a_chunk(_stcb, _chk) { \
-	if (TAILQ_EMPTY(&(_stcb)->asoc.free_chunks))  { \
+	if (TAILQ_EMPTY(&(_stcb)->asoc.free_chunks)) { \
 		(_chk) = SCTP_ZONE_GET(SCTP_BASE_INFO(ipi_zone_chunk), struct sctp_tmit_chunk); \
 		if ((_chk)) { \
 			SCTP_INCR_CHK_COUNT(); \
