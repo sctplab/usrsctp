@@ -40,7 +40,7 @@ extern "C" {
 #endif
 
 #if !defined(MSG_NOTIFICATION)
-#define MSG_NOTIFICATION 0x2000         /* SCTP notification */ 
+#define MSG_NOTIFICATION 0x2000         /* SCTP notification */
 #endif
 
 void
@@ -55,9 +55,9 @@ userspace_socket(int domain,
                  int protocol);
 
 struct socket *
-usrsctp_socket(int domain, int type, int protocol, 
-  int (*receive_cb)(struct socket *sock, struct sctp_queued_to_read* c), 
-  int (*send_cb)(struct socket *sock, uint32_t sb_free), 
+usrsctp_socket(int domain, int type, int protocol,
+  int (*receive_cb)(struct socket *sock, struct sctp_queued_to_read* c),
+  int (*send_cb)(struct socket *sock, uint32_t sb_free),
   uint32_t sb_threshold);
 
 int
@@ -98,15 +98,6 @@ userspace_sctp_sendmbuf(struct socket *so,
                         uint32_t timetolive,
                         uint32_t context);
 
-#if defined(CALLBACK_API)
-int
-register_recv_cb (struct socket* so,
-                  int (*receive_cb)(struct socket* sock, struct sctp_queued_to_read* c));
-int
-register_send_cb (struct socket* so,
-                  uint32_t sb_threshold,
-                  int (*send_cb)(struct socket *sock, uint32_t sb_free));
-#else
 ssize_t
 userspace_sctp_recvmsg(struct socket *so,
                        void *dbuf,
@@ -115,7 +106,6 @@ userspace_sctp_recvmsg(struct socket *so,
                        socklen_t * fromlen,
                        struct sctp_sndrcvinfo *sinfo,
                        int *msg_flags);
-#endif
 
 int
 userspace_bind(struct socket *so,
@@ -125,7 +115,7 @@ userspace_bind(struct socket *so,
 int
 userspace_bindx(struct socket *so,
                 struct sockaddr *addrs,
-                int addrcnt, 
+                int addrcnt,
                 int flags);
 
 int
@@ -139,7 +129,7 @@ userspace_accept(struct socket *so,
                  socklen_t * anamelen);
 
 
-int 
+int
 userspace_connect(struct socket *so,
                   struct sockaddr *name,
                   int namelen);
