@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2005 -2011 Michael Tuexen
- * Copyright (C) 2011 -2011 Irene Ruengeler
+ * Copyright (C) 2005 -2012 Michael Tuexen
+ * Copyright (C) 2011 -2012 Irene Ruengeler
  *
  * All rights reserved.
  *
@@ -60,15 +60,14 @@ static char *buffer;
 static int length;
 static struct sockaddr_in remote_addr;
 static int unordered;
-uint32_t optval=1;
+uint32_t optval = 1;
 struct socket *psock = NULL;
 
-#if defined(CALLBACK_API)
 static struct timeval start_time;
 static unsigned long messages = 0;
 static unsigned int first_length = 0;
 static unsigned long long sum = 0;
-#endif
+static unsigned int use_cb = 0;
 
 #ifndef timersub
 #define timersub(tvp, uvp, vvp)                                   \
@@ -87,6 +86,7 @@ char Usage[] =
 "Usage: tsctp [options] [address]\n"
 "Options:\n"
 "        -a             set adaptation layer indication\n"
+"        -c             use callback API\n"
 "        -E             local UDP encapsulation port (default 9899)\n"
 "        -f             fragmentation point\n"
 "        -l             size of send/receive buffer\n"
@@ -113,7 +113,6 @@ void stop_sender(int sig)
 	done = 1;
 }
 
-#if !defined (CALLBACK_API)
 static void*
 handle_connection(void *arg)
 {
@@ -194,8 +193,7 @@ handle_connection(void *arg)
 	free(buf);
 	return NULL;
 }
-#else
-#if defined(SCTP_USERSPACE_SEND_CALLBACK_USE_THRESHOLD)
+
 static int
 send_cb(struct socket *sock, uint32_t sb_free) {
 
@@ -226,7 +224,6 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 
 	return 1;
 }
-#endif
 
 static int
 receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
@@ -263,7 +260,6 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 	m_freem(control->data);
 	return 1;
 }
-#endif
 
 
 int main(int argc, char **argv)
@@ -282,13 +278,8 @@ int main(int argc, char **argv)
 	unsigned long i;
 	struct sctp_assoc_value av;
 	struct sctp_udpencaps encaps;
-#if !defined (CALLBACK_API)
 	pthread_t tid;
-#endif
 	int fragpoint = 0;
-#ifdef CALLBACK_API
-	int ret;
-#endif
 	unsigned int runtime = 0;
 	struct sctp_setadaptation ind = {0};
 #if defined (__Userspace_os_Windows)
@@ -309,10 +300,13 @@ int main(int argc, char **argv)
 	memset((void *) &local_addr, 0, sizeof(struct sockaddr_in));
 
 #if !defined (__Userspace_os_Windows)
-	while ((c = getopt(argc, argv, "a:p:l:E:f:n:T:uU:vVD")) != -1)
+	while ((c = getopt(argc, argv, "a:cp:l:E:f:n:T:uU:vVD")) != -1)
 		switch(c) {
 			case 'a':
 				ind.ssb_adaptation_ind = atoi(optarg);
+				break;
+			case 'c':
+				use_cb = 1;
 				break;
 			case 'l':
 				length = atoi(optarg);
@@ -359,11 +353,14 @@ int main(int argc, char **argv)
 			switch (argv[optind][1]) {
 				case 'a':
 					if (++optind >= argc) {
-					printf("%s", Usage);
-					exit(1);
+						printf("%s", Usage);
+						exit(1);
 					}
 					opt = argv[optind];
 					ind.ssb_adaptation_ind = atoi(opt);
+					break;
+				case 'c':
+					use_cb = 1;
 					break;
 				case 'l':
 					if (++optind >= argc) {
@@ -464,9 +461,30 @@ int main(int argc, char **argv)
 	SCTP_BASE_SYSCTL(sctp_debug_on) = 0x0;
 	SCTP_BASE_SYSCTL(sctp_blackhole) = 2;
 
-	if (!(psock = userspace_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP)) ){
-		printf("user_socket() returned NULL\n");
-		exit(1);
+	if (client) {
+		if (use_cb) {
+			if (!(psock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, send_cb, length)) ){
+				printf("user_socket() returned NULL\n");
+				exit(1);
+			}
+		} else {
+			if (!(psock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0)) ){
+				printf("user_socket() returned NULL\n");
+				exit(1);
+			}
+		}
+	} else {
+		if (use_cb) {
+			if (!(psock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0)) ){
+				printf("user_socket() returned NULL\n");
+				exit(1);
+			}
+		} else {
+			if (!(psock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0)) ){
+				printf("user_socket() returned NULL\n");
+				exit(1);
+			}
+		}
 	}
 
 	if (userspace_bind(psock, (struct sockaddr *)&local_addr, sizeof(struct sockaddr_in)) == -1) {
@@ -485,28 +503,25 @@ int main(int argc, char **argv)
 		}
 
 		while (1) {
-#if defined(CALLBACK_API)
-			struct socket *conn_sock;
-
 			memset(&remote_addr, 0, sizeof(struct sockaddr_in));
 			addr_len = sizeof(struct sockaddr_in);
-			if ((conn_sock = userspace_accept(psock, (struct sockaddr *) &remote_addr, &addr_len))== NULL) {
-				printf("userspace_accept failed.  exiting...\n");
-				continue;
-			}
-			ret = register_recv_cb(conn_sock, receive_cb);
-#else
-			struct socket **conn_sock;
+			if (use_cb) {
+				struct socket *conn_sock;
 
-			memset(&remote_addr, 0, sizeof(struct sockaddr_in));
-			addr_len = sizeof(struct sockaddr_in);
-			conn_sock = (struct socket **)malloc(sizeof(struct socket *));
-			if ((*conn_sock = userspace_accept(psock, (struct sockaddr *) &remote_addr, &addr_len))== NULL) {
-				printf("userspace_accept failed.  exiting...\n");
-				continue;
+				if ((conn_sock = userspace_accept(psock, (struct sockaddr *) &remote_addr, &addr_len))== NULL) {
+					printf("userspace_accept failed.  exiting...\n");
+					continue;
+				}
+			} else {
+				struct socket **conn_sock;
+
+				conn_sock = (struct socket **)malloc(sizeof(struct socket *));
+				if ((*conn_sock = userspace_accept(psock, (struct sockaddr *) &remote_addr, &addr_len))== NULL) {
+					printf("userspace_accept failed.  exiting...\n");
+					continue;
+				}
+				pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock);
 			}
-			pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock);
-#endif
 			if (verbose)
 				printf("Connection accepted from %s:%d\n", inet_ntoa(remote_addr.sin_addr), ntohs(remote_addr.sin_port));
 		}
@@ -571,14 +586,7 @@ int main(int argc, char **argv)
 #endif
 		}
 
-#if defined(CALLBACK_API)
 		messages = 0;
-#if defined(SCTP_USERSPACE_SEND_CALLBACK_USE_THRESHOLD)
-		ret = register_send_cb(psock, length, send_cb);
-#else
-		ret = register_send_cb(psock, length, NULL);
-#endif
-#endif
 		while (!done && ((number_of_messages == 0) || (i < (number_of_messages - 1)))) {
 			if (very_verbose)
 				printf("Sending message number %lu.\n", i);
@@ -593,25 +601,25 @@ int main(int argc, char **argv)
 			                           0 /* u_int16_t stream_no */,
 			                           0 /* u_int32_t timetolive */,
 			                           0 /* u_int32_t context */) < 0) {
-#if defined (CALLBACK_API)
-				if (errno != EWOULDBLOCK && errno != EAGAIN) {
+			        if (use_cb) {
+					if (errno != EWOULDBLOCK && errno != EAGAIN) {
+						perror("userspace_sctp_sendmsg returned < 0");
+						exit(1);
+					} else {
+						/* send until EWOULDBLOCK then sleep until runtime expires.
+						   All sending after initial EWOULDBLOCK done in send callback. */
+#if defined (__Userspace_os_Windows)
+						Sleep(runtime*1000);
+#else
+						sleep(runtime);
+#endif
+						i += messages;
+						continue;
+					}
+				} else {
 					perror("userspace_sctp_sendmsg returned < 0");
 					exit(1);
-				} else {
-					/* send until EWOULDBLOCK then sleep until runtime expires.
-					   All sending after initial EWOULDBLOCK done in send callback. */
-#if defined (__Userspace_os_Windows)
-					Sleep(runtime*1000);
-#else
-					sleep(runtime);
-#endif
-					i += messages;
-					continue;
 				}
-#else
-				perror("userspace_sctp_sendmsg returned < 0");
-				exit(1);
-#endif
 			}
 
 			i++;
