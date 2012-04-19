@@ -302,7 +302,7 @@ sctp_process_asconf_add_ip(struct mbuf *m, struct sctp_asconf_paramhdr *aph,
 	if (bad_address) {
 		m_reply = sctp_asconf_error_response(aph->correlation_id,
 		    SCTP_CAUSE_INVALID_PARAM, (uint8_t *) aph,
-		    aparam_length);		
+		    aparam_length);
 	} else if (sctp_add_remote_addr(stcb, sa, &net, SCTP_DONOT_SETSCOPE,
 	                         SCTP_ADDR_DYNAMIC_ADDED) != 0) {
 		SCTPDBG(SCTP_DEBUG_ASCONF1,
@@ -925,7 +925,7 @@ sctp_handle_asconf(struct mbuf *m, unsigned int offset,
 			(void)sa6_recoverscope(from6);
 			sa6_embedscope(from6,
 			       MODULE_GLOBAL(ip6_use_defzone));
-			
+
 #else
 			(void)in6_recoverscope(from6, &from6->sin6_addr, NULL);
 #if defined(SCTP_BASE_FREEBSD) || defined(__APPLE__)
@@ -1148,7 +1148,7 @@ sctp_assoc_immediate_retrans(struct sctp_tcb *stcb, struct sctp_nets *dstnet)
 		if ((stcb->asoc.num_send_timers_up == 0) &&
 		    (stcb->asoc.sent_queue_cnt > 0)) {
 			struct sctp_tmit_chunk *chk;
-			
+
 			chk = TAILQ_FIRST(&stcb->asoc.sent_queue);
 			sctp_timer_start(SCTP_TIMER_TYPE_SEND, stcb->sctp_ep,
 					 stcb, chk->whoTo);
@@ -2314,7 +2314,7 @@ sctp_asconf_iterator_stcb(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				return;
 			else
 				continue;
-			break;		
+			break;
 		}
 
 		if (type == SCTP_ADD_IP_ADDRESS) {
@@ -3384,7 +3384,7 @@ sctp_addr_mgmt_ep_sa(struct sctp_inpcb *inp, struct sockaddr *sa,
 		} else {
 			struct sctp_asconf_iterator *asc;
 			struct sctp_laddr *wi;
-			
+
 			SCTP_MALLOC(asc, struct sctp_asconf_iterator *,
 			            sizeof(struct sctp_asconf_iterator),
 			            SCTP_M_ASC_IT);
