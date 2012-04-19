@@ -85,9 +85,6 @@ main(int argc, char *argv[])
 	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0)) == NULL) {
 		perror("userspace_socket ipv6");
 	}
-#if defined(CALLBACK_API)
-	register_recv_cb(sock, receive_cb);
-#endif
 	if (argc > 4) {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET6;
