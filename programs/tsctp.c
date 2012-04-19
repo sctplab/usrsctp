@@ -625,6 +625,7 @@ int main(int argc, char **argv)
 				perror("userspace_sctp_sendmsg returned < 0");
 				exit(1);
 			}
+			messages++;
 			while (!done && (messages < (number_of_messages - 1))) {
 #if defined (__Userspace_os_Windows)
 				Sleep(1000);
