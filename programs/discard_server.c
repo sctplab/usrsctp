@@ -45,11 +45,10 @@
 #include <netinet/sctp_pcb.h>
 #include <usrsctp.h>
 
-#if !defined(CALLBACK_API)
 #define BUFFER_SIZE 10240
-#endif
 
-#if defined(CALLBACK_API)
+const int use_cb = 0;
+
 static int
 receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 {
@@ -76,7 +75,6 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 	}
 	return 1;
 }
-#endif
 
 int
 main(int argc, char *argv[])
@@ -93,14 +91,12 @@ main(int argc, char *argv[])
 	                          SCTP_PARTIAL_DELIVERY_EVENT};
 	unsigned int i;
 	struct sctp_assoc_value av;
-#if !defined(CALLBACK_API)
 	const int on = 1;
 	int n, flags;
 	socklen_t from_len;
 	struct sctp_sndrcvinfo sinfo;
 	char buffer[BUFFER_SIZE];
 	char name[INET6_ADDRSTRLEN];
-#endif
 
 	if (argc > 1) {
 		sctp_init(atoi(argv[1]));
@@ -110,14 +106,12 @@ main(int argc, char *argv[])
 	SCTP_BASE_SYSCTL(sctp_debug_on) = 0x0;
 	SCTP_BASE_SYSCTL(sctp_blackhole) = 2;
 
-	if ((sock = userspace_socket(AF_INET6, SOCK_SEQPACKET, IPPROTO_SCTP)) == NULL) {
+	if ((sock = usrsctp_socket(AF_INET6, SOCK_SEQPACKET, IPPROTO_SCTP, use_cb?receive_cb:NULL, NULL, 0)) == NULL) {
 		perror("userspace_socket");
 	}
-#if !defined(CALLBACK_API)
 	if (userspace_setsockopt(sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, (const void*)&on, (socklen_t)sizeof(int)) < 0) {
 		perror("setsockopt");
 	}
-#endif
 	memset(&av, 0, sizeof(struct sctp_assoc_value));
 	av.assoc_id = SCTP_ALL_ASSOC;
 	av.assoc_value = 47;
@@ -155,39 +149,36 @@ main(int argc, char *argv[])
 	if (userspace_listen(sock, 1) < 0) {
 		perror("userspace_listen");
 	}
-#if defined(CALLBACK_API)
-	register_recv_cb(sock, receive_cb);
 	while (1) {
+		if (use_cb) {
 #if defined (__Userspace_os_Windows)
-		Sleep(1*1000);
+			Sleep(1*1000);
 #else
-		sleep(1);
+			sleep(1);
 #endif
-	}
-#else
-	while (1) {
-		memset((void *)&addr, 0, sizeof(struct sockaddr_in6));
-		memset((void *)&sinfo, 0, sizeof(struct sctp_sndrcvinfo));
-		from_len = (socklen_t)sizeof(struct sockaddr_in6);
-		flags = 0;
-		n = userspace_sctp_recvmsg(sock, (void*)buffer, BUFFER_SIZE, (struct sockaddr *)&addr, &from_len, &sinfo, &flags);
-		if (n > 0) {
-			if (flags & MSG_NOTIFICATION) {
-				printf("Notification of length %d received.\n", n);
-			} else {
-				printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d, context %u, complete %d.\n",
-				        n,
-				        inet_ntop(AF_INET6, &addr.sin6_addr, name, INET6_ADDRSTRLEN), ntohs(addr.sin6_port),
-				        sinfo.sinfo_stream,
-				        sinfo.sinfo_ssn,
-				        sinfo.sinfo_tsn,
-				        ntohl(sinfo.sinfo_ppid),
-				        sinfo.sinfo_context,
-				        (flags & MSG_EOR) ? 1 : 0);
+		} else {
+			memset((void *)&addr, 0, sizeof(struct sockaddr_in6));
+			memset((void *)&sinfo, 0, sizeof(struct sctp_sndrcvinfo));
+			from_len = (socklen_t)sizeof(struct sockaddr_in6);
+			flags = 0;
+			n = userspace_sctp_recvmsg(sock, (void*)buffer, BUFFER_SIZE, (struct sockaddr *)&addr, &from_len, &sinfo, &flags);
+			if (n > 0) {
+				if (flags & MSG_NOTIFICATION) {
+					printf("Notification of length %d received.\n", n);
+				} else {
+					printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d, context %u, complete %d.\n",
+					        n,
+					        inet_ntop(AF_INET6, &addr.sin6_addr, name, INET6_ADDRSTRLEN), ntohs(addr.sin6_port),
+					        sinfo.sinfo_stream,
+					        sinfo.sinfo_ssn,
+					        sinfo.sinfo_tsn,
+					        ntohl(sinfo.sinfo_ppid),
+					        sinfo.sinfo_context,
+					        (flags & MSG_EOR) ? 1 : 0);
+				}
 			}
 		}
 	}
-#endif
 	userspace_close(sock);
 	while (userspace_finish() != 0) {
 #if defined (__Userspace_os_Windows)
