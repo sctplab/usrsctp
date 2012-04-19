@@ -3529,7 +3529,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 			if (stcb->sctp_socket) {
 				atomic_add_int(&stcb->asoc.refcnt, 1);
 				SCTP_TCB_UNLOCK(stcb);
-				inp->recv_callback(stcb->sctp_socket, NULL);
+				stcb->sctp_ep->recv_callback(stcb->sctp_socket, NULL);
 				SCTP_TCB_LOCK(stcb);
 				atomic_subtract_int(&stcb->asoc.refcnt, 1);
 			}
