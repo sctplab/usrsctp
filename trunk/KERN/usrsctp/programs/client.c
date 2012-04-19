@@ -59,7 +59,7 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
 		userspace_close(sock);
 	} else {
 		for (m = control->data; m; m = m->m_next) {
-			printf("%s", m->m_data);
+			write(fileno(stdout), m->m_data, SCTP_BUF_LEN(m));
 		}
 		m_freem(control->data);
 	}
