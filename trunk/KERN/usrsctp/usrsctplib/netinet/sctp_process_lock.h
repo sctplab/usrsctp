@@ -53,31 +53,23 @@
 
 #if defined (__Userspace_os_Windows)
 /* Lock for INFO stuff */
-#define SCTP_INP_INFO_LOCK_INIT() \
-	InitializeCriticalSection(&SCTP_BASE_INFO(ipi_ep_mtx))
+#define SCTP_INP_INFO_LOCK_INIT()
 #define SCTP_INP_INFO_RLOCK()
 #define SCTP_INP_INFO_RUNLOCK()
 #define SCTP_INP_INFO_WLOCK()
 #define SCTP_INP_INFO_WUNLOCK()
-#define SCTP_INP_INFO_LOCK_DESTROY() \
-	DeleteCriticalSection(&SCTP_BASE_INFO(ipi_ep_mtx))
-#define SCTP_IPI_COUNT_INIT() \
-	InitializeCriticalSection(&SCTP_BASE_INFO(ipi_count_mtx))
-#define SCTP_IPI_COUNT_DESTROY() \
-	DeleteCriticalSection(&SCTP_BASE_INFO(ipi_count_mtx))
+#define SCTP_INP_INFO_LOCK_DESTROY()
+#define SCTP_IPI_COUNT_INIT()
+#define SCTP_IPI_COUNT_DESTROY()
 #else
-#define SCTP_INP_INFO_LOCK_INIT() \
-	(void)pthread_mutex_init(&SCTP_BASE_INFO(ipi_ep_mtx), NULL)
+#define SCTP_INP_INFO_LOCK_INIT()
 #define SCTP_INP_INFO_RLOCK()
 #define SCTP_INP_INFO_RUNLOCK()
 #define SCTP_INP_INFO_WLOCK()
 #define SCTP_INP_INFO_WUNLOCK()
-#define SCTP_INP_INFO_LOCK_DESTROY() \
-	(void)pthread_mutex_destroy(&SCTP_BASE_INFO(ipi_ep_mtx))
-#define SCTP_IPI_COUNT_INIT() \
-	(void)pthread_mutex_init(&SCTP_BASE_INFO(ipi_count_mtx), NULL)
-#define SCTP_IPI_COUNT_DESTROY() \
-	(void)pthread_mutex_destroy(&SCTP_BASE_INFO(ipi_count_mtx))
+#define SCTP_INP_INFO_LOCK_DESTROY()
+#define SCTP_IPI_COUNT_INIT()
+#define SCTP_IPI_COUNT_DESTROY()
 #endif
 
 #define SCTP_TCB_SEND_LOCK_INIT(_tcb)
