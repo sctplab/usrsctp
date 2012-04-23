@@ -33,7 +33,7 @@
 /* $KAME: sctp_uio.h,v 1.11 2005/03/06 16:04:18 itojun Exp $	 */
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 233660 2012-03-29 13:36:53Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 234614 2012-04-23 20:45:31Z tuexen $");
 #endif
 
 #ifndef __sctp_uio_h__
@@ -482,9 +482,11 @@ struct sctp_stream_reset_event {
 };
 
 /* flags in stream_reset_event (strreset_flags) */
-#define SCTP_STREAM_RESET_DENIED        0x0004 /* SCTP_STRRESET_FAILED */
-#define SCTP_STREAM_RESET_FAILED        0x0008 /* SCTP_STRRESET_FAILED */
-#define SCTP_STREAM_CHANGED_DENIED	0x0010
+#define SCTP_STREAM_RESET_INCOMING_SSN  0x0001
+#define SCTP_STREAM_RESET_OUTGOING_SSN  0x0002
+#define SCTP_STREAM_RESET_DENIED        0x0004
+#define SCTP_STREAM_RESET_FAILED        0x0008
+#define SCTP_STREAM_CHANGED_DENIED      0x0010
 
 /*
  * Assoc reset event - subscribe to SCTP_ASSOC_RESET_EVENT
