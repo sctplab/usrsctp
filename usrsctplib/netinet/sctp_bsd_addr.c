@@ -587,7 +587,11 @@ sctp_init_ifns_for_vrf(int vrfid)
 
 	IFNET_RLOCK();
 	TAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_list) {
+#if __FreeBSD_version > 900000
 		IF_ADDR_RLOCK(ifn);
+#else
+		IF_ADDR_LOCK(ifn);
+#endif
 		TAILQ_FOREACH(ifa, &ifn->if_addrlist, ifa_list) {
 			if (ifa->ifa_addr == NULL) {
 				continue;
@@ -645,7 +649,11 @@ sctp_init_ifns_for_vrf(int vrfid)
 				sctp_ifa->localifa_flags &= ~SCTP_ADDR_DEFER_USE;
 			}
 		}
+#if __FreeBSD_version > 900000
 		IF_ADDR_RUNLOCK(ifn);
+#else
+		IF_ADDR_UNLOCK(ifn);
+#endif
 	}
 	IFNET_RUNLOCK();
 }
