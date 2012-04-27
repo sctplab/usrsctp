@@ -33,7 +33,7 @@
 /* $KAME: sctp_uio.h,v 1.11 2005/03/06 16:04:18 itojun Exp $	 */
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 234614 2012-04-23 20:45:31Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 234731 2012-04-27 13:58:09Z tuexen $");
 #endif
 
 #ifndef __sctp_uio_h__
@@ -638,13 +638,6 @@ struct sctp_getaddresses {
 	sctp_assoc_t sget_assoc_id;
 	/* addr is filled in for N * sockaddr_storage */
 	struct sockaddr addr[1];
-};
-
-struct sctp_setstrm_timeout {
-	sctp_assoc_t ssto_assoc_id;
-	uint32_t ssto_timeout;
-	uint32_t ssto_streamid_start;
-	uint32_t ssto_streamid_end;
 };
 
 struct sctp_status {
