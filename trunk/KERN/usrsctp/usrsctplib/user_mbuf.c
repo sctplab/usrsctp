@@ -766,7 +766,7 @@ bad:
 static struct mbuf *
 m_dup1(struct mbuf *m, int off, int len, int wait)
 {
-	struct mbuf *n;
+	struct mbuf *n = NULL;
 	int copyhdr;
 
 	if (len > MCLBYTES)
