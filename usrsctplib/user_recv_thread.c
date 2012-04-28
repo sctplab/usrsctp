@@ -1131,10 +1131,9 @@ recv_thread_init(void)
 
 		if ((rc = pthread_create(&SCTP_BASE_VAR(recvthreadroute), NULL, &recv_function_route, NULL))) {
 			printf("Can't start routing thread (%d).\n", rc);
-			SCTP_BASE_VAR(recvthreadroute) = NULL;
+			close(SCTP_BASE_VAR(userspace_route));
+			SCTP_BASE_VAR(userspace_route) = -1;
 		}
-	} else {
-		SCTP_BASE_VAR(recvthreadroute) = NULL;
 	}
 #endif
 #if defined(INET)
@@ -1143,20 +1142,18 @@ recv_thread_init(void)
 
 		if ((rc = pthread_create(&SCTP_BASE_VAR(recvthreadraw), NULL, &recv_function_raw, NULL))) {
 			printf("ERROR; return code from recvthread pthread_create() is %d\n", rc);
-			SCTP_BASE_VAR(recvthreadraw) = NULL;
+			close(SCTP_BASE_VAR(userspace_rawsctp));
+			SCTP_BASE_VAR(userspace_rawsctp) = -1;
 		}
-	} else {
-		SCTP_BASE_VAR(recvthreadraw) = NULL;
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp) != -1) {
 		int rc;
 
 		if ((rc = pthread_create(&SCTP_BASE_VAR(recvthreadudp), NULL, &recv_function_udp, NULL))) {
 			printf("ERROR; return code from recvthread pthread_create() is %d\n", rc);
-			SCTP_BASE_VAR(recvthreadudp) = NULL;
+			close(SCTP_BASE_VAR(userspace_udpsctp));
+			SCTP_BASE_VAR(userspace_udpsctp) = -1;
 		}
-	} else {
-		SCTP_BASE_VAR(recvthreadudp) = NULL;
 	}
 #endif
 #if defined(INET6)
@@ -1165,20 +1162,18 @@ recv_thread_init(void)
 
 		if ((rc = pthread_create(&SCTP_BASE_VAR(recvthreadraw6), NULL, &recv_function_raw6, NULL))) {
 			printf("ERROR; return code from recvthread pthread_create() is %d\n", rc);
-			SCTP_BASE_VAR(recvthreadraw6) = NULL;
+			close(SCTP_BASE_VAR(userspace_rawsctp6));
+			SCTP_BASE_VAR(userspace_rawsctp6) = -1;
 		}
-	} else {
-		SCTP_BASE_VAR(recvthreadraw6) = NULL;
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp6) != -1) {
 		int rc;
 
 		if ((rc = pthread_create(&SCTP_BASE_VAR(recvthreadudp6), NULL, &recv_function_udp6, NULL))) {
 			printf("ERROR; return code from recvthread pthread_create() is %d\n", rc);
-			SCTP_BASE_VAR(recvthreadudp6) = NULL;
+			close(SCTP_BASE_VAR(userspace_udpsctp6));
+			SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 		}
-	} else {
-		SCTP_BASE_VAR(recvthreadudp6) = NULL;
 	}
 #endif
 #else
@@ -1186,32 +1181,32 @@ recv_thread_init(void)
 	if (SCTP_BASE_VAR(userspace_rawsctp) != -1) {
 		if ((SCTP_BASE_VAR(recvthreadraw) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_raw, NULL, 0, NULL)) == NULL) {
 			printf("ERROR; Creating recvthreadraw failed\n");
+			socket_close(SCTP_BASE_VAR(userspace_rawsctp));
+			SCTP_BASE_VAR(userspace_rawsctp) = -1;
 		}
-	} else {
-		SCTP_BASE_VAR(recvthreadraw) = NULL;
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp) != -1) {
 		if ((SCTP_BASE_VAR(recvthreadudp) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_udp, NULL, 0, NULL))==NULL) {
 			printf("ERROR; Creating recvthreadudp failed\n");
+			socket_close(SCTP_BASE_VAR(userspace_udpsctp));
+			SCTP_BASE_VAR(userspace_udpsctp) = -1;
 		}
-	} else {
-		SCTP_BASE_VAR(recvthreadudp) = NULL;
 	}
 #endif
 #if defined(INET6)
 	if (SCTP_BASE_VAR(userspace_rawsctp6) != -1) {
 		if ((SCTP_BASE_VAR(recvthreadraw6) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_raw6, NULL, 0, NULL))==NULL) {
 			printf("ERROR; Creating recvthreadraw6 failed\n");
+			socket_close(SCTP_BASE_VAR(userspace_rawsctp6));
+			SCTP_BASE_VAR(userspace_rawsctp6) = -1;
 		}
-	} else {
-		SCTP_BASE_VAR(recvthreadraw6) = NULL;
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp6) != -1) {
 		if ((SCTP_BASE_VAR(recvthreadudp6) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_udp6, NULL, 0, NULL))==NULL) {
 			printf("ERROR; Creating recvthreadudp6 failed\n");
+			socket_close(SCTP_BASE_VAR(userspace_udpsctp6));
+			SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 		}
-	} else {
-		SCTP_BASE_VAR(userspace_udpsctp6) = NULL;
 	}
 #endif
 #endif
