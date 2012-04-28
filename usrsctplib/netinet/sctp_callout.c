@@ -52,10 +52,6 @@ extern int ticks;
 static sctp_os_timer_t *sctp_os_timer_current = NULL;
 static sctp_os_timer_t *sctp_os_timer_next = NULL;
 
-#if defined (__Userspace__)
-static int onetime_timer_initialization = 0;
-#endif
-
 void
 sctp_os_timer_init(sctp_os_timer_t *c)
 {
@@ -66,15 +62,6 @@ void
 sctp_os_timer_start(sctp_os_timer_t *c, int to_ticks, void (*ftn) (void *),
                     void *arg)
 {
-
-#if defined (__Userspace__)
-	/* if timer_init() not called previously, then call it */
-	if (!onetime_timer_initialization) {
-		onetime_timer_initialization = 1;
-		timer_init();
-	}
-#endif
-
 	/* paranoia */
 	if ((c == NULL) || (ftn == NULL))
 	    return;

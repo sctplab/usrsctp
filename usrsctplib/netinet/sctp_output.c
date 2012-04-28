@@ -11625,7 +11625,7 @@ sctp_send_packet_dropped(struct sctp_tcb *stcb, struct sctp_nets *net,
 #if defined(__FreeBSD__) || defined(__APPLE__)
 		len = chk->send_size = iph->ip_len;
 #elif defined(__Userspace__)
-#if defined(__Userspace_os_FreeBSD)
+#if defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Darwin)
                 len = chk->send_size = SCTP_GET_IPV4_LENGTH(iph);
 #else
                 len = chk->send_size = (SCTP_GET_IPV4_LENGTH(iph) - iphlen);

@@ -309,6 +309,28 @@ struct sctp_base_info {
 #if defined(__APPLE__)
 	int sctp_main_timer_ticks;
 #endif
+#if defined(__Userspace__)
+	userland_thread_t timer_thread;
+	uint8_t timer_thread_should_exit;
+#if !defined(__Userspace_os_Windows)
+#if defined(INET) || defined(INET6)
+	int userspace_route;
+	userland_thread_t recvthreadroute;
+#endif
+#endif
+#ifdef INET
+	int userspace_rawsctp;
+	int userspace_udpsctp;
+	userland_thread_t recvthreadraw;
+	userland_thread_t recvthreadudp;
+#endif
+#ifdef INET6
+	int userspace_rawsctp6;
+	int userspace_udpsctp6;
+	userland_thread_t recvthreadraw6;
+	userland_thread_t recvthreadudp6;
+#endif
+#endif
 };
 
 /*-
