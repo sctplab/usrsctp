@@ -189,7 +189,6 @@ recv_function_route(void *arg)
 static void *
 recv_function_route(void *arg)
 {
-	int fd;
 	int len;
 	char buf[4096];
 	struct iovec iov = { buf, sizeof(buf) };
