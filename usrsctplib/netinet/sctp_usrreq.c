@@ -185,18 +185,20 @@ sctp_finish(void)
 	recv_thread_destroy();
 #if !defined(__Userspace_os_Windows)
 #if defined(INET) || defined(INET6)
-	pthread_join(SCTP_BASE_VAR(recvthreadroute), NULL);
+	if (SCTP_BASE_VAR(userspace_route) != -1) {
+		pthread_join(SCTP_BASE_VAR(recvthreadroute), NULL);
+	}
 #endif
 #endif
 #if defined(INET)
-	if (SCTP_BASE_VAR(recvthreadraw)) {
+	if (SCTP_BASE_VAR(userspace_rawsctp) != -1) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadraw), INFINITE);
 #else
 		pthread_join(SCTP_BASE_VAR(recvthreadraw), NULL);
 #endif
 	}
-	if (SCTP_BASE_VAR(recvthreadudp)) {
+	if (SCTP_BASE_VAR(userspace_udpsctp) != -1) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadudp), INFINITE);
 #else
@@ -205,14 +207,14 @@ sctp_finish(void)
 	}
 #endif
 #if defined(INET6)
-	if (SCTP_BASE_VAR(recvthreadraw6)) {
+	if (SCTP_BASE_VAR(userspace_rawsctp6) != -1) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadraw6), INFINITE);
 #else
 		pthread_join(SCTP_BASE_VAR(recvthreadraw6), NULL);
 #endif
 	}
-	if (SCTP_BASE_VAR(recvthreadudp6)) {
+	if (SCTP_BASE_VAR(userspace_udpsctp6) != -1) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadudp6), INFINITE);
 #else
