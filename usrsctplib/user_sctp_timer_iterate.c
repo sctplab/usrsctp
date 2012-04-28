@@ -1,12 +1,39 @@
-#include <sys/types.h> 
+/*-
+ * Copyright (c) 2012 Michael Tuexen
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ */
+
+#include <sys/types.h>
 #if !defined (__Userspace_os_Windows)
-#include <sys/wait.h> 
+#include <sys/wait.h>
 #include <unistd.h>
 #include <pthread.h>
 #endif
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h> 
+#include <stdio.h>
 #include <errno.h>
 #include <netinet/sctp_pcb.h>
 #include <netinet/sctp_sysctl.h>
@@ -24,9 +51,9 @@ void * (*timerFunction)(void *) = {&user_sctp_timer_iterate};
 extern int ticks;
 userland_mutex_t timer_mtx;
 
-void 
-timer_init(void) {
-	userland_thread_t ithread;
+void
+sctp_start_timer(void)
+{
 #if !defined (__Userspace_os_Windows)
 	int rc;
 #endif
@@ -35,12 +62,12 @@ timer_init(void) {
 	/* No need to do SCTP_TIMERQ_LOCK_INIT(); here, it is being done in sctp_pcb_init() */
 	/* start one thread here */
 #if defined (__Userspace_os_Windows)
-	if ((ithread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)timerFunction, (void *)tn, 0, NULL))==NULL) {
+	if ((SCTP_BASE_VAR(timer_thread) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)timerFunction, (void *)tn, 0, NULL))==NULL) {
 		printf("ERROR; Creating ithread failed\n");
 		exit(1);
 	}
 #else
-	rc = pthread_create(&ithread, NULL, timerFunction, (void *)tn);
+	rc = pthread_create(&SCTP_BASE_VAR(timer_thread), NULL, timerFunction, (void *)tn);
 	if (rc) {
 		printf("ERROR; return code from pthread_create() is %d\n", rc);
 		exit(1);
@@ -62,16 +89,19 @@ user_sctp_timer_iterate(void *threadname)
 	 * and further to_ticks level off at 60000 i.e. 60 seconds.
 	 * If hz=100 then for multiple INIT the to_ticks are 200, 400, 800 and so-on.
 	 */
-	struct timeval timeout;
-
-	while(1) {
-		timeout.tv_sec  = 0;
-		timeout.tv_usec = 1000 * TIMEOUT_INTERVAL;
+	for (;;) {
 #if defined (__Userspace_os_Windows)
 		Sleep(TIMEOUT_INTERVAL);
 #else
+		struct timeval timeout;
+
+		timeout.tv_sec  = 0;
+		timeout.tv_usec = 1000 * TIMEOUT_INTERVAL;
 		select(0, NULL, NULL, NULL, &timeout);
 #endif
+		if (SCTP_BASE_VAR(timer_thread_should_exit)) {
+			break;
+		}
 		/* update our tick count */
 		ticks += MSEC_TO_TICKS(TIMEOUT_INTERVAL);
 		SCTP_TIMERQ_LOCK();
@@ -93,6 +123,11 @@ user_sctp_timer_iterate(void *threadname)
 		}
 		SCTP_TIMERQ_UNLOCK();
 	}
+#if defined (__Userspace_os_Windows)
+	ExitThread(0);
+#else
+	pthread_exit(NULL);
+#endif
 	return NULL;
 }
 

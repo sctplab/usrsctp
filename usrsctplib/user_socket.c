@@ -1,3 +1,34 @@
+/*-
+ * Copyright (c) 1982, 1986, 1988, 1990, 1993
+ *      The Regents of the University of California.
+ * Copyright (c) 2004 The FreeBSD Foundation
+ * Copyright (c) 2004-2008 Robert N. M. Watson
+ * Copyright (c) 2012 Michael Tuexen
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ */
+
 #include <netinet/sctp_os.h>
 #include <netinet/sctp_pcb.h>
 #include <netinet/sctputil.h>
@@ -2292,13 +2323,13 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	msg_hdr.msg_controllen = 0;
 	msg_hdr.msg_flags = 0;
 
-	if ((!use_udp_tunneling) && (userspace_rawsctp > -1)) {
-		if ((res = sendmsg(userspace_rawsctp, &msg_hdr, MSG_DONTWAIT)) != send_len) {
+	if ((!use_udp_tunneling) && (SCTP_BASE_VAR(userspace_rawsctp) > -1)) {
+		if ((res = sendmsg(SCTP_BASE_VAR(userspace_rawsctp), &msg_hdr, MSG_DONTWAIT)) != send_len) {
 			*result = errno;
 		}
 	}
-	if ((use_udp_tunneling) && (userspace_udpsctp > -1)) {
-		if ((res = sendmsg(userspace_udpsctp, &msg_hdr, MSG_DONTWAIT)) != send_len) {
+	if ((use_udp_tunneling) && (SCTP_BASE_VAR(userspace_udpsctp) > -1)) {
+		if ((res = sendmsg(SCTP_BASE_VAR(userspace_udpsctp), &msg_hdr, MSG_DONTWAIT)) != send_len) {
 			*result = errno;
 		}
 	}
@@ -2312,15 +2343,15 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	win_msg_hdr.Control = winbuf;
 	win_msg_hdr.dwFlags = 0;
 
-	if ((!use_udp_tunneling) && (userspace_rawsctp > -1)) {
-		if (WSASendMsg(userspace_rawsctp, &win_msg_hdr, 0, &win_sent_len, NULL, NULL) != 0) {
+	if ((!use_udp_tunneling) && (SCTP_BASE_VAR(userspace_rawsctp) > -1)) {
+		if (WSASendMsg(SCTP_BASE_VAR(userspace_rawsctp), &win_msg_hdr, 0, &win_sent_len, NULL, NULL) != 0) {
 			*result = WSAGetLastError();
 		} else if (win_sent_len != send_len) {
 			*result = WSAGetLastError();
 		}
 	}
-	if ((use_udp_tunneling) && (userspace_udpsctp > -1)) {
-		if ((res = WSASendMsg(userspace_udpsctp, &win_msg_hdr, 0, &win_sent_len, NULL, NULL)) != 0) {
+	if ((use_udp_tunneling) && (SCTP_BASE_VAR(userspace_udpsctp) > -1)) {
+		if ((res = WSASendMsg(SCTP_BASE_VAR(userspace_udpsctp), &win_msg_hdr, 0, &win_sent_len, NULL, NULL)) != 0) {
 			*result = WSAGetLastError();
 		} else if (win_sent_len != send_len) {
 			*result = WSAGetLastError();
@@ -2433,7 +2464,7 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 #endif
 	}
 	if (m != NULL) {
-        printf("mbuf chain couldn't be copied completely\n");
+		printf("mbuf chain couldn't be copied completely\n");
 		goto free_mbuf;
 	}
 
@@ -2446,13 +2477,13 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	msg_hdr.msg_controllen = 0;
 	msg_hdr.msg_flags = 0;
 
-	if ((!use_udp_tunneling) && (userspace_rawsctp6 > -1)) {
-		if ((res = sendmsg(userspace_rawsctp6, &msg_hdr, MSG_DONTWAIT)) != send_len) {
+	if ((!use_udp_tunneling) && (SCTP_BASE_VAR(userspace_rawsctp6) > -1)) {
+		if ((res = sendmsg(SCTP_BASE_VAR(userspace_rawsctp6), &msg_hdr, MSG_DONTWAIT)) != send_len) {
 			*result = errno;
 		}
 	}
-	if ((use_udp_tunneling) && (userspace_udpsctp6 > -1)) {
-		if ((res = sendmsg(userspace_udpsctp6, &msg_hdr, MSG_DONTWAIT)) != send_len) {
+	if ((use_udp_tunneling) && (SCTP_BASE_VAR(userspace_udpsctp6) > -1)) {
+		if ((res = sendmsg(SCTP_BASE_VAR(userspace_udpsctp6), &msg_hdr, MSG_DONTWAIT)) != send_len) {
 			*result = errno;
 		}
 	}
@@ -2466,15 +2497,15 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	win_msg_hdr.Control = winbuf;
 	win_msg_hdr.dwFlags = 0;
 
-	if ((!use_udp_tunneling) && (userspace_rawsctp6 > -1)) {
-		if (WSASendMsg(userspace_rawsctp6, &win_msg_hdr, 0, &win_sent_len, NULL, NULL) != 0) {
+	if ((!use_udp_tunneling) && (SCTP_BASE_VAR(userspace_rawsctp6) > -1)) {
+		if (WSASendMsg(SCTP_BASE_VAR(userspace_rawsctp6), &win_msg_hdr, 0, &win_sent_len, NULL, NULL) != 0) {
 			*result = WSAGetLastError();
 		} else if (win_sent_len != send_len) {
 			*result = WSAGetLastError();
 		}
 	}
-	if ((use_udp_tunneling) && (userspace_udpsctp6 > -1)) {
-		if ((res = WSASendMsg(userspace_udpsctp6, &win_msg_hdr, 0, &win_sent_len, NULL, NULL)) != 0) {
+	if ((use_udp_tunneling) && (SCTP_BASE_VAR(userspace_udpsctp6) > -1)) {
+		if ((res = WSASendMsg(SCTP_BASE_VAR(userspace_udpsctp6), &win_msg_hdr, 0, &win_sent_len, NULL, NULL)) != 0) {
 			*result = WSAGetLastError();
 		} else if (win_sent_len != send_len) {
 			*result = WSAGetLastError();
