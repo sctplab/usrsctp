@@ -66,7 +66,7 @@ __FBSDID("$FreeBSD$");
 #endif
 
 extern int ticks;
-extern void timer_init();
+extern void sctp_start_timer();
 extern userland_mutex_t timer_mtx;
 #endif
 

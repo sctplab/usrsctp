@@ -6609,7 +6609,7 @@ sctp_pcb_init()
 #if defined(__Userspace__)
 	mbuf_init(NULL);
 	atomic_init();
-	RECV_THREAD_INIT();
+	recv_thread_init();
 #endif
 }
 
