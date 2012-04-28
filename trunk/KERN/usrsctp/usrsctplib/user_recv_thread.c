@@ -198,6 +198,7 @@ recv_function_route(void *arg)
 	struct ifaddrmsg *rtmsg;
 	struct rtattr *rtatp;
 	struct in_addr *inp;
+	struct sockaddr_nl sanl;
 #ifdef INET
 	struct sockaddr_in *sa;
 #endif
@@ -205,7 +206,10 @@ recv_function_route(void *arg)
 	struct sockaddr_in6 *sa6;
 #endif
 
-	while (1) {
+	for (;;) {
+		memset(&sanl, 0, sizeof(sanl));
+		sanl.nl_family = AF_NETLINK;
+		sanl.nl_groups = RTMGRP_IPV6_IFADDR | RTMGRP_IPV4_IFADDR;
 		memset(&msg, 0, sizeof(struct msghdr));
 		msg.msg_name = (void *)&sanl;
 		msg.msg_namelen = sizeof(sanl);
