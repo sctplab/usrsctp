@@ -33,7 +33,7 @@
 /* $KAME: sctp_uio.h,v 1.11 2005/03/06 16:04:18 itojun Exp $	 */
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 234731 2012-04-27 13:58:09Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 234832 2012-04-30 08:44:21Z tuexen $");
 #endif
 
 #ifndef __sctp_uio_h__
@@ -692,6 +692,7 @@ struct sctp_authkeyid {
 /* SCTP_PEER_AUTH_CHUNKS / SCTP_LOCAL_AUTH_CHUNKS */
 struct sctp_authchunks {
 	sctp_assoc_t gauth_assoc_id;
+	uint32_t gauth_number_of_chunks;
 	uint8_t gauth_chunks[];
 };
 
