@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 234762 2012-04-28 16:32:49Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 234832 2012-04-30 08:44:21Z tuexen $");
 #endif
 #include <netinet/sctp_os.h>
 #ifdef __FreeBSD__
@@ -3327,6 +3327,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			} else {
 				/* copy in the chunks */
 				(void)sctp_serialize_auth_chunks(chklist, sac->gauth_chunks);
+				sac->gauth_number_of_chunks = (uint32_t)size;
 				*optsize = sizeof(struct sctp_authchunks) + size;
 			}
 			SCTP_TCB_UNLOCK(stcb);
@@ -3345,6 +3346,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 				} else {
 					/* copy in the chunks */
 					(void)sctp_serialize_auth_chunks(chklist, sac->gauth_chunks);
+					sac->gauth_number_of_chunks = (uint32_t)size;
 					*optsize = sizeof(struct sctp_authchunks) + size;
 				}
 				SCTP_INP_RUNLOCK(inp);
@@ -3375,6 +3377,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			} else {
 				/* copy in the chunks */
 				(void)sctp_serialize_auth_chunks(chklist, sac->gauth_chunks);
+				sac->gauth_number_of_chunks = (uint32_t)size;
 				*optsize = sizeof(struct sctp_authchunks) + size;
 			}
 			SCTP_TCB_UNLOCK(stcb);
