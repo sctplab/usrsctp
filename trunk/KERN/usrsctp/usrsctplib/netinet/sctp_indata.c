@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 234459 2012-04-19 12:43:19Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 234995 2012-05-04 09:27:00Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -330,7 +330,7 @@ sctp_mark_non_revokable(struct sctp_association *asoc, uint32_t tsn)
 	}
 	SCTP_CALC_TSN_TO_GAP(gap, tsn, asoc->mapping_array_base_tsn);
 	if (!SCTP_IS_TSN_PRESENT(asoc->mapping_array, gap)) {
-		printf("gap:%x tsn:%x\n", gap, tsn);
+		SCTP_PRINTF("gap:%x tsn:%x\n", gap, tsn);
 		sctp_print_mapping_array(asoc);
 #ifdef INVARIANTS
 		panic("Things are really messed up now!!");
@@ -2303,7 +2303,7 @@ sctp_slide_mapping_arrays(struct sctp_tcb *stcb)
 #ifdef INVARIANTS
 		for (i = 0; i < asoc->mapping_array_size; i++) {
 			if ((asoc->mapping_array[i]) || (asoc->nr_mapping_array[i])) {
-				printf("Error Mapping array's not clean at clear\n");
+				SCTP_PRINTF("Error Mapping array's not clean at clear\n");
 				sctp_print_mapping_array(asoc);
 			}
 		}
@@ -2325,8 +2325,8 @@ sctp_slide_mapping_arrays(struct sctp_tcb *stcb)
 #ifdef INVARIANTS
 			panic("impossible slide");
 #else
-			printf("impossible slide lgap:%x slide_end:%x slide_from:%x? at:%d\n",
-				   lgap, slide_end, slide_from, at);
+			SCTP_PRINTF("impossible slide lgap:%x slide_end:%x slide_from:%x? at:%d\n",
+			            lgap, slide_end, slide_from, at);
 			return;
 #endif
 		}
@@ -2334,8 +2334,8 @@ sctp_slide_mapping_arrays(struct sctp_tcb *stcb)
 #ifdef INVARIANTS
 			panic("would overrun buffer");
 #else
-			printf("Gak, would have overrun map end:%d slide_end:%d\n",
-			       asoc->mapping_array_size, slide_end);
+			SCTP_PRINTF("Gak, would have overrun map end:%d slide_end:%d\n",
+			            asoc->mapping_array_size, slide_end);
 			slide_end = asoc->mapping_array_size;
 #endif
 		}
@@ -3478,7 +3478,7 @@ sctp_strike_gap_ack_chunks(struct sctp_tcb *stcb, struct sctp_association *asoc,
 					continue;
 				}
 			}
-			/* printf("OK, we are now ready to FR this guy\n"); */
+			/* SCTP_PRINTF("OK, we are now ready to FR this guy\n"); */
 			if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_FR_LOGGING_ENABLE) {
 				sctp_log_fr(tp1->rec.data.TSN_seq, tp1->snd_count,
 					    0, SCTP_FR_MARKED);
@@ -3539,7 +3539,7 @@ sctp_strike_gap_ack_chunks(struct sctp_tcb *stcb, struct sctp_association *asoc,
 			tot_retrans++;
 			/* mark the sending seq for possible subsequent FR's */
 			/*
-			 * printf("Marking TSN for FR new value %x\n",
+			 * SCTP_PRINTF("Marking TSN for FR new value %x\n",
 			 * (uint32_t)tpi->rec.data.TSN_seq);
 			 */
 			if (TAILQ_EMPTY(&asoc->send_queue)) {
@@ -3694,11 +3694,10 @@ sctp_fs_audit(struct sctp_association *asoc)
 
 	TAILQ_FOREACH(chk, &asoc->sent_queue, sctp_next) {
 		if (chk->sent < SCTP_DATAGRAM_RESEND) {
-			printf("Chk TSN:%u size:%d inflight cnt:%d\n",
-			       chk->rec.data.TSN_seq,
-			       chk->send_size,
-			       chk->snd_count
-				);
+			SCTP_PRINTF("Chk TSN:%u size:%d inflight cnt:%d\n",
+			            chk->rec.data.TSN_seq,
+			            chk->send_size,
+			            chk->snd_count);
 			inflight++;
 		} else if (chk->sent == SCTP_DATAGRAM_RESEND) {
 			resend++;
@@ -3715,8 +3714,8 @@ sctp_fs_audit(struct sctp_association *asoc)
 #ifdef INVARIANTS
 		panic("Flight size-express incorrect? \n");
 #else
-		printf("asoc->total_flight:%d cnt:%d\n",
-		       entry_flight, entry_cnt);
+		SCTP_PRINTF("asoc->total_flight:%d cnt:%d\n",
+		            entry_flight, entry_cnt);
 
 		SCTP_PRINTF("Flight size-express incorrect F:%d I:%d R:%d Ab:%d ACK:%d\n",
 			    inflight, inbetween, resend, above, acked);
@@ -3881,7 +3880,7 @@ sctp_express_handle_sack(struct sctp_tcb *stcb, uint32_t cumack,
 		TAILQ_FOREACH_SAFE(tp1, &asoc->sent_queue, sctp_next, tp2) {
 			if (SCTP_TSN_GE(cumack, tp1->rec.data.TSN_seq)) {
 				if (tp1->sent == SCTP_DATAGRAM_UNSENT) {
-					printf("Warning, an unsent is now acked?\n");
+					SCTP_PRINTF("Warning, an unsent is now acked?\n");
 				}
 				if (tp1->sent < SCTP_DATAGRAM_ACKED) {
 					/*
@@ -4437,11 +4436,11 @@ sctp_handle_sack(struct mbuf *m, int offset_seg, int offset_dup,
 			 * no way, we have not even sent this TSN out yet.
 			 * Peer is hopelessly messed up with us.
 			 */
-			printf("NEW cum_ack:%x send_s:%x is smaller or equal\n",
-			       cum_ack, send_s);
+			SCTP_PRINTF("NEW cum_ack:%x send_s:%x is smaller or equal\n",
+			            cum_ack, send_s);
 			if (tp1) {
-				printf("Got send_s from tsn:%x + 1 of tp1:%p\n",
-				       tp1->rec.data.TSN_seq, tp1);
+				SCTP_PRINTF("Got send_s from tsn:%x + 1 of tp1:%p\n",
+				            tp1->rec.data.TSN_seq, tp1);
 			}
 		hopeless_peer:
 			*abort_now = 1;
@@ -4682,10 +4681,8 @@ sctp_handle_sack(struct mbuf *m, int offset_seg, int offset_dup,
 				 * peer is either confused or we are under
 				 * attack. We must abort.
 				 */
-				printf("Hopeless peer! biggest_tsn_acked:%x largest seq:%x\n",
-				       biggest_tsn_acked,
-				       send_s);
-
+				SCTP_PRINTF("Hopeless peer! biggest_tsn_acked:%x largest seq:%x\n",
+				            biggest_tsn_acked, send_s);
 				goto hopeless_peer;
 			}
 		}
@@ -4720,8 +4717,8 @@ sctp_handle_sack(struct mbuf *m, int offset_seg, int offset_dup,
 		}
 		if (tp1->sent == SCTP_DATAGRAM_UNSENT) {
 			/* no more sent on list */
-			printf("Warning, tp1->sent == %d and its now acked?\n",
-			       tp1->sent);
+			SCTP_PRINTF("Warning, tp1->sent == %d and its now acked?\n",
+			            tp1->sent);
 		}
 		TAILQ_REMOVE(&asoc->sent_queue, tp1, sctp_next);
 		if (tp1->pr_sctp_on) {

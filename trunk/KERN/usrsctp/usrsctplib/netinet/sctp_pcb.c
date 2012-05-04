@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 228907 2011-12-27 10:16:24Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 234995 2012-05-04 09:27:00Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2626,7 +2626,7 @@ sctp_findassociation_ep_asconf(struct mbuf *m, int offset,
 	if (zero_address) {
 	        stcb = sctp_findassoc_by_vtag(NULL, to, ntohl(sh->v_tag), inp_p,
 					      netp, sh->src_port, sh->dest_port, 1, vrf_id, 0);
-                /*printf("findassociation_ep_asconf: zero lookup address finds stcb 0x%x\n", (uint32_t)stcb);*/
+                /*SCTP_PRINTF("findassociation_ep_asconf: zero lookup address finds stcb 0x%x\n", (uint32_t)stcb);*/
 	} else {
 		stcb = sctp_findassociation_ep_addr(inp_p,
 		    (struct sockaddr *)&remote_store, netp,
@@ -6296,7 +6296,7 @@ sctp_mcore_thread(void *arg)
 			if (v6 == 0) {
 				sctp_input_with_port(m, off, 0);
 			} else {
-				printf("V6 not yet supported\n");
+				SCTP_PRINTF("V6 not yet supported\n");
 				sctp_m_freem(m);
 			}
 #if defined(__FreeBSD__) && __FreeBSD_version >= 801000
@@ -6598,7 +6598,7 @@ sctp_pcb_init()
 #endif
 #if defined(__FreeBSD__) && __FreeBSD_cc_version >= 1100000
 	if (ip_register_flow_handler(sctp_netisr_hdlr, IPPROTO_SCTP)) {
-		printf("***SCTP- Error can't register netisr handler***\n");
+		SCTP_PRINTF("***SCTP- Error can't register netisr handler***\n");
 	}
 #endif
 #if defined(_SCTP_NEEDS_CALLOUT_) || defined(_USER_SCTP_NEEDS_CALLOUT_)
@@ -6985,7 +6985,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 		ptype = ntohs(phdr->param_type);
 		plen = ntohs(phdr->param_length);
 		/*
-		 * printf("ptype => %0x, plen => %d\n", (uint32_t)ptype,
+		 * SCTP_PRINTF("ptype => %0x, plen => %d\n", (uint32_t)ptype,
 		 * (int)plen);
 		 */
 		if (offset + plen > limit) {

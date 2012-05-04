@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 234461 2012-04-19 13:11:17Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 234995 2012-05-04 09:27:00Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -786,12 +786,12 @@ sctp_handle_abort(struct sctp_abort_chunk *cp,
 	sctp_abort_notification(stcb, 0, SCTP_SO_NOT_LOCKED);
 	/* free the tcb */
 #if defined(SCTP_PANIC_ON_ABORT)
-	printf("stcb:%p state:%d rport:%d net:%p\n",
-	       stcb, stcb->asoc.state, stcb->rport, net);
+	SCTP_PRINTF("stcb:%p state:%d rport:%d net:%p\n",
+	            stcb, stcb->asoc.state, stcb->rport, net);
 	if (!(stcb->asoc.state & SCTP_STATE_CLOSED_SOCKET)) {
 		panic("Received an ABORT");
 	} else {
-		printf("No panic its in state %x closed\n", stcb->asoc.state);
+		SCTP_PRINTF("No panic its in state %x closed\n", stcb->asoc.state);
 	}
 #endif
 	SCTP_STAT_INCR_COUNTER32(sctps_aborted);
@@ -5807,9 +5807,9 @@ static void
 sctp_print_mbuf_chain(struct mbuf *m)
 {
 	for (; m; m = SCTP_BUF_NEXT(m)) {
-		printf("%p: m_len = %ld\n", m, SCTP_BUF_LEN(m));
+		SCTP_PRINTF("%p: m_len = %ld\n", m, SCTP_BUF_LEN(m));
 		if (SCTP_BUF_IS_EXTENDED(m))
-			printf("%p: extend_size = %d\n", m, SCTP_BUF_EXTEND_SIZE(m));
+			SCTP_PRINTF("%p: extend_size = %d\n", m, SCTP_BUF_EXTEND_SIZE(m));
 	}
 }
 #endif

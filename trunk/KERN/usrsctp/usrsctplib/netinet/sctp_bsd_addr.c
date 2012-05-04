@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 232866 2012-03-12 15:05:17Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 234995 2012-05-04 09:27:00Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -213,14 +213,12 @@ sctp_startup_iterator(void)
         (void)kernel_thread_start((thread_continue_t)sctp_iterator_thread, NULL, &sctp_it_ctl.thread_proc);
 #elif defined(__Userspace__)
 #if defined(__Userspace_os_Windows)
-	if ((sctp_it_ctl.thread_proc = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&sctp_iterator_thread, NULL, 0, NULL))==NULL) {
-		printf("ERROR; Creating sctp_iterator_thread failed\n");
-		exit(1);
+	if ((sctp_it_ctl.thread_proc = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&sctp_iterator_thread, NULL, 0, NULL)) == NULL) {
+		SCTP_PRINTF("ERROR; Creating sctp_iterator_thread failed\n");
 	}
 #else
 	if ((ret = pthread_create(&sctp_it_ctl.thread_proc, NULL, &sctp_iterator_thread, NULL))) {
-		printf("ERROR; return code from sctp_iterator_thread pthread_create() is %d\n", ret);
-		exit(1);
+		SCTP_PRINTF("ERROR; return code from sctp_iterator_thread pthread_create() is %d\n", ret);
 	}
 #endif
 #endif
@@ -345,20 +343,20 @@ sctp_init_ifns_for_vrf(int vrfid)
 
 	if ((Err = GetAdaptersAddresses(AF_INET, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
 		if ((Err != ERROR_BUFFER_OVERFLOW) && (Err != ERROR_INSUFFICIENT_BUFFER)) {
-			printf("GetAdaptersV4Addresses() sizing failed with error code %d\n", Err);
-			printf("err = %d; AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
+			SCTP_PRINTF("GetAdaptersV4Addresses() sizing failed with error code %d\n", Err);
+			SCTP_PRINTF("err = %d; AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
 			return;
 		}
 	}
 
 	/* Allocate memory from sizing information */
 	if ((pAdapterAddrs = (PIP_ADAPTER_ADDRESSES) GlobalAlloc(GPTR, AdapterAddrsSize)) == NULL) {
-		printf("Memory allocation error!\n");
+		SCTP_PRINTF("Memory allocation error!\n");
 		return;
 	}
 	/* Get actual adapter information */
 	if ((Err = GetAdaptersAddresses(AF_INET, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
-		printf("GetAdaptersV4Addresses() failed with error code %d\n", Err);
+		SCTP_PRINTF("GetAdaptersV4Addresses() failed with error code %d\n", Err);
 		return;
 	}
 	/* Enumerate through each returned adapter and save its information */
@@ -392,19 +390,19 @@ sctp_init_ifns_for_vrf(int vrfid)
 
 	if ((Err = GetAdaptersAddresses(AF_INET6, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
 		if ((Err != ERROR_BUFFER_OVERFLOW) && (Err != ERROR_INSUFFICIENT_BUFFER)) {
-			printf("GetAdaptersV6Addresses() sizing failed with error code %d\n", Err);
-			printf("err = %d; AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
+			SCTP_PRINTF("GetAdaptersV6Addresses() sizing failed with error code %d\n", Err);
+			SCTP_PRINTF("err = %d; AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
 			return;
 		}
 	}
 	/* Allocate memory from sizing information */
 	if ((pAdapterAddrs6 = (PIP_ADAPTER_ADDRESSES) GlobalAlloc(GPTR, AdapterAddrsSize)) == NULL) {
-		printf("Memory allocation error!\n");
+		SCTP_PRINTF("Memory allocation error!\n");
 		return;
 	}
 	/* Get actual adapter information */
 	if ((Err = GetAdaptersAddresses(AF_INET6, 0, NULL, pAdapterAddrs6, &AdapterAddrsSize)) != ERROR_SUCCESS) {
-		printf("GetAdaptersV6Addresses() failed with error code %d\n", Err);
+		SCTP_PRINTF("GetAdaptersV6Addresses() failed with error code %d\n", Err);
 		return;
 	}
 	/* Enumerate through each returned adapter and save its information */
@@ -510,7 +508,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 	count = 0;
 	error = ifnet_list_get(IFNET_FAMILY_ANY, &ifnetlist, &count);
 	if (error != 0) {
-		printf("ifnet_list_get failed %d\n", error);
+		SCTP_PRINTF("ifnet_list_get failed %d\n", error);
 		goto out;
 	}
 	for (i = 0; i < count; i++) {
@@ -786,7 +784,7 @@ sctp_add_or_del_interfaces(int (*pred)(struct ifnet *), int add)
 	count = 0;
 	error = ifnet_list_get(IFNET_FAMILY_ANY, &ifnetlist, &count);
 	if (error != 0) {
-		printf("ifnet_list_get failed %d\n", error);
+		SCTP_PRINTF("ifnet_list_get failed %d\n", error);
 		goto out;
 	}
 	for (i = 0; i < count; i++) {
@@ -1025,12 +1023,12 @@ sctp_packet_log(struct mbuf *m, int length)
 	}
 	/* Sanity check */
 	if (thisend >= SCTP_PACKET_LOG_SIZE) {
-		printf("Insanity stops a log thisbegin:%d thisend:%d writers:%d lock:%d end:%d\n",
-		       thisbegin,
-		       thisend,
-		       SCTP_BASE_VAR(packet_log_writers),
-		       grabbed_lock,
-		       SCTP_BASE_VAR(packet_log_end));
+		SCTP_PRINTF("Insanity stops a log thisbegin:%d thisend:%d writers:%d lock:%d end:%d\n",
+		            thisbegin,
+		            thisend,
+		            SCTP_BASE_VAR(packet_log_writers),
+		            grabbed_lock,
+		            SCTP_BASE_VAR(packet_log_end));
 		SCTP_BASE_VAR(packet_log_end) = 0;
 		goto no_log;
 
