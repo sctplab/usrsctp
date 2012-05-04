@@ -4184,8 +4184,10 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 
 #if defined(__APPLE__)
 	inp->ip_inp.inp.inp_state = INPCB_STATE_DEAD;
+#ifdef INVARIANTS
 	if (in_pcb_checkstate(&inp->ip_inp.inp, WNT_STOPUSING, 1) != WNT_STOPUSING)
 		panic("sctp_inpcb_free inp = %p couldn't set to STOPUSING\n", inp);
+#endif
 	inp->ip_inp.inp.inp_socket->so_flags |= SOF_PCBCLEARING;
 #endif
 	/*
