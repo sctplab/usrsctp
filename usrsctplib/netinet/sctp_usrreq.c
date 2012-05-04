@@ -88,7 +88,7 @@ sctp_init(void)
 	int Ret;
 
 	if ((Ret = WSAStartup(MAKEWORD(2,2), &wsaData))!=0) {
-		printf("WSAStartup failed\n");
+		SCTP_PRINTF("WSAStartup failed\n");
 		exit (-1);
 	}
 	InitializeConditionVariable(&accept_cond);

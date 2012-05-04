@@ -48,7 +48,7 @@
 #endif
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_cc_functions.c 228907 2011-12-27 10:16:24Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_cc_functions.c 234995 2012-05-04 09:27:00Z tuexen $");
 #endif
 
 #define SHIFT_MPTCP_MULTI_N 40
@@ -1685,9 +1685,7 @@ sctp_hs_cwnd_increase(struct sctp_tcb *stcb, struct sctp_nets *net)
 
 	cur_val = net->cwnd >> 10;
 	indx = SCTP_HS_TABLE_SIZE - 1;
-#ifdef SCTP_DEBUG
-	printf("HS CC CAlled.\n");
-#endif
+
 	if (cur_val < sctp_cwnd_adjust[0].cwnd) {
 		/* normal mode */
 		if (net->net_ack > net->mtu) {

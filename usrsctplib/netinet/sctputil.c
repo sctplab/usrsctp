@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 234699 2012-04-26 11:07:15Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 234995 2012-05-04 09:27:00Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1155,34 +1155,34 @@ sctp_print_mapping_array(struct sctp_association *asoc)
 {
 	unsigned int i, limit;
 
-	printf("Mapping array size: %d, baseTSN: %8.8x, cumAck: %8.8x, highestTSN: (%8.8x, %8.8x).\n",
-	       asoc->mapping_array_size,
-	       asoc->mapping_array_base_tsn,
-	       asoc->cumulative_tsn,
-	       asoc->highest_tsn_inside_map,
-	       asoc->highest_tsn_inside_nr_map);
+	SCTP_PRINTF("Mapping array size: %d, baseTSN: %8.8x, cumAck: %8.8x, highestTSN: (%8.8x, %8.8x).\n",
+	            asoc->mapping_array_size,
+	            asoc->mapping_array_base_tsn,
+	            asoc->cumulative_tsn,
+	            asoc->highest_tsn_inside_map,
+	            asoc->highest_tsn_inside_nr_map);
 	for (limit = asoc->mapping_array_size; limit > 1; limit--) {
 		if (asoc->mapping_array[limit - 1] != 0) {
 			break;
 		}
 	}
-	printf("Renegable mapping array (last %d entries are zero):\n", asoc->mapping_array_size - limit);
+	SCTP_PRINTF("Renegable mapping array (last %d entries are zero):\n", asoc->mapping_array_size - limit);
 	for (i = 0; i < limit; i++) {
-		printf("%2.2x%c", asoc->mapping_array[i], ((i + 1) % 16) ? ' ' : '\n');
+		SCTP_PRINTF("%2.2x%c", asoc->mapping_array[i], ((i + 1) % 16) ? ' ' : '\n');
 	}
 	if (limit % 16)
-		printf("\n");
+		SCTP_PRINTF("\n");
 	for (limit = asoc->mapping_array_size; limit > 1; limit--) {
 		if (asoc->nr_mapping_array[limit - 1]) {
 			break;
 		}
 	}
-	printf("Non renegable mapping array (last %d entries are zero):\n", asoc->mapping_array_size - limit);
+	SCTP_PRINTF("Non renegable mapping array (last %d entries are zero):\n", asoc->mapping_array_size - limit);
 	for (i = 0; i < limit; i++) {
-		printf("%2.2x%c", asoc->nr_mapping_array[i], ((i + 1) % 16) ? ' ': '\n');
+		SCTP_PRINTF("%2.2x%c", asoc->nr_mapping_array[i], ((i + 1) % 16) ? ' ': '\n');
 	}
 	if (limit % 16)
-		printf("\n");
+		SCTP_PRINTF("\n");
 }
 
 int
@@ -1326,8 +1326,8 @@ select_a_new_ep:
 					goto no_stcb;
 				}
 				/* If we reach here huh? */
-				printf("Unknown it ctl flag %x\n",
-					sctp_it_ctl.iterator_flags);
+				SCTP_PRINTF("Unknown it ctl flag %x\n",
+					    sctp_it_ctl.iterator_flags);
 				sctp_it_ctl.iterator_flags = 0;
 			}
 			SCTP_INP_RLOCK(it->inp);
@@ -5717,7 +5717,7 @@ sctp_sorecvmsg(struct socket *so,
 #ifdef INVARIANTS
 				panic("refcnt already incremented");
 #else
-				printf("refcnt already incremented?\n");
+				SCTP_PRINTF("refcnt already incremented?\n");
 #endif
 			} else {
 				atomic_add_int(&stcb->asoc.refcnt, 1);
@@ -6580,7 +6580,7 @@ sctp_hashinit_flags(int elements, struct malloc_type *type,
 #ifdef INVARIANTS
 		panic("hashinit: bad elements");
 #else
-		printf("hashinit: bad elements?");
+		SCTP_PRINTF("hashinit: bad elements?");
 		elements = 1;
 #endif
 	}
@@ -6627,11 +6627,10 @@ sctp_hashinit_flags(int elements, struct malloc_type *type,
 	int i;
 
 	if (elements <= 0) {
+		SCTP_PRINTF("hashinit: bad elements?");
 #ifdef INVARIANTS
-		perror("hashinit: bad elements");
-		return (-1);
+		return (NULL);
 #else
-		printf("hashinit: bad elements?");
 		elements = 1;
 #endif
 	}
@@ -6646,11 +6645,9 @@ sctp_hashinit_flags(int elements, struct malloc_type *type,
 		hashtbl = malloc((u_long)hashsize * sizeof(*hashtbl));
 	else {
 #ifdef INVARIANTS
-		perror("flag incorrect in hashinit_flags");
-		return (-1);
-#else
-		return (NULL);
+		SCTP_PRINTF("flag incorrect in hashinit_flags");
 #endif
+		return (NULL);
 	}
 
 	/* no memory? */
@@ -6672,7 +6669,7 @@ sctp_hashdestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask)
 	hashtbl = vhashtbl;
 	for (hp = hashtbl; hp <= &hashtbl[hashmask]; hp++)
 		if (!LIST_EMPTY(hp)) {
-			perror("hashdestroy: hash not empty");
+			SCTP_PRINTF("hashdestroy: hash not empty");
 			return;
 		}
 	FREE(hashtbl, type);
@@ -6695,7 +6692,7 @@ sctp_hashfreedestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask)
 			while (start != NULL) {
 				temp = start;
 				start = start->le_next;
-				printf("%s: %p \n", __func__, temp);
+				SCTP_PRINTF("%s: %p \n", __func__, temp);
 				FREE(temp, type);
 			}
 		}

@@ -35,7 +35,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_crc32.c 218319 2011-02-05 12:12:51Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_crc32.c 234995 2012-05-04 09:27:00Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -807,8 +807,8 @@ sctp_delayed_cksum(struct mbuf *m, uint32_t offset)
 	offset += offsetof(struct sctphdr, checksum);
 
 	if (offset + sizeof(uint32_t) > (uint32_t) (m->m_len)) {
-		printf("sctp_delayed_cksum(): m->len: %d,  off: %d.\n",
-		       (uint32_t) m->m_len, offset);
+		SCTP_PRINTF("sctp_delayed_cksum(): m->len: %d,  off: %d.\n",
+		            (uint32_t) m->m_len, offset);
 		/*
 		 * XXX this shouldn't happen, but if it does, the correct
 		 * behavior may be to insert the checksum in the appropriate
