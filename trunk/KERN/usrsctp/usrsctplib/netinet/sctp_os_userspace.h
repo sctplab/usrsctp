@@ -52,7 +52,6 @@
 typedef CRITICAL_SECTION userland_mutex_t;
 typedef CONDITION_VARIABLE userland_cond_t;
 typedef HANDLE userland_thread_t;
-#define I_AM_HERE   printf("%s:%d at %s\n", __FILE__, __LINE__ , __FUNCTION__)
 #define ADDRESS_FAMILY	unsigned __int8
 #define IPVERSION  4
 #define MAXTTL     255
@@ -497,6 +496,12 @@ struct sx {int dummy;};
 #include <netinet/ip_options.h>
 #endif
 
+#if !defined(__Userspace_os_Windows)
+#define SCTP_PRINTF(params...)	printf(params)
+#else
+#define SCTP_PRINTF(...)   printf(__VA_ARGS__)
+#endif
+
 #if defined(__FreeBSD__)
 #ifndef in6pcb
 #define in6pcb		inpcb
@@ -557,7 +562,7 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 {									\
     do {								\
 	if (SCTP_BASE_SYSCTL(sctp_debug_on) & level ) {					\
-	    printf(params);						\
+	    SCTP_PRINTF(params);						\
 	}								\
     } while (0);							\
 }
@@ -566,7 +571,7 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 {                              \
     do {    \
 	if (SCTP_BASE_SYSCTL(sctp_debug_on) & level) {  \
-	    printf(__VA_ARGS__);           \
+	    SCTP_PRINTF(__VA_ARGS__);           \
 	}        \
 	} while (0);     \
 }
@@ -592,11 +597,6 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 #define SCTPDBG_ADDR(level, addr)
 #define SCTPDBG_PKT(level, iph, sh)
 #endif
-#if !defined(__Userspace_os_Windows)
-#define SCTP_PRINTF(params...)	printf(params)
-#else
-#define SCTP_PRINTF(...)   printf(__VA_ARGS__)
-#endif
 
 #ifdef SCTP_LTRACE_CHUNKS
 #define SCTP_LTRACE_CHK(a, b, c, d) if(sctp_logging_level & SCTP_LTRACE_CHUNK_ENABLE) CTR6(KTR_SUBSYS, "SCTP:%d[%d]:%x-%x-%x-%x", SCTP_LOG_CHUNK_PROC, 0, a, b, c, d)
@@ -605,12 +605,14 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 #endif
 
 #ifdef SCTP_LTRACE_ERRORS
-#define SCTP_LTRACE_ERR_RET_PKT(m, inp, stcb, net, file, err) if(sctp_logging_level & SCTP_LTRACE_ERROR_ENABLE) \
-                                                         printf("mbuf:%p inp:%p stcb:%p net:%p file:%x line:%d error:%d\n", \
-								     m, inp, stcb, net, file, __LINE__, err);
-#define SCTP_LTRACE_ERR_RET(inp, stcb, net, file, err) if(sctp_logging_level & SCTP_LTRACE_ERROR_ENABLE) \
-                                                          printf("inp:%p stcb:%p net:%p file:%x line:%d error:%d\n", \
-								     inp, stcb, net, file, __LINE__, err);
+#define SCTP_LTRACE_ERR_RET_PKT(m, inp, stcb, net, file, err) \
+	if (sctp_logging_level & SCTP_LTRACE_ERROR_ENABLE) \
+		SCTP_PRINTF("mbuf:%p inp:%p stcb:%p net:%p file:%x line:%d error:%d\n", \
+		            m, inp, stcb, net, file, __LINE__, err);
+#define SCTP_LTRACE_ERR_RET(inp, stcb, net, file, err) \
+	if (sctp_logging_level & SCTP_LTRACE_ERROR_ENABLE) \
+		SCTP_PRINTF("inp:%p stcb:%p net:%p file:%x line:%d error:%d\n", \
+		            inp, stcb, net, file, __LINE__, err);
 #else
 #define SCTP_LTRACE_ERR_RET_PKT(m, inp, stcb, net, file, err)
 #define SCTP_LTRACE_ERR_RET(inp, stcb, net, file, err)
@@ -1130,7 +1132,7 @@ sctp_get_mbuf_for_msg(unsigned int space_needed,
 #define CMSG_ALIGN(n)   __DARWIN_ALIGN32(n)
 #define I_AM_HERE \
                 do { \
-			printf("%s:%d at %s\n", __FILE__, __LINE__ , __FUNCTION__); \
+			SCTP_PRINTF("%s:%d at %s\n", __FILE__, __LINE__ , __FUNCTION__); \
 		} while (0)
 #endif
 
