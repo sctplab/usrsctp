@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 234832 2012-04-30 08:44:21Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 235009 2012-05-04 15:49:08Z tuexen $");
 #endif
 #include <netinet/sctp_os.h>
 #ifdef __FreeBSD__
@@ -3445,6 +3445,12 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOTSUP);
 			error = ENOTSUP;
 			break;
+		case SCTP_ASSOC_RESET_EVENT:
+			event_type = SCTP_PCB_FLAGS_ASSOC_RESETEVNT;
+			break;
+		case SCTP_STREAM_CHANGE_EVENT:
+			event_type = SCTP_PCB_FLAGS_STREAM_CHANGEEVNT;
+			break;
 		default:
 			event_type = 0;
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
@@ -5999,6 +6005,12 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			event_type = 0;
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOTSUP);
 			error = ENOTSUP;
+			break;
+		case SCTP_ASSOC_RESET_EVENT:
+			event_type = SCTP_PCB_FLAGS_ASSOC_RESETEVNT;
+			break;
+		case SCTP_STREAM_CHANGE_EVENT:
+			event_type = SCTP_PCB_FLAGS_STREAM_CHANGEEVNT;
 			break;
 		default:
 			event_type = 0;
