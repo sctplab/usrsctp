@@ -171,7 +171,9 @@ sctp_iterator_thread(void *v SCTP_UNUSED)
 	wakeup(&sctp_it_ctl.iterator_flags);
 	thread_terminate(current_thread());
 #endif
+#ifdef INVARIANTS
 	panic("Hmm. thread_terminate() continues...");
+#endif
 #if defined(__Userspace__)
 	return NULL;
 #endif
