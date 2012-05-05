@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 235021 2012-05-04 17:18:02Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 235057 2012-05-05 14:06:15Z tuexen $");
 #endif
 #include <netinet/sctp_os.h>
 #ifdef __FreeBSD__
@@ -4730,12 +4730,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 	case SCTP_RESET_STREAMS:
 	{
 		struct sctp_reset_streams *strrst;
-		int i,send_out=0;
-		int send_in=0;
+		int i, send_out = 0;
+		int send_in = 0;
 
 		SCTP_CHECK_AND_CAST(strrst, optval, struct sctp_reset_streams, optsize);
 		SCTP_FIND_STCB(inp, stcb, strrst->srs_assoc_id);
-
 		if (stcb == NULL) {
 		        SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOENT);
 			error = ENOENT;
@@ -4747,15 +4746,6 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			 */
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EOPNOTSUPP);
 			error = EOPNOTSUPP;
-			SCTP_TCB_UNLOCK(stcb);
-			break;
-		}
-		if (!(stcb->asoc.local_strreset_support & SCTP_ENABLE_RESET_STREAM_REQ)) {
-			/*
-			 * User did not enable the operation.
-			 */
-			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EPERM);
-			error = EPERM;
 			SCTP_TCB_UNLOCK(stcb);
 			break;
 		}
@@ -4806,15 +4796,30 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 	case SCTP_ADD_STREAMS:
 	{
 		struct sctp_add_streams *stradd;
-		uint8_t addstream=0;
-		uint16_t add_o_strmcnt=0;
-		uint16_t add_i_strmcnt=0;
+		uint8_t addstream = 0;
+		uint16_t add_o_strmcnt = 0;
+		uint16_t add_i_strmcnt = 0;
 
 		SCTP_CHECK_AND_CAST(stradd, optval, struct sctp_add_streams, optsize);
 		SCTP_FIND_STCB(inp, stcb, stradd->sas_assoc_id);
 		if (stcb == NULL) {
 		        SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOENT);
 			error = ENOENT;
+			break;
+		}
+		if (stcb->asoc.peer_supports_strreset == 0) {
+			/*
+			 * Peer does not support the chunk type.
+			 */
+			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EOPNOTSUPP);
+			error = EOPNOTSUPP;
+			SCTP_TCB_UNLOCK(stcb);
+			break;
+		}
+		if (stcb->asoc.stream_reset_outstanding) {
+			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EALREADY);
+			error = EALREADY;
+			SCTP_TCB_UNLOCK(stcb);
 			break;
 		}
 		if ((stradd->sas_outstrms == 0) &&
@@ -4874,15 +4879,6 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			 */
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EOPNOTSUPP);
 			error = EOPNOTSUPP;
-			SCTP_TCB_UNLOCK(stcb);
-			break;
-		}
-		if (!(stcb->asoc.local_strreset_support & SCTP_ENABLE_RESET_ASSOC_REQ)) {
-			/*
-			 * User did not enable the operation.
-			 */
-			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EPERM);
-			error = EPERM;
 			SCTP_TCB_UNLOCK(stcb);
 			break;
 		}
