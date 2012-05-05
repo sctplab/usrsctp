@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 233660 2012-03-29 13:36:53Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 235066 2012-05-05 21:41:16Z tuexen $");
 #endif
 
 #ifndef __sctp_constants_h__
@@ -820,10 +820,9 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_NOTIFY_SPECIAL_SP_FAIL             27
 #define SCTP_NOTIFY_NO_PEER_AUTH                28
 #define SCTP_NOTIFY_SENDER_DRY                  29
-#define SCTP_NOTIFY_STR_RESET_ADD_OK            30
-#define SCTP_NOTIFY_STR_RESET_ADD_FAIL          31
-#define SCTP_NOTIFY_STR_RESET_INSTREAM_ADD_OK   32
-#define SCTP_NOTIFY_MAX                         32
+#define SCTP_NOTIFY_STR_RESET_DENIED_OUT        30
+#define SCTP_NOTIFY_STR_RESET_DENIED_IN         31
+#define SCTP_NOTIFY_MAX                         31
 
 
 /* This is the value for messages that are NOT completely
