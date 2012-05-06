@@ -926,7 +926,14 @@ recv_thread_init(void)
 #if defined(INET) || defined(INET6)
 	const int on = 1;
 #endif
+#if !defined(__Userspace_os_Windows)
+	struct timeval timeout;
+#endif
 
+#if !defined(__Userspace_os_Windows)
+	timeout.tv_sec  = 0;
+	timeout.tv_usec = 100 * 1000;
+#endif
 #if !defined(__Userspace_os_Windows)
 	if (SCTP_BASE_VAR(userspace_route) == -1) {
 #if !defined(__Userspace_os_Linux)
@@ -969,7 +976,14 @@ recv_thread_init(void)
 #else
 				close(SCTP_BASE_VAR(userspace_rawsctp));
 #endif
-
+				SCTP_BASE_VAR(userspace_rawsctp) = -1;
+			} else if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp), SOL_SOCKET, SO_RCVTIMEO,(const void*)&timeout, sizeof(struct timeval)) < 0) {
+				perror("raw setsockopt failure\n");
+#if defined(__Userspace_os_Windows)
+				close_socket(SCTP_BASE_VAR(userspace_rawsctp));
+#else
+				close(SCTP_BASE_VAR(userspace_rawsctp));
+#endif
 				SCTP_BASE_VAR(userspace_rawsctp) = -1;
 			} else {
 				memset((void *)&addr_ipv4, 0, sizeof(struct sockaddr_in));
@@ -1000,6 +1014,14 @@ recv_thread_init(void)
 		} else {
 			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp), IPPROTO_IP, DSTADDR_SOCKOPT, (const void *)&on, (int)sizeof(int)) < 0) {
 				perror("setsockopt: DSTADDR_SOCKOPT");
+#if defined(__Userspace_os_Windows)
+				close_socket(SCTP_BASE_VAR(userspace_udpsctp));
+#else
+				close(SCTP_BASE_VAR(userspace_udpsctp));
+#endif
+				SCTP_BASE_VAR(userspace_udpsctp) = -1;
+			} else if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp), SOL_SOCKET, SO_RCVTIMEO,(const void*)&timeout, sizeof(struct timeval)) < 0) {
+				perror("raw setsockopt failure\n");
 #if defined(__Userspace_os_Windows)
 				close_socket(SCTP_BASE_VAR(userspace_udpsctp));
 #else
