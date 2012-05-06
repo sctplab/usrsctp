@@ -961,6 +961,17 @@ recv_thread_init(void)
 			SCTP_BASE_VAR(userspace_route) = -1;
 		}
 #endif
+		if (SCTP_BASE_VAR(userspace_route) != -1) {
+			if (setsockopt(SCTP_BASE_VAR(userspace_route), SOL_SOCKET, SO_RCVTIMEO,(const void*)&timeout, sizeof(struct timeval)) < 0) {
+				perror("raw setsockopt failure\n");
+#if defined(__Userspace_os_Windows)
+				close_socket(SCTP_BASE_VAR(userspace_route));
+#else
+				close(SCTP_BASE_VAR(userspace_route));
+#endif
+				SCTP_BASE_VAR(userspace_route) = -1;
+			}
+		}
 	}
 #endif
 #if defined(INET)
@@ -1082,26 +1093,34 @@ recv_thread_init(void)
 				if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), IPPROTO_IPV6, IPV6_V6ONLY, (const void*)&on, (socklen_t)sizeof(on)) < 0) {
 					perror("ipv6only");
 				}
-
-				memset((void *)&addr_ipv6, 0, sizeof(struct sockaddr_in6));
-#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
-				addr_ipv6.sin6_len         = sizeof(struct sockaddr_in6);
-#endif
-				addr_ipv6.sin6_family      = AF_INET6;
-				addr_ipv6.sin6_port        = htons(0);
-				addr_ipv6.sin6_addr        = in6addr_any;
-				if (bind(SCTP_BASE_VAR(userspace_rawsctp6), (const struct sockaddr *)&addr_ipv6, sizeof(struct sockaddr_in6)) < 0) {
-					perror("bind");
+				if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), SOL_SOCKET, SO_RCVTIMEO,(const void*)&timeout, sizeof(struct timeval)) < 0) {
+						perror("setsockopt");
 #if defined(__Userspace_os_Windows)
-					close_socket(SCTP_BASE_VAR(userspace_rawsctp6));
+						close_socket(SCTP_BASE_VAR(userspace_rawsctp6));
 #else
-					close(SCTP_BASE_VAR(userspace_rawsctp6));
+						close(SCTP_BASE_VAR(userspace_rawsctp6));
 #endif
-					SCTP_BASE_VAR(userspace_rawsctp6) = -1;
+						SCTP_BASE_VAR(userspace_rawsctp6) = -1;
 				} else {
-
-					setReceiveBufferSize(SCTP_BASE_VAR(userspace_rawsctp6), SB_RAW); /* 128K */
-					setSendBufferSize(SCTP_BASE_VAR(userspace_rawsctp6), SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
+					memset((void *)&addr_ipv6, 0, sizeof(struct sockaddr_in6));
+#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+					addr_ipv6.sin6_len         = sizeof(struct sockaddr_in6);
+#endif
+					addr_ipv6.sin6_family      = AF_INET6;
+					addr_ipv6.sin6_port        = htons(0);
+					addr_ipv6.sin6_addr        = in6addr_any;
+					if (bind(SCTP_BASE_VAR(userspace_rawsctp6), (const struct sockaddr *)&addr_ipv6, sizeof(struct sockaddr_in6)) < 0) {
+						perror("bind");
+#if defined(__Userspace_os_Windows)
+						close_socket(SCTP_BASE_VAR(userspace_rawsctp6));
+#else
+						close(SCTP_BASE_VAR(userspace_rawsctp6));
+#endif
+						SCTP_BASE_VAR(userspace_rawsctp6) = -1;
+					} else {
+						setReceiveBufferSize(SCTP_BASE_VAR(userspace_rawsctp6), SB_RAW); /* 128K */
+						setSendBufferSize(SCTP_BASE_VAR(userspace_rawsctp6), SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
+					}
 				}
 			}
 		}
@@ -1126,20 +1145,30 @@ recv_thread_init(void)
 			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), IPPROTO_IPV6, IPV6_V6ONLY, (const void*)&on, (socklen_t)sizeof(on)) < 0) {
 				  perror("ipv6only");
 			}
-			memset((void *)&addr_ipv6, 0, sizeof(struct sockaddr_in6));
-#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
-			addr_ipv6.sin6_len         = sizeof(struct sockaddr_in6);
+			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), SOL_SOCKET, SO_RCVTIMEO,(const void*)&timeout, sizeof(struct timeval)) < 0) {
+					perror("setsockopt");
+#if defined(__Userspace_os_Windows)
+					close_socket(SCTP_BASE_VAR(userspace_udpsctp6));
+#elsE
+					close(SCTP_BASE_VAR(userspace_udpsctp6));
 #endif
-			addr_ipv6.sin6_family      = AF_INET6;
-			addr_ipv6.sin6_port        = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
-			addr_ipv6.sin6_addr        = in6addr_any;
-			if (bind(SCTP_BASE_VAR(userspace_udpsctp6), (const struct sockaddr *)&addr_ipv6, sizeof(struct sockaddr_in6)) < 0) {
-				perror("bind");
-				close(SCTP_BASE_VAR(userspace_udpsctp6));
-				SCTP_BASE_VAR(userspace_udpsctp6) = -1;
+					SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 			} else {
-				setReceiveBufferSize(SCTP_BASE_VAR(userspace_udpsctp6), SB_RAW); /* 128K */
-				setSendBufferSize(SCTP_BASE_VAR(userspace_udpsctp6), SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
+				memset((void *)&addr_ipv6, 0, sizeof(struct sockaddr_in6));
+#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+				addr_ipv6.sin6_len         = sizeof(struct sockaddr_in6);
+#endif
+				addr_ipv6.sin6_family      = AF_INET6;
+				addr_ipv6.sin6_port        = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
+				addr_ipv6.sin6_addr        = in6addr_any;
+				if (bind(SCTP_BASE_VAR(userspace_udpsctp6), (const struct sockaddr *)&addr_ipv6, sizeof(struct sockaddr_in6)) < 0) {
+					perror("bind");
+					close(SCTP_BASE_VAR(userspace_udpsctp6));
+					SCTP_BASE_VAR(userspace_udpsctp6) = -1;
+				} else {
+					setReceiveBufferSize(SCTP_BASE_VAR(userspace_udpsctp6), SB_RAW); /* 128K */
+					setSendBufferSize(SCTP_BASE_VAR(userspace_udpsctp6), SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
+				}
 			}
 		}
 	}
