@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 234995 2012-05-04 09:27:00Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 235077 2012-05-06 11:37:41Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3820,9 +3820,6 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 					*ippp = htonl(SCTP_FROM_SCTP_PCB+SCTP_LOC_3);
 				}
 				asoc->sctp_ep->last_abort_code = SCTP_FROM_SCTP_PCB+SCTP_LOC_3;
-#if defined(SCTP_PANIC_ON_ABORT)
-				panic("inpcb_free does an abort");
-#endif
 				sctp_send_abort_tcb(asoc, op_err, SCTP_SO_LOCKED);
 				SCTP_STAT_INCR_COUNTER32(sctps_aborted);
 				if ((SCTP_GET_STATE(&asoc->asoc) == SCTP_STATE_OPEN) ||
@@ -3909,10 +3906,6 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 						*ippp = htonl(SCTP_FROM_SCTP_PCB+SCTP_LOC_5);
 					}
 					asoc->sctp_ep->last_abort_code = SCTP_FROM_SCTP_PCB+SCTP_LOC_5;
-#if defined(SCTP_PANIC_ON_ABORT)
-					panic("inpcb_free does an abort");
-#endif
-
 					sctp_send_abort_tcb(asoc, op_err, SCTP_SO_LOCKED);
 					SCTP_STAT_INCR_COUNTER32(sctps_aborted);
 					if ((SCTP_GET_STATE(&asoc->asoc) == SCTP_STATE_OPEN) ||
@@ -3995,9 +3988,6 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 
 			}
 			asoc->sctp_ep->last_abort_code = SCTP_FROM_SCTP_PCB+SCTP_LOC_7;
-#if defined(SCTP_PANIC_ON_ABORT)
-			panic("inpcb_free does an abort");
-#endif
 			sctp_send_abort_tcb(asoc, op_err, SCTP_SO_LOCKED);
 			SCTP_STAT_INCR_COUNTER32(sctps_aborted);
 		} else if (asoc->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED) {
