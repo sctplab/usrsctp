@@ -941,7 +941,7 @@ int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af);
 /* Macro's for getting length from V6/V4 header */
 #if defined(__Userspace_os_Linux)
 /* if encapsulated over UDP, we do NOT convert values set in recv_function_udp  */
-#define SCTP_GET_IPV4_LENGTH(iph) ((iph->ip_p == IPPROTO_UDP) ? iph->ip_len + sizeof(struct ip) : ntohs(iph->ip_len))
+#define SCTP_GET_IPV4_LENGTH(iph) ((iph->ip_p == IPPROTO_UDP) ? iph->ip_len + sizeof(struct ip) : iph->ip_len)
 #else
 #define SCTP_GET_IPV4_LENGTH(iph) (iph->ip_len)
 #endif
