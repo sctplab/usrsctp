@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 235066 2012-05-05 21:41:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 235077 2012-05-06 11:37:41Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -785,15 +785,6 @@ sctp_handle_abort(struct sctp_abort_chunk *cp,
 	/* notify user of the abort and clean up... */
 	sctp_abort_notification(stcb, 0, SCTP_SO_NOT_LOCKED);
 	/* free the tcb */
-#if defined(SCTP_PANIC_ON_ABORT)
-	SCTP_PRINTF("stcb:%p state:%d rport:%d net:%p\n",
-	            stcb, stcb->asoc.state, stcb->rport, net);
-	if (!(stcb->asoc.state & SCTP_STATE_CLOSED_SOCKET)) {
-		panic("Received an ABORT");
-	} else {
-		SCTP_PRINTF("No panic its in state %x closed\n", stcb->asoc.state);
-	}
-#endif
 	SCTP_STAT_INCR_COUNTER32(sctps_aborted);
 	if ((SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_OPEN) ||
 	    (SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) {
