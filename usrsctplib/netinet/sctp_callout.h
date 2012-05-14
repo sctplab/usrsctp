@@ -54,20 +54,19 @@ __FBSDID("$FreeBSD$");
 
 #if defined (__Userspace__)
 #if defined (__Userspace_os_Windows)
-#define SCTP_TIMERQ_LOCK()          EnterCriticalSection(&timer_mtx)
-#define SCTP_TIMERQ_UNLOCK()        LeaveCriticalSection(&timer_mtx)
-#define SCTP_TIMERQ_LOCK_INIT()     InitializeCriticalSection(&timer_mtx)
-#define SCTP_TIMERQ_LOCK_DESTROY()  DeleteCriticalSection(&timer_mtx)
+#define SCTP_TIMERQ_LOCK()          EnterCriticalSection(&SCTP_BASE_VAR(timer_mtx))
+#define SCTP_TIMERQ_UNLOCK()        LeaveCriticalSection(&SCTP_BASE_VAR(timer_mtx))
+#define SCTP_TIMERQ_LOCK_INIT()     InitializeCriticalSection(&SCTP_BASE_VAR(timer_mtx))
+#define SCTP_TIMERQ_LOCK_DESTROY()  DeleteCriticalSection(&SCTP_BASE_VAR(timer_mtx))
 #else
-#define SCTP_TIMERQ_LOCK()          (void)pthread_mutex_lock(&timer_mtx)
-#define SCTP_TIMERQ_UNLOCK()        (void)pthread_mutex_unlock(&timer_mtx)
-#define SCTP_TIMERQ_LOCK_INIT()     (void)pthread_mutex_init(&timer_mtx, NULL)
-#define SCTP_TIMERQ_LOCK_DESTROY()  (void)pthread_mutex_destroy(&timer_mtx)
+#define SCTP_TIMERQ_LOCK()          (void)pthread_mutex_lock(&SCTP_BASE_VAR(timer_mtx))
+#define SCTP_TIMERQ_UNLOCK()        (void)pthread_mutex_unlock(&SCTP_BASE_VAR(timer_mtx))
+#define SCTP_TIMERQ_LOCK_INIT()     (void)pthread_mutex_init(&SCTP_BASE_VAR(timer_mtx), NULL)
+#define SCTP_TIMERQ_LOCK_DESTROY()  (void)pthread_mutex_destroy(&SCTP_BASE_VAR(timer_mtx))
 #endif
 
 extern int ticks;
 extern void sctp_start_timer();
-extern userland_mutex_t timer_mtx;
 #endif
 
 TAILQ_HEAD(calloutlist, sctp_callout);

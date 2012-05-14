@@ -310,6 +310,7 @@ struct sctp_base_info {
 	int sctp_main_timer_ticks;
 #endif
 #if defined(__Userspace__)
+	userland_mutex_t timer_mtx;
 	userland_thread_t timer_thread;
 	uint8_t timer_thread_should_exit;
 #if !defined(__Userspace_os_Windows)
@@ -574,14 +575,17 @@ struct sctp_inpcb {
 	uint32_t readlog_index;
 #endif
 #if defined(__Userspace__)
-	int (*recv_callback)(struct socket*, struct sctp_queued_to_read*);
+	int (*recv_callback)(struct socket *, union sctp_sockstore, void*, size_t, 
+                       struct sctp_rcvinfo, int);
 	uint32_t send_sb_threshold;
 	int (*send_callback)(struct socket*, uint32_t);
 #endif
 };
 
 #if defined(__Userspace__)
-int register_recv_cb (struct socket*, int (*)(struct socket *, struct sctp_queued_to_read*));
+int register_recv_cb (struct socket*,
+                      int (*)(struct socket *, union sctp_sockstore, void*, size_t, 
+                              struct sctp_rcvinfo, int));
 int register_send_cb (struct socket*, uint32_t, int (*)(struct socket *, uint32_t));
 
 #endif
