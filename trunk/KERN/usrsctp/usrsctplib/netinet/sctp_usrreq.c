@@ -155,9 +155,11 @@ sctp_init(void)
 	SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 #endif
 	SCTP_BASE_VAR(timer_thread_should_exit) = 0;
-	sctp_start_timer();
 #endif
 	sctp_pcb_init();
+#if defined(__Userspace__)
+	sctp_start_timer();
+#endif
 #if defined(SCTP_PACKET_LOGGING)
 	SCTP_BASE_VAR(packet_log_writers) = 0;
 	SCTP_BASE_VAR(packet_log_end) = 0;
@@ -165,8 +167,6 @@ sctp_init(void)
 #endif
 #if defined(__APPLE__)
 	SCTP_BASE_VAR(sctp_main_timer_ticks) = 0;
-#endif
-#if defined(__APPLE__)
 	sctp_start_main_timer();
 	sctp_address_monitor_start();
 	sctp_over_udp_start();
@@ -7492,7 +7492,9 @@ sctp_usrreq(so, req, m, nam, control)
 
 #if defined(__Userspace__)
 int
-register_recv_cb (struct socket* so, int (*receive_cb)(struct socket *sock, struct sctp_queued_to_read* c))
+register_recv_cb (struct socket* so,
+                  int (*receive_cb)(struct socket *sock, union sctp_sockstore addr, void *data,
+                                    size_t datalen, struct sctp_rcvinfo, int flags))
 {
 	struct sctp_inpcb* inp;
 
