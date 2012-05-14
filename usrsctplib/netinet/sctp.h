@@ -33,7 +33,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 235075 2012-05-06 11:02:53Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 235280 2012-05-11 17:50:51Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_H_
@@ -271,8 +271,10 @@ struct sctp_paramhdr {
 #define SCTP_PEELOFF                    0x0000800a
 /* the real worker for sctp_getaddrlen() */
 #define SCTP_GET_ADDR_LEN               0x0000800b
+#if defined(__APPLE__)
 /* temporary workaround for Apple listen() issue, no args used */
 #define SCTP_LISTEN_FIX			0x0000800c
+#endif
 #if defined(__Windows__)
 /* workaround for Cygwin on Windows: returns the SOCKET handle */
 #define SCTP_GET_HANDLE			0x0000800d

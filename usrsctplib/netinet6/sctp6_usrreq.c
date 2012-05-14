@@ -33,7 +33,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 233005 2012-03-15 14:22:05Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 235415 2012-05-13 19:25:21Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -524,10 +524,8 @@ sctp6_notify(struct sctp_inpcb *inp,
 	struct socket *so;
 
 #endif
+
 	/* protection */
-	int reason;
-
-
 	if ((inp == NULL) || (stcb == NULL) || (net == NULL) ||
 	    (sh == NULL) || (to == NULL)) {
 		if (stcb)
@@ -568,8 +566,7 @@ sctp6_notify(struct sctp_inpcb *inp,
 			net->dest_state &= ~SCTP_ADDR_REACHABLE;
 			net->dest_state &= ~SCTP_ADDR_PF;
 			sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_DOWN,
-					stcb, SCTP_FAILED_THRESHOLD,
-					(void *)net, SCTP_SO_NOT_LOCKED);
+					stcb, 0, (void *)net, SCTP_SO_NOT_LOCKED);
 		}
 		SCTP_TCB_UNLOCK(stcb);
 	} else  if ((icmph->icmp6_code == ICMP_UNREACH_PROTOCOL) ||
@@ -582,8 +579,7 @@ sctp6_notify(struct sctp_inpcb *inp,
 		 * either case treat it like a OOTB abort with no
 		 * TCB
 		 */
-		reason = SCTP_PEER_FAULTY;
-		sctp_abort_notification(stcb, reason, SCTP_SO_NOT_LOCKED);
+		sctp_abort_notification(stcb, 1, 0, NULL, SCTP_SO_NOT_LOCKED);
 #if defined (__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 		so = SCTP_INP_SO(inp);
 		atomic_add_int(&stcb->asoc.refcnt, 1);

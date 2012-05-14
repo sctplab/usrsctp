@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 234297 2012-04-14 21:01:44Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 235416 2012-05-13 19:32:49Z tuexen $");
 #endif
 
 #define _IP_VHL
@@ -111,8 +111,7 @@ sctp_threshold_management(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				net->dest_state &= ~SCTP_ADDR_REQ_PRIMARY;
 				net->dest_state &= ~SCTP_ADDR_PF;
 				sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_DOWN,
-				    stcb,
-				    SCTP_FAILED_THRESHOLD,
+				    stcb, 0,
 				    (void *)net, SCTP_SO_NOT_LOCKED);
 			}
 		} else if ((net->pf_threshold < net->failure_threshold) &&
@@ -177,7 +176,7 @@ sctp_threshold_management(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			*ippp = htonl(SCTP_FROM_SCTP_TIMER+SCTP_LOC_1);
 		}
 		inp->last_abort_code = SCTP_FROM_SCTP_TIMER+SCTP_LOC_1;
-		sctp_abort_an_association(inp, stcb, SCTP_FAILED_THRESHOLD, oper, SCTP_SO_NOT_LOCKED);
+		sctp_abort_an_association(inp, stcb, oper, SCTP_SO_NOT_LOCKED);
 		return (1);
 	}
 	return (0);
@@ -618,7 +617,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 					if (chk->data) {
 						(void)sctp_release_pr_sctp_chunk(stcb,
 										 chk,
-										 (SCTP_RESPONSE_TO_USER_REQ | SCTP_NOTIFY_DATAGRAM_SENT),
+										 1,
 										 SCTP_SO_NOT_LOCKED);
 						cnt_abandoned++;
 					}
@@ -631,7 +630,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 					if (chk->data) {
 						(void)sctp_release_pr_sctp_chunk(stcb,
 										 chk,
-										 (SCTP_RESPONSE_TO_USER_REQ | SCTP_NOTIFY_DATAGRAM_SENT),
+										 1,
 										 SCTP_SO_NOT_LOCKED);
 						cnt_abandoned++;
 					}
@@ -1073,8 +1072,7 @@ sctp_cookie_timer(struct sctp_inpcb *inp,
 				*ippp = htonl(SCTP_FROM_SCTP_TIMER+SCTP_LOC_3);
 			}
 			inp->last_abort_code = SCTP_FROM_SCTP_TIMER+SCTP_LOC_4;
-			sctp_abort_an_association(inp, stcb, SCTP_INTERNAL_ERROR,
-			    oper, SCTP_SO_NOT_LOCKED);
+			sctp_abort_an_association(inp, stcb, oper, SCTP_SO_NOT_LOCKED);
 		} else {
 #ifdef INVARIANTS
 			panic("Cookie timer expires in wrong state?");
