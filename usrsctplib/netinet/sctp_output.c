@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 235416 2012-05-13 19:32:49Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 235554 2012-05-17 17:02:47Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -14401,8 +14401,7 @@ skip_preblock:
 dataless_eof:
 	/* EOF thing ? */
 	if ((srcv->sinfo_flags & SCTP_EOF) &&
-	    (got_all_of_the_send == 1) &&
-	    (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE)) {
+	    (got_all_of_the_send == 1)) {
 		int cnt;
 		SCTP_STAT_INCR(sctps_sends_with_eof);
 		error = 0;
