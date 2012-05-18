@@ -44,39 +44,10 @@
  */
 #define TIMEOUT_INTERVAL 10
 
-void *user_sctp_timer_iterate(void * threadname);
-
-void * (*timerFunction)(void *) = {&user_sctp_timer_iterate};
-
 extern int ticks;
-userland_mutex_t timer_mtx;
-
-void
-sctp_start_timer(void)
-{
-#if !defined (__Userspace_os_Windows)
-	int rc;
-#endif
-	char *tn = {"iterator"};
-
-	/* No need to do SCTP_TIMERQ_LOCK_INIT(); here, it is being done in sctp_pcb_init() */
-	/* start one thread here */
-#if defined (__Userspace_os_Windows)
-	if ((SCTP_BASE_VAR(timer_thread) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)timerFunction, (void *)tn, 0, NULL))==NULL) {
-		printf("ERROR; Creating ithread failed\n");
-		exit(1);
-	}
-#else
-	rc = pthread_create(&SCTP_BASE_VAR(timer_thread), NULL, timerFunction, (void *)tn);
-	if (rc) {
-		printf("ERROR; return code from pthread_create() is %d\n", rc);
-		exit(1);
-	}
-#endif
-}
 
 void *
-user_sctp_timer_iterate(void *threadname)
+user_sctp_timer_iterate(void *arg)
 {
 	sctp_os_timer_t *c;
 	void (*c_func)(void *);
@@ -131,3 +102,23 @@ user_sctp_timer_iterate(void *threadname)
 	return NULL;
 }
 
+void
+sctp_start_timer(void)
+{
+	/*
+	 * No need to do SCTP_TIMERQ_LOCK_INIT();
+	 * here, it is being done in sctp_pcb_init()
+	 */
+#if defined (__Userspace_os_Windows)
+	if ((SCTP_BASE_VAR(timer_thread) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)user_sctp_timer_iterate, NULL, 0, NULL)) == NULL) {
+		SCTP_PRINTF("ERROR; Creating ithread failed\n");
+	}
+#else
+	int rc;
+
+	rc = pthread_create(&SCTP_BASE_VAR(timer_thread), NULL, user_sctp_timer_iterate, NULL);
+	if (rc) {
+		SCTP_PRINTF("ERROR; return code from pthread_create() is %d\n", rc);
+	}
+#endif
+}
