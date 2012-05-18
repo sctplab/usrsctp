@@ -319,7 +319,12 @@ recv_function_raw(void *arg)
 		nResult = WSARecvFrom(SCTP_BASE_VAR(userspace_rawsctp), recv_iovec, MAXLEN_MBUF_CHAIN, (LPDWORD)&ncounter, (LPDWORD)&flags, (struct sockaddr*)&from, &fromlen, NULL, NULL);
 		if (nResult != 0) {
 			m_ErrorCode = WSAGetLastError();
-			printf("error: %d\n", m_ErrorCode);
+			if (m_ErrorCode == WSAETIMEDOUT) {
+				continue;
+			}
+			if ((m_ErrorCode == WSAENOTSOCK) || (m_ErrorCode == WSAEINTR)) {
+				break;
+			}
 		}
 		n = ncounter;
 #else
@@ -435,20 +440,22 @@ recv_function_raw6(void *arg)
 		                   &WSARecvMsg_GUID, sizeof WSARecvMsg_GUID,
 		                   &WSARecvMsg, sizeof WSARecvMsg,
 		                   &ncounter, NULL, NULL);
-		if (nResult == SOCKET_ERROR) {
-			m_ErrorCode = WSAGetLastError();
-			WSARecvMsg = NULL;
+		if (nResult == 0) {
+			win_msg.name = (void *)&src;
+			win_msg.namelen = sizeof(struct sockaddr_in6);
+			win_msg.lpBuffers = recv_iovec;
+			win_msg.dwBufferCount = MAXLEN_MBUF_CHAIN;
+			win_msg.Control.len = sizeof ControlBuffer;
+			win_msg.Control.buf = ControlBuffer;
+			win_msg.dwFlags = 0;
+			nResult = WSARecvMsg(SCTP_BASE_VAR(userspace_rawsctp6), &win_msg, &ncounter, NULL, NULL);
 		}
-		win_msg.name = (void *)&src;
-		win_msg.namelen = sizeof(struct sockaddr_in6);
-		win_msg.lpBuffers = recv_iovec;
-		win_msg.dwBufferCount = MAXLEN_MBUF_CHAIN;
-		win_msg.Control.len = sizeof ControlBuffer;
-		win_msg.Control.buf = ControlBuffer;
-		win_msg.dwFlags = 0;
-		nResult = WSARecvMsg(SCTP_BASE_VAR(userspace_rawsctp6), &win_msg, &ncounter, NULL, NULL);
 		if (nResult != 0) {
 			m_ErrorCode = WSAGetLastError();
+			if (m_ErrorCode == WSAETIMEDOUT)
+				continue;
+			if (m_ErrorCode == WSAENOTSOCK || m_ErrorCode == WSAEINTR)
+				break;
 		}
 		n = ncounter;
 #else
@@ -619,20 +626,24 @@ recv_function_udp(void *arg)
 		 &WSARecvMsg_GUID, sizeof WSARecvMsg_GUID,
 		 &WSARecvMsg, sizeof WSARecvMsg,
 		 &ncounter, NULL, NULL);
-		if (nResult == SOCKET_ERROR) {
-			m_ErrorCode = WSAGetLastError();
-			WSARecvMsg = NULL;
+		if (nResult == 0) {
+			win_msg.name = (void *)&src;
+			win_msg.namelen = sizeof(struct sockaddr_in);
+			win_msg.lpBuffers = iov;
+			win_msg.dwBufferCount = MAXLEN_MBUF_CHAIN;
+			win_msg.Control.len = sizeof ControlBuffer;
+			win_msg.Control.buf = ControlBuffer;
+			win_msg.dwFlags = 0;
+			nResult = WSARecvMsg(SCTP_BASE_VAR(userspace_udpsctp), &win_msg, &ncounter, NULL, NULL);
 		}
-		win_msg.name = (void *)&src;
-		win_msg.namelen = sizeof(struct sockaddr_in);
-		win_msg.lpBuffers = iov;
-		win_msg.dwBufferCount = MAXLEN_MBUF_CHAIN;
-		win_msg.Control.len = sizeof ControlBuffer;
-		win_msg.Control.buf = ControlBuffer;
-		win_msg.dwFlags = 0;
-		nResult = WSARecvMsg(SCTP_BASE_VAR(userspace_udpsctp), &win_msg, &ncounter, NULL, NULL);
 		if (nResult != 0) {
 			m_ErrorCode = WSAGetLastError();
+			if (m_ErrorCode == WSAETIMEDOUT) {
+				continue;
+			}
+			if ((m_ErrorCode == WSAENOTSOCK) || (m_ErrorCode == WSAEINTR)) {
+				break;
+			}
 		}
 		n = ncounter;
 #endif
@@ -797,20 +808,24 @@ recv_function_udp6(void *arg)
 		                   &WSARecvMsg_GUID, sizeof WSARecvMsg_GUID,
 		                   &WSARecvMsg, sizeof WSARecvMsg,
 		                   &ncounter, NULL, NULL);
-		if (nResult == SOCKET_ERROR) {
-			m_ErrorCode = WSAGetLastError();
-			WSARecvMsg = NULL;
+		if (nResult == 0) {
+			win_msg.name = (void *)&src;
+			win_msg.namelen = sizeof(struct sockaddr_in6);
+			win_msg.lpBuffers = iov;
+			win_msg.dwBufferCount = MAXLEN_MBUF_CHAIN;
+			win_msg.Control.len = sizeof ControlBuffer;
+			win_msg.Control.buf = ControlBuffer;
+			win_msg.dwFlags = 0;
+			nResult = WSARecvMsg(SCTP_BASE_VAR(userspace_udpsctp6), &win_msg, &ncounter, NULL, NULL);
 		}
-		win_msg.name = (void *)&src;
-		win_msg.namelen = sizeof(struct sockaddr_in6);
-		win_msg.lpBuffers = iov;
-		win_msg.dwBufferCount = MAXLEN_MBUF_CHAIN;
-		win_msg.Control.len = sizeof ControlBuffer;
-		win_msg.Control.buf = ControlBuffer;
-		win_msg.dwFlags = 0;
-		nResult = WSARecvMsg(SCTP_BASE_VAR(userspace_udpsctp6), &win_msg, &ncounter, NULL, NULL);
 		if (nResult != 0) {
 			m_ErrorCode = WSAGetLastError();
+			if (m_ErrorCode == WSAETIMEDOUT) {
+				continue;
+			}
+			if ((m_ErrorCode == WSAENOTSOCK) || (m_ErrorCode == WSAEINTR)) {
+				break;
+			}
 		}
 		n = ncounter;
 #endif
@@ -913,6 +928,7 @@ setSendBufferSize(int sfd, int new_size)
 	return 0;
 }
 
+#define SOCKET_TIMEOUT 100 /* in ms */
 void
 recv_thread_init(void)
 {
@@ -928,11 +944,11 @@ recv_thread_init(void)
 #endif
 #if !defined(__Userspace_os_Windows)
 	struct timeval timeout;
-#endif
 
-#if !defined(__Userspace_os_Windows)
-	timeout.tv_sec  = 0;
-	timeout.tv_usec = 100 * 1000;
+	timeout.tv_sec  = (SOCKET_TIMEOUT / 1000);
+	timeout.tv_usec = (SOCKET_TIMEOUT % 1000) * 1000;
+#else
+	unsigned int timeout = SOCKET_TIMEOUT; /* Timeout in milliseconds */
 #endif
 #if !defined(__Userspace_os_Windows)
 	if (SCTP_BASE_VAR(userspace_route) == -1) {
@@ -963,9 +979,9 @@ recv_thread_init(void)
 #endif
 		if (SCTP_BASE_VAR(userspace_route) != -1) {
 			if (setsockopt(SCTP_BASE_VAR(userspace_route), SOL_SOCKET, SO_RCVTIMEO,(const void*)&timeout, sizeof(struct timeval)) < 0) {
-				perror("raw setsockopt failure\n");
+				perror("routing setsockopt failure\n");
 #if defined(__Userspace_os_Windows)
-				close_socket(SCTP_BASE_VAR(userspace_route));
+				closesocket(SCTP_BASE_VAR(userspace_route));
 #else
 				close(SCTP_BASE_VAR(userspace_route));
 #endif
@@ -983,15 +999,15 @@ recv_thread_init(void)
 			if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp), IPPROTO_IP, IP_HDRINCL,(const void*)&hdrincl, sizeof(int)) < 0) {
 				perror("raw setsockopt failure\n");
 #if defined(__Userspace_os_Windows)
-				close_socket(SCTP_BASE_VAR(userspace_rawsctp));
+				closesocket(SCTP_BASE_VAR(userspace_rawsctp));
 #else
 				close(SCTP_BASE_VAR(userspace_rawsctp));
 #endif
 				SCTP_BASE_VAR(userspace_rawsctp) = -1;
-			} else if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp), SOL_SOCKET, SO_RCVTIMEO,(const void*)&timeout, sizeof(struct timeval)) < 0) {
+			} else if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp), SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0) {
 				perror("raw setsockopt failure\n");
 #if defined(__Userspace_os_Windows)
-				close_socket(SCTP_BASE_VAR(userspace_rawsctp));
+				closesocket(SCTP_BASE_VAR(userspace_rawsctp));
 #else
 				close(SCTP_BASE_VAR(userspace_rawsctp));
 #endif
@@ -1007,7 +1023,7 @@ recv_thread_init(void)
 				if (bind(SCTP_BASE_VAR(userspace_rawsctp), (const struct sockaddr *)&addr_ipv4, sizeof(struct sockaddr_in)) < 0) {
 					perror("bind");
 #if defined(__Userspace_os_Windows)
-					close_socket(SCTP_BASE_VAR(userspace_rawsctp));
+					closesocket(SCTP_BASE_VAR(userspace_rawsctp));
 #else
 					close(SCTP_BASE_VAR(userspace_rawsctp));
 #endif
@@ -1026,15 +1042,15 @@ recv_thread_init(void)
 			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp), IPPROTO_IP, DSTADDR_SOCKOPT, (const void *)&on, (int)sizeof(int)) < 0) {
 				perror("setsockopt: DSTADDR_SOCKOPT");
 #if defined(__Userspace_os_Windows)
-				close_socket(SCTP_BASE_VAR(userspace_udpsctp));
+				closesocket(SCTP_BASE_VAR(userspace_udpsctp));
 #else
 				close(SCTP_BASE_VAR(userspace_udpsctp));
 #endif
 				SCTP_BASE_VAR(userspace_udpsctp) = -1;
-			} else if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp), SOL_SOCKET, SO_RCVTIMEO,(const void*)&timeout, sizeof(struct timeval)) < 0) {
-				perror("raw setsockopt failure\n");
+			} else if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp), SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0) {
+				perror("udp setsockopt failure\n");
 #if defined(__Userspace_os_Windows)
-				close_socket(SCTP_BASE_VAR(userspace_udpsctp));
+				closesocket(SCTP_BASE_VAR(userspace_udpsctp));
 #else
 				close(SCTP_BASE_VAR(userspace_udpsctp));
 #endif
@@ -1050,7 +1066,7 @@ recv_thread_init(void)
 				if (bind(SCTP_BASE_VAR(userspace_udpsctp), (const struct sockaddr *)&addr_ipv4, sizeof(struct sockaddr_in)) < 0) {
 					perror("bind");
 #if defined(__Userspace_os_Windows)
-					close_socket(SCTP_BASE_VAR(userspace_udpsctp));
+					closesocket(SCTP_BASE_VAR(userspace_udpsctp));
 #else
 					close(SCTP_BASE_VAR(userspace_udpsctp));
 #endif
@@ -1073,7 +1089,7 @@ recv_thread_init(void)
 			if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), IPPROTO_IPV6, IPV6_RECVPKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
 				perror("raw6 setsockopt: IPV6_RECVPKTINFO");
 #if defined(__Userspace_os_Windows)
-				close_socket(SCTP_BASE_VAR(userspace_rawsctp6));
+				closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
 #else
 				close(SCTP_BASE_VAR(userspace_rawsctp6));
 #endif
@@ -1083,7 +1099,7 @@ recv_thread_init(void)
 			if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), IPPROTO_IPV6, IPV6_PKTINFO,(const void*)&on, sizeof(on)) < 0) {
 				perror("raw6 setsockopt: IPV6_PKTINFO\n");
 #if defined(__Userspace_os_Windows)
-				close_socket(SCTP_BASE_VAR(userspace_rawsctp6));
+				closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
 #else
 				close(SCTP_BASE_VAR(userspace_rawsctp6));
 #endif
@@ -1093,14 +1109,14 @@ recv_thread_init(void)
 				if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), IPPROTO_IPV6, IPV6_V6ONLY, (const void*)&on, (socklen_t)sizeof(on)) < 0) {
 					perror("ipv6only");
 				}
-				if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), SOL_SOCKET, SO_RCVTIMEO,(const void*)&timeout, sizeof(struct timeval)) < 0) {
-						perror("setsockopt");
+				if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0) {
+					perror("setsockopt");
 #if defined(__Userspace_os_Windows)
-						close_socket(SCTP_BASE_VAR(userspace_rawsctp6));
+					closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
 #else
-						close(SCTP_BASE_VAR(userspace_rawsctp6));
+					close(SCTP_BASE_VAR(userspace_rawsctp6));
 #endif
-						SCTP_BASE_VAR(userspace_rawsctp6) = -1;
+					SCTP_BASE_VAR(userspace_rawsctp6) = -1;
 				} else {
 					memset((void *)&addr_ipv6, 0, sizeof(struct sockaddr_in6));
 #if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
@@ -1112,7 +1128,7 @@ recv_thread_init(void)
 					if (bind(SCTP_BASE_VAR(userspace_rawsctp6), (const struct sockaddr *)&addr_ipv6, sizeof(struct sockaddr_in6)) < 0) {
 						perror("bind");
 #if defined(__Userspace_os_Windows)
-						close_socket(SCTP_BASE_VAR(userspace_rawsctp6));
+						closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
 #else
 						close(SCTP_BASE_VAR(userspace_rawsctp6));
 #endif
@@ -1132,27 +1148,35 @@ recv_thread_init(void)
 #if defined(IPV6_RECVPKTINFO)
 		if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), IPPROTO_IPV6, IPV6_RECVPKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
 			perror("udp6 setsockopt: IPV6_RECVPKTINFO");
+#if defined(__Userspace_os_Windows)
+			closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
+#else
 			close(SCTP_BASE_VAR(userspace_udpsctp6));
+#endif
 			SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 		} else {
 #else
 		if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), IPPROTO_IPV6, IPV6_PKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
 			perror("udp6 setsockopt: IPV6_PKTINFO");
+#if defined(__Userspace_os_Windows)
+			closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
+#else
 			close(SCTP_BASE_VAR(userspace_udpsctp6));
+#endif
 			SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 		} else {
 #endif
-			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), IPPROTO_IPV6, IPV6_V6ONLY, (const void*)&on, (socklen_t)sizeof(on)) < 0) {
+			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), IPPROTO_IPV6, IPV6_V6ONLY, (const void *)&on, (socklen_t)sizeof(on)) < 0) {
 				  perror("ipv6only");
 			}
-			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), SOL_SOCKET, SO_RCVTIMEO,(const void*)&timeout, sizeof(struct timeval)) < 0) {
-					perror("setsockopt");
+			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0) {
+				perror("setsockopt");
 #if defined(__Userspace_os_Windows)
-					close_socket(SCTP_BASE_VAR(userspace_udpsctp6));
-#elsE
-					close(SCTP_BASE_VAR(userspace_udpsctp6));
+				closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
+#else
+				close(SCTP_BASE_VAR(userspace_udpsctp6));
 #endif
-					SCTP_BASE_VAR(userspace_udpsctp6) = -1;
+				SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 			} else {
 				memset((void *)&addr_ipv6, 0, sizeof(struct sockaddr_in6));
 #if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
@@ -1163,7 +1187,11 @@ recv_thread_init(void)
 				addr_ipv6.sin6_addr        = in6addr_any;
 				if (bind(SCTP_BASE_VAR(userspace_udpsctp6), (const struct sockaddr *)&addr_ipv6, sizeof(struct sockaddr_in6)) < 0) {
 					perror("bind");
+#if defined(__Userspace_os_Windows)
+					closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
+#else
 					close(SCTP_BASE_VAR(userspace_udpsctp6));
+#endif
 					SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 				} else {
 					setReceiveBufferSize(SCTP_BASE_VAR(userspace_udpsctp6), SB_RAW); /* 128K */
@@ -1231,14 +1259,14 @@ recv_thread_init(void)
 	if (SCTP_BASE_VAR(userspace_rawsctp) != -1) {
 		if ((SCTP_BASE_VAR(recvthreadraw) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_raw, NULL, 0, NULL)) == NULL) {
 			printf("ERROR; Creating recvthreadraw failed\n");
-			socket_close(SCTP_BASE_VAR(userspace_rawsctp));
+			closesocket(SCTP_BASE_VAR(userspace_rawsctp));
 			SCTP_BASE_VAR(userspace_rawsctp) = -1;
 		}
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp) != -1) {
 		if ((SCTP_BASE_VAR(recvthreadudp) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_udp, NULL, 0, NULL))==NULL) {
 			printf("ERROR; Creating recvthreadudp failed\n");
-			socket_close(SCTP_BASE_VAR(userspace_udpsctp));
+			closesocket(SCTP_BASE_VAR(userspace_udpsctp));
 			SCTP_BASE_VAR(userspace_udpsctp) = -1;
 		}
 	}
@@ -1247,14 +1275,14 @@ recv_thread_init(void)
 	if (SCTP_BASE_VAR(userspace_rawsctp6) != -1) {
 		if ((SCTP_BASE_VAR(recvthreadraw6) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_raw6, NULL, 0, NULL))==NULL) {
 			printf("ERROR; Creating recvthreadraw6 failed\n");
-			socket_close(SCTP_BASE_VAR(userspace_rawsctp6));
+			closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
 			SCTP_BASE_VAR(userspace_rawsctp6) = -1;
 		}
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp6) != -1) {
 		if ((SCTP_BASE_VAR(recvthreadudp6) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_udp6, NULL, 0, NULL))==NULL) {
 			printf("ERROR; Creating recvthreadudp6 failed\n");
-			socket_close(SCTP_BASE_VAR(userspace_udpsctp6));
+			closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
 			SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 		}
 	}
@@ -1268,11 +1296,7 @@ recv_thread_destroy(void)
 #if !defined(__Userspace_os_Windows)
 #if defined(INET) || defined(INET6)
 	if (SCTP_BASE_VAR(userspace_route) != -1) {
-#if defined(__Userspace_os_Windows)
-		closesocket(SCTP_BASE_VAR(userspace_route));
-#else
 		close(SCTP_BASE_VAR(userspace_route));
-#endif
 	}
 #endif
 #endif
