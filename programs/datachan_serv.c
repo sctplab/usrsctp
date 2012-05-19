@@ -44,10 +44,10 @@
 #include <time.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+#include <sys/errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #endif
-#include <netinet/sctp_pcb.h>
 #include <usrsctp.h>
 
 #include "datachan.h"
@@ -76,53 +76,51 @@ int num_channels = 0;
 void
 send_error_response(struct socket* sock,
                     struct rtcweb_datachannel_msg *msg,
-                    struct sctp_queued_to_read *control,
+                    struct sctp_rcvinfo *rcv,
                     uint16_t error)
 {
+	struct sctp_sndinfo sndinfo;
   struct rtcweb_datachannel_msg response[2]; // need extra space for error value
 
   /* ok, send a response */
   response[0] = *msg;
   response[0].msg_type = DATA_CHANNEL_OPEN_RESPONSE;
-  response[0].reverse_stream = control->sinfo_stream;
+  response[0].reverse_stream = rcv->rcv_sid;
   *((uint16_t *) &((&msg->reliability_params)[1])) = htons(error);
-
-  if (userspace_sctp_sendmsg(sock, &response[0], sizeof(response[0])+sizeof(uint16_t),
-                             NULL, 0,
-                             DATA_CHANNEL_PPID_CONTROL,0,
-                             control->sinfo_stream, 0, 0) < 0)
-  {
-    printf("error %d sending response\n",errno);
+            
+  sndinfo.snd_sid = rcv->rcv_sid;
+	sndinfo.snd_flags = 0;
+	sndinfo.snd_ppid = DATA_CHANNEL_PPID_CONTROL;
+	sndinfo.snd_context = 0;
+	sndinfo.snd_assoc_id = 0;
+						
+	if (usrsctp_sendv(sock, &response[0], sizeof(response[0])+sizeof(uint16_t), NULL, 0, 
+				              (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), 
+				              SCTP_SENDV_SNDINFO, 0) < 0) {
+  	printf("error %d sending response\n", errno);
     /* hard to send an error here... */
   }
 }
 
 static int
-receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
+receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
+           size_t datalen, struct sctp_rcvinfo rcv, int flags)
 {
-	if (control == NULL) {
+	struct sctp_sndinfo sndinfo;
+	
+	if (data == NULL) {
 		/* done = 1;*/ /* XXX? */
-		userspace_close(sock);
+		usrsctp_close(sock);
 	} else {
-    struct mbuf *m;
     struct rtcweb_datachannel_msg *msg;
     uint16_t forward,reverse;
     uint16_t error;
     int i;
 
-    switch (control->sinfo_ppid)
+    switch (rcv.rcv_ppid)
     {
       case DATA_CHANNEL_PPID_CONTROL:
-        m = control->data;
-        if (SCTP_BUF_LEN(m) < sizeof(control->length)) {
-          if ((m = m_pullup(m, control->length)) == 0) {
-            printf("Can not get the datachannel msg in the first mbuf.\n");
-            return 0;
-          }
-          control->data = m; // used by m_freem()
-        }
-        msg = mtod(m, struct rtcweb_datachannel_msg *);
-
+				msg = (struct rtcweb_datachannel_msg *)data;
         printf("rtcweb_datachannel_msg = \n"
                "  type\t\t\t%u\n"
                "  channel_type\t\t%u\n"
@@ -137,13 +135,13 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
         switch (msg->msg_type)
         {
           case DATA_CHANNEL_OPEN:
-            if (channels_in[control->sinfo_stream].in_use)
+            if (channels_in[rcv.rcv_sid].in_use)
             {
-              printf("error, channel %u in use\n",control->sinfo_stream);
-              send_error_response(sock,msg,control,ERR_DATA_CHANNEL_ALREADY_OPEN);
+              printf("error, channel %u in use\n",rcv.rcv_sid);
+              send_error_response(sock, msg, &rcv, ERR_DATA_CHANNEL_ALREADY_OPEN);
               break;
             }
-            reverse = control->sinfo_stream;
+            reverse = rcv.rcv_sid;
             if (channels_out[reverse].reverse == INVALID_STREAM &&
                 !channels_out[reverse].pending)
             {
@@ -166,7 +164,7 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
               {
                 printf("no reverse channel available!\n");
                 channels_in[reverse].in_use = 0;
-                send_error_response(sock,msg,control,ERR_DATA_CHANNEL_NONE_AVAILABLE);
+                send_error_response(sock, msg, &rcv ,ERR_DATA_CHANNEL_NONE_AVAILABLE);
                 break;
               }
               forward = i;
@@ -189,12 +187,17 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
               response[0].msg_type = DATA_CHANNEL_OPEN_RESPONSE;
               response[0].reverse_stream = reverse;
               *((uint16_t *) &((&msg->reliability_params)[1])) = /*htons*/(0); /* no error */
+              *((char *) &((&msg->reliability_params)[1])) = /*htons*/(0);
 
-              if (userspace_sctp_sendmsg(sock, &response[0], sizeof(response[0])+sizeof(uint16_t),
-                                         NULL, 0,
-                                         DATA_CHANNEL_PPID_CONTROL,0,
-                                         forward, 0, 0) < 0)
-              {
+              sndinfo.snd_sid = forward;
+							sndinfo.snd_flags = 0;
+							sndinfo.snd_ppid = DATA_CHANNEL_PPID_CONTROL;
+							sndinfo.snd_context = 0;
+							sndinfo.snd_assoc_id = 0;
+							
+							if (usrsctp_sendv(sock, &response[0], sizeof(response[0])+sizeof(uint16_t), NULL, 0, 
+				                        (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), 
+				                        SCTP_SENDV_SNDINFO, 0) < 0) {							
                 printf("error %d sending response\n",errno);
                 channels_out[forward].reverse = INVALID_STREAM;
                 channels_in[reverse].in_use = 0;
@@ -212,7 +215,7 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
             if (!channels_out[msg->reverse_stream].pending)
             {
               printf("Error: open_response for non-pending channel %u (on %u)\n",
-                     msg->reverse_stream, control->sinfo_stream);
+                     msg->reverse_stream, rcv.rcv_sid);
               break;
             }
             error = ntohs(*((uint16_t *) &((&msg->reliability_params)[1])));
@@ -223,11 +226,11 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
               break;
             }
             channels_out[msg->reverse_stream].pending = 0;
-            channels_in[control->sinfo_stream].in_use = 1;
-            channels_out[msg->reverse_stream].reverse = control->sinfo_stream;
+            channels_in[rcv.rcv_sid].in_use = 1;
+            channels_out[msg->reverse_stream].reverse = rcv.rcv_sid;
             num_channels++;
             printf("successful open of in: %u, out: %u, total channels %d\n",
-                   control->sinfo_stream, msg->reverse_stream, num_channels);
+                   rcv.rcv_sid, msg->reverse_stream, num_channels);
             /* XXX Notify onopened */
             break;
 
@@ -238,25 +241,15 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
         break;
 
       case DATA_CHANNEL_PPID_DOMSTRING:
-        printf("Received DOMString, len %d\n",control->length);
-        for (m = control->data; m; m = SCTP_BUF_NEXT(m)) {
-          fwrite(m->m_data,SCTP_BUF_LEN(m),1,stdout);
-        }
+        printf("Received DOMString, len %d\n", (int)datalen);
+        printf("%s\n", (char *)data);
         /* XXX Notify onmessage */
         break;
 
       case DATA_CHANNEL_PPID_BINARY:
-        printf("Received binary, len %d\n",control->length);
+        printf("Received binary, len %d\n", (int)datalen);
         {
-          m = control->data;
-          if (SCTP_BUF_LEN(m) < 8) {
-            if ((m = m_pullup(m, 8)) == 0) {
-              printf("Can not get the datachannel msg in the first mbuf.\n");
-              return 0;
-            }
-            control->data = m; // used by m_freem()
-          }
-          char *buffer = m->m_data;
+          char *buffer = (char *)data;
           printf("0000: %02x %02x %02x %02x %02x %02x %02x %02x \n",
                  buffer[0],buffer[1],buffer[2],buffer[3],
                  buffer[4],buffer[5],buffer[6],buffer[7]);
@@ -265,11 +258,11 @@ receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
         break;
 
       default:
-        printf("Error: Unknown ppid %u\n",control->sinfo_ppid);
+        printf("Error: Unknown ppid %u\n", rcv.rcv_ppid);
         break;
     } /* switch ppid */
 
-		m_freem(control->data);
+		free(data);
 	}
 	return 1;
 }
@@ -286,6 +279,9 @@ main(int argc, char *argv[])
 	socklen_t addr_len;
   fd_set fds;
   int i;
+  struct sctp_sndinfo sndinfo;
+	struct sctp_prinfo prinfo;
+	struct sctp_sendv_spa spa;
 
   for (i = 0; i < SIZEOF_ARRAY(channels_out); i++)
   {
@@ -295,21 +291,21 @@ main(int argc, char *argv[])
   }
 
   if (argc > 1) {
-		sctp_init(atoi(argv[1]));
+		usrsctp_init(atoi(argv[1]));
 	} else {
-		sctp_init(9899);
+		usrsctp_init(9899);
 	}
-	SCTP_BASE_SYSCTL(sctp_debug_on) = 0x0;
-	SCTP_BASE_SYSCTL(sctp_blackhole) = 2;
+	usrsctp_sysctl_set_sctp_debug_on(0);
+	usrsctp_sysctl_set_sctp_blackhole(2);
 
-	if ((sock = userspace_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP)) == NULL) {
-		perror("userspace_socket");
+	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0)) == NULL) {
+		perror("usrsctp_socket");
 	}
 	if (argc > 2) {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET;
 		encaps.sue_port = htons(atoi(argv[2]));
-		if (userspace_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
 			perror("setsockopt");
 		}
 	}
@@ -329,12 +325,12 @@ main(int argc, char *argv[])
     addr4.sin_port = htons(atoi(argv[4]));
     addr6.sin6_port = htons(atoi(argv[4]));
     if (inet_pton(AF_INET6, argv[3], &addr6.sin6_addr) == 1) {
-      if (userspace_connect(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
-        perror("userspace_connect");
+      if (usrsctp_connect(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
+        perror("usrsctp_connect");
       }
     } else if (inet_pton(AF_INET, argv[3], &addr4.sin_addr) == 1) {
-      if (userspace_connect(sock, (struct sockaddr *)&addr4, sizeof(struct sockaddr_in)) < 0) {
-        perror("userspace_connect");
+      if (usrsctp_connect(sock, (struct sockaddr *)&addr4, sizeof(struct sockaddr_in)) < 0) {
+        perror("usrsctp_connect");
       }
     } else {
       printf("Illegal destination address.\n");
@@ -352,11 +348,11 @@ main(int argc, char *argv[])
     addr.sin_port = htons(13);
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     printf("Waiting for connections on port %d\n",ntohs(addr.sin_port));
-    if (userspace_bind(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) < 0) {
-      perror("userspace_bind");
+    if (usrsctp_bind(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) < 0) {
+      perror("usrsctp_bind");
     }
-    if (userspace_listen(sock, 1) < 0) {
-      perror("userspace_listen");
+    if (usrsctp_listen(sock, 1) < 0) {
+      perror("usrsctp_listen");
     }
   }
 
@@ -370,14 +366,12 @@ main(int argc, char *argv[])
     else
     {
       addr_len = 0;
-      if ((conn_sock = userspace_accept(sock, NULL, &addr_len)) == NULL) {
+      if ((conn_sock = usrsctp_accept(sock, NULL, &addr_len)) == NULL) {
         continue;
       }
       printf("Accepting incoming connection.  Entering connected mode\n");
     }
 
-    /* all incoming data will appear in receive_cb */
-    register_recv_cb(conn_sock, receive_cb);
 
     /* control loop and sending */
     FD_ZERO(&fds);
@@ -451,21 +445,32 @@ main(int argc, char *argv[])
             {
               case DATA_CHANNEL_RELIABLE:
                 flags = 0;
+                prinfo.pr_policy = 0;
                 break;
               case DATA_CHANNEL_UNRELIABLE:
               case DATA_CHANNEL_PARTIAL_RELIABLE_REXMIT:
-                flags = SCTP_PR_SCTP_RTX | SCTP_UNORDERED;
+                flags = SCTP_UNORDERED;
+                prinfo.pr_policy = SCTP_PR_SCTP_RTX;
                 break;
               case DATA_CHANNEL_PARTIAL_RELIABLE_TIMED:
-                flags = SCTP_PR_SCTP_TTL | SCTP_UNORDERED;
+                flags = SCTP_UNORDERED;
+                prinfo.pr_policy = SCTP_PR_SCTP_TTL;
                 break;
             }
-
-            if (userspace_sctp_sendmsg(conn_sock,&msg[0], len,
-                                       NULL, 0,
-                                       DATA_CHANNEL_PPID_CONTROL,flags,
-                                       stream, timeout, 0) < 0)
-            {
+						sndinfo.snd_sid = stream;
+						sndinfo.snd_flags = flags;
+						sndinfo.snd_ppid = DATA_CHANNEL_PPID_CONTROL;
+						sndinfo.snd_context = 0;
+						sndinfo.snd_assoc_id = 0;
+						
+						prinfo.pr_value = timeout;
+						
+						spa.sendv_sndinfo = sndinfo;
+						spa.sendv_prinfo = prinfo;
+						spa.sendv_flags = SCTP_SEND_SNDINFO_VALID | SCTP_SEND_PRINFO_VALID;
+						if (usrsctp_sendv(conn_sock, &msg[0], len, NULL, 0, 
+				              (void *)&spa, (socklen_t)sizeof(struct sctp_sendv_spa), SCTP_SENDV_SPA,
+				              flags) < 0) {
               printf("error %d sending open\n",errno);
               channels_out[stream].pending = 0;
             }
@@ -476,12 +481,16 @@ main(int argc, char *argv[])
             if (!str) /* should be impossible */
               exit(1);
             str++;
-            if (userspace_sctp_sendmsg(conn_sock,str, strlen(str),
-                                       NULL, 0,
-                                       DATA_CHANNEL_PPID_DOMSTRING,0,
-                                       stream, 0, 0) < 0)
-            {
-              printf("error %d sending string\n",errno);
+            sndinfo.snd_sid = stream;
+						sndinfo.snd_flags = 0;
+						sndinfo.snd_ppid = DATA_CHANNEL_PPID_DOMSTRING;
+						sndinfo.snd_context = 0;
+						sndinfo.snd_assoc_id = 0;
+						
+						if (usrsctp_sendv(conn_sock, str, strlen(str), NULL, 0, 
+				              (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), 
+				              SCTP_SENDV_SNDINFO, 0) < 0) {
+            	printf("error %d sending string\n",errno);
             }
           }
           else if (sscanf(inputline,"close %d:",&stream) == 1)
@@ -494,10 +503,10 @@ main(int argc, char *argv[])
         }
       } /* if FDSET */
     }
-		userspace_close(conn_sock);
+		usrsctp_close(conn_sock);
 	}
-	userspace_close(sock);
-	while (userspace_finish() != 0) {
+	usrsctp_close(sock);
+	while (usrsctp_finish() != 0) {
 #if defined (__Userspace_os_Windows)
 		Sleep(1000);
 #else

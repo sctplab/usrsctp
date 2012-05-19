@@ -44,24 +44,20 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #endif
-#include <netinet/sctp_pcb.h>
 #include <usrsctp.h>
 
 int done = 0;
 
 static int
-receive_cb(struct socket* sock, struct sctp_queued_to_read *control)
+receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
+           size_t datalen, struct sctp_rcvinfo rcv, int flags)
 {
-	struct mbuf *m;
-
-	if (control == NULL) {
+	if (data == NULL) {
 		done = 1;
-		userspace_close(sock);
+		usrsctp_close(sock);
 	} else {
-		for (m = control->data; m; m = m->m_next) {
-			write(fileno(stdout), m->m_data, SCTP_BUF_LEN(m));
-		}
-		m_freem(control->data);
+		write(fileno(stdout), data, datalen);
+		free(data);
 	}
 	return 1;
 }
@@ -76,12 +72,12 @@ main(int argc, char *argv[])
 	char buffer[80];
 
 	if (argc > 3) {
-		sctp_init(atoi(argv[3]));
+		usrsctp_init(atoi(argv[3]));
 	} else {
-		sctp_init(9899);
+		usrsctp_init(9899);
 	}
-	SCTP_BASE_SYSCTL(sctp_debug_on) = 0x0;
-	SCTP_BASE_SYSCTL(sctp_blackhole) = 2;
+	usrsctp_sysctl_set_sctp_debug_on(0);
+	usrsctp_sysctl_set_sctp_blackhole(2);
 	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0)) == NULL) {
 		perror("userspace_socket ipv6");
 	}
@@ -89,7 +85,7 @@ main(int argc, char *argv[])
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET6;
 		encaps.sue_port = htons(atoi(argv[4]));
-		if (userspace_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
 			perror("setsockopt");
 		}
 	}
@@ -104,21 +100,22 @@ main(int argc, char *argv[])
 	addr4.sin_port = htons(atoi(argv[2]));
 	addr6.sin6_port = htons(atoi(argv[2]));
 	if (inet_pton(AF_INET6, argv[1], &addr6.sin6_addr) == 1) {
-		if (userspace_connect(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
+		if (usrsctp_connect(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
 			perror("userspace_connect");
 		}
 	} else if (inet_pton(AF_INET, argv[1], &addr4.sin_addr) == 1) {
-		if (userspace_connect(sock, (struct sockaddr *)&addr4, sizeof(struct sockaddr_in)) < 0) {
+		if (usrsctp_connect(sock, (struct sockaddr *)&addr4, sizeof(struct sockaddr_in)) < 0) {
 			perror("userspace_connect");
 		}
 	} else {
 		printf("Illegal destination address.\n");
 	}
 	while ((fgets(buffer, sizeof(buffer), stdin) != NULL) && !done) {
-		userspace_sctp_sendmsg(sock, buffer, strlen(buffer), NULL, 0, 0, 0, 0, 0, 0);
+		usrsctp_sendv(sock, buffer, strlen(buffer), NULL, 0,
+				                  NULL, 0, SCTP_SENDV_NOINFO, 0);
 	}
 	if (!done) {
-		userspace_shutdown(sock, SHUT_WR);
+		usrsctp_shutdown(sock, SHUT_WR);
 	}
 	while (!done) {
 #if defined (__Userspace_os_Windows)
@@ -127,7 +124,7 @@ main(int argc, char *argv[])
 		sleep(1);
 #endif
 	}
-	while (userspace_finish() != 0) {
+	while (usrsctp_finish() != 0) {
 #if defined (__Userspace_os_Windows)
 		Sleep(1000);
 #else

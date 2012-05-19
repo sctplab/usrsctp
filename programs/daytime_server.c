@@ -46,7 +46,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #endif
-#include <netinet/sctp_pcb.h>
 #include <usrsctp.h>
 
 int
@@ -58,23 +57,24 @@ main(int argc, char *argv[])
 	socklen_t addr_len;
 	char buffer[80];
 	time_t now;
+	struct sctp_sndinfo sndinfo;
 
 	if (argc > 1) {
-		sctp_init(atoi(argv[1]));
+		usrsctp_init(atoi(argv[1]));
 	} else {
-		sctp_init(9899);
+		usrsctp_init(9899);
 	}
-	SCTP_BASE_SYSCTL(sctp_debug_on) = 0x0;
-	SCTP_BASE_SYSCTL(sctp_blackhole) = 2;
+	usrsctp_sysctl_set_sctp_debug_on(0);
+	usrsctp_sysctl_set_sctp_blackhole(2);
 
 	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0)) == NULL) {
-		perror("userspace_socket");
+		perror("usrsctp_socket");
 	}
 	if (argc > 2) {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET;
 		encaps.sue_port = htons(atoi(argv[2]));
-		if (userspace_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
 			perror("setsockopt");
 		}
 	}
@@ -85,24 +85,34 @@ main(int argc, char *argv[])
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(13);
 	addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	if (userspace_bind(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) < 0) {
-		perror("userspace_bind");
+	if (usrsctp_bind(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) < 0) {
+		perror("usrsctp_bind");
 	}
-	if (userspace_listen(sock, 1) < 0) {
-		perror("userspace_listen");
+	if (usrsctp_listen(sock, 1) < 0) {
+		perror("usrsctp_listen");
 	}
 	while (1) {
 		addr_len = 0;
-		if ((conn_sock = userspace_accept(sock, NULL, &addr_len)) == NULL) {
+		if ((conn_sock = usrsctp_accept(sock, NULL, &addr_len)) == NULL) {
 			continue;
 		}
 		time(&now);
+#if defined(__Userspace_os_Windows)
+		_snprintf(buffer, sizeof(buffer), _TRUNCATE, "%s", ctime(&now));
+#else
 		snprintf(buffer, sizeof(buffer), "%s", ctime(&now));
-		userspace_sctp_sendmsg(conn_sock, buffer, strlen(buffer), NULL, 0, 0, 0, 0, 0, 0);
-		userspace_close(conn_sock);
+#endif
+		sndinfo.snd_sid = 0;
+		sndinfo.snd_flags = 0;
+		sndinfo.snd_ppid = 0;
+		sndinfo.snd_context = 0;
+		sndinfo.snd_assoc_id = 0;
+		usrsctp_sendv(conn_sock, buffer, strlen(buffer), NULL, 0, (void *)&sndinfo, 
+		              (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0);
+		usrsctp_close(conn_sock);
 	}
-	userspace_close(sock);
-	while (userspace_finish() != 0) {
+	usrsctp_close(sock);
+	while (usrsctp_finish() != 0) {
 #if defined (__Userspace_os_Windows)
 		Sleep(1000);
 #else
