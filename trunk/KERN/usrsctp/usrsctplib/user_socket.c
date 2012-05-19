@@ -33,6 +33,7 @@
 #include <netinet/sctp_pcb.h>
 #include <netinet/sctputil.h>
 #include <netinet/sctp_var.h>
+#include <netinet/sctp_sysctl.h>
 
 #if defined(__Userspace_os_Linux)
 #define __FAVOR_BSD    /* (on Ubuntu at least) enables UDP header field names like BSD in RFC 768 */
@@ -60,6 +61,12 @@ extern int sctp_sosend(struct socket *so, struct sockaddr *addr, struct uio *uio
 
 extern int sctp_attach(struct socket *so, int proto, uint32_t vrf_id);
 
+
+void
+usrsctp_init(uint16_t port)
+{
+	sctp_init(port);
+}
 
 
 /* Taken from  usr/src/sys/kern/uipc_sockbuf.c and modified for __Userspace__*/
@@ -171,7 +178,6 @@ soalloc(void)
 	   What about gencnt and numopensockets?*/
 	TAILQ_INIT(&so->so_aiojobq);
 	return (so);
-
 #else
 	/* Putting the kernel version for reference. The #else
 	   should be removed once the __Userspace__
@@ -785,18 +791,124 @@ userspace_sctp_sendmsg(struct socket *so,
 	auio.uio_rw = UIO_WRITE;
 	auio.uio_offset = 0;			/* XXX */
 	auio.uio_resid = len;
-	error = sctp_lower_sosend(so, to, &auio,
-                              (struct mbuf *)NULL, (struct mbuf *)NULL,
-                              uflags, sinfo);
+	error = sctp_lower_sosend(so, to, &auio, NULL, NULL, uflags, sinfo);
 sendmsg_return:
-	if (0 == error)
+	if (error == 0)
 		retvalsendmsg = len - auio.uio_resid;
-	else if(error == EWOULDBLOCK) {
+	else if (error == EWOULDBLOCK) {
 		errno = EWOULDBLOCK;
-		retvalsendmsg = (-1);
+		retvalsendmsg = -1;
 	} else {
-		printf("%s: error = %d\n", __func__, error);
-		retvalsendmsg = (-1);
+		SCTP_PRINTF("%s: error = %d\n", __func__, error);
+		retvalsendmsg = -1;
+	}
+	return (retvalsendmsg);
+}
+
+
+ssize_t
+usrsctp_sendv(struct socket *so,
+                       const void *data,
+                       size_t len,
+                       struct sockaddr *to,
+                       int addrcnt,
+                       void *info,
+                       socklen_t infolen,
+                       unsigned int infotype,
+                       int flags)
+{
+	struct sctp_sndrcvinfo sinfo;
+	struct uio auio;
+	struct iovec iov[1];
+	int error = 0;
+	int uflags = 0;
+	int retvalsendmsg;
+
+	switch (infotype) {
+	case SCTP_SENDV_NOINFO:
+		if ((infolen != 0) || (info != NULL)) {
+			errno = EINVAL;
+			return (-1);
+		}
+		break;
+	case SCTP_SENDV_SNDINFO:
+		if ((info == NULL) || (infolen != sizeof(struct sctp_sndinfo))) {
+			errno = EINVAL;
+			return (-1);
+		}
+		sinfo.sinfo_stream = ((struct sctp_sndinfo *)info)->snd_sid;
+		sinfo.sinfo_flags = ((struct sctp_sndinfo *)info)->snd_flags;
+		sinfo.sinfo_ppid = ((struct sctp_sndinfo *)info)->snd_ppid;
+		sinfo.sinfo_context = ((struct sctp_sndinfo *)info)->snd_context;
+		sinfo.sinfo_assoc_id = ((struct sctp_sndinfo *)info)->snd_assoc_id;
+		break;
+	case SCTP_SENDV_PRINFO:
+		if ((info == NULL) || (infolen != sizeof(struct sctp_prinfo))) {
+			errno = EINVAL;
+			return (-1);
+		}
+		sinfo.sinfo_stream = 0;
+		sinfo.sinfo_flags = PR_SCTP_POLICY(((struct sctp_prinfo *)info)->pr_policy);
+		sinfo.sinfo_timetolive = ((struct sctp_prinfo *)info)->pr_value;
+		break;
+	case SCTP_SENDV_AUTHINFO:
+		errno = EINVAL;
+		return (-1);
+	case SCTP_SENDV_SPA:
+		if ((info == NULL) || (infolen != sizeof(struct sctp_sendv_spa))) {
+			errno = EINVAL;
+			return (-1);
+		}
+		if (((struct sctp_sendv_spa *)info)->sendv_flags & SCTP_SEND_SNDINFO_VALID) {
+			sinfo.sinfo_stream = ((struct sctp_sendv_spa *)info)->sendv_sndinfo.snd_sid;
+			sinfo.sinfo_flags = ((struct sctp_sendv_spa *)info)->sendv_sndinfo.snd_flags;
+			sinfo.sinfo_ppid = ((struct sctp_sendv_spa *)info)->sendv_sndinfo.snd_ppid;
+			sinfo.sinfo_context = ((struct sctp_sendv_spa *)info)->sendv_sndinfo.snd_context;
+			sinfo.sinfo_assoc_id = ((struct sctp_sendv_spa *)info)->sendv_sndinfo.snd_assoc_id;
+		} else {
+			sinfo.sinfo_flags = 0;
+			sinfo.sinfo_stream = 0;
+		}
+		if (((struct sctp_sendv_spa *)info)->sendv_flags & SCTP_SEND_PRINFO_VALID) {
+			sinfo.sinfo_flags |= PR_SCTP_POLICY(((struct sctp_sendv_spa *)info)->sendv_prinfo.pr_policy);
+			sinfo.sinfo_timetolive = ((struct sctp_sendv_spa *)info)->sendv_prinfo.pr_value;
+		}
+		if (((struct sctp_sendv_spa *)info)->sendv_flags & SCTP_SEND_AUTHINFO_VALID) {
+			errno = EINVAL;
+			return (-1);
+		}
+		break;
+	default:
+		errno = EINVAL;
+		return (-1);
+	}
+
+	/* Perform error checks on destination (to) */
+	if (addrcnt > 1) {
+		errno = EINVAL;
+		goto sendmsg_return;
+	}
+
+
+	iov[0].iov_base = (caddr_t)data;
+	iov[0].iov_len = len;
+
+	auio.uio_iov =  iov;
+	auio.uio_iovcnt = 1;
+	auio.uio_segflg = UIO_USERSPACE;
+	auio.uio_rw = UIO_WRITE;
+	auio.uio_offset = 0;			/* XXX */
+	auio.uio_resid = len;
+	error = sctp_lower_sosend(so, to, &auio, NULL, NULL, uflags, &sinfo);
+sendmsg_return:
+	if (error == 0)
+		retvalsendmsg = len - auio.uio_resid;
+	else if (error == EWOULDBLOCK) {
+		errno = EWOULDBLOCK;
+		retvalsendmsg = -1;
+	} else {
+		SCTP_PRINTF("%s: error = %d\n", __func__, error);
+		retvalsendmsg = -1;
 	}
 
 	return (retvalsendmsg);
@@ -815,7 +927,7 @@ struct mbuf* mbufalloc(size_t size, void* data, unsigned char fill)
     left = size;
     head = m = sctp_get_mbuf_for_msg((left + resv_upfront), 1, M_WAIT, 0, MT_DATA);
     if (m == NULL) {
-        printf("%s: ENOMEN: Memory allocation failure\n", __func__);
+        SCTP_PRINTF("%s: ENOMEN: Memory allocation failure\n", __func__);
         return (NULL);
     }
     /*-
@@ -851,7 +963,7 @@ struct mbuf* mbufalloc(size_t size, void* data, unsigned char fill)
                  */
                 sctp_m_freem(head);
                 SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOMEM);
-                printf("%s: ENOMEN: Memory allocation failure\n", __func__);
+                SCTP_PRINTF("%s: ENOMEN: Memory allocation failure\n", __func__);
                 return (NULL);
             }
             m = SCTP_BUF_NEXT(m);
@@ -893,7 +1005,7 @@ struct mbuf* mbufallocfromiov(int iovlen, struct iovec *srciov)
     /* First one gets a header equal to sizeof(struct sctp_data_chunk) */
     head = m = sctp_get_mbuf_for_msg((left + resv_upfront), 1, M_WAIT, 0, MT_DATA);
     if (m == NULL) {
-        printf("%s: ENOMEN: Memory allocation failure\n", __func__);
+        SCTP_PRINTF("%s: ENOMEN: Memory allocation failure\n", __func__);
         return (NULL);
     }
     /*-
@@ -945,7 +1057,7 @@ struct mbuf* mbufallocfromiov(int iovlen, struct iovec *srciov)
                  */
                 sctp_m_freem(head);
                 SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOMEM);
-                printf("%s: ENOMEN: Memory allocation failure\n", __func__);
+                SCTP_PRINTF("%s: ENOMEN: Memory allocation failure\n", __func__);
                 return (NULL);
             }
             m = SCTP_BUF_NEXT(m);
@@ -1019,7 +1131,7 @@ sendmsg_return:
         errno = EWOULDBLOCK;
         retvalsendmsg = (-1);
     } else {
-        printf("%s: error = %d\n", __func__, error);
+        SCTP_PRINTF("%s: error = %d\n", __func__, error);
         errno = error;
         retvalsendmsg = (-1);
     }
@@ -1027,162 +1139,6 @@ sendmsg_return:
 
 }
 
-#if 0 /* Old version: To be removed */
-/* This is purely experimental for now. It can't handle message sizes larger than MHLEN */
-ssize_t userspace_sctp_sendmbuf(struct socket *so, const void *message, size_t length,
-       int flags, const struct sockaddr *dest_addr, socklen_t dest_len)
-{
-    struct mbuf * m;
-    struct mbuf * control = NULL;
-    struct proc *p = NULL;
-
-    if (so == NULL) {
-        perror("sockset so passed to userspace_sctp_sendmbuf is NULL\n");
-        exit(1);
-    }
-
-    /* Just getting a single mbuf for now for a short message.
-     * Not appending any packet headers because that would be done
-     * in sctp_med_chunk_output, which prepends common sctp header and
-     * in sctp_lowlevel_chunk_output which attaches ip header
-     */
-
-    m = sctp_get_mbuf_for_msg(MHLEN, 0, M_DONTWAIT, 0, MT_DATA);
-
-    if (m == NULL){
-        perror("out of memory in userspace_sctp_sendmbuf\n");
-        exit(1);
-    }
-
-    bcopy((caddr_t)message, m->m_data, length);
-    SCTP_HEADER_LEN(m) = SCTP_BUF_LEN(m) = length;
-
-    return (sctp_sosend(so,
-                        (struct sockaddr *) dest_addr,
-                        (struct uio *)NULL,
-                        m,
-                        control,
-                        flags,
-                        p
-			));
-
-}
-#endif
-
-
-/* The original implementation of sctp_generic_recvmsg is in /src/sys/kern/uipc_syscalls.c
- * Modifying it for __Userspace__
- */
-#if 0
-static int
-sctp_generic_recvmsg(so, uap, retval)
-	struct socket *so;
-	struct sctp_generic_recvmsg_args /* {
-		int sd,
-		struct iovec *iov,
-		int iovlen,
-		struct sockaddr *from,
-		socklen_t *fromlenaddr,
-		struct sctp_sndrcvinfo *sinfo,
-		int *msg_flags
-	} */ *uap;
-        int *retval;
-{
-	u_int8_t sockbufstore[256];
-	struct uio auio;
-	struct iovec *iov, *tiov;
-	struct sctp_sndrcvinfo sinfo;
-	struct sockaddr *fromsa;
-	int fromlen;
-	int len, i, msg_flags;
-	int error = 0;
-	error = copyiniov(uap->iov, uap->iovlen, &iov, EMSGSIZE);
-	if (error) {
-                return (error);
-	}
-
-	if (uap->fromlenaddr) {
-		error = copyin(uap->fromlenaddr,
-		    &fromlen, sizeof (fromlen));
-		if (error) {
-			goto out;
-		}
-	} else {
-		fromlen = 0;
-	}
-	if(uap->msg_flags) {
-		error = copyin(uap->msg_flags, &msg_flags, sizeof (int));
-		if (error) {
-			goto out;
-		}
-	} else {
-		msg_flags = 0;
-	}
-	auio.uio_iov = iov;
-	auio.uio_iovcnt = uap->iovlen;
-  	auio.uio_segflg = UIO_USERSPACE;
-	auio.uio_rw = UIO_READ;
-	auio.uio_offset = 0;			/* XXX */
-	auio.uio_resid = 0;
-	tiov = iov;
-	for (i = 0; i <uap->iovlen; i++, tiov++) {
-		if ((auio.uio_resid += tiov->iov_len) < 0) {
-			error = EINVAL;
-			goto out;
-		}
-	}
-	len = auio.uio_resid;
-	fromsa = (struct sockaddr *)sockbufstore;
-
-	error = sctp_sorecvmsg(so, &auio, (struct mbuf **)NULL,
-		    fromsa, fromlen, &msg_flags,
-		    (struct sctp_sndrcvinfo *)&sinfo, 1);
-	if (error) {
-		if (auio.uio_resid != (int)len && (error == ERESTART ||
-		    error == EINTR || error == EWOULDBLOCK))
-			error = 0;
-	} else {
-		if (uap->sinfo)
-			error = copyout(&sinfo, uap->sinfo, sizeof (sinfo));
-	}
-	if (error)
-		goto out;
-
-        /* ready return value */
-        /*	td->td_retval[0] = (int)len - auio.uio_resid; original */
-        *retval = (int)len - auio.uio_resid;
-
-	if (fromlen && uap->from) {
-		len = fromlen;
-		if (len <= 0 || fromsa == 0)
-			len = 0;
-		else {
-#if !defined(__Userspace_os_Linux)
-			len = min(len, fromsa->sa_len);
-#else
-			len = min(len, sizeof(*fromsa));
-#endif
-			error = copyout(fromsa, uap->from, (unsigned)len);
-			if (error)
-				goto out;
-		}
-		error = copyout(&len, uap->fromlenaddr, sizeof (socklen_t));
-		if (error) {
-			goto out;
-		}
-	}
-	if (uap->msg_flags) {
-		error = copyout(&msg_flags, uap->msg_flags, sizeof (int));
-		if (error) {
-			goto out;
-		}
-	}
-out:
-	free(iov); /* , M_IOV); */
-
-	return (error);
-}
-#endif
 
 /* taken from usr.lib/sctp_sys_calls.c and needed here */
 #define        SCTP_SMALL_IOVEC_SIZE 2
@@ -1200,8 +1156,6 @@ userspace_sctp_recvmsg(struct socket *so,
     struct sctp_sndrcvinfo *sinfo,
     int *msg_flags)
 {
-#if 1 /* def SYS_sctp_generic_recvmsg __Userspace__ */
-
 	struct uio auio;
 	struct iovec iov[SCTP_SMALL_IOVEC_SIZE];
 	struct iovec *tiov;
@@ -1222,7 +1176,7 @@ userspace_sctp_recvmsg(struct socket *so,
 	for (i = 0; i <iovlen; i++, tiov++) {
 		if ((auio.uio_resid += tiov->iov_len) < 0) {
 			error = EINVAL;
-			printf("%s: error = %d\n", __func__, error);
+			SCTP_PRINTF("%s: error = %d\n", __func__, error);
 			return (-1);
 		}
 	}
@@ -1237,93 +1191,104 @@ userspace_sctp_recvmsg(struct socket *so,
 			error = 0;
 		}
 
-	if (0 == error){
+	if (error == 0){
 		/* ready return value */
 		retval = (int)ulen - auio.uio_resid;
 		return (retval);
 	} else {
-		printf("%s: error = %d\n", __func__, error);
+		SCTP_PRINTF("%s: error = %d\n", __func__, error);
 		return (-1);
 	}
-#else
-	struct sctp_sndrcvinfo *s_info;
-	ssize_t sz;
-	int sinfo_found = 0;
-	struct msghdr msg;
-	struct iovec iov[SCTP_SMALL_IOVEC_SIZE];
-	char controlVector[SCTP_CONTROL_VEC_SIZE_RCV];
-	struct cmsghdr *cmsg;
+}
 
-	if (msg_flags == NULL) {
-		errno = EINVAL;
-		return (-1);
-	}
-	msg.msg_flags = 0;
+ssize_t
+usrsctp_recvv(struct socket *so,
+    void *dbuf,
+    size_t len,
+    struct sockaddr *from,
+    socklen_t * fromlen,
+    void *info,
+    socklen_t *infolen,
+    unsigned int *infotype,
+    int *msg_flags)
+{
+	struct uio auio;
+	struct iovec iov[SCTP_SMALL_IOVEC_SIZE];
+	struct iovec *tiov;
+	int iovlen = 1;
+	int error = 0;
+	int ulen, i, retval;
+	struct sctp_rcvinfo *rcv;
+	struct sctp_nxtinfo *nxt;
+	struct sctp_sndrcvinfo sinfo;
+	struct sctp_extrcvinfo *seinfo;
+	struct sctp_recvv_rn *rn;
+
 	iov[0].iov_base = dbuf;
 	iov[0].iov_len = len;
-	iov[1].iov_base = NULL;
-	iov[1].iov_len = 0;
-	msg.msg_name = (caddr_t)from;
-	if (fromlen == NULL)
-		msg.msg_namelen = 0;
-	else
-		msg.msg_namelen = *fromlen;
-	msg.msg_iov = iov;
-	msg.msg_iovlen = 1;
-	msg.msg_control = (caddr_t)controlVector;
-	msg.msg_controllen = sizeof(controlVector);
-	errno = 0;
-	sz = recvmsg(s, &msg, *msg_flags);
-	if (sz <= 0)
-		return (sz);
 
-	s_info = NULL;
-	len = sz;
-	*msg_flags = msg.msg_flags;
-	if (sinfo)
-		sinfo->sinfo_assoc_id = 0;
-
-	if ((msg.msg_controllen) && sinfo) {
-		/*
-		 * parse through and see if we find the sctp_sndrcvinfo (if
-		 * the user wants it).
-		 */
-		cmsg = (struct cmsghdr *)controlVector;
-		while (cmsg) {
-			if ((cmsg->cmsg_len == 0) || (cmsg->cmsg_len > msg.msg_controllen)) {
-				break;
-			}
-			if (cmsg->cmsg_level == IPPROTO_SCTP) {
-				if (cmsg->cmsg_type == SCTP_SNDRCV) {
-					/* Got it */
-					s_info = (struct sctp_sndrcvinfo *)CMSG_DATA(cmsg);
-					/* Copy it to the user */
-					if (sinfo)
-						*sinfo = *s_info;
-					sinfo_found = 1;
-					break;
-				} else if (cmsg->cmsg_type == SCTP_EXTRCV) {
-					/*
-					 * Got it, presumably the user has
-					 * asked for this extra info, so the
-					 * structure holds more room :-D
-					 */
-					s_info = (struct sctp_sndrcvinfo *)CMSG_DATA(cmsg);
-					/* Copy it to the user */
-					if (sinfo) {
-						memcpy(sinfo, s_info, sizeof(struct sctp_extrcvinfo));
-					}
-					sinfo_found = 1;
-					break;
-
-				}
-			}
-			cmsg = CMSG_NXTHDR(&msg, cmsg);
+	auio.uio_iov = iov;
+	auio.uio_iovcnt = iovlen;
+	auio.uio_segflg = UIO_USERSPACE;
+	auio.uio_rw = UIO_READ;
+	auio.uio_offset = 0;			/* XXX */
+	auio.uio_resid = 0;
+	tiov = iov;
+	for (i = 0; i <iovlen; i++, tiov++) {
+		if ((auio.uio_resid += tiov->iov_len) < 0) {
+			error = EINVAL;
+			SCTP_PRINTF("%s: error = %d\n", __func__, error);
+			return (-1);
 		}
 	}
-	return (sz);
-#endif
+	ulen = auio.uio_resid;
+	error = sctp_sorecvmsg(so, &auio, (struct mbuf **)NULL,
+		    from, *fromlen, msg_flags,
+		    (struct sctp_sndrcvinfo *)&sinfo, 1);
+	if (error) {
+		if (auio.uio_resid != (int)ulen && (error == ERESTART ||
+		    error == EINTR || error == EWOULDBLOCK))
+			error = 0;
+		}
+	if (*infolen >= sizeof(struct sctp_rcvinfo)) {
+		rcv = malloc(sizeof(struct sctp_rcvinfo));
+		rcv->rcv_sid = sinfo.sinfo_stream;
+		rcv->rcv_ssn = sinfo.sinfo_ssn;
+		rcv->rcv_flags = sinfo.sinfo_flags;
+		rcv->rcv_ppid = sinfo.sinfo_ppid;
+		rcv->rcv_context = sinfo.sinfo_context;
+		rcv->rcv_tsn = sinfo.sinfo_tsn;
+		rcv->rcv_cumtsn = sinfo.sinfo_cumtsn;
+		rcv->rcv_assoc_id = sinfo.sinfo_assoc_id;
+		if (*infolen >= sizeof(struct sctp_recvv_rn)) {
+			nxt = malloc(sizeof(struct sctp_nxtinfo));
+			seinfo = (struct sctp_extrcvinfo *)&sinfo;
+			nxt->nxt_sid = seinfo->sreinfo_next_stream;
+			nxt->nxt_flags = seinfo->sreinfo_next_flags;
+			nxt->nxt_ppid = seinfo->sreinfo_next_ppid;
+			nxt->nxt_length = seinfo->sreinfo_next_length;
+			nxt->nxt_assoc_id = seinfo->sreinfo_next_aid;
+			rn = (struct sctp_recvv_rn *)info;
+			rn->recvv_rcvinfo = *rcv;
+			rn->recvv_nxtinfo = *nxt;
+			*infolen = (socklen_t)sizeof(struct sctp_recvv_rn);
+			*infotype = SCTP_RECVV_RN;
+		} else {
+			memcpy(info, rcv, sizeof(struct sctp_rcvinfo));
+			*infolen = (socklen_t)sizeof(struct sctp_rcvinfo);
+		  *infotype = SCTP_RECVV_RCVINFO;
+		}
+	}
+	if (error == 0) {
+		/* ready return value */
+		retval = (int)ulen - auio.uio_resid;
+		return (retval);
+	} else {
+		SCTP_PRINTF("%s: error = %d\n", __func__, error);
+		return (-1);
+	}
 }
+
 
 
 
@@ -1483,9 +1448,10 @@ userspace_socket(int domain, int type, int protocol)
 
 struct socket *
 usrsctp_socket(int domain, int type, int protocol,
-	int (*receive_cb)(struct socket *sock, struct sctp_queued_to_read* c),
-	int (*send_cb)(struct socket *sock, uint32_t sb_free),
-	uint32_t sb_threshold)
+	             int (*receive_cb)(struct socket *sock, union sctp_sockstore addr, void *data,
+                                 size_t datalen, struct sctp_rcvinfo, int flags),
+	             int (*send_cb)(struct socket *sock, uint32_t sb_free),
+	             uint32_t sb_threshold)
 {
 	struct socket *so = NULL;
 	int error;
@@ -1753,6 +1719,23 @@ userspace_bind(so, name, namelen)
 	return (error);
 }
 
+int
+usrsctp_bind(so, name, namelen)
+     struct socket *so;
+     struct sockaddr *name;
+     socklen_t	namelen;
+
+{
+	struct sockaddr *sa;
+	int error;
+
+	if ((error = getsockaddr(&sa, (caddr_t)name, namelen)) != 0)
+		return (error);
+
+	error = user_bind(so, sa);
+	FREE(sa, M_SONAME);
+	return (error);
+}
 
 
 /* Taken from  /src/sys/kern/uipc_socket.c
@@ -1802,6 +1785,19 @@ solisten_proto(struct socket *so, int backlog)
 
 int
 userspace_listen(so, backlog)
+     struct socket *so;
+     int backlog;
+
+{
+	int error;
+
+        error = solisten(so, backlog);
+
+	return(error);
+}
+
+int
+usrsctp_listen(so, backlog)
      struct socket *so;
      int backlog;
 
@@ -1938,8 +1934,9 @@ user_accept(struct socket *aso,  struct sockaddr **name, socklen_t *namelen, str
 		sa = NULL;
 	}
 noconnection:
-	if (sa)
+	if (sa) {
 		FREE(sa, M_SONAME);
+	}
 
 done:
         *ptr_accept_ret_sock = so;
@@ -2017,6 +2014,22 @@ userspace_accept(so, aname, anamelen)
 	}
 }
 
+struct socket *
+usrsctp_accept(so, aname, anamelen)
+	struct socket *so;
+	struct sockaddr *aname;
+	socklen_t * anamelen;
+{
+	int error;
+	struct socket *accept_return_sock;
+
+	error = accept1(so, aname, anamelen, &accept_return_sock);
+	if (error) {
+		return (NULL);
+	} else {
+		return (accept_return_sock);
+	}
+}
 
 
 int
@@ -2148,8 +2161,34 @@ int userspace_connect(so, name, namelen)
 
 }
 
+int usrsctp_connect(so, name, namelen)
+     struct socket *so;
+     struct sockaddr *name;
+     socklen_t namelen;
+{
+
+	struct sockaddr *sa;
+	int error;
+
+	error = getsockaddr(&sa, (caddr_t)name, namelen);
+	if (error)
+		return (error);
+
+	error = user_connect(so, sa);
+	FREE(sa, M_SONAME);
+	return (error);
+
+}
+
 void
 userspace_close(struct socket *so) {
+	ACCEPT_LOCK();
+	SOCK_LOCK(so);
+	sorele(so);
+}
+
+void
+usrsctp_close(struct socket *so) {
 	ACCEPT_LOCK();
 	SOCK_LOCK(so);
 	sorele(so);
@@ -2174,6 +2213,25 @@ userspace_shutdown(struct socket *so, int how)
 }
 
 int
+usrsctp_shutdown(struct socket *so, int how)
+{
+	int error;
+
+	if (!(how == SHUT_RD || how == SHUT_WR || how == SHUT_RDWR))
+		return (EINVAL);
+
+	sctp_flush(so, how);
+	if (how != SHUT_WR)
+		 socantrcvmore(so);
+	if (how != SHUT_RD) {
+		error = sctp_shutdown(so);
+		return (error);
+	}
+	return (0);
+}
+
+
+int
 userspace_finish(void)
 {
 
@@ -2189,11 +2247,36 @@ userspace_finish(void)
 	return (0);
 }
 
+int
+usrsctp_finish(void)
+{
+
+	if (SCTP_INP_INFO_TRYLOCK()) {
+		if (!LIST_EMPTY(&SCTP_BASE_INFO(listhead))) {
+			SCTP_INP_INFO_RUNLOCK();
+			return (-1);
+		}
+	} else {
+		return (-1);
+	}
+	sctp_finish();
+	return (0);
+}
+
+
 /* needed from sctp_usrreq.c */
 int
 sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize, void *p);
+
 int
 userspace_setsockopt(struct socket *so, int level, int option_name,
+                     const void *option_value, socklen_t option_len)
+{
+	return (sctp_setopt(so, option_name, (void *) option_value, option_len, NULL));
+}
+
+int
+usrsctp_setsockopt(struct socket *so, int level, int option_name,
                      const void *option_value, socklen_t option_len)
 {
 	return (sctp_setopt(so, option_name, (void *) option_value, option_len, NULL));
@@ -2203,8 +2286,16 @@ userspace_setsockopt(struct socket *so, int level, int option_name,
 int
 sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 	    void *p);
+
 int
 userspace_getsockopt(struct socket *so, int level, int option_name,
+                     void *option_value, socklen_t *option_len)
+{
+	return (sctp_getopt(so, option_name, option_value, (size_t*)option_len, NULL));
+}
+
+int
+usrsctp_getsockopt(struct socket *so, int level, int option_name,
                      void *option_value, socklen_t option_len)
 {
 	return (sctp_getopt(so, option_name, option_value, (size_t*)&option_len, NULL));
@@ -2245,7 +2336,7 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	len = sizeof(struct ip);
 	if (SCTP_BUF_LEN(m) < len) {
 		if ((m = m_pullup(m, len)) == 0) {
-			printf("Can not get the IP header in the first mbuf.\n");
+			SCTP_PRINTF("Can not get the IP header in the first mbuf.\n");
 			return;
 		}
 	}
@@ -2256,7 +2347,7 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 		len = sizeof(struct ip) + sizeof(struct udphdr);
 		if (SCTP_BUF_LEN(m) < len) {
 			if ((m = m_pullup(m, len)) == 0) {
-				printf("Can not get the UDP/IP header in the first mbuf.\n");
+				SCTP_PRINTF("Can not get the UDP/IP header in the first mbuf.\n");
 				return;
 			}
 			ip = mtod(m, struct ip *);
@@ -2267,7 +2358,7 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	if (!use_udp_tunneling) {
 		if (ip->ip_src.s_addr == INADDR_ANY) {
 			/* TODO get addr of outgoing interface */
-			printf("Why did the SCTP implementation did not choose a source address?\n");
+			SCTP_PRINTF("Why did the SCTP implementation did not choose a source address?\n");
 		}
 		/* TODO need to worry about ro->ro_dst as in ip_output? */
 #if defined(__Userspace_os_Linux) || defined (__Userspace_os_Windows)
@@ -2310,7 +2401,7 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	}
 
 	if (m != NULL) {
-		printf("mbuf chain couldn't be copied completely\n");
+		SCTP_PRINTF("mbuf chain couldn't be copied completely\n");
 		goto free_mbuf;
 	}
 
@@ -2398,7 +2489,7 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 
 	if (SCTP_BUF_LEN(m) < len) {
 		if ((m = m_pullup(m, len)) == 0) {
-			printf("Can not get the IP header in the first mbuf.\n");
+			SCTP_PRINTF("Can not get the IP header in the first mbuf.\n");
 			return;
 		}
 	}
@@ -2410,7 +2501,7 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 		len = sizeof(struct ip6_hdr) + sizeof(struct udphdr);
 		if (SCTP_BUF_LEN(m) < len) {
 			if ((m = m_pullup(m, len)) == 0) {
-				printf("Can not get the UDP/IP header in the first mbuf.\n");
+				SCTP_PRINTF("Can not get the UDP/IP header in the first mbuf.\n");
 				return;
 			}
 			ip6 = mtod(m, struct ip6_hdr *);
@@ -2421,7 +2512,7 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	if (!use_udp_tunneling) {
 		if (ip6->ip6_src.s6_addr == in6addr_any.s6_addr) {
 			/* TODO get addr of outgoing interface */
-			printf("Why did the SCTP implementation did not choose a source address?\n");
+			SCTP_PRINTF("Why did the SCTP implementation did not choose a source address?\n");
 		}
 		/* TODO need to worry about ro->ro_dst as in ip_output? */
 #if defined(__Userspace_os_Linux) || defined (__Userspace_os_Windows)
@@ -2464,7 +2555,7 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 #endif
 	}
 	if (m != NULL) {
-		printf("mbuf chain couldn't be copied completely\n");
+		SCTP_PRINTF("mbuf chain couldn't be copied completely\n");
 		goto free_mbuf;
 	}
 
@@ -2516,3 +2607,156 @@ free_mbuf:
 	sctp_m_freem(m_orig);
 }
 #endif
+
+#define USRSCTP_SYSCTL_SET_DEF(__field) \
+void usrsctp_sysctl_set_ ## __field(uint32_t value) { \
+	SCTP_BASE_SYSCTL(__field) = value; \
+}
+
+USRSCTP_SYSCTL_SET_DEF(sctp_sendspace)
+USRSCTP_SYSCTL_SET_DEF(sctp_recvspace)
+USRSCTP_SYSCTL_SET_DEF(sctp_auto_asconf)
+USRSCTP_SYSCTL_SET_DEF(sctp_multiple_asconfs)
+USRSCTP_SYSCTL_SET_DEF(sctp_ecn_enable)
+USRSCTP_SYSCTL_SET_DEF(sctp_strict_sacks)
+USRSCTP_SYSCTL_SET_DEF(sctp_no_csum_on_loopback)
+USRSCTP_SYSCTL_SET_DEF(sctp_peer_chunk_oh)
+USRSCTP_SYSCTL_SET_DEF(sctp_max_burst_default)
+USRSCTP_SYSCTL_SET_DEF(sctp_max_chunks_on_queue)
+USRSCTP_SYSCTL_SET_DEF(sctp_hashtblsize)
+USRSCTP_SYSCTL_SET_DEF(sctp_pcbtblsize)
+USRSCTP_SYSCTL_SET_DEF(sctp_min_split_point)
+USRSCTP_SYSCTL_SET_DEF(sctp_chunkscale)
+USRSCTP_SYSCTL_SET_DEF(sctp_delayed_sack_time_default)
+USRSCTP_SYSCTL_SET_DEF(sctp_sack_freq_default)
+USRSCTP_SYSCTL_SET_DEF(sctp_system_free_resc_limit)
+USRSCTP_SYSCTL_SET_DEF(sctp_asoc_free_resc_limit)
+USRSCTP_SYSCTL_SET_DEF(sctp_heartbeat_interval_default)
+USRSCTP_SYSCTL_SET_DEF(sctp_pmtu_raise_time_default)
+USRSCTP_SYSCTL_SET_DEF(sctp_shutdown_guard_time_default)
+USRSCTP_SYSCTL_SET_DEF(sctp_secret_lifetime_default)
+USRSCTP_SYSCTL_SET_DEF(sctp_rto_max_default)
+USRSCTP_SYSCTL_SET_DEF(sctp_rto_min_default)
+USRSCTP_SYSCTL_SET_DEF(sctp_rto_initial_default)
+USRSCTP_SYSCTL_SET_DEF(sctp_init_rto_max_default)
+USRSCTP_SYSCTL_SET_DEF(sctp_valid_cookie_life_default)
+USRSCTP_SYSCTL_SET_DEF(sctp_init_rtx_max_default)
+USRSCTP_SYSCTL_SET_DEF(sctp_assoc_rtx_max_default)
+USRSCTP_SYSCTL_SET_DEF(sctp_path_rtx_max_default)
+USRSCTP_SYSCTL_SET_DEF(sctp_add_more_threshold)
+USRSCTP_SYSCTL_SET_DEF(sctp_nr_outgoing_streams_default)
+USRSCTP_SYSCTL_SET_DEF(sctp_cmt_on_off)
+USRSCTP_SYSCTL_SET_DEF(sctp_cmt_use_dac)
+USRSCTP_SYSCTL_SET_DEF(sctp_nr_sack_on_off)
+USRSCTP_SYSCTL_SET_DEF(sctp_use_cwnd_based_maxburst)
+USRSCTP_SYSCTL_SET_DEF(sctp_asconf_auth_nochk)
+USRSCTP_SYSCTL_SET_DEF(sctp_auth_disable)
+USRSCTP_SYSCTL_SET_DEF(sctp_nat_friendly)
+USRSCTP_SYSCTL_SET_DEF(sctp_L2_abc_variable)
+USRSCTP_SYSCTL_SET_DEF(sctp_mbuf_threshold_count)
+USRSCTP_SYSCTL_SET_DEF(sctp_do_drain)
+USRSCTP_SYSCTL_SET_DEF(sctp_hb_maxburst)
+USRSCTP_SYSCTL_SET_DEF(sctp_abort_if_one_2_one_hits_limit)
+USRSCTP_SYSCTL_SET_DEF(sctp_strict_data_order)
+USRSCTP_SYSCTL_SET_DEF(sctp_min_residual)
+USRSCTP_SYSCTL_SET_DEF(sctp_max_retran_chunk)
+USRSCTP_SYSCTL_SET_DEF(sctp_logging_level)
+USRSCTP_SYSCTL_SET_DEF(sctp_default_cc_module)
+USRSCTP_SYSCTL_SET_DEF(sctp_default_frag_interleave)
+USRSCTP_SYSCTL_SET_DEF(sctp_mobility_base)
+USRSCTP_SYSCTL_SET_DEF(sctp_mobility_fasthandoff)
+USRSCTP_SYSCTL_SET_DEF(sctp_inits_include_nat_friendly)
+USRSCTP_SYSCTL_SET_DEF(sctp_udp_tunneling_port)
+USRSCTP_SYSCTL_SET_DEF(sctp_enable_sack_immediately)
+USRSCTP_SYSCTL_SET_DEF(sctp_vtag_time_wait)
+USRSCTP_SYSCTL_SET_DEF(sctp_blackhole)
+USRSCTP_SYSCTL_SET_DEF(sctp_fr_max_burst_default)
+USRSCTP_SYSCTL_SET_DEF(sctp_path_pf_threshold)
+USRSCTP_SYSCTL_SET_DEF(sctp_default_ss_module)
+USRSCTP_SYSCTL_SET_DEF(sctp_rttvar_bw)
+USRSCTP_SYSCTL_SET_DEF(sctp_rttvar_rtt)
+USRSCTP_SYSCTL_SET_DEF(sctp_rttvar_eqret)
+USRSCTP_SYSCTL_SET_DEF(sctp_steady_step)
+USRSCTP_SYSCTL_SET_DEF(sctp_use_dccc_ecn)
+USRSCTP_SYSCTL_SET_DEF(sctp_buffer_splitting)
+USRSCTP_SYSCTL_SET_DEF(sctp_initial_cwnd)
+#ifdef SCTP_DEBUG
+USRSCTP_SYSCTL_SET_DEF(sctp_debug_on)
+#endif
+
+#define USRSCTP_SYSCTL_GET_DEF(__field) \
+uint32_t usrsctp_sysctl_get_ ## __field(void) { \
+	return SCTP_BASE_SYSCTL(__field); \
+}
+
+USRSCTP_SYSCTL_GET_DEF(sctp_sendspace)
+USRSCTP_SYSCTL_GET_DEF(sctp_recvspace)
+USRSCTP_SYSCTL_GET_DEF(sctp_auto_asconf)
+USRSCTP_SYSCTL_GET_DEF(sctp_multiple_asconfs)
+USRSCTP_SYSCTL_GET_DEF(sctp_ecn_enable)
+USRSCTP_SYSCTL_GET_DEF(sctp_strict_sacks)
+USRSCTP_SYSCTL_GET_DEF(sctp_no_csum_on_loopback)
+USRSCTP_SYSCTL_GET_DEF(sctp_peer_chunk_oh)
+USRSCTP_SYSCTL_GET_DEF(sctp_max_burst_default)
+USRSCTP_SYSCTL_GET_DEF(sctp_max_chunks_on_queue)
+USRSCTP_SYSCTL_GET_DEF(sctp_hashtblsize)
+USRSCTP_SYSCTL_GET_DEF(sctp_pcbtblsize)
+USRSCTP_SYSCTL_GET_DEF(sctp_min_split_point)
+USRSCTP_SYSCTL_GET_DEF(sctp_chunkscale)
+USRSCTP_SYSCTL_GET_DEF(sctp_delayed_sack_time_default)
+USRSCTP_SYSCTL_GET_DEF(sctp_sack_freq_default)
+USRSCTP_SYSCTL_GET_DEF(sctp_system_free_resc_limit)
+USRSCTP_SYSCTL_GET_DEF(sctp_asoc_free_resc_limit)
+USRSCTP_SYSCTL_GET_DEF(sctp_heartbeat_interval_default)
+USRSCTP_SYSCTL_GET_DEF(sctp_pmtu_raise_time_default)
+USRSCTP_SYSCTL_GET_DEF(sctp_shutdown_guard_time_default)
+USRSCTP_SYSCTL_GET_DEF(sctp_secret_lifetime_default)
+USRSCTP_SYSCTL_GET_DEF(sctp_rto_max_default)
+USRSCTP_SYSCTL_GET_DEF(sctp_rto_min_default)
+USRSCTP_SYSCTL_GET_DEF(sctp_rto_initial_default)
+USRSCTP_SYSCTL_GET_DEF(sctp_init_rto_max_default)
+USRSCTP_SYSCTL_GET_DEF(sctp_valid_cookie_life_default)
+USRSCTP_SYSCTL_GET_DEF(sctp_init_rtx_max_default)
+USRSCTP_SYSCTL_GET_DEF(sctp_assoc_rtx_max_default)
+USRSCTP_SYSCTL_GET_DEF(sctp_path_rtx_max_default)
+USRSCTP_SYSCTL_GET_DEF(sctp_add_more_threshold)
+USRSCTP_SYSCTL_GET_DEF(sctp_nr_outgoing_streams_default)
+USRSCTP_SYSCTL_GET_DEF(sctp_cmt_on_off)
+USRSCTP_SYSCTL_GET_DEF(sctp_cmt_use_dac)
+USRSCTP_SYSCTL_GET_DEF(sctp_nr_sack_on_off)
+USRSCTP_SYSCTL_GET_DEF(sctp_use_cwnd_based_maxburst)
+USRSCTP_SYSCTL_GET_DEF(sctp_asconf_auth_nochk)
+USRSCTP_SYSCTL_GET_DEF(sctp_auth_disable)
+USRSCTP_SYSCTL_GET_DEF(sctp_nat_friendly)
+USRSCTP_SYSCTL_GET_DEF(sctp_L2_abc_variable)
+USRSCTP_SYSCTL_GET_DEF(sctp_mbuf_threshold_count)
+USRSCTP_SYSCTL_GET_DEF(sctp_do_drain)
+USRSCTP_SYSCTL_GET_DEF(sctp_hb_maxburst)
+USRSCTP_SYSCTL_GET_DEF(sctp_abort_if_one_2_one_hits_limit)
+USRSCTP_SYSCTL_GET_DEF(sctp_strict_data_order)
+USRSCTP_SYSCTL_GET_DEF(sctp_min_residual)
+USRSCTP_SYSCTL_GET_DEF(sctp_max_retran_chunk)
+USRSCTP_SYSCTL_GET_DEF(sctp_logging_level)
+USRSCTP_SYSCTL_GET_DEF(sctp_default_cc_module)
+USRSCTP_SYSCTL_GET_DEF(sctp_default_frag_interleave)
+USRSCTP_SYSCTL_GET_DEF(sctp_mobility_base)
+USRSCTP_SYSCTL_GET_DEF(sctp_mobility_fasthandoff)
+USRSCTP_SYSCTL_GET_DEF(sctp_inits_include_nat_friendly)
+USRSCTP_SYSCTL_GET_DEF(sctp_udp_tunneling_port)
+USRSCTP_SYSCTL_GET_DEF(sctp_enable_sack_immediately)
+USRSCTP_SYSCTL_GET_DEF(sctp_vtag_time_wait)
+USRSCTP_SYSCTL_GET_DEF(sctp_blackhole)
+USRSCTP_SYSCTL_GET_DEF(sctp_fr_max_burst_default)
+USRSCTP_SYSCTL_GET_DEF(sctp_path_pf_threshold)
+USRSCTP_SYSCTL_GET_DEF(sctp_default_ss_module)
+USRSCTP_SYSCTL_GET_DEF(sctp_rttvar_bw)
+USRSCTP_SYSCTL_GET_DEF(sctp_rttvar_rtt)
+USRSCTP_SYSCTL_GET_DEF(sctp_rttvar_eqret)
+USRSCTP_SYSCTL_GET_DEF(sctp_steady_step)
+USRSCTP_SYSCTL_GET_DEF(sctp_use_dccc_ecn)
+USRSCTP_SYSCTL_GET_DEF(sctp_buffer_splitting)
+USRSCTP_SYSCTL_GET_DEF(sctp_initial_cwnd)
+#ifdef SCTP_DEBUG
+USRSCTP_SYSCTL_GET_DEF(sctp_debug_on)
+#endif
+
