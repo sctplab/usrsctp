@@ -96,7 +96,6 @@ sctp_handle_ifamsg(unsigned char type, unsigned short index, struct sockaddr *sa
 
 	rc = getifaddrs(&g_interfaces);
 	if (rc != 0) {
-		printf("getifaddrs failed\n");
 		return;
 	}
 	for (ifa = g_interfaces; ifa; ifa = ifa->ifa_next) {
@@ -106,8 +105,6 @@ sctp_handle_ifamsg(unsigned char type, unsigned short index, struct sockaddr *sa
 		}
 	}
 	if (found_ifa == NULL) {
-		/* TSNH */
-		printf("ifa not found?!\n");
 		return;
 	}
 
@@ -125,7 +122,7 @@ sctp_handle_ifamsg(unsigned char type, unsigned short index, struct sockaddr *sa
 		break;
 #endif
 	default:
-		printf("Address family not supported\n");
+		SCTPDBG(SCTP_DEBUG_USR, "Address family %d not supported.\n", sa->sa_family);
 	}
 
 	/* relay the appropriate address change to the base code */
@@ -256,7 +253,7 @@ recv_function_route(void *arg)
 						break;
 #endif
 					default:
-						printf("Address family not supported\n");
+						SCTPDBG(SCTP_DEBUG_USR, "Address family %d not supported.\n", sa->sa_family);
 						break;
 					}
 				}
@@ -358,8 +355,8 @@ recv_function_raw(void *arg)
 			} while (ncounter > 0);
 		}
 		assert(to_fill <= MAXLEN_MBUF_CHAIN);
-		SCTPDBG(SCTP_DEBUG_INPUT1, "%s: Received %d bytes.", __func__, n);
-		SCTPDBG(SCTP_DEBUG_INPUT1, " - calling sctp_input with off=%d\n", (int)sizeof(struct ip));
+		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
+		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_input with off=%d\n", (int)sizeof(struct ip));
 
 		/* process incoming data */
 		/* sctp_input frees this mbuf. */
@@ -528,8 +525,8 @@ recv_function_raw6(void *arg)
 		SCTP_BUF_NEXT(ip6_m) = recvmbuf6[0];
 		/* process incoming data */
 		/* sctp_input frees this mbuf. */
-		SCTPDBG(SCTP_DEBUG_INPUT1, "%s: Received %d bytes.", __func__, n);
-		SCTPDBG(SCTP_DEBUG_INPUT1, " - calling sctp6_input with off=%d\n", (int)sizeof(struct ip6_hdr));
+		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
+		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp6_input with off=%d\n", (int)sizeof(struct ip6_hdr));
 
 		offset = sizeof(struct ip6_hdr);
 		sctp6_input_with_port(&ip6_m, &offset, 0);
@@ -708,8 +705,8 @@ recv_function_udp(void *arg)
 		SCTP_BUF_LEN(ip_m) = sizeof(struct ip);
 		SCTP_BUF_NEXT(ip_m) = udprecvmbuf[0];
 
-		SCTPDBG(SCTP_DEBUG_INPUT1, "%s: Received %d bytes.", __func__, n);
-		SCTPDBG(SCTP_DEBUG_INPUT1, " - calling sctp_input with off=%d\n", (int)sizeof(struct ip));
+		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
+		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_input with off=%d\n", (int)sizeof(struct ip));
 
 		/* process incoming data */
 		/* sctp_input frees this mbuf. */
@@ -884,8 +881,8 @@ recv_function_udp6(void *arg)
 		SCTP_BUF_LEN(ip6_m) = sizeof(struct ip6_hdr);
 		SCTP_BUF_NEXT(ip6_m) = udprecvmbuf6[0];
 
-		SCTPDBG(SCTP_DEBUG_INPUT1, "%s: Received %d bytes.", __func__, n);
-		SCTPDBG(SCTP_DEBUG_INPUT1, " - calling sctp_input with off=%d\n", (int)sizeof(struct ip));
+		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
+		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_input with off=%d\n", (int)sizeof(struct ip));
 
 		/* process incoming data */
 		/* sctp_input frees this mbuf. */
@@ -1208,7 +1205,7 @@ recv_thread_init(void)
 		int rc;
 
 		if ((rc = pthread_create(&SCTP_BASE_VAR(recvthreadroute), NULL, &recv_function_route, NULL))) {
-			printf("Can't start routing thread (%d).\n", rc);
+			SCTPDBG(SCTP_DEBUG_USR, "Can't start routing thread (%d).\n", rc);
 			close(SCTP_BASE_VAR(userspace_route));
 			SCTP_BASE_VAR(userspace_route) = -1;
 		}
@@ -1219,7 +1216,7 @@ recv_thread_init(void)
 		int rc;
 
 		if ((rc = pthread_create(&SCTP_BASE_VAR(recvthreadraw), NULL, &recv_function_raw, NULL))) {
-			printf("ERROR; return code from recvthread pthread_create() is %d\n", rc);
+			SCTPDBG(SCTP_DEBUG_USR, "Can't start SCTP/IPv4 recv thread (%d).\n", rc);
 			close(SCTP_BASE_VAR(userspace_rawsctp));
 			SCTP_BASE_VAR(userspace_rawsctp) = -1;
 		}
@@ -1228,7 +1225,7 @@ recv_thread_init(void)
 		int rc;
 
 		if ((rc = pthread_create(&SCTP_BASE_VAR(recvthreadudp), NULL, &recv_function_udp, NULL))) {
-			printf("ERROR; return code from recvthread pthread_create() is %d\n", rc);
+			SCTPDBG(SCTP_DEBUG_USR, "Can't start SCTP/UDP/IPv4 recv thread (%d).\n", rc);
 			close(SCTP_BASE_VAR(userspace_udpsctp));
 			SCTP_BASE_VAR(userspace_udpsctp) = -1;
 		}
@@ -1239,7 +1236,7 @@ recv_thread_init(void)
 		int rc;
 
 		if ((rc = pthread_create(&SCTP_BASE_VAR(recvthreadraw6), NULL, &recv_function_raw6, NULL))) {
-			printf("ERROR; return code from recvthread pthread_create() is %d\n", rc);
+			SCTPDBG(SCTP_DEBUG_USR, "Can't start SCTP/IPv6 recv thread (%d).\n", rc);
 			close(SCTP_BASE_VAR(userspace_rawsctp6));
 			SCTP_BASE_VAR(userspace_rawsctp6) = -1;
 		}
@@ -1248,7 +1245,7 @@ recv_thread_init(void)
 		int rc;
 
 		if ((rc = pthread_create(&SCTP_BASE_VAR(recvthreadudp6), NULL, &recv_function_udp6, NULL))) {
-			printf("ERROR; return code from recvthread pthread_create() is %d\n", rc);
+			SCTPDBG(SCTP_DEBUG_USR, "Can't start SCTP/UDP/IPv6 recv thread (%d).\n", rc);
 			close(SCTP_BASE_VAR(userspace_udpsctp6));
 			SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 		}
@@ -1258,14 +1255,14 @@ recv_thread_init(void)
 #if defined(INET)
 	if (SCTP_BASE_VAR(userspace_rawsctp) != -1) {
 		if ((SCTP_BASE_VAR(recvthreadraw) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_raw, NULL, 0, NULL)) == NULL) {
-			printf("ERROR; Creating recvthreadraw failed\n");
+			SCTPDBG(SCTP_DEBUG_USR, "Can't start SCTP/IPv4 recv thread.\n");
 			closesocket(SCTP_BASE_VAR(userspace_rawsctp));
 			SCTP_BASE_VAR(userspace_rawsctp) = -1;
 		}
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp) != -1) {
-		if ((SCTP_BASE_VAR(recvthreadudp) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_udp, NULL, 0, NULL))==NULL) {
-			printf("ERROR; Creating recvthreadudp failed\n");
+		if ((SCTP_BASE_VAR(recvthreadudp) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_udp, NULL, 0, NULL)) == NULL) {
+			SCTPDBG(SCTP_DEBUG_USR, "Can't start SCTP/UDP/IPv4 recv thread.\n");
 			closesocket(SCTP_BASE_VAR(userspace_udpsctp));
 			SCTP_BASE_VAR(userspace_udpsctp) = -1;
 		}
@@ -1273,15 +1270,15 @@ recv_thread_init(void)
 #endif
 #if defined(INET6)
 	if (SCTP_BASE_VAR(userspace_rawsctp6) != -1) {
-		if ((SCTP_BASE_VAR(recvthreadraw6) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_raw6, NULL, 0, NULL))==NULL) {
-			printf("ERROR; Creating recvthreadraw6 failed\n");
+		if ((SCTP_BASE_VAR(recvthreadraw6) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_raw6, NULL, 0, NULL)) == NULL) {
+			SCTPDBG(SCTP_DEBUG_USR, "Can't start SCTP/IPv6 recv thread.\n");
 			closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
 			SCTP_BASE_VAR(userspace_rawsctp6) = -1;
 		}
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp6) != -1) {
-		if ((SCTP_BASE_VAR(recvthreadudp6) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_udp6, NULL, 0, NULL))==NULL) {
-			printf("ERROR; Creating recvthreadudp6 failed\n");
+		if ((SCTP_BASE_VAR(recvthreadudp6) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&recv_function_udp6, NULL, 0, NULL)) == NULL) {
+			SCTPDBG(SCTP_DEBUG_USR, "Can't start SCTP/UDP/IPv6 recv thread.\n");
 			closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
 			SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 		}
