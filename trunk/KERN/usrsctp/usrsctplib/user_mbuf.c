@@ -15,6 +15,7 @@
 #include "user_mbuf.h"
 #include "user_environment.h"
 #include "user_atomic.h"
+#include "netinet/sctp_pcb.h"
 
 struct mbstat mbstat;
 #define KIPC_MAX_LINKHDR        4       /* int: max length of link header (see sys/sysclt.h) */
@@ -206,7 +207,6 @@ static int clust_constructor_dup(caddr_t m_clust, struct mbuf* m)
 	refcnt = SCTP_ZONE_GET(zone_ext_refcnt, u_int);
 	/*refcnt = (u_int *)umem_cache_alloc(zone_ext_refcnt, UMEM_DEFAULT);*/
 	if (refcnt == NULL) {
-		printf("calling reap in %s\n", __func__);
 #if !defined(SCTP_SIMPLE_ALLOCATOR)
 		umem_reap();
 #endif
@@ -236,8 +236,10 @@ void
 m_clget(struct mbuf *m, int how)
 {
 	caddr_t mclust_ret;
-	if (m->m_flags & M_EXT)
-		printf("%s: %p mbuf already has cluster\n", __func__, m);
+
+	if (m->m_flags & M_EXT) {
+		SCTPDBG(SCTP_DEBUG_USR, "%s: %p mbuf already has cluster\n", __func__, m);
+	}
 	m->m_ext.ext_buf = (char *)NULL;
 #if USING_MBUF_CONSTRUCTOR
 	set_clust_mb_args(m);
@@ -252,8 +254,6 @@ m_clget(struct mbuf *m, int how)
 	 */
 
 	if ((mclust_ret == NULL)) {
-		printf("calling reap in %s\n", __func__);
-
 #if !defined(SCTP_SIMPLE_ALLOCATOR)
 	/*	mclust_ret = SCTP_ZONE_GET(zone_clust, char);
 		mb_ctor_clust(mclust_ret, &clust_mb_args, 0);
@@ -262,9 +262,8 @@ m_clget(struct mbuf *m, int how)
 		mclust_ret = SCTP_ZONE_GET(zone_clust, char);
 #endif
 		/*mclust_ret = umem_cache_alloc(zone_clust, UMEM_DEFAULT);*/
-		if(NULL == mclust_ret)
-		{
-			printf("Memory allocation failure in %s\n", __func__);
+		if(NULL == mclust_ret) {
+			SCTPDBG(SCTP_DEBUG_USR, "Memory allocation failure in %s\n", __func__);
 			exit(1);
 		}
 	}
@@ -593,11 +592,11 @@ m_tag_delete_chain(struct mbuf *m, struct m_tag *t)
 static void
 sctp_print_mbuf_chain(struct mbuf *m)
 {
-	printf("Printing mbuf chain %p.\n", m);
+	SCTP_DEBUG_USR(SCTP_DEBUG_USR, "Printing mbuf chain %p.\n", m);
 	for(; m; m=m->m_next) {
-		printf("%p: m_len = %ld, m_type = %x, m_next = %p.\n", m, m->m_len, m->m_type, m->m_next);
+		SCTP_DEBUG_USR(SCTP_DEBUG_USR, "%p: m_len = %ld, m_type = %x, m_next = %p.\n", m, m->m_len, m->m_type, m->m_next);
 		if (m->m_flags & M_EXT)
-			printf("%p: extend_size = %d, extend_buffer = %p, ref_cnt = %d.\n", m, m->m_ext.ext_size, m->m_ext.ext_buf, *(m->m_ext.ref_cnt));
+			SCTP_DEBUG_USR(SCTP_DEBUG_USR, "%p: extend_size = %d, extend_buffer = %p, ref_cnt = %d.\n", m, m->m_ext.ext_size, m->m_ext.ext_buf, *(m->m_ext.ref_cnt));
 	}
 }
 #endif
@@ -819,10 +818,10 @@ m_pulldown(struct mbuf *m, int off, int len, int *offp)
 #ifdef PULLDOWN_DEBUG
 	{
 		struct mbuf *t;
-		printf("before:");
+		SCTP_DEBUG_USR(SCTP_DEBUG_USR, "before:");
 		for (t = m; t; t = t->m_next)
-			printf(" %d", t->m_len);
-		printf("\n");
+			SCTP_DEBUG_USR(SCTP_DEBUG_USR, " %d", t->m_len);
+		SCTP_DEBUG_USR(SCTP_DEBUG_USR, "\n");
 	}
 #endif
 	n = m;
@@ -943,10 +942,10 @@ ok:
 #ifdef PULLDOWN_DEBUG
 	{
 		struct mbuf *t;
-		printf("after:");
+		SCTP_DEBUG_USR(SCTP_DEBUG_USR, "after:");
 		for (t = m; t; t = t->m_next)
-			printf("%c%d", t == n ? '*' : ' ', t->m_len);
-		printf(" (off=%d)\n", off);
+			SCTP_DEBUG_USR(SCTP_DEBUG_USR, "%c%d", t == n ? '*' : ' ', t->m_len);
+		SCTP_DEBUG_USR(SCTP_DEBUG_USR, " (off=%d)\n", off);
 	}
 #endif
 	if (offp)
@@ -966,9 +965,9 @@ mb_dupcl(struct mbuf *n, struct mbuf *m)
 	assert((n->m_flags & M_EXT) == 0);
 
 	if (*(m->m_ext.ref_cnt) == 1)
-            *(m->m_ext.ref_cnt) += 1;
+		*(m->m_ext.ref_cnt) += 1;
 	else
-            atomic_add_int(m->m_ext.ref_cnt, 1);
+		atomic_add_int(m->m_ext.ref_cnt, 1);
 	n->m_ext.ext_buf = m->m_ext.ext_buf;
 	n->m_ext.ext_free = m->m_ext.ext_free;
 	n->m_ext.ext_args = m->m_ext.ext_args;
