@@ -1435,8 +1435,7 @@ userspace_socket(int domain, int type, int protocol)
 
 	error = socreate(domain, &so, type, protocol);
 	if (error) {
-		perror("In user_socket(): socreate failed\n");
-		exit(1);
+		return (NULL);
 	}
 	/*
 	 * The original socket call returns the file descriptor fd.
