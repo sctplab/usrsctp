@@ -14,12 +14,12 @@
 
 /* maxsockets is used in SCTP_ZONE_INIT call. It refers to
  * kern.ipc.maxsockets kernel environment variable.
- */ 
+ */
 extern int maxsockets;
 
 /* int hz; is declared in sys/kern/subr_param.c and refers to kernel timer frequency.
  * See http://ivoras.sharanet.org/freebsd/vmware.html for additional info about kern.hz
- * hz is initialized in void init_param1(void) in that file. 
+ * hz is initialized in void init_param1(void) in that file.
  */
 extern int hz;
 
@@ -61,10 +61,14 @@ extern u_short ip_id;
 #include <assert.h>
 #define KASSERT(exp,msg) assert(exp)
 
-#define panic(arg1)	do { 					\
-                            perror(arg1);                       \
-                            exit(1);                            \
+#if defined(INVARIANTS)
+#define panic(arg1) \
+	do { \
+		perror(arg1);\
+		exit(1);\
 } while (0)
+#endif
+
 /* necessary for sctp_pcb.c */
 extern int ip_defttl;
 
