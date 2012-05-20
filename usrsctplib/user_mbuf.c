@@ -253,7 +253,7 @@ m_clget(struct mbuf *m, int how)
 	 On a cluster allocation failure, call umem_reap() and retry.
 	 */
 
-	if ((mclust_ret == NULL)) {
+	if (mclust_ret == NULL) {
 #if !defined(SCTP_SIMPLE_ALLOCATOR)
 	/*	mclust_ret = SCTP_ZONE_GET(zone_clust, char);
 		mb_ctor_clust(mclust_ret, &clust_mb_args, 0);
@@ -262,9 +262,8 @@ m_clget(struct mbuf *m, int how)
 		mclust_ret = SCTP_ZONE_GET(zone_clust, char);
 #endif
 		/*mclust_ret = umem_cache_alloc(zone_clust, UMEM_DEFAULT);*/
-		if(NULL == mclust_ret) {
+		if (NULL == mclust_ret) {
 			SCTPDBG(SCTP_DEBUG_USR, "Memory allocation failure in %s\n", __func__);
-			exit(1);
 		}
 	}
 
