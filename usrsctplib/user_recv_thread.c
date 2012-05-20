@@ -902,27 +902,26 @@ recv_function_udp6(void *arg)
 }
 #endif
 
-static int
+static void
 setReceiveBufferSize(int sfd, int new_size)
 {
 	int ch = new_size;
+
 	if (setsockopt (sfd, SOL_SOCKET, SO_RCVBUF, (void*)&ch, sizeof(ch)) < 0) {
-		perror("setReceiveBufferSize setsockopt: SO_RCVBUF failed !\n");
-		exit(1);
+		SCTPDBG(SCTP_DEBUG_USR, "Can't set recv-buffers size (errno = %d).\n", errno);
 	}
-	return 0;
+	return;
 }
 
-static int
+static void
 setSendBufferSize(int sfd, int new_size)
 {
 	int ch = new_size;
 
 	if (setsockopt (sfd, SOL_SOCKET, SO_SNDBUF, (void*)&ch, sizeof(ch)) < 0) {
-		perror("setSendBufferSize setsockopt: SO_RCVBUF failed !\n");
-		exit(1);
+		SCTPDBG(SCTP_DEBUG_USR, "Can't set recv-buffers size (errno = %d).\n", errno);
 	}
-	return 0;
+	return;
 }
 
 #define SOCKET_TIMEOUT 100 /* in ms */
@@ -951,13 +950,13 @@ recv_thread_init(void)
 	if (SCTP_BASE_VAR(userspace_route) == -1) {
 #if !defined(__Userspace_os_Linux)
 		if ((SCTP_BASE_VAR(userspace_route) = socket(AF_ROUTE, SOCK_RAW, 0)) < 0) {
-			perror("routing socket failure\n");
+			SCTPDBG(SCTP_DEBUG_USR, "Can't create routing socket (errno = %d).\n", errno);
 		}
 #else
 		struct sockaddr_nl sanl;
 
 		if ((SCTP_BASE_VAR(userspace_route) = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE)) < 0) {
-			perror("routing socket failure\n");
+			SCTPDBG(SCTP_DEBUG_USR, "Can't create routing socket (errno = %d.\n", errno);
 		}
 		memset(&sanl, 0, sizeof(sanl));
 		sanl.nl_family = AF_NETLINK;
@@ -969,14 +968,14 @@ recv_thread_init(void)
 		sanl.nl_groups |= RTMGRP_IPV6_IFADDR;
 #endif
 		if (bind(SCTP_BASE_VAR(userspace_route), (struct sockaddr *) &sanl, sizeof(sanl)) < 0) {
-			perror("bind");
+			SCTPDBG(SCTP_DEBUG_USR, "Can't bind routing socket (errno = %d).\n", errno);
 			close(SCTP_BASE_VAR(userspace_route));
 			SCTP_BASE_VAR(userspace_route) = -1;
 		}
 #endif
 		if (SCTP_BASE_VAR(userspace_route) != -1) {
 			if (setsockopt(SCTP_BASE_VAR(userspace_route), SOL_SOCKET, SO_RCVTIMEO,(const void*)&timeout, sizeof(struct timeval)) < 0) {
-				perror("routing setsockopt failure\n");
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on routing socket (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
 				closesocket(SCTP_BASE_VAR(userspace_route));
 #else
@@ -990,11 +989,11 @@ recv_thread_init(void)
 #if defined(INET)
 	if (SCTP_BASE_VAR(userspace_rawsctp) == -1) {
 		if ((SCTP_BASE_VAR(userspace_rawsctp) = socket(AF_INET, SOCK_RAW, IPPROTO_SCTP)) < 0) {
-			perror("raw socket failure. continue with only UDP socket...\n");
+			SCTPDBG(SCTP_DEBUG_USR, "Can't create raw socket for IPv4 (errno = %d).\n", errno);
 		} else {
 			/* complete setting up the raw SCTP socket */
 			if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp), IPPROTO_IP, IP_HDRINCL,(const void*)&hdrincl, sizeof(int)) < 0) {
-				perror("raw setsockopt failure\n");
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set IP_HDRINCL (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
 				closesocket(SCTP_BASE_VAR(userspace_rawsctp));
 #else
@@ -1002,7 +1001,7 @@ recv_thread_init(void)
 #endif
 				SCTP_BASE_VAR(userspace_rawsctp) = -1;
 			} else if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp), SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0) {
-				perror("raw setsockopt failure\n");
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/IPv4 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
 				closesocket(SCTP_BASE_VAR(userspace_rawsctp));
 #else
@@ -1018,7 +1017,7 @@ recv_thread_init(void)
 				addr_ipv4.sin_port        = htons(0);
 				addr_ipv4.sin_addr.s_addr = htonl(INADDR_ANY);
 				if (bind(SCTP_BASE_VAR(userspace_rawsctp), (const struct sockaddr *)&addr_ipv4, sizeof(struct sockaddr_in)) < 0) {
-					perror("bind");
+					SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/IPv4 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
 					closesocket(SCTP_BASE_VAR(userspace_rawsctp));
 #else
@@ -1034,10 +1033,10 @@ recv_thread_init(void)
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp) == -1) {
 		if ((SCTP_BASE_VAR(userspace_udpsctp) = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
-			perror("UDP socket failure");
+			SCTPDBG(SCTP_DEBUG_USR, "Can't create socket for SCTP/UDP/IPv4 (errno = %d).\n", errno);
 		} else {
 			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp), IPPROTO_IP, DSTADDR_SOCKOPT, (const void *)&on, (int)sizeof(int)) < 0) {
-				perror("setsockopt: DSTADDR_SOCKOPT");
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set DSTADDR_SOCKOPT on socket for SCTP/UDP/IPv4 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
 				closesocket(SCTP_BASE_VAR(userspace_udpsctp));
 #else
@@ -1045,7 +1044,7 @@ recv_thread_init(void)
 #endif
 				SCTP_BASE_VAR(userspace_udpsctp) = -1;
 			} else if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp), SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0) {
-				perror("udp setsockopt failure\n");
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/UDP/IPv4 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
 				closesocket(SCTP_BASE_VAR(userspace_udpsctp));
 #else
@@ -1061,7 +1060,7 @@ recv_thread_init(void)
 				addr_ipv4.sin_port        = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
 				addr_ipv4.sin_addr.s_addr = htonl(INADDR_ANY);
 				if (bind(SCTP_BASE_VAR(userspace_udpsctp), (const struct sockaddr *)&addr_ipv4, sizeof(struct sockaddr_in)) < 0) {
-					perror("bind");
+					SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/UDP/IPv4 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
 					closesocket(SCTP_BASE_VAR(userspace_udpsctp));
 #else
@@ -1079,12 +1078,12 @@ recv_thread_init(void)
 #if defined(INET6)
 	if (SCTP_BASE_VAR(userspace_rawsctp6) == -1) {
 		if ((SCTP_BASE_VAR(userspace_rawsctp6) = socket(AF_INET6, SOCK_RAW, IPPROTO_SCTP)) < 0) {
-			perror("raw ipv6 socket failure. continue with only UDP6 socket...\n");
+			SCTPDBG(SCTP_DEBUG_USR, "Can't create socket for SCTP/IPv6 (errno = %d).\n", errno);
 		} else {
 			/* complete setting up the raw SCTP socket */
 #if defined(IPV6_RECVPKTINFO)
 			if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), IPPROTO_IPV6, IPV6_RECVPKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
-				perror("raw6 setsockopt: IPV6_RECVPKTINFO");
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_RECVPKTINFO on socket for SCTP/IPv6 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
 				closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
 #else
@@ -1094,7 +1093,7 @@ recv_thread_init(void)
 			} else {
 #else
 			if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), IPPROTO_IPV6, IPV6_PKTINFO,(const void*)&on, sizeof(on)) < 0) {
-				perror("raw6 setsockopt: IPV6_PKTINFO\n");
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_PKTINFO on socket for SCTP/IPv6 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
 				closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
 #else
@@ -1104,10 +1103,10 @@ recv_thread_init(void)
 			} else {
 #endif
 				if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), IPPROTO_IPV6, IPV6_V6ONLY, (const void*)&on, (socklen_t)sizeof(on)) < 0) {
-					perror("ipv6only");
+					SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_V6ONLY on socket for SCTP/IPv6 (errno = %d).\n", errno);
 				}
 				if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0) {
-					perror("setsockopt");
+					SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/IPv6 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
 					closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
 #else
@@ -1123,7 +1122,7 @@ recv_thread_init(void)
 					addr_ipv6.sin6_port        = htons(0);
 					addr_ipv6.sin6_addr        = in6addr_any;
 					if (bind(SCTP_BASE_VAR(userspace_rawsctp6), (const struct sockaddr *)&addr_ipv6, sizeof(struct sockaddr_in6)) < 0) {
-						perror("bind");
+						SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/IPv6 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
 						closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
 #else
@@ -1140,11 +1139,11 @@ recv_thread_init(void)
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp6) == -1) {
 		if ((SCTP_BASE_VAR(userspace_udpsctp6) = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
-			perror("UDP ipv6 socket failure");
+			SCTPDBG(SCTP_DEBUG_USR, "Can't create socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
 		}
 #if defined(IPV6_RECVPKTINFO)
 		if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), IPPROTO_IPV6, IPV6_RECVPKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
-			perror("udp6 setsockopt: IPV6_RECVPKTINFO");
+			SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_RECVPKTINFO on socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
 			closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
 #else
@@ -1154,7 +1153,7 @@ recv_thread_init(void)
 		} else {
 #else
 		if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), IPPROTO_IPV6, IPV6_PKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
-			perror("udp6 setsockopt: IPV6_PKTINFO");
+			SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_PKTINFO on socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
 			closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
 #else
@@ -1164,10 +1163,10 @@ recv_thread_init(void)
 		} else {
 #endif
 			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), IPPROTO_IPV6, IPV6_V6ONLY, (const void *)&on, (socklen_t)sizeof(on)) < 0) {
-				  perror("ipv6only");
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_V6ONLY on socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
 			}
 			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0) {
-				perror("setsockopt");
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
 				closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
 #else
@@ -1183,7 +1182,7 @@ recv_thread_init(void)
 				addr_ipv6.sin6_port        = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
 				addr_ipv6.sin6_addr        = in6addr_any;
 				if (bind(SCTP_BASE_VAR(userspace_udpsctp6), (const struct sockaddr *)&addr_ipv6, sizeof(struct sockaddr_in6)) < 0) {
-					perror("bind");
+					SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
 					closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
 #else
