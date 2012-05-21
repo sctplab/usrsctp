@@ -40,11 +40,11 @@ void mbuf_init(void *);
 /* Length to m_copy to copy all. */
 #define	M_COPYALL	1000000000
 
-/* umem_cache_t is defined in user_include/umem.h as 
+/* umem_cache_t is defined in user_include/umem.h as
  * typedef struct umem_cache umem_cache_t;
  * Note:umem_zone_t is a pointer.
  */
-#if defined(SCTP_SIMPLE_ALLOCATOR) 
+#if defined(SCTP_SIMPLE_ALLOCATOR)
 typedef size_t sctp_zone_t;
 #else
 typedef umem_cache_t *sctp_zone_t;
@@ -73,9 +73,9 @@ struct clust_args {
   struct mbuf * parent_mbuf;
 };
 
-/*__Userspace__ 
+/*__Userspace__
  * mbuf_mb_args will be passed as callback data to umem_cache_create.
- * umem_cache_alloc will then be able to use this callback data when the constructor 
+ * umem_cache_alloc will then be able to use this callback data when the constructor
  * function mb_ctor_mbuf is called. See user_mbuf.c
  * This is important because mbuf_mb_args would specify flags like M_PKTHDR
  * and type like MT_DATA or MT_HEADER. This information is needed in mb_ctor_mbuf
@@ -85,7 +85,7 @@ struct clust_args {
  * allocations.
  */
 extern struct mb_args mbuf_mb_args;
-/* __Userspace__ clust_mb_args will be passed as callback data to mb_ctor_clust 
+/* __Userspace__ clust_mb_args will be passed as callback data to mb_ctor_clust
  * and mb_dtor_clust.
  */
 extern struct clust_args clust_mb_args;
@@ -413,8 +413,10 @@ extern struct mbstat	mbstat;		/* General mbuf stats/infos */
  * object of the specified size at the end of the mbuf, longword aligned.
  */
 #define	M_ALIGN(m, len) do {						\
-	assert(!((m)->m_flags & (M_PKTHDR|M_EXT)));			\
-	assert((m)->m_data == (m)->m_dat);				\
+        KASSERT(!((m)->m_flags & (M_PKTHDR|M_EXT)),                     \
+                ("%s: M_ALIGN not normal mbuf", __func__));             \
+        KASSERT((m)->m_data == (m)->m_dat,                              \
+                ("%s: M_ALIGN not a virgin mbuf", __func__));           \
 	(m)->m_data += (MLEN - (len)) & ~(sizeof(long) - 1);		\
 } while (0)
 
@@ -423,8 +425,10 @@ extern struct mbstat	mbstat;		/* General mbuf stats/infos */
  * M_DUP/MOVE_PKTHDR.
  */
 #define	MH_ALIGN(m, len) do {						\
-	assert((m)->m_flags & M_PKTHDR && !((m)->m_flags & M_EXT));	\
-	assert((m)->m_data == (m)->m_pktdat);				\
+        KASSERT((m)->m_flags & M_PKTHDR && !((m)->m_flags & M_EXT),     \
+                ("%s: MH_ALIGN not PKTHDR mbuf", __func__));            \
+        KASSERT((m)->m_data == (m)->m_pktdat,                           \
+                ("%s: MH_ALIGN not a virgin mbuf", __func__));          \
 	(m)->m_data += (MHLEN - (len)) & ~(sizeof(long) - 1);		\
 } while (0)
 

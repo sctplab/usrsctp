@@ -334,7 +334,6 @@ recv_function_raw(void *arg)
 			}
 		}
 #endif
-		assert (n <= (MAXLEN_MBUF_CHAIN * iovlen));
 		SCTP_HEADER_LEN(recvmbuf[0]) = n; /* length of total packet */
 
 		if (n <= iovlen) {
@@ -354,7 +353,6 @@ recv_function_raw(void *arg)
 				(to_fill)++;
 			} while (ncounter > 0);
 		}
-		assert(to_fill <= MAXLEN_MBUF_CHAIN);
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
 		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_input with off=%d\n", (int)sizeof(struct ip));
 
@@ -477,7 +475,6 @@ recv_function_raw6(void *arg)
 			}
 		}
 #endif
-		assert (n <= (MAXLEN_MBUF_CHAIN * iovlen));
 		SCTP_HEADER_LEN(recvmbuf6[0]) = n; /* length of total packet */
 
 		if (n <= iovlen) {
@@ -497,7 +494,6 @@ recv_function_raw6(void *arg)
 				(to_fill)++;
 			} while (ncounter > 0);
 		}
-		assert(to_fill <= MAXLEN_MBUF_CHAIN);
 
 #if !defined(__Userspace_os_Windows)
 		for (cmsgptr = CMSG_FIRSTHDR(&msg); cmsgptr != NULL; cmsgptr = CMSG_NXTHDR(&msg, cmsgptr)) {
@@ -644,7 +640,6 @@ recv_function_udp(void *arg)
 		}
 		n = ncounter;
 #endif
-		assert (n <= (MAXLEN_MBUF_CHAIN * iovlen));
 		SCTP_HEADER_LEN(udprecvmbuf[0]) = n; /* length of total packet */
 
 		if (n <= iovlen) {
@@ -664,7 +659,6 @@ recv_function_udp(void *arg)
 				(to_fill)++;
 			} while (ncounter > 0);
 		}
-		assert(to_fill <= MAXLEN_MBUF_CHAIN);
 
 #if !defined(__Userspace_os_Windows)
 		for (cmsgptr = CMSG_FIRSTHDR(&msg); cmsgptr != NULL; cmsgptr = CMSG_NXTHDR(&msg, cmsgptr)) {
@@ -826,7 +820,6 @@ recv_function_udp6(void *arg)
 		}
 		n = ncounter;
 #endif
-		assert (n <= (MAXLEN_MBUF_CHAIN * iovlen));
 		SCTP_HEADER_LEN(udprecvmbuf6[0]) = n; /* length of total packet */
 
 		if (n <= iovlen) {
@@ -846,7 +839,6 @@ recv_function_udp6(void *arg)
 				(to_fill)++;
 			} while (ncounter > 0);
 		}
-		assert(to_fill <= MAXLEN_MBUF_CHAIN);
 
 #if !defined(__Userspace_os_Windows)
 		for (cmsgptr = CMSG_FIRSTHDR(&msg); cmsgptr != NULL; cmsgptr = CMSG_NXTHDR(&msg, cmsgptr)) {

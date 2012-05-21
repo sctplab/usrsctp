@@ -49,10 +49,10 @@
 #endif
 #define SOCK_MAXADDRLEN 255
 #if !defined(MSG_NOTIFICATION)
-#define MSG_NOTIFICATION 0x2000         /* SCTP notification */ 
+#define MSG_NOTIFICATION 0x2000         /* SCTP notification */
 #endif
 #define	SO_ACCEPTFILTER	0x1000		/* there is an accept filter */
-#define SS_CANTRCVMORE 0x020 
+#define SS_CANTRCVMORE 0x020
 #define SS_CANTSENDMORE 0x010
 
 #if defined (__Userspace_os_FreeBSD) || defined(__Userspace_os_Darwin) || defined (__Userspace_os_Windows)
@@ -167,7 +167,7 @@ struct socket {
 		/* __Userspace__ Many of these fields may
 		 * not be required for the sctp stack.
 		 * Commenting out the following.
-		 * Including pthread mutex and condition variable to be 
+		 * Including pthread mutex and condition variable to be
 		 * used by sbwait, sorwakeup and sowwakeup.
 		*/
 		/* struct	selinfo sb_sel;*/ /* process selecting read/write */
@@ -240,7 +240,7 @@ struct socket {
 #if defined(__Userspace_os_Windows)
 extern CRITICAL_SECTION accept_mtx;
 extern CONDITION_VARIABLE accept_cond;
-#define ACCEPT_LOCK_ASSERT() 
+#define ACCEPT_LOCK_ASSERT()
 #define	ACCEPT_LOCK() do { \
 	EnterCriticalSection(&accept_mtx); \
 } while (0)
@@ -250,13 +250,13 @@ extern CONDITION_VARIABLE accept_cond;
 #define	ACCEPT_UNLOCK_ASSERT()
 #else
 extern userland_mutex_t accept_mtx;
-#define	ACCEPT_LOCK_ASSERT()		assert(pthread_mutex_trylock(&accept_mtx) == EBUSY)
+#define	ACCEPT_LOCK_ASSERT()		KASSERT(pthread_mutex_trylock(&accept_mtx) == EBUSY, ("%s: accept_mtx not locked", __func__))
 #define	ACCEPT_LOCK()			(void)pthread_mutex_lock(&accept_mtx)
 #define	ACCEPT_UNLOCK()			(void)pthread_mutex_unlock(&accept_mtx)
-#define	ACCEPT_UNLOCK_ASSERT()	 do{                                                     \
-                                        assert(pthread_mutex_trylock(&accept_mtx) == 0); \
-                                        (void)pthread_mutex_unlock(&accept_mtx);         \
-}while (0)
+#define	ACCEPT_UNLOCK_ASSERT()	 do{                                                            \
+	KASSERT(pthread_mutex_trylock(&accept_mtx) == 0, ("%s: accept_mtx  locked", __func__)); \
+	(void)pthread_mutex_unlock(&accept_mtx);                                                \
+} while (0)
 #endif
 
 /*
@@ -297,13 +297,13 @@ extern userland_mutex_t accept_mtx;
  * efficiency.  This decision should probably be revisited as we optimize
  * locking for the socket code.
  */
-#define	SOCK_MTX(_so)			SOCKBUF_MTX(&(_so)->so_rcv) 
+#define	SOCK_MTX(_so)			SOCKBUF_MTX(&(_so)->so_rcv)
 /*__Userspace__ SOCK_LOCK(_so) is now defined in netinet/sctp_process_lock.h */
 
 /* #define	SOCK_OWNED(_so)			SOCKBUF_OWNED(&(_so)->so_rcv) unused */
 /*__Userspace__ SOCK_UNLOCK(_so) is now defined in netinet/sctp_process_lock.h */
 
-#define	SOCK_LOCK_ASSERT(_so)		SOCKBUF_LOCK_ASSERT(&(_so)->so_rcv) 
+#define	SOCK_LOCK_ASSERT(_so)		SOCKBUF_LOCK_ASSERT(&(_so)->so_rcv)
 
 /*
  * Socket state bits.
