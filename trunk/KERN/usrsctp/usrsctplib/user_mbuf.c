@@ -7,10 +7,8 @@
 #include <stdio.h>
 #include <string.h>
 /* #include <sys/param.h> This defines MSIZE 256 */
-#include <assert.h>
 #if !defined(SCTP_SIMPLE_ALLOCATOR)
 #include "umem.h"
-//#include "user_include/umem_impl.h"
 #endif
 #include "user_mbuf.h"
 #include "user_environment.h"
@@ -19,9 +17,9 @@
 
 struct mbstat mbstat;
 #define KIPC_MAX_LINKHDR        4       /* int: max length of link header (see sys/sysclt.h) */
-#define	KIPC_MAX_PROTOHDR	5	/* int: max length of network header (see sys/sysclt.h)*/
-int     max_linkhdr = KIPC_MAX_LINKHDR;
-int	max_protohdr = KIPC_MAX_PROTOHDR; /* Size of largest protocol layer header. */
+#define KIPC_MAX_PROTOHDR	5	/* int: max length of network header (see sys/sysclt.h)*/
+int max_linkhdr = KIPC_MAX_LINKHDR;
+int max_protohdr = KIPC_MAX_PROTOHDR; /* Size of largest protocol layer header. */
 
 /*
  * Zones from which we allocate.
@@ -212,7 +210,6 @@ static int clust_constructor_dup(caddr_t m_clust, struct mbuf* m)
 #endif
 		refcnt = SCTP_ZONE_GET(zone_ext_refcnt, u_int);
 		/*refcnt = (u_int *)umem_cache_alloc(zone_ext_refcnt, UMEM_DEFAULT);*/
-		assert(refcnt != NULL);
 	}
 	*refcnt = 1;
 	if (m != NULL) {
@@ -481,13 +478,9 @@ mb_dtor_mbuf(void *mem, void *arg)
 	args = (struct mb_args *)arg;
 	flags = args->flags;
 
-	if ((flags & MB_NOTAGS) == 0 && (m->m_flags & M_PKTHDR) != 0)
-	  {
+	if ((flags & MB_NOTAGS) == 0 && (m->m_flags & M_PKTHDR) != 0) {
 		m_tag_delete_chain(m, NULL);
-	  }
-	assert((m->m_flags & M_EXT) == 0);
-	assert((m->m_flags & M_NOFREE) == 0);
-
+	}
 }
 
 
@@ -561,8 +554,7 @@ mb_dtor_clust(void *mem, void *arg)
 void
 m_tag_delete(struct mbuf *m, struct m_tag *t)
 {
-
-	assert(m && t);
+	KASSERT(m && t, ("m_tag_delete: null argument, m %p t %p", m, t));
 	m_tag_unlink(m, t);
 	m_tag_free(t);
 }
@@ -575,7 +567,7 @@ m_tag_delete_chain(struct mbuf *m, struct m_tag *t)
 
 	struct m_tag *p, *q;
 
-	assert(m);
+	KASSERT(m, ("m_tag_delete_chain: null mbuf"));
 	if (t != NULL)
 		p = t;
 	else
@@ -622,8 +614,8 @@ mb_free_ext(struct mbuf *m)
 
 	int skipmbuf;
 
-	assert((m->m_flags & M_EXT) == M_EXT);
-	assert(m->m_ext.ref_cnt != NULL);
+	KASSERT((m->m_flags & M_EXT) == M_EXT, ("%s: M_EXT not set", __func__));
+	KASSERT(m->m_ext.ref_cnt != NULL, ("%s: ref_cnt not set", __func__));
 
 	/*
 	 * check if the header is embedded in the cluster
@@ -635,18 +627,17 @@ mb_free_ext(struct mbuf *m)
 	 *__Userspace__ TODO: jumbo frames
 	 *
 	*/
-        /* NOTE: We had the same code that SCTP_DECREMENT_AND_CHECK_REFCOUNT
-                 reduces to here before but the IPHONE malloc commit had changed
-                 this to compare to 0 instead of 1 (see next line).  Why?
-
-                 ... this caused a huge memory leak in Linux.
-         */
+	/* NOTE: We had the same code that SCTP_DECREMENT_AND_CHECK_REFCOUNT
+	         reduces to here before but the IPHONE malloc commit had changed
+	         this to compare to 0 instead of 1 (see next line).  Why?
+	        . .. this caused a huge memory leak in Linux.
+	*/
 #ifdef IPHONE
-        if (atomic_fetchadd_int(m->m_ext.ref_cnt, -1) == 0)
+	if (atomic_fetchadd_int(m->m_ext.ref_cnt, -1) == 0)
 #else
-        if (SCTP_DECREMENT_AND_CHECK_REFCOUNT(m->m_ext.ref_cnt))
+	if (SCTP_DECREMENT_AND_CHECK_REFCOUNT(m->m_ext.ref_cnt))
 #endif
-        {
+	{
 		if (m->m_ext.ext_type == EXT_CLUSTER){
 #if defined(SCTP_SIMPLE_ALLOCATOR)
 			mb_dtor_clust(m->m_ext.ext_buf, &clust_mb_args);
@@ -655,7 +646,7 @@ mb_free_ext(struct mbuf *m)
 			SCTP_ZONE_FREE(zone_ext_refcnt, (u_int*)m->m_ext.ref_cnt);
 			m->m_ext.ref_cnt = NULL;
 		}
-        }
+	}
 
 	if (skipmbuf)
 		return;
@@ -959,9 +950,9 @@ ok:
 static void
 mb_dupcl(struct mbuf *n, struct mbuf *m)
 {
-	assert((m->m_flags & M_EXT) == M_EXT);
-	assert(m->m_ext.ref_cnt != NULL);
-	assert((n->m_flags & M_EXT) == 0);
+	KASSERT((m->m_flags & M_EXT) == M_EXT, ("%s: M_EXT not set", __func__));
+	KASSERT(m->m_ext.ref_cnt != NULL, ("%s: ref_cnt not set", __func__));
+	KASSERT((n->m_flags & M_EXT) == 0, ("%s: M_EXT set", __func__));
 
 	if (*(m->m_ext.ref_cnt) == 1)
 		*(m->m_ext.ref_cnt) += 1;
@@ -993,13 +984,13 @@ m_copym(struct mbuf *m, int off0, int len, int wait)
 	struct mbuf *top;
 	int copyhdr = 0;
 
-	assert(off >= 0);
-	assert(len >= 0);
+	KASSERT(off >= 0, ("m_copym, negative off %d", off));
+	KASSERT(len >= 0, ("m_copym, negative len %d", len));
 
 	if (off == 0 && m->m_flags & M_PKTHDR)
 		copyhdr = 1;
 	while (off > 0) {
-		assert(m != NULL);
+		KASSERT(m != NULL, ("m_copym, offset > size of mbuf chain"));
 		if (off < m->m_len)
 			break;
 		off -= m->m_len;
@@ -1009,8 +1000,8 @@ m_copym(struct mbuf *m, int off0, int len, int wait)
 	top = 0;
 	while (len > 0) {
 		if (m == NULL) {
-		  assert(len == M_COPYALL);
-		  break;
+			KASSERT(len == M_COPYALL, ("m_copym, length > size of mbuf chain"));
+			break;
 		}
 		if (copyhdr)
 			MGETHDR(n, wait, m->m_type);
@@ -1057,7 +1048,7 @@ m_tag_copy_chain(struct mbuf *to, struct mbuf *from, int how)
 {
 	struct m_tag *p, *t, *tprev = NULL;
 
-	assert(to && from);
+	KASSERT(to && from, ("m_tag_copy_chain: null argument, to %p from %p", to, from));
 	m_tag_delete_chain(to, NULL);
 	SLIST_FOREACH(p, &from->m_pkthdr.tags, m_tag_link) {
 		t = m_tag_copy(p, how);
@@ -1097,7 +1088,7 @@ m_tag_copy(struct m_tag *t, int how)
 {
 	struct m_tag *p;
 
-	assert(t);
+	KASSERT(t, ("m_tag_copy: null tag"));
 	p = m_tag_alloc(t->m_tag_cookie, t->m_tag_id, t->m_tag_len, how);
 	if (p == NULL)
 		return (NULL);
@@ -1221,17 +1212,17 @@ m_copydata(const struct mbuf *m, int off, int len, caddr_t cp)
 {
 	u_int count;
 
-	assert(off >= 0);
-	assert(len >= 0);
+	KASSERT(off >= 0, ("m_copydata, negative off %d", off));
+	KASSERT(len >= 0, ("m_copydata, negative len %d", len));
 	while (off > 0) {
-		assert(m != NULL);
+		KASSERT(m != NULL, ("m_copydata, offset > size of mbuf chain"));
 		if (off < m->m_len)
 			break;
 		off -= m->m_len;
 		m = m->m_next;
 	}
 	while (len > 0) {
-		assert(m != NULL);
+		KASSERT(m != NULL, ("m_copydata, length > size of mbuf chain"));
 		count = min(m->m_len - off, len);
 		bcopy(mtod(m, caddr_t) + off, cp, count);
 		len -= count;
@@ -1250,21 +1241,20 @@ m_copydata(const struct mbuf *m, int off, int len, caddr_t cp)
 void
 m_cat(struct mbuf *m, struct mbuf *n)
 {
-        while (m->m_next)
-                m = m->m_next;
-        while (n) {
-                if (m->m_flags & M_EXT ||
-                    m->m_data + m->m_len + n->m_len >= &m->m_dat[MLEN]) {
-                        /* just join the two chains */
-                        m->m_next = n;
-                        return;
-                }
-                /* splat the data from one into the other */
-                bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len,
-                    (u_int)n->m_len);
-                m->m_len += n->m_len;
-                n = m_free(n);
-        }
+	while (m->m_next)
+		m = m->m_next;
+	while (n) {
+		if (m->m_flags & M_EXT ||
+		    m->m_data + m->m_len + n->m_len >= &m->m_dat[MLEN]) {
+			/* just join the two chains */
+			m->m_next = n;
+			return;
+		}
+		/* splat the data from one into the other */
+		bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len, (u_int)n->m_len);
+		m->m_len += n->m_len;
+		n = m_free(n);
+	}
 }
 
 
@@ -1423,13 +1413,13 @@ pack_send_buffer(caddr_t buffer, struct mbuf* mb){
 	int total_count_copied = 0;
 	int offset = 0;
 
-	do{
+	do {
 		count_to_copy = mb->m_len;
 		bcopy(mtod(mb, caddr_t), buffer+offset, count_to_copy);
 		offset += count_to_copy;
 		total_count_copied += count_to_copy;
 		mb = mb->m_next;
-	}while(mb);
+	} while(mb);
 
 	return (total_count_copied);
 }

@@ -55,18 +55,24 @@ extern u_short ip_id;
 #if defined(__Userspace_os_Linux)
 #define IPV6_VERSION            0x60
 #endif
-
-
-/* kernel stuff */
-#include <assert.h>
-#define KASSERT(exp,msg) assert(exp)
+#if defined(INVARIANTS)
+#define panic(args...)            \
+	do {                      \
+		SCTP_PRINTF(args);\
+		exit(1);          \
+} while (0)
+#endif
 
 #if defined(INVARIANTS)
-#define panic(arg1) \
-	do { \
-		perror(arg1);\
-		exit(1);\
-} while (0)
+#define KASSERT(cond, args)          \
+	do {                         \
+		if (!(cond)) {       \
+			printf args ;\
+			exit(1);     \
+		}                    \
+	} while (0)
+#else
+#define KASSERT(cond, args)
 #endif
 
 /* necessary for sctp_pcb.c */

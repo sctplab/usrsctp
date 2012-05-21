@@ -215,8 +215,8 @@ static void
 sodealloc(struct socket *so)
 {
 
-	assert(so->so_count == 0);
-	assert(so->so_pcb == NULL);
+	KASSERT(so->so_count == 0, ("sodealloc(): so_count %d", so->so_count));
+	KASSERT(so->so_pcb == NULL, ("sodealloc(): so_pcb != NULL"));
 
 	SOCKBUF_LOCK_DESTROY(&so->so_snd);
 	SOCKBUF_LOCK_DESTROY(&so->so_rcv);
@@ -660,7 +660,10 @@ uiomove(void *cp, int n, struct uio *uio)
 	int cnt;
 	int error = 0;
 
-	assert(uio->uio_rw == UIO_READ || uio->uio_rw == UIO_WRITE);
+	if ((uio->uio_rw != UIO_READ) &&
+	    (uio->uio_rw != UIO_WRITE)) {
+		return (EINVAL);
+	}
 
 	while (n > 0 && uio->uio_resid) {
 		iov = uio->uio_iov;
@@ -1069,7 +1072,6 @@ struct mbuf* mbufallocfromiov(int iovlen, struct iovec *srciov)
     }
 
     /* The following overwrites data in head->m_hdr.mh_data , if M_PKTHDR isn't set */
-    assert(cpsz == total);
     SCTP_HEADER_LEN(head) = total;
 
     return (head);
@@ -1304,9 +1306,15 @@ socreate(int dom, struct socket **aso, int type, int proto)
 	struct socket *so;
 	int error;
 
-	assert((AF_INET == dom) || (AF_UNIX == dom) || (AF_INET6 == dom));
-	assert((SOCK_STREAM == type) || (SOCK_SEQPACKET == type));
-	assert(IPPROTO_SCTP == proto);
+	if ((dom != AF_INET) && (dom != AF_INET6)) {
+		return (EINVAL);
+	}
+	if ((type != SOCK_STREAM) && (type != SOCK_SEQPACKET)) {
+		return (EINVAL);
+	}
+	if (proto != IPPROTO_SCTP) {
+		return (EINVAL);
+	}
 
 	so = soalloc();
 	if (so == NULL) {
@@ -1345,7 +1353,7 @@ socreate(int dom, struct socket **aso, int type, int proto)
 	}
 
 	if (error) {
-		assert(so->so_count == 1);
+		KASSERT(so->so_count == 1, ("socreate: so_count %d", so->so_count));
 		so->so_count = 0;
 		sodealloc(so);
 		return (error);
