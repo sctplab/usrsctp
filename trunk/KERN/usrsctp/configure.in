@@ -6,14 +6,14 @@ AC_PROG_LIBTOOL
 AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([m4])
 
-CFLAGS="$CFLAGS -Wall -std=c99 -g -O0 -DINET -DINET6 -DUSE_SCTP_SHA1 -DSCTP_PROCESS_LEVEL_LOCKS -DSCTP_SIMPLE_ALLOCATOR -D__Userspace__"
+CFLAGS="$CFLAGS -Wall -g -O0 -DINET -DINET6 -DUSE_SCTP_SHA1 -DSCTP_PROCESS_LEVEL_LOCKS -DSCTP_SIMPLE_ALLOCATOR -D__Userspace__"
 
 case $host_os in
 darwin*)
   CFLAGS="$CFLAGS -D__APPLE_USE_RFC_2292 -U__APPLE__ -D__Userspace_os_Darwin"
   ;;
 linux*)
-  CFLAGS="$CFLAGS -pthread -D__Userspace_os_Linux"
+  CFLAGS="$CFLAGS -Wno-unused-but-set-variable -pthread -D__Userspace_os_Linux"
   ;;
 freebsd*)
   CFLAGS="$CFLAGS -pthread -U__FreeBSD__ -D__Userspace_os_FreeBSD"
