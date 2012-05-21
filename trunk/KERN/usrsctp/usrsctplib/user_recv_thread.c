@@ -253,7 +253,7 @@ recv_function_route(void *arg)
 						break;
 #endif
 					default:
-						SCTPDBG(SCTP_DEBUG_USR, "Address family %d not supported.\n", sa->sa_family);
+						SCTPDBG(SCTP_DEBUG_USR, "Address family %d not supported.\n", rtmsg->ifa_family);
 						break;
 					}
 				}
