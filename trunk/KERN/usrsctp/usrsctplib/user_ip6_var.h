@@ -72,8 +72,8 @@ do {									\
 	else {								\
 		t = m_pulldown((m), (off), (len), &tmp);		\
 		if (t) {						\
-			if (t->m_len < tmp + (len))			\
-				panic("m_pulldown malfunction");	\
+			KASSERT(t->m_len >= tmp + (len),		\
+			        ("m_pulldown malfunction"));		\
 			(val) = (typ)(mtod(t, caddr_t) + tmp);		\
 		} else {						\
 			(val) = (typ)NULL;				\

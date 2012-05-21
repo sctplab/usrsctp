@@ -361,7 +361,7 @@ struct {								\
  * List functions.
  */
 
-#if (defined(_KERNEL) && defined(INVARIANTS))
+#if defined(INVARIANTS))
 #define	QMD_LIST_CHECK_HEAD(head, field) do {				\
 	if (LIST_FIRST((head)) != NULL &&				\
 	    LIST_FIRST((head))->field.le_prev !=			\
@@ -384,7 +384,7 @@ struct {								\
 #define	QMD_LIST_CHECK_HEAD(head, field)
 #define	QMD_LIST_CHECK_NEXT(elm, field)
 #define	QMD_LIST_CHECK_PREV(elm, field)
-#endif /* (_KERNEL && INVARIANTS) */
+#endif /* (INVARIANTS) */
 
 #define	LIST_EMPTY(head)	((head)->lh_first == NULL)
 
@@ -477,7 +477,7 @@ struct {								\
 /*
  * Tail queue functions.
  */
-#if (defined(_KERNEL) && defined(INVARIANTS))
+#if defined(INVARIANTS)
 #define	QMD_TAILQ_CHECK_HEAD(head, field) do {				\
 	if (!TAILQ_EMPTY(head) &&					\
 	    TAILQ_FIRST((head))->field.tqe_prev !=			\
@@ -506,7 +506,7 @@ struct {								\
 #define	QMD_TAILQ_CHECK_TAIL(head, headname)
 #define	QMD_TAILQ_CHECK_NEXT(elm, field)
 #define	QMD_TAILQ_CHECK_PREV(elm, field)
-#endif /* (_KERNEL && INVARIANTS) */
+#endif /* (INVARIANTS) */
 
 #define	TAILQ_CONCAT(head1, head2, field) do {				\
 	if (!TAILQ_EMPTY(head2)) {					\

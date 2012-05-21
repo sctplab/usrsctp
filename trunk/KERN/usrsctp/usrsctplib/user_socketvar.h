@@ -459,8 +459,7 @@ struct xsocket {
 #define	sorele(so) do {							\
 	ACCEPT_LOCK_ASSERT();						\
 	SOCK_LOCK_ASSERT(so);						\
-	if ((so)->so_count <= 0)					\
-		panic("sorele");					\
+	KASSERT((so)->so_count > 0, ("sorele"));			\
 	if (--(so)->so_count == 0)					\
 		sofree(so);						\
 	else {								\
@@ -718,8 +717,7 @@ void	socantsendmore(struct socket *so);
 #define	sorele(so) do {							\
 	ACCEPT_LOCK_ASSERT();						\
 	SOCK_LOCK_ASSERT(so);						\
-	if ((so)->so_count <= 0)					\
-		panic("sorele");					\
+	KASSERT((so)->so_count > 0, ("sorele"));			\
 	if (--(so)->so_count == 0)					\
 		sofree(so);						\
 	else {								\
