@@ -181,6 +181,9 @@ handle_connection(void *arg)
 				printf("SCTP_PEER_ADDR_CHANGE: state=%d, error=%d\n",spc->spc_state, spc->spc_error);
 			}
 		} else {
+			if (very_verbose) {
+				printf("Message received\n");
+			}
 			sum += n;
 			if (flags & MSG_EOR) {
 				messages++;
