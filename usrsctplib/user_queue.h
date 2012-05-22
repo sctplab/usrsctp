@@ -361,7 +361,7 @@ struct {								\
  * List functions.
  */
 
-#if defined(INVARIANTS))
+#if defined(INVARIANTS)
 #define	QMD_LIST_CHECK_HEAD(head, field) do {				\
 	if (LIST_FIRST((head)) != NULL &&				\
 	    LIST_FIRST((head))->field.le_prev !=			\
