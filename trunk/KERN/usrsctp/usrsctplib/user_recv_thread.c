@@ -689,8 +689,6 @@ recv_function_udp(void *arg)
 		ip->ip_len = n;
 #if defined(__Userspace_os_Linux) ||  defined(__Userspace_os_Windows)
 		ip->ip_len += sizeof(struct ip);
-#endif
-#if defined(__Userspace_os_Windows)
 		ip->ip_len = htons(ip->ip_len);
 #endif
 		ip->ip_src = src.sin_addr;
@@ -1189,7 +1187,6 @@ recv_thread_init(void)
 		}
 	}
 #endif
-
 #if !defined(__Userspace_os_Windows)
 #if defined(INET) || defined(INET6)
 	if (SCTP_BASE_VAR(userspace_route) != -1) {
