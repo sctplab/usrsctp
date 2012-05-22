@@ -433,7 +433,7 @@
 
 /* socket locks */
 
-#if defined(__Userspace_)
+#if defined(__Userspace__)
 #if defined(__Userspace_os_Windows)
 #define SOCKBUF_LOCK_ASSERT(_so_buf)
 #define SOCKBUF_LOCK(_so_buf) EnterCriticalSection(_so_buf->sb_mtx)
