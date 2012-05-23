@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Michael Tuexen
+ * Copyright (C) 2011-2012 Michael Tuexen
  *
  * All rights reserved.
  *
