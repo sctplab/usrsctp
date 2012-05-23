@@ -436,8 +436,8 @@
 #if defined(__Userspace__)
 #if defined(__Userspace_os_Windows)
 #define SOCKBUF_LOCK_ASSERT(_so_buf)
-#define SOCKBUF_LOCK(_so_buf) EnterCriticalSection(&(_so_buf)->sb_mtx)
-#define SOCKBUF_UNLOCK(_so_buf) LeaveCriticalSection(&(_so_buf)->sb_mtx)
+#define SOCKBUF_LOCK(_so_buf) EnterCriticalSection(_so_buf->sb_mtx)
+#define SOCKBUF_UNLOCK(_so_buf) LeaveCriticalSection(_so_buf->sb_mtx)
 #define SOCK_LOCK(_so)  SOCKBUF_LOCK(&(_so)->so_rcv)
 #define SOCK_UNLOCK(_so)  SOCKBUF_UNLOCK(&(_so)->so_rcv)
 #else

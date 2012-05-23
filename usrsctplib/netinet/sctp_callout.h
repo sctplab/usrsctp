@@ -1,7 +1,7 @@
 /*-
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
- * Copyright (c) 2008-2011, by Randall Stewart. All rights reserved.
- * Copyright (c) 2008-2011, by Michael Tuexen. All rights reserved.
+ * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
+ * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,15 +28,13 @@
  * SUCH DAMAGE.
  */
 
-/* $KAME: sctp_callout.h,v 1.9 2005/03/06 16:04:17 itojun Exp $	 */
-
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 #endif
 
-#ifndef __SCTP_CALLOUT__
-#define __SCTP_CALLOUT__
+#ifndef _NETINET_SCTP_CALLOUT_
+#define _NETINET_SCTP_CALLOUT_
 
 /*
  * NOTE: the following MACROS are required for locking the callout

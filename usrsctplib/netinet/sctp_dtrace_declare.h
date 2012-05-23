@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 2008-2011, by Randall Stewart. All rights reserved.
- * Copyright (c) 2008-2011, by Michael Tuexen. All rights reserved.
+ * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
+ * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,11 +28,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_dtrace_declare.h 228653 2011-12-17 19:21:40Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_dtrace_declare.h 235828 2012-05-23 11:26:28Z tuexen $");
 #endif
-#ifndef __sctp_dtrace_declare_h__
+
+#ifndef _NETINET_SCTP_DTRACE_DECLARE_H_
+#define _NETINET_SCTP_DTRACE_DECLARE_H_
+
 #if defined(__FreeBSD__) && __FreeBSD_version >= 803000
 #include "opt_kdtrace.h"
 #include <sys/kernel.h>
@@ -65,10 +69,10 @@ SDT_PROBE_DECLARE(sctp, cwnd, net, rttstep);
 /* One to track an associations rwnd */
 SDT_PROBE_DECLARE(sctp, rwnd, assoc, val);
 
-/* One to track a net's flight size */ 
+/* One to track a net's flight size */
 SDT_PROBE_DECLARE(sctp, flightsize, net, val);
 
-/* One to track an associations flight size */ 
+/* One to track an associations flight size */
 SDT_PROBE_DECLARE(sctp, flightsize, assoc, val);
 
 
@@ -79,7 +83,7 @@ SDT_PROBE_DECLARE(sctp, flightsize, assoc, val);
 #else
 /* All other platforms not defining dtrace probes */
 #ifndef SDT_PROBE
-#define SDT_PROBE(a, b, c, d, e, f, g, h, i) 
+#define SDT_PROBE(a, b, c, d, e, f, g, h, i)
 #endif
 #endif
 #endif
