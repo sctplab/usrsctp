@@ -3,7 +3,10 @@
  *      The Regents of the University of California.
  * Copyright (c) 2004 The FreeBSD Foundation
  * Copyright (c) 2004-2008 Robert N. M. Watson
- * Copyright (c) 2012 Michael Tuexen
+ * Copyright (c) 2009-2010 Brad Penoff
+ * Copyright (c) 2009-2010 Humaira Kamal
+ * Copyright (c) 2011-2012 Irene Ruengeler
+ * Copyright (c) 2011-2012 Michael Tuexen
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

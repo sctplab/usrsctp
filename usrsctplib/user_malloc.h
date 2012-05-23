@@ -28,13 +28,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)malloc.h	8.5 (Berkeley) 5/3/95
- * $FreeBSD: src/sys/sys/malloc.h,v 1.80.2.1 2005/07/23 17:11:33 rwatson Exp $
  */
 
 /* This file has been renamed user_malloc.h for Userspace */
-#ifndef _SYS_MALLOC_H_
-#define	_SYS_MALLOC_H_
+#ifndef _USER_MALLOC_H_
+#define	_USER_MALLOC_H_
 
 /*__Userspace__*/
 #include <stdlib.h>
@@ -147,31 +145,31 @@ struct malloc_type_header {
 };
 
 /* __Userspace__
-Notice that at places it uses ifdef _KERNEL. That line cannot be 
-removed because it causes conflicts with malloc definition in 
-/usr/include/malloc.h, which essentially says that malloc.h has 
-been overridden by stdlib.h. We will need to use names like 
-user_malloc.h for isolating kernel interface headers. using 
-original names like malloc.h in a user_include header can be 
-confusing, All userspace header files are being placed in ./user_include 
-Better still to remove from user_include.h all irrelevant code such 
-as that in the block starting with #ifdef _KERNEL. I am only leaving 
-it in for the time being to see what functionality is in this file 
+Notice that at places it uses ifdef _KERNEL. That line cannot be
+removed because it causes conflicts with malloc definition in
+/usr/include/malloc.h, which essentially says that malloc.h has
+been overridden by stdlib.h. We will need to use names like
+user_malloc.h for isolating kernel interface headers. using
+original names like malloc.h in a user_include header can be
+confusing, All userspace header files are being placed in ./user_include
+Better still to remove from user_include.h all irrelevant code such
+as that in the block starting with #ifdef _KERNEL. I am only leaving
+it in for the time being to see what functionality is in this file
 that kernel uses.
- 
+
 Start copy: Copied code for __Userspace__ */
 #define	MALLOC_DEFINE(type, shortdesc, longdesc)			\
 	struct malloc_type type[1] = {					\
 		{ NULL, 0, 0, 0, 0, 0, M_MAGIC, shortdesc, NULL, NULL,	\
 		    NULL, 0, NULL, NULL, 0, 0 }				\
-	};								
+	};
 
 /* Removed "extern" in __Userspace__ code */
 /* If we need to use MALLOC_DECLARE before using MALLOC then
-   we have to remove extern. 
-     In /usr/include/sys/malloc.h there is this definition: 
+   we have to remove extern.
+     In /usr/include/sys/malloc.h there is this definition:
      #define    MALLOC_DECLARE(type) \
-        extern struct malloc_type type[1] 
+        extern struct malloc_type type[1]
      and loader is unable to find the extern malloc_type because
      it may be defined in one of kernel object files.
      It seems that MALLOC_DECLARE and MALLOC_DEFINE cannot be used at
@@ -192,7 +190,7 @@ Start copy: Copied code for __Userspace__ */
         if(flags & M_ZERO) {                                            \
 	  memset(space,0,size);                                         \
 	}								\
-    } while (0);                                                        
+    } while (0);
 
 
 /* End copy: Copied code for __Userspace__ */

@@ -23,10 +23,12 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * [id for your version control system, if any]
  */
+
+#ifndef _USER_RECV_THREAD_H_
+#define	_USER_RECV_THREAD_H_
 
 void recv_thread_init(void);
 void recv_thread_destroy(void);
 
+#endif
