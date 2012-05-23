@@ -26,14 +26,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)socketvar.h	8.3 (Berkeley) 2/19/95
- * $FreeBSD: src/sys/sys/socketvar.h,v 1.158 2007/05/03 14:42:42 rwatson Exp $
  */
 
 /* __Userspace__ version of <sys/socketvar.h> goes here.*/
 
-#ifndef _SYS_SOCKETVAR_H_
-#define _SYS_SOCKETVAR_H_
+#ifndef _USER_SOCKETVAR_H_
+#define _USER_SOCKETVAR_H_
 
 #if defined(__Userspace_os_Darwin)
 #include <sys/types.h>

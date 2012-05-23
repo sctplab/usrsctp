@@ -26,12 +26,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)queue.h	8.5 (Berkeley) 8/20/94
- * $FreeBSD: src/sys/sys/queue.h,v 1.75 2011/05/13 15:49:23 mdf Exp $
  */
 
-#ifndef _SYS_QUEUE_H_
-#define	_SYS_QUEUE_H_
+#ifndef _USER_QUEUE_H_
+#define	_USER_QUEUE_H_
+
 #if !defined (__Userspace_os_Windows)
 #include <sys/cdefs.h>
 #endif

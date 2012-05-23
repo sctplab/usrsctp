@@ -26,12 +26,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)radix.h	8.2 (Berkeley) 10/31/94
- * $FreeBSD: src/sys/net/radix.h,v 1.26 2005/01/07 01:45:35 imp Exp $
  */
 
-#ifndef _RADIX_H_
-#define	_RADIX_H_
+#ifndef _USER_RADIX_H_
+#define	_USER_RADIX_H_
 
 #ifdef _KERNEL
 #include <sys/_lock.h>

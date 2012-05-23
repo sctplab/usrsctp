@@ -30,8 +30,8 @@
  * $FreeBSD: src/sys/netinet/in_pcb.h,v 1.100.2.1 2007/12/07 05:46:08 kmacy Exp $
  */
 
-#ifndef _NETINET_IN_PCB_H_
-#define _NETINET_IN_PCB_H_
+#ifndef _USER_INPCB_H_
+#define _USER_INPCB_H_
 
 #include <user_route.h> /* was <net/route.h> */
 
@@ -266,7 +266,7 @@ struct inpcbinfo {
 	 * vimage 1
 	 * general use 1
 	 */
-	void 			*ipi_pspare[2];	
+	void 			*ipi_pspare[2];
 };
 
 #define INP_LOCK_INIT(inp, d, t) \

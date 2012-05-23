@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)route.h	8.4 (Berkeley) 1/9/95
- * $FreeBSD: src/sys/net/route.h,v 1.65 2006/03/15 19:39:09 andre Exp $
  */
 
 #ifndef _NET_ROUTE_H_
