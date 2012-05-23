@@ -185,6 +185,7 @@ struct sctp_udpencaps {
 #define SCTP_NOTIFICATIONS_STOPPED_EVENT  0x000b
 #define SCTP_ASSOC_RESET_EVENT            0x000c
 #define SCTP_STREAM_CHANGE_EVENT          0x000d
+#define SCTP_SEND_FAILED_EVENT            0x000e
 
 /* notification event structures */
 
@@ -209,6 +210,13 @@ struct sctp_assoc_change {
 #define SCTP_SHUTDOWN_COMP  0x0004
 #define SCTP_CANT_STR_ASSOC 0x0005
 
+/* sac_info values */
+#define SCTP_ASSOC_SUPPORTS_PR        0x01
+#define SCTP_ASSOC_SUPPORTS_AUTH      0x02
+#define SCTP_ASSOC_SUPPORTS_ASCONF    0x03
+#define SCTP_ASSOC_SUPPORTS_MULTIBUF  0x04
+#define SCTP_ASSOC_SUPPORTS_RE_CONFIG 0x05
+#define SCTP_ASSOC_SUPPORTS_MAX       0x05
 
 /* Address event */
 struct sctp_paddr_change {
