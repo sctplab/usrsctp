@@ -4,30 +4,30 @@
  * Copyright (c) 2008-2011, by Michael Tuexen. All rights reserved.
  * Copyright (c) 2008-2011, by Brad Penoff. All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
+ * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
- * a) Redistributions of source code must retain the above copyright notice, 
+ *
+ * a) Redistributions of source code must retain the above copyright notice,
  *   this list of conditions and the following disclaimer.
  *
- * b) Redistributions in binary form must reproduce the above copyright 
- *    notice, this list of conditions and the following disclaimer in 
+ * b) Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
  *   the documentation and/or other materials provided with the distribution.
  *
- * c) Neither the name of Cisco Systems, Inc. nor the names of its 
- *    contributors may be used to endorse or promote products derived 
+ * c) Neither the name of Cisco Systems, Inc. nor the names of its
+ *    contributors may be used to endorse or promote products derived
  *    from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
@@ -389,7 +389,6 @@ struct sx {int dummy;};
 #include "user_socketvar.h" /* MALLOC_DECLARE's M_PCB. Replacement for sys/socketvar.h */
 /* #include <sys/jail.h> */
 /* #include <sys/sysctl.h> */
-#include <user_resourcevar.h>
 #include <user_environment.h>
 #include <user_atomic.h>
 #include <user_mbuf.h>
@@ -403,12 +402,12 @@ struct sx {int dummy;};
 #include <sys/priv.h>
 #endif
 /* #include <sys/random.h> */
-/* #include <sys/limits.h> */ 
+/* #include <sys/limits.h> */
 /* #include <machine/cpu.h> */
 
 #if defined(__Userspace_os_Darwin)
 /* was a 0 byte file.  needed for structs if_data(64) and net_event_data */
-#include <net/if_var.h> 
+#include <net/if_var.h>
 #endif
 #if defined(__Userspace_os_FreeBSD)
 #include <net/if_types.h>
@@ -432,7 +431,7 @@ struct sx {int dummy;};
 #if defined(__Userspace_os_FreeBSD)
 /* all of these were 0 byte files */
 /* #include <netinet/in_var.h> */
-/* #include <netinet/ip_var.h> */ 
+/* #include <netinet/ip_var.h> */
 /* #include <netinet/icmp_var.h> */
 #endif
 
@@ -528,7 +527,7 @@ MALLOC_DECLARE(SCTP_M_MVRF);
 MALLOC_DECLARE(SCTP_M_ITER);
 MALLOC_DECLARE(SCTP_M_SOCKOPT);
 
-#if defined(SCTP_LOCAL_TRACE_BUF) 
+#if defined(SCTP_LOCAL_TRACE_BUF)
 
 #define SCTP_GET_CYCLECOUNT get_cyclecount()
 #define SCTP_CTR6 sctp_log_trace
@@ -678,13 +677,13 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 
 /* __Userspace__ SCTP_ZONE_GET: allocate element from the zone */
 #define SCTP_ZONE_GET(zone, type)  \
-        (type *)malloc(zone); 
+        (type *)malloc(zone);
 
 
 /* __Userspace__ SCTP_ZONE_FREE: free element from the zone */
 #define SCTP_ZONE_FREE(zone, element) { \
 	free(element);  \
-} 
+}
 
 #define SCTP_ZONE_DESTROY(zone)
 #else
@@ -699,11 +698,11 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 
 /* __Userspace__ SCTP_ZONE_INIT: initialize the zone */
 /*
-  __Userspace__ 
+  __Userspace__
   No equivalent function to uma_zone_set_max added yet. (See SCTP_ZONE_INIT in sctp_os_bsd.h
   for reference). It may not be required as mentioned in
-  http://nixdoc.net/man-pages/FreeBSD/uma_zalloc.9.html that 
-  max limits may not enforced on systems with more than one CPU. 
+  http://nixdoc.net/man-pages/FreeBSD/uma_zalloc.9.html that
+  max limits may not enforced on systems with more than one CPU.
 */
 #define SCTP_ZONE_INIT(zone, name, size, number) { \
 	zone = umem_cache_create(name, size, 0, NULL, NULL, NULL, NULL, NULL, 0); \
@@ -735,7 +734,7 @@ extern struct ifaddrs *g_interfaces;
 /*
  * __Userspace__ Defining sctp_hashinit_flags() and sctp_hashdestroy() for userland.
  */
-void *sctp_hashinit_flags(int elements, struct malloc_type *type, 
+void *sctp_hashinit_flags(int elements, struct malloc_type *type,
                     u_long *hashmask, int flags);
 void
 sctp_hashdestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask);
@@ -758,7 +757,7 @@ sctp_hashfreedestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask);
 /*
  * timers
  */
-/* __Userspace__ 
+/* __Userspace__
  * user_sctp_callout.h has typedef struct sctp_callout sctp_os_timer_t;
  * which is used in the timer related functions such as
  * SCTP_OS_TIMER_INIT etc.
@@ -820,7 +819,7 @@ typedef struct route	sctp_route_t;
 typedef struct rtentry	sctp_rtentry_t;
 
 static inline void sctp_userspace_rtalloc(sctp_route_t *ro) {
-    
+
     if(ro->ro_rt != NULL) {
         ro->ro_rt->rt_refcnt++;
         return;
@@ -833,7 +832,7 @@ static inline void sctp_userspace_rtalloc(sctp_route_t *ro) {
     /* initialize */
     memset(ro->ro_rt, 0, sizeof(sctp_rtentry_t));
     ro->ro_rt->rt_refcnt = 1;
-    
+
     /* set MTU */
     /* TODO set this based on the ro->ro_dst, looking up MTU with routing socket */
 #if 0
@@ -877,7 +876,7 @@ int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af);
 #define SCTP_SET_MTU_OF_ROUTE(sa, rt, mtu) do { \
                                               if (rt != NULL) \
                                                  rt->rt_rmx.rmx_mtu = mtu; \
-                                           } while(0) 
+                                           } while(0)
 
 /* (de-)register interface event notifications */
 #define SCTP_REGISTER_INTERFACE(ifhandle, af)
@@ -923,7 +922,7 @@ int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af);
 #define SCTP_ATTACH_CHAIN(pak, m, packet_length) do { \
                                                   pak = m; \
                                                   pak->m_pkthdr.len = packet_length; \
-                          } while(0) 
+                          } while(0)
 
 /* Other m_pkthdr type things */
 /* FIXME need real definitions */
@@ -976,7 +975,7 @@ int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af);
 
 /* Future zero copy wakeup/send  function */
 #define SCTP_ZERO_COPY_EVENT(inp, so)
-/* This is re-pulse ourselves for sendbuf */  
+/* This is re-pulse ourselves for sendbuf */
 #define SCTP_ZERO_COPY_SENDQ_EVENT(inp, so)
 
 
@@ -1022,7 +1021,7 @@ typedef SHA_CTX SHA1_CTX;
 
 #else /* only _KERNEL? */
 
-#include <sys/md5.h> 
+#include <sys/md5.h>
 /* map standard crypto API names */
 #define MD5_Init	MD5Init
 #define MD5_Update	MD5Update
@@ -1049,7 +1048,7 @@ typedef int SHA512_CTX;
 #if defined(__Userspace_os_Windows)
 #define SHUT_RD 1
 #define SHUT_WR 2
-#define SHUT_RDWR 3 
+#define SHUT_RDWR 3
 #endif
 #define PRU_FLUSH_RD SHUT_RD
 #define PRU_FLUSH_WR SHUT_WR
@@ -1081,7 +1080,7 @@ extern void sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 
 #define SCTP_IP_OUTPUT(result, o_pak, ro, stcb, vrf_id) sctp_userspace_ip_output(&result, o_pak, ro, stcb, vrf_id);
 
-#if defined (INET6)                        
+#if defined (INET6)
 extern void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
                                       struct route_in6 *ro, void *stcb,
                                       uint32_t vrf_id);
@@ -1103,7 +1102,7 @@ extern void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 #endif
 
 struct mbuf *
-sctp_get_mbuf_for_msg(unsigned int space_needed, 
+sctp_get_mbuf_for_msg(unsigned int space_needed,
 		      int want_header, int how, int allonebuf, int type);
 
 
