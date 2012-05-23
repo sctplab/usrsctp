@@ -1,10 +1,8 @@
-#ifndef __sctp_lock_empty_h__
-#define __sctp_lock_empty_h__
 /*-
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
- * Copyright (c) 2008-2011, by Randall Stewart. All rights reserved.
- * Copyright (c) 2008-2011, by Michael Tuexen. All rights reserved.
- * Copyright (c) 2008-2011, by Brad Penoff. All rights reserved.
+ * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
+ * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
+ * Copyright (c) 2008-2012, by Brad Penoff. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -33,14 +31,18 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * Empty Lock declarations for all other platforms. Pre-process away to
- * nothing.
- */
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 #endif
+
+#ifndef _NETINET_SCTP_LOCK_EMPTY_H_
+#define _NETINET_SCTP_LOCK_EMPTY_H_
+
+/*
+ * Empty Lock declarations for all other platforms. Pre-process away to
+ * nothing.
+ */
 
 /* __Userspace__ putting lock macros in same order as sctp_lock_bsd.h ...*/
 

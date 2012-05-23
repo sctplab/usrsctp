@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 2008-2011, by Randall Stewart. All rights reserved.
- * Copyright (c) 2008-2011, by Michael Tuexen. All rights reserved.
+ * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
+ * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,11 +28,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_dtrace_define.h 228653 2011-12-17 19:21:40Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_dtrace_define.h 235828 2012-05-23 11:26:28Z tuexen $");
 #endif
-#ifndef __sctp_dtrace_define_h__
+
+#ifndef _NETINET_SCTP_DTRACE_DEFINE_H_
+#define _NETINET_SCTP_DTRACE_DEFINE_H_
+
 #if defined(__FreeBSD__) && __FreeBSD_version >= 803000
 #include "opt_kdtrace.h"
 #include <sys/kernel.h>
@@ -47,7 +51,7 @@ SDT_PROVIDER_DEFINE(sctp);
 SDT_PROBE_DEFINE(sctp, cwnd, net, init, init);
 /* The Vtag for this end */
 SDT_PROBE_ARGTYPE(sctp, cwnd, net, init, 0, "uint32_t");
-/* The port number of the local side << 16 | port number of remote 
+/* The port number of the local side << 16 | port number of remote
  * in network byte order.
  */
 SDT_PROBE_ARGTYPE(sctp, cwnd, net, init, 1, "uint32_t");
@@ -63,7 +67,7 @@ SDT_PROBE_ARGTYPE(sctp, cwnd, net, init, 4, "int");
 SDT_PROBE_DEFINE(sctp, cwnd, net, ack, ack);
 /* The Vtag for this end */
 SDT_PROBE_ARGTYPE(sctp, cwnd, net, ack, 0, "uint32_t");
-/* The port number of the local side << 16 | port number of remote 
+/* The port number of the local side << 16 | port number of remote
  * in network byte order.
  */
 SDT_PROBE_ARGTYPE(sctp, cwnd, net, ack, 1, "uint32_t");
@@ -106,7 +110,7 @@ SDT_PROBE_ARGTYPE(sctp, cwnd, net, rttstep, 4, "uint64_t");
 SDT_PROBE_DEFINE(sctp, cwnd, net, fr, fr);
 /* The Vtag for this end */
 SDT_PROBE_ARGTYPE(sctp, cwnd, net, fr, 0, "uint32_t");
-/* The port number of the local side << 16 | port number of remote 
+/* The port number of the local side << 16 | port number of remote
  * in network byte order.
  */
 SDT_PROBE_ARGTYPE(sctp, cwnd, net, fr, 1, "uint32_t");
@@ -122,7 +126,7 @@ SDT_PROBE_ARGTYPE(sctp, cwnd, net, fr, 4, "int");
 SDT_PROBE_DEFINE(sctp, cwnd, net, to, to);
 /* The Vtag for this end */
 SDT_PROBE_ARGTYPE(sctp, cwnd, net, to, 0, "uint32_t");
-/* The port number of the local side << 16 | port number of remote 
+/* The port number of the local side << 16 | port number of remote
  * in network byte order.
  */
 SDT_PROBE_ARGTYPE(sctp, cwnd, net, to, 1, "uint32_t");
@@ -138,7 +142,7 @@ SDT_PROBE_ARGTYPE(sctp, cwnd, net, to, 4, "int");
 SDT_PROBE_DEFINE(sctp, cwnd, net, bl, bl);
 /* The Vtag for this end */
 SDT_PROBE_ARGTYPE(sctp, cwnd, net, bl, 0, "uint32_t");
-/* The port number of the local side << 16 | port number of remote 
+/* The port number of the local side << 16 | port number of remote
  * in network byte order.
  */
 SDT_PROBE_ARGTYPE(sctp, cwnd, net, bl, 1, "uint32_t");
@@ -154,7 +158,7 @@ SDT_PROBE_ARGTYPE(sctp, cwnd, net, bl, 4, "int");
 SDT_PROBE_DEFINE(sctp, cwnd, net, ecn, ecn);
 /* The Vtag for this end */
 SDT_PROBE_ARGTYPE(sctp, cwnd, net, ecn, 0, "uint32_t");
-/* The port number of the local side << 16 | port number of remote 
+/* The port number of the local side << 16 | port number of remote
  * in network byte order.
  */
 SDT_PROBE_ARGTYPE(sctp, cwnd, net, ecn, 1, "uint32_t");
@@ -170,7 +174,7 @@ SDT_PROBE_ARGTYPE(sctp, cwnd, net, ecn, 4, "int");
 SDT_PROBE_DEFINE(sctp, cwnd, net, pd, pd);
 /* The Vtag for this end */
 SDT_PROBE_ARGTYPE(sctp, cwnd, net, pd, 0, "uint32_t");
-/* The port number of the local side << 16 | port number of remote 
+/* The port number of the local side << 16 | port number of remote
  * in network byte order.
  */
 SDT_PROBE_ARGTYPE(sctp, cwnd, net, pd, 1, "uint32_t");
@@ -189,7 +193,7 @@ SDT_PROBE_ARGTYPE(sctp, cwnd, net, pd, 4, "int");
 SDT_PROBE_DEFINE(sctp, rwnd, assoc, val, val);
 /* The Vtag for this end */
 SDT_PROBE_ARGTYPE(sctp, rwnd, assoc, val, 0, "uint32_t");
-/* The port number of the local side << 16 | port number of remote 
+/* The port number of the local side << 16 | port number of remote
  * in network byte order.
  */
 SDT_PROBE_ARGTYPE(sctp, rwnd, assoc, val, 1, "uint32_t");
@@ -204,7 +208,7 @@ SDT_PROBE_ARGTYPE(sctp, rwnd, assoc, val, 3, "int");
 SDT_PROBE_DEFINE(sctp, flightsize, net, val, val);
 /* The Vtag for this end */
 SDT_PROBE_ARGTYPE(sctp, flightsize, net, val, 0, "uint32_t");
-/* The port number of the local side << 16 | port number of remote 
+/* The port number of the local side << 16 | port number of remote
  * in network byte order.
  */
 SDT_PROBE_ARGTYPE(sctp, flightsize, net, val, 1, "uint32_t");
@@ -220,7 +224,7 @@ SDT_PROBE_ARGTYPE(sctp, flightsize, net, val, 4, "int");
 SDT_PROBE_DEFINE(sctp, flightsize, assoc, val, val);
 /* The Vtag for this end */
 SDT_PROBE_ARGTYPE(sctp, flightsize, assoc, val, 0, "uint32_t");
-/* The port number of the local side << 16 | port number of remote 
+/* The port number of the local side << 16 | port number of remote
  * in network byte order.
  */
 SDT_PROBE_ARGTYPE(sctp, flightsize, assoc, val, 1, "uint32_t");
@@ -236,4 +240,4 @@ SDT_PROBE_ARGTYPE(sctp, flightsize, assoc, val, 3, "int");
 
 #endif
 
-#endif 
+#endif

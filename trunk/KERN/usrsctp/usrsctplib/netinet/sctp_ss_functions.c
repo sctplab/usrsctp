@@ -1,7 +1,7 @@
 /*-
- * Copyright (c) 2010-2011, by Michael Tuexen. All rights reserved.
- * Copyright (c) 2010-2011, by Randall Stewart. All rights reserved.
- * Copyright (c) 2010-2011, by Robin Seggelmann. All rights reserved.
+ * Copyright (c) 2010-2012, by Michael Tuexen. All rights reserved.
+ * Copyright (c) 2010-2012, by Randall Stewart. All rights reserved.
+ * Copyright (c) 2010-2012, by Robin Seggelmann. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,7 +28,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_ss_functions.c 228907 2011-12-27 10:16:24Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_ss_functions.c 235828 2012-05-23 11:26:28Z tuexen $");
 #endif
 
 #include <netinet/sctp_pcb.h>

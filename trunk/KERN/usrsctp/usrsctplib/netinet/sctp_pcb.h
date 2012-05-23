@@ -1,7 +1,8 @@
 /*-
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
- * Copyright (c) 2008-2011, by Randall Stewart. All rights reserved.
- * Copyright (c) 2008-2011, by Michael Tuexen. All rights reserved.
+ * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
+ * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -29,15 +30,13 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $KAME: sctp_pcb.h,v 1.21 2005/07/16 01:18:47 suz Exp $	 */
-
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 233660 2012-03-29 13:36:53Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 235828 2012-05-23 11:26:28Z tuexen $");
 #endif
 
-#ifndef __sctp_pcb_h__
-#define __sctp_pcb_h__
+#ifndef _NETINET_SCTP_PCB_H_
+#define _NETINET_SCTP_PCB_H_
 
 #include <netinet/sctp_os.h>
 #include <netinet/sctp.h>
@@ -575,7 +574,7 @@ struct sctp_inpcb {
 	uint32_t readlog_index;
 #endif
 #if defined(__Userspace__)
-	int (*recv_callback)(struct socket *, union sctp_sockstore, void*, size_t, 
+	int (*recv_callback)(struct socket *, union sctp_sockstore, void*, size_t,
                        struct sctp_rcvinfo, int);
 	uint32_t send_sb_threshold;
 	int (*send_callback)(struct socket*, uint32_t);
@@ -584,7 +583,7 @@ struct sctp_inpcb {
 
 #if defined(__Userspace__)
 int register_recv_cb (struct socket*,
-                      int (*)(struct socket *, union sctp_sockstore, void*, size_t, 
+                      int (*)(struct socket *, union sctp_sockstore, void*, size_t,
                               struct sctp_rcvinfo, int));
 int register_send_cb (struct socket*, uint32_t, int (*)(struct socket *, uint32_t));
 
