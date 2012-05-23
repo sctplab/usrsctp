@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 2011 Irene Ruengeler
- * Copyright (c) 2011 Michael Tuexen
+ * Copyright (c) 2011-2012 Irene Ruengeler
+ * Copyright (c) 2011-2012 Michael Tuexen
  *
  * All rights reserved.
  *
