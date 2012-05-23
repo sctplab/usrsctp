@@ -447,9 +447,9 @@ wakeup_one(ident)
 	 */
 	ACCEPT_LOCK();
 #if defined (__Userspace_os_Windows)
-	WakeConditionVariable(&accept_cond);
+	WakeAllConditionVariable(&accept_cond);
 #else
-	pthread_cond_signal(&accept_cond);
+	pthread_cond_broadcast(&accept_cond);
 #endif
 	ACCEPT_UNLOCK();
 }
@@ -1623,9 +1623,9 @@ sowakeup(struct socket *so, struct sockbuf *sb)
 	if (sb->sb_flags & SB_WAIT) {
 		sb->sb_flags &= ~SB_WAIT;
 #if defined (__Userspace_os_Windows)
-		WakeConditionVariable(&(sb)->sb_cond);
+		WakeAllConditionVariable(&(sb)->sb_cond);
 #else
-		pthread_cond_signal(&(sb)->sb_cond);
+		pthread_cond_broadcast(&(sb)->sb_cond);
 #endif
 	}
 	SOCKBUF_UNLOCK(sb);
