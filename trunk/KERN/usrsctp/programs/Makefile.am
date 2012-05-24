@@ -28,8 +28,8 @@
 # SUCH DAMAGE.
 #
 
-EXTRA_DIST = Makefile.nmake tsctp.c daytime_server.c discard_server.c client.c
-noinst_PROGRAMS = tsctp daytime_server discard_server client
+EXTRA_DIST = Makefile.nmake tsctp.c daytime_server.c discard_server.c client.c rtcweb.c
+noinst_PROGRAMS = tsctp daytime_server discard_server client rtcweb
 tsctp_SOURCES = tsctp.c
 tsctp_LDADD = ../usrsctplib/libusrsctp.la
 daytime_server_SOURCES = daytime_server.c
@@ -38,5 +38,7 @@ discard_server_SOURCES = discard_server.c
 discard_server_LDADD = ../usrsctplib/libusrsctp.la
 client_SOURCES = client.c
 client_LDADD = ../usrsctplib/libusrsctp.la
+rtcweb_SOURCES = rtcweb.c
+rtcweb_LDADD = ../usrsctplib/libusrsctp.la
 INCLUDES = -I$(srcdir)/../usrsctplib
 
