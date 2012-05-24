@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.8 2012-05-24 20:57:26 tuexen Exp $
+ * $Id: rtcweb.c,v 1.9 2012-05-24 21:53:18 tuexen Exp $
  */
 
 /*
@@ -1195,7 +1195,7 @@ main(int argc, char *argv[])
 	usrsctp_sysctl_set_sctp_debug_on(0);
 	usrsctp_sysctl_set_sctp_blackhole(2);
 
-	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0)) < 0) {
+	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0)) == NULL) {
 		perror("socket");
 	}
 	if (argc > 2) {
@@ -1262,7 +1262,7 @@ main(int argc, char *argv[])
 		}
 		addr_len = (socklen_t)sizeof(struct sockaddr_in);
 		memset(&addr, 0, sizeof(struct sockaddr_in));
-		if ((conn_sock = usrsctp_accept(sock, (struct sockaddr *)&addr, &addr_len)) < 0) {
+		if ((conn_sock = usrsctp_accept(sock, (struct sockaddr *)&addr, &addr_len)) == NULL) {
 			perror("accept");
 		}
 		usrsctp_close(sock);
