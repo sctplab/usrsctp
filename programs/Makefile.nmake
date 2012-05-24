@@ -42,7 +42,8 @@ all: \
 	client \
 	daytime_server \
 	discard_server \
-	tsctp
+	tsctp \
+	rtcweb
 
 client:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c client.c
@@ -60,6 +61,10 @@ tsctp:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c tsctp.c
 	link -out:tsctp.exe tsctp.obj $(LINKFLAGS)
 
+rtcweb:
+	$(CC) $(CFLAGS) $(CVARSDLL) -c rtcweb.c
+	link -out:rtcweb.exe rtcweb.obj $(LINKFLAGS)
+
 clean:
 	del /F client
 	del /F client.obj
@@ -69,3 +74,5 @@ clean:
 	del /F discard_server.obj
 	del /F tsctp
 	del /F tsctp.obj
+	del /F rtcweb
+	del /F rtcweb.obj
