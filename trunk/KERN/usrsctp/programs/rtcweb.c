@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.5 2012-05-24 16:25:33 tuexen Exp $
+ * $Id: rtcweb.c,v 1.6 2012-05-24 16:41:10 tuexen Exp $
  */
 
 /*
@@ -36,15 +36,21 @@
  */
 
 #include <sys/types.h>
+#if defined(__Userspace_os_Windows)
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+#include <crtdbg.h>
+#else
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <unistd.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <usrsctp.h>
 
 #define LINE_LENGTH (1024)
@@ -77,7 +83,11 @@ struct peer_connection {
 	struct channel *o_stream_channel[NUMBER_OF_STREAMS];
 	uint16_t o_stream_buffer[NUMBER_OF_STREAMS];
 	uint32_t o_stream_buffer_counter;
+#if defined(__Userspace_os_Windows)
+	CRITICAL_SECTION mutex;
+#else
 	pthread_mutex_t mutex;
+#endif
 	struct socket *sock;
 } peer_connection;
 
@@ -100,18 +110,30 @@ struct rtcweb_datachannel_open_request {
 	uint16_t reliability_params;
 	int16_t priority;
 	char label[];
+#if !defined(__Userspace_os_Windows)
 }__attribute__((packed));
+#else
+};
+#endif
 
 struct rtcweb_datachannel_open_response {
 	uint8_t  msg_type; /* DATA_CHANNEL_OPEN_RESPONSE */
 	uint8_t  error;
 	uint16_t flags;
 	uint16_t reverse_stream;
+#if !defined(__Userspace_os_Windows)
 }__attribute__((packed));
+#else
+};
+#endif
 
 struct rtcweb_datachannel_ack {
 	uint8_t  msg_type; /* DATA_CHANNEL_ACK */
+#if !defined(__Userspace_os_Windows)
 }__attribute__((packed));
+#else
+};
+#endif
 
 static void
 init_peer_connection(struct peer_connection *pc, struct socket *sock)
@@ -136,19 +158,31 @@ init_peer_connection(struct peer_connection *pc, struct socket *sock)
 	}
 	pc->o_stream_buffer_counter = 0;
 	pc->sock = sock;
+#if defined(__Userspace_os_Windows)
+	InitializeCriticalSection(&(pc->mutex));
+#else
 	pthread_mutex_init(&pc->mutex, NULL);
+#endif
 }
 
 static void
 lock_peer_connection(struct peer_connection *pc)
 {
+#if defined(__Userspace_os_Windows)
+	EnterCriticalSection(&(pc->mutex));
+#else
 	pthread_mutex_lock(&pc->mutex);
+#endif
 }
 
 static void
 unlock_peer_connection(struct peer_connection *pc)
 {
+#if defined(__Userspace_os_Windows)
+	LeaveCriticalSection(&(pc->mutex));
+#else
 	pthread_mutex_unlock(&pc->mutex);
+#endif
 }
 
 static struct channel *
@@ -1243,11 +1277,15 @@ main(int argc, char *argv[])
 	init_peer_connection(&peer_connection, sock);
 
 	for (;;) {
+#if defined(__Userspace_os_Windows)
+		if (gets_s(line, LINE_LENGTH) == NULL) {
+#else
 		if (fgets(line, LINE_LENGTH, stdin) == NULL) {
+#endif
 			break;
 		}
-		if (strncasecmp(line, "?", strlen("?")) == 0 ||
-		    strncasecmp(line, "help", strlen("help")) == 0) {
+		if (strncmp(line, "?", strlen("?")) == 0 ||
+		    strncmp(line, "help", strlen("help")) == 0) {
 			printf("Commands:\n"
 			       "open unordered pr_policy pr_value - opens a channel\n"
 			       "close channel - closes the channel\n"
@@ -1255,7 +1293,7 @@ main(int argc, char *argv[])
 			       "status - prints the status\n"
 			       "sleep n - sleep for n seconds\n"
 			       "help - this message\n");
-		} else if (strncasecmp(line, "status", strlen("status")) == 0) {
+		} else if (strncmp(line, "status", strlen("status")) == 0) {
 			lock_peer_connection(&peer_connection);
 			print_status(&peer_connection);
 			unlock_peer_connection(&peer_connection);
@@ -1291,7 +1329,11 @@ main(int argc, char *argv[])
 				}
 			}
 		} else if (sscanf(line, "sleep %u", &seconds) == 1) {
+#if defined(__Userspace_os_Windows)
+			Sleep(seconds * 1000);
+#else
 			sleep(seconds);
+#endif
 		} else {
 			printf("Unknown command: %s", line);
 		}
