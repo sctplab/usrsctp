@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.7 2012-05-24 17:33:47 tuexen Exp $
+ * $Id: rtcweb.c,v 1.8 2012-05-24 20:57:26 tuexen Exp $
  */
 
 /*
@@ -37,6 +37,7 @@
 
 #include <sys/types.h>
 #if defined(__Userspace_os_Windows)
+#define _CRT_SECURE_NO_WARNINGS
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <crtdbg.h>
