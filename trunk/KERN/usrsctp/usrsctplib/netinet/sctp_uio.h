@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 235828 2012-05-23 11:26:28Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 235903 2012-05-24 11:52:57Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UIO_H_
@@ -556,10 +556,10 @@ union sctp_notification {
 	struct sctp_pdapi_event sn_pdapi_event;
 	struct sctp_authkey_event sn_auth_event;
 	struct sctp_sender_dry_event sn_sender_dry_event;
+	struct sctp_send_failed_event sn_send_failed_event;
 	struct sctp_stream_reset_event sn_strreset_event;
 	struct sctp_assoc_reset_event  sn_assocreset_event;
 	struct sctp_stream_change_event sn_strchange_event;
-
 };
 
 /* notification types */
