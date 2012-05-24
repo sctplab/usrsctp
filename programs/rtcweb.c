@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.2 2012-05-24 07:46:14 tuexen Exp $
+ * $Id: rtcweb.c,v 1.3 2012-05-24 12:02:11 tuexen Exp $
  */
 
 /*
@@ -945,25 +945,25 @@ handle_remote_error_event(struct sctp_remote_error *sre)
 }
 
 static void
-handle_send_failed(struct sctp_send_failed_event *ssf)
+handle_send_failed_event(struct sctp_send_failed_event *ssfe)
 {
 	size_t i, n;
 
-	if (ssf->ssfe_flags & SCTP_DATA_UNSENT) {
+	if (ssfe->ssfe_flags & SCTP_DATA_UNSENT) {
 		printf("Unsent ");
 	}
-	if (ssf->ssfe_flags & SCTP_DATA_SENT) {
+	if (ssfe->ssfe_flags & SCTP_DATA_SENT) {
 		printf("Sent ");
 	}
-	if (ssf->ssfe_flags & ~(SCTP_DATA_SENT | SCTP_DATA_UNSENT)) {
-		printf("(flags = %x) ", ssf->ssfe_flags);
+	if (ssfe->ssfe_flags & ~(SCTP_DATA_SENT | SCTP_DATA_UNSENT)) {
+		printf("(flags = %x) ", ssfe->ssfe_flags);
 	}
 	printf("message with PPID = %d, SID = %d, flags: 0x%04x due to error = 0x%08x",
-	       ntohl(ssf->ssfe_info.snd_ppid), ssf->ssfe_info.snd_sid,
-	       ssf->ssfe_info.snd_flags, ssf->ssfe_error);
-	n = ssf->ssfe_length - sizeof(struct sctp_send_failed_event);
+	       ntohl(ssfe->ssfe_info.snd_ppid), ssfe->ssfe_info.snd_sid,
+	       ssfe->ssfe_info.snd_flags, ssfe->ssfe_error);
+	n = ssfe->ssfe_length - sizeof(struct sctp_send_failed_event);
 	for (i = 0; i < n; i++) {
-		printf(" 0x%02x", ssf->ssfe_data[i]);
+		printf(" 0x%02x", ssfe->ssfe_data[i]);
 	}
 	printf(".\n");
 	return;
@@ -1000,7 +1000,7 @@ handle_notification(struct peer_connection *pc, union sctp_notification *notif, 
 	case SCTP_NOTIFICATIONS_STOPPED_EVENT:
 		break;
 	case SCTP_SEND_FAILED_EVENT:
-		handle_send_failed(&(notif->sn_send_failed_event));
+		handle_send_failed_event(&(notif->sn_send_failed_event));
 		break;
 	case SCTP_STREAM_RESET_EVENT:
 		handle_stream_reset_event(pc, &(notif->sn_strreset_event));
