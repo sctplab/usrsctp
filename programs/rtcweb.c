@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.6 2012-05-24 16:41:10 tuexen Exp $
+ * $Id: rtcweb.c,v 1.7 2012-05-24 17:33:47 tuexen Exp $
  */
 
 /*
@@ -49,6 +49,7 @@
 #include <unistd.h>
 #endif
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <usrsctp.h>
