@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.3 2012-05-24 12:02:11 tuexen Exp $
+ * $Id: rtcweb.c,v 1.4 2012-05-24 12:10:42 tuexen Exp $
  */
 
 /*
@@ -260,7 +260,6 @@ send_open_request_message(struct socket *sock, uint16_t o_stream, uint8_t unorde
 	/* XXX: This should be encoded in a better way */
 	struct rtcweb_datachannel_open_request req;
 	struct sctp_sndinfo sndinfo;
-	char buffer[BUFFER_SIZE];
 
 	memset(&req, 0, sizeof(struct rtcweb_datachannel_open_request));
 	req.msg_type = DATA_CHANNEL_OPEN_REQUEST;
@@ -285,16 +284,15 @@ send_open_request_message(struct socket *sock, uint16_t o_stream, uint8_t unorde
 	}
 	req.reliability_params = htons((uint16_t)pr_value); /* XXX Why 16-bit */
 	req.priority = htons(0); /* XXX: add support */
-	memcpy(buffer, &req, sizeof(struct rtcweb_datachannel_open_request));
 	memset(&sndinfo, 0, sizeof(struct sctp_sndinfo));
 	sndinfo.snd_sid = o_stream;
 	sndinfo.snd_flags = SCTP_EOR;
 	sndinfo.snd_ppid = htonl(DATA_CHANNEL_PPID_CONTROL);
 	if (usrsctp_sendv(sock,
-	               buffer, sizeof(struct rtcweb_datachannel_open_request),
-	               NULL, 0,
-	               &sndinfo, (socklen_t)sizeof(struct sctp_sndinfo),
-	               SCTP_SENDV_SNDINFO, 0) < 0) {
+	                  &req, sizeof(struct rtcweb_datachannel_open_request),
+	                  NULL, 0,
+	                  &sndinfo, (socklen_t)sizeof(struct sctp_sndinfo),
+	                  SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("sctp_sendv");
 		return (0);
 	} else {
@@ -308,24 +306,22 @@ send_open_response_message(struct socket *sock, uint16_t o_stream, uint16_t i_st
 	/* XXX: This should be encoded in a better way */
 	struct rtcweb_datachannel_open_response rsp;
 	struct sctp_sndinfo sndinfo;
-	char buffer[BUFFER_SIZE];
 
 	memset(&rsp, 0, sizeof(struct rtcweb_datachannel_open_response));
 	rsp.msg_type = DATA_CHANNEL_OPEN_RESPONSE;
 	rsp.error = 0;
 	rsp.flags = htons(0);
 	rsp.reverse_stream = htons(i_stream);
-	memcpy(buffer, &rsp, sizeof(struct rtcweb_datachannel_open_response));
 	memset(&sndinfo, 0, sizeof(struct sctp_sndinfo));
 	sndinfo.snd_sid = o_stream;
 	sndinfo.snd_flags = SCTP_EOR;
 	sndinfo.snd_ppid = htonl(DATA_CHANNEL_PPID_CONTROL);
 	if (usrsctp_sendv(sock,
-	               buffer, sizeof(struct rtcweb_datachannel_open_response),
-	               NULL, 0,
-	               &sndinfo, (socklen_t)sizeof(struct sctp_sndinfo),
-	               SCTP_SENDV_SNDINFO, 0) < 0) {
-	        perror("sctp_sendv");
+	                  &rsp, sizeof(struct rtcweb_datachannel_open_response),
+	                  NULL, 0,
+	                  &sndinfo, (socklen_t)sizeof(struct sctp_sndinfo),
+	                  SCTP_SENDV_SNDINFO, 0) < 0) {
+		perror("sctp_sendv");
 		return (0);
 	} else {
 		return (1);
@@ -338,21 +334,19 @@ send_open_ack_message(struct socket *sock, uint16_t o_stream)
 	/* XXX: This should be encoded in a better way */
 	struct rtcweb_datachannel_ack ack;
 	struct sctp_sndinfo sndinfo;
-	char buffer[BUFFER_SIZE];
 
 	memset(&ack, 0, sizeof(struct rtcweb_datachannel_ack));
 	ack.msg_type = DATA_CHANNEL_ACK;
-	memcpy(buffer, &ack, sizeof(struct rtcweb_datachannel_ack));
 	memset(&sndinfo, 0, sizeof(struct sctp_sndinfo));
 	sndinfo.snd_sid = o_stream;
 	sndinfo.snd_flags = SCTP_EOR;
 	sndinfo.snd_ppid = htonl(DATA_CHANNEL_PPID_CONTROL);
 	if (usrsctp_sendv(sock,
-	               buffer, sizeof(struct rtcweb_datachannel_ack),
-	               NULL, 0,
-	               &sndinfo, (socklen_t)sizeof(struct sctp_sndinfo),
-	               SCTP_SENDV_SNDINFO, 0) < 0) {
-	        perror("sctp_sendv");
+	                  &ack, sizeof(struct rtcweb_datachannel_ack),
+	                  NULL, 0,
+	                  &sndinfo, (socklen_t)sizeof(struct sctp_sndinfo),
+	                  SCTP_SENDV_SNDINFO, 0) < 0) {
+		perror("sctp_sendv");
 		return (0);
 	} else {
 		return (1);
@@ -429,11 +423,11 @@ send_user_message(struct peer_connection *pc, struct channel *channel, char *mes
 		spa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
 	}
 	if (usrsctp_sendv(pc->sock,
-	               message, length,
-	               NULL, 0,
-	               &spa, (socklen_t)sizeof(struct sctp_sendv_spa),
-	               SCTP_SENDV_SPA, 0) < 0) {
-	        perror("sctp_sendv");
+	                  message, length,
+	                  NULL, 0,
+	                  &spa, (socklen_t)sizeof(struct sctp_sendv_spa),
+	                  SCTP_SENDV_SPA, 0) < 0) {
+		perror("sctp_sendv");
 		return (0);
 	} else {
 		return (1);
@@ -1131,9 +1125,8 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		}
 		unlock_peer_connection(&peer_connection);
 	}
-	return 1;
+	return (1);
 }
-
 
 int
 main(int argc, char *argv[])
@@ -1157,12 +1150,12 @@ main(int argc, char *argv[])
 	                          SCTP_SEND_FAILED_EVENT,
 	                          SCTP_STREAM_RESET_EVENT,
 	                          SCTP_STREAM_CHANGE_EVENT};
-  if (argc > 1) {
+
+	if (argc > 1) {
 		usrsctp_init(atoi(argv[1]));
 	} else {
 		usrsctp_init(9899);
 	}
-
 	usrsctp_sysctl_set_sctp_debug_on(0);
 	usrsctp_sysctl_set_sctp_blackhole(2);
 
