@@ -1,5 +1,6 @@
 /*-
  * Copyright (C) 2012 Michael Tuexen
+ * Copyright (C) 2012 Irene Ruengeler
  *
  * All rights reserved.
  *
@@ -27,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.1 2012-05-24 07:45:15 tuexen Exp $
+ * $Id: rtcweb.c,v 1.2 2012-05-24 07:46:14 tuexen Exp $
  */
 
 /*
@@ -1164,7 +1165,7 @@ main(int argc, char *argv[])
 
 	usrsctp_sysctl_set_sctp_debug_on(0);
 	usrsctp_sysctl_set_sctp_blackhole(2);
-	
+
 	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0)) < 0) {
 		perror("socket");
 	}
