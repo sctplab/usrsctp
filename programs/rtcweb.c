@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.4 2012-05-24 12:10:42 tuexen Exp $
+ * $Id: rtcweb.c,v 1.5 2012-05-24 16:25:33 tuexen Exp $
  */
 
 /*
@@ -1291,7 +1291,7 @@ main(int argc, char *argv[])
 				}
 			}
 		} else if (sscanf(line, "sleep %u", &seconds) == 1) {
-				sleep(seconds);
+			sleep(seconds);
 		} else {
 			printf("Unknown command: %s", line);
 		}
