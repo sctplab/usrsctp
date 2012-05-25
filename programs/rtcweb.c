@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.12 2012-05-25 11:06:11 tuexen Exp $
+ * $Id: rtcweb.c,v 1.13 2012-05-25 12:03:23 tuexen Exp $
  */
 
 /*
@@ -693,8 +693,7 @@ handle_message(struct peer_connection *pc, char *buffer, size_t length, uint32_t
 	struct rtcweb_datachannel_open_request *req;
 	struct rtcweb_datachannel_open_response *rsp;
 	struct rtcweb_datachannel_ack *ack, *msg;
-printf("Message of length %lu, PPID %u on stream %u received.\n",
-		       length, ppid, i_stream);
+
 	switch (ppid) {
 	case DATA_CHANNEL_PPID_CONTROL:
 		if (length < sizeof(struct rtcweb_datachannel_ack)) {
