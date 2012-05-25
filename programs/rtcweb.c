@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.10 2012-05-24 22:40:06 tuexen Exp $
+ * $Id: rtcweb.c,v 1.11 2012-05-25 09:29:40 ruengeler Exp $
  */
 
 /*
@@ -48,9 +48,9 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <stdint.h>
 #endif
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <usrsctp.h>
@@ -105,6 +105,13 @@ struct peer_connection {
 
 #define DATA_CHANNEL_FLAG_OUT_OF_ORDER_ALLOWED 0x0001
 
+#if !defined(__Userspace_os_Windows)
+#define SCTP_PACKED __attribute__((packed))
+#else
+#pragma pack (push, 1)
+#define SCTP_PACKED
+#endif
+
 struct rtcweb_datachannel_open_request {
 	uint8_t msg_type; /* DATA_CHANNEL_OPEN_REQUEST */
 	uint8_t channel_type;
@@ -112,30 +119,25 @@ struct rtcweb_datachannel_open_request {
 	uint16_t reliability_params;
 	int16_t priority;
 	char label[];
-#if !defined(__Userspace_os_Windows)
-}__attribute__((packed));
-#else
-};
-#endif
+} SCTP_PACKED;
+
 
 struct rtcweb_datachannel_open_response {
 	uint8_t  msg_type; /* DATA_CHANNEL_OPEN_RESPONSE */
 	uint8_t  error;
 	uint16_t flags;
 	uint16_t reverse_stream;
-#if !defined(__Userspace_os_Windows)
-}__attribute__((packed));
-#else
-};
-#endif
+} SCTP_PACKED;
 
 struct rtcweb_datachannel_ack {
 	uint8_t  msg_type; /* DATA_CHANNEL_ACK */
-#if !defined(__Userspace_os_Windows)
-}__attribute__((packed));
-#else
-};
+} SCTP_PACKED;
+
+#if defined(__Userspace_os_Windows)
+#pragma pack()
 #endif
+
+#undef SCTP_PACKED
 
 static void
 init_peer_connection(struct peer_connection *pc)
@@ -691,7 +693,8 @@ handle_message(struct peer_connection *pc, char *buffer, size_t length, uint32_t
 	struct rtcweb_datachannel_open_request *req;
 	struct rtcweb_datachannel_open_response *rsp;
 	struct rtcweb_datachannel_ack *ack, *msg;
-
+printf("Message of length %lu, PPID %u on stream %u received.\n",
+		       length, ppid, i_stream);
 	switch (ppid) {
 	case DATA_CHANNEL_PPID_CONTROL:
 		if (length < sizeof(struct rtcweb_datachannel_ack)) {
@@ -1325,7 +1328,11 @@ main(int argc, char *argv[])
 				msg = strstr(line, ":");
 				if (msg) {
 					msg++;
+#if defined(__Userspace_os_Windows)
+					if (send_user_message(&peer_connection, &peer_connection.channels[id], msg, strlen(msg))) {
+#else
 					lock_peer_connection(&peer_connection);
+#endif
 					if (send_user_message(&peer_connection, &peer_connection.channels[id], msg, strlen(msg) - 1)) {
 						printf("Message sent.\n");
 					} else {
