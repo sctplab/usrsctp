@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.11 2012-05-25 09:29:40 ruengeler Exp $
+ * $Id: rtcweb.c,v 1.12 2012-05-25 11:06:11 tuexen Exp $
  */
 
 /*
@@ -1328,12 +1328,12 @@ main(int argc, char *argv[])
 				msg = strstr(line, ":");
 				if (msg) {
 					msg++;
+					lock_peer_connection(&peer_connection);
 #if defined(__Userspace_os_Windows)
 					if (send_user_message(&peer_connection, &peer_connection.channels[id], msg, strlen(msg))) {
 #else
-					lock_peer_connection(&peer_connection);
-#endif
 					if (send_user_message(&peer_connection, &peer_connection.channels[id], msg, strlen(msg) - 1)) {
+#endif
 						printf("Message sent.\n");
 					} else {
 						printf("Message sending failed.\n");
