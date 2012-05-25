@@ -829,8 +829,10 @@ usrsctp_sendv(struct socket *so,
 	int error = 0;
 	int uflags = 0;
 	int retvalsendmsg;
+	int use_sinfo;
 
 	memset(&sinfo, 0, sizeof(struct sctp_sndrcvinfo));
+	use_sinfo = 0;
 	switch (infotype) {
 	case SCTP_SENDV_NOINFO:
 		if ((infolen != 0) || (info != NULL)) {
@@ -848,6 +850,7 @@ usrsctp_sendv(struct socket *so,
 		sinfo.sinfo_ppid = ((struct sctp_sndinfo *)info)->snd_ppid;
 		sinfo.sinfo_context = ((struct sctp_sndinfo *)info)->snd_context;
 		sinfo.sinfo_assoc_id = ((struct sctp_sndinfo *)info)->snd_assoc_id;
+		use_sinfo = 1;
 		break;
 	case SCTP_SENDV_PRINFO:
 		if ((info == NULL) || (infolen != sizeof(struct sctp_prinfo))) {
@@ -857,6 +860,7 @@ usrsctp_sendv(struct socket *so,
 		sinfo.sinfo_stream = 0;
 		sinfo.sinfo_flags = PR_SCTP_POLICY(((struct sctp_prinfo *)info)->pr_policy);
 		sinfo.sinfo_timetolive = ((struct sctp_prinfo *)info)->pr_value;
+		use_sinfo = 1;
 		break;
 	case SCTP_SENDV_AUTHINFO:
 		errno = EINVAL;
@@ -884,6 +888,7 @@ usrsctp_sendv(struct socket *so,
 			errno = EINVAL;
 			return (-1);
 		}
+		use_sinfo = 1;
 		break;
 	default:
 		errno = EINVAL;
@@ -906,7 +911,7 @@ usrsctp_sendv(struct socket *so,
 	auio.uio_rw = UIO_WRITE;
 	auio.uio_offset = 0;			/* XXX */
 	auio.uio_resid = len;
-	error = sctp_lower_sosend(so, to, &auio, NULL, NULL, uflags, &sinfo);
+	error = sctp_lower_sosend(so, to, &auio, NULL, NULL, uflags, use_sinfo ? &sinfo : NULL);
 sendmsg_return:
 	if (error == 0)
 		retvalsendmsg = len - auio.uio_resid;
@@ -1225,10 +1230,8 @@ usrsctp_recvv(struct socket *so,
 	int error = 0;
 	int ulen, i, retval;
 	struct sctp_rcvinfo *rcv;
-	struct sctp_nxtinfo *nxt;
-	struct sctp_sndrcvinfo sinfo;
-	struct sctp_extrcvinfo *seinfo;
 	struct sctp_recvv_rn *rn;
+	struct sctp_extrcvinfo seinfo;
 
 	iov[0].iov_base = dbuf;
 	iov[0].iov_len = len;
@@ -1250,39 +1253,62 @@ usrsctp_recvv(struct socket *so,
 	ulen = auio.uio_resid;
 	error = sctp_sorecvmsg(so, &auio, (struct mbuf **)NULL,
 		    from, *fromlen, msg_flags,
-		    (struct sctp_sndrcvinfo *)&sinfo, 1);
+		    (struct sctp_sndrcvinfo *)&seinfo, 1);
 	if (error) {
-		if (auio.uio_resid != (int)ulen && (error == ERESTART ||
-		    error == EINTR || error == EWOULDBLOCK))
+		if (auio.uio_resid != (int)ulen &&
+		    (error == ERESTART || error == EINTR || error == EWOULDBLOCK)) {
 			error = 0;
 		}
-	if (*infolen >= sizeof(struct sctp_rcvinfo)) {
-		rcv = malloc(sizeof(struct sctp_rcvinfo));
-		rcv->rcv_sid = sinfo.sinfo_stream;
-		rcv->rcv_ssn = sinfo.sinfo_ssn;
-		rcv->rcv_flags = sinfo.sinfo_flags;
-		rcv->rcv_ppid = sinfo.sinfo_ppid;
-		rcv->rcv_context = sinfo.sinfo_context;
-		rcv->rcv_tsn = sinfo.sinfo_tsn;
-		rcv->rcv_cumtsn = sinfo.sinfo_cumtsn;
-		rcv->rcv_assoc_id = sinfo.sinfo_assoc_id;
-		if (*infolen >= sizeof(struct sctp_recvv_rn)) {
-			nxt = malloc(sizeof(struct sctp_nxtinfo));
-			seinfo = (struct sctp_extrcvinfo *)&sinfo;
-			nxt->nxt_sid = seinfo->sreinfo_next_stream;
-			nxt->nxt_flags = seinfo->sreinfo_next_flags;
-			nxt->nxt_ppid = seinfo->sreinfo_next_ppid;
-			nxt->nxt_length = seinfo->sreinfo_next_length;
-			nxt->nxt_assoc_id = seinfo->sreinfo_next_aid;
+	}
+	if ((*msg_flags & MSG_NOTIFICATION) == 0) {
+		struct sctp_inpcb *inp;
+
+		inp = (struct sctp_inpcb *)so->so_pcb;
+		if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVNXTINFO) &&
+		    sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVRCVINFO) &&
+		    *infolen >= sizeof(struct sctp_recvv_rn) &&
+		    seinfo.sreinfo_next_flags & SCTP_NEXT_MSG_AVAIL) {
 			rn = (struct sctp_recvv_rn *)info;
-			rn->recvv_rcvinfo = *rcv;
-			rn->recvv_nxtinfo = *nxt;
+			rn->recvv_rcvinfo.rcv_sid = seinfo.sinfo_stream;
+			rn->recvv_rcvinfo.rcv_ssn = seinfo.sinfo_ssn;
+			rn->recvv_rcvinfo.rcv_flags = seinfo.sinfo_flags;
+			rn->recvv_rcvinfo.rcv_ppid = seinfo.sinfo_ppid;
+			rn->recvv_rcvinfo.rcv_context = seinfo.sinfo_context;
+			rn->recvv_rcvinfo.rcv_tsn = seinfo.sinfo_tsn;
+			rn->recvv_rcvinfo.rcv_cumtsn = seinfo.sinfo_cumtsn;
+			rn->recvv_rcvinfo.rcv_assoc_id = seinfo.sinfo_assoc_id;
+			rn->recvv_nxtinfo.nxt_sid = seinfo.sreinfo_next_stream;
+			rn->recvv_nxtinfo.nxt_flags = 0;
+			if (seinfo.sreinfo_next_flags & SCTP_NEXT_MSG_IS_UNORDERED) {
+				rn->recvv_nxtinfo.nxt_flags |= SCTP_UNORDERED;
+			}
+			if (seinfo.sreinfo_next_flags & SCTP_NEXT_MSG_IS_NOTIFICATION) {
+				rn->recvv_nxtinfo.nxt_flags |= SCTP_NOTIFICATION;
+			}
+			if (seinfo.sreinfo_next_flags & SCTP_NEXT_MSG_ISCOMPLETE) {
+				rn->recvv_nxtinfo.nxt_flags |= SCTP_COMPLETE;
+			}
+			rn->recvv_nxtinfo.nxt_ppid = seinfo.sreinfo_next_ppid;
+			rn->recvv_nxtinfo.nxt_length = seinfo.sreinfo_next_length;
+			rn->recvv_nxtinfo.nxt_assoc_id = seinfo.sreinfo_next_aid;
 			*infolen = (socklen_t)sizeof(struct sctp_recvv_rn);
 			*infotype = SCTP_RECVV_RN;
-		} else {
-			memcpy(info, rcv, sizeof(struct sctp_rcvinfo));
+		} else if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVRCVINFO) &&
+		           *infolen >= sizeof(struct sctp_rcvinfo)) {
+			rcv = (struct sctp_rcvinfo *)info;
+			rcv->rcv_sid = seinfo.sinfo_stream;
+			rcv->rcv_ssn = seinfo.sinfo_ssn;
+			rcv->rcv_flags = seinfo.sinfo_flags;
+			rcv->rcv_ppid = seinfo.sinfo_ppid;
+			rcv->rcv_context = seinfo.sinfo_context;
+			rcv->rcv_tsn = seinfo.sinfo_tsn;
+			rcv->rcv_cumtsn = seinfo.sinfo_cumtsn;
+			rcv->rcv_assoc_id = seinfo.sinfo_assoc_id;
 			*infolen = (socklen_t)sizeof(struct sctp_rcvinfo);
-		  *infotype = SCTP_RECVV_RCVINFO;
+			*infotype = SCTP_RECVV_RCVINFO;
+		} else {
+			*infotype = SCTP_RECVV_NOINFO;
+			*infolen = 0;
 		}
 	}
 	if (error == 0) {
