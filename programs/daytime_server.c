@@ -48,6 +48,7 @@
 #endif
 #include <usrsctp.h>
 
+#define DAYTIME_PPID 40
 int
 main(int argc, char *argv[])
 {
@@ -104,10 +105,10 @@ main(int argc, char *argv[])
 #endif
 		sndinfo.snd_sid = 0;
 		sndinfo.snd_flags = 0;
-		sndinfo.snd_ppid = 0;
+		sndinfo.snd_ppid = htonl(DAYTIME_PPID);
 		sndinfo.snd_context = 0;
 		sndinfo.snd_assoc_id = 0;
-		usrsctp_sendv(conn_sock, buffer, strlen(buffer), NULL, 0, (void *)&sndinfo, 
+		usrsctp_sendv(conn_sock, buffer, strlen(buffer), NULL, 0, (void *)&sndinfo,
 		              (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0);
 		usrsctp_close(conn_sock);
 	}
