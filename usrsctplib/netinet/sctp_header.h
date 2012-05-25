@@ -635,5 +635,8 @@ struct sctp_auth_invalid_hmac {
 #if defined(__Windows__)
 #include <packoff.h>
 #endif
+#if defined (__Userspace_os_Windows)
+#pragma pack ()
+#endif
 #undef SCTP_PACKED
 #endif				/* !__sctp_header_h__ */

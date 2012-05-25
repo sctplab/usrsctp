@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 235828 2012-05-23 11:26:28Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 235990 2012-05-25 11:14:08Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_H_
@@ -572,6 +572,7 @@ struct sctp_error_unrecognized_chunk {
 #if defined(__Userspace_os_Windows)
 #pragma pack()
 #endif
+#undef SCTP_PACKED
 
 #include <netinet/sctp_uio.h>
 
@@ -623,8 +624,5 @@ struct sctp_error_unrecognized_chunk {
 #define SCTP_LOG_AT_SEND_2_SCTP				0x04000000
 #define SCTP_LOG_AT_SEND_2_OUTQ				0x08000000
 #define SCTP_LOG_TRY_ADVANCE				0x10000000
-
-
-#undef SCTP_PACKED
 
 #endif				/* !_NETINET_SCTP_H_ */
