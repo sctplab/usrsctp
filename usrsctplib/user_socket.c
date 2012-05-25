@@ -830,6 +830,7 @@ usrsctp_sendv(struct socket *so,
 	int uflags = 0;
 	int retvalsendmsg;
 
+	memset(&sinfo, 0, sizeof(struct sctp_sndrcvinfo));
 	switch (infotype) {
 	case SCTP_SENDV_NOINFO:
 		if ((infolen != 0) || (info != NULL)) {

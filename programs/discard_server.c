@@ -173,11 +173,11 @@ main(int argc, char *argv[])
 					printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d, context %u, complete %d.\n",
 					        n,
 					        inet_ntop(AF_INET6, &addr.sin6_addr, name, INET6_ADDRSTRLEN), ntohs(addr.sin6_port),
-					        rcv.rcv_sid,
-					        rcv.rcv_ssn,
-					        rcv.rcv_tsn,
-					        ntohl(rcv.rcv_ppid),
-					        rcv.rcv_context,
+					        rn.recvv_rcvinfo.rcv_sid,
+					        rn.recvv_rcvinfo.rcv_ssn,
+					        rn.recvv_rcvinfo.rcv_tsn,
+					        ntohl(rn.recvv_rcvinfo.rcv_ppid),
+					        rn.recvv_rcvinfo.rcv_context,
 					        (flags & MSG_EOR) ? 1 : 0);
 				}
 			}
