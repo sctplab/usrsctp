@@ -31,7 +31,7 @@
 \section{Introduction}
 In this manual the socket API for the SCTP User-land implementation will be described. 
 It is based on RFC 6458~\cite{socketAPI}. The main focus of this document is on pointing out
- the differences to the SCTP Sockets API . For all aspects of the sockets API that are not
+ the differences to the SCTP Sockets API. For all aspects of the sockets API that are not
  mentioned in this document, please refer to RFC~6458. Questions about SCTP can hopefully be
  answered by RFC~4960~\cite{SCTP}.
  
@@ -41,7 +41,7 @@ and MAC OS X 10.7.
 The current version of the User-land stack is provided on \textit{http://sctp.fh-muenster.de/sctp-user-land-stack.html}.
 Download the tarball and untar it in a folder of your choice. 
 The tarball contains all the sources to build the libusrsctp, which has to linked to the object file of an 
-example program. In addition there are two application in the folder 'programs'  that can be build and run.
+example program. In addition there are two applications in the folder \textit{programs} that can be built and run.
  
 \subsection{Building the Library and the Applications}
 \subsubsection{Unix-like Operating Systems}
@@ -66,6 +66,65 @@ example programs with the command line tool of the compiler by typing
 nmake -f Makefile.nmake
 \end{verbatim}
 in the directory \textit{usrsctp}.
+
+\subsection{Running the Test Programs}
+There are two test programs included, a discard server and a client. You can run both to send data from the
+client to the server. The client reads data from stdin and sends them to the server, which prints the message
+in the terminal and discards it. The sources of the server are also provided in Section~\ref{server} and those
+of the client in Section~\ref{client}.
+
+\subsubsection{Using UDP Encapsulation}
+Both programs can either send data over SCTP directly or use UDP encapsulation, thus encapsulating the
+SCTP packet in a UDP datagram. The first mode works on loopback or in a protected setup without any 
+NAT boxes involved. In all other cases it is better to use UDP encapsulation.
+
+The usage of the discard\_server is
+\begin{verbatim}
+discard_server [local_encaps_port remote_encaps_port]
+\end{verbatim}
+For UDP encapsulation the ports have to be specified. The local and remote encapsulation port can be arbitrarily
+set.
+For example, you can call
+\begin{verbatim}
+./discard_server 11111 22222
+\end{verbatim}
+on a Unix-like OS and
+\begin{verbatim}
+discard_server.exe 11111 22222
+\end{verbatim}
+on Windows.
+
+The client needs two additional parameters, the server's address and its port.
+Its usage is
+\begin{verbatim}
+client remote_addr remote_port [local_encaps_port remote_encaps_port]
+\end{verbatim}
+The remote address is the server's address. If client and server are started on the same machine,
+the loopback address 127.0.0.1 can be used for Unix-like OSs and the local address on Windows.
+The discard port is 9, thus 9 has to be taken as remote port. The encapsulation ports have to
+match those of the server, i.e. the server's local\_encaps\_port is the client's
+remote\_encaps\_port and vice versa. Thus, the client can be started with
+\begin{verbatim}
+./client 127.0.0.1 9 22222 11111
+\end{verbatim}
+on a Unix-like OS and
+\begin{verbatim}
+client.exe 192.168.0.1 9 22222 11111
+\end{verbatim}
+on Windows provided your local IP address is 192.168.0.1.
+
+\subsubsection{Sending over SCTP}
+To send data over SCTP directly you might need root privileges because raw sockets are used.
+Thus instead of specifying the encapsulation ports you have to start the programs prepending 
+\texttt{sudo} or in case of Windows start the program from an administrator console.
+
+\subsubsection{Using the Callback API}
+Instead of asking constantly for new data, a callback API can be used that is triggered by 
+SCTP. A callback function has to be registered that will be called whenever data is ready to
+be delivered to the application.
+
+The discard\_server has a flag to switch between the two modi. If  use\_cb is set to 1, the
+callback API will be used. To change the setting, just set the flag and compile the program again.
 
 
 
@@ -704,7 +763,7 @@ SCTP\_DEBUG has to be set as a compile flag.
 %\end{longtable}
 
 \section{Examples}
-\subsection{Discard Server}
+\subsection{Discard Server}\label{server}
 \begin{verbatim}
 /*
  * Copyright (C) 2011-2012 Michael Tuexen
@@ -770,8 +829,10 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
                    "SSN %u and TSN %u, PPID %d, context %u.\n",
                    (int)datalen,
                    addr.sa.sa_family == AF_INET ?
-                       inet_ntop(AF_INET, &addr.sin.sin_addr, name, INET6_ADDRSTRLEN):
-                       inet_ntop(AF_INET6, &addr.sin6.sin6_addr, name, INET6_ADDRSTRLEN),
+                       inet_ntop(AF_INET, &addr.sin.sin_addr, name, 
+                                 INET6_ADDRSTRLEN):
+                       inet_ntop(AF_INET6, &addr.sin6.sin6_addr, name, 
+                                 INET6_ADDRSTRLEN),
                    ntohs(addr.sin.sin_port),
                    rcv.rcv_sid,
                    rcv.rcv_ssn,
@@ -792,11 +853,11 @@ main(int argc, char *argv[])
     struct sctp_udpencaps encaps;
     struct sctp_event event;
     uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
-	                          SCTP_PEER_ADDR_CHANGE,
-	                          SCTP_REMOTE_ERROR,
-	                          SCTP_SHUTDOWN_EVENT,
-	                          SCTP_ADAPTATION_INDICATION,
-	                          SCTP_PARTIAL_DELIVERY_EVENT};
+	                              SCTP_PEER_ADDR_CHANGE,
+	                              SCTP_REMOTE_ERROR,
+	                              SCTP_SHUTDOWN_EVENT,
+	                              SCTP_ADAPTATION_INDICATION,
+	                              SCTP_PARTIAL_DELIVERY_EVENT};
     unsigned int i;
     struct sctp_assoc_value av;
     const int on = 1;
@@ -916,7 +977,7 @@ main(int argc, char *argv[])
 
 \end{verbatim}
 
-\subsection{Client}
+\subsection{Client}\label{client}
 \begin{verbatim}
 /*
  * Copyright (C) 2011-2012 Michael Tuexen
@@ -949,7 +1010,7 @@ main(int argc, char *argv[])
  */
 
 /*
- * Usage: client remote_addr remote_port [local_encaps_port] [remote_encaps_port]
+ * Usage: client remote_addr remote_port [local_encaps_port remote_encaps_port]
  */
 
 #include <stdio.h>
@@ -972,86 +1033,91 @@ static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
            size_t datalen, struct sctp_rcvinfo rcv, int flags)
 {
-	if (data == NULL) {
-		done = 1;
-		usrsctp_close(sock);
-	} else {
-		write(fileno(stdout), data, datalen);
-		free(data);
-	}
-	return 1;
+    if (data == NULL) {
+        done = 1;
+        usrsctp_close(sock);
+    } else {
+        write(fileno(stdout), data, datalen);
+        free(data);
+    }
+    return 1;
 }
 
 int
 main(int argc, char *argv[])
 {
-	struct socket *sock;
-	struct sockaddr_in addr4;
-	struct sockaddr_in6 addr6;
-	struct sctp_udpencaps encaps;
-	char buffer[80];
+    struct socket *sock;
+    struct sockaddr_in addr4;
+    struct sockaddr_in6 addr6;
+    struct sctp_udpencaps encaps;
+    char buffer[80];
 
-	if (argc > 3) {
-		usrsctp_init(atoi(argv[3]));
-	} else {
-		usrsctp_init(9899);
-	}
-	usrsctp_sysctl_set_sctp_debug_on(0);
-	usrsctp_sysctl_set_sctp_blackhole(2);
-	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0)) == NULL) {
-		perror("userspace_socket ipv6");
-	}
-	if (argc > 4) {
-		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
-		encaps.sue_address.ss_family = AF_INET6;
-		encaps.sue_port = htons(atoi(argv[4]));
-		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
-			perror("setsockopt");
-		}
-	}
-	memset((void *)&addr4, 0, sizeof(struct sockaddr_in));
-	memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
+    if (argc > 3) {
+        usrsctp_init(atoi(argv[3]));
+    } else {
+        usrsctp_init(9899);
+    }
+    usrsctp_sysctl_set_sctp_debug_on(0);
+    usrsctp_sysctl_set_sctp_blackhole(2);
+    if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, 
+                               receive_cb, NULL, 0)) == NULL) {
+        perror("userspace_socket ipv6");
+    }
+    if (argc > 4) {
+        memset(&encaps, 0, sizeof(struct sctp_udpencaps));
+        encaps.sue_address.ss_family = AF_INET6;
+        encaps.sue_port = htons(atoi(argv[4]));
+        if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, 
+                               (const void*)&encaps, 
+                               (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+            perror("setsockopt");
+        }
+    }
+    memset((void *)&addr4, 0, sizeof(struct sockaddr_in));
+    memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
 #if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
-	addr4.sin_len = sizeof(struct sockaddr_in);
-	addr6.sin6_len = sizeof(struct sockaddr_in6);
+    addr4.sin_len = sizeof(struct sockaddr_in);
+    addr6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
-	addr4.sin_family = AF_INET;
-	addr6.sin6_family = AF_INET6;
-	addr4.sin_port = htons(atoi(argv[2]));
-	addr6.sin6_port = htons(atoi(argv[2]));
-	if (inet_pton(AF_INET6, argv[1], &addr6.sin6_addr) == 1) {
-		if (usrsctp_connect(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
-			perror("userspace_connect");
-		}
-	} else if (inet_pton(AF_INET, argv[1], &addr4.sin_addr) == 1) {
-		if (usrsctp_connect(sock, (struct sockaddr *)&addr4, sizeof(struct sockaddr_in)) < 0) {
-			perror("userspace_connect");
-		}
-	} else {
-		printf("Illegal destination address.\n");
-	}
-	while ((fgets(buffer, sizeof(buffer), stdin) != NULL) && !done) {
-		usrsctp_sendv(sock, buffer, strlen(buffer), NULL, 0,
+    addr4.sin_family = AF_INET;
+    addr6.sin6_family = AF_INET6;
+    addr4.sin_port = htons(atoi(argv[2]));
+    addr6.sin6_port = htons(atoi(argv[2]));
+    if (inet_pton(AF_INET6, argv[1], &addr6.sin6_addr) == 1) {
+        if (usrsctp_connect(sock, (struct sockaddr *)&addr6, 
+                            sizeof(struct sockaddr_in6)) < 0) {
+            perror("userspace_connect");
+        }
+    } else if (inet_pton(AF_INET, argv[1], &addr4.sin_addr) == 1) {
+        if (usrsctp_connect(sock, (struct sockaddr *)&addr4, 
+                            sizeof(struct sockaddr_in)) < 0) {
+            perror("userspace_connect");
+        }
+    } else {
+        printf("Illegal destination address.\n");
+    }
+    while ((fgets(buffer, sizeof(buffer), stdin) != NULL) && !done) {
+        usrsctp_sendv(sock, buffer, strlen(buffer), NULL, 0,
 				                  NULL, 0, SCTP_SENDV_NOINFO, 0);
-	}
-	if (!done) {
-		usrsctp_shutdown(sock, SHUT_WR);
-	}
-	while (!done) {
+    }
+    if (!done) {
+        usrsctp_shutdown(sock, SHUT_WR);
+    }
+    while (!done) {
 #if defined (__Userspace_os_Windows)
-		Sleep(1*1000);
+        Sleep(1*1000);
 #else
-		sleep(1);
+        sleep(1);
 #endif
-	}
-	while (usrsctp_finish() != 0) {
+    }
+    while (usrsctp_finish() != 0) {
 #if defined (__Userspace_os_Windows)
-		Sleep(1000);
+        Sleep(1000);
 #else
-		sleep(1);
+        sleep(1);
 #endif
-	}
-	return(0);
+    }
+    return(0);
 }
 
 \end{verbatim}
