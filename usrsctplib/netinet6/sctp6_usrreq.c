@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 235828 2012-05-23 11:26:28Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 236087 2012-05-26 09:16:33Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -263,11 +263,13 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto)
 	}
 #endif
 	check = sh->checksum;	/* save incoming checksum */
+#if !(defined(__FreeBSD__) && __FreeBSD_version >= 800000)
 	if ((check == 0) && (SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback)) &&
 	    (IN6_ARE_ADDR_EQUAL(&ip6->ip6_src, &ip6->ip6_dst))) {
 		SCTP_STAT_INCR(sctps_recvnocrc);
 		goto sctp_skip_csum;
 	}
+#endif
 	sh->checksum = 0;	/* prepare for calc */
 	calc_check = sctp_calculate_cksum(m, iphlen);
 	SCTP_STAT_INCR(sctps_recvswcrc);
