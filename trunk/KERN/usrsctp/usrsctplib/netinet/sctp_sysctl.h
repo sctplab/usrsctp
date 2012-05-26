@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.h 235828 2012-05-23 11:26:28Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.h 236087 2012-05-26 09:16:33Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_SYSCTL_H_
@@ -49,8 +49,10 @@ struct sctp_sysctl {
 	uint32_t sctp_ecn_enable;
 	uint32_t sctp_fr_max_burst_default;
 	uint32_t sctp_strict_sacks;
+#if !(defined(__FreeBSD__) && __FreeBSD_version >= 800000)
 #if !defined(SCTP_WITH_NO_CSUM)
 	uint32_t sctp_no_csum_on_loopback;
+#endif
 #endif
 	uint32_t sctp_peer_chunk_oh;
 	uint32_t sctp_max_burst_default;
