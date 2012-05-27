@@ -1469,10 +1469,9 @@ struct socket *
 userspace_socket(int domain, int type, int protocol)
 {
 	struct socket *so = NULL;
-	int error;
 
-	error = socreate(domain, &so, type, protocol);
-	if (error) {
+	errno = socreate(domain, &so, type, protocol);
+	if (errno) {
 		return (NULL);
 	}
 	/*
@@ -1492,15 +1491,14 @@ usrsctp_socket(int domain, int type, int protocol,
 	       void *ulp_info)
 {
 	struct socket *so;
-	int error;
 
 	if ((receive_cb == NULL) &&
 	   ((send_cb != NULL) || (sb_threshold != 0) || (ulp_info != NULL))) {
 		errno = EINVAL;
 		return (NULL);
 	}
-	error = socreate(domain, &so, type, protocol);
-	if (error) {
+	errno = socreate(domain, &so, type, protocol);
+	if (errno) {
 		return (NULL);
 	}
 	/*
@@ -1742,41 +1740,27 @@ user_bind(so, sa)
  */
 
 int
-userspace_bind(so, name, namelen)
-     struct socket *so;
-     struct sockaddr *name;
-     int	namelen;
-
+usrsctp_bind(struct socket *so, struct sockaddr *name, int namelen)
 {
 	struct sockaddr *sa;
-	int error;
 
-	if ((error = getsockaddr(&sa, (caddr_t)name, namelen)) != 0)
-		return (error);
+	if ((errno = getsockaddr(&sa, (caddr_t)name, namelen)) != 0)
+		return (-1);
 
-	error = user_bind(so, sa);
+	errno = user_bind(so, sa);
 	FREE(sa, M_SONAME);
-	return (error);
+	if (errno) {
+		return (-1);
+	} else {
+		return (0);
+	}
 }
 
 int
-usrsctp_bind(so, name, namelen)
-     struct socket *so;
-     struct sockaddr *name;
-     socklen_t	namelen;
-
+userspace_bind(struct socket *so, struct sockaddr *name, int namelen)
 {
-	struct sockaddr *sa;
-	int error;
-
-	if ((error = getsockaddr(&sa, (caddr_t)name, namelen)) != 0)
-		return (error);
-
-	error = user_bind(so, sa);
-	FREE(sa, M_SONAME);
-	return (error);
+	return(usrsctp_bind(so, name, namelen));
 }
-
 
 /* Taken from  /src/sys/kern/uipc_socket.c
  * and modified for __Userspace__
@@ -1824,31 +1808,21 @@ solisten_proto(struct socket *so, int backlog)
  */
 
 int
-userspace_listen(so, backlog)
-     struct socket *so;
-     int backlog;
-
+usrsctp_listen(struct socket *so, int backlog)
 {
-	int error;
-
-        error = solisten(so, backlog);
-
-	return(error);
+        errno = solisten(so, backlog);
+	if (errno) {
+		return (-1);
+	} else {
+		return (0);
+	}
 }
 
 int
-usrsctp_listen(so, backlog)
-     struct socket *so;
-     int backlog;
-
+userspace_listen(struct socket *so, int backlog)
 {
-	int error;
-
-        error = solisten(so, backlog);
-
-	return(error);
+	return(usrsctp_listen(so, backlog));
 }
-
 
 /* Taken from  /src/sys/kern/uipc_socket.c
  * and modified for __Userspace__
@@ -1992,11 +1966,7 @@ done:
  * accept1()
  */
 static int
-accept1(so, aname, anamelen, ptr_accept_ret_sock)
-     struct socket *so;
-     struct sockaddr * aname;
-     socklen_t * anamelen;
-     struct socket **ptr_accept_ret_sock;
+accept1(struct socket *so, struct sockaddr *aname, socklen_t *anamelen, struct socket **ptr_accept_ret_sock)
 {
 	struct sockaddr *name;
 	socklen_t namelen;
@@ -2035,19 +2005,13 @@ accept1(so, aname, anamelen, ptr_accept_ret_sock)
 	return (error);
 }
 
-
-
 struct socket *
-userspace_accept(so, aname, anamelen)
-	struct socket *so;
-	struct sockaddr *aname;
-	socklen_t * anamelen;
+usrsctp_accept(struct socket *so, struct sockaddr *aname, socklen_t *anamelen)
 {
-	int error;
 	struct socket *accept_return_sock;
 
-	error = accept1(so, aname, anamelen, &accept_return_sock);
-	if (error) {
+	errno = accept1(so, aname, anamelen, &accept_return_sock);
+	if (errno) {
 		return (NULL);
 	} else {
 		return (accept_return_sock);
@@ -2055,22 +2019,10 @@ userspace_accept(so, aname, anamelen)
 }
 
 struct socket *
-usrsctp_accept(so, aname, anamelen)
-	struct socket *so;
-	struct sockaddr *aname;
-	socklen_t * anamelen;
+userspace_accept(struct socket *so, struct sockaddr *aname, socklen_t *anamelen)
 {
-	int error;
-	struct socket *accept_return_sock;
-
-	error = accept1(so, aname, anamelen, &accept_return_sock);
-	if (error) {
-		return (NULL);
-	} else {
-		return (accept_return_sock);
-	}
+	return (usrsctp_accept(so, aname, anamelen));
 }
-
 
 int
 sodisconnect(struct socket *so)
@@ -2128,9 +2080,7 @@ soconnect(struct socket *so, struct sockaddr *nam)
 
 
 
-int user_connect(so, sa)
-     struct socket *so;
-     struct sockaddr *sa;
+int user_connect(struct socket *so, struct sockaddr *sa)
 {
 	int error;
 	int interrupted = 0;
@@ -2180,51 +2130,26 @@ done1:
 	return (error);
 }
 
-
-
-int userspace_connect(so, name, namelen)
-     struct socket *so;
-     struct sockaddr *name;
-     int namelen;
+int usrsctp_connect(struct socket *so, struct sockaddr *name, int namelen)
 {
-
 	struct sockaddr *sa;
-	int error;
 
-	error = getsockaddr(&sa, (caddr_t)name, namelen);
-	if (error)
-		return (error);
+	errno = getsockaddr(&sa, (caddr_t)name, namelen);
+	if (errno)
+		return (-1);
 
-	error = user_connect(so, sa);
+	errno = user_connect(so, sa);
 	FREE(sa, M_SONAME);
-	return (error);
-
+	if (errno) {
+		return (-1);
+	} else {
+		return (0);
+	}
 }
 
-int usrsctp_connect(so, name, namelen)
-     struct socket *so;
-     struct sockaddr *name;
-     socklen_t namelen;
+int userspace_connect(struct socket *so, struct sockaddr *name, int namelen)
 {
-
-	struct sockaddr *sa;
-	int error;
-
-	error = getsockaddr(&sa, (caddr_t)name, namelen);
-	if (error)
-		return (error);
-
-	error = user_connect(so, sa);
-	FREE(sa, M_SONAME);
-	return (error);
-
-}
-
-void
-userspace_close(struct socket *so) {
-	ACCEPT_LOCK();
-	SOCK_LOCK(so);
-	sorele(so);
+	return(usrsctp_connect(so, name, namelen));
 }
 
 void
@@ -2234,63 +2159,43 @@ usrsctp_close(struct socket *so) {
 	sorele(so);
 }
 
-int
-userspace_shutdown(struct socket *so, int how)
+void
+userspace_close(struct socket *so)
 {
-	int error;
-
-	if (!(how == SHUT_RD || how == SHUT_WR || how == SHUT_RDWR))
-		return (EINVAL);
-
-	sctp_flush(so, how);
-	if (how != SHUT_WR)
-		 socantrcvmore(so);
-	if (how != SHUT_RD) {
-		error = sctp_shutdown(so);
-		return (error);
-	}
-	return (0);
+	return (usrsctp_close(so));
 }
 
 int
 usrsctp_shutdown(struct socket *so, int how)
 {
-	int error;
-
-	if (!(how == SHUT_RD || how == SHUT_WR || how == SHUT_RDWR))
-		return (EINVAL);
+	if (!(how == SHUT_RD || how == SHUT_WR || how == SHUT_RDWR)) {
+		errno = EINVAL;
+		return (-1);
+	}
 
 	sctp_flush(so, how);
 	if (how != SHUT_WR)
 		 socantrcvmore(so);
 	if (how != SHUT_RD) {
-		error = sctp_shutdown(so);
-		return (error);
+		errno = sctp_shutdown(so);
+		if (errno) {
+			return (-1);
+		} else {
+			return (0);
+		}
 	}
 	return (0);
 }
 
-
 int
-userspace_finish(void)
+userspace_shutdown(struct socket *so, int how)
 {
-
-	if (SCTP_INP_INFO_TRYLOCK()) {
-		if (!LIST_EMPTY(&SCTP_BASE_INFO(listhead))) {
-			SCTP_INP_INFO_RUNLOCK();
-			return (-1);
-		}
-	} else {
-		return -1;
-	}
-	sctp_finish();
-	return (0);
+	return (usrsctp_shutdown(so, how));
 }
 
 int
 usrsctp_finish(void)
 {
-
 	if (SCTP_INP_INFO_TRYLOCK()) {
 		if (!LIST_EMPTY(&SCTP_BASE_INFO(listhead))) {
 			SCTP_INP_INFO_RUNLOCK();
@@ -2303,22 +2208,15 @@ usrsctp_finish(void)
 	return (0);
 }
 
+int
+userspace_finish(void)
+{
+	return (usrsctp_finish());
+}
 
 /* needed from sctp_usrreq.c */
 int
 sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize, void *p);
-
-int
-userspace_setsockopt(struct socket *so, int level, int option_name,
-                     const void *option_value, socklen_t option_len)
-{
-	errno = sctp_setopt(so, option_name, (void *) option_value, option_len, NULL);
-	if (errno) {
-		return (-1);
-	} else {
-		return (0);
-	}
-}
 
 int
 usrsctp_setsockopt(struct socket *so, int level, int option_name,
@@ -2332,16 +2230,23 @@ usrsctp_setsockopt(struct socket *so, int level, int option_name,
 	}
 }
 
+int
+userspace_setsockopt(struct socket *so, int level, int option_name,
+                     const void *option_value, socklen_t option_len)
+{
+	return (usrsctp_setsockopt(so, level, option_name, option_value, option_len));
+}
+
 /* needed from sctp_usrreq.c */
 int
 sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 	    void *p);
 
 int
-userspace_getsockopt(struct socket *so, int level, int option_name,
+usrsctp_getsockopt(struct socket *so, int level, int option_name,
                      void *option_value, socklen_t *option_len)
 {
-	errno = sctp_getopt(so, option_name, option_value, (size_t*)&option_len, NULL);
+	errno = sctp_getopt(so, option_name, option_value, (size_t *)option_len, NULL);
 	if (errno) {
 		return (-1);
 	} else {
@@ -2350,15 +2255,10 @@ userspace_getsockopt(struct socket *so, int level, int option_name,
 }
 
 int
-usrsctp_getsockopt(struct socket *so, int level, int option_name,
-                     void *option_value, socklen_t option_len)
+userspace_getsockopt(struct socket *so, int level, int option_name,
+                     void *option_value, socklen_t *option_len)
 {
-	errno = sctp_getopt(so, option_name, option_value, (size_t*)&option_len, NULL);
-	if (errno) {
-		return (-1);
-	} else {
-		return (0);
-	}
+	return (usrsctp_getsockopt(so, level, option_name, option_value, option_len));
 }
 
 void
