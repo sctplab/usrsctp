@@ -50,7 +50,7 @@ int done = 0;
 
 static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
-           size_t datalen, struct sctp_rcvinfo rcv, int flags)
+           size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
 {
 	if (data == NULL) {
 		done = 1;
@@ -78,7 +78,7 @@ main(int argc, char *argv[])
 	}
 	usrsctp_sysctl_set_sctp_debug_on(0);
 	usrsctp_sysctl_set_sctp_blackhole(2);
-	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0)) == NULL) {
+	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("userspace_socket ipv6");
 	}
 	if (argc > 4) {

@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.13 2012-05-25 12:03:23 tuexen Exp $
+ * $Id: rtcweb.c,v 1.14 2012-05-27 11:10:08 tuexen Exp $
  */
 
 /*
@@ -1152,7 +1152,7 @@ print_status(struct peer_connection *pc)
 
 static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
-           size_t datalen, struct sctp_rcvinfo rcv, int flags)
+           size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
 {
 	if (data) {
 		lock_peer_connection(&peer_connection);
@@ -1199,7 +1199,7 @@ main(int argc, char *argv[])
 
 	init_peer_connection(&peer_connection);
 
-	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0)) == NULL) {
+	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("socket");
 	}
 	if (argc > 2) {

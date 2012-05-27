@@ -3665,7 +3665,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 				memset(&rcv, 0, sizeof(struct sctp_rcvinfo));
 				atomic_add_int(&stcb->asoc.refcnt, 1);
 				SCTP_TCB_UNLOCK(stcb);
-				stcb->sctp_ep->recv_callback(stcb->sctp_socket, addr, NULL, 0, rcv, 0);
+				stcb->sctp_ep->recv_callback(stcb->sctp_socket, addr, NULL, 0, rcv, 0, stcb->sctp_ep->ulp_info);
 				SCTP_TCB_LOCK(stcb);
 				atomic_subtract_int(&stcb->asoc.refcnt, 1);
 			}
@@ -4726,7 +4726,7 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 			if (control->spec_flags & M_EOR) {
 				flags |= MSG_EOR;
 			}
-			inp->recv_callback(so, addr, buffer, control->length, rcv, flags);
+			inp->recv_callback(so, addr, buffer, control->length, rcv, flags, inp->ulp_info);
 			SCTP_TCB_LOCK(stcb);
 			atomic_subtract_int(&stcb->asoc.refcnt, 1);
 			sctp_m_freem(control->data);
@@ -4941,7 +4941,7 @@ sctp_append_to_readq(struct sctp_inpcb *inp,
 			if (control->spec_flags & M_EOR) {
 				flags |= MSG_EOR;
 			}
-			inp->recv_callback(so, addr, buffer, control->length, rcv, flags);
+			inp->recv_callback(so, addr, buffer, control->length, rcv, flags, inp->ulp_info);
 			SCTP_TCB_LOCK(stcb);
 			atomic_subtract_int(&stcb->asoc.refcnt, 1);
 			sctp_m_freem(control->data);

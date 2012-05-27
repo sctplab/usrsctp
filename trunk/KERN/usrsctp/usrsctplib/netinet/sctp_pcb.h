@@ -574,18 +574,20 @@ struct sctp_inpcb {
 	uint32_t readlog_index;
 #endif
 #if defined(__Userspace__)
-	int (*recv_callback)(struct socket *, union sctp_sockstore, void*, size_t,
-                       struct sctp_rcvinfo, int);
+	void *ulp_info;
+	int (*recv_callback)(struct socket *, union sctp_sockstore, void *, size_t,
+                             struct sctp_rcvinfo, int, void *);
 	uint32_t send_sb_threshold;
-	int (*send_callback)(struct socket*, uint32_t);
+	int (*send_callback)(struct socket *, uint32_t);
 #endif
 };
 
 #if defined(__Userspace__)
-int register_recv_cb (struct socket*,
-                      int (*)(struct socket *, union sctp_sockstore, void*, size_t,
-                              struct sctp_rcvinfo, int));
-int register_send_cb (struct socket*, uint32_t, int (*)(struct socket *, uint32_t));
+int register_recv_cb (struct socket *,
+                      int (*)(struct socket *, union sctp_sockstore, void *, size_t,
+                              struct sctp_rcvinfo, int, void *));
+int register_send_cb (struct socket *, uint32_t, int (*)(struct socket *, uint32_t));
+int register_ulp_info (struct socket *, void *);
 
 #endif
 struct sctp_tcb {

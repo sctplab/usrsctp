@@ -2689,6 +2689,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	inp->sctp_cmt_on_off = SCTP_BASE_SYSCTL(sctp_cmt_on_off);
 	inp->sctp_ecn_enable = SCTP_BASE_SYSCTL(sctp_ecn_enable);
 #if defined(__Userspace__)
+	inp->ulp_info = NULL;
 	inp->recv_callback = NULL;
 	inp->send_callback = NULL;
 	inp->send_sb_threshold = 0;

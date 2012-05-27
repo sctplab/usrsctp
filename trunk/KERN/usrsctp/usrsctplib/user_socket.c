@@ -1485,15 +1485,17 @@ userspace_socket(int domain, int type, int protocol)
 
 struct socket *
 usrsctp_socket(int domain, int type, int protocol,
-	             int (*receive_cb)(struct socket *sock, union sctp_sockstore addr, void *data,
-                                 size_t datalen, struct sctp_rcvinfo, int flags),
-	             int (*send_cb)(struct socket *sock, uint32_t sb_free),
-	             uint32_t sb_threshold)
+	       int (*receive_cb)(struct socket *sock, union sctp_sockstore addr, void *data,
+                                 size_t datalen, struct sctp_rcvinfo, int flags, void *ulp_info),
+	       int (*send_cb)(struct socket *sock, uint32_t sb_free),
+	       uint32_t sb_threshold,
+	       void *ulp_info)
 {
-	struct socket *so = NULL;
+	struct socket *so;
 	int error;
 
-	if ((receive_cb == NULL) && ((send_cb != NULL) || (sb_threshold != 0))) {
+	if ((receive_cb == NULL) &&
+	   ((send_cb != NULL) || (sb_threshold != 0) || (ulp_info != NULL))) {
 		errno = EINVAL;
 		return (NULL);
 	}
@@ -1508,6 +1510,7 @@ usrsctp_socket(int domain, int type, int protocol,
 	 */
 	register_recv_cb(so, receive_cb);
 	register_send_cb(so, sb_threshold, send_cb);
+	register_ulp_info(so, ulp_info);
 	return (so);
 }
 

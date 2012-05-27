@@ -50,7 +50,7 @@ const int use_cb = 0;
 
 static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
-           size_t datalen, struct sctp_rcvinfo rcv, int flags)
+           size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
 {
 	char name[INET6_ADDRSTRLEN];
 
@@ -107,7 +107,7 @@ main(int argc, char *argv[])
 	usrsctp_sysctl_set_sctp_debug_on(0);
 	usrsctp_sysctl_set_sctp_blackhole(2);
 
-	if ((sock = usrsctp_socket(AF_INET6, SOCK_SEQPACKET, IPPROTO_SCTP, use_cb?receive_cb:NULL, NULL, 0)) == NULL) {
+	if ((sock = usrsctp_socket(AF_INET6, SOCK_SEQPACKET, IPPROTO_SCTP, use_cb?receive_cb:NULL, NULL, 0, NULL)) == NULL) {
 		perror("userspace_socket");
 	}
 	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, (const void*)&on, (socklen_t)sizeof(int)) < 0) {
