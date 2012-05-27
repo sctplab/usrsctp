@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.15 2012-05-27 11:31:25 tuexen Exp $
+ * $Id: rtcweb.c,v 1.16 2012-05-27 11:43:58 tuexen Exp $
  */
 
 /*
@@ -1360,5 +1360,12 @@ main(int argc, char *argv[])
 		}
 	}
 	usrsctp_close(sock);
+	while (usrsctp_finish() != 0) {
+#if defined (__Userspace_os_Windows)
+		Sleep(1000);
+#else
+		sleep(1);
+#endif
+	}
 	return (0);
 }
