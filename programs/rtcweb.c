@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.17 2012-05-27 11:49:11 tuexen Exp $
+ * $Id: rtcweb.c,v 1.18 2012-05-27 14:24:47 tuexen Exp $
  */
 
 /*
@@ -1169,6 +1169,9 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 			handle_message(pc, data, datalen, ntohl(rcv.rcv_ppid), rcv.rcv_sid);
 		}
 		unlock_peer_connection(pc);
+	} else {
+		printf("Done.\n");
+		usrsctp_close(sock);
 	}
 	return (1);
 }
@@ -1299,6 +1302,16 @@ main(int argc, char *argv[])
 #else
 		if (fgets(line, LINE_LENGTH, stdin) == NULL) {
 #endif
+			if (usrsctp_shutdown(sock, SHUT_WR) < 0) {
+				perror("usrsctp_shutdown");
+			}
+			while (usrsctp_finish() != 0) {
+#if defined (__Userspace_os_Windows)
+				Sleep(1000);
+#else
+				sleep(1);
+#endif
+			}
 			break;
 		}
 		if (strncmp(line, "?", strlen("?")) == 0 ||
@@ -1309,11 +1322,24 @@ main(int argc, char *argv[])
 			       "send channel:string - sends string using channel\n"
 			       "status - prints the status\n"
 			       "sleep n - sleep for n seconds\n"
-			       "help - this message\n");
+			       "help - this message\n"
+			       "quit - terminate association and quit\n");
 		} else if (strncmp(line, "status", strlen("status")) == 0) {
 			lock_peer_connection(&peer_connection);
 			print_status(&peer_connection);
 			unlock_peer_connection(&peer_connection);
+		} else if (strncmp(line, "quit", strlen("quit")) == 0) {
+			if (usrsctp_shutdown(sock, SHUT_WR) < 0) {
+				perror("usrsctp_shutdown");
+			}
+			while (usrsctp_finish() != 0) {
+#if defined (__Userspace_os_Windows)
+				Sleep(1000);
+#else
+				sleep(1);
+#endif
+			}
+			break;
 		} else if (sscanf(line, "open %u %u %u", &unordered, &policy, &value) == 3) {
 			lock_peer_connection(&peer_connection);
 			channel = open_channel(&peer_connection, (uint8_t)unordered, (uint16_t)policy, (uint32_t)value);
@@ -1358,14 +1384,6 @@ main(int argc, char *argv[])
 		} else {
 			printf("Unknown command: %s", line);
 		}
-	}
-	usrsctp_close(sock);
-	while (usrsctp_finish() != 0) {
-#if defined (__Userspace_os_Windows)
-		Sleep(1000);
-#else
-		sleep(1);
-#endif
 	}
 	return (0);
 }
