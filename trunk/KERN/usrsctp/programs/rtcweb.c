@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.16 2012-05-27 11:43:58 tuexen Exp $
+ * $Id: rtcweb.c,v 1.17 2012-05-27 11:49:11 tuexen Exp $
  */
 
 /*
@@ -1240,7 +1240,7 @@ main(int argc, char *argv[])
 		}
 	}
 
-	if (argc > 4) {
+	if (argc == 5) {
 		/* operating as client */
 		memset(&addr, 0, sizeof(struct sockaddr_in));
 		addr.sin_family = AF_INET;
@@ -1254,7 +1254,7 @@ main(int argc, char *argv[])
 		}
 		printf("Connected to %s:%d.\n",
 		       inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
-	} else if (argc > 3) {
+	} else if (argc == 4) {
 		struct socket *conn_sock;
 
 		/* operating as server */
@@ -1280,7 +1280,7 @@ main(int argc, char *argv[])
 		sock = conn_sock;
 		printf("Connected to %s:%d.\n",
 		       inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
-	} else if (argc < 2) {
+	} else {
 		printf("Usage: %s local_udp_port remote_udp_port local_port when operating as server\n"
 		       "       %s local_udp_port remote_udp_port remote_addr remote_port when operating as client\n",
 		       argv[0], argv[0]);
