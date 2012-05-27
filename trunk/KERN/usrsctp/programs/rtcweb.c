@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.14 2012-05-27 11:10:08 tuexen Exp $
+ * $Id: rtcweb.c,v 1.15 2012-05-27 11:31:25 tuexen Exp $
  */
 
 /*
@@ -742,7 +742,7 @@ handle_message(struct peer_connection *pc, char *buffer, size_t length, uint32_t
 }
 
 static void
-handle_association_change_event(struct sctp_assoc_change *sac)
+handle_association_change_event(struct peer_connection *pc, struct socket *sock, struct sctp_assoc_change *sac)
 {
 	unsigned int i, n;
 
@@ -803,6 +803,9 @@ handle_association_change_event(struct sctp_assoc_change *sac)
 		}
 	}
 	printf(".\n");
+	if ((sac->sac_state == SCTP_COMM_UP) && (pc->sock == NULL)) {
+		pc->sock = sock;
+	}
 	return;
 }
 
@@ -1002,14 +1005,14 @@ handle_send_failed_event(struct sctp_send_failed_event *ssfe)
 }
 
 static void
-handle_notification(struct peer_connection *pc, union sctp_notification *notif, size_t n)
+handle_notification(struct peer_connection *pc, struct socket *sock, union sctp_notification *notif, size_t n)
 {
 	if (notif->sn_header.sn_length != (uint32_t)n) {
 		return;
 	}
 	switch (notif->sn_header.sn_type) {
 	case SCTP_ASSOC_CHANGE:
-		handle_association_change_event(&(notif->sn_assoc_change));
+		handle_association_change_event(pc, sock, &(notif->sn_assoc_change));
 		break;
 	case SCTP_PEER_ADDR_CHANGE:
 		handle_peer_address_change_event(&(notif->sn_paddr_change));
@@ -1154,14 +1157,18 @@ static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
            size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
 {
+	struct peer_connection *pc;
+
+	pc = (struct peer_connection *)ulp_info;
+
 	if (data) {
-		lock_peer_connection(&peer_connection);
+		lock_peer_connection(pc);
 		if (flags & MSG_NOTIFICATION) {
-			handle_notification(&peer_connection, (union sctp_notification *)data, (int)datalen);
+			handle_notification(pc, sock, (union sctp_notification *)data, datalen);
 		} else {
-			handle_message(&peer_connection, data, datalen, ntohl(rcv.rcv_ppid), rcv.rcv_sid);
+			handle_message(pc, data, datalen, ntohl(rcv.rcv_ppid), rcv.rcv_sid);
 		}
-		unlock_peer_connection(&peer_connection);
+		unlock_peer_connection(pc);
 	}
 	return (1);
 }
@@ -1199,7 +1206,7 @@ main(int argc, char *argv[])
 
 	init_peer_connection(&peer_connection);
 
-	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
+	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &peer_connection)) == NULL) {
 		perror("socket");
 	}
 	if (argc > 2) {
@@ -1281,7 +1288,9 @@ main(int argc, char *argv[])
 	}
 
 	lock_peer_connection(&peer_connection);
-	peer_connection.sock = sock;
+	if (peer_connection.sock == NULL) {
+		peer_connection.sock = sock;
+	}
 	unlock_peer_connection(&peer_connection);
 
 	for (;;) {
