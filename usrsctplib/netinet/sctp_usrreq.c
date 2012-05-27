@@ -7491,11 +7491,11 @@ sctp_usrreq(so, req, m, nam, control)
 
 #if defined(__Userspace__)
 int
-register_recv_cb (struct socket* so,
-                  int (*receive_cb)(struct socket *sock, union sctp_sockstore addr, void *data,
-                                    size_t datalen, struct sctp_rcvinfo, int flags))
+register_recv_cb(struct socket *so,
+                 int (*receive_cb)(struct socket *sock, union sctp_sockstore addr, void *data,
+                 size_t datalen, struct sctp_rcvinfo, int flags, void *ulp_info))
 {
-	struct sctp_inpcb* inp;
+	struct sctp_inpcb *inp;
 
 	inp = (struct sctp_inpcb *) so->so_pcb;
 	if (inp == NULL) {
@@ -7508,9 +7508,9 @@ register_recv_cb (struct socket* so,
 }
 
 int
-register_send_cb (struct socket* so, uint32_t sb_threshold, int (*send_cb)(struct socket *sock, uint32_t sb_free))
+register_send_cb(struct socket *so, uint32_t sb_threshold, int (*send_cb)(struct socket *sock, uint32_t sb_free))
 {
-	struct sctp_inpcb* inp;
+	struct sctp_inpcb *inp;
 
 	inp = (struct sctp_inpcb *) so->so_pcb;
 	if (inp == NULL) {
@@ -7525,6 +7525,21 @@ register_send_cb (struct socket* so, uint32_t sb_threshold, int (*send_cb)(struc
 	 * of the send buffer if this is called a second time e.g. if the
 	 * threshold changes.
 	 */
+	return 1;
+}
+
+int
+register_ulp_info (struct socket *so, void *ulp_info)
+{
+	struct sctp_inpcb *inp;
+
+	inp = (struct sctp_inpcb *) so->so_pcb;
+	if (inp == NULL) {
+		return (0);
+	}
+	SCTP_INP_WLOCK(inp);
+	inp->ulp_info = ulp_info;
+	SCTP_INP_WUNLOCK(inp);
 	return 1;
 }
 #endif

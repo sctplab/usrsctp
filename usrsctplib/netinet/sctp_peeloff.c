@@ -146,6 +146,7 @@ sctp_do_peeloff(struct socket *head, struct socket *so, sctp_assoc_t assoc_id)
 	(void)sctp_copy_skeylist(&inp->sctp_ep.shared_keys,
 	    &n_inp->sctp_ep.shared_keys);
 #if defined(__Userspace__)
+	n_inp->ulp_info = inp->ulp_info;
 	n_inp->recv_callback = inp->recv_callback;
 	n_inp->send_callback = inp->send_callback;
 	n_inp->send_sb_threshold = inp->send_sb_threshold;
@@ -243,6 +244,7 @@ sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
 	n_inp->local_strreset_support = inp->local_strreset_support;
 	n_inp->inp_starting_point_for_iterator = NULL;
 #if defined(__Userspace__)
+	n_inp->ulp_info = inp->ulp_info;
 	n_inp->recv_callback = inp->recv_callback;
 	n_inp->send_callback = inp->send_callback;
 	n_inp->send_sb_threshold = inp->send_sb_threshold;

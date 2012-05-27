@@ -87,15 +87,15 @@ send_error_response(struct socket* sock,
   response[0].msg_type = DATA_CHANNEL_OPEN_RESPONSE;
   response[0].reverse_stream = rcv->rcv_sid;
   *((uint16_t *) &((&msg->reliability_params)[1])) = htons(error);
-            
+
   sndinfo.snd_sid = rcv->rcv_sid;
 	sndinfo.snd_flags = 0;
 	sndinfo.snd_ppid = DATA_CHANNEL_PPID_CONTROL;
 	sndinfo.snd_context = 0;
 	sndinfo.snd_assoc_id = 0;
-						
-	if (usrsctp_sendv(sock, &response[0], sizeof(response[0])+sizeof(uint16_t), NULL, 0, 
-				              (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), 
+
+	if (usrsctp_sendv(sock, &response[0], sizeof(response[0])+sizeof(uint16_t), NULL, 0,
+				              (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo),
 				              SCTP_SENDV_SNDINFO, 0) < 0) {
   	printf("error %d sending response\n", errno);
     /* hard to send an error here... */
@@ -104,10 +104,10 @@ send_error_response(struct socket* sock,
 
 static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
-           size_t datalen, struct sctp_rcvinfo rcv, int flags)
+           size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
 {
 	struct sctp_sndinfo sndinfo;
-	
+
 	if (data == NULL) {
 		/* done = 1;*/ /* XXX? */
 		usrsctp_close(sock);
@@ -194,10 +194,10 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 							sndinfo.snd_ppid = DATA_CHANNEL_PPID_CONTROL;
 							sndinfo.snd_context = 0;
 							sndinfo.snd_assoc_id = 0;
-							
-							if (usrsctp_sendv(sock, &response[0], sizeof(response[0])+sizeof(uint16_t), NULL, 0, 
-				                        (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), 
-				                        SCTP_SENDV_SNDINFO, 0) < 0) {							
+
+							if (usrsctp_sendv(sock, &response[0], sizeof(response[0])+sizeof(uint16_t), NULL, 0,
+				                        (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo),
+				                        SCTP_SENDV_SNDINFO, 0) < 0) {
                 printf("error %d sending response\n",errno);
                 channels_out[forward].reverse = INVALID_STREAM;
                 channels_in[reverse].in_use = 0;
@@ -298,7 +298,7 @@ main(int argc, char *argv[])
 	usrsctp_sysctl_set_sctp_debug_on(0);
 	usrsctp_sysctl_set_sctp_blackhole(2);
 
-	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0)) == NULL) {
+	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 	}
 	if (argc > 2) {
@@ -462,13 +462,13 @@ main(int argc, char *argv[])
 						sndinfo.snd_ppid = DATA_CHANNEL_PPID_CONTROL;
 						sndinfo.snd_context = 0;
 						sndinfo.snd_assoc_id = 0;
-						
+
 						prinfo.pr_value = timeout;
-						
+
 						spa.sendv_sndinfo = sndinfo;
 						spa.sendv_prinfo = prinfo;
 						spa.sendv_flags = SCTP_SEND_SNDINFO_VALID | SCTP_SEND_PRINFO_VALID;
-						if (usrsctp_sendv(conn_sock, &msg[0], len, NULL, 0, 
+						if (usrsctp_sendv(conn_sock, &msg[0], len, NULL, 0,
 				              (void *)&spa, (socklen_t)sizeof(struct sctp_sendv_spa), SCTP_SENDV_SPA,
 				              flags) < 0) {
               printf("error %d sending open\n",errno);
@@ -486,9 +486,9 @@ main(int argc, char *argv[])
 						sndinfo.snd_ppid = DATA_CHANNEL_PPID_DOMSTRING;
 						sndinfo.snd_context = 0;
 						sndinfo.snd_assoc_id = 0;
-						
-						if (usrsctp_sendv(conn_sock, str, strlen(str), NULL, 0, 
-				              (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), 
+
+						if (usrsctp_sendv(conn_sock, str, strlen(str), NULL, 0,
+				              (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo),
 				              SCTP_SENDV_SNDINFO, 0) < 0) {
             	printf("error %d sending string\n",errno);
             }

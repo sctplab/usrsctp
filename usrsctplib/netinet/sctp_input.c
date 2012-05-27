@@ -2810,6 +2810,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 			inp->local_strreset_support = (*inp_p)->local_strreset_support;
 			inp->inp_starting_point_for_iterator = NULL;
 #if defined(__Userspace__)
+			inp->ulp_info = (*inp_p)->ulp_info;
 			inp->recv_callback = (*inp_p)->recv_callback;
 			inp->send_callback = (*inp_p)->send_callback;
 			inp->send_sb_threshold = (*inp_p)->send_sb_threshold;
