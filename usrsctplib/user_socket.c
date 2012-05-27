@@ -2312,14 +2312,24 @@ int
 userspace_setsockopt(struct socket *so, int level, int option_name,
                      const void *option_value, socklen_t option_len)
 {
-	return (sctp_setopt(so, option_name, (void *) option_value, option_len, NULL));
+	errno = sctp_setopt(so, option_name, (void *) option_value, option_len, NULL);
+	if (errno) {
+		return (-1);
+	} else {
+		return (0);
+	}
 }
 
 int
 usrsctp_setsockopt(struct socket *so, int level, int option_name,
                      const void *option_value, socklen_t option_len)
 {
-	return (sctp_setopt(so, option_name, (void *) option_value, option_len, NULL));
+	errno = sctp_setopt(so, option_name, (void *) option_value, option_len, NULL);
+	if (errno) {
+		return (-1);
+	} else {
+		return (0);
+	}
 }
 
 /* needed from sctp_usrreq.c */
@@ -2331,14 +2341,24 @@ int
 userspace_getsockopt(struct socket *so, int level, int option_name,
                      void *option_value, socklen_t *option_len)
 {
-	return (sctp_getopt(so, option_name, option_value, (size_t*)option_len, NULL));
+	errno = sctp_getopt(so, option_name, option_value, (size_t*)&option_len, NULL);
+	if (errno) {
+		return (-1);
+	} else {
+		return (0);
+	}
 }
 
 int
 usrsctp_getsockopt(struct socket *so, int level, int option_name,
                      void *option_value, socklen_t option_len)
 {
-	return (sctp_getopt(so, option_name, option_value, (size_t*)&option_len, NULL));
+	errno = sctp_getopt(so, option_name, option_value, (size_t*)&option_len, NULL);
+	if (errno) {
+		return (-1);
+	} else {
+		return (0);
+	}
 }
 
 void
