@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.18 2012-05-27 14:24:47 tuexen Exp $
+ * $Id: rtcweb.c,v 1.19 2012-05-27 14:34:57 tuexen Exp $
  */
 
 /*
@@ -1170,7 +1170,6 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		}
 		unlock_peer_connection(pc);
 	} else {
-		printf("Done.\n");
 		usrsctp_close(sock);
 	}
 	return (1);
