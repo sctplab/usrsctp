@@ -511,6 +511,7 @@ Data is stored in mbufs. Several mbufs can be chained together. The maximum numb
 can be set with this parameter, before an mbuf cluset is used. The default is 5.
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_add\_more\_threshold()}
+TBD
 This parameter configures the threshold below which more space should be added to a socket send buffer.
 The default value is 1452 bytes.
 
@@ -547,14 +548,17 @@ If a SHUTDOWN is not answered with a SHUTDOWN-ACK while the shutdown guard timer
 running, the association will be aborted after the default of 180~secs.
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_pmtu\_raise\_time\_default()}
+TBD
 To set the size of the packets to the highest value possible, the maximum transfer unit (MTU)
 of the complete path has to be known. The default time interval for the path mtu discovery
 is 600~secs.
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_secret\_lifetime\_default()}
+TBD
 The default secret lifetime of a server is 3600~secs.
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_vtag\_time\_wait()}
+TBD
 Vtag time wait time, 0 disables it. Default: 60~secs
 
 
@@ -580,9 +584,11 @@ The parameter configures how many times an unlucky chunk can be retransmitted be
 association aborts. The default is set to 30.
 				
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_path\_pf\_threshold()}
+TBD
 Default potentially failed threshold. Default: 65535		
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_abort\_if\_one\_2\_one\_hits\_limit()}
+TBD
 When one-2-one hits qlimit abort. Default: 0
 
 		
@@ -597,6 +603,7 @@ SACK in case another packet does not arrive in due time. The default value for t
 200~ms.
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_strict\_sacks()}
+TBD
 This is a flag to turn the controlling of the coherence of SACKs on or off. The default value is
 1 (on).
 
@@ -614,6 +621,7 @@ cases a bit called SACK-IMMEDIATELY~\cite{sack-imm} can be set to provoke the in
 The default is to turn it off. 
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_L2\_abc\_variable()}
+TBD
 SCTP ABC max increase per SACK (L). Default: 1
 
 \subsection{Change Max Burst}
@@ -631,7 +639,7 @@ This parameter is set by default.
 Heartbeats are mostly used to verify a path. Their number can be limited. The default is 4.
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_fr\_max\_burst\_default()}
-In the state of fast retransmission the number of packets bursts can be limited. The default
+In the state of fast retransmission the number of packet bursts can be limited. The default
 value is 4.
 
 
@@ -643,15 +651,19 @@ to store the data. This parameter sets the additional amount to debit the peer's
 chunk sent. The default value is 256, which is the value needed by FreeBSD.
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_max\_chunks\_on\_queue()}
-This parameter sets the maximum number chunks that can be queued per association. The default 
+This parameter sets the maximum number of chunks that can be queued per association. The default 
 value is 512.
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_min\_split\_point()}
+TBD
 The minimum size when splitting a chunk is 2904 bytes by default.
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_chunkscale()}
-This parameter can be tuned for scaling of number of chunks and messages. The default is10.						
+TBD
+This parameter can be tuned for scaling of number of chunks and messages. The default is10.		
+				
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_min\_residual()}
+TBD
 This parameter configures the minimum size of the residual data chunk in the second
 part of the split. The default is 1452.
 
@@ -660,12 +672,15 @@ part of the split. The default is 1452.
 The calculation of the round trip time (RTT) depends on several parameters.
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_rttvar\_bw()}
+TBD
 Shift amount for bw smoothing on rtt calc. Default: 4
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_rttvar\_rtt()}
+TBD
 Shift amount for rtt smoothing on rtt calc. Default: 5
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_rttvar\_eqret()}
+TBD
 What to return when rtt and bw are unchanged. Default: 0
 
 
@@ -683,9 +698,11 @@ Default is 0, i.e. the one specified in RFC~4960.
 Set the initial congestion window in MTUs. The default is 3.
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_use\_dccc\_ecn()}
+TBD
 Enable for RTCC CC datacenter ECN. Default: 1
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_steady\_step()}
+TBD
 How many the sames it takes to try step down of cwnd. Default: 20
 
 
@@ -739,10 +756,12 @@ Set the SCTP/UDP tunneling port. Default: 9899
 
 \subsection{SCTP Mobility}
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_mobility\_base()}
+TBD
 Enable SCTP base mobility. Default: 0
 
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_mobility\_fasthandoff()}
+TBD
 Enable SCTP fast handoff. default: 0
 
 
@@ -759,6 +778,7 @@ The default is 10.
 Determines whether SCTP should respond to the drain calls. Default: 1		
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_strict\_data\_order()}
+TBD
 Enforce strict data ordering, abort if control inside data. Default: 0
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_default\_ss\_module()}
@@ -767,9 +787,11 @@ SCTP\_SS\_DEFAULT, SCTP\_SS\_ROUND\_ROBIN, SCTP\_SS\_ROUND\_ROBIN\_PACKET,
 SCTP\_SS\_PRIORITY, SCTP\_SS\_FAIR\_BANDWITH, and SCTP\_SS\_FIRST\_COME.
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_default\_frag\_interleave()}
+TBD
 Default fragment interleave level. Default: 1
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_blackhole()}
+TBD
 Enable SCTP blackholing. Default: 0
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_logging\_level()}
