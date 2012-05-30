@@ -40,7 +40,7 @@ The User-land stack has been tested on FreeBSD 10.0, Ubuntu 11.10, Windows 7, Ma
 and MAC OS X 10.7.
 The current version of the User-land stack is provided on \textit{http://sctp.fh-muenster.de/sctp-user-land-stack.html}.
 Download the tarball and untar it in a folder of your choice. 
-The tarball contains all the sources to build the libusrsctp, which has to linked to the object file of an 
+The tarball contains all the sources to build the libusrsctp, which has to be linked to the object file of an 
 example program. In addition there are two applications in the folder \textit{programs} that can be built and run.
  
 \subsection{Building the Library and the Applications}
@@ -82,7 +82,7 @@ The usage of the discard\_server is
 \begin{verbatim}
 discard_server [local_encaps_port remote_encaps_port]
 \end{verbatim}
-For UDP encapsulation the ports have to be specified. The local and remote encapsulation port can be arbitrarily
+For UDP encapsulation the ports have to be specified. The local and remote encapsulation ports can be arbitrarily
 set.
 For example, you can call
 \begin{verbatim}
@@ -130,12 +130,12 @@ callback API will be used. To change the setting, just set the flag and compile 
 
 
 \section{Basic Operations}
-All system calls start with the prefix "usrsctp\_" to distinguish them from the kernel variants. 
+All system calls start with the prefix \textit{usrsctp\_} to distinguish them from the kernel variants. 
 Some of them are changed to account for the different demands in the userland environment. 
 
 \subsection{Differences to RFC 6458}
 \subsubsection{usrsctp\_init()}
-Every application has to start with usrsctp\_init(). This function calls sctp\_init() and reserves
+Every application has to start with \textit{usrsctp\_init()}. This function calls \textit{sctp\_init()} and reserves
 the memory necessary to administer the data transfer.
 The function prototype is 
 \begin{verbatim}
@@ -149,7 +149,7 @@ with the parameter \texttt{udp\_port}. The default value is 9899, the standard U
 If UDP encapsulation is not necessary, the UDP port has to be set to 0.
 
 \subsubsection{usrsctp\_finish()}
-As the end of the program usrsctp\_finish() should be called to free all the memory that has been
+At the end of the program \textit{usrsctp\_finish()} should be called to free all the memory that has been
 allocated before.
 The function prototype is 
 \begin{verbatim}
@@ -159,7 +159,7 @@ usrsctp_finish(void).
 The return code is 0 on success and -1 in case of an error.
 
 \subsubsection{usrsctp\_socket()}
-A representation of an SCTP endpoint is a socket. Is it created with usrsctp\_socket().
+A representation of an SCTP endpoint is a socket. Is it created with \textit{usrsctp\_socket()}.
 The function prototype is 
 \begin{verbatim}
 struct socket *
@@ -176,17 +176,28 @@ usrsctp_socket(int domain,
                               uint32_t sb_free),
                uint32_t sb_threshold).
 \end{verbatim}
-The returned socket is described in the \texttt{struct socket} data type. It will be needed in all
-other system calls.
+and the arguments taken from RFC~6458 are
+\begin{itemize}
+\item  domain: PF\_INET or PF\_INET6 can be used.
+\item type: In case of a one-to-many style socket it is SOCK\_SEQPACKET, in case of a one-to-one style 
+socket it is SOCK\_STREAM. For an explanation of the differences between the socket types please
+refer to RFC~6458.
+\item protocol: Set IPPROTO\_SCTP.
+\end{itemize}
+
 In usrsctp a callback API can be used. The function pointers of the receive and send callbacks
-are new arguments to the socket call. They are NULL, is no callback API is used. The sb\_threshold 
+are new arguments to the socket call. They are NULL, if no callback API is used. The sb\_threshold 
 specifies the amount of free space in the send socket buffer before the send function in the 
 application is called. If a send callback function is specified and sb\_threshold is 0, the function is
 called whenever there is room in the send socket buffer.
 
+On success \textit{usrsctp\_socket()} returns the pointer to the new socket in the \texttt{struct socket} data type. 
+It will be needed in all other system calls. In case of a failure NULL is returned and
+errno is set to the appropriate error code.
+
 \subsubsection{usrsctp\_close()}
 
-The function prototype of usrsctp\_close() is 
+The function prototype of \textit{usrsctp\_close()} is 
 \begin{verbatim}   
 void
 usrsctp_close(struct socket *so).
@@ -194,46 +205,95 @@ usrsctp_close(struct socket *so).
 Thus the only difference is the absence of a return code. 
  
 \subsection{Same Functionality as RFC 6458}
-The following functions have the same functionality as their kernel pendants. The only difference is
-that the socket has the data type \texttt{struct socket}.
+The following functions have the same functionality as their kernel pendants. There prototypes
+are described in the following subsections. For a detailed description please refer to RFC~6458.
 
-The function prototype of usrsctp\_bind() is 
+\subsubsection{usrsctp\_bind()}
+The function prototype of \textit{usrsctp\_bind()} is 
 \begin{verbatim}
 int
 usrsctp_bind(struct socket *so,
              struct sockaddr *addr,
              socklen_t addrlen).
-\end{verbatim}      
+\end{verbatim}     
+The arguments are
+\begin{itemize}
+\item so: Pointer to the socket as returned by \textit{usrsctp\_socket()}.
+\item addr: The address structure (struct sockaddr\_in for an IPv4 address
+      or struct sockaddr\_in6 for an IPv6 address).
+\item addrlen: The size of the address structure.
+\end{itemize}
+\textit{usrsctp\_bind()} returns 0 on success and -1 in case of an error.
 
-The function prototype of usrsctp\_listen() is 
+\subsubsection{usrsctp\_listen()}
+The function prototype of \textit{usrsctp\_listen()} is 
 \begin{verbatim}
 int
 usrsctp_listen(struct socket *so,
                int backlog).
  \end{verbatim}      
+The arguments are
+\begin{itemize}
+\item so: Pointer to the socket as returned by \textit{usrsctp\_socket()}.
+\item backlog: If backlog is non-zero, enable listening, else disable
+      listening.
+\end{itemize}
+\textit{usrsctp\_listen()} returns 0 on success and -1 in case of an error.
 
-The function prototype of usrsctp\_accept() is 
+\subsubsection{usrsctp\_accept()}
+The function prototype of \textit{usrsctp\_accept()} is 
 \begin{verbatim}                
 struct socket *
 usrsctp_accept(struct socket *so,
                struct sockaddr * addr,
                socklen_t * addrlen).
  \end{verbatim}
- 
-The function prototype of usrsctp\_connect() is 
+ The arguments are
+\begin{itemize}
+\item so: Pointer to the socket as returned by \textit{usrsctp\_socket()}.
+\item addr: On return,  the primary address of the peer (struct sockaddr\_in for an IPv4 address or
+      struct sockaddr\_in6 for an IPv6 address).
+\item addrlen: Size of the returned address structure.
+\end{itemize}
+\textit{usrsctp\_accept()} returns the accepted socket on success and NULL in case of an error.
+
+\subsubsection{usrsctp\_connect()}
+The function prototype of \textit{usrsctp\_connect()} is 
 \begin{verbatim}     
 int
 usrsctp_connect(struct socket *so,
                 struct sockaddr *name,
                 socklen_t addrlen)
  \end{verbatim}
- 
- 
-The function prototype of usrsctp\_shutdown() is 
+The arguments are
+\begin{itemize}
+\item so: Pointer to the socket as returned by \textit{usrsctp\_socket()}.
+ \item name: Address of the peer to connect to (struct sockaddr\_in for an IPv4 address or
+      struct sockaddr\_in6 for an IPv6 address).
+\item addrlen: Size of the peer's address.
+\end{itemize}
+\textit{usrsctp\_connect()} returns 0 on success and -1 in case of an error.
+
+\subsubsection{usrsctp\_shutdown()} 
+The function prototype of \textit{usrsctp\_shutdown()} is 
 \begin{verbatim}   
 int
 usrsctp_shutdown(struct socket *so, int how).
 \end{verbatim}
+The arguments are
+\begin{itemize}
+\item so: Pointer to the socket of the association to be closed.
+\item how: Specifies the type of shutdown.  The values are as follows:
+\begin{itemize}
+\item SHUT\_RD:  Disables further receive operations.  No SCTP protocol
+         action is taken.
+\item SHUT\_WR:  Disables further send operations, and initiates the SCTP
+         shutdown sequence.
+\item SHUT\_RDWR:  Disables further send and receive operations, and
+         initiates the SCTP shutdown sequence.
+\end{itemize}
+\end{itemize}
+\textit{usrsctp\_listen()} returns 0 on success and -1 in case of an error.
 
 \section{Sending and Receiving Data}
 Since the publication of RFC~6458 there is only one function for sending and one for receiving
@@ -253,23 +313,35 @@ usrsctp_sendv(struct socket *so,
               unsigned int infotype,
               int flags).
 \end{verbatim}
-As it is more convenient to send data in a buffer and not a \texttt{struct iovec} data structure, we
-chose to pass the data as a void pointer and give an indication of its length via the parameter 
-\texttt{len}. 
+The arguments are
+\begin{itemize}
+\item so: The socket to send data on.
+\item data: As it is more convenient to send data in a buffer and not a \texttt{struct iovec} data structure, we
+chose to pass the data as a void pointer.
+\item len: Length of the data.
+\item addrs: In this version of usrsctp at most one destination address is supported. In the case of a connected
+socket, the parameter \texttt{addrs} can be set to NULL.
+\item addrcnt: Number of addresses. As at most one address is supported, addrcnt is 0 if addrs is NULL and 
+1 otherwise.
+\item info: Additional information for a message is stored in \texttt{void *info}. The data types \texttt{struct~sctp\_sndinfo},
+\texttt{struct~sctp\_prinfo}, and \texttt{struct} \linebreak \texttt{sctp\_sendv\_spa} are supported as defined in 
+RFC~6458. Support for \texttt{structsctp\_authinfo} is not implemented yet, therefore, errno is set EINVAL
+and -1 will be returned, if it is used.
+\item infolen: Length of info in bytes.
+\item infotype: Identifies the type of the information provided in info. Possible values are
+SCTP\_SENDV\_NOINFO, SCTP\_SENDV\_SNDINFO, \linebreak SCTP\_SENDV\_PRINFO, SCTP\_SENDV\_SPA. 
+For additional information please refer to RFC~6458.
+\item flags: Flags as described in RFC~6458.
+\end{itemize}
 
-In this version of usrsctp at most one destination address is supported. In the case of a connected
-socket, the parameter \texttt{addrs} can be set to NULL and addrcnt to 0.
+\textit{usrsctp\_sendv()} returns the number of bytes sent, or -1 if an error
+occurred.  The variable errno is then set appropriately.
 
-Additional information for a message is stored in \texttt{void * info}. \texttt{struct sctp\_sndinfo},
-\texttt{struct sctp\_prinfo}, and \texttt{struct sctp\_sendv\_spa} are supported like defined in 
-RFC~6458. Support for \texttt{struct sctp\_authinfo} is not implemented yet, therefore, EINVAL
-will be returned, if it is used.
-
-\subsection{usrsctp\_rcvv()}
+\subsection{usrsctp\_recvv()}
 The function prototype is
 \begin{verbatim}
 ssize_t
-usrsctp_rcvv(struct socket *so,
+usrsctp_recvv(struct socket *so,
              void *dbuf,
              size_t len,
              struct sockaddr *from,
@@ -279,11 +351,38 @@ usrsctp_rcvv(struct socket *so,
              unsigned int *infotype,
              int *msg_flags).
 \end{verbatim}
-Analog to usrsctp\_sendv() the data is returned in a buffer specified by its length. The attributes
-returned in \texttt{info} have to be handled in the same way as specified in RFC~6458.  
+The arguments are
+\begin{itemize}
+\item so: The socket to receive data on.
+\item dbuf: Analog to \textit{usrsctp\_sendv()} the data is returned in a buffer.
+\item len: Length of the buffer in bytes.
+\item from: A pointer to an address to be filled with the sender of the
+      received message's address.
+\item fromlen: An in/out parameter describing the from length.
+\item info: A pointer to the buffer to hold the attributes of the received
+      message.  The structure type of info is determined by the
+      infotype parameter. The attributes returned in \texttt{info} have to be 
+      handled in the same way as specified in RFC~6458.
+\item infolen:  An in/out parameter describing the size of the info buffer.
+\item infotype:  On return, *infotype is set to the type of the info
+      buffer.  The current defined values are SCTP\_RECVV\_NOINFO, 
+      SCTP\_RECVV\_RCVINFO, SCTP\_RECVV\_NXTINFO, and
+      SCTP\_RECVV\_RN. A detailed description is given in RFC~6458.
+\item flags: A pointer to an integer to be filled with any message flags
+      (e.g., MSG\_NOTIFICATION).  Note that this field is an in/out
+      parameter.  Options for the receive may also be passed into the
+      value (e.g., MSG\_EOR).  Returning from the call, the flags' value
+      will differ from its original value.
+\end{itemize}
+
+\textit{usrsctp\_recvv()} returns the number of bytes sent, or -1 if an error
+occurred.  The variable errno is then set appropriately.
+
+  
 
 \section{Socket Options}
-The socket options can be used as specified in RFC~6458. The functions to get or set them are
+Socket options are used to change the default behavior of socket calls.
+Their behavior is specified in RFC~6458. The functions to get or set them are
 
 \begin{verbatim}
 int
@@ -302,6 +401,18 @@ usrsctp_setsockopt(struct socket *so,
                      const void *optval,
                      socklen_t optlen).
 \end{verbatim}
+
+and the arguments are
+\begin{itemize}
+\item so:  The socket of type struct socket.
+\item level:  Set to IPPROTO\_SCTP for all SCTP options.
+\item optname:  The option name as specified in Table~\ref{options}.
+\item optval: The buffer to store the value of the option as specified in the second column of Table~\ref{options}.
+\item optlen:  The size of the buffer (or the length of the option
+      returned in case of \textit{usrsctp\_getsockopt}).
+\end{itemize}
+
+These functions return 0 on success and -1 in case of an error.
 
 \begin{longtable}{|l|l|c|} 
 \hline
