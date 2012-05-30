@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 236087 2012-05-26 09:16:33Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 236332 2012-05-30 20:56:07Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4648,7 +4648,11 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			SCTP_STAT_INCR(sctps_sendnocrc);
 #else
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if __FreeBSD_version >= 901000
+			m->m_pkthdr.csum_flags = CSUM_SCTP_IPV6;
+#else
 			m->m_pkthdr.csum_flags = CSUM_SCTP;
+#endif
 			m->m_pkthdr.csum_data = 0;
 			SCTP_STAT_INCR(sctps_sendhwcrc);
 #else
@@ -11356,7 +11360,11 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 			SCTP_STAT_INCR(sctps_sendnocrc);
 #else
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if __FreeBSD_version >= 901000
+			mout->m_pkthdr.csum_flags = CSUM_SCTP_IPV6;
+#else
 			mout->m_pkthdr.csum_flags = CSUM_SCTP;
+#endif
 			mout->m_pkthdr.csum_data = 0;
 			SCTP_STAT_INCR(sctps_sendhwcrc);
 #else
@@ -12532,7 +12540,11 @@ sctp_send_abort(struct mbuf *m, int iphlen, struct sctphdr *sh, uint32_t vtag,
 			SCTP_STAT_INCR(sctps_sendnocrc);
 #else
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if __FreeBSD_version >= 901000
+			mout->m_pkthdr.csum_flags = CSUM_SCTP_IPV6;
+#else
 			mout->m_pkthdr.csum_flags = CSUM_SCTP;
+#endif
 			mout->m_pkthdr.csum_data = 0;
 			SCTP_STAT_INCR(sctps_sendhwcrc);
 #else
@@ -12860,7 +12872,11 @@ sctp_send_operr_to(struct mbuf *m, int iphlen, struct mbuf *scm, uint32_t vtag,
 			SCTP_STAT_INCR(sctps_sendnocrc);
 #else
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if __FreeBSD_version >= 901000
+			mout->m_pkthdr.csum_flags = CSUM_SCTP_IPV6;
+#else
 			mout->m_pkthdr.csum_flags = CSUM_SCTP;
+#endif
 			mout->m_pkthdr.csum_data = 0;
 			SCTP_STAT_INCR(sctps_sendhwcrc);
 #else
