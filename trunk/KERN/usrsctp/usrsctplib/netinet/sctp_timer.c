@@ -1487,7 +1487,7 @@ sctp_pathmtu_timer(struct sctp_inpcb *inp,
 				if (net->ro._l_addr.sa.sa_family == AF_INET6) {
 					struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&net->ro._l_addr;
 					/* KAME hack: embed scopeid */
-#if defined(SCTP_BASE_FREEBSD) || defined(__APPLE__)
+#if defined(__APPLE__)
 #if defined(APPLE_LION)
 					(void)in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL, NULL);
 #else
