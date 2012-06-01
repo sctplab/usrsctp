@@ -4357,7 +4357,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 
 #ifdef SCTP_EMBEDDED_V6_SCOPE
 		/* KAME hack: embed scopeid */
-#if defined(SCTP_BASE_FREEBSD) || defined(__APPLE__)
+#if defined(__APPLE__)
 #if defined(APPLE_LION)
 		if (in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL, NULL) != 0)
 #else
@@ -4440,7 +4440,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #ifdef SCTP_EMBEDDED_V6_SCOPE
 				sin6 = (struct sockaddr_in6 *)&net->ro._l_addr;
 				/* KAME hack: embed scopeid */
-#if defined(SCTP_BASE_FREEBSD) || defined(__APPLE__)
+#if defined(__APPLE__)
 #if defined(APPLE_LION)
 				if (in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL, NULL) != 0)
 #else
@@ -4485,7 +4485,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #ifdef SCTP_EMBEDDED_V6_SCOPE
 			sin6 = (struct sockaddr_in6 *)&ro->ro_dst;
 			/* KAME hack: embed scopeid */
-#if defined(SCTP_BASE_FREEBSD) || defined(__APPLE__)
+#if defined(__APPLE__)
 #if defined(APPLE_LION)
 			if (in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL, NULL) != 0)
 #else
@@ -4732,7 +4732,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #elif defined(__Windows__)
 #define ND_IFINFO(ifp)	(ifp)
 #define linkmtu		if_mtu
-#endif				/* SCTP_BASE_FREEBSD */
+#endif
 				if (ND_IFINFO(ifp)->linkmtu &&
 				    (stcb->asoc.smallest_mtu > ND_IFINFO(ifp)->linkmtu)) {
 					sctp_mtu_size_reset(inp,
@@ -5793,7 +5793,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				(void)sa6_recoverscope(sin6);
 #endif /* not SCTP_KAME */
 				stc.scope_id = sin6->sin6_scope_id;
-#if defined(SCTP_BASE_FREEBSD) || defined(__APPLE__)
+#if defined(__APPLE__)
 #if defined(APPLE_LION)
 				in6_embedscope(&sin6->sin6_addr, sin6, NULL,
 					       NULL, NULL);
@@ -5843,7 +5843,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				(void)sa6_recoverscope(sin6);
 #endif /* not SCTP_KAME */
 				stc.scope_id = sin6->sin6_scope_id;
-#if defined(SCTP_BASE_FREEBSD) || defined(__APPLE__)
+#if defined(__APPLE__)
 #if defined(APPLE_LION)
 				in6_embedscope(&sin6->sin6_addr, sin6, NULL,
 					       NULL, NULL);

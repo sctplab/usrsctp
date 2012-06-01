@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 235828 2012-05-23 11:26:28Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 236391 2012-06-01 08:26:50Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -50,11 +50,6 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 235828 2012-05-23 11:26:28Z t
  * SCTP_DEBUG_ASCONF1: protocol info, general info and errors
  * SCTP_DEBUG_ASCONF2: detailed info
  */
-#ifdef SCTP_DEBUG
-#if defined(SCTP_BASE_FREEBSD) || defined(__APPLE__)
-#define strlcpy strncpy
-#endif
-#endif /* SCTP_DEBUG */
 
 #if defined(__APPLE__)
 #define APPLE_FILE_NO 1
@@ -927,7 +922,7 @@ sctp_handle_asconf(struct mbuf *m, unsigned int offset,
 
 #else
 			(void)in6_recoverscope(from6, &from6->sin6_addr, NULL);
-#if defined(SCTP_BASE_FREEBSD) || defined(__APPLE__)
+#if defined(__APPLE__)
 #if defined(APPLE_LION)
 			(void)in6_embedscope(&from6->sin6_addr, from6, NULL, NULL, NULL);
 #else
