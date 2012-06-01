@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.19 2012-05-27 14:34:57 tuexen Exp $
+ * $Id: rtcweb.c,v 1.20 2012-06-01 21:00:19 tuexen Exp $
  */
 
 /*
@@ -120,7 +120,6 @@ struct rtcweb_datachannel_open_request {
 	int16_t priority;
 	char label[];
 } SCTP_PACKED;
-
 
 struct rtcweb_datachannel_open_response {
 	uint8_t  msg_type; /* DATA_CHANNEL_OPEN_RESPONSE */
@@ -289,7 +288,6 @@ request_more_o_streams(struct peer_connection *pc)
 		perror("setsockopt");
 	}
 	return;
-
 }
 
 static int
