@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 236332 2012-05-30 20:56:07Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 236492 2012-06-02 20:53:23Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -11325,16 +11325,8 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 #endif
 #ifdef INET6
 	if (ip6_out != NULL) {
-		struct route_in6 ro;
 		int ret;
-#if !defined(__Panda__) && !defined(__Userspace__)
-		struct ifnet *ifp = NULL;
-#endif
 
-		bzero(&ro, sizeof(ro));
-#if defined(__Panda__)
-		ro._l_addr.sa.sa_family = AF_INET6;
-#endif
 		mlen = SCTP_BUF_LEN(mout);
 #ifdef  SCTP_PACKET_LOGGING
 		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING)
@@ -11373,15 +11365,7 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 #endif
 #endif
 		}
-#if !defined(__Userspace__)
-		SCTP_IP6_OUTPUT(ret, o_pak, &ro, &ifp, NULL, vrf_id);
-#else
-		SCTP_IP6_OUTPUT(ret, o_pak, &ro, NULL, NULL, vrf_id);
-#endif
-
-		/* Free the route if we got one back */
-		if (ro.ro_rt)
-			RTFREE(ro.ro_rt);
+		SCTP_IP6_OUTPUT(ret, o_pak, NULL, NULL, NULL, vrf_id);
 	}
 #endif
 	SCTP_STAT_INCR(sctps_sendpackets);
@@ -12500,16 +12484,8 @@ sctp_send_abort(struct mbuf *m, int iphlen, struct sctphdr *sh, uint32_t vtag,
 #endif
 #ifdef INET6
 	if (ip6_out != NULL) {
-		struct route_in6 ro;
 		int ret;
-#if !defined(__Panda__) && !defined(__Userspace__)
-		struct ifnet *ifp = NULL;
-#endif
-		/* zap the stack pointer to the route */
-		bzero(&ro, sizeof(ro));
-#if defined(__Panda__)
-		ro._l_addr.sa.sa_family = AF_INET6;
-#endif
+
 		if (port) {
 			udp->uh_ulen = htons(len - sizeof(struct ip6_hdr));
 		}
@@ -12553,15 +12529,7 @@ sctp_send_abort(struct mbuf *m, int iphlen, struct sctphdr *sh, uint32_t vtag,
 #endif
 #endif
 		}
-#if !defined(__Userspace__)
-		SCTP_IP6_OUTPUT(ret, o_pak, &ro, &ifp, NULL, vrf_id);
-#else
-		SCTP_IP6_OUTPUT(ret, o_pak, &ro, NULL, NULL, vrf_id);
-#endif
-
-		/* Free the route if we got one back */
-		if (ro.ro_rt)
-			RTFREE(ro.ro_rt);
+		SCTP_IP6_OUTPUT(ret, o_pak, NULL, NULL, NULL, vrf_id);
 	}
 #endif
 	SCTP_STAT_INCR(sctps_sendpackets);
@@ -12834,16 +12802,8 @@ sctp_send_operr_to(struct mbuf *m, int iphlen, struct mbuf *scm, uint32_t vtag,
 #endif
 #ifdef INET6
 	if (ip6_out != NULL) {
-		struct route_in6 ro;
 		int ret;
-#if !defined(__Panda__) && !defined(__Userspace__)
-		struct ifnet *ifp = NULL;
-#endif
-		/* zap the stack pointer to the route */
-		bzero(&ro, sizeof(ro));
-#if defined(__Panda__)
-		ro._l_addr.sa.sa_family = AF_INET6;
-#endif
+
 		if (port) {
 			udp->uh_ulen = htons(len - sizeof(struct ip6_hdr));
 		}
@@ -12885,15 +12845,7 @@ sctp_send_operr_to(struct mbuf *m, int iphlen, struct mbuf *scm, uint32_t vtag,
 #endif
 #endif
 		}
-#if !defined(__Userspace__)
-		SCTP_IP6_OUTPUT(ret, o_pak, &ro, &ifp, NULL, vrf_id);
-#else
-		SCTP_IP6_OUTPUT(ret, o_pak, &ro, NULL, NULL, vrf_id);
-#endif
-
-		/* Free the route if we got one back */
-		if (ro.ro_rt)
-			RTFREE(ro.ro_rt);
+		SCTP_IP6_OUTPUT(ret, o_pak, NULL, NULL, NULL, vrf_id);
 	}
 #endif
 	SCTP_STAT_INCR(sctps_sendpackets);
