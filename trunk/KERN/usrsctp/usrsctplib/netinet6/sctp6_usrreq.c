@@ -906,11 +906,7 @@ sctp6_attach(struct socket *so, int proto SCTP_UNUSED, struct proc *p SCTP_UNUSE
 	 * socket as well, because the socket may be bound to an IPv6
 	 * wildcard address, which may match an IPv4-mapped IPv6 address.
 	 */
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined (__Userspace__)
 	inp6->inp_ip_ttl = MODULE_GLOBAL(ip_defttl);
-#else
-	inp->inp_ip_ttl = ip_defttl;
-#endif
 #endif
 	/*
 	 * Hmm what about the IPSEC stuff that is missing here but in

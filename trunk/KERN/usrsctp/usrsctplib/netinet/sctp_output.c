@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 236492 2012-06-02 20:53:23Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 236493 2012-06-02 21:22:26Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -11174,7 +11174,7 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 		iph_out->ip_tos = (u_char)0;
 		iph_out->ip_id = 0;
 		iph_out->ip_off = 0;
-		iph_out->ip_ttl = MAXTTL;
+		iph_out->ip_ttl = MODULE_GLOBAL(ip_defttl);
 		if (port) {
 			iph_out->ip_p = IPPROTO_UDP;
 		} else {
@@ -12306,7 +12306,7 @@ sctp_send_abort(struct mbuf *m, int iphlen, struct sctphdr *sh, uint32_t vtag,
 		iph_out->ip_tos = (u_char)0;
 		iph_out->ip_id = 0;
 		iph_out->ip_off = 0;
-		iph_out->ip_ttl = MAXTTL;
+		iph_out->ip_ttl = MODULE_GLOBAL(ip_defttl);
 		if (port) {
 			iph_out->ip_p = IPPROTO_UDP;
 		} else {
@@ -12628,7 +12628,7 @@ sctp_send_operr_to(struct mbuf *m, int iphlen, struct mbuf *scm, uint32_t vtag,
 		iph_out->ip_tos = (u_char)0;
 		iph_out->ip_id = 0;
 		iph_out->ip_off = 0;
-		iph_out->ip_ttl = MAXTTL;
+		iph_out->ip_ttl = MODULE_GLOBAL(ip_defttl);
 		if (port) {
 			iph_out->ip_p = IPPROTO_UDP;
 		} else {
