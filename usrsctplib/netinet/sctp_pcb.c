@@ -2722,12 +2722,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	}
 #endif				/* IPSEC */
 	SCTP_INCR_EP_COUNT();
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Panda__) || defined(__Windows__) || defined(__Userspace__)
 	inp->ip_inp.inp.inp_ip_ttl = MODULE_GLOBAL(ip_defttl);
-#else /* who's left? */
-	inp->inp_ip_ttl = ip_defttl;
-	inp->inp_ip_tos = 0;
-#endif
 	SCTP_INP_INFO_WUNLOCK();
 
 	so->so_pcb = (caddr_t)inp;
