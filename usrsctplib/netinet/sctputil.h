@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 236391 2012-06-01 08:26:50Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 236450 2012-06-02 13:13:38Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UTIL_H_
@@ -195,7 +195,7 @@ sctp_abort_an_association(struct sctp_inpcb *, struct sctp_tcb *,
 );
 
 void sctp_handle_ootb(struct mbuf *, int, int, struct sctphdr *,
-    struct sctp_inpcb *, struct mbuf *, uint32_t, uint16_t);
+    struct sctp_inpcb *, uint32_t, uint16_t);
 
 int sctp_connectx_helper_add(struct sctp_tcb *stcb, struct sockaddr *addr,
     int totaddr, int *error);
