@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 235828 2012-05-23 11:26:28Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 236522 2012-06-03 18:14:57Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2350,11 +2350,8 @@ sctp_findassociation_addr(struct mbuf *m, int offset,
 #ifdef SCTP_EMBEDDED_V6_SCOPE
 		/* Get the scopes in properly to the sin6 addr's */
 #ifdef SCTP_KAME
-		/* we probably don't need these operations */
-		(void)sa6_recoverscope(from6);
 		sa6_embedscope(from6, MODULE_GLOBAL(ip6_use_defzone));
 #else
-		(void)in6_recoverscope(from6, &from6->sin6_addr, NULL);
 #if defined(__APPLE__)
 #if defined(APPLE_LION)
 		(void)in6_embedscope(&from6->sin6_addr, from6, NULL, NULL, NULL);
@@ -2412,11 +2409,8 @@ sctp_findassociation_addr(struct mbuf *m, int offset,
 #ifdef SCTP_EMBEDDED_V6_SCOPE
 		/* Get the scopes in properly to the sin6 addr's */
 #ifdef SCTP_KAME
-		/* we probably don't need these operations */
-		(void)sa6_recoverscope(to6);
 		sa6_embedscope(to6, MODULE_GLOBAL(ip6_use_defzone));
 #else
-		(void)in6_recoverscope(to6, &to6->sin6_addr, NULL);
 #if defined(__APPLE__)
 #if defined(APPLE_LION)
 		(void)in6_embedscope(&to6->sin6_addr, to6, NULL, NULL, NULL);
