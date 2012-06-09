@@ -13,3 +13,5 @@ libtool
 missing
 m4
 *.tar.gz
+Manual.aux
+Manual.toc
