@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 236493 2012-06-02 21:22:26Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 236956 2012-06-12 13:15:27Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -11089,47 +11089,73 @@ sctp_send_shutdown_complete(struct sctp_tcb *stcb,
 }
 
 #if defined(__FreeBSD__)
-void
-sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
-                             uint32_t vrf_id, uint16_t port)
+static void
+sctp_send_resp_msg(struct mbuf *m, struct sctphdr *sh, uint32_t vtag,
+                   uint8_t type, struct mbuf *cause, uint32_t vrf_id, uint16_t port)
 #else
-void
-sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
-                             uint32_t vrf_id SCTP_UNUSED, uint16_t port)
+static void
+sctp_send_resp_msg(struct mbuf *m, struct sctphdr *sh, uint32_t vtag,
+                   uint8_t type, struct mbuf *cause, uint32_t vrf_id SCTP_UNUSED, uint16_t port)
 #endif
 {
-	/* formulate and SEND a SHUTDOWN-COMPLETE */
 #ifdef __Panda__
 	pakhandle_type o_pak;
 #else
 	struct mbuf *o_pak;
 #endif
 	struct mbuf *mout;
+	struct sctphdr *shout;
+	struct sctp_chunkhdr *ch;
 	struct ip *iph;
-	struct udphdr *udp = NULL;
-	int offset_out, len, mlen;
-	struct sctp_shutdown_complete_msg *comp_cp;
+	struct udphdr *udp;
+	int len, cause_len, padding_len, ret;
 #ifdef INET
+	sctp_route_t ro;
 	struct ip *iph_out;
 #endif
 #ifdef INET6
 	struct ip6_hdr *ip6, *ip6_out;
 #endif
 
+	/* Compute the length of the cause and add final padding. */
+	cause_len = 0;
+	if (cause != NULL) {
+		struct mbuf *m_at, *m_last = NULL;
+
+		for (m_at = cause; m_at; m_at = SCTP_BUF_NEXT(m_at)) {
+			if (SCTP_BUF_NEXT(m_at) == NULL)
+				m_last = m_at;
+			cause_len += SCTP_BUF_LEN(m_at);
+		}
+		padding_len = cause_len % 4;
+		if (padding_len != 0) {
+			padding_len = 4 - padding_len;
+		}
+		if (padding_len != 0) {
+			if (sctp_add_pad_tombuf(m_last, padding_len)) {
+				sctp_m_freem(cause);
+				return;
+			}
+		}
+	} else {
+		padding_len = 0;
+	}
+	/* Get an mbuf for the header. */
+	len = sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr);
 	iph = mtod(m, struct ip *);
 	switch (iph->ip_v) {
 #ifdef INET
 	case IPVERSION:
-		len = (sizeof(struct ip) + sizeof(struct sctp_shutdown_complete_msg));
+		len += sizeof(struct ip);
 		break;
 #endif
 #ifdef INET6
 	case IPV6_VERSION >> 4:
-		len = (sizeof(struct ip6_hdr) + sizeof(struct sctp_shutdown_complete_msg));
+		len += sizeof(struct ip6_hdr);
 		break;
 #endif
 	default:
-		return;
+		break;
 	}
 	if (port) {
 		len += sizeof(struct udphdr);
@@ -11140,6 +11166,9 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 	mout = sctp_get_mbuf_for_msg(len + max_linkhdr, 1, M_DONTWAIT, 1, MT_DATA);
 #endif
 	if (mout == NULL) {
+		if (cause) {
+			sctp_m_freem(cause);
+		}
 		return;
 	}
 #if defined(APPLE_LION)
@@ -11148,7 +11177,7 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 	SCTP_BUF_RESV_UF(mout, max_linkhdr);
 #endif
 	SCTP_BUF_LEN(mout) = len;
-	SCTP_BUF_NEXT(mout) = NULL;
+	SCTP_BUF_NEXT(mout) = cause;
 #if defined(__FreeBSD__)
 	if (m->m_flags & M_FLOWID) {
 		mout->m_pkthdr.flowid = m->m_pkthdr.flowid;
@@ -11161,18 +11190,24 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 #ifdef INET6
 	ip6_out = NULL;
 #endif
-	offset_out = 0;
-
 	switch (iph->ip_v) {
 #ifdef INET
 	case IPVERSION:
 		iph_out = mtod(mout, struct ip *);
-
-		/* Fill in the IP header for the ABORT */
 		iph_out->ip_v = IPVERSION;
-		iph_out->ip_hl = (sizeof(struct ip) / 4);
-		iph_out->ip_tos = (u_char)0;
-		iph_out->ip_id = 0;
+		iph_out->ip_hl = (sizeof(struct ip) >> 2);
+		iph_out->ip_tos = 0;
+#if defined(__FreeBSD__)
+		iph_out->ip_id = ip_newid();
+#elif defined(__APPLE__)
+#if RANDOM_IP_ID
+		iph_out->ip_id = ip_randomid();
+#else
+		iph_out->ip_id = htons(ip_id++);
+#endif
+#else
+                iph_out->ip_id = htons(ip_id++));
+#endif
 		iph_out->ip_off = 0;
 		iph_out->ip_ttl = MODULE_GLOBAL(ip_defttl);
 		if (port) {
@@ -11182,21 +11217,21 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 		}
 		iph_out->ip_src.s_addr = iph->ip_dst.s_addr;
 		iph_out->ip_dst.s_addr = iph->ip_src.s_addr;
-
-		/* let IP layer calculate this */
 		iph_out->ip_sum = 0;
-		offset_out += sizeof(*iph_out);
-		comp_cp = (struct sctp_shutdown_complete_msg *)(
-		    (caddr_t)iph_out + offset_out);
+		len = sizeof(struct ip);
+		shout = (struct sctphdr *)((caddr_t)iph_out + len);
 		break;
 #endif
 #ifdef INET6
 	case IPV6_VERSION >> 4:
 		ip6 = (struct ip6_hdr *)iph;
 		ip6_out = mtod(mout, struct ip6_hdr *);
-
-		/* Fill in the IPv6 header for the ABORT */
-		ip6_out->ip6_flow = ip6->ip6_flow;
+		ip6_out->ip6_flow = htonl(0x60000000);
+#if defined(__FreeBSD__)
+		if (V_ip6_auto_flowlabel) {
+			ip6_out->ip6_flow |= (htonl(ip6_randomflowlabel()) & IPV6_FLOWLABEL_MASK);
+		}
+#endif
 #if defined(__Userspace__)
 		ip6_out->ip6_hlim = IPv6_HOP_LIMIT;
 #else
@@ -11209,32 +11244,67 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 		}
 		ip6_out->ip6_src = ip6->ip6_dst;
 		ip6_out->ip6_dst = ip6->ip6_src;
-		/* ?? The old code had both the iph len + payload, I think
-		 * this is wrong and would never have worked
-		 */
- 		ip6_out->ip6_plen = sizeof(struct sctp_shutdown_complete_msg);
-		offset_out += sizeof(*ip6_out);
-		comp_cp = (struct sctp_shutdown_complete_msg *)(
-		    (caddr_t)ip6_out + offset_out);
+		len = sizeof(struct ip6_hdr);
+		shout = (struct sctphdr *)((caddr_t)ip6_out + len);
 		break;
-#endif /* INET6 */
+#endif
 	default:
-		/* Currently not supported. */
-		sctp_m_freem(mout);
-		return;
+		len = 0;
+		shout = mtod(mout, struct sctphdr *);
+		break;
 	}
 	if (port) {
 		if (htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port)) == 0) {
 			sctp_m_freem(mout);
 			return;
 		}
-		udp = (struct udphdr *)comp_cp;
+		udp = (struct udphdr *)shout;
 		udp->uh_sport = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
 		udp->uh_dport = port;
-		udp->uh_ulen = htons(sizeof(struct sctp_shutdown_complete_msg) + sizeof(struct udphdr));
-#if !defined(__Windows__) && !defined(__Userspace__)
+		udp->uh_sum = 0;
+		udp->uh_ulen = htons(sizeof(struct udphdr) +
+		                     sizeof(struct sctphdr) +
+		                     sizeof(struct sctp_chunkhdr) +
+		                     cause_len + padding_len);
+		len += sizeof(struct udphdr);
+		shout = (struct sctphdr *)((caddr_t)shout + sizeof(struct udphdr));
+	} else {
+		udp = NULL;
+	}
+	shout->src_port = sh->dest_port;
+	shout->dest_port = sh->src_port;
+	shout->checksum = 0;
+	if (vtag) {
+		shout->v_tag = htonl(vtag);
+	} else {
+		shout->v_tag = sh->v_tag;
+	}
+	len += sizeof(struct sctphdr);
+	ch = (struct sctp_chunkhdr *)((caddr_t)shout + sizeof(struct sctphdr));
+	ch->chunk_type = type;
+	if (vtag) {
+		ch->chunk_flags = 0;
+	} else {
+		ch->chunk_flags = SCTP_HAD_NO_TCB;
+	}
+	ch->chunk_length = htons(sizeof(struct sctp_chunkhdr) + cause_len);
+	len += sizeof(struct sctp_chunkhdr);
+	len += cause_len + padding_len;
+
+	if (SCTP_GET_HEADER_FOR_OUTPUT(o_pak)) {
+		sctp_m_freem(mout);
+		return;
+	}
+	SCTP_ATTACH_CHAIN(o_pak, mout, len);
 #ifdef INET
-		if (iph_out) {
+	if (iph_out != NULL) {
+		/* zap the stack pointer to the route */
+		bzero(&ro, sizeof(sctp_route_t));
+#if defined(__Panda__)
+		ro._l_addr.sa.sa_family = AF_INET;
+#endif
+		if (port) {
+#if !defined(__Windows__) && !defined(__Userspace__)
 #if defined(__FreeBSD__) && ((__FreeBSD_version > 803000 && __FreeBSD_version < 900000) || __FreeBSD_version > 900000)
 			if (V_udp_cksum) {
 				udp->uh_sum = in_pseudo(iph_out->ip_src.s_addr, iph_out->ip_dst.s_addr, udp->uh_ulen + htons(IPPROTO_UDP));
@@ -11244,61 +11314,33 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 #else
 			udp->uh_sum = in_pseudo(iph_out->ip_src.s_addr, iph_out->ip_dst.s_addr, udp->uh_ulen + htons(IPPROTO_UDP));
 #endif
+#else
+			udp->uh_sum = 0;
+#endif
 		}
-#endif
-#else
-		udp->uh_sum = 0;
-#endif
-		offset_out += sizeof(struct udphdr);
-		comp_cp = (struct sctp_shutdown_complete_msg *)((caddr_t)comp_cp + sizeof(struct udphdr));
-	}
-	if (SCTP_GET_HEADER_FOR_OUTPUT(o_pak)) {
-		/* no mbuf's */
-		sctp_m_freem(mout);
-		return;
-	}
-	/* Now copy in and fill in the ABORT tags etc. */
-	comp_cp->sh.src_port = sh->dest_port;
-	comp_cp->sh.dest_port = sh->src_port;
-	comp_cp->sh.checksum = 0;
-	comp_cp->sh.v_tag = sh->v_tag;
-	comp_cp->shut_cmp.ch.chunk_flags = SCTP_HAD_NO_TCB;
-	comp_cp->shut_cmp.ch.chunk_type = SCTP_SHUTDOWN_COMPLETE;
-	comp_cp->shut_cmp.ch.chunk_length = htons(sizeof(struct sctp_shutdown_complete_chunk));
-
-#ifdef INET
-	if (iph_out != NULL) {
-		sctp_route_t ro;
-		int ret;
-
-		mlen = SCTP_BUF_LEN(mout);
-		bzero(&ro, sizeof ro);
-#if defined(__Panda__)
-		ro._l_addr.sa.sa_family = AF_INET;
-#endif
-		/* set IPv4 length */
 #if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Userspace__)
-		iph_out->ip_len = mlen;
+		iph_out->ip_len = len;
 #else
-		iph_out->ip_len = htons(mlen);
+		iph_out->ip_len = htons(len);
 #endif
-#ifdef  SCTP_PACKET_LOGGING
-		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING)
-			sctp_packet_log(mout, mlen);
+#ifdef SCTP_PACKET_LOGGING
+		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING) {
+			sctp_packet_log(mout, len);
+		}
 #endif
 		if (port) {
 #if defined(SCTP_WITH_NO_CSUM)
 			SCTP_STAT_INCR(sctps_sendnocrc);
 #else
-			comp_cp->sh.checksum = sctp_calculate_cksum(mout, offset_out);
+			shout->checksum = sctp_calculate_cksum(mout, sizeof(struct ip) + sizeof(struct udphdr));
 			SCTP_STAT_INCR(sctps_sendswcrc);
 #endif
 #if defined(__FreeBSD__) && ((__FreeBSD_version > 803000 && __FreeBSD_version < 900000) || __FreeBSD_version > 900000)
 			if (V_udp_cksum) {
-				SCTP_ENABLE_UDP_CSUM(mout);
+				SCTP_ENABLE_UDP_CSUM(o_pak);
 			}
 #else
-			SCTP_ENABLE_UDP_CSUM(mout);
+			SCTP_ENABLE_UDP_CSUM(o_pak);
 #endif
 		} else {
 #if defined(SCTP_WITH_NO_CSUM)
@@ -11309,41 +11351,37 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 			mout->m_pkthdr.csum_data = 0;
 			SCTP_STAT_INCR(sctps_sendhwcrc);
 #else
-			comp_cp->sh.checksum = sctp_calculate_cksum(mout, offset_out);
+			shout->checksum = sctp_calculate_cksum(mout, sizeof(struct ip));
 			SCTP_STAT_INCR(sctps_sendswcrc);
 #endif
 #endif
 		}
-		SCTP_ATTACH_CHAIN(o_pak, mout, mlen);
-		/* out it goes */
 		SCTP_IP_OUTPUT(ret, o_pak, &ro, NULL, vrf_id);
-
 		/* Free the route if we got one back */
-		if (ro.ro_rt)
+		if (ro.ro_rt) {
 			RTFREE(ro.ro_rt);
+		}
 	}
 #endif
 #ifdef INET6
 	if (ip6_out != NULL) {
-		int ret;
-
-		mlen = SCTP_BUF_LEN(mout);
+		ip6_out->ip6_plen = len - sizeof(struct ip6_hdr);
 #ifdef  SCTP_PACKET_LOGGING
-		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING)
-			sctp_packet_log(mout, mlen);
+		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING) {
+			sctp_packet_log(mout, len);
+		}
 #endif
-		SCTP_ATTACH_CHAIN(o_pak, mout, mlen);
 		if (port) {
 #if defined(SCTP_WITH_NO_CSUM)
 			SCTP_STAT_INCR(sctps_sendnocrc);
 #else
-			comp_cp->sh.checksum = sctp_calculate_cksum(mout, sizeof(struct ip6_hdr) + sizeof(struct udphdr));
+			shout->checksum = sctp_calculate_cksum(mout, sizeof(struct ip6_hdr) + sizeof(struct udphdr));
 			SCTP_STAT_INCR(sctps_sendswcrc);
 #endif
 #if defined(__Windows__)
 			udp->uh_sum = 0;
 #elif !defined(__Userspace__)
-			if ((udp->uh_sum = in6_cksum(o_pak, IPPROTO_UDP, sizeof(struct ip6_hdr), mlen - sizeof(struct ip6_hdr))) == 0) {
+			if ((udp->uh_sum = in6_cksum(o_pak, IPPROTO_UDP, sizeof(struct ip6_hdr), len - sizeof(struct ip6_hdr))) == 0) {
 				udp->uh_sum = 0xffff;
 			}
 #endif
@@ -11360,7 +11398,7 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 			mout->m_pkthdr.csum_data = 0;
 			SCTP_STAT_INCR(sctps_sendhwcrc);
 #else
-			comp_cp->sh.checksum = sctp_calculate_cksum(mout, sizeof(struct ip6_hdr));
+			shout->checksum = sctp_calculate_cksum(mout, sizeof(struct ip6_hdr));
 			SCTP_STAT_INCR(sctps_sendswcrc);
 #endif
 #endif
@@ -11372,7 +11410,13 @@ sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
 	SCTP_STAT_INCR_COUNTER64(sctps_outpackets);
 	SCTP_STAT_INCR_COUNTER64(sctps_outcontrolchunks);
 	return;
+}
 
+void
+sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
+                             uint32_t vrf_id, uint16_t port)
+{
+	sctp_send_resp_msg(m, sh, 0, SCTP_SHUTDOWN_COMPLETE, NULL, vrf_id, port);
 }
 
 void
@@ -12207,650 +12251,26 @@ skip_stuff:
 	return (0);
 }
 
-#if defined(__FreeBSD__)
 void
 sctp_send_abort(struct mbuf *m, int iphlen, struct sctphdr *sh, uint32_t vtag,
-                struct mbuf *err_cause, uint32_t vrf_id, uint16_t port)
-#else
-void
-sctp_send_abort(struct mbuf *m, int iphlen, struct sctphdr *sh, uint32_t vtag,
-                struct mbuf *err_cause, uint32_t vrf_id SCTP_UNUSED, uint16_t port)
-#endif
+                struct mbuf *cause, uint32_t vrf_id, uint16_t port)
 {
-	/*-
-	 * Formulate the abort message, and send it back down.
-	 */
-#ifdef __Panda__
-	pakhandle_type o_pak;
-#else
-	struct mbuf *o_pak;
-#endif
-	struct mbuf *mout;
-	struct sctp_abort_msg *abm;
-	struct ip *iph;
-	struct udphdr *udp;
-	int iphlen_out, len;
-#ifdef INET
-	struct ip *iph_out;
-#endif
-#ifdef INET6
-	struct ip6_hdr *ip6, *ip6_out;
-#endif
-
-	/* don't respond to ABORT with ABORT */
+	/* Don't respond to an ABORT with an ABORT. */
 	if (sctp_is_there_an_abort_here(m, iphlen, &vtag)) {
-		if (err_cause)
-			sctp_m_freem(err_cause);
+		if (cause)
+			sctp_m_freem(cause);
 		return;
 	}
-
-	iph = mtod(m, struct ip *);
-	switch (iph->ip_v) {
-#ifdef INET
-	case IPVERSION:
-		len = (sizeof(struct ip) + sizeof(struct sctp_abort_msg));
-		break;
-#endif
-#ifdef INET6
-	case IPV6_VERSION >> 4:
-		len = (sizeof(struct ip6_hdr) + sizeof(struct sctp_abort_msg));
-		break;
-#endif
-	default:
-		if (err_cause) {
-			sctp_m_freem(err_cause);
-		}
-		return;
-	}
-	if (port) {
-		len += sizeof(struct udphdr);
-	}
-#if defined(APPLE_LION)
-	mout = sctp_get_mbuf_for_msg(len + SCTP_MAX_LINKHDR, 1, M_DONTWAIT, 1, MT_DATA);
-#else
-	mout = sctp_get_mbuf_for_msg(len + max_linkhdr, 1, M_DONTWAIT, 1, MT_DATA);
-#endif
-	if (mout == NULL) {
-		if (err_cause) {
-			sctp_m_freem(err_cause);
-		}
-		return;
-	}
-#if defined(APPLE_LION)
-	SCTP_BUF_RESV_UF(mout, SCTP_MAX_LINKHDR);
-#else
-	SCTP_BUF_RESV_UF(mout, max_linkhdr);
-#endif
-	SCTP_BUF_LEN(mout) = len;
-	SCTP_BUF_NEXT(mout) = err_cause;
-#if defined(__FreeBSD__)
-	if (m->m_flags & M_FLOWID) {
-		mout->m_pkthdr.flowid = m->m_pkthdr.flowid;
-		mout->m_flags |= M_FLOWID;
-	}
-#endif
-#ifdef INET
-	iph_out = NULL;
-#endif
-#ifdef INET6
-	ip6_out = NULL;
-#endif
-	switch (iph->ip_v) {
-#ifdef INET
-	case IPVERSION:
-		iph_out = mtod(mout, struct ip *);
-
-		/* Fill in the IP header for the ABORT */
-		iph_out->ip_v = IPVERSION;
-		iph_out->ip_hl = (sizeof(struct ip) / 4);
-		iph_out->ip_tos = (u_char)0;
-		iph_out->ip_id = 0;
-		iph_out->ip_off = 0;
-		iph_out->ip_ttl = MODULE_GLOBAL(ip_defttl);
-		if (port) {
-			iph_out->ip_p = IPPROTO_UDP;
-		} else {
-			iph_out->ip_p = IPPROTO_SCTP;
-		}
-		iph_out->ip_src.s_addr = iph->ip_dst.s_addr;
-		iph_out->ip_dst.s_addr = iph->ip_src.s_addr;
-		/* let IP layer calculate this */
-		iph_out->ip_sum = 0;
-
-		iphlen_out = sizeof(*iph_out);
-		abm = (struct sctp_abort_msg *)((caddr_t)iph_out + iphlen_out);
-		break;
-#endif
-#ifdef INET6
-	case IPV6_VERSION >> 4:
-		ip6 = (struct ip6_hdr *)iph;
-		ip6_out = mtod(mout, struct ip6_hdr *);
-
-		/* Fill in the IP6 header for the ABORT */
-		ip6_out->ip6_flow = ip6->ip6_flow;
-#if defined(__Userspace__)
-		ip6_out->ip6_hlim = IPv6_HOP_LIMIT;
-#else
-		ip6_out->ip6_hlim = MODULE_GLOBAL(ip6_defhlim);
-#endif
-		if (port) {
-			ip6_out->ip6_nxt = IPPROTO_UDP;
-		} else {
-			ip6_out->ip6_nxt = IPPROTO_SCTP;
-		}
-		ip6_out->ip6_src = ip6->ip6_dst;
-		ip6_out->ip6_dst = ip6->ip6_src;
-
-		iphlen_out = sizeof(*ip6_out);
-		abm = (struct sctp_abort_msg *)((caddr_t)ip6_out + iphlen_out);
-		break;
-#endif /* INET6 */
-	default:
-		/* Currently not supported */
-		sctp_m_freem(mout);
-		return;
-	}
-
-	udp = (struct udphdr *)abm;
-	if (port) {
-		if (htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port)) == 0) {
-			sctp_m_freem(mout);
-			return;
-		}
-		udp->uh_sport = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
-		udp->uh_dport = port;
-		/* set udp->uh_ulen later */
-		udp->uh_sum = 0;
-		iphlen_out += sizeof(struct udphdr);
-		abm = (struct sctp_abort_msg *)((caddr_t)abm + sizeof(struct udphdr));
-	}
-
-	abm->sh.src_port = sh->dest_port;
-	abm->sh.dest_port = sh->src_port;
-	abm->sh.checksum = 0;
-	if (vtag == 0) {
-		abm->sh.v_tag = sh->v_tag;
-		abm->msg.ch.chunk_flags = SCTP_HAD_NO_TCB;
-	} else {
-		abm->sh.v_tag = htonl(vtag);
-		abm->msg.ch.chunk_flags = 0;
-	}
-	abm->msg.ch.chunk_type = SCTP_ABORT_ASSOCIATION;
-
-	if (err_cause) {
-		struct mbuf *m_tmp = err_cause;
-		int err_len = 0;
-
-		/* get length of the err_cause chain */
-		while (m_tmp != NULL) {
-			err_len += SCTP_BUF_LEN(m_tmp);
-			m_tmp = SCTP_BUF_NEXT(m_tmp);
-		}
-		len = SCTP_BUF_LEN(mout) + err_len;
-		if (err_len % 4) {
-			/* need pad at end of chunk */
-			uint32_t cpthis = 0;
-			int padlen;
-
-			padlen = 4 - (len % 4);
-			m_copyback(mout, len, padlen, (caddr_t)&cpthis);
-			len += padlen;
-		}
-		abm->msg.ch.chunk_length = htons(sizeof(abm->msg.ch) + err_len);
-	} else {
-		len = SCTP_BUF_LEN(mout);
-		abm->msg.ch.chunk_length = htons(sizeof(abm->msg.ch));
-	}
-
-	if (SCTP_GET_HEADER_FOR_OUTPUT(o_pak)) {
-		/* no mbuf's */
-		sctp_m_freem(mout);
-		return;
-	}
-#ifdef INET
-	if (iph_out != NULL) {
-		sctp_route_t ro;
-		int ret;
-
-		/* zap the stack pointer to the route */
-		bzero(&ro, sizeof ro);
-#if defined(__Panda__)
-		ro._l_addr.sa.sa_family = AF_INET;
-#endif
-		if (port) {
-			udp->uh_ulen = htons(len - sizeof(struct ip));
-#if !defined(__Windows__) && !defined(__Userspace__)
-#if defined(__FreeBSD__) && ((__FreeBSD_version > 803000 && __FreeBSD_version < 900000) || __FreeBSD_version > 900000)
-			if (V_udp_cksum) {
-				udp->uh_sum = in_pseudo(iph_out->ip_src.s_addr, iph_out->ip_dst.s_addr, udp->uh_ulen + htons(IPPROTO_UDP));
-			} else {
-				udp->uh_sum = 0;
-			}
-#else
-			udp->uh_sum = in_pseudo(iph_out->ip_src.s_addr, iph_out->ip_dst.s_addr, udp->uh_ulen + htons(IPPROTO_UDP));
-#endif
-#else
-			udp->uh_sum = 0;
-#endif
-		}
-		SCTPDBG(SCTP_DEBUG_OUTPUT2, "sctp_send_abort calling ip_output:\n");
-		SCTPDBG_PKT(SCTP_DEBUG_OUTPUT2, iph_out, &abm->sh);
-		/* set IPv4 length */
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Userspace__)
-		iph_out->ip_len = len;
-#else
-		iph_out->ip_len = htons(len);
-#endif
-		/* out it goes */
-#ifdef  SCTP_PACKET_LOGGING
-		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING)
-			sctp_packet_log(mout, len);
-#endif
-		SCTP_ATTACH_CHAIN(o_pak, mout, len);
-		if (port) {
-#if defined(SCTP_WITH_NO_CSUM)
-			SCTP_STAT_INCR(sctps_sendnocrc);
-#else
-			abm->sh.checksum = sctp_calculate_cksum(mout, iphlen_out);
-			SCTP_STAT_INCR(sctps_sendswcrc);
-#endif
-#if defined(__FreeBSD__) && ((__FreeBSD_version > 803000 && __FreeBSD_version < 900000) || __FreeBSD_version > 900000)
-			if (V_udp_cksum) {
-				SCTP_ENABLE_UDP_CSUM(o_pak);
-			}
-#else
-			SCTP_ENABLE_UDP_CSUM(o_pak);
-#endif
-		} else {
-#if defined(SCTP_WITH_NO_CSUM)
-			SCTP_STAT_INCR(sctps_sendnocrc);
-#else
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
-			mout->m_pkthdr.csum_flags = CSUM_SCTP;
-			mout->m_pkthdr.csum_data = 0;
-			SCTP_STAT_INCR(sctps_sendhwcrc);
-#else
-			abm->sh.checksum = sctp_calculate_cksum(mout, iphlen_out);
-			SCTP_STAT_INCR(sctps_sendswcrc);
-#endif
-#endif
-		}
-		SCTP_IP_OUTPUT(ret, o_pak, &ro, NULL, vrf_id);
-
-		/* Free the route if we got one back */
-		if (ro.ro_rt)
-			RTFREE(ro.ro_rt);
-	}
-#endif
-#ifdef INET6
-	if (ip6_out != NULL) {
-		int ret;
-
-		if (port) {
-			udp->uh_ulen = htons(len - sizeof(struct ip6_hdr));
-		}
-		SCTPDBG(SCTP_DEBUG_OUTPUT2, "sctp_send_abort calling ip6_output:\n");
-		SCTPDBG_PKT(SCTP_DEBUG_OUTPUT2, (struct ip *)ip6_out, &abm->sh);
-		ip6_out->ip6_plen = len - sizeof(*ip6_out);
-#ifdef  SCTP_PACKET_LOGGING
-		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING)
-			sctp_packet_log(mout, len);
-#endif
-		SCTP_ATTACH_CHAIN(o_pak, mout, len);
-		if (port) {
-#if defined(SCTP_WITH_NO_CSUM)
-			SCTP_STAT_INCR(sctps_sendnocrc);
-#else
-			abm->sh.checksum = sctp_calculate_cksum(mout, sizeof(struct ip6_hdr) + sizeof(struct udphdr));
-			SCTP_STAT_INCR(sctps_sendswcrc);
-#endif
-#if defined(__Windows__)
-			udp->uh_sum = 0;
-#elif !defined(__Userspace__)
-			if ((udp->uh_sum = in6_cksum(o_pak, IPPROTO_UDP, sizeof(struct ip6_hdr), len - sizeof(struct ip6_hdr))) == 0) {
-				udp->uh_sum = 0xffff;
-			}
-#endif
-		} else {
-#if defined(SCTP_WITH_NO_CSUM)
-			SCTP_STAT_INCR(sctps_sendnocrc);
-#else
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
-#if __FreeBSD_version >= 901000
-			mout->m_pkthdr.csum_flags = CSUM_SCTP_IPV6;
-#else
-			mout->m_pkthdr.csum_flags = CSUM_SCTP;
-#endif
-			mout->m_pkthdr.csum_data = 0;
-			SCTP_STAT_INCR(sctps_sendhwcrc);
-#else
-			abm->sh.checksum = sctp_calculate_cksum(mout, sizeof(struct ip6_hdr));
-			SCTP_STAT_INCR(sctps_sendswcrc);
-#endif
-#endif
-		}
-		SCTP_IP6_OUTPUT(ret, o_pak, NULL, NULL, NULL, vrf_id);
-	}
-#endif
-	SCTP_STAT_INCR(sctps_sendpackets);
-	SCTP_STAT_INCR_COUNTER64(sctps_outpackets);
-	SCTP_STAT_INCR_COUNTER64(sctps_outcontrolchunks);
+	sctp_send_resp_msg(m, sh, vtag, SCTP_ABORT_ASSOCIATION, cause, vrf_id, port);
+	return;
 }
 
-#if defined(__FreeBSD__)
 void
-sctp_send_operr_to(struct mbuf *m, int iphlen, struct mbuf *scm, uint32_t vtag,
-                   uint32_t vrf_id, uint16_t port)
-#else
-void
-sctp_send_operr_to(struct mbuf *m, int iphlen, struct mbuf *scm, uint32_t vtag,
-                   uint32_t vrf_id SCTP_UNUSED, uint16_t port)
-#endif
+sctp_send_operr_to(struct mbuf *m, struct sctphdr *sh, uint32_t vtag,
+                   struct mbuf *cause, uint32_t vrf_id, uint16_t port)
 {
-#ifdef __Panda__
-	pakhandle_type o_pak;
-#else
-	struct mbuf *o_pak;
-#endif
-	struct sctphdr *sh, *sh_out;
-	struct sctp_chunkhdr *ch;
-	struct ip *iph;
-	struct udphdr *udp = NULL;
-	struct mbuf *mout;
-	int iphlen_out, len;
-#ifdef INET
-	struct ip *iph_out;
-#endif
-#ifdef INET6
-	struct ip6_hdr *ip6, *ip6_out;
-#endif
-
-	iph = mtod(m, struct ip *);
-	sh = (struct sctphdr *)((caddr_t)iph + iphlen);
-	switch (iph->ip_v) {
-#ifdef INET
-	case IPVERSION:
-		len = (sizeof(struct ip) + sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr));
-		break;
-#endif
-#ifdef INET6
-	case IPV6_VERSION >> 4:
-		len = (sizeof(struct ip6_hdr) + sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr));
-		break;
-#endif
-	default:
-		if (scm) {
-			sctp_m_freem(scm);
-		}
-		return;
-	}
-	if (port) {
-		len += sizeof(struct udphdr);
-	}
-#if defined(APPLE_LION)
-	mout = sctp_get_mbuf_for_msg(len + SCTP_MAX_LINKHDR, 1, M_DONTWAIT, 1, MT_DATA);
-#else
-	mout = sctp_get_mbuf_for_msg(len + max_linkhdr, 1, M_DONTWAIT, 1, MT_DATA);
-#endif
-	if (mout == NULL) {
-		if (scm) {
-			sctp_m_freem(scm);
-		}
-		return;
-	}
-#if defined(APPLE_LION)
-	SCTP_BUF_RESV_UF(mout, SCTP_MAX_LINKHDR);
-#else
-	SCTP_BUF_RESV_UF(mout, max_linkhdr);
-#endif
-	SCTP_BUF_LEN(mout) = len;
-	SCTP_BUF_NEXT(mout) = scm;
-#if defined(__FreeBSD__)
-	if (m->m_flags & M_FLOWID) {
-		mout->m_pkthdr.flowid = m->m_pkthdr.flowid;
-		mout->m_flags |= M_FLOWID;
-	}
-#endif
-#ifdef INET
-	iph_out = NULL;
-#endif
-#ifdef INET6
-	ip6_out = NULL;
-#endif
-	switch (iph->ip_v) {
-#ifdef INET
-	case IPVERSION:
-		iph_out = mtod(mout, struct ip *);
-
-		/* Fill in the IP header for the ABORT */
-		iph_out->ip_v = IPVERSION;
-		iph_out->ip_hl = (sizeof(struct ip) / 4);
-		iph_out->ip_tos = (u_char)0;
-		iph_out->ip_id = 0;
-		iph_out->ip_off = 0;
-		iph_out->ip_ttl = MODULE_GLOBAL(ip_defttl);
-		if (port) {
-			iph_out->ip_p = IPPROTO_UDP;
-		} else {
-			iph_out->ip_p = IPPROTO_SCTP;
-		}
-		iph_out->ip_src.s_addr = iph->ip_dst.s_addr;
-		iph_out->ip_dst.s_addr = iph->ip_src.s_addr;
-		/* let IP layer calculate this */
-		iph_out->ip_sum = 0;
-
-		iphlen_out = sizeof(struct ip);
-		sh_out = (struct sctphdr *)((caddr_t)iph_out + iphlen_out);
-		break;
-#endif
-#ifdef INET6
-	case IPV6_VERSION >> 4:
-		ip6 = (struct ip6_hdr *)iph;
-		ip6_out = mtod(mout, struct ip6_hdr *);
-
-		/* Fill in the IP6 header for the ABORT */
-		ip6_out->ip6_flow = ip6->ip6_flow;
-#if defined(__Userspace__)
-		ip6_out->ip6_hlim = IPv6_HOP_LIMIT;
-#else
-		ip6_out->ip6_hlim = MODULE_GLOBAL(ip6_defhlim);
-#endif
-		if (port) {
-			ip6_out->ip6_nxt = IPPROTO_UDP;
-		} else {
-			ip6_out->ip6_nxt = IPPROTO_SCTP;
-		}
-		ip6_out->ip6_src = ip6->ip6_dst;
-		ip6_out->ip6_dst = ip6->ip6_src;
-
-		iphlen_out = sizeof(struct ip6_hdr);
-		sh_out = (struct sctphdr *)((caddr_t)ip6_out + iphlen_out);
-		break;
-#endif /* INET6 */
-	default:
-		/* Currently not supported */
-		sctp_m_freem(mout);
-		return;
-	}
-
-	udp = (struct udphdr *)sh_out;
-	if (port) {
-		if (htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port)) == 0) {
-			sctp_m_freem(mout);
-			return;
-		}
-		udp->uh_sport = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
-		udp->uh_dport = port;
-		/* set udp->uh_ulen later */
-		udp->uh_sum = 0;
-		iphlen_out += sizeof(struct udphdr);
-		sh_out = (struct sctphdr *)((caddr_t)udp + sizeof(struct udphdr));
-	}
-
-	sh_out->src_port = sh->dest_port;
-	sh_out->dest_port = sh->src_port;
-	sh_out->v_tag = vtag;
-	sh_out->checksum = 0;
-
-	ch = (struct sctp_chunkhdr *)((caddr_t)sh_out + sizeof(struct sctphdr));
-	ch->chunk_type = SCTP_OPERATION_ERROR;
-	ch->chunk_flags = 0;
-
-	if (scm) {
-		struct mbuf *m_tmp = scm;
-		int cause_len = 0;
-
-		/* get length of the err_cause chain */
-		while (m_tmp != NULL) {
-			cause_len += SCTP_BUF_LEN(m_tmp);
-			m_tmp = SCTP_BUF_NEXT(m_tmp);
-		}
-		len = SCTP_BUF_LEN(mout) + cause_len;
-		if (cause_len % 4) {
-			/* need pad at end of chunk */
-			uint32_t cpthis = 0;
-			int padlen;
-
-			padlen = 4 - (len % 4);
-			m_copyback(mout, len, padlen, (caddr_t)&cpthis);
-			len += padlen;
-		}
-		ch->chunk_length = htons(sizeof(struct sctp_chunkhdr) + cause_len);
-	} else {
-		len = SCTP_BUF_LEN(mout);
-		ch->chunk_length = htons(sizeof(struct sctp_chunkhdr));
-	}
-
-	if (SCTP_GET_HEADER_FOR_OUTPUT(o_pak)) {
-		/* no mbuf's */
-		sctp_m_freem(mout);
-		return;
-	}
-
-#ifdef INET
-	if (iph_out != NULL) {
-		sctp_route_t ro;
-		int ret;
-
-		/* zap the stack pointer to the route */
-		bzero(&ro, sizeof ro);
-#if defined(__Panda__)
-		ro._l_addr.sa.sa_family = AF_INET;
-#endif
-		if (port) {
-			udp->uh_ulen = htons(len - sizeof(struct ip));
-#if !defined(__Windows__) && !defined(__Userspace__)
-#if defined(__FreeBSD__) && ((__FreeBSD_version > 803000 && __FreeBSD_version < 900000) || __FreeBSD_version > 900000)
-			if (V_udp_cksum) {
-				udp->uh_sum = in_pseudo(iph_out->ip_src.s_addr, iph_out->ip_dst.s_addr, udp->uh_ulen + htons(IPPROTO_UDP));
-			} else {
-				udp->uh_sum = 0;
-			}
-#else
-			udp->uh_sum = in_pseudo(iph_out->ip_src.s_addr, iph_out->ip_dst.s_addr, udp->uh_ulen + htons(IPPROTO_UDP));
-#endif
-#else
-			udp->uh_sum = 0;
-#endif
-		}
-		/* set IPv4 length */
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Userspace__)
-		iph_out->ip_len = len;
-#else
-		iph_out->ip_len = htons(len);
-#endif
-		/* out it goes */
-#ifdef  SCTP_PACKET_LOGGING
-		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING)
-			sctp_packet_log(mout, len);
-#endif
-		SCTP_ATTACH_CHAIN(o_pak, mout, len);
-		if (port) {
-#if defined(SCTP_WITH_NO_CSUM)
-			SCTP_STAT_INCR(sctps_sendnocrc);
-#else
-			sh_out->checksum = sctp_calculate_cksum(mout, iphlen_out);
-			SCTP_STAT_INCR(sctps_sendswcrc);
-#endif
-#if defined(__FreeBSD__) && ((__FreeBSD_version > 803000 && __FreeBSD_version < 900000) || __FreeBSD_version > 900000)
-			if (V_udp_cksum) {
-				SCTP_ENABLE_UDP_CSUM(o_pak);
-			}
-#else
-			SCTP_ENABLE_UDP_CSUM(o_pak);
-#endif
-		} else {
-#if defined(SCTP_WITH_NO_CSUM)
-			SCTP_STAT_INCR(sctps_sendnocrc);
-#else
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
-			mout->m_pkthdr.csum_flags = CSUM_SCTP;
-			mout->m_pkthdr.csum_data = 0;
-			SCTP_STAT_INCR(sctps_sendhwcrc);
-#else
-			sh_out->checksum = sctp_calculate_cksum(mout, iphlen_out);
-			SCTP_STAT_INCR(sctps_sendswcrc);
-#endif
-#endif
-		}
-		SCTP_IP_OUTPUT(ret, o_pak, &ro, NULL, vrf_id);
-
-		/* Free the route if we got one back */
-		if (ro.ro_rt)
-			RTFREE(ro.ro_rt);
-	}
-#endif
-#ifdef INET6
-	if (ip6_out != NULL) {
-		int ret;
-
-		if (port) {
-			udp->uh_ulen = htons(len - sizeof(struct ip6_hdr));
-		}
-		ip6_out->ip6_plen = len - sizeof(*ip6_out);
-#ifdef  SCTP_PACKET_LOGGING
-		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING)
-			sctp_packet_log(mout, len);
-#endif
-		SCTP_ATTACH_CHAIN(o_pak, mout, len);
-		if (port) {
-#if defined(SCTP_WITH_NO_CSUM)
-			SCTP_STAT_INCR(sctps_sendnocrc);
-#else
-			sh_out->checksum = sctp_calculate_cksum(mout, sizeof(struct ip6_hdr) + sizeof(struct udphdr));
-			SCTP_STAT_INCR(sctps_sendswcrc);
-#endif
-#if defined(__Windows__)
-			udp->uh_sum = 0;
-#elif !defined(__Userspace__)
-			if ((udp->uh_sum = in6_cksum(o_pak, IPPROTO_UDP, sizeof(struct ip6_hdr), len - sizeof(struct ip6_hdr))) == 0) {
-				udp->uh_sum = 0xffff;
-			}
-#endif
-		} else {
-#if defined(SCTP_WITH_NO_CSUM)
-			SCTP_STAT_INCR(sctps_sendnocrc);
-#else
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
-#if __FreeBSD_version >= 901000
-			mout->m_pkthdr.csum_flags = CSUM_SCTP_IPV6;
-#else
-			mout->m_pkthdr.csum_flags = CSUM_SCTP;
-#endif
-			mout->m_pkthdr.csum_data = 0;
-			SCTP_STAT_INCR(sctps_sendhwcrc);
-#else
-			sh_out->checksum = sctp_calculate_cksum(mout, sizeof(struct ip6_hdr));
-			SCTP_STAT_INCR(sctps_sendswcrc);
-#endif
-#endif
-		}
-		SCTP_IP6_OUTPUT(ret, o_pak, NULL, NULL, NULL, vrf_id);
-	}
-#endif
-	SCTP_STAT_INCR(sctps_sendpackets);
-	SCTP_STAT_INCR_COUNTER64(sctps_outpackets);
-	SCTP_STAT_INCR_COUNTER64(sctps_outcontrolchunks);
+	sctp_send_resp_msg(m, sh, vtag, SCTP_OPERATION_ERROR, cause, vrf_id, port);
+	return;
 }
 
 static struct mbuf *
