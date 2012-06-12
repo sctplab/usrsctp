@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 236450 2012-06-02 13:13:38Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 236949 2012-06-12 09:18:28Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2642,15 +2642,13 @@ sctp_pad_lastmbuf(struct mbuf *m, int padval, struct mbuf *last_mbuf)
 	/* find the last mbuf in chain and pad it */
 	struct mbuf *m_at;
 
-	m_at = m;
 	if (last_mbuf) {
 		return (sctp_add_pad_tombuf(last_mbuf, padval));
 	} else {
-		while (m_at) {
+		for (m_at = m; m_at; m_at = SCTP_BUF_NEXT(m_at)) {
 			if (SCTP_BUF_NEXT(m_at) == NULL) {
 				return (sctp_add_pad_tombuf(m_at, padval));
 			}
-			m_at = SCTP_BUF_NEXT(m_at);
 		}
 	}
 	SCTP_LTRACE_ERR_RET_PKT(m, NULL, NULL, NULL, SCTP_FROM_SCTPUTIL, EFAULT);
