@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 236450 2012-06-02 13:13:38Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 236956 2012-06-12 13:15:27Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1437,7 +1437,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		ph = mtod(op_err, struct sctp_paramhdr *);
 		ph->param_type = htons(SCTP_CAUSE_COOKIE_IN_SHUTDOWN);
 		ph->param_length = htons(sizeof(struct sctp_paramhdr));
-		sctp_send_operr_to(m, iphlen, op_err, cookie->peers_vtag,
+		sctp_send_operr_to(m, sh, cookie->peers_vtag, op_err,
 				   vrf_id, net->port);
 		if (how_indx < sizeof(asoc->cookie_how))
 			asoc->cookie_how[how_indx] = 2;
@@ -2568,7 +2568,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 		if (tim == 0)
 			tim = now.tv_usec - cookie->time_entered.tv_usec;
 		scm->time_usec = htonl(tim);
-		sctp_send_operr_to(m, iphlen, op_err, cookie->peers_vtag,
+		sctp_send_operr_to(m, sh, cookie->peers_vtag, op_err,
 				   vrf_id, port);
 		return (NULL);
 	}
