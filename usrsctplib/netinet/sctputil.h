@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 236450 2012-06-02 13:13:38Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 237049 2012-06-14 06:54:48Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UTIL_H_
@@ -181,8 +181,12 @@ void sctp_abort_notification(struct sctp_tcb *, uint8_t, uint16_t,
 
 /* We abort responding to an IP packet for some reason */
 void
-sctp_abort_association(struct sctp_inpcb *, struct sctp_tcb *,
-    struct mbuf *, int, struct sctphdr *, struct mbuf *, uint32_t, uint16_t);
+sctp_abort_association(struct sctp_inpcb *, struct sctp_tcb *, struct mbuf *,
+                       int, struct sctphdr *, struct mbuf *,
+#if defined(__FreeBSD__)
+                       uint8_t, uint32_t,
+#endif
+                       uint32_t, uint16_t);
 
 
 /* We choose to abort via user input */
@@ -195,7 +199,11 @@ sctp_abort_an_association(struct sctp_inpcb *, struct sctp_tcb *,
 );
 
 void sctp_handle_ootb(struct mbuf *, int, int, struct sctphdr *,
-    struct sctp_inpcb *, uint32_t, uint16_t);
+                      struct sctp_inpcb *,
+#if defined(__FreeBSD__)
+                      uint8_t, uint32_t,
+#endif
+                      uint32_t, uint16_t);
 
 int sctp_connectx_helper_add(struct sctp_tcb *stcb, struct sockaddr *addr,
     int totaddr, int *error);
