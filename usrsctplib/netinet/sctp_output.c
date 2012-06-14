@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 236956 2012-06-12 13:15:27Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 237049 2012-06-14 06:54:48Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3890,16 +3890,14 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
     uint16_t dest_port,
     uint32_t v_tag,
     uint16_t port,
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
-    int so_locked SCTP_UNUSED,
-#else
-    int so_locked,
-#endif
     union sctp_sockstore *over_addr,
 #if defined(__FreeBSD__)
-    struct mbuf *init
+    uint8_t use_mflowid, uint32_t mflowid,
+#endif
+#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+    int so_locked SCTP_UNUSED
 #else
-    struct mbuf *init SCTP_UNUSED
+    int so_locked
 #endif
     )
 /* nofragment_flag to tell if IP_DF should be set (IPv4 only) */
@@ -3998,8 +3996,8 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			m->m_pkthdr.flowid = net->flowid;
 			m->m_flags |= M_FLOWID;
 		} else {
-			if ((init != NULL) && (init->m_flags & M_FLOWID)) {
-				m->m_pkthdr.flowid = init->m_pkthdr.flowid;
+			if (use_mflowid != 0) {
+				m->m_pkthdr.flowid = mflowid;
 				m->m_flags |= M_FLOWID;
 			}
 		}
@@ -4341,8 +4339,8 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			m->m_pkthdr.flowid = net->flowid;
 			m->m_flags |= M_FLOWID;
 		} else {
-			if ((init != NULL) && (init->m_flags & M_FLOWID)) {
-				m->m_pkthdr.flowid = init->m_pkthdr.flowid;
+			if (use_mflowid != 0) {
+				m->m_pkthdr.flowid = mflowid;
 				m->m_flags |= M_FLOWID;
 			}
 		}
@@ -5038,7 +5036,11 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked
 	                                 (struct sockaddr *)&net->ro._l_addr,
 	                                 m, 0, NULL, 0, 0, 0, 0,
 	                                 inp->sctp_lport, stcb->rport, htonl(0),
-	                                 net->port, so_locked, NULL, NULL);
+	                                 net->port, NULL,
+#if defined(__FreeBSD__)
+	                                 0, 0,
+#endif
+	                                 so_locked);
 	SCTPDBG(SCTP_DEBUG_OUTPUT4, "lowlevel_output - %d\n", ret);
 	SCTP_STAT_INCR_COUNTER64(sctps_outcontrolchunks);
 	(void)SCTP_GETTIME_TIMEVAL(&net->last_sent_time);
@@ -5564,8 +5566,12 @@ sctp_are_there_new_addresses(struct sctp_association *asoc,
  */
 void
 sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
-    struct mbuf *init_pkt, int iphlen, int offset, struct sctphdr *sh,
-    struct sctp_init_chunk *init_chk, uint32_t vrf_id, uint16_t port, int hold_inp_lock)
+                       struct mbuf *init_pkt, int iphlen, int offset,
+                       struct sctphdr *sh, struct sctp_init_chunk *init_chk,
+#if defined(__FreeBSD__)
+		       uint8_t use_mflowid, uint32_t mflowid,
+#endif
+                       uint32_t vrf_id, uint16_t port, int hold_inp_lock)
 {
 	struct sctp_association *asoc;
 	struct mbuf *m, *m_at, *m_tmp, *m_cookie, *op_err, *mp_last;
@@ -5611,7 +5617,11 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		 * though we even set the T bit and copy in the 0 tag.. this
 		 * looks no different than if no listener was present.
 		 */
-		sctp_send_abort(init_pkt, iphlen, sh, 0, NULL, vrf_id, port);
+		sctp_send_abort(init_pkt, iphlen, sh, 0, NULL,
+#if defined(__FreeBSD__)
+		                use_mflowid, mflowid,
+#endif
+		                vrf_id, port);
 		return;
 	}
 	abort_flag = 0;
@@ -5621,7 +5631,11 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	if (abort_flag) {
 	do_a_abort:
 		sctp_send_abort(init_pkt, iphlen, sh,
-				init_chk->init.initiate_tag, op_err, vrf_id, port);
+				init_chk->init.initiate_tag, op_err,
+#if defined(__FreeBSD__)
+		                use_mflowid, mflowid,
+#endif
+		                vrf_id, port);
 		return;
 	}
 	m = sctp_get_mbuf_for_msg(MCLBYTES, 0, M_DONTWAIT, 1, MT_DATA);
@@ -6254,7 +6268,11 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	(void)sctp_lowlevel_chunk_output(inp, NULL, NULL, to, m, 0, NULL, 0, 0,
 	                                 0, 0,
 	                                 inp->sctp_lport, sh->src_port, init_chk->init.initiate_tag,
-	                                 port, SCTP_SO_NOT_LOCKED, over_addr, init_pkt);
+	                                 port, over_addr,
+#if defined(__FreeBSD__)
+	                                 use_mflowid, mflowid,
+#endif
+	                                 SCTP_SO_NOT_LOCKED);
 	SCTP_STAT_INCR_COUNTER64(sctps_outcontrolchunks);
 }
 
@@ -8339,7 +8357,11 @@ again_one_more_time:
 					                                        no_fragmentflg, 0, asconf,
 					                                        inp->sctp_lport, stcb->rport,
 					                                        htonl(stcb->asoc.peer_vtag),
-					                                        net->port, so_locked, NULL, NULL))) {
+					                                        net->port, NULL,
+#if defined(__FreeBSD__)
+					                                        0, 0,
+#endif
+					                                        so_locked))) {
 						if (error == ENOBUFS) {
 							asoc->ifp_had_enobuf = 1;
 							SCTP_STAT_INCR(sctps_lowlevelerr);
@@ -8600,7 +8622,11 @@ again_one_more_time:
 					                                        no_fragmentflg, 0, asconf,
 					                                        inp->sctp_lport, stcb->rport,
 					                                        htonl(stcb->asoc.peer_vtag),
-					                                        net->port, so_locked, NULL, NULL))) {
+					                                        net->port, NULL,
+#if defined(__FreeBSD__)
+					                                        0, 0,
+#endif
+					                                        so_locked))) {
 						if (error == ENOBUFS) {
 							asoc->ifp_had_enobuf = 1;
 							SCTP_STAT_INCR(sctps_lowlevelerr);
@@ -8928,7 +8954,11 @@ again_one_more_time:
 			                                        asconf,
 			                                        inp->sctp_lport, stcb->rport,
 			                                        htonl(stcb->asoc.peer_vtag),
-			                                        net->port, so_locked, NULL, NULL))) {
+			                                        net->port, NULL,
+#if defined(__FreeBSD__)
+			                                        0, 0,
+#endif
+			                                        so_locked))) {
 				/* error, we could not output */
 				if (error == ENOBUFS) {
 					SCTP_STAT_INCR(sctps_lowlevelerr);
@@ -9641,7 +9671,11 @@ sctp_chunk_retransmission(struct sctp_inpcb *inp,
 		                                        auth_offset, auth, stcb->asoc.authinfo.active_keyid,
 		                                        no_fragmentflg, 0, 0,
 		                                        inp->sctp_lport, stcb->rport, htonl(stcb->asoc.peer_vtag),
-		                                        chk->whoTo->port, so_locked, NULL, NULL))) {
+		                                        chk->whoTo->port, NULL,
+#if defined(__FreeBSD__)
+		                                        0, 0,
+#endif
+		                                        so_locked))) {
 			SCTP_STAT_INCR(sctps_lowlevelerr);
 			return (error);
 		}
@@ -9903,7 +9937,11 @@ sctp_chunk_retransmission(struct sctp_inpcb *inp,
 			                                        auth_offset, auth, auth_keyid,
 			                                        no_fragmentflg, 0, 0,
 			                                        inp->sctp_lport, stcb->rport, htonl(stcb->asoc.peer_vtag),
-			                                        net->port, so_locked, NULL, NULL))) {
+			                                        net->port, NULL,
+#if defined(__FreeBSD__)
+			                                        0, 0,
+#endif
+			                                        so_locked))) {
 				/* error, we could not output */
 				SCTP_STAT_INCR(sctps_lowlevelerr);
 				return (error);
@@ -11046,7 +11084,11 @@ sctp_send_abort_tcb(struct sctp_tcb *stcb, struct mbuf *operr, int so_locked
 	                                 (struct sockaddr *)&net->ro._l_addr,
 	                                 m_out, auth_offset, auth, stcb->asoc.authinfo.active_keyid, 1, 0, 0,
 	                                 stcb->sctp_ep->sctp_lport, stcb->rport, htonl(stcb->asoc.peer_vtag),
-	                                 stcb->asoc.primary_destination->port, so_locked, NULL, NULL);
+	                                 stcb->asoc.primary_destination->port, NULL,
+#if defined(__FreeBSD__)
+	                                 0, 0,
+#endif
+	                                 so_locked);
 	SCTP_STAT_INCR_COUNTER64(sctps_outcontrolchunks);
 }
 
@@ -11083,7 +11125,11 @@ sctp_send_shutdown_complete(struct sctp_tcb *stcb,
 	                                 m_shutdown_comp, 0, NULL, 0, 1, 0, 0,
 	                                 stcb->sctp_ep->sctp_lport, stcb->rport,
 	                                 htonl(vtag),
-	                                 net->port, SCTP_SO_NOT_LOCKED, NULL, NULL);
+	                                 net->port, NULL,
+#if defined(__FreeBSD__)
+	                                 0, 0,
+#endif
+	                                 SCTP_SO_NOT_LOCKED);
 	SCTP_STAT_INCR_COUNTER64(sctps_outcontrolchunks);
 	return;
 }
@@ -11091,11 +11137,14 @@ sctp_send_shutdown_complete(struct sctp_tcb *stcb,
 #if defined(__FreeBSD__)
 static void
 sctp_send_resp_msg(struct mbuf *m, struct sctphdr *sh, uint32_t vtag,
-                   uint8_t type, struct mbuf *cause, uint32_t vrf_id, uint16_t port)
+                   uint8_t type, struct mbuf *cause,
+                   uint8_t use_mflowid, uint32_t mflowid,
+                   uint32_t vrf_id, uint16_t port)
 #else
 static void
 sctp_send_resp_msg(struct mbuf *m, struct sctphdr *sh, uint32_t vtag,
-                   uint8_t type, struct mbuf *cause, uint32_t vrf_id SCTP_UNUSED, uint16_t port)
+                   uint8_t type, struct mbuf *cause,
+                   uint32_t vrf_id SCTP_UNUSED, uint16_t port)
 #endif
 {
 #ifdef __Panda__
@@ -11179,8 +11228,8 @@ sctp_send_resp_msg(struct mbuf *m, struct sctphdr *sh, uint32_t vtag,
 	SCTP_BUF_LEN(mout) = len;
 	SCTP_BUF_NEXT(mout) = cause;
 #if defined(__FreeBSD__)
-	if (m->m_flags & M_FLOWID) {
-		mout->m_pkthdr.flowid = m->m_pkthdr.flowid;
+	if (use_mflowid != 0) {
+		mout->m_pkthdr.flowid = mflowid;
 		mout->m_flags |= M_FLOWID;
 	}
 #endif
@@ -11414,9 +11463,16 @@ sctp_send_resp_msg(struct mbuf *m, struct sctphdr *sh, uint32_t vtag,
 
 void
 sctp_send_shutdown_complete2(struct mbuf *m, struct sctphdr *sh,
+#if defined(__FreeBSD__)
+                             uint8_t use_mflowid, uint32_t mflowid,
+#endif
                              uint32_t vrf_id, uint16_t port)
 {
-	sctp_send_resp_msg(m, sh, 0, SCTP_SHUTDOWN_COMPLETE, NULL, vrf_id, port);
+	sctp_send_resp_msg(m, sh, 0, SCTP_SHUTDOWN_COMPLETE, NULL,
+#if defined(__FreeBSD__)
+	                   use_mflowid, mflowid,
+#endif
+	                   vrf_id, port);
 }
 
 void
@@ -12253,7 +12309,11 @@ skip_stuff:
 
 void
 sctp_send_abort(struct mbuf *m, int iphlen, struct sctphdr *sh, uint32_t vtag,
-                struct mbuf *cause, uint32_t vrf_id, uint16_t port)
+                struct mbuf *cause,
+#if defined(__FreeBSD__)
+                uint8_t use_mflowid, uint32_t mflowid,
+#endif
+                uint32_t vrf_id, uint16_t port)
 {
 	/* Don't respond to an ABORT with an ABORT. */
 	if (sctp_is_there_an_abort_here(m, iphlen, &vtag)) {
@@ -12261,15 +12321,27 @@ sctp_send_abort(struct mbuf *m, int iphlen, struct sctphdr *sh, uint32_t vtag,
 			sctp_m_freem(cause);
 		return;
 	}
-	sctp_send_resp_msg(m, sh, vtag, SCTP_ABORT_ASSOCIATION, cause, vrf_id, port);
+	sctp_send_resp_msg(m, sh, vtag, SCTP_ABORT_ASSOCIATION, cause,
+#if defined(__FreeBSD__)
+	                   use_mflowid, mflowid,
+#endif
+	                   vrf_id, port);
 	return;
 }
 
 void
 sctp_send_operr_to(struct mbuf *m, struct sctphdr *sh, uint32_t vtag,
-                   struct mbuf *cause, uint32_t vrf_id, uint16_t port)
+                   struct mbuf *cause,
+#if defined(__FreeBSD__)
+                   uint8_t use_mflowid, uint32_t mflowid,
+#endif
+                   uint32_t vrf_id, uint16_t port)
 {
-	sctp_send_resp_msg(m, sh, vtag, SCTP_OPERATION_ERROR, cause, vrf_id, port);
+	sctp_send_resp_msg(m, sh, vtag, SCTP_OPERATION_ERROR, cause,
+#if defined(__FreeBSD__)
+	                   use_mflowid, mflowid,
+#endif
+	                   vrf_id, port);
 	return;
 }
 
