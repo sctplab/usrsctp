@@ -11255,7 +11255,7 @@ sctp_send_resp_msg(struct mbuf *m, struct sctphdr *sh, uint32_t vtag,
 		iph_out->ip_id = htons(ip_id++);
 #endif
 #else
-                iph_out->ip_id = htons(ip_id++));
+                iph_out->ip_id = htons(ip_id++);
 #endif
 		iph_out->ip_off = 0;
 		iph_out->ip_ttl = MODULE_GLOBAL(ip_defttl);

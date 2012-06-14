@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.h 236956 2012-06-12 13:15:27Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.h 237049 2012-06-14 06:54:48Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_OUTPUT_H_
@@ -86,9 +86,12 @@ void sctp_send_initiate(struct sctp_inpcb *, struct sctp_tcb *, int
     );
 
 void
-sctp_send_initiate_ack(struct sctp_inpcb *, struct sctp_tcb *,
-    struct mbuf *, int, int, struct sctphdr *, struct sctp_init_chunk *,
-    uint32_t, uint16_t, int);
+sctp_send_initiate_ack(struct sctp_inpcb *, struct sctp_tcb *, struct mbuf *,
+                       int, int, struct sctphdr *, struct sctp_init_chunk *,
+#if defined(__FreeBSD__)
+                       uint8_t, uint32_t,
+#endif
+                       uint32_t, uint16_t, int);
 
 struct mbuf *
 sctp_arethere_unrecognized_parameters(struct mbuf *, int, int *,
@@ -118,7 +121,10 @@ void sctp_send_shutdown_ack(struct sctp_tcb *, struct sctp_nets *);
 void sctp_send_shutdown_complete(struct sctp_tcb *, struct sctp_nets *, int);
 
 void sctp_send_shutdown_complete2(struct mbuf *, struct sctphdr *,
-				 uint32_t, uint16_t);
+#if defined(__FreeBSD__)
+                                  uint8_t, uint32_t,
+#endif
+                                  uint32_t, uint16_t);
 
 void sctp_send_asconf(struct sctp_tcb *, struct sctp_nets *, int addr_locked);
 
@@ -225,14 +231,22 @@ sctp_send_str_reset_req(struct sctp_tcb *stcb,
 
 void
 sctp_send_abort(struct mbuf *, int, struct sctphdr *, uint32_t,
-    struct mbuf *, uint32_t, uint16_t);
+                struct mbuf *,
+#if defined(__FreeBSD__)
+                uint8_t, uint32_t,
+#endif
+                uint32_t, uint16_t);
 
 void sctp_send_operr_to(struct mbuf *, struct sctphdr *, uint32_t,
-    struct mbuf *, uint32_t, uint16_t);
+                        struct mbuf *,
+#if defined(__FreeBSD__)
+                        uint8_t, uint32_t,
+#endif
+                        uint32_t, uint16_t);
 
 #endif /* _KERNEL || __Userspace__ */
 
-#if defined(_KERNEL) || defined (__Userspace__)
+#if defined(_KERNEL) || defined(__Userspace__)
 int
 sctp_sosend(struct socket *so,
     struct sockaddr *addr,
