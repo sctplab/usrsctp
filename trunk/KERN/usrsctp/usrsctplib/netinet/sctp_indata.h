@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.h 235828 2012-05-23 11:26:28Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.h 237049 2012-06-14 06:54:48Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_INDATA_H_
@@ -115,7 +115,11 @@ sctp_update_acked(struct sctp_tcb *, struct sctp_shutdown_chunk *, int *);
 int
 sctp_process_data(struct mbuf **, int, int *, int, struct sctphdr *,
 		  struct sctp_inpcb *, struct sctp_tcb *,
-		  struct sctp_nets *, uint32_t *);
+		  struct sctp_nets *, uint32_t *,
+#if defined(__FreeBSD__)
+                  uint8_t, uint32_t,
+#endif
+                  uint32_t, uint16_t);
 
 void sctp_slide_mapping_arrays(struct sctp_tcb *stcb);
 

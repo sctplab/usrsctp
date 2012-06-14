@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 235828 2012-05-23 11:26:28Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 237049 2012-06-14 06:54:48Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2512,8 +2512,12 @@ sctp_service_queues(struct sctp_tcb *stcb, struct sctp_association *asoc)
 
 int
 sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
-    struct sctphdr *sh, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
-    struct sctp_nets *net, uint32_t * high_tsn)
+                  struct sctphdr *sh, struct sctp_inpcb *inp,
+                  struct sctp_tcb *stcb, struct sctp_nets *net, uint32_t *high_tsn,
+#if defined(__FreeBSD__)
+                  uint8_t use_mflowid, uint32_t mflowid,
+#endif
+		  uint32_t vrf_id, uint16_t port)
 {
 	struct sctp_data_chunk *ch, chunk_buf;
 	struct sctp_association *asoc;
@@ -2622,7 +2626,11 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 				}
 				stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA+SCTP_LOC_19;
 				sctp_abort_association(inp, stcb, m, iphlen, sh,
-						       op_err, 0, net->port);
+						       op_err,
+#if defined(__FreeBSD__)
+				                       use_mflowid, mflowid,
+#endif
+				                       vrf_id, port);
 				return (2);
 			}
 #ifdef SCTP_AUDITING_ENABLED
@@ -2686,7 +2694,13 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 					struct mbuf *op_err;
 
 					op_err = sctp_generate_invmanparam(SCTP_CAUSE_PROTOCOL_VIOLATION);
-					sctp_abort_association(inp, stcb, m, iphlen, sh, op_err, 0, net->port);
+					sctp_abort_association(inp, stcb,
+					                       m, iphlen,
+					                       sh, op_err,
+#if defined(__FreeBSD__)
+					                       use_mflowid, mflowid,
+#endif
+					                       vrf_id, port);
 					return (2);
 				}
 				break;
