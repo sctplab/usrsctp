@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 237049 2012-06-14 06:54:48Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 237230 2012-06-18 17:11:24Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6259,13 +6259,8 @@ sctp_input(i_pak, va_alist)
 	if (inp == NULL) {
 		struct sctp_init_chunk *init_chk, chunk_buf;
 		SCTP_STAT_INCR(sctps_noport);
-#ifdef ICMP_BANDLIM
-		/*
-		 * we use the bandwidth limiting to protect against sending
-		 * too many ABORTS all at once. In this case these count the
-		 * same as an ICMP message.
-		 */
-		if (badport_bandlim(0) < 0)
+#if defined(__FreeBSD__) && __FreeBSD_version >= 900001
+		if (badport_bandlim(BANDLIM_SCTP_OOTB) < 0)
 			goto bad;
 #endif				/* ICMP_BANDLIM */
 		SCTPDBG(SCTP_DEBUG_INPUT1,
