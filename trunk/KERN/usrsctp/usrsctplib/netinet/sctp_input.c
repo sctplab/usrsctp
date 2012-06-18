@@ -6262,7 +6262,7 @@ sctp_input(i_pak, va_alist)
 #if defined(__FreeBSD__) && __FreeBSD_version >= 900001
 		if (badport_bandlim(BANDLIM_SCTP_OOTB) < 0)
 			goto bad;
-#endif				/* ICMP_BANDLIM */
+#endif
 		SCTPDBG(SCTP_DEBUG_INPUT1,
 			"Sending a ABORT from packet entry!\n");
 		if (ch->chunk_type == SCTP_INITIATION) {
