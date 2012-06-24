@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 237049 2012-06-14 06:54:48Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 237542 2012-06-24 23:12:24Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2765,7 +2765,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 		/*
 		 * we need to report rwnd overrun drops.
 		 */
-		sctp_send_packet_dropped(stcb, net, *mm, iphlen, 0);
+		sctp_send_packet_dropped(stcb, net, *mm, length, iphlen, 0);
 	}
 	if (num_chunks) {
 		/*

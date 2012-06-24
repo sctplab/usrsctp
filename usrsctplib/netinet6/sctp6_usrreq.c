@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 237540 2012-06-24 21:25:54Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 237542 2012-06-24 23:12:24Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -309,7 +309,7 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto)
 #endif
 		/* in6p's ref-count increased && stcb locked */
 		if ((in6p) && (stcb)) {
-			sctp_send_packet_dropped(stcb, net, m, iphlen, 1);
+			sctp_send_packet_dropped(stcb, net, m, pkt_len, iphlen, 1);
 			sctp_chunk_output((struct sctp_inpcb *)in6p, stcb, SCTP_OUTPUT_FROM_INPUT_ERROR, SCTP_SO_NOT_LOCKED);
 		} else if ((in6p != NULL) && (stcb == NULL)) {
 			refcount_up = 1;
