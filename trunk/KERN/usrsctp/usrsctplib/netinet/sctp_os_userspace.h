@@ -902,7 +902,7 @@ int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af);
  */
 #define SCTP_HEADER_TO_CHAIN(m) (m)
 #define SCTP_DETACH_HEADER_FROM_CHAIN(m)
-#define SCTP_HEADER_LEN(m) (m->m_pkthdr.len)
+#define SCTP_HEADER_LEN(m) ((m)->m_pkthdr.len)
 #define SCTP_GET_HEADER_FOR_OUTPUT(o_pak) 0
 #define SCTP_RELEASE_HEADER(m)
 #define SCTP_RELEASE_PKT(m)	sctp_m_freem(m)
