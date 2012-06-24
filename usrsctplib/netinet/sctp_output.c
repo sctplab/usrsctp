@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 237049 2012-06-14 06:54:48Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 237540 2012-06-24 21:25:54Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4187,10 +4187,6 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			sctp_m_freem(m);
 			return (ENOMEM);
 		}
-#ifdef  SCTP_PACKET_LOGGING
-		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING)
-			sctp_packet_log(m, packet_length);
-#endif
 		SCTP_ATTACH_CHAIN(o_pak, m, packet_length);
 		if (port) {
 #if defined(SCTP_WITH_NO_CSUM)
@@ -4225,6 +4221,10 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #endif
 #endif
 		}
+#ifdef SCTP_PACKET_LOGGING
+		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING)
+			sctp_packet_log(o_pak);
+#endif
 		/* send it out.  table id is taken from stcb */
 #if defined (__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 		if ((SCTP_BASE_SYSCTL(sctp_output_unlocked)) && (so_locked)) {
@@ -4622,10 +4622,6 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			SCTP_LTRACE_ERR_RET(inp, stcb, NULL, SCTP_FROM_SCTP_OUTPUT, ENOMEM);
 			return (ENOMEM);
 		}
-#ifdef  SCTP_PACKET_LOGGING
-		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING)
-			sctp_packet_log(m, packet_length);
-#endif
 		SCTP_ATTACH_CHAIN(o_pak, m, packet_length);
 		if (port) {
 #if defined(SCTP_WITH_NO_CSUM)
@@ -4670,6 +4666,10 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			so = SCTP_INP_SO(inp);
 			SCTP_SOCKET_UNLOCK(so, 0);
 		}
+#endif
+#ifdef SCTP_PACKET_LOGGING
+		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING)
+			sctp_packet_log(o_pak);
 #endif
 		SCTP_IP6_OUTPUT(ret, o_pak, (struct route_in6 *)ro, &ifp, stcb, vrf_id);
 #if defined (__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
@@ -11372,11 +11372,6 @@ sctp_send_resp_msg(struct mbuf *m, struct sctphdr *sh, uint32_t vtag,
 #else
 		iph_out->ip_len = htons(len);
 #endif
-#ifdef SCTP_PACKET_LOGGING
-		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING) {
-			sctp_packet_log(mout, len);
-		}
-#endif
 		if (port) {
 #if defined(SCTP_WITH_NO_CSUM)
 			SCTP_STAT_INCR(sctps_sendnocrc);
@@ -11405,6 +11400,11 @@ sctp_send_resp_msg(struct mbuf *m, struct sctphdr *sh, uint32_t vtag,
 #endif
 #endif
 		}
+#ifdef SCTP_PACKET_LOGGING
+		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING) {
+			sctp_packet_log(o_pak);
+		}
+#endif
 		SCTP_IP_OUTPUT(ret, o_pak, &ro, NULL, vrf_id);
 		/* Free the route if we got one back */
 		if (ro.ro_rt) {
@@ -11415,11 +11415,6 @@ sctp_send_resp_msg(struct mbuf *m, struct sctphdr *sh, uint32_t vtag,
 #ifdef INET6
 	if (ip6_out != NULL) {
 		ip6_out->ip6_plen = len - sizeof(struct ip6_hdr);
-#ifdef  SCTP_PACKET_LOGGING
-		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING) {
-			sctp_packet_log(mout, len);
-		}
-#endif
 		if (port) {
 #if defined(SCTP_WITH_NO_CSUM)
 			SCTP_STAT_INCR(sctps_sendnocrc);
@@ -11452,6 +11447,11 @@ sctp_send_resp_msg(struct mbuf *m, struct sctphdr *sh, uint32_t vtag,
 #endif
 #endif
 		}
+#ifdef SCTP_PACKET_LOGGING
+		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING) {
+			sctp_packet_log(o_pak);
+		}
+#endif
 		SCTP_IP6_OUTPUT(ret, o_pak, NULL, NULL, NULL, vrf_id);
 	}
 #endif

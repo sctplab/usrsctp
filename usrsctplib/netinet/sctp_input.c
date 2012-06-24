@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 237230 2012-06-18 17:11:24Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 237540 2012-06-24 21:25:54Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6090,9 +6090,9 @@ sctp_input(i_pak, va_alist)
 		}
 	}
 #endif
-#ifdef  SCTP_PACKET_LOGGING
+#ifdef SCTP_PACKET_LOGGING
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING)
-		sctp_packet_log(m, mlen);
+		sctp_packet_log(m);
 #endif
 #if defined(__FreeBSD__)
 	if (m->m_flags & M_FLOWID) {
