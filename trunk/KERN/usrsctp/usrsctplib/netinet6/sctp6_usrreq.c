@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 237049 2012-06-14 06:54:48Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 237540 2012-06-24 21:25:54Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -167,7 +167,7 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto)
 	}
 
 	m = SCTP_HEADER_TO_CHAIN(*i_pak);
-	pkt_len = SCTP_HEADER_LEN((*i_pak));
+	pkt_len = SCTP_HEADER_LEN(*i_pak);
 #ifdef __Panda__
 	/* We dont need the pak hdr, free it */
 	/* For BSD/MAC this does nothing */
@@ -175,8 +175,10 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto)
 	(void)SCTP_RELEASE_HEADER(*i_pak);
 #endif
 
-#ifdef  SCTP_PACKET_LOGGING
-	sctp_packet_log(m, pkt_len);
+#ifdef SCTP_PACKET_LOGGING
+	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING) {
+		sctp_packet_log(m);
+	}
 #endif
 #if defined(__FreeBSD__)
 	if (m->m_flags & M_FLOWID) {
