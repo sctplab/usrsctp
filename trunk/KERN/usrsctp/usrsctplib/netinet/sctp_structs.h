@@ -188,7 +188,7 @@ struct iterator_control {
 	lck_mtx_t *ipi_iterator_wq_mtx;
 	lck_mtx_t *it_mtx;
 #elif defined(SCTP_PROCESS_LEVEL_LOCKS)
-#if defined (__Userspace__)
+#if defined(__Userspace__)
 	userland_mutex_t ipi_iterator_wq_mtx;
 	userland_mutex_t it_mtx;
 	userland_cond_t iterator_wakeup;

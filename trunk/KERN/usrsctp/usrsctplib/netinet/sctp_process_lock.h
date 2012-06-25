@@ -51,7 +51,7 @@
  * per socket level locking
  */
 
-#if defined (__Userspace_os_Windows)
+#if defined(__Userspace_os_Windows)
 /* Lock for INFO stuff */
 #define SCTP_INP_INFO_LOCK_INIT()
 #define SCTP_INP_INFO_RLOCK()
@@ -113,7 +113,7 @@
  */
 #define SCTP_IPI_COUNT_INIT()
 
-#if defined (__Userspace_os_Windows)
+#if defined(__Userspace_os_Windows)
 #define SCTP_WQ_ADDR_INIT() \
         InitializeCriticalSection(&SCTP_BASE_INFO(wq_addr_mtx))
 #define SCTP_WQ_ADDR_DESTROY() \
@@ -460,7 +460,7 @@
 #define SCTP_STATLOG_UNLOCK()
 #define SCTP_STATLOG_DESTROY()
 
-#if defined (__Userspace_os_Windows)
+#if defined(__Userspace_os_Windows)
 /* address list locks */
 #define SCTP_IPI_ADDR_INIT() \
 	InitializeCriticalSection(&SCTP_BASE_INFO(ipi_addr_mtx))

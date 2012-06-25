@@ -38,16 +38,16 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_header.h 235828 2012-05-23 11:26:28Z t
 #ifndef _NETINET_SCTP_HEADER_H_
 #define _NETINET_SCTP_HEADER_H_
 
-#if defined(__Windows__) && !defined (__Userspace_os_Windows)
+#if defined(__Windows__) && !defined(__Userspace_os_Windows)
 #include <packon.h>
 #endif
-#if !defined (__Userspace_os_Windows)
+#if !defined(__Userspace_os_Windows)
 #include <sys/time.h>
 #endif
 #include <netinet/sctp.h>
 #include <netinet/sctp_constants.h>
 
-#if !defined (__Userspace_os_Windows)
+#if !defined(__Userspace_os_Windows)
 #define SCTP_PACKED __attribute__((packed))
 #else
 #pragma pack (push, 1)
@@ -635,7 +635,7 @@ struct sctp_auth_invalid_hmac {
 #if defined(__Windows__)
 #include <packoff.h>
 #endif
-#if defined (__Userspace_os_Windows)
+#if defined(__Userspace_os_Windows)
 #pragma pack ()
 #endif
 #undef SCTP_PACKED

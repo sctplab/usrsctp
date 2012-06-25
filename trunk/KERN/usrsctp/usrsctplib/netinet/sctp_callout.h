@@ -50,8 +50,8 @@ __FBSDID("$FreeBSD$");
 
 #define SCTP_TICKS_PER_FASTTIMO 20	/* called about every 20ms */
 
-#if defined (__Userspace__)
-#if defined (__Userspace_os_Windows)
+#if defined(__Userspace__)
+#if defined(__Userspace_os_Windows)
 #define SCTP_TIMERQ_LOCK()          EnterCriticalSection(&SCTP_BASE_VAR(timer_mtx))
 #define SCTP_TIMERQ_UNLOCK()        LeaveCriticalSection(&SCTP_BASE_VAR(timer_mtx))
 #define SCTP_TIMERQ_LOCK_INIT()     InitializeCriticalSection(&SCTP_BASE_VAR(timer_mtx))

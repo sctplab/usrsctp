@@ -45,7 +45,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp.h 235990 2012-05-25 11:14:08Z tuexen $
 #include <sys/types.h>
 
 
-#if !defined (__Userspace_os_Windows)
+#if !defined(__Userspace_os_Windows)
 #define SCTP_PACKED __attribute__((packed))
 #else
 #pragma pack (push, 1)

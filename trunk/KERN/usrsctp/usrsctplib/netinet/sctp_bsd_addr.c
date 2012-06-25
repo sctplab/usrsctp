@@ -48,7 +48,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 237540 2012-06-24 21:25:54Z
 #include <netinet/sctp_asconf.h>
 #include <netinet/sctp_sysctl.h>
 #include <netinet/sctp_indata.h>
-#if !defined (__Userspace_os_Windows)
+#if !defined(__Userspace_os_Windows)
 #include <sys/unistd.h>
 #endif
 
@@ -107,7 +107,7 @@ void
 sctp_wakeup_iterator(void)
 {
 #if defined(SCTP_PROCESS_LEVEL_LOCKS)
-#if defined (__Userspace_os_Windows)
+#if defined(__Userspace_os_Windows)
 	WakeAllConditionVariable(&sctp_it_ctl.iterator_wakeup);
 #else
 	pthread_cond_broadcast(&sctp_it_ctl.iterator_wakeup);
@@ -320,7 +320,7 @@ sctp_is_vmware_interface(struct ifnet *ifn)
 }
 #endif
 
-#if defined (__Userspace_os_Windows)
+#if defined(__Userspace_os_Windows)
 #ifdef MALLOC
 #undef MALLOC
 #define MALLOC(x) HeapAlloc(GetProcessHeap(), 0, (x))
@@ -433,7 +433,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 		FREE(pAdapterAddrs6);
 #endif
 }
-#elif defined (__Userspace__)
+#elif defined(__Userspace__)
 static void
 sctp_init_ifns_for_vrf(int vrfid)
 {
@@ -485,7 +485,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 }
 #endif
 
-#if defined (__APPLE__)
+#if defined(__APPLE__)
 static void
 sctp_init_ifns_for_vrf(int vrfid)
 {
@@ -566,7 +566,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 }
 #endif
 
-#if defined (__FreeBSD__)
+#if defined(__FreeBSD__)
 static void
 sctp_init_ifns_for_vrf(int vrfid)
 {
@@ -751,7 +751,7 @@ sctp_addr_change(struct ifaddr *ifa, int cmd)
 #endif
 }
 
-#if defined (__FreeBSD__)
+#if defined(__FreeBSD__)
 void
 sctp_add_or_del_interfaces(int (*pred)(struct ifnet *), int add)
 {
@@ -770,7 +770,7 @@ sctp_add_or_del_interfaces(int (*pred)(struct ifnet *), int add)
 	IFNET_RUNLOCK();
 }
 #endif
-#if defined (__APPLE__)
+#if defined(__APPLE__)
 void
 sctp_add_or_del_interfaces(int (*pred)(struct ifnet *), int add)
 {

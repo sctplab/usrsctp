@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 236087 2012-05-26 09:16:33Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 237565 2012-06-25 17:15:09Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -385,7 +385,7 @@ copy_out_local_addresses(struct sctp_inpcb *inp, struct sctp_tcb *stcb, struct s
 /*
  * sysctl functions
  */
-#if defined (__APPLE__)
+#if defined(__APPLE__)
 static int
 sctp_assoclist SYSCTL_HANDLER_ARGS
 {
@@ -634,7 +634,7 @@ skip:
 
 /* XXX: Remove the #if after tunneling over IPv6 works also on FreeBSD. */
 #if !defined(__FreeBSD__) || defined(INET)
-#if defined (__APPLE__)
+#if defined(__APPLE__)
 static int
 sysctl_sctp_udp_tunneling_check SYSCTL_HANDLER_ARGS
 {
@@ -678,7 +678,7 @@ out:
 }
 #endif
 
-#if defined (__APPLE__)
+#if defined(__APPLE__)
 int sctp_is_vmware_interface(struct ifnet *);
 
 static int
@@ -703,7 +703,7 @@ sysctl_sctp_vmware_interfaces_check SYSCTL_HANDLER_ARGS
 }
 #endif
 
-#if defined (__APPLE__)
+#if defined(__APPLE__)
 static int
 sysctl_sctp_check SYSCTL_HANDLER_ARGS
 {
@@ -816,7 +816,7 @@ sysctl_sctp_check(SYSCTL_HANDLER_ARGS)
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_addr_watchdog_limit), SCTPCTL_ADDR_WATCHDOG_LIMIT_MIN, SCTPCTL_ADDR_WATCHDOG_LIMIT_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_vtag_watchdog_limit), SCTPCTL_VTAG_WATCHDOG_LIMIT_MIN, SCTPCTL_VTAG_WATCHDOG_LIMIT_MAX);
 #endif
-#if defined (__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_output_unlocked), SCTPCTL_OUTPUT_UNLOCKED_MIN, SCTPCTL_OUTPUT_UNLOCKED_MAX);
 #endif
 	}
@@ -977,7 +977,7 @@ sysctl_stat_get(SYSCTL_HANDLER_ARGS)
 #endif
 
 #if defined(SCTP_LOCAL_TRACE_BUF)
-#if defined (__APPLE__)
+#if defined(__APPLE__)
 static int
 sysctl_sctp_cleartrace SYSCTL_HANDLER_ARGS
 {
@@ -1339,7 +1339,7 @@ SYSCTL_INT(_net_inet_sctp, OID_AUTO, vtag_watchdog_limit, CTLFLAG_RW,
             &SCTP_BASE_SYSCTL(sctp_vtag_watchdog_limit), 0, "Vtag watchdog intervall");
 #endif
 
-#if defined (__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, output_unlocked, CTLTYPE_UINT|CTLFLAG_RW,
                  &SCTP_BASE_SYSCTL(sctp_output_unlocked), 0, sysctl_sctp_check, "IU",
                  SCTPCTL_OUTPUT_UNLOCKED_DESC);
