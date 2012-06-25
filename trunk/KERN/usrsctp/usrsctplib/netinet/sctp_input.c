@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 237565 2012-06-25 17:15:09Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 237569 2012-06-25 19:13:43Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6010,19 +6010,16 @@ sctp_input(i_pak, va_alist)
 {
 	struct mbuf *m;
 	int iphlen;
-#ifdef __Panda__
-	int off;
-#endif
 	uint32_t vrf_id = 0;
 	uint8_t ecn_bits;
 	struct ip *ip;
 	struct sctphdr *sh;
-	struct sctp_inpcb *inp = NULL;
-	struct sctp_nets *net;
-	struct sctp_tcb *stcb = NULL;
 	struct sctp_chunkhdr *ch;
+	struct sctp_inpcb *inp = NULL;
+	struct sctp_tcb *stcb = NULL;
+	struct sctp_nets *net = NULL;
 	int refcount_up = 0;
-	int length, mlen, offset;
+	int length, offset;
 #if defined(__FreeBSD__)
 	uint32_t mflowid;
 	uint8_t use_mflowid;
@@ -6030,46 +6027,25 @@ sctp_input(i_pak, va_alist)
 #if !defined(SCTP_WITH_NO_CSUM)
 	uint32_t check, calc_check;
 #endif
-#if !(defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__))
+#if !(defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined (__Userspace__))
 	uint16_t port = 0;
 #endif
 
-#ifdef __Panda__
-	/*-
-	 * This is Evil, but its the only way to make
-	 * panda work right
-	 */
-	off = sizeof(struct ip);
+#if defined(__Panda__)
+	/* This is Evil, but its the only way to make panda work right. */
+	iphlen = sizeof(struct ip);
+#else
+	iphlen = off;
 #endif
 	if (SCTP_GET_PKT_VRFID(i_pak, vrf_id)) {
 		SCTP_RELEASE_PKT(i_pak);
 		return;
 	}
-
-	mlen = SCTP_HEADER_LEN(i_pak);
-#if !(defined(__FreeBSD__) || defined(__APPLE__) || defined(__Panda__) || defined(__Windows__) || defined(__Userspace__))
-	int off;
-	va_list ap;
-
-	va_start(ap, m);
-	iphlen = off = va_arg(ap, int);
-	va_end(ap);
-#else
-	iphlen = off;
-#endif
 	m = SCTP_HEADER_TO_CHAIN(i_pak);
 #ifdef __Panda__
-	/* Free the pak header as we already have the data chain */
-	/* For BSD/MAC this does nothing */
 	SCTP_DETACH_HEADER_FROM_CHAIN(i_pak);
 	(void)SCTP_RELEASE_HEADER(i_pak);
 #endif
-
-	net = NULL;
-	SCTP_STAT_INCR(sctps_recvpackets);
-	SCTP_STAT_INCR_COUNTER64(sctps_inpackets);
-
-
 #ifdef SCTP_MBUF_LOGGING
 	/* Log in any input mbufs */
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_MBUF_LOGGING_ENABLE) {
@@ -6083,8 +6059,9 @@ sctp_input(i_pak, va_alist)
 	}
 #endif
 #ifdef SCTP_PACKET_LOGGING
-	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING)
+	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING) {
 		sctp_packet_log(m);
+	}
 #endif
 #if defined(__FreeBSD__)
 	if (m->m_flags & M_FLOWID) {
@@ -6095,14 +6072,11 @@ sctp_input(i_pak, va_alist)
 		use_mflowid = 0;
 	}
 #endif
-	/* Must take out the iphlen, since mlen expects this (only effect lb case) */
-	mlen -= iphlen;
-
-	/*
-	 * Get IP, SCTP, and first chunk header together in first mbuf.
-	 */
+	SCTP_STAT_INCR(sctps_recvpackets);
+	SCTP_STAT_INCR_COUNTER64(sctps_inpackets);
+	/* Get IP, SCTP, and first chunk header together in the first mbuf. */
 	ip = mtod(m, struct ip *);
-	offset = iphlen + sizeof(*sh) + sizeof(*ch);
+	offset = iphlen + sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr);
 	if (SCTP_BUF_LEN(m) < offset) {
 		if ((m = m_pullup(m, offset)) == 0) {
 			SCTP_STAT_INCR(sctps_hdrops);
@@ -6110,59 +6084,71 @@ sctp_input(i_pak, va_alist)
 		}
 		ip = mtod(m, struct ip *);
 	}
+	sh = (struct sctphdr *)((caddr_t)ip + iphlen);
+	ch = (struct sctp_chunkhdr *)((caddr_t)sh + sizeof(struct sctphdr));
+	offset -= sizeof(struct sctp_chunkhdr);
 #if defined(__Windows__)
-	/* Open BSD gives us the len in network order, fix it */
 	NTOHS(ip->ip_len);
 #endif
 #if defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
 	ip->ip_len = ntohs(ip->ip_len);
 #endif
-	/* validate mbuf chain length with IP payload length */
-	if (mlen < (SCTP_GET_IPV4_LENGTH(ip) - iphlen)) {
+#if defined(__FreeBSD__)  || defined(__APPLE__)
+	length = ip->ip_len + iphlen;
+#elif defined(__Userspace__)
+#if defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
+	length = ip->ip_len;
+#else
+	length = ip->ip_len + iphlen;
+#endif
+#else
+	length = ip->ip_len;
+#endif
+	/* Validate mbuf chain length with IP payload length. */
+	if (SCTP_HEADER_LEN(i_pak) != length) {
+		SCTPDBG(SCTP_DEBUG_INPUT1,
+		        "sctp_input() length:%d reported length:%d\n", length, SCTP_HEADER_LEN(i_pak));
 		SCTP_STAT_INCR(sctps_hdrops);
 		goto bad;
 	}
-
-	sh = (struct sctphdr *)((caddr_t)ip + iphlen);
-	ch = (struct sctp_chunkhdr *)((caddr_t)sh + sizeof(*sh));
-	SCTPDBG(SCTP_DEBUG_INPUT1,
-		"sctp_input() length:%d iphlen:%d\n", mlen, iphlen);
-
 	/* SCTP does not allow broadcasts or multicasts */
 	if (IN_MULTICAST(ntohl(ip->ip_dst.s_addr))) {
-			goto bad;
+		goto bad;
 	}
 	if (SCTP_IS_IT_BROADCAST(ip->ip_dst, m)) {
-		/* We only look at broadcast if its a
-		 * front state, All others we will
-		 * not have a tcb for anyway.
-		 */
- 		goto bad;
+		goto bad;
 	}
-
-	/* validate SCTP checksum */
+	SCTPDBG(SCTP_DEBUG_INPUT1,
+	        "sctp_input() length:%d iphlen:%d\n", length, iphlen);
 #if defined(__FreeBSD__)
 #if __FreeBSD_version >= 800000
 	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
-		"sctp_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
-		m->m_pkthdr.len,
-		if_name(m->m_pkthdr.rcvif),
-		m->m_pkthdr.csum_flags);
+	        "sctp_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
+	        m->m_pkthdr.len,
+	        if_name(m->m_pkthdr.rcvif),
+	        m->m_pkthdr.csum_flags);
 #else
 	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
-		"sctp_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
-		m->m_pkthdr.len,
-		m->m_pkthdr.rcvif->if_xname,
-		m->m_pkthdr.csum_flags);
+	        "sctp_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
+	        m->m_pkthdr.len,
+	        m->m_pkthdr.rcvif->if_xname,
+	        m->m_pkthdr.csum_flags);
 #endif
 #endif
 #if defined(__APPLE__)
 	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
-		"sctp_input(): Packet of length %d received on %s%d with csum_flags 0x%x.\n",
-		m->m_pkthdr.len,
-		m->m_pkthdr.rcvif->if_name,
-		m->m_pkthdr.rcvif->if_unit,
-		m->m_pkthdr.csum_flags);
+	        "sctp_input(): Packet of length %d received on %s%d with csum_flags 0x%x.\n",
+	        m->m_pkthdr.len,
+	        m->m_pkthdr.rcvif->if_name,
+	        m->m_pkthdr.rcvif->if_unit,
+	        m->m_pkthdr.csum_flags);
+#endif
+#if defined(__Windows__)
+	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
+	        "sctp_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
+	        m->m_pkthdr.len,
+	        m->m_pkthdr.rcvif->if_xname,
+	        m->m_pkthdr.csum_flags);
 #endif
 #if defined(SCTP_WITH_NO_CSUM)
 	SCTP_STAT_INCR(sctps_recvnocrc);
@@ -6170,31 +6156,27 @@ sctp_input(i_pak, va_alist)
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800000
 	if (m->m_pkthdr.csum_flags & CSUM_SCTP_VALID) {
 		SCTP_STAT_INCR(sctps_recvhwcrc);
-		goto sctp_skip_csum_4;
+		goto sctp_skip_csum;
 	}
 #endif
-	check = sh->checksum;	/* save incoming checksum */
+	check = sh->checksum;
 #if !(defined(__FreeBSD__) && __FreeBSD_version >= 800000)
 	if ((check == 0) && (SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback)) &&
 	    ((ip->ip_src.s_addr == ip->ip_dst.s_addr) ||
-	     (SCTP_IS_IT_LOOPBACK(m)))
-		) {
+	     (SCTP_IS_IT_LOOPBACK(m)))) {
 		SCTP_STAT_INCR(sctps_recvnocrc);
-		goto sctp_skip_csum_4;
+		goto sctp_skip_csum;
 	}
 #endif
-	sh->checksum = 0;	/* prepare for calc */
+	sh->checksum = 0;
 	calc_check = sctp_calculate_cksum(m, iphlen);
 	sh->checksum = check;
 	SCTP_STAT_INCR(sctps_recvswcrc);
 	if (calc_check != check) {
 		SCTPDBG(SCTP_DEBUG_INPUT1, "Bad CSUM on SCTP packet calc_check:%x check:%x  m:%p mlen:%d iphlen:%d\n",
-			calc_check, check, m, mlen, iphlen);
-
-		stcb = sctp_findassociation_addr(m,
-						 offset - sizeof(*ch),
-						 sh, ch, &inp, &net,
-						 vrf_id);
+		        calc_check, check, m, length, iphlen);
+		stcb = sctp_findassociation_addr(m, offset,
+		                                 sh, ch, &inp, &net, vrf_id);
 		if ((net) && (port)) {
 			if (net->port == 0) {
 				sctp_pathmtu_adjustment(stcb, net->mtu - sizeof(struct udphdr));
@@ -6210,7 +6192,7 @@ sctp_input(i_pak, va_alist)
 		}
 #endif
 		if ((inp) && (stcb)) {
-			sctp_send_packet_dropped(stcb, net, m, mlen + iphlen, iphlen, 1);
+			sctp_send_packet_dropped(stcb, net, m, length, iphlen, 1);
 			sctp_chunk_output(inp, stcb, SCTP_OUTPUT_FROM_INPUT_ERROR, SCTP_SO_NOT_LOCKED);
 		} else if ((inp != NULL) && (stcb == NULL)) {
 			refcount_up = 1;
@@ -6219,20 +6201,15 @@ sctp_input(i_pak, va_alist)
 		SCTP_STAT_INCR_COUNTER32(sctps_checksumerrors);
 		goto bad;
 	}
- sctp_skip_csum_4:
+ sctp_skip_csum:
 #endif
 	/* destination port of 0 is illegal, based on RFC2960. */
 	if (sh->dest_port == 0) {
 		SCTP_STAT_INCR(sctps_hdrops);
 		goto bad;
 	}
-
-	/*
-	 * Locate pcb and tcb for datagram sctp_findassociation_addr() wants
-	 * IP/SCTP/first chunk header...
-	 */
-	stcb = sctp_findassociation_addr(m, offset - sizeof(*ch),
-					 sh, ch, &inp, &net, vrf_id);
+	stcb = sctp_findassociation_addr(m, offset,
+	                                 sh, ch, &inp, &net, vrf_id);
 	if ((net) && (port)) {
 		if (net->port == 0) {
 			sctp_pathmtu_adjustment(stcb, net->mtu - sizeof(struct udphdr));
@@ -6247,34 +6224,18 @@ sctp_input(i_pak, va_alist)
 #endif
 	}
 #endif
-	/* inp's ref-count increased && stcb locked */
 	if (inp == NULL) {
-		struct sctp_init_chunk *init_chk, chunk_buf;
 		SCTP_STAT_INCR(sctps_noport);
 #if defined(__FreeBSD__) && __FreeBSD_version >= 900001
 		if (badport_bandlim(BANDLIM_SCTP_OOTB) < 0)
 			goto bad;
 #endif
-		SCTPDBG(SCTP_DEBUG_INPUT1,
-			"Sending a ABORT from packet entry!\n");
-		if (ch->chunk_type == SCTP_INITIATION) {
-			/*
-			 * we do a trick here to get the INIT tag, dig in
-			 * and get the tag from the INIT and put it in the
-			 * common header.
-			 */
-			init_chk = (struct sctp_init_chunk *)sctp_m_getptr(m,
-									   iphlen + sizeof(*sh), sizeof(*init_chk),
-									   (uint8_t *) & chunk_buf);
-			if (init_chk != NULL)
-				sh->v_tag = init_chk->init.initiate_tag;
-		}
 		if (ch->chunk_type == SCTP_SHUTDOWN_ACK) {
 			sctp_send_shutdown_complete2(m, sh,
 #if defined(__FreeBSD__)
 			                             use_mflowid, mflowid,
 #endif
-		                                     vrf_id, port);
+			                             vrf_id, port);
 			goto bad;
 		}
 		if (ch->chunk_type == SCTP_SHUTDOWN_COMPLETE) {
@@ -6296,37 +6257,18 @@ sctp_input(i_pak, va_alist)
 		refcount_up = 1;
 	}
 #ifdef IPSEC
-	/*
+	/*-
 	 * I very much doubt any of the IPSEC stuff will work but I have no
 	 * idea, so I will leave it in place.
 	 */
 	if (inp && ipsec4_in_reject(m, &inp->ip_inp.inp)) {
-                MODULE_GLOBAL(ipsec4stat).in_polvio++;
+		MODULE_GLOBAL(ipsec4stat).in_polvio++;
 		SCTP_STAT_INCR(sctps_hdrops);
 		goto bad;
 	}
-#endif				/* IPSEC */
-
-	/*
-	 * common chunk processing
-	 */
-#if defined(__FreeBSD__)  || defined(__APPLE__)
-	length = ip->ip_len + iphlen;
-#elif defined(__Userspace__)
-
-#if defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
-	length = SCTP_GET_IPV4_LENGTH(ip);
-#else
-	length = SCTP_GET_IPV4_LENGTH(ip) + iphlen;
 #endif
-
-#else
-	length = ip->ip_len;
-#endif
-	offset -= sizeof(struct sctp_chunkhdr);
 
 	ecn_bits = ip->ip_tos;
-
 	/*sa_ignore NO_NULL_CHK*/
 	sctp_common_input_processing(&m, iphlen, offset, length, sh, ch,
 	                             inp, stcb, net, ecn_bits,
@@ -6334,13 +6276,14 @@ sctp_input(i_pak, va_alist)
 	                             use_mflowid, mflowid,
 #endif
 	                             vrf_id, port);
-	/* inp's ref-count reduced && stcb unlocked */
 	if (m) {
 		sctp_m_freem(m);
 	}
 	if ((inp) && (refcount_up)) {
 		/* reduce ref-count */
+		SCTP_INP_WLOCK(inp);
 		SCTP_INP_DECR_REF(inp);
+		SCTP_INP_WUNLOCK(inp);
 	}
 	return;
  bad:
@@ -6350,7 +6293,9 @@ sctp_input(i_pak, va_alist)
 
 	if ((inp) && (refcount_up)) {
 		/* reduce ref-count */
+		SCTP_INP_WLOCK(inp);
 		SCTP_INP_DECR_REF(inp);
+		SCTP_INP_WUNLOCK(inp);
 	}
 	if (m) {
 		sctp_m_freem(m);
