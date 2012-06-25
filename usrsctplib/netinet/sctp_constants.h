@@ -38,7 +38,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 235828 2012-05-23 11:26:28
 #ifndef _NETINET_SCTP_CONSTANTS_H_
 #define _NETINET_SCTP_CONSTANTS_H_
 
-#if defined (__Userspace_os_Windows)
+#if defined(__Userspace_os_Windows)
 extern void getwintimeofday(struct timeval *tv);
 #endif
 /* IANA assigned port number for SCTP over UDP encapsulation */
@@ -283,7 +283,7 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_SCALE_FOR_ADDR	2
 
 /* default AUTO_ASCONF mode enable(1)/disable(0) value (sysctl) */
-#if defined (__APPLE__)
+#if defined(__APPLE__)
 #if !defined(SCTP_APPLE_AUTO_ASCONF)
 #define SCTP_DEFAULT_AUTO_ASCONF        0
 #else
@@ -297,7 +297,7 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_DEFAULT_MULTIPLE_ASCONFS	0
 
 /* default MOBILITY_BASE mode enable(1)/disable(0) value (sysctl) */
-#if defined (__APPLE__)
+#if defined(__APPLE__)
 #if !defined(SCTP_APPLE_MOBILITY_BASE)
 #define SCTP_DEFAULT_MOBILITY_BASE      0
 #else
@@ -308,7 +308,7 @@ extern void getwintimeofday(struct timeval *tv);
 #endif
 
 /* default MOBILITY_FASTHANDOFF mode enable(1)/disable(0) value (sysctl) */
-#if defined (__APPLE__)
+#if defined(__APPLE__)
 #if !defined(SCTP_APPLE_MOBILITY_FASTHANDOFF)
 #define SCTP_DEFAULT_MOBILITY_FASTHANDOFF	0
 #else
@@ -1046,8 +1046,8 @@ extern void getwintimeofday(struct timeval *tv);
      (((uint8_t *)&(a)->s_addr)[2] == 0) && \
      (((uint8_t *)&(a)->s_addr)[3] == 1))
 
-#if defined (__Userspace__)
-#if defined (__Userspace_os_Windows)
+#if defined(__Userspace__)
+#if defined(__Userspace_os_Windows)
 #define SCTP_GETTIME_TIMEVAL(x)	getwintimeofday(x)
 #define SCTP_GETPTIME_TIMEVAL(x) getwintimeofday(x) /* this doesn't seem to ever be used.. */
 #else

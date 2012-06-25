@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 237392 2012-06-21 12:51:24Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 237565 2012-06-25 17:15:09Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -56,7 +56,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 237392 2012-06-21 12:51:24Z t
 #include <netinet/sctp_timer.h>
 #include <netinet/sctp_auth.h>
 #include <netinet/sctp_bsd_addr.h>
-#if !defined (__Userspace_os_Windows)
+#if !defined(__Userspace_os_Windows)
 #include <netinet/udp.h>
 #endif
 
@@ -96,7 +96,7 @@ sctp_init(void)
 	/* Initialize and modify the sysctled variables */
 	sctp_init_sysctls();
 #if defined(__Userspace__)
-#if defined (__Userspace_os_Windows)
+#if defined(__Userspace_os_Windows)
 	srand((unsigned int)time(NULL));
 #else
 	srandom(getpid()); /* so inp->sctp_ep.random_numbers are truly random... */
@@ -369,7 +369,7 @@ sctp_notify(struct sctp_inpcb *inp,
     struct sctp_tcb *stcb,
     struct sctp_nets *net)
 {
-#if defined (__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 	struct socket *so;
 
 #endif
@@ -434,7 +434,7 @@ sctp_notify(struct sctp_inpcb *inp,
 		 * TCB
 		 */
 		sctp_abort_notification(stcb, 1, 0, NULL, SCTP_SO_NOT_LOCKED);
-#if defined (__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 		so = SCTP_INP_SO(inp);
 		atomic_add_int(&stcb->asoc.refcnt, 1);
 		SCTP_TCB_UNLOCK(stcb);
@@ -443,7 +443,7 @@ sctp_notify(struct sctp_inpcb *inp,
 		atomic_subtract_int(&stcb->asoc.refcnt, 1);
 #endif
 		(void)sctp_free_assoc(inp, stcb, SCTP_NORMAL_PROC, SCTP_FROM_SCTP_USRREQ+SCTP_LOC_2);
-#if defined (__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 		SCTP_SOCKET_UNLOCK(so, 1);
 		/* SCTP_TCB_UNLOCK(stcb); MT: I think this is not needed.*/
 #endif
@@ -687,7 +687,7 @@ sctp_abort(struct socket *so)
 #endif
 }
 
-#if defined(__Panda__) || defined (__Userspace__)
+#if defined(__Panda__) || defined(__Userspace__)
 int
 #else
 static int
@@ -1023,7 +1023,7 @@ connected_type:
 		inp->pkt_last = inp->pkt = m;
 	}
 	if (
-#if defined (__FreeBSD__) || defined(__APPLE__)
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	/* FreeBSD uses a flag passed */
 	    ((flags & PRUS_MORETOCOME) == 0)
 #else
@@ -1638,7 +1638,7 @@ sctp_fill_up_addresses_vrf(struct sctp_inpcb *inp,
 		}
 	} else {
 		struct sctp_laddr *laddr;
-#if defined(__Windows__) || defined(__Userspace_os_Linux) || defined (__Userspace_os_Windows)
+#if defined(__Windows__) || defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
 		uint32_t sa_len = 0;
 #endif
 		LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
@@ -1650,7 +1650,7 @@ sctp_fill_up_addresses_vrf(struct sctp_inpcb *inp,
 			if (sctp_fill_user_address(sas, &laddr->ifa->address.sa))
 				continue;
 
-#if defined(__Windows__) || defined (__Userspace_os_Windows)
+#if defined(__Windows__) || defined(__Userspace_os_Windows)
 			if (laddr->ifa->address.sa.sa_family == AF_INET) {
 				sa_len = sizeof(struct sockaddr_in);
 			} else {
@@ -6452,7 +6452,7 @@ sctp_ctloutput(struct socket *so, struct sockopt *sopt)
 		if (INP_CHECK_SOCKAF(so, AF_INET6))
 			error = ip6_ctloutput(so, sopt);
 #endif				/* INET6 */
-#if defined(INET) && defined (INET6)
+#if defined(INET) && defined(INET6)
 		else
 #endif
 #ifdef INET
@@ -6577,7 +6577,7 @@ sctp_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 		struct sockaddr_in *sinp;
 
 #endif
-#if !defined (__Userspace_os_Windows)
+#if !defined(__Userspace_os_Windows)
 		if (addr->sa_len != sizeof(struct sockaddr_in)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			return (EINVAL);
@@ -7012,7 +7012,7 @@ sctp_accept(struct socket *so, struct mbuf *nam)
 			sin6->sin6_scope_id = 0;	/* XXX */
 #endif /* SCTP_KAME */
 #endif /* SCTP_EMBEDDED_V6_SCOPE */
-#if defined(__FreeBSD__) || defined (__APPLE__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__)
 		*addr = (struct sockaddr *)sin6;
 #elif !defined(__Panda__)
 		SCTP_BUF_LEN(nam) = sizeof(*sin6);

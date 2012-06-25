@@ -54,7 +54,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 235828 2012-05-23 11:26:28Z tu
 #include <netinet/sctp_input.h>
 #include <netinet/sctp.h>
 #include <netinet/sctp_uio.h>
-#if !defined (__Userspace_os_Windows)
+#if !defined(__Userspace_os_Windows)
 #include <netinet/udp.h>
 #endif
 

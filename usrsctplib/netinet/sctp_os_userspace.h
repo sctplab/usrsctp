@@ -41,7 +41,7 @@
 
 #include <errno.h>
 
-#if defined (__Userspace_os_Windows)
+#if defined(__Userspace_os_Windows)
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <ws2ipdef.h>
@@ -200,7 +200,7 @@ typedef char* caddr_t;
 #define random() rand()
 #define srandom(s) srand(s)
 #define	MSG_EOR		0x8		/* data completes record */
-#if defined (CMSG_DATA)
+#if defined(CMSG_DATA)
 #undef CMSG_DATA
 #endif
 #define CMSG_DATA(x)   WSA_CMSG_DATA(x)
@@ -349,7 +349,7 @@ struct udphdr {
 	unsigned __int16 uh_sum;
 };
 
-#else /* !defined (Userspace_os_Windows) */
+#else /* !defined(Userspace_os_Windows) */
 #include <sys/cdefs.h> /* needed? added from old __FreeBSD__ */
 #include <sys/socket.h>
 #if defined(__Userspace_os_FreeBSD)
@@ -375,7 +375,7 @@ struct sx {int dummy;};
 /* #include <sys/param.h>  in FreeBSD defines MSIZE */
 /* #include <sys/ktr.h> */
 /* #include <sys/systm.h> */
-#if defined (__Userspace_os_Windows)
+#if defined(__Userspace_os_Windows)
 #include <user_queue.h>
 #else
 #include <sys/queue.h>
@@ -417,7 +417,7 @@ struct sx {int dummy;};
  *  userspace as well? */
 /* on FreeBSD, this results in a redefintion of struct route */
 /* #include <net/route.h> */
-#if !defined (__Userspace_os_Windows)
+#if !defined(__Userspace_os_Windows)
 #include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
@@ -437,7 +437,7 @@ struct sx {int dummy;};
 
 /* for getifaddrs */
 #include <sys/types.h>
-#if !defined (__Userspace_os_Windows)
+#if !defined(__Userspace_os_Windows)
 #include <ifaddrs.h>
 
 /* for ioctl */
@@ -452,7 +452,7 @@ struct sx {int dummy;};
 /* for offsetof */
 #include <stddef.h>
 
-#if defined(SCTP_PROCESS_LEVEL_LOCKS) && !defined (__Userspace_os_Windows)
+#if defined(SCTP_PROCESS_LEVEL_LOCKS) && !defined(__Userspace_os_Windows)
 /* for pthread_mutex_lock, pthread_mutex_unlock, etc. */
 #include <pthread.h>
 #endif
@@ -556,7 +556,7 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 
 #if defined(SCTP_DEBUG)
 #include <netinet/sctp_constants.h>
-#if !defined (__Userspace_os_Windows)
+#if !defined(__Userspace_os_Windows)
 #define SCTPDBG(level, params...)					\
 {									\
     do {								\
@@ -629,7 +629,7 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 #define SCTP_VRF_IFN_HASH_SIZE	3
 #define	SCTP_INIT_VRF_TABLEID(vrf)
 
-#if !defined (__Userspace_os_Windows)
+#if !defined(__Userspace_os_Windows)
 #define SCTP_IFN_IS_IFT_LOOP(ifn) (strncmp((ifn)->ifn_name, "lo", 2) == 0)
 /* BSD definition */
 /* #define SCTP_ROUTE_IS_REAL_LOOP(ro) ((ro)->ro_rt && (ro)->ro_rt->rt_ifa && (ro)->ro_rt->rt_ifa->ifa_ifp && (ro)->ro_rt->rt_ifa->ifa_ifp->if_type == IFT_LOOP) */
@@ -773,7 +773,7 @@ sctp_hashfreedestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask);
 #define sctp_get_tick_count() (ticks)
 
 /* The packed define for 64 bit platforms */
-#if !defined (__Userspace_os_Windows)
+#if !defined(__Userspace_os_Windows)
 #define SCTP_PACKED __attribute__((packed))
 #define SCTP_UNUSED __attribute__((unused))
 #else
@@ -1080,7 +1080,7 @@ extern void sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 
 #define SCTP_IP_OUTPUT(result, o_pak, ro, stcb, vrf_id) sctp_userspace_ip_output(&result, o_pak, ro, stcb, vrf_id);
 
-#if defined (INET6)
+#if defined(INET6)
 extern void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
                                       struct route_in6 *ro, void *stcb,
                                       uint32_t vrf_id);
@@ -1147,7 +1147,7 @@ sctp_get_mbuf_for_msg(unsigned int space_needed,
 	} while (0)
 #endif
 
-#if defined (__Userspace_os_Linux)
+#if defined(__Userspace_os_Linux)
 #define TAILQ_FOREACH_SAFE(var, head, field, tvar)             \
          for ((var) = ((head)->tqh_first);                     \
               (var) && ((tvar) = TAILQ_NEXT((var), field), 1); \
