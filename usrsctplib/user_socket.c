@@ -2261,6 +2261,7 @@ userspace_getsockopt(struct socket *so, int level, int option_name,
 	return (usrsctp_getsockopt(so, level, option_name, option_value, option_len));
 }
 
+#ifdef INET
 void
 sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
                          struct route *ro, void *stcb,
@@ -2412,6 +2413,7 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 free_mbuf:
 	sctp_m_freem(m_orig);
 }
+#endif
 
 #if defined (INET6)
 void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
