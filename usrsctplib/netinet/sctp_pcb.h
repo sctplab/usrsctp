@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 235828 2012-05-23 11:26:28Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 237715 2012-06-28 16:01:08Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_PCB_H_
@@ -742,6 +742,7 @@ int sctp_inpcb_bind(struct socket *, struct sockaddr *,
 
 struct sctp_tcb *
 sctp_findassociation_addr(struct mbuf *, int,
+    struct sockaddr *, struct sockaddr *,
     struct sctphdr *, struct sctp_chunkhdr *, struct sctp_inpcb **,
     struct sctp_nets **, uint32_t vrf_id);
 
@@ -772,7 +773,7 @@ sctp_findassociation_ep_asocid(struct sctp_inpcb *,
     sctp_assoc_t, int);
 
 struct sctp_tcb *
-sctp_findassociation_ep_asconf(struct mbuf *, int,
+sctp_findassociation_ep_asconf(struct mbuf *, int, struct sockaddr *,
 			       struct sctphdr *, struct sctp_inpcb **, struct sctp_nets **, uint32_t vrf_id);
 
 int sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id);
@@ -828,8 +829,8 @@ void sctp_add_local_addr_restricted(struct sctp_tcb *, struct sctp_ifa *);
 void sctp_del_local_addr_restricted(struct sctp_tcb *, struct sctp_ifa *);
 
 int
-sctp_load_addresses_from_init(struct sctp_tcb *, struct mbuf *, int,
-    int, struct sctphdr *, struct sockaddr *);
+sctp_load_addresses_from_init(struct sctp_tcb *, struct mbuf *, int, int,
+    struct sockaddr *, struct sockaddr *, struct sockaddr *);
 
 int
 sctp_set_primary_addr(struct sctp_tcb *, struct sockaddr *,
