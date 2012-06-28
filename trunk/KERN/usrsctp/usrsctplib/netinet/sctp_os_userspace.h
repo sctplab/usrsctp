@@ -583,18 +583,9 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 	}								\
     } while (0);							\
 }
-#define SCTPDBG_PKT(level, iph, sh)					\
-{									\
-    do {								\
-	    if (SCTP_BASE_SYSCTL(sctp_debug_on) & level) {				\
-		    sctp_print_address_pkt(iph, sh);			\
-	    }								\
-    } while (0);							\
-}
 #else
 #define SCTPDBG(level, params...)
 #define SCTPDBG_ADDR(level, addr)
-#define SCTPDBG_PKT(level, iph, sh)
 #endif
 
 #ifdef SCTP_LTRACE_CHUNKS
@@ -936,15 +927,6 @@ int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af);
  * into the chain of data holders, for BSD
  * its a NOP.
  */
-
-/* Macro's for getting length from V6/V4 header */
-#if defined(__Userspace_os_Linux)
-/* if encapsulated over UDP, we do NOT convert values set in recv_function_udp  */
-#define SCTP_GET_IPV4_LENGTH(iph) ((iph->ip_p == IPPROTO_UDP) ? iph->ip_len + sizeof(struct ip) : iph->ip_len)
-#else
-#define SCTP_GET_IPV4_LENGTH(iph) (iph->ip_len)
-#endif
-#define SCTP_GET_IPV6_LENGTH(ip6) (ntohs(ip6->ip6_plen))
 
 /* get the v6 hop limit */
 #define SCTP_GET_HLIM(inp, ro) 128 /* As done for __Windows__ */

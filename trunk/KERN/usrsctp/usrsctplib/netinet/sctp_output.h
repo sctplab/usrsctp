@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.h 237542 2012-06-24 23:12:24Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.h 237715 2012-06-28 16:01:08Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_OUTPUT_H_
@@ -87,7 +87,9 @@ void sctp_send_initiate(struct sctp_inpcb *, struct sctp_tcb *, int
 
 void
 sctp_send_initiate_ack(struct sctp_inpcb *, struct sctp_tcb *, struct mbuf *,
-                       int, int, struct sctphdr *, struct sctp_init_chunk *,
+                       int, int,
+                       struct sockaddr *, struct sockaddr *,
+                       struct sctphdr *, struct sctp_init_chunk *,
 #if defined(__FreeBSD__)
                        uint8_t, uint32_t,
 #endif
@@ -120,7 +122,8 @@ void sctp_send_shutdown_ack(struct sctp_tcb *, struct sctp_nets *);
 
 void sctp_send_shutdown_complete(struct sctp_tcb *, struct sctp_nets *, int);
 
-void sctp_send_shutdown_complete2(struct mbuf *, struct sctphdr *,
+void sctp_send_shutdown_complete2(struct sockaddr *, struct sockaddr *,
+                                  struct sctphdr *,
 #if defined(__FreeBSD__)
                                   uint8_t, uint32_t,
 #endif
@@ -230,15 +233,15 @@ sctp_send_str_reset_req(struct sctp_tcb *stcb,
 			uint16_t adding_i, uint8_t from_peer);
 
 void
-sctp_send_abort(struct mbuf *, int, struct sctphdr *, uint32_t,
-                struct mbuf *,
+sctp_send_abort(struct mbuf *, int, struct sockaddr *, struct sockaddr *,
+                struct sctphdr *, uint32_t, struct mbuf *,
 #if defined(__FreeBSD__)
                 uint8_t, uint32_t,
 #endif
                 uint32_t, uint16_t);
 
-void sctp_send_operr_to(struct mbuf *, struct sctphdr *, uint32_t,
-                        struct mbuf *,
+void sctp_send_operr_to(struct sockaddr *, struct sockaddr *,
+                        struct sctphdr *, uint32_t, struct mbuf *,
 #if defined(__FreeBSD__)
                         uint8_t, uint32_t,
 #endif
