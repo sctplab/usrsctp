@@ -267,6 +267,7 @@ recv_function_route(void *arg)
 #endif
 #endif
 
+#ifdef INET
 static void *
 recv_function_raw(void *arg)
 {
@@ -373,6 +374,7 @@ recv_function_raw(void *arg)
 	pthread_exit(NULL);
 #endif
 }
+#endif
 
 #if defined(INET6)
 static void *
@@ -542,6 +544,7 @@ recv_function_raw6(void *arg)
 }
 #endif
 
+#ifdef INET
 static void *
 recv_function_udp(void *arg)
 {
@@ -717,6 +720,7 @@ recv_function_udp(void *arg)
 	pthread_exit(NULL);
 #endif
 }
+#endif
 
 #if defined(INET6)
 static void *
