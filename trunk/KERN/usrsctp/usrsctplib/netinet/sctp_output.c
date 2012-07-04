@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 238092 2012-07-04 07:37:53Z glebius $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 238122 2012-07-04 20:59:30Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4646,7 +4646,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			SCTP_STAT_INCR(sctps_sendnocrc);
 #else
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800000
-#if __FreeBSD_version >= 901000
+#if __FreeBSD_version > 901000
 			m->m_pkthdr.csum_flags = CSUM_SCTP_IPV6;
 #else
 			m->m_pkthdr.csum_flags = CSUM_SCTP;
@@ -11244,8 +11244,9 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		return;
 	}
 	SCTP_ATTACH_CHAIN(o_pak, mout, len);
+	switch (dst->sa_family) {
 #ifdef INET
-	if (ip != NULL) {
+	case AF_INET:
 #if defined(__APPLE__) || defined(__Panda__)
 		/* zap the stack pointer to the route */
 		bzero(&ro, sizeof(sctp_route_t));
@@ -11315,10 +11316,10 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #else
 		SCTP_IP_OUTPUT(ret, o_pak, NULL, NULL, vrf_id);
 #endif
-	}
+		break;
 #endif
 #ifdef INET6
-	if (ip6 != NULL) {
+	case AF_INET6:
 		ip6->ip6_plen = len - sizeof(struct ip6_hdr);
 		if (port) {
 #if defined(SCTP_WITH_NO_CSUM)
@@ -11339,7 +11340,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 			SCTP_STAT_INCR(sctps_sendnocrc);
 #else
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800000
-#if __FreeBSD_version >= 901000
+#if __FreeBSD_version > 901000
 			mout->m_pkthdr.csum_flags = CSUM_SCTP_IPV6;
 #else
 			mout->m_pkthdr.csum_flags = CSUM_SCTP;
@@ -11358,8 +11359,15 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		}
 #endif
 		SCTP_IP6_OUTPUT(ret, o_pak, NULL, NULL, NULL, vrf_id);
-	}
+		break;
 #endif
+	default:
+		SCTPDBG(SCTP_DEBUG_OUTPUT1, "Unknown protocol (TSNH) type %d\n",
+		        dst->sa_family);
+		sctp_m_freem(mout);
+		SCTP_LTRACE_ERR_RET_PKT(mout, NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, EFAULT);
+		return;
+	}
 	SCTP_STAT_INCR(sctps_sendpackets);
 	SCTP_STAT_INCR_COUNTER64(sctps_outpackets);
 	SCTP_STAT_INCR_COUNTER64(sctps_outcontrolchunks);
