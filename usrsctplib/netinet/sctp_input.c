@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 237715 2012-06-28 16:01:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 238087 2012-07-03 21:41:19Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5684,28 +5684,153 @@ void
 sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int length,
                              struct sockaddr *src, struct sockaddr *dst,
                              struct sctphdr *sh, struct sctp_chunkhdr *ch,
-                             struct sctp_inpcb *inp, struct sctp_tcb *stcb,
-                             struct sctp_nets *net, uint8_t ecn_bits,
+#if !defined(SCTP_WITH_NO_CSUM)
+                             uint8_t compute_crc,
+#endif
+                             uint8_t ecn_bits,
 #if defined(__FreeBSD__)
                              uint8_t use_mflowid, uint32_t mflowid,
 #endif
                              uint32_t vrf_id, uint16_t port)
 {
-	/*
-	 * Control chunk processing
-	 */
 	uint32_t high_tsn;
 	int fwd_tsn_seen = 0, data_processed = 0;
 	struct mbuf *m = *mm;
 	int un_sent;
 	int cnt_ctrl_ready = 0;
+	struct sctp_inpcb *inp, *inp_decr = NULL;
+	struct sctp_tcb *stcb = NULL;
+	struct sctp_nets *net = NULL;
 
 	SCTP_STAT_INCR(sctps_recvdatagrams);
 #ifdef SCTP_AUDITING_ENABLED
 	sctp_audit_log(0xE0, 1);
 	sctp_auditing(0, inp, stcb, net);
 #endif
+#if !defined(SCTP_WITH_NO_CSUM)
+	if (compute_crc != 0) {
+		uint32_t check, calc_check;
 
+		check = sh->checksum;
+		sh->checksum = 0;
+		calc_check = sctp_calculate_cksum(m, iphlen);
+		sh->checksum = check;
+		if (calc_check != check) {
+			SCTPDBG(SCTP_DEBUG_INPUT1, "Bad CSUM on SCTP packet calc_check:%x check:%x  m:%p mlen:%d iphlen:%d\n",
+			        calc_check, check, m, length, iphlen);
+			stcb = sctp_findassociation_addr(m, offset, src, dst,
+			                                 sh, ch, &inp, &net, vrf_id);
+			if ((net != NULL) && (port != 0)) {
+				if (net->port == 0) {
+					sctp_pathmtu_adjustment(stcb, net->mtu - sizeof(struct udphdr));
+				}
+				net->port = port;
+			}
+#if defined(__FreeBSD__)
+			if ((net != NULL) && (use_mflowid != 0)) {
+				net->flowid = mflowid;
+#ifdef INVARIANTS
+				net->flowidset = 1;
+#endif
+			}
+#endif
+			if ((inp != NULL) && (stcb != NULL)) {
+				sctp_send_packet_dropped(stcb, net, m, length, iphlen, 1);
+				sctp_chunk_output(inp, stcb, SCTP_OUTPUT_FROM_INPUT_ERROR, SCTP_SO_NOT_LOCKED);
+			} else if ((inp != NULL) && (stcb == NULL)) {
+				inp_decr = inp;
+			}
+			SCTP_STAT_INCR(sctps_badsum);
+			SCTP_STAT_INCR_COUNTER32(sctps_checksumerrors);
+			goto out;
+		}
+	}
+#endif
+	/* Destination port of 0 is illegal, based on RFC4960. */
+	if (sh->dest_port == 0) {
+		SCTP_STAT_INCR(sctps_hdrops);
+		goto out;
+	}
+	stcb = sctp_findassociation_addr(m, offset, src, dst,
+	                                 sh, ch, &inp, &net, vrf_id);
+	if ((net != NULL) && (port != 0)) {
+		if (net->port == 0) {
+			sctp_pathmtu_adjustment(stcb, net->mtu - sizeof(struct udphdr));
+		}
+		net->port = port;
+	}
+#if defined(__FreeBSD__)
+	if ((net != NULL) && (use_mflowid != 0)) {
+		net->flowid = mflowid;
+#ifdef INVARIANTS
+		net->flowidset = 1;
+#endif
+	}
+#endif
+	if (inp == NULL) {
+		SCTP_STAT_INCR(sctps_noport);
+#if defined(__FreeBSD__) && __FreeBSD_version >= 900001
+		if (badport_bandlim(BANDLIM_SCTP_OOTB) < 0) {
+			goto out;
+		}
+#endif
+		if (ch->chunk_type == SCTP_SHUTDOWN_ACK) {
+			sctp_send_shutdown_complete2(src, dst, sh,
+#if defined(__FreeBSD__)
+			                             use_mflowid, mflowid,
+#endif
+			                             vrf_id, port);
+			goto out;
+		}
+		if (ch->chunk_type == SCTP_SHUTDOWN_COMPLETE) {
+			goto out;
+		}
+		if (ch->chunk_type != SCTP_ABORT_ASSOCIATION) {
+			if ((SCTP_BASE_SYSCTL(sctp_blackhole) == 0) ||
+			    ((SCTP_BASE_SYSCTL(sctp_blackhole) == 1) &&
+			     (ch->chunk_type != SCTP_INIT))) {
+				sctp_send_abort(m, iphlen, src, dst,
+				                sh, 0, NULL,
+#if defined(__FreeBSD__)
+				                use_mflowid, mflowid,
+#endif
+				                vrf_id, port);
+			}
+		}
+		goto out;
+	} else if (stcb == NULL) {
+		inp_decr = inp;
+	}
+#ifdef IPSEC
+	/*-
+	 * I very much doubt any of the IPSEC stuff will work but I have no
+	 * idea, so I will leave it in place.
+	 */
+	if (inp != NULL) {
+		switch (dst->sa_family) {
+#ifdef INET
+		case AF_INET:
+			if (ipsec4_in_reject(m, &inp->ip_inp.inp)) {
+				MODULE_GLOBAL(ipsec4stat).in_polvio++;
+				SCTP_STAT_INCR(sctps_hdrops);
+				goto out;
+			}
+			break;
+#endif
+#ifdef INET6
+		case AF_INET6:
+			if (ipsec6_in_reject(m, &inp->ip_inp.inp)) {
+				MODULE_GLOBAL(ipsec6stat).in_polvio++;
+				SCTP_STAT_INCR(sctps_hdrops);
+				goto out;
+			}
+			break;
+#endif
+		default:
+			break;
+		}
+	}
+#endif
 	SCTPDBG(SCTP_DEBUG_INPUT1, "Ok, Common input processing called, m:%p iphlen:%d offset:%d length:%d stcb:%p\n",
 		m, iphlen, offset, length, stcb);
 	if (stcb) {
@@ -5724,12 +5849,13 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 			 * NOT respond to any packet.. its OOTB.
 			 */
  			SCTP_TCB_UNLOCK(stcb);
+			stcb = NULL;
 			sctp_handle_ootb(m, iphlen, offset, src, dst, sh, inp,
 #if defined(__FreeBSD__)
 			                 use_mflowid, mflowid,
 #endif
 					 vrf_id, port);
-			goto out_now;
+			goto out;
 		}
 
 	}
@@ -5771,8 +5897,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 		    sctp_auth_is_required_chunk(SCTP_DATA, stcb->asoc.local_auth_chunks)) {
 			/* "silently" ignore */
 			SCTP_STAT_INCR(sctps_recvauthmissing);
-			SCTP_TCB_UNLOCK(stcb);
-			goto out_now;
+			goto out;
 		}
 		if (stcb == NULL) {
 			/* out of the blue DATA chunk */
@@ -5781,13 +5906,12 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 			                 use_mflowid, mflowid,
 #endif
 					 vrf_id, port);
-			goto out_now;
+			goto out;
 		}
 		if (stcb->asoc.my_vtag != ntohl(sh->v_tag)) {
 			/* v_tag mismatch! */
 			SCTP_STAT_INCR(sctps_badvtag);
-			SCTP_TCB_UNLOCK(stcb);
-			goto out_now;
+			goto out;
 		}
 	}
 
@@ -5797,7 +5921,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 		 * packet while processing control, or we're done with this
 		 * packet (done or skip rest of data), so we drop it...
 		 */
-		goto out_now;
+		goto out;
 	}
 
 	/*
@@ -5854,8 +5978,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 			                 use_mflowid, mflowid,
 #endif
 					 vrf_id, port);
-			SCTP_TCB_UNLOCK(stcb);
-			goto out_now;
+			goto out;
 			/*sa_ignore NOTREACHED*/
 			break;
 		case SCTP_STATE_EMPTY:	/* should not happen */
@@ -5863,8 +5986,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 		case SCTP_STATE_SHUTDOWN_RECEIVED:	/* This is a peer error */
 		case SCTP_STATE_SHUTDOWN_ACK_SENT:
 		default:
-			SCTP_TCB_UNLOCK(stcb);
-			goto out_now;
+			goto out;
 			/*sa_ignore NOTREACHED*/
 			break;
 		case SCTP_STATE_OPEN:
@@ -5884,7 +6006,8 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 			 * The association aborted, NO UNLOCK needed since
 			 * the association is destroyed.
 			 */
-			goto out_now;
+			stcb = NULL;
+			goto out;
 		}
 		data_processed = 1;
 		/*
@@ -5943,10 +6066,20 @@ trigger_send:
 	sctp_audit_log(0xE0, 3);
 	sctp_auditing(2, inp, stcb, net);
 #endif
-	SCTP_TCB_UNLOCK(stcb);
- out_now:
+ out:
+	if (stcb != NULL) {
+		SCTP_TCB_UNLOCK(stcb);
+	}
+	if (inp_decr != NULL) {
+		/* reduce ref-count */
+		SCTP_INP_WLOCK(inp_decr);
+		SCTP_INP_DECR_REF(inp_decr);
+		SCTP_INP_WUNLOCK(inp_decr);
+	}
 #ifdef INVARIANTS
-	sctp_validate_no_locks(inp);
+	if (inp != NULL) {
+		sctp_validate_no_locks(inp);
+	}
 #endif
 	return;
 }
@@ -5992,17 +6125,13 @@ sctp_input(i_pak, va_alist)
 	struct ip *ip;
 	struct sctphdr *sh;
 	struct sctp_chunkhdr *ch;
-	struct sctp_inpcb *inp = NULL;
-	struct sctp_tcb *stcb = NULL;
-	struct sctp_nets *net = NULL;
-	int refcount_up = 0;
 	int length, offset;
+#if !defined(SCTP_WITH_NO_CSUM)
+	uint8_t compute_crc;
+#endif
 #if defined(__FreeBSD__)
 	uint32_t mflowid;
 	uint8_t use_mflowid;
-#endif
-#if !defined(SCTP_WITH_NO_CSUM)
-	uint32_t check, calc_check;
 #endif
 #if !(defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined (__Userspace__))
 	uint16_t port = 0;
@@ -6039,6 +6168,36 @@ sctp_input(i_pak, va_alist)
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING) {
 		sctp_packet_log(m);
 	}
+#endif
+#if defined(__FreeBSD__)
+#if __FreeBSD_version >= 800000
+	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
+	        "sctp_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
+	        m->m_pkthdr.len,
+	        if_name(m->m_pkthdr.rcvif),
+	        m->m_pkthdr.csum_flags);
+#else
+	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
+	        "sctp_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
+	        m->m_pkthdr.len,
+	        m->m_pkthdr.rcvif->if_xname,
+	        m->m_pkthdr.csum_flags);
+#endif
+#endif
+#if defined(__APPLE__)
+	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
+	        "sctp_input(): Packet of length %d received on %s%d with csum_flags 0x%x.\n",
+	        m->m_pkthdr.len,
+	        m->m_pkthdr.rcvif->if_name,
+	        m->m_pkthdr.rcvif->if_unit,
+	        m->m_pkthdr.csum_flags);
+#endif
+#if defined(__Windows__)
+	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
+	        "sctp_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
+	        m->m_pkthdr.len,
+	        m->m_pkthdr.rcvif->if_xname,
+	        m->m_pkthdr.csum_flags);
 #endif
 #if defined(__FreeBSD__)
 	if (m->m_flags & M_FLOWID) {
@@ -6095,209 +6254,53 @@ sctp_input(i_pak, va_alist)
 	length = ip->ip_len;
 #endif
 	/* Validate mbuf chain length with IP payload length. */
-	if (SCTP_HEADER_LEN(i_pak) != length) {
+	if (SCTP_HEADER_LEN(m) != length) {
 		SCTPDBG(SCTP_DEBUG_INPUT1,
-		        "sctp_input() length:%d reported length:%d\n", length, SCTP_HEADER_LEN(i_pak));
+		        "sctp_input() length:%d reported length:%d\n", length, SCTP_HEADER_LEN(m));
 		SCTP_STAT_INCR(sctps_hdrops);
-		goto bad;
+		goto out;
 	}
 	/* SCTP does not allow broadcasts or multicasts */
 	if (IN_MULTICAST(ntohl(dst.sin_addr.s_addr))) {
-		goto bad;
+		goto out;
 	}
 	if (SCTP_IS_IT_BROADCAST(dst.sin_addr, m)) {
-		goto bad;
+		goto out;
 	}
-	SCTPDBG(SCTP_DEBUG_INPUT1,
-	        "sctp_input() length:%d iphlen:%d\n", length, iphlen);
-#if defined(__FreeBSD__)
-#if __FreeBSD_version >= 800000
-	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
-	        "sctp_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
-	        m->m_pkthdr.len,
-	        if_name(m->m_pkthdr.rcvif),
-	        m->m_pkthdr.csum_flags);
-#else
-	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
-	        "sctp_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
-	        m->m_pkthdr.len,
-	        m->m_pkthdr.rcvif->if_xname,
-	        m->m_pkthdr.csum_flags);
-#endif
-#endif
-#if defined(__APPLE__)
-	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
-	        "sctp_input(): Packet of length %d received on %s%d with csum_flags 0x%x.\n",
-	        m->m_pkthdr.len,
-	        m->m_pkthdr.rcvif->if_name,
-	        m->m_pkthdr.rcvif->if_unit,
-	        m->m_pkthdr.csum_flags);
-#endif
-#if defined(__Windows__)
-	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
-	        "sctp_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
-	        m->m_pkthdr.len,
-	        m->m_pkthdr.rcvif->if_xname,
-	        m->m_pkthdr.csum_flags);
-#endif
+	ecn_bits = ip->ip_tos;
 #if defined(SCTP_WITH_NO_CSUM)
 	SCTP_STAT_INCR(sctps_recvnocrc);
 #else
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800000
 	if (m->m_pkthdr.csum_flags & CSUM_SCTP_VALID) {
 		SCTP_STAT_INCR(sctps_recvhwcrc);
-		goto sctp_skip_csum;
-	}
-#endif
-	check = sh->checksum;
-#if !(defined(__FreeBSD__) && __FreeBSD_version >= 800000)
-	if ((check == 0) && (SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback)) &&
+		compute_crc = 0;
+	} else {
+#else
+	if (SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) &&
 	    ((src.sin_addr.s_addr == dst.sin_addr.s_addr) ||
 	     (SCTP_IS_IT_LOOPBACK(m)))) {
 		SCTP_STAT_INCR(sctps_recvnocrc);
-		goto sctp_skip_csum;
+		compute_crc = 0;
+	} else {
+#endif
+		SCTP_STAT_INCR(sctps_recvswcrc);
+		compute_crc = 1;
 	}
 #endif
-	sh->checksum = 0;
-	calc_check = sctp_calculate_cksum(m, iphlen);
-	sh->checksum = check;
-	SCTP_STAT_INCR(sctps_recvswcrc);
-	if (calc_check != check) {
-		SCTPDBG(SCTP_DEBUG_INPUT1, "Bad CSUM on SCTP packet calc_check:%x check:%x  m:%p mlen:%d iphlen:%d\n",
-		        calc_check, check, m, length, iphlen);
-		stcb = sctp_findassociation_addr(m, offset,
-		                                 (struct sockaddr *)&src,
-		                                 (struct sockaddr *)&dst,
-		                                 sh, ch, &inp, &net, vrf_id);
-		if ((net) && (port)) {
-			if (net->port == 0) {
-				sctp_pathmtu_adjustment(stcb, net->mtu - sizeof(struct udphdr));
-			}
-			net->port = port;
-		}
-#if defined(__FreeBSD__)
-		if ((net != NULL) && (use_mflowid != 0)) {
-			net->flowid = mflowid;
-#ifdef INVARIANTS
-			net->flowidset = 1;
-#endif
-		}
-#endif
-		if ((inp) && (stcb)) {
-			sctp_send_packet_dropped(stcb, net, m, length, iphlen, 1);
-			sctp_chunk_output(inp, stcb, SCTP_OUTPUT_FROM_INPUT_ERROR, SCTP_SO_NOT_LOCKED);
-		} else if ((inp != NULL) && (stcb == NULL)) {
-			refcount_up = 1;
-		}
-		SCTP_STAT_INCR(sctps_badsum);
-		SCTP_STAT_INCR_COUNTER32(sctps_checksumerrors);
-		goto bad;
-	}
- sctp_skip_csum:
-#endif
-	/* destination port of 0 is illegal, based on RFC2960. */
-	if (sh->dest_port == 0) {
-		SCTP_STAT_INCR(sctps_hdrops);
-		goto bad;
-	}
-	stcb = sctp_findassociation_addr(m, offset,
-	                                 (struct sockaddr *)&src,
-	                                 (struct sockaddr *)&dst,
-	                                 sh, ch, &inp, &net, vrf_id);
-	if ((net) && (port)) {
-		if (net->port == 0) {
-			sctp_pathmtu_adjustment(stcb, net->mtu - sizeof(struct udphdr));
-		}
-		net->port = port;
-	}
-#if defined(__FreeBSD__)
-	if ((net != NULL) && (use_mflowid != 0)) {
-		net->flowid = mflowid;
-#ifdef INVARIANTS
-		net->flowidset = 1;
-#endif
-	}
-#endif
-	if (inp == NULL) {
-		SCTP_STAT_INCR(sctps_noport);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 900001
-		if (badport_bandlim(BANDLIM_SCTP_OOTB) < 0)
-			goto bad;
-#endif
-		if (ch->chunk_type == SCTP_SHUTDOWN_ACK) {
-			sctp_send_shutdown_complete2((struct sockaddr *)&src,
-			                             (struct sockaddr *)&dst,
-			                             sh,
-#if defined(__FreeBSD__)
-			                             use_mflowid, mflowid,
-#endif
-			                             vrf_id, port);
-			goto bad;
-		}
-		if (ch->chunk_type == SCTP_SHUTDOWN_COMPLETE) {
-			goto bad;
-		}
-		if (ch->chunk_type != SCTP_ABORT_ASSOCIATION) {
-			if ((SCTP_BASE_SYSCTL(sctp_blackhole) == 0) ||
-			    ((SCTP_BASE_SYSCTL(sctp_blackhole) == 1) &&
-			     (ch->chunk_type != SCTP_INIT))) {
-				sctp_send_abort(m, iphlen,
-				                (struct sockaddr *)&src,
-				                (struct sockaddr *)&dst,
-				                sh, 0, NULL,
-#if defined(__FreeBSD__)
-				                use_mflowid, mflowid,
-#endif
-				                vrf_id, port);
-			}
-		}
-		goto bad;
-	} else if (stcb == NULL) {
-		refcount_up = 1;
-	}
-#ifdef IPSEC
-	/*-
-	 * I very much doubt any of the IPSEC stuff will work but I have no
-	 * idea, so I will leave it in place.
-	 */
-	if (inp && ipsec4_in_reject(m, &inp->ip_inp.inp)) {
-		MODULE_GLOBAL(ipsec4stat).in_polvio++;
-		SCTP_STAT_INCR(sctps_hdrops);
-		goto bad;
-	}
-#endif
-
-	ecn_bits = ip->ip_tos;
-	/*sa_ignore NO_NULL_CHK*/
 	sctp_common_input_processing(&m, iphlen, offset, length,
 	                             (struct sockaddr *)&src,
 	                             (struct sockaddr *)&dst,
-	                             sh, ch, inp, stcb, net, ecn_bits,
+	                             sh, ch,
+#if !defined(SCTP_WITH_NO_CSUM)
+	                             compute_crc,
+#endif
+	                             ecn_bits,
 #if defined(__FreeBSD__)
 	                             use_mflowid, mflowid,
 #endif
 	                             vrf_id, port);
-	if (m) {
-		sctp_m_freem(m);
-	}
-	if ((inp) && (refcount_up)) {
-		/* reduce ref-count */
-		SCTP_INP_WLOCK(inp);
-		SCTP_INP_DECR_REF(inp);
-		SCTP_INP_WUNLOCK(inp);
-	}
-	return;
- bad:
-	if (stcb) {
-		SCTP_TCB_UNLOCK(stcb);
-	}
-
-	if ((inp) && (refcount_up)) {
-		/* reduce ref-count */
-		SCTP_INP_WLOCK(inp);
-		SCTP_INP_DECR_REF(inp);
-		SCTP_INP_WUNLOCK(inp);
-	}
+ out:
 	if (m) {
 		sctp_m_freem(m);
 	}

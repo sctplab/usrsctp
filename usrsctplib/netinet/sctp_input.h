@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.h 237715 2012-06-28 16:01:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.h 238003 2012-07-02 16:44:09Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_INPUT_H_
@@ -43,8 +43,10 @@ void
 sctp_common_input_processing(struct mbuf **, int, int, int,
                              struct sockaddr *, struct sockaddr *,
                              struct sctphdr *, struct sctp_chunkhdr *,
-                             struct sctp_inpcb *, struct sctp_tcb *,
-                             struct sctp_nets *, uint8_t,
+#if !defined(SCTP_WITH_NO_CSUM)
+                             uint8_t,
+#endif
+                             uint8_t,
 #if defined(__FreeBSD__)
                              uint8_t, uint32_t,
 #endif
