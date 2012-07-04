@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 237715 2012-06-28 16:01:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 238002 2012-07-02 16:40:11Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -11044,7 +11044,9 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 	struct udphdr *udp;
 	int len, cause_len, padding_len, ret;
 #ifdef INET
+#if defined(__APPLE__) || defined(__Panda__)
 	sctp_route_t ro;
+#endif
 	struct sockaddr_in *src_sin, *dst_sin;
 	struct ip *ip;
 #endif
@@ -11236,10 +11238,12 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 	SCTP_ATTACH_CHAIN(o_pak, mout, len);
 #ifdef INET
 	if (ip != NULL) {
+#if defined(__APPLE__) || defined(__Panda__)
 		/* zap the stack pointer to the route */
 		bzero(&ro, sizeof(sctp_route_t));
 #if defined(__Panda__)
 		ro._l_addr.sa.sa_family = AF_INET;
+#endif
 #endif
 		if (port) {
 #if !defined(__Windows__) && !defined(__Userspace__)
@@ -11294,11 +11298,15 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 			sctp_packet_log(o_pak);
 		}
 #endif
+#if defined(__APPLE__) || defined(__Panda__)
 		SCTP_IP_OUTPUT(ret, o_pak, &ro, NULL, vrf_id);
 		/* Free the route if we got one back */
 		if (ro.ro_rt) {
 			RTFREE(ro.ro_rt);
 		}
+#else
+		SCTP_IP_OUTPUT(ret, o_pak, NULL, NULL, vrf_id);
+#endif
 	}
 #endif
 #ifdef INET6
