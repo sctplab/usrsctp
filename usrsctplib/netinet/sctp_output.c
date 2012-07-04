@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 238002 2012-07-02 16:40:11Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 238092 2012-07-04 07:37:53Z glebius $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4250,10 +4250,14 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		SCTPDBG(SCTP_DEBUG_OUTPUT3, "IP output returns %d\n", ret);
 		if (net == NULL) {
 			/* free tempy routes */
+#if defined(__FreeBSD__) && __FreeBSD_version > 901000
+			RO_RTFREE(ro);
+#else
 			if (ro->ro_rt) {
 				RTFREE(ro->ro_rt);
 				ro->ro_rt = NULL;
 			}
+#endif
 		} else {
 			/* PMTU check versus smallest asoc MTU goes here */
 			if ((ro->ro_rt != NULL) &&
@@ -4694,9 +4698,13 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		}
 		if (net == NULL) {
 			/* Now if we had a temp route free it */
+#if defined(__FreeBSD__) && __FreeBSD_version > 901000
+			RO_RTFREE(ro);
+#else
 			if (ro->ro_rt) {
 				RTFREE(ro->ro_rt);
 			}
+#endif
 		} else {
 			/* PMTU check versus smallest asoc MTU goes here */
 			if (ro->ro_rt == NULL) {
