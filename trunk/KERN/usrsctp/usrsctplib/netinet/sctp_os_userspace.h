@@ -191,6 +191,7 @@ typedef HANDLE userland_thread_t;
 typedef char* caddr_t;
 
 #define getifaddrs(interfaces)  (int)Win_getifaddrs(interfaces)
+#define if_nametoindex(x) (int)win_if_nametoindex(x)
 
 #define bzero(buf, len) memset(buf, 0, len)
 #define bcopy(srcKey, dstKey, len) memcpy(dstKey, srcKey, len)
