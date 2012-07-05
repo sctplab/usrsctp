@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.21 2012-06-05 09:12:09 ruengeler Exp $
+ * $Id: rtcweb.c,v 1.22 2012-07-05 06:35:23 ruengeler Exp $
  */
 
 /*
@@ -145,7 +145,7 @@ struct rtcweb_datachannel_ack {
 #undef SCTP_PACKED
 
 static void
-init_peer_connection(struct peer_connection *pc, struct socket *sock)
+init_peer_connection(struct peer_connection *pc)
 {
 	uint32_t i;
 	struct channel *channel;
@@ -167,7 +167,7 @@ init_peer_connection(struct peer_connection *pc, struct socket *sock)
 		pc->o_stream_buffer[i] = 0;
 	}
 	pc->o_stream_buffer_counter = 0;
-	pc->sock = sock;
+	pc->sock = NULL;
 #if defined(__Userspace_os_Windows)
 	InitializeCriticalSection(&(pc->mutex));
 #else
@@ -1287,6 +1287,7 @@ main(int argc, char *argv[])
 	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &peer_connection)) == NULL) {
 		perror("socket");
 	}
+	init_peer_connection(&peer_connection);
 	if (argc > 2) {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET6;
@@ -1365,7 +1366,9 @@ main(int argc, char *argv[])
 		return (0);
 	}
 
-	init_peer_connection(&peer_connection, sock);
+  lock_peer_connection(&peer_connection);
+  peer_connection.sock = sock;
+  unlock_peer_connection(&peer_connection);
 
 	for (;;) {
 #if defined(__Userspace_os_Windows)
