@@ -176,4 +176,35 @@ Win_getifaddrs(struct ifaddrs** interfaces)
 #endif
 	return (0);
 }
+
+int
+win_if_nametoindex(const char *ifname)
+{
+	IP_ADAPTER_ADDRESSES *addresses, *addr;
+	ULONG status, size;
+	int index = 0;
+
+	if (!ifname) {
+		return 0;
+	}
+
+	size = 0;
+	status = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, NULL, &size);
+	if (status != ERROR_BUFFER_OVERFLOW) {
+		return 0;
+	}
+	addresses = malloc(size);
+	status = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, addresses, &size);
+	if (status == ERROR_SUCCESS) {
+		for (addr = addresses; addr; addr = addr->Next) {
+			if (addr->AdapterName && !strcmp(ifname, addr->AdapterName)) {
+				index = addr->IfIndex;
+				break;
+			}
+		}
+	}
+
+	free(addresses);
+	return index;
+}
 #endif

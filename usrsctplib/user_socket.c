@@ -2396,14 +2396,15 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	win_msg_hdr.dwFlags = 0;
 
 	if ((!use_udp_tunneling) && (SCTP_BASE_VAR(userspace_rawsctp) > -1)) {
-		if (WSASendMsg(SCTP_BASE_VAR(userspace_rawsctp), &win_msg_hdr, 0, &win_sent_len, NULL, NULL) != 0) {
+		if (WSASendTo(SCTP_BASE_VAR(userspace_rawsctp), (LPWSABUF) send_iovec, iovcnt, &win_sent_len, win_msg_hdr.dwFlags, win_msg_hdr.name, (int) win_msg_hdr.namelen, NULL, NULL) != 0) {
+
 			*result = WSAGetLastError();
 		} else if (win_sent_len != send_len) {
 			*result = WSAGetLastError();
 		}
 	}
 	if ((use_udp_tunneling) && (SCTP_BASE_VAR(userspace_udpsctp) > -1)) {
-		if ((res = WSASendMsg(SCTP_BASE_VAR(userspace_udpsctp), &win_msg_hdr, 0, &win_sent_len, NULL, NULL)) != 0) {
+		if (WSASendTo(SCTP_BASE_VAR(userspace_udpsctp), (LPWSABUF) send_iovec, iovcnt, &win_sent_len, win_msg_hdr.dwFlags, win_msg_hdr.name, (int) win_msg_hdr.namelen, NULL, NULL) != 0) {
 			*result = WSAGetLastError();
 		} else if (win_sent_len != send_len) {
 			*result = WSAGetLastError();
@@ -2551,14 +2552,14 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	win_msg_hdr.dwFlags = 0;
 
 	if ((!use_udp_tunneling) && (SCTP_BASE_VAR(userspace_rawsctp6) > -1)) {
-		if (WSASendMsg(SCTP_BASE_VAR(userspace_rawsctp6), &win_msg_hdr, 0, &win_sent_len, NULL, NULL) != 0) {
+		if (WSASendTo(SCTP_BASE_VAR(userspace_rawsctp6), (LPWSABUF) send_iovec, iovcnt, &win_sent_len, win_msg_hdr.dwFlags, win_msg_hdr.name, (int) win_msg_hdr.namelen, NULL, NULL) != 0) {
 			*result = WSAGetLastError();
 		} else if (win_sent_len != send_len) {
 			*result = WSAGetLastError();
 		}
 	}
 	if ((use_udp_tunneling) && (SCTP_BASE_VAR(userspace_udpsctp6) > -1)) {
-		if ((res = WSASendMsg(SCTP_BASE_VAR(userspace_udpsctp6), &win_msg_hdr, 0, &win_sent_len, NULL, NULL)) != 0) {
+		if (WSASendTo(SCTP_BASE_VAR(userspace_udpsctp6), (LPWSABUF) send_iovec, iovcnt, &win_sent_len, win_msg_hdr.dwFlags, win_msg_hdr.name, (int) win_msg_hdr.namelen, NULL, NULL) != 0) {
 			*result = WSAGetLastError();
 		} else if (win_sent_len != send_len) {
 			*result = WSAGetLastError();
