@@ -2616,9 +2616,9 @@ usrsctp_conninput(void *addr, void *buffer, size_t length, uint8_t ecn_bits)
 	src.sconn_len = sizeof(struct sockaddr_conn);
 	src.sconn_addr = addr;
 	memset(&dst, 0, sizeof(struct sockaddr_conn));
-	src.sconn_family = AF_CONN;
-	src.sconn_len = sizeof(struct sockaddr_conn);
-	src.sconn_addr = addr;
+	dst.sconn_family = AF_CONN;
+	dst.sconn_len = sizeof(struct sockaddr_conn);
+	dst.sconn_addr = addr;
 	if ((m = sctp_get_mbuf_for_msg(length, 1, M_DONTWAIT, 0, MT_DATA)) == NULL) {
 		return;
 	}
