@@ -512,7 +512,7 @@ int main(int argc, char **argv)
 	local_addr.sin_port = htons(local_port);
 	local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	usrsctp_init(local_udp_port);
+	usrsctp_init(local_udp_port, NULL);
 	usrsctp_sysctl_set_sctp_debug_on(0);
 	usrsctp_sysctl_set_sctp_blackhole(2);
 

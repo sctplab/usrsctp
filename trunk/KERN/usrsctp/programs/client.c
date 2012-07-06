@@ -72,9 +72,9 @@ main(int argc, char *argv[])
 	char buffer[80];
 
 	if (argc > 3) {
-		usrsctp_init(atoi(argv[3]));
+		usrsctp_init(atoi(argv[3]), NULL);
 	} else {
-		usrsctp_init(9899);
+		usrsctp_init(9899, NULL);
 	}
 	usrsctp_sysctl_set_sctp_debug_on(0);
 	usrsctp_sysctl_set_sctp_blackhole(2);

@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.23 2012-07-05 07:36:20 ruengeler Exp $
+ * $Id: rtcweb.c,v 1.24 2012-07-06 20:00:31 tuexen Exp $
  */
 
 /*
@@ -1281,9 +1281,9 @@ main(int argc, char *argv[])
 	                          SCTP_STREAM_CHANGE_EVENT};
 
 	if (argc > 1) {
-		usrsctp_init(atoi(argv[1]));
+		usrsctp_init(atoi(argv[1]), NULL);
 	} else {
-		usrsctp_init(9899);
+		usrsctp_init(9899, NULL);
 	}
 	usrsctp_sysctl_set_sctp_debug_on(0);
 	usrsctp_sysctl_set_sctp_blackhole(2);
