@@ -40,7 +40,7 @@
 #include <unistd.h>
 #include <usrsctp.h>
 
-#define MAX_PACKET_SIZE (1<16)
+#define MAX_PACKET_SIZE (1<<16)
 
 static void *
 handle_packets(void *arg)
@@ -122,11 +122,12 @@ main(int argc, char *argv[])
 	sin.sin_family = AF_INET;
 	sin.sin_len = sizeof(struct sockaddr_in);
 	sin.sin_port = htons(atoi(argv[4]));
-	sin.sin_addr.s_addr = inet_addr(argv[4]);
+	sin.sin_addr.s_addr = inet_addr(argv[3]);
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
 		perror("bind");
 	}
 	usrsctp_init(0, conn_output);
+	usrsctp_sysctl_set_sctp_debug_on(0xffffffff);
 	if (pthread_create(&tid, NULL, &handle_packets, (void *)&fd) != 0) {
 		printf("pthread_create failed\n");
 	}
