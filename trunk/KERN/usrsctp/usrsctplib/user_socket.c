@@ -1770,8 +1770,11 @@ userspace_bind(struct socket *so, struct sockaddr *name, int namelen)
 int
 solisten(struct socket *so, int backlog)
 {
-
-	return (sctp_listen(so, backlog, NULL));
+	if (so == NULL) {
+		return (EBADF);
+	} else {
+		return (sctp_listen(so, backlog, NULL));
+	}
 }
 
 
@@ -1973,6 +1976,9 @@ accept1(struct socket *so, struct sockaddr *aname, socklen_t *anamelen, struct s
 	socklen_t namelen;
 	int error;
 
+	if (so == NULL) {
+		return (EBADF);
+	}
 	if (aname == NULL) {
 		return (user_accept(so, NULL, NULL, ptr_accept_ret_sock));
 	}
@@ -2000,7 +2006,7 @@ accept1(struct socket *so, struct sockaddr *aname, socklen_t *anamelen, struct s
 		error = copyout(&namelen, anamelen, sizeof(namelen));
 	}
 
-	if(name) {
+	if (name) {
 		FREE(name, M_SONAME);
 	}
 	return (error);
@@ -2086,6 +2092,10 @@ int user_connect(struct socket *so, struct sockaddr *sa)
 	int error;
 	int interrupted = 0;
 
+	if (so == NULL) {
+		error = EBADF;
+		goto done1;
+	}
 	if (so->so_state & SS_ISCONNECTING) {
 		error = EALREADY;
 		goto done1;
@@ -2155,9 +2165,11 @@ int userspace_connect(struct socket *so, struct sockaddr *name, int namelen)
 
 void
 usrsctp_close(struct socket *so) {
-	ACCEPT_LOCK();
-	SOCK_LOCK(so);
-	sorele(so);
+	if (so != NULL) {
+		ACCEPT_LOCK();
+		SOCK_LOCK(so);
+		sorele(so);
+	}
 }
 
 void
@@ -2173,7 +2185,10 @@ usrsctp_shutdown(struct socket *so, int how)
 		errno = EINVAL;
 		return (-1);
 	}
-
+	if (so == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
 	sctp_flush(so, how);
 	if (how != SHUT_WR)
 		 socantrcvmore(so);
@@ -2227,6 +2242,10 @@ usrsctp_setsockopt(struct socket *so, int level, int option_name,
 		errno = ENOPROTOOPT;
 		return (-1);
 	}
+	if (so == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
 	errno = sctp_setopt(so, option_name, (void *) option_value, option_len, NULL);
 	if (errno) {
 		return (-1);
@@ -2253,6 +2272,10 @@ usrsctp_getsockopt(struct socket *so, int level, int option_name,
 {
 	if (level != IPPROTO_SCTP) {
 		errno = ENOPROTOOPT;
+		return (-1);
+	}
+	if (so == NULL) {
+		errno = EBADF;
 		return (-1);
 	}
 	errno = sctp_getopt(so, option_name, option_value, (size_t *)option_len, NULL);
