@@ -4755,7 +4755,9 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 	case AF_CONN:
 	{
 		char *buffer;
+		struct sockaddr_conn *sconn;
 
+		sconn = (struct sockaddr_conn *)to;
 		if (tos_value == 0) {
 			tos_value = inp->ip_inp.inp.inp_ip_tos;
 		}
@@ -4766,7 +4768,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		/* Don't alloc/free for each packet */
 		if ((buffer = malloc(packet_length)) != NULL) {
 			m_copydata(m, 0, packet_length, buffer);
-			ret = SCTP_BASE_VAR(conn_output)((void *)to, buffer, packet_length, tos_value, nofragment_flag);
+			ret = SCTP_BASE_VAR(conn_output)(sconn->sconn_addr, buffer, packet_length, tos_value, nofragment_flag);
 			free(buffer);
 		}
 		sctp_m_freem(m);
@@ -11387,11 +11389,20 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 	case AF_CONN:
 	{
 		char *buffer;
+		struct sockaddr_conn *sconn;
 
+		sconn = (struct sockaddr_conn *)src;
+		shout->checksum = sctp_calculate_cksum(mout, 0);
+		SCTP_STAT_INCR(sctps_sendswcrc);
+#ifdef SCTP_PACKET_LOGGING
+		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING) {
+			sctp_packet_log(mout);
+		}
+#endif		
 		/* Don't alloc/free for each packet */
 		if ((buffer = malloc(len)) != NULL) {
 			m_copydata(mout, 0, len, buffer);
-			ret = SCTP_BASE_VAR(conn_output)((void *)dst, buffer, len, 0, 0);
+			ret = SCTP_BASE_VAR(conn_output)(sconn->sconn_addr, buffer, len, 0, 0);
 			free(buffer);
 		}
 		sctp_m_freem(mout);
