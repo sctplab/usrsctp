@@ -1045,8 +1045,8 @@ typedef int SHA512_CTX;
 
 #define AF_CONN 123
 struct sockaddr_conn {
-	uint8_t sconn_family;
 	uint8_t sconn_len;
+	uint8_t sconn_family;
 	uint16_t sconn_port;
 	void *sconn_addr;
 };
