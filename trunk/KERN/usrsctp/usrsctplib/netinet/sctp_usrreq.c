@@ -73,7 +73,8 @@ extern struct sctp_ss_functions sctp_ss_functions[];
 
 void
 #if defined(__Userspace__)
-sctp_init(uint16_t port)
+sctp_init(uint16_t port,
+          int (*conn_output)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df))
 #else
 sctp_init(void)
 #endif
@@ -154,6 +155,7 @@ sctp_init(void)
 	SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 #endif
 	SCTP_BASE_VAR(timer_thread_should_exit) = 0;
+	SCTP_BASE_VAR(conn_output) = conn_output;
 #endif
 	sctp_pcb_init();
 #if defined(__Userspace__)
