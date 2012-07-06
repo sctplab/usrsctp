@@ -2223,7 +2223,7 @@ usrsctp_setsockopt(struct socket *so, int level, int option_name,
                      const void *option_value, socklen_t option_len)
 {
 	if (level != IPPROTO_SCTP) {
-		errno = ENOTSUP;
+		errno = ENOPROTOOPT;
 		return (-1);
 	}
 	errno = sctp_setopt(so, option_name, (void *) option_value, option_len, NULL);
@@ -2251,7 +2251,7 @@ usrsctp_getsockopt(struct socket *so, int level, int option_name,
                      void *option_value, socklen_t *option_len)
 {
 	if (level != IPPROTO_SCTP) {
-		errno = ENOTSUP;
+		errno = ENOPROTOOPT;
 		return (-1);
 	}
 	errno = sctp_getopt(so, option_name, option_value, (size_t *)option_len, NULL);
