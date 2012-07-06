@@ -67,13 +67,22 @@ extern "C" {
 
 typedef uint32_t sctp_assoc_t;
 
+#define AF_CONN 123
+struct sockaddr_conn {
+	uint8_t sconn_family;
+	uint8_t sconn_len;
+	uint16_t sconn_port;
+	void *sconn_addr;
+};
+
 union sctp_sockstore {
-#if defined(INET) || !defined(_KERNEL)
+#if defined(INET)
 	struct sockaddr_in sin;
 #endif
-#if defined(INET6) || !defined(_KERNEL)
+#if defined(INET6)
 	struct sockaddr_in6 sin6;
 #endif
+	struct sockaddr_conn sconn;
 	struct sockaddr sa;
 };
 
@@ -805,7 +814,9 @@ struct sctp_timeouts {
 
 
 void
-usrsctp_init(uint16_t);
+usrsctp_init(uint16_t,
+             int (*)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df);
+);
 
 
 struct socket *
@@ -904,6 +915,9 @@ usrsctp_shutdown(struct socket *so, int how);
 #if defined(__Userspace_os_Windows)
 void getwintimeofday(struct timeval *tv);
 #endif
+
+void
+usrsctp_conninput(void *, void *, size_t, uint8_t);
 
 #define USRSCTP_SYSCTL_DECL(__field)           \
 void usrsctp_sysctl_set_ ## __field(uint32_t value);\

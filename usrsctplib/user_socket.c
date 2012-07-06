@@ -66,9 +66,10 @@ extern int sctp_attach(struct socket *so, int proto, uint32_t vrf_id);
 
 
 void
-usrsctp_init(uint16_t port)
+usrsctp_init(uint16_t port,
+             int (*conn_output)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df))
 {
-	sctp_init(port);
+	sctp_init(port, conn_output);
 }
 
 
@@ -2578,6 +2579,49 @@ free_mbuf:
 	sctp_m_freem(m_orig);
 }
 #endif
+
+void
+usrsctp_conninput(void *addr, void *buffer, size_t length, uint8_t ecn_bits)
+{
+	struct sockaddr_conn src, dst;
+	struct mbuf *m;
+	struct sctphdr *sh;
+	struct sctp_chunkhdr *ch;
+
+	memset(&src, 0, sizeof(struct sockaddr_conn));
+	src.sconn_family = AF_CONN;
+	src.sconn_len = sizeof(struct sockaddr_conn);
+	src.sconn_addr = addr;
+	memset(&dst, 0, sizeof(struct sockaddr_conn));
+	src.sconn_family = AF_CONN;
+	src.sconn_len = sizeof(struct sockaddr_conn);
+	src.sconn_addr = addr;
+	if ((m = sctp_get_mbuf_for_msg(length, 1, M_DONTWAIT, 0, MT_DATA)) == NULL) {
+		return;
+	}
+	m_copyback(m, 0, length, buffer);
+	if (SCTP_BUF_LEN(m) < sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr)) {
+		if ((m = m_pullup(m, sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr))) == NULL) {
+			SCTP_STAT_INCR(sctps_hdrops);
+			return;
+		}
+	}
+	sh = mtod(m, struct sctphdr *);;
+	ch = (struct sctp_chunkhdr *)((caddr_t)sh + sizeof(struct sctphdr));
+	src.sconn_port = sh->src_port;
+	dst.sconn_port = sh->dest_port;
+	sctp_common_input_processing(&m, 0, sizeof(struct sctphdr), length,
+	                             (struct sockaddr *)&src,
+	                             (struct sockaddr *)&dst,
+	                             sh, ch,
+#if !defined(SCTP_WITH_NO_CSUM)
+	                             1,
+#endif
+	                             ecn_bits,
+	                             SCTP_DEFAULT_VRFID, 0);
+	return;
+}
+
 
 #define USRSCTP_SYSCTL_SET_DEF(__field) \
 void usrsctp_sysctl_set_ ## __field(uint32_t value) { \
