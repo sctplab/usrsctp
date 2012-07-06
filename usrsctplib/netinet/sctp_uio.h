@@ -1127,6 +1127,9 @@ union sctp_sockstore {
 #if defined(INET6) || !defined(_KERNEL)
 	struct sockaddr_in6 sin6;
 #endif
+#if defined(__Userspace__)
+	struct sockaddr_conn sconn;
+#endif
 	struct sockaddr sa;
 };
 

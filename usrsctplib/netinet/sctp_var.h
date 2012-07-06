@@ -433,7 +433,8 @@ int sctp_ctloutput __P((int, struct socket *, int, int, struct mbuf **));
 #endif
 void sctp_drain __P((void));
 #if defined(__Userspace__)
-void sctp_init __P((uint16_t));
+void sctp_init __P((uint16_t,
+                    int (*)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df)));
 #else
 void sctp_init __P((void));
 #endif

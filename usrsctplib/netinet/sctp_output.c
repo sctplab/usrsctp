@@ -4751,6 +4751,28 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		return (ret);
 	}
 #endif
+#if defined(__Userspace__)
+	case AF_CONN:
+	{
+		char *buffer;
+
+		if (tos_value == 0) {
+			tos_value = inp->ip_inp.inp.inp_ip_tos;
+		}
+		tos_value &= 0xfc;
+		if (ecn_ok) {
+			tos_value |= sctp_get_ect(stcb);
+		}
+		/* Don't alloc/free for each packet */
+		if ((buffer = malloc(packet_length)) != NULL) {
+			m_copydata(m, 0, packet_length, buffer);
+			ret = SCTP_BASE_VAR(conn_output)((void *)to, buffer, packet_length, tos_value, nofragment_flag);
+			free(buffer);
+		}
+		sctp_m_freem(m);
+		return (ret);
+	}
+#endif
 	default:
 		SCTPDBG(SCTP_DEBUG_OUTPUT1, "Unknown protocol (TSNH) type %d\n",
 		        ((struct sockaddr *)to)->sa_family);
@@ -11360,6 +11382,21 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #endif
 		SCTP_IP6_OUTPUT(ret, o_pak, NULL, NULL, NULL, vrf_id);
 		break;
+#endif
+#if defined(__Userspace__)
+	case AF_CONN:
+	{
+		char *buffer;
+
+		/* Don't alloc/free for each packet */
+		if ((buffer = malloc(len)) != NULL) {
+			m_copydata(mout, 0, len, buffer);
+			ret = SCTP_BASE_VAR(conn_output)((void *)dst, buffer, len, 0, 0);
+			free(buffer);
+		}
+		sctp_m_freem(mout);
+		break;
+	}
 #endif
 	default:
 		SCTPDBG(SCTP_DEBUG_OUTPUT1, "Unknown protocol (TSNH) type %d\n",
