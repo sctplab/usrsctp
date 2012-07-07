@@ -37,6 +37,7 @@
 #include <netinet/sctputil.h>
 #include <netinet/sctp_var.h>
 #include <netinet/sctp_sysctl.h>
+#include <netinet/sctp_input.h>
 
 #if defined(__Userspace_os_Linux)
 #define __FAVOR_BSD    /* (on Ubuntu at least) enables UDP header field names like BSD in RFC 768 */
@@ -63,7 +64,7 @@ extern int sctp_sosend(struct socket *so, struct sockaddr *addr, struct uio *uio
                      /* proc is a dummy in __Userspace__ and will not be passed to sctp_lower_sosend */                       struct proc *p);
 
 extern int sctp_attach(struct socket *so, int proto, uint32_t vrf_id);
-
+extern int sctpconn_attach(struct socket *so, int proto, uint32_t vrf_id);
 
 void
 usrsctp_init(uint16_t port,
@@ -1337,7 +1338,7 @@ socreate(int dom, struct socket **aso, int type, int proto)
 	struct socket *so;
 	int error;
 
-	if ((dom != AF_INET) && (dom != AF_INET6)) {
+	if ((dom != AF_CONN) && (dom != AF_INET) && (dom != AF_INET6)) {
 		return (EINVAL);
 	}
 	if ((type != SOCK_STREAM) && (type != SOCK_SEQPACKET)) {
@@ -1352,13 +1353,13 @@ socreate(int dom, struct socket **aso, int type, int proto)
 		return (ENOBUFS);
 	}
 
-        /*
-         * so_incomp represents a queue of connections that
-         * must be completed at protocol level before being
-         * returned. so_comp field heads a list of sockets
-         * that are ready to be returned to the listening process
-         *__Userspace__ These queues are being used at a number of places like accept etc.
-         */
+	/*
+	 * so_incomp represents a queue of connections that
+	 * must be completed at protocol level before being
+	 * returned. so_comp field heads a list of sockets
+	 * that are ready to be returned to the listening process
+	 *__Userspace__ These queues are being used at a number of places like accept etc.
+	 */
 	TAILQ_INIT(&so->so_incomp);
 	TAILQ_INIT(&so->so_comp);
 	so->so_type = type;
@@ -1366,7 +1367,7 @@ socreate(int dom, struct socket **aso, int type, int proto)
 	/*
 	 * Auto-sizing of socket buffers is managed by the protocols and
 	 * the appropriate flags must be set in the pru_attach function.
-         * For __Userspace__ The pru_attach function in this case is sctp_attach.
+	 * For __Userspace__ The pru_attach function in this case is sctp_attach.
 	 */
 	switch (dom) {
 #if defined(INET)
@@ -1379,10 +1380,13 @@ socreate(int dom, struct socket **aso, int type, int proto)
 		error = sctp6_attach(so, proto, SCTP_DEFAULT_VRFID);
 		break;
 #endif
+	case AF_CONN:
+		error = sctpconn_attach(so, proto, SCTP_DEFAULT_VRFID);
+		break;
 	default:
 		error = EAFNOSUPPORT;
+		break;
 	}
-
 	if (error) {
 		KASSERT(so->so_count == 1, ("socreate: so_count %d", so->so_count));
 		so->so_count = 0;
