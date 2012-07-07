@@ -767,6 +767,39 @@ sctp_attach(struct socket *so, int proto SCTP_UNUSED, struct proc *p SCTP_UNUSED
 	SCTP_INP_WUNLOCK(inp);
 	return (0);
 }
+#if defined(__Userspace__)
+
+int
+sctpconn_attach(struct socket *so, int proto SCTP_UNUSED, uint32_t vrf_id)
+{
+	struct sctp_inpcb *inp;
+	struct inpcb *ip_inp;
+	int error;
+
+	inp = (struct sctp_inpcb *)so->so_pcb;
+	if (inp != NULL) {
+		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+		return (EINVAL);
+	}
+	if (so->so_snd.sb_hiwat == 0 || so->so_rcv.sb_hiwat == 0) {
+		error = SCTP_SORESERVE(so, SCTP_BASE_SYSCTL(sctp_sendspace), SCTP_BASE_SYSCTL(sctp_recvspace));
+		if (error) {
+			return (error);
+		}
+	}
+	error = sctp_inpcb_alloc(so, vrf_id);
+	if (error) {
+		return (error);
+	}
+	inp = (struct sctp_inpcb *)so->so_pcb;
+	SCTP_INP_WLOCK(inp);
+	inp->sctp_flags &= ~SCTP_PCB_FLAGS_BOUND_V6;	/* I'm not v6! */
+	ip_inp = &inp->ip_inp.inp;
+	ip_inp->inp_ip_ttl = MODULE_GLOBAL(ip_defttl);
+	SCTP_INP_WUNLOCK(inp);
+	return (0);
+}
+#endif
 
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
 static int
