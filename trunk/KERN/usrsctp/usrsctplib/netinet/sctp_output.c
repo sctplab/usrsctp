@@ -4756,8 +4756,27 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 	{
 		char *buffer;
 		struct sockaddr_conn *sconn;
+		int len;
 
 		sconn = (struct sockaddr_conn *)to;
+		len = sizeof(struct sctphdr);
+		newm = sctp_get_mbuf_for_msg(len, 1, M_DONTWAIT, 1, MT_DATA);
+		if (newm == NULL) {
+			sctp_m_freem(m);
+			SCTP_LTRACE_ERR_RET(inp, stcb, NULL, SCTP_FROM_SCTP_OUTPUT, ENOMEM);
+			return (ENOMEM);
+		}
+		SCTP_ALIGN_TO_END(newm, len);
+		SCTP_BUF_LEN(newm) = len;
+		SCTP_BUF_NEXT(newm) = m;
+		m = newm;
+		packet_length = sctp_calculate_len(m);
+		sctphdr = mtod(m, struct sctphdr *);
+		sctphdr->src_port = src_port;
+		sctphdr->dest_port = dest_port;
+		sctphdr->v_tag = v_tag;
+		sctphdr->checksum = sctp_calculate_cksum(m, 0);
+		SCTP_STAT_INCR(sctps_sendswcrc);
 		if (tos_value == 0) {
 			tos_value = inp->ip_inp.inp.inp_ip_tos;
 		}
