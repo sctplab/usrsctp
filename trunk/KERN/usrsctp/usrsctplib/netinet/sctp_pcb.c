@@ -1656,6 +1656,9 @@ sctp_endpoint_probe(struct sockaddr *nam, struct sctppcbhead *head,
 	struct sockaddr_in6 *sin6;
 	struct sockaddr_in6 *intf_addr6;
 #endif
+#if defined(__Userspace__)
+	struct sockaddr_conn *sconn;
+#endif
 
 #ifdef SCTP_MVRF
 	int i;
@@ -1679,6 +1682,11 @@ sctp_endpoint_probe(struct sockaddr *nam, struct sctppcbhead *head,
 #ifdef INET6
 	case AF_INET6:
 		sin6 = (struct sockaddr_in6 *)nam;
+		break;
+#endif
+#if defined(__Userspace__)
+	case AF_CONN:
+		sconn = (struct sockaddr_conn *)nam;
 		break;
 #endif
 	default:
@@ -1749,6 +1757,13 @@ sctp_endpoint_probe(struct sockaddr *nam, struct sctppcbhead *head,
 	case AF_INET6:
 		if (IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
 			/* Can't hunt for one that has no address specified */
+			return (NULL);
+		}
+		break;
+#endif
+#if defined(__Userspace__)
+	case AF_CONN:
+		if (sconn->sconn_addr == NULL) {
 			return (NULL);
 		}
 		break;
@@ -1831,6 +1846,14 @@ sctp_endpoint_probe(struct sockaddr *nam, struct sctppcbhead *head,
 					intf_addr6 = &laddr->ifa->address.sin6;
 					if (SCTP6_ARE_ADDR_EQUAL(sin6,
 					    intf_addr6)) {
+						SCTP_INP_RUNLOCK(inp);
+						return (inp);
+					}
+					break;
+#endif
+#if defined(__Userspace__)
+				case AF_CONN:
+					if (sconn->sconn_addr == laddr->ifa->address.sconn.sconn_addr) {
 						SCTP_INP_RUNLOCK(inp);
 						return (inp);
 					}
@@ -1974,6 +1997,9 @@ sctp_pcb_findep(struct sockaddr *nam, int find_tcp_pool, int have_lock,
 #ifdef INET6
 	struct sockaddr_in6 *sin6;
 #endif
+#if defined(__Userspace__)
+	struct sockaddr_conn *sconn;
+#endif
 
 	switch (nam->sa_family) {
 #ifdef INET
@@ -1986,6 +2012,12 @@ sctp_pcb_findep(struct sockaddr *nam, int find_tcp_pool, int have_lock,
 	case AF_INET6:
 		sin6 = (struct sockaddr_in6 *)nam;
 		lport = sin6->sin6_port;
+		break;
+#endif
+#if defined(__Userspace__)
+	case AF_CONN:
+		sconn = (struct sockaddr_conn *)nam;
+		lport = sconn->sconn_port;
 		break;
 #endif
 	default:
@@ -2047,10 +2079,13 @@ sctp_findassociation_addr_sa(struct sockaddr *from, struct sockaddr *to,
 
 	SCTP_INP_INFO_RLOCK();
 	if (find_tcp_pool) {
+I_AM_HERE;
 		if (inp_p != NULL) {
+I_AM_HERE;
 			retval = sctp_tcb_special_locate(inp_p, from, to, netp,
 							 vrf_id);
 		} else {
+I_AM_HERE;
 			retval = sctp_tcb_special_locate(&inp, from, to, netp,
 							 vrf_id);
 		}
@@ -2059,6 +2094,7 @@ sctp_findassociation_addr_sa(struct sockaddr *from, struct sockaddr *to,
 			return (retval);
 		}
 	}
+I_AM_HERE;
 	inp = sctp_pcb_findep(to, 0, 1, vrf_id);
 	if (inp_p != NULL) {
 		*inp_p = inp;
@@ -2311,6 +2347,7 @@ sctp_findassociation_addr(struct mbuf *m, int offset,
 	struct sctp_inpcb *inp;
 
 	if (sh->v_tag) {
+I_AM_HERE;
 		/* we only go down this path if vtag is non-zero */
 		retval = sctp_findassoc_by_vtag(src, dst, ntohl(sh->v_tag),
 		                                inp_p, netp, sh->src_port, sh->dest_port, 0, vrf_id, 0);
@@ -2328,10 +2365,12 @@ sctp_findassociation_addr(struct mbuf *m, int offset,
 		find_tcp_pool = 1;
 	}
 	if (inp_p) {
+I_AM_HERE;
 		retval = sctp_findassociation_addr_sa(src, dst, inp_p, netp,
 		    find_tcp_pool, vrf_id);
 		inp = *inp_p;
 	} else {
+I_AM_HERE;
 		retval = sctp_findassociation_addr_sa(src, dst, &inp, netp,
 		    find_tcp_pool, vrf_id);
 	}
@@ -3054,6 +3093,24 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 			/* this must be cleared for ifa_ifwithaddr() */
 			sin6->sin6_scope_id = 0;
 #endif /* SCOPEDROUTING */
+			break;
+		}
+#endif
+#if defined(__Userspace__)
+		case AF_CONN:
+		{
+			struct sockaddr_conn *sconn;
+#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+			if (addr->sa_len != sizeof(struct sockaddr_conn)) {
+				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
+				return (EINVAL);
+			}
+#endif
+			sconn = (struct sockaddr_conn *)addr;
+			lport = sconn->sconn_port;
+			if (sconn->sconn_addr != NULL) {
+				bindall = 0;
+			}
 			break;
 		}
 #endif
