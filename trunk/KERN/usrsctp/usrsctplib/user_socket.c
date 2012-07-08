@@ -1720,6 +1720,8 @@ sobind(struct socket *so, struct sockaddr *nam)
 	case AF_INET6:
 		return (sctp6_bind(so, nam, NULL));
 #endif
+	case AF_CONN:
+		return (sctpconn_bind(so, nam));
 	default:
 		return EAFNOSUPPORT;
 	}
@@ -1731,9 +1733,7 @@ sobind(struct socket *so, struct sockaddr *nam)
  */
 
 int
-user_bind(so, sa)
-     struct socket *so;
-     struct sockaddr *sa;
+user_bind(struct socket *so, struct sockaddr *sa)
 {
 	int error;
 	error = sobind(so, sa);
@@ -2061,8 +2061,7 @@ soconnect(struct socket *so, struct sockaddr *nam)
 	 * Otherwise, if connected, try to disconnect first.  This allows
 	 * user to disconnect by connecting to, e.g., a null address.
 	 */
-	if (so->so_state & (SS_ISCONNECTED|SS_ISCONNECTING) &&
-            (error = sodisconnect(so))) {
+	if (so->so_state & (SS_ISCONNECTED|SS_ISCONNECTING) && (error = sodisconnect(so))) {
 		error = EISCONN;
 	} else {
 		/*
@@ -2081,6 +2080,9 @@ soconnect(struct socket *so, struct sockaddr *nam)
 			error = sctp6_connect(so, nam);
 			break;
 #endif
+		case AF_CONN:
+			error = sctpconn_connect(so, nam);
+			break;
 		default:
 			error = EAFNOSUPPORT;
 		}
