@@ -767,39 +767,6 @@ sctp_attach(struct socket *so, int proto SCTP_UNUSED, struct proc *p SCTP_UNUSED
 	SCTP_INP_WUNLOCK(inp);
 	return (0);
 }
-#if defined(__Userspace__)
-
-int
-sctpconn_attach(struct socket *so, int proto SCTP_UNUSED, uint32_t vrf_id)
-{
-	struct sctp_inpcb *inp;
-	struct inpcb *ip_inp;
-	int error;
-
-	inp = (struct sctp_inpcb *)so->so_pcb;
-	if (inp != NULL) {
-		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
-		return (EINVAL);
-	}
-	if (so->so_snd.sb_hiwat == 0 || so->so_rcv.sb_hiwat == 0) {
-		error = SCTP_SORESERVE(so, SCTP_BASE_SYSCTL(sctp_sendspace), SCTP_BASE_SYSCTL(sctp_recvspace));
-		if (error) {
-			return (error);
-		}
-	}
-	error = sctp_inpcb_alloc(so, vrf_id);
-	if (error) {
-		return (error);
-	}
-	inp = (struct sctp_inpcb *)so->so_pcb;
-	SCTP_INP_WLOCK(inp);
-	inp->sctp_flags &= ~SCTP_PCB_FLAGS_BOUND_V6;	/* I'm not v6! */
-	ip_inp = &inp->ip_inp.inp;
-	ip_inp->inp_ip_ttl = MODULE_GLOBAL(ip_defttl);
-	SCTP_INP_WUNLOCK(inp);
-	return (0);
-}
-#endif
 
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
 static int
@@ -839,6 +806,67 @@ sctp_bind(struct socket *so, struct mbuf *nam, struct proc *p)
 	}
 #endif
 
+	inp = (struct sctp_inpcb *)so->so_pcb;
+	if (inp == NULL) {
+		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+		return (EINVAL);
+	}
+
+	error = sctp_inpcb_bind(so, addr, NULL, p);
+	return (error);
+}
+
+#endif
+#if defined(__Userspace__)
+
+int
+sctpconn_attach(struct socket *so, int proto SCTP_UNUSED, uint32_t vrf_id)
+{
+	struct sctp_inpcb *inp;
+	struct inpcb *ip_inp;
+	int error;
+
+	inp = (struct sctp_inpcb *)so->so_pcb;
+	if (inp != NULL) {
+		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+		return (EINVAL);
+	}
+	if (so->so_snd.sb_hiwat == 0 || so->so_rcv.sb_hiwat == 0) {
+		error = SCTP_SORESERVE(so, SCTP_BASE_SYSCTL(sctp_sendspace), SCTP_BASE_SYSCTL(sctp_recvspace));
+		if (error) {
+			return (error);
+		}
+	}
+	error = sctp_inpcb_alloc(so, vrf_id);
+	if (error) {
+		return (error);
+	}
+	inp = (struct sctp_inpcb *)so->so_pcb;
+	SCTP_INP_WLOCK(inp);
+	inp->sctp_flags &= ~SCTP_PCB_FLAGS_BOUND_V6;
+	ip_inp = &inp->ip_inp.inp;
+	ip_inp->inp_ip_ttl = MODULE_GLOBAL(ip_defttl);
+	SCTP_INP_WUNLOCK(inp);
+	return (0);
+}
+
+int
+sctpconn_bind(struct socket *so, struct sockaddr *addr) {
+	void *p = NULL;
+	struct sctp_inpcb *inp = NULL;
+	int error;
+
+	if (addr && addr->sa_family != AF_CONN) {
+		/* must be a v4 address! */
+		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+		return (EINVAL);
+	}
+#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+	if (addr && (addr->sa_len != sizeof(struct sockaddr_conn))) {
+		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+		return (EINVAL);
+	}
+#endif
 	inp = (struct sctp_inpcb *)so->so_pcb;
 	if (inp == NULL) {
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
@@ -6742,6 +6770,172 @@ sctp_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 }
 #endif
 
+#if defined(__Userspace__)
+int
+sctpconn_connect(struct socket *so, struct sockaddr *addr)
+{
+#ifdef SCTP_MVRF
+	int i, fnd = 0;
+#endif
+	void *p = NULL;
+	int error = 0;
+	int create_lock_on = 0;
+	uint32_t vrf_id;
+	struct sctp_inpcb *inp;
+	struct sctp_tcb *stcb = NULL;
+
+	inp = (struct sctp_inpcb *)so->so_pcb;
+	if (inp == NULL) {
+		/* I made the same as TCP since we are not setup? */
+		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+		return (ECONNRESET);
+	}
+	if (addr == NULL) {
+		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+		return EINVAL;
+	}
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+	switch (addr->sa_family) {
+#ifdef INET6
+	case AF_INET6:
+	{
+		if (addr->sa_len != sizeof(struct sockaddr_in6)) {
+			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+			return (EINVAL);
+		}
+		break;
+	}
+#endif
+#ifdef INET
+	case AF_INET:
+	{
+		if (addr->sa_len != sizeof(struct sockaddr_in)) {
+			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+			return (EINVAL);
+		}
+		break;
+	}
+#endif
+	case AF_CONN:
+	{
+		if (addr->sa_len != sizeof(struct sockaddr_conn)) {
+			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+			return (EINVAL);
+		}
+		break;
+	}
+	default:
+		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EAFNOSUPPORT);
+ 		return (EAFNOSUPPORT);
+	}
+#endif
+	SCTP_INP_INCR_REF(inp);
+	SCTP_ASOC_CREATE_LOCK(inp);
+	create_lock_on = 1;
+
+
+	if ((inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) ||
+	    (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
+		/* Should I really unlock ? */
+		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EFAULT);
+	        error = EFAULT;
+		goto out_now;
+	}
+#ifdef INET6
+	if (((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) == 0) &&
+	    (addr->sa_family == AF_INET6)) {
+		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+		error = EINVAL;
+		goto out_now;
+	}
+#endif
+	if ((inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND) == SCTP_PCB_FLAGS_UNBOUND) {
+		/* Bind a ephemeral port */
+		error = sctp_inpcb_bind(so, NULL, NULL, p);
+		if (error) {
+			goto out_now;
+		}
+	}
+	/* Now do we connect? */
+	if ((inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) &&
+	    (sctp_is_feature_off(inp, SCTP_PCB_FLAGS_PORTREUSE))) {
+		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+		error = EINVAL;
+		goto out_now;
+	}
+	if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) &&
+	    (inp->sctp_flags & SCTP_PCB_FLAGS_CONNECTED)) {
+		/* We are already connected AND the TCP model */
+		SCTP_LTRACE_ERR_RET(inp, stcb, NULL, SCTP_FROM_SCTP_USRREQ, EADDRINUSE);
+		error = EADDRINUSE;
+		goto out_now;
+	}
+	if (inp->sctp_flags & SCTP_PCB_FLAGS_CONNECTED) {
+		SCTP_INP_RLOCK(inp);
+		stcb = LIST_FIRST(&inp->sctp_asoc_list);
+		SCTP_INP_RUNLOCK(inp);
+	} else {
+		/* We increment here since sctp_findassociation_ep_addr() will
+		 * do a decrement if it finds the stcb as long as the locked
+		 * tcb (last argument) is NOT a TCB.. aka NULL.
+		 */
+		SCTP_INP_INCR_REF(inp);
+		stcb = sctp_findassociation_ep_addr(&inp, addr, NULL, NULL, NULL);
+		if (stcb == NULL) {
+			SCTP_INP_DECR_REF(inp);
+		} else {
+			SCTP_TCB_UNLOCK(stcb);
+		}
+	}
+	if (stcb != NULL) {
+		/* Already have or am bring up an association */
+		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EALREADY);
+		error = EALREADY;
+		goto out_now;
+	}
+
+	vrf_id = inp->def_vrf_id;
+#ifdef SCTP_MVRF
+	for (i = 0; i < inp->num_vrfs; i++) {
+		if (vrf_id == inp->m_vrf_ids[i]) {
+			fnd = 1;
+			break;
+		}
+	}
+	if (!fnd) {
+		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+		error = EINVAL;
+		goto out_now;
+	}
+#endif
+	/* We are GOOD to go */
+	stcb = sctp_aloc_assoc(inp, addr, &error, 0, vrf_id, p);
+	if (stcb == NULL) {
+		/* Gak! no memory */
+		goto out_now;
+	}
+	if (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) {
+		stcb->sctp_ep->sctp_flags |= SCTP_PCB_FLAGS_CONNECTED;
+		/* Set the connected flag so we can queue data */
+		soisconnecting(so);
+	}
+	SCTP_SET_STATE(&stcb->asoc, SCTP_STATE_COOKIE_WAIT);
+	(void)SCTP_GETTIME_TIMEVAL(&stcb->asoc.time_entered);
+
+	/* initialize authentication parameters for the assoc */
+	sctp_initialize_auth_params(inp, stcb);
+
+	sctp_send_initiate(inp, stcb, SCTP_SO_LOCKED);
+	SCTP_TCB_UNLOCK(stcb);
+ out_now:
+	if (create_lock_on) {
+		SCTP_ASOC_CREATE_UNLOCK(inp);
+	}
+
+	SCTP_INP_DECR_REF(inp);
+	return (error);
+}
+#endif
 int
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
 #if __FreeBSD_version >= 700000
