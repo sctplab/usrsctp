@@ -2848,6 +2848,11 @@ sctp_notify_peer_addr_change(struct sctp_tcb *stcb, uint32_t state,
 		break;
 	}
 #endif
+#if defined(__Userspace__)
+	case AF_CONN:
+		memcpy(&spc->spc_aaddr, sa, sizeof(struct sockaddr_conn));
+		break;
+#endif
 	default:
 		/* TSNH */
 		break;
@@ -4372,6 +4377,16 @@ sctp_cmpaddr(struct sockaddr *sa1, struct sockaddr *sa2)
 		return (sin_1->sin_addr.s_addr == sin_2->sin_addr.s_addr);
 	}
 #endif
+#if defined(__Userspace__)
+	case AF_CONN:
+	{
+		struct sockaddr_conn *sconn_1, *sconn_2;
+
+		sconn_1 = (struct sockaddr_conn *)sa1;
+		sconn_2 = (struct sockaddr_conn *)sa2;
+		return (sconn_1->sconn_addr == sconn_2->sconn_addr);
+	}
+#endif
 	default:
 		/* we don't do these... */
 		return (0);
@@ -4428,6 +4443,16 @@ sctp_print_address(struct sockaddr *sa)
 		p = (unsigned char *)&sin->sin_addr;
 		SCTP_PRINTF("IPv4 address: %u.%u.%u.%u:%d\n",
 			    p[0], p[1], p[2], p[3], ntohs(sin->sin_port));
+		break;
+	}
+#endif
+#if defined(__Userspace__)
+	case AF_CONN:
+	{
+		struct sockaddr_conn *sconn;
+
+		sconn = (struct sockaddr_conn *)sa;
+		SCTP_PRINTF("AF_CONN address: %p\n", sconn->sconn_addr);
 		break;
 	}
 #endif
@@ -4672,6 +4697,11 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 				addr.sin6 = control->whoFrom->ro._l_addr.sin6;
 				break;
 #endif
+#if defined(__Userspace__)
+			case AF_CONN:
+				addr.sconn = control->whoFrom->ro._l_addr.sconn;
+				break;
+#endif
 			default:
 				addr.sa = control->whoFrom->ro._l_addr.sa;
 				break;
@@ -4885,6 +4915,11 @@ sctp_append_to_readq(struct sctp_inpcb *inp,
 #ifdef INET6
 			case AF_INET6:
 				addr.sin6 = control->whoFrom->ro._l_addr.sin6;
+				break;
+#endif
+#if defined(__Userspace__)
+			case AF_CONN:
+				addr.sconn = control->whoFrom->ro._l_addr.sconn;
 				break;
 #endif
 			default:
@@ -5272,6 +5307,18 @@ sctp_find_ifa_in_ep(struct sctp_inpcb *inp, struct sockaddr *addr,
 			}
 		}
 #endif
+#if defined(__Userspace__)
+		if (addr->sa_family == AF_CONN) {
+			if (((struct sockaddr_conn *)addr)->sconn_addr == laddr->ifa->address.sconn.sconn_addr) {
+				/* found him. */
+				if (holds_lock == 0) {
+					SCTP_INP_RUNLOCK(inp);
+				}
+				return (laddr->ifa);
+				break;
+			}
+		}
+#endif
 	}
 	if (holds_lock == 0) {
 		SCTP_INP_RUNLOCK(inp);
@@ -5381,6 +5428,17 @@ sctp_find_ifa_by_addr(struct sockaddr *addr, uint32_t vrf_id, int holds_lock)
 		if (addr->sa_family == AF_INET6) {
 			if (SCTP6_ARE_ADDR_EQUAL((struct sockaddr_in6 *)addr,
 						 &sctp_ifap->address.sin6)) {
+				/* found him. */
+				if (holds_lock == 0)
+					SCTP_IPI_ADDR_RUNLOCK();
+				return (sctp_ifap);
+				break;
+			}
+		}
+#endif
+#if defined(__Userspace__)
+		if (addr->sa_family == AF_CONN) {
+			if (((struct sockaddr_conn *)addr)->sconn_addr == sctp_ifap->address.sconn.sconn_addr) {
 				/* found him. */
 				if (holds_lock == 0)
 					SCTP_IPI_ADDR_RUNLOCK();
@@ -6025,6 +6083,14 @@ sctp_sorecvmsg(struct socket *so,
 				cp_len = min((size_t)fromlen, sizeof(struct sockaddr_in));
 #endif
 				((struct sockaddr_in *)from)->sin_port = control->port_from;
+				break;
+#endif
+#if defined(__Userspace__)
+			case AF_CONN:
+#if defined(__Windows__) || defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
+				cp_len = min((size_t)fromlen, sizeof(struct sockaddr_conn));
+#endif
+				((struct sockaddr_conn *)from)->sconn_port = control->port_from;
 				break;
 #endif
 			default:
@@ -6960,6 +7026,19 @@ sctp_connectx_helper_add(struct sctp_tcb *stcb, struct sockaddr *addr,
 			added++;
 			break;
 #endif
+#if defined(__Userspace__)
+		case AF_CONN:
+			incr = sizeof(struct sockaddr_in6);
+			if (sctp_add_remote_addr(stcb, sa, NULL, SCTP_DONOT_SETSCOPE, SCTP_ADDR_IS_CONFIRMED)) {
+				/* assoc gone no un-lock */
+				SCTP_LTRACE_ERR_RET(NULL, stcb, NULL, SCTP_FROM_SCTPUTIL, ENOBUFS);
+				(void)sctp_free_assoc(inp, stcb, SCTP_NORMAL_PROC, SCTP_FROM_SCTP_USRREQ+SCTP_LOC_8);
+				*error = ENOBUFS;
+				goto out_now;
+			}
+			added++;
+			break;
+#endif
 		default:
 			break;
 		}
@@ -7422,6 +7501,11 @@ sctp_local_addr_count(struct sctp_tcb *stcb)
 						/* count this one */
 						count++;
 					}
+					break;
+#endif
+#if defined(__Userspace__)
+				case AF_CONN:
+					count++;
 					break;
 #endif
 				default:

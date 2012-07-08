@@ -5625,6 +5625,11 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	struct sockaddr_in6 *src6 = (struct sockaddr_in6 *)src;
 	struct sockaddr_in6 *sin6;
 #endif
+#if defined(__Userspace__)
+	struct sockaddr_conn *dstconn = (struct sockaddr_conn *)dst;
+	struct sockaddr_conn *srcconn = (struct sockaddr_conn *)src;
+	struct sockaddr_conn *sconn;
+#endif
 	struct sockaddr *to;
 	struct sctp_state_cookie stc;
 	struct sctp_nets *net = NULL;
@@ -5733,6 +5738,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	stc.ipv4_scope = 0;
 #endif
 	if (net == NULL) {
+I_AM_HERE;
 		to = src;
 		switch (dst->sa_family) {
 #ifdef INET
@@ -5820,12 +5826,32 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			break;
 		}
 #endif
+#if defined(__Userspace__)
+		case AF_CONN:
+		{
+			/* lookup address */
+			stc.address[0] = 0;
+			stc.address[1] = 0;
+			stc.address[2] = 0;
+			stc.address[3] = 0;
+			stc.addr_type = SCTP_CONN_ADDRESS;
+			/* local from address */
+			stc.laddress[0] = 0;
+			stc.laddress[1] = 0;
+			stc.laddress[2] = 0;
+			stc.laddress[3] = 0;
+			stc.laddr_type = SCTP_CONN_ADDRESS;
+			/* scope_id is only for v6 */
+			break;
+		}
+#endif
 		default:
 			/* TSNH */
 		    goto do_a_abort;
 			break;
 		}
 	} else {
+I_AM_HERE;
 		/* set the scope per the existing tcb */
 
 #ifdef INET6
@@ -5911,6 +5937,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 #endif
 		}
 	}
+I_AM_HERE;
 	/* Now lets put the SCTP header in place */
 	initack = mtod(m, struct sctp_init_ack_chunk *);
 	/* Save it off for quick ref */

@@ -436,6 +436,9 @@ extern void getwintimeofday(struct timeval *tv);
 /* SCTP parameter types */
 /*************0x0000 series*************/
 #define SCTP_HEARTBEAT_INFO		0x0001
+#if defined(__Userspace__)
+#define SCTP_CONN_ADDRESS               0x0004
+#endif
 #define SCTP_IPV4_ADDRESS		0x0005
 #define SCTP_IPV6_ADDRESS		0x0006
 #define SCTP_STATE_COOKIE		0x0007
