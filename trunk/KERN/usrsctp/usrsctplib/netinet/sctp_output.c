@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 238122 2012-07-04 20:59:30Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 238294 2012-07-09 10:59:39Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5738,7 +5738,6 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	stc.ipv4_scope = 0;
 #endif
 	if (net == NULL) {
-I_AM_HERE;
 		to = src;
 		switch (dst->sa_family) {
 #ifdef INET
@@ -5779,6 +5778,7 @@ I_AM_HERE;
 		case AF_INET6:
 		{
 			stc.addr_type = SCTP_IPV6_ADDRESS;
+			memcpy(&stc.address, &src6->sin6_addr, sizeof(struct in6_addr));
 #if defined(__FreeBSD__)
 			stc.scope_id = in6_getscope(&src6->sin6_addr);
 #else
@@ -5834,12 +5834,14 @@ I_AM_HERE;
 			stc.address[1] = 0;
 			stc.address[2] = 0;
 			stc.address[3] = 0;
+			memcpy(&stc.address, &srcconn->sconn_addr, sizeof(void *));
 			stc.addr_type = SCTP_CONN_ADDRESS;
 			/* local from address */
 			stc.laddress[0] = 0;
 			stc.laddress[1] = 0;
 			stc.laddress[2] = 0;
 			stc.laddress[3] = 0;
+			memcpy(&stc.laddress, &dstconn->sconn_addr, sizeof(void *));
 			stc.laddr_type = SCTP_CONN_ADDRESS;
 			/* scope_id is only for v6 */
 			break;
@@ -5851,7 +5853,6 @@ I_AM_HERE;
 			break;
 		}
 	} else {
-I_AM_HERE;
 		/* set the scope per the existing tcb */
 
 #ifdef INET6
@@ -5937,7 +5938,6 @@ I_AM_HERE;
 #endif
 		}
 	}
-I_AM_HERE;
 	/* Now lets put the SCTP header in place */
 	initack = mtod(m, struct sctp_init_ack_chunk *);
 	/* Save it off for quick ref */
