@@ -8719,6 +8719,15 @@ again_one_more_time:
 				omtu = 0;
 			break;
 #endif
+#if defined(__Userspace__)
+		case AF_CONN:
+			if (net->mtu > sizeof(struct sctphdr)) {
+				omtu = net->mtu - sizeof(struct sctphdr);
+			} else {
+				omtu = 0;
+			}
+			break;
+#endif
 		default:
 			/* TSNH */
 			omtu = 0;
