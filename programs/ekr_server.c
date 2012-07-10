@@ -137,7 +137,6 @@ main(int argc, char *argv[])
 	int fd;
 	struct socket *s;
 	pthread_t tid;
-	socklen_t addr_len;
 
 	/* set up a connected UDP socket */
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
@@ -160,7 +159,7 @@ main(int argc, char *argv[])
 		perror("bind");
 	}
 	usrsctp_init(0, conn_output);
-	usrsctp_sysctl_set_sctp_debug_on(0xffffffff);
+	usrsctp_sysctl_set_sctp_debug_on(0x0);
 	if (pthread_create(&tid, NULL, &handle_packets, (void *)&fd) != 0) {
 		printf("pthread_create failed\n");
 	}
@@ -171,7 +170,7 @@ main(int argc, char *argv[])
 	sconn.sconn_family = AF_CONN;
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
 	sconn.sconn_port = htons(5001);
-	sconn.sconn_addr = &fd;
+	sconn.sconn_addr = NULL;
 	if (usrsctp_bind(s, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_bind");
 	}
@@ -179,11 +178,14 @@ main(int argc, char *argv[])
 		perror("usrsctp_listen");
 	}
 	while (1) {
+		socklen_t addr_len;
+
 		addr_len = 0;
 		if (usrsctp_accept(s, NULL, &addr_len) == NULL) {
 			perror("usrsctp_accept");
 		}
 	}
+	usrsctp_close(s);
 	while (usrsctp_finish() != 0) {
 		sleep(1);
 	}
