@@ -6858,6 +6858,13 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 			}
 			break;
 #endif
+#if defined(__Userspace__)
+		case AF_CONN:
+			if (sctp_add_remote_addr(stcb, sa, NULL, SCTP_DONOT_SETSCOPE, SCTP_LOAD_ADDR_3)) {
+				return (-2);
+			}
+			break;
+#endif
 		default:
 			break;
 		}
