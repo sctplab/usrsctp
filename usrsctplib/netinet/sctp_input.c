@@ -596,6 +596,9 @@ sctp_handle_heartbeat_ack(struct sctp_heartbeat_chunk *cp,
 #ifdef INET6
 	struct sockaddr_in6 *sin6;
 #endif
+#if defined(__Userspace__)
+	struct sockaddr_conn *sconn;
+#endif
 
 	if (ntohs(cp->ch.chunk_length) != sizeof(struct sctp_heartbeat_chunk)) {
 		/* Invalid length */
@@ -631,6 +634,22 @@ sctp_handle_heartbeat_ack(struct sctp_heartbeat_chunk *cp,
 			sin6->sin6_port = stcb->rport;
 			memcpy(&sin6->sin6_addr, cp->heartbeat.hb_info.address,
 			       sizeof(sin6->sin6_addr));
+		} else {
+			return;
+		}
+		break;
+#endif
+#if defined(__Userspace__)
+	case AF_CONN:
+		if (cp->heartbeat.hb_info.addr_len == sizeof(struct sockaddr_conn)) {
+			sconn = (struct sockaddr_conn *)&store;
+			sconn->sconn_family = cp->heartbeat.hb_info.addr_family;
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+			sconn->sconn_len = cp->heartbeat.hb_info.addr_len;
+#endif
+			sconn->sconn_port = stcb->rport;
+			memcpy(&sconn->sconn_addr, cp->heartbeat.hb_info.address,
+			       sizeof(sconn->sconn_addr));
 		} else {
 			return;
 		}
@@ -2071,6 +2090,9 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 #ifdef INET6
 	struct sockaddr_in6 *sin6;
 #endif
+#if defined(__Userspace__)
+	struct sockaddr_conn *sconn;
+#endif
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 	struct socket *so;
 
@@ -2328,6 +2350,18 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 		    sizeof(sin6->sin6_addr));
 		break;
 #endif
+#if defined(__Userspace__)
+	case SCTP_CONN_ADDRESS:
+		/* source addr is IPv4 */
+		sconn = (struct sockaddr_conn *)initack_src;
+		memset(sconn, 0, sizeof(struct sockaddr_conn));
+		sconn->sconn_family = AF_CONN;
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+		sconn->sconn_len = sizeof(struct sockaddr_conn);
+#endif
+		memcpy(&sconn->sconn_addr, cookie->laddress, sizeof(void *));
+		break;
+#endif
 	default:
 		atomic_add_int(&stcb->asoc.refcnt, 1);
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
@@ -2464,6 +2498,9 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 #endif
 #ifdef INET6
 	struct sockaddr_in6 sin6;
+#endif
+#if defined(__Userspace__)
+	struct sockaddr_conn sconn;
 #endif
 
 	SCTPDBG(SCTP_DEBUG_INPUT2,
@@ -2668,6 +2705,18 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 		sin.sin_port = sh->src_port;
 		sin.sin_addr.s_addr = cookie->address[0];
 		to = (struct sockaddr *)&sin;
+		break;
+#endif
+#if defined(__Userspace__)
+	case SCTP_CONN_ADDRESS:
+		memset(&sconn, 0, sizeof(struct sockaddr_conn));
+		sconn.sconn_family = AF_CONN;
+#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+		sconn.sconn_len = sizeof(struct sockaddr_conn);
+#endif
+		sconn.sconn_port = sh->src_port;
+		memcpy(&sconn.sconn_addr, cookie->address, sizeof(void *));
+		to = (struct sockaddr *)&sconn;
 		break;
 #endif
 	default:

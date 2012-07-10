@@ -4775,6 +4775,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		sctphdr->src_port = src_port;
 		sctphdr->dest_port = dest_port;
 		sctphdr->v_tag = v_tag;
+		sctphdr->checksum = 0;
 		sctphdr->checksum = sctp_calculate_cksum(m, 0);
 		SCTP_STAT_INCR(sctps_sendswcrc);
 		if (tos_value == 0) {
@@ -11508,6 +11509,10 @@ sctp_send_hb(struct sctp_tcb *stcb, struct sctp_nets *net,int so_locked
 	case AF_INET6:
 		break;
 #endif
+#if defined(__Userspace__)
+	case AF_CONN:
+		break;
+#endif
 	default:
 		return;
 	}
@@ -11577,6 +11582,13 @@ sctp_send_hb(struct sctp_tcb *stcb, struct sctp_nets *net,int so_locked
 		memcpy(hb->heartbeat.hb_info.address,
 		       &net->ro._l_addr.sin6.sin6_addr,
 		       sizeof(net->ro._l_addr.sin6.sin6_addr));
+		break;
+#endif
+#if defined(__Userspace__)
+	case AF_CONN:
+		memcpy(hb->heartbeat.hb_info.address,
+		       &net->ro._l_addr.sconn.sconn_addr,
+		       sizeof(net->ro._l_addr.sconn.sconn_addr));
 		break;
 #endif
 	default:
