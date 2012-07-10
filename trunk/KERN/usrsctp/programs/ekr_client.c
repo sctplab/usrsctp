@@ -41,6 +41,8 @@
 #include <usrsctp.h>
 
 #define MAX_PACKET_SIZE (1<<16)
+#define BUFFER_SIZE 80
+#define DISCARD_PPID 39
 
 static void *
 handle_packets(void *arg)
@@ -105,6 +107,8 @@ main(int argc, char *argv[])
 	int fd;
 	struct socket *s;
 	pthread_t tid;
+	struct sctp_sndinfo sndinfo;
+	char buffer[BUFFER_SIZE];
 
 	/* set up a connected UDP socket */
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
@@ -127,7 +131,7 @@ main(int argc, char *argv[])
 		perror("bind");
 	}
 	usrsctp_init(0, conn_output);
-	usrsctp_sysctl_set_sctp_debug_on(0xffffffff);
+	usrsctp_sysctl_set_sctp_debug_on(0x0);
 	if (pthread_create(&tid, NULL, &handle_packets, (void *)&fd) != 0) {
 		printf("pthread_create failed\n");
 	}
@@ -149,6 +153,16 @@ main(int argc, char *argv[])
 	sconn.sconn_addr = &fd;
 	if (usrsctp_connect(s, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_connect");
+	}
+	memset(buffer, 'A', BUFFER_SIZE);
+	sndinfo.snd_sid = 1;
+	sndinfo.snd_flags = 0;
+	sndinfo.snd_ppid = htonl(DISCARD_PPID);
+	sndinfo.snd_context = 0;
+	sndinfo.snd_assoc_id = 0;
+	if (usrsctp_sendv(s, buffer, BUFFER_SIZE, NULL, 0, (void *)&sndinfo,
+	                  (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
+		perror("usrsctp_sendv");
 	}
 	usrsctp_close(s);
 	while (usrsctp_finish() != 0) {
