@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.24 2012-07-06 20:00:31 tuexen Exp $
+ * $Id: rtcweb.c,v 1.25 2012-07-11 05:49:51 tuexen Exp $
  */
 
 /*
@@ -1370,9 +1370,9 @@ main(int argc, char *argv[])
 		return (0);
 	}
 
-  lock_peer_connection(&peer_connection);
-  peer_connection.sock = sock;
-  unlock_peer_connection(&peer_connection);
+	lock_peer_connection(&peer_connection);
+	peer_connection.sock = sock;
+	unlock_peer_connection(&peer_connection);
 
 	for (;;) {
 #if defined(__Userspace_os_Windows)
