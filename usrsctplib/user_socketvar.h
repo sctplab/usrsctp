@@ -763,6 +763,9 @@ extern int sctp_listen(struct socket *so, int backlog, struct proc *p);
 extern void socantrcvmore_locked(struct socket *so);
 extern int sctp_bind(struct socket *so, struct sockaddr *addr);
 extern int sctp6_bind(struct socket *so, struct sockaddr *addr, void *proc);
+#if defined(__Userspace__)
+extern int sctpconn_bind(struct socket *so, struct sockaddr *addr);
+#endif
 extern int sctp_accept(struct socket *so, struct sockaddr **addr);
 extern int sctp_attach(struct socket *so, int proto, uint32_t vrf_id);
 extern int sctp6_attach(struct socket *so, int proto, uint32_t vrf_id);
@@ -781,6 +784,9 @@ extern int soconnect(struct socket *so, struct sockaddr *nam);
 extern int sctp_disconnect(struct socket *so);
 extern int sctp_connect(struct socket *so, struct sockaddr *addr);
 extern int sctp6_connect(struct socket *so, struct sockaddr *addr);
+#if defined(__Userspace__)
+extern int sctpconn_connect(struct socket *so, struct sockaddr *addr);
+#endif
 extern struct mbuf* mbufalloc(size_t size, void* data, unsigned char fill);
 extern struct mbuf* mbufallocfromiov(int iovlen, struct iovec *srciov);
 extern void sctp_finish(void);
