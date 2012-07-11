@@ -68,12 +68,20 @@ extern "C" {
 typedef uint32_t sctp_assoc_t;
 
 #define AF_CONN 123
+#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 struct sockaddr_conn {
 	uint8_t sconn_len;
 	uint8_t sconn_family;
 	uint16_t sconn_port;
 	void *sconn_addr;
 };
+#else
+struct sockaddr_conn {
+	uint16_t sconn_family;
+	uint16_t sconn_port;
+	void *sconn_addr;
+};
+#endif
 
 union sctp_sockstore {
 #if defined(INET)
