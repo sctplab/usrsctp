@@ -1959,6 +1959,10 @@ sctp_is_address_in_scope(struct sctp_ifa *ifa,
 		}
 		break;
 #endif
+#if defined(__Userspace__)
+	case AF_CONN:
+		break;
+#endif
 	default:
 		return (0);
 	}
@@ -5937,6 +5941,29 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			stc.laddr_type = SCTP_IPV6_ADDRESS;
 			break;
 #endif
+#if defined(__Userspace__)
+		case AF_CONN:
+			sconn = (struct sockaddr_conn *)to;
+			memcpy(&stc.address, &sconn->sconn_addr, sizeof(void *));
+			stc.addr_type = SCTP_CONN_ADDRESS;
+			stc.scope_id = 0;
+			if (net->src_addr_selected == 0) {
+				/*
+				 * strange case here, the INIT should have
+				 * done the selection.
+				 */
+				net->ro._s_addr = sctp_source_address_selection(inp,
+										stcb, (sctp_route_t *)&net->ro,
+										net, 0, vrf_id);
+				if (net->ro._s_addr == NULL)
+					return;
+
+				net->src_addr_selected = 1;
+			}
+			memcpy(&stc.laddress, &net->ro._s_addr->address.sconn.sconn_addr, sizeof(void *));
+			stc.laddr_type = SCTP_CONN_ADDRESS;
+			break;
+#endif
 		}
 	}
 	/* Now lets put the SCTP header in place */
@@ -7797,6 +7824,11 @@ sctp_fill_outqueue(struct sctp_tcb *stcb,
 			goal_mtu = net->mtu - SCTP_MIN_OVERHEAD;
 			break;
 #endif
+#if defined(__Userspace__)
+		case AF_CONN:
+			goal_mtu = net->mtu - sizeof(struct sctphdr);
+			break;
+#endif
 		default:
 			/* TSNH */
 			goal_mtu = net->mtu;
@@ -8169,6 +8201,11 @@ again_one_more_time:
 			mtu = net->mtu - (sizeof(struct ip6_hdr) + sizeof(struct sctphdr));
 			break;
 #endif
+#if defined(__Userspace__)
+		case AF_CONN:
+			mtu = net->mtu - sizeof(struct sctphdr);
+			break;
+#endif
 		default:
 			/* TSNH */
 			mtu = net->mtu;
@@ -8381,6 +8418,11 @@ again_one_more_time:
 #ifdef INET6
 						case AF_INET6:
 							mtu = net->mtu - SCTP_MIN_OVERHEAD;
+							break;
+#endif
+#if defined(__Userspace__)
+						case AF_CONN:
+							mtu = net->mtu - sizeof(struct sctphdr);
 							break;
 #endif
 						default:
@@ -8651,6 +8693,11 @@ again_one_more_time:
 #ifdef INET6
 						case AF_INET6:
 							mtu = net->mtu - SCTP_MIN_OVERHEAD;
+							break;
+#endif
+#if defined(__Userspace__)
+						case AF_CONN:
+							mtu = net->mtu - sizeof(struct sctphdr);
 							break;
 #endif
 						default:
@@ -9719,6 +9766,11 @@ sctp_chunk_retransmission(struct sctp_inpcb *inp,
 #ifdef INET6
 			case AF_INET6:
 				mtu = net->mtu - SCTP_MIN_OVERHEAD;
+				break;
+#endif
+#if defined(__Userspace__)
+			case AF_CONN:
+				mtu = net->mtu - sizeof(struct sctphdr);
 				break;
 #endif
 			default:
@@ -12899,6 +12951,18 @@ sctp_lower_sosend(struct socket *so,
 			}
 #endif
 			port = raddr->sin6.sin6_port;
+			break;
+#endif
+#if defined(__Userspace__)
+		case AF_CONN:
+#if defined(__FreeBSD__) || defined(__APPLE__)
+			if (raddr->sconn.sconn_len != sizeof(struct sockaddr_conn)) {
+				SCTP_LTRACE_ERR_RET(inp, stcb, net, SCTP_FROM_SCTP_OUTPUT, EINVAL);
+				error = EINVAL;
+				goto out_unlocked;
+			}
+#endif
+			port = raddr->sconn.sconn_port;
 			break;
 #endif
 		default:
