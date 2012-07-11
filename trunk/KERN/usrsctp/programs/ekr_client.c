@@ -154,7 +154,7 @@ main(int argc, char *argv[])
 	sconn.sconn_family = AF_CONN;
 #ifdef HAVE_SIN_LEN
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
-#ifdef HAVE_SIN_LEN
+#endif
 	sconn.sconn_port = htons(5001);
 	sconn.sconn_addr = &fd;
 	if (usrsctp_connect(s, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
