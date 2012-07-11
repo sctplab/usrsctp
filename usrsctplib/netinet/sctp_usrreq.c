@@ -845,6 +845,7 @@ sctpconn_attach(struct socket *so, int proto SCTP_UNUSED, uint32_t vrf_id)
 	SCTP_INP_WLOCK(inp);
 	inp->sctp_flags &= ~SCTP_PCB_FLAGS_BOUND_V6;
 	ip_inp = &inp->ip_inp.inp;
+	ip_inp->inp_vflag |= INP_CONN;
 	ip_inp->inp_ip_ttl = MODULE_GLOBAL(ip_defttl);
 	SCTP_INP_WUNLOCK(inp);
 	return (0);
@@ -1833,6 +1834,11 @@ sctp_count_max_addresses_vrf(struct sctp_inpcb *inp, uint32_t vrf_id)
 				cnt += sizeof(struct sockaddr_in6);
 				break;
 #endif
+#if defined(__Userspace__)
+			case AF_CONN:
+				cnt += sizeof(struct sockaddr_conn);
+				break;
+#endif
 			default:
 				break;
 			}
@@ -2340,6 +2346,12 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			error = 0;
 		}
 #endif
+#if defined(__Userspace__)
+		if (av->assoc_value == AF_CONN) {
+			av->assoc_value = sizeof(struct sockaddr_conn);
+			error = 0;
+		}
+#endif
 		if (error) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
 		} else {
@@ -2710,6 +2722,11 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 						size += sizeof(struct sockaddr_in6);
 						break;
 #endif
+#if defined(__Userspace__)
+					case AF_CONN:
+						size += sizeof(struct sockaddr_conn);
+						break;
+#endif
 					default:
 						break;
 					}
@@ -2756,6 +2773,11 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 #ifdef INET6
 					case AF_INET6:
 						cpsz = sizeof(struct sockaddr_in6);
+						break;
+#endif
+#if defined(__Userspace__)
+					case AF_CONN:
+						cpsz = sizeof(struct sockaddr_conn);
 						break;
 #endif
 					default:
@@ -2858,6 +2880,19 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 
 				sin6 = (struct sockaddr_in6 *)sa;
 				if (!IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
+					error = EINVAL;
+					SCTP_TCB_UNLOCK(stcb);
+					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
+					break;
+				}
+			} else
+#endif
+#if defined(__Userspace__)
+			if (sa->sa_family == AF_CONN) {
+				struct sockaddr_conn *sconn;
+
+				sconn = (struct sockaddr_conn *)sa;
+				if (sconn->sconn_addr != NULL) {
 					error = EINVAL;
 					SCTP_TCB_UNLOCK(stcb);
 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
@@ -3679,6 +3714,19 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 				}
 			} else
 #endif
+#if defined(__Userspace__)
+			if (sa->sa_family == AF_CONN) {
+				struct sockaddr_conn *sconn;
+
+				sconn = (struct sockaddr_conn *)sa;
+				if (sconn->sconn_addr != NULL) {
+					error = EINVAL;
+					SCTP_TCB_UNLOCK(stcb);
+					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
+					break;
+				}
+			} else
+#endif
 			{
 				error = EAFNOSUPPORT;
 				SCTP_TCB_UNLOCK(stcb);
@@ -3761,6 +3809,19 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 
 				sin6 = (struct sockaddr_in6 *)sa;
 				if (!IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
+					error = EINVAL;
+					SCTP_TCB_UNLOCK(stcb);
+					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
+					break;
+				}
+			} else
+#endif
+#if defined(__Userspace__)
+			if (sa->sa_family == AF_CONN) {
+				struct sockaddr_conn *sconn;
+
+				sconn = (struct sockaddr_conn *)sa;
+				if (sconn->sconn_addr != NULL) {
 					error = EINVAL;
 					SCTP_TCB_UNLOCK(stcb);
 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
@@ -5350,6 +5411,19 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				}
 			} else
 #endif
+#if defined(__Userspace__)
+			if (sa->sa_family == AF_CONN) {
+				struct sockaddr_conn *sconn;
+
+				sconn = (struct sockaddr_conn *)sa;
+				if (sconn->sconn_addr != NULL) {
+					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+					SCTP_TCB_UNLOCK(stcb);
+					error = EINVAL;
+					break;
+				}
+			} else
+#endif
 			{
 				error = EAFNOSUPPORT;
 				SCTP_TCB_UNLOCK(stcb);
@@ -6328,6 +6402,19 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				}
 			} else
 #endif
+#if defined(__Userspace__)
+			if (sa->sa_family == AF_CONN) {
+				struct sockaddr_conn *sconn;
+
+				sconn = (struct sockaddr_conn *)sa;
+				if (sconn->sconn_addr != NULL) {
+					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+					SCTP_TCB_UNLOCK(stcb);
+					error = EINVAL;
+					break;
+				}
+			} else
+#endif
 			{
 				error = EAFNOSUPPORT;
 				SCTP_TCB_UNLOCK(stcb);
@@ -6456,6 +6543,19 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 
 				sin6 = (struct sockaddr_in6 *)sa;
 				if (!IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
+					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+					SCTP_TCB_UNLOCK(stcb);
+					error = EINVAL;
+					break;
+				}
+			} else
+#endif
+#if defined(__Userspace__)
+			if (sa->sa_family == AF_CONN) {
+				struct sockaddr_conn *sconn;
+
+				sconn = (struct sockaddr_conn *)sa;
+				if (sconn->sconn_addr != NULL) {
 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 					SCTP_TCB_UNLOCK(stcb);
 					error = EINVAL;
@@ -6992,6 +7092,11 @@ sctp_listen(struct socket *so, struct proc *p)
 					sp->sin6.sin6_port = inp->sctp_lport;
 					break;
 #endif
+#if defined(__Userspace__)
+				case AF_CONN:
+					sp->sconn.sconn_port = inp->sctp_lport;
+					break;
+#endif
 				default:
 					break;
 				}
@@ -7019,6 +7124,11 @@ sctp_listen(struct socket *so, struct proc *p)
 #ifdef INET6
 			case AF_INET6:
 				sp->sin6.sin6_port = inp->sctp_lport;
+				break;
+#endif
+#if defined(__Userspace__)
+			case AF_CONN:
+				sp->sconn.sconn_port = inp->sctp_lport;
 				break;
 #endif
 			default:
