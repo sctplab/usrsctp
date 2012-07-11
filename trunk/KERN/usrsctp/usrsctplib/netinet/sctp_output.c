@@ -5780,7 +5780,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		{
 			stc.addr_type = SCTP_IPV6_ADDRESS;
 			memcpy(&stc.address, &src6->sin6_addr, sizeof(struct in6_addr));
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && __FreeBSD_version > 900000
 			stc.scope_id = in6_getscope(&src6->sin6_addr);
 #else
 			stc.scope_id = 0;
@@ -11454,7 +11454,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING) {
 			sctp_packet_log(mout);
 		}
-#endif		
+#endif
 		/* Don't alloc/free for each packet */
 		if ((buffer = malloc(len)) != NULL) {
 			m_copydata(mout, 0, len, buffer);
