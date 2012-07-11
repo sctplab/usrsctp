@@ -144,7 +144,9 @@ main(int argc, char *argv[])
 	}
 	memset(&sin, 0, sizeof(struct sockaddr_in));
 	sin.sin_family = AF_INET;
+#ifdef HAVE_SIN_LEN
 	sin.sin_len = sizeof(struct sockaddr_in);
+#endif
 	sin.sin_port = htons(atoi(argv[2]));
 	sin.sin_addr.s_addr = inet_addr(argv[1]);
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
@@ -152,7 +154,9 @@ main(int argc, char *argv[])
 	}
 	memset(&sin, 0, sizeof(struct sockaddr_in));
 	sin.sin_family = AF_INET;
+#ifdef HAVE_SIN_LEN
 	sin.sin_len = sizeof(struct sockaddr_in);
+#endif
 	sin.sin_port = htons(atoi(argv[4]));
 	sin.sin_addr.s_addr = inet_addr(argv[3]);
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
@@ -168,7 +172,9 @@ main(int argc, char *argv[])
 	}
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
+#ifdef HAVE_SIN_LEN
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
+#endif
 	sconn.sconn_port = htons(5001);
 	sconn.sconn_addr = NULL;
 	if (usrsctp_bind(s, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
