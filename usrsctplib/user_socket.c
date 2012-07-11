@@ -2181,7 +2181,7 @@ usrsctp_close(struct socket *so) {
 void
 userspace_close(struct socket *so)
 {
-	return (usrsctp_close(so));
+	usrsctp_close(so);
 }
 
 int
@@ -2313,7 +2313,9 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	int send_count;
 	struct ip *ip;
 	struct udphdr *udp;
+#if !defined (__Userspace_os_Windows)
 	int res;
+#endif
 	struct sockaddr_in dst;
 #if defined (__Userspace_os_Windows)
 	WSAMSG win_msg_hdr;
@@ -2467,7 +2469,9 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	int send_count;
 	struct ip6_hdr *ip6;
 	struct udphdr *udp;
+#if !defined (__Userspace_os_Windows)
 	int res;
+#endif
 	struct sockaddr_in6 dst;
 #if defined (__Userspace_os_Windows)
 	WSAMSG win_msg_hdr;
