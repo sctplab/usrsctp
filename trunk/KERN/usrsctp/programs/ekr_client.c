@@ -144,7 +144,9 @@ main(int argc, char *argv[])
 	}
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
+#ifdef HAVE_SIN_LEN
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
+#endif
 	sconn.sconn_port = htons(0);
 	sconn.sconn_addr = NULL;
 	if (usrsctp_bind(s, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
