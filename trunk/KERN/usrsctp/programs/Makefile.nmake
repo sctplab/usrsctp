@@ -43,7 +43,9 @@ all: \
 	daytime_server \
 	discard_server \
 	tsctp \
-	rtcweb
+	rtcweb \
+	ekr_client \
+	ekr_server
 
 client:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c client.c
@@ -65,6 +67,14 @@ rtcweb:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c rtcweb.c
 	link -out:rtcweb.exe rtcweb.obj $(LINKFLAGS)
 
+ekr_client:
+	$(CC) $(CFLAGS) $(CVARSDLL) -c ekr_client.c
+	link -out:ekt_client.exe ekr_client.obj $(LINKFLAGS)
+
+ekr_server:
+	$(CC) $(CFLAGS) $(CVARSDLL) -c ekr_server.c
+	link -out:ekr_server.exe ekr_server.obj $(LINKFLAGS)
+
 clean:
 	del /F client
 	del /F client.obj
@@ -76,3 +86,7 @@ clean:
 	del /F tsctp.obj
 	del /F rtcweb
 	del /F rtcweb.obj
+	del /F ekr_client
+	del /F ekr_client.obj
+	del /F ekr_server
+	del /F ekr_server.obj
