@@ -2625,7 +2625,7 @@ usrsctp_conninput(void *addr, void *buffer, size_t length, uint8_t ecn_bits)
 	src.sconn_addr = addr;
 	memset(&dst, 0, sizeof(struct sockaddr_conn));
 	dst.sconn_family = AF_CONN;
-!defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 	dst.sconn_len = sizeof(struct sockaddr_conn);
 #endif
 	dst.sconn_addr = addr;
