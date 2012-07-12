@@ -28,16 +28,21 @@
  * SUCH DAMAGE.
  */
 
+#if defined(__Userspace_os_Windows)
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
+#if !defined(__Userspace_os_Windows)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <errno.h>
 #include <pthread.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+#endif
 #include <usrsctp.h>
 
 #define MAX_PACKET_SIZE (1<<16)
