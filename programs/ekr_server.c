@@ -54,11 +54,19 @@
 static void *
 handle_packets(void *arg)
 {
+#if defined(__Userspace_os_Windows)
+	SOCKET *fdp;
+#else
 	int *fdp;
+#endif
 	char *buf;
 	ssize_t length;
 
+#if defined(__Userspace_os_Windows)
+	fdp = (SOCKET *)arg;
+#else
 	fdp = (int *)arg;
+#endif
 	if ((buf = (char *)malloc(MAX_PACKET_SIZE)) == NULL) {
 		return (NULL);
 	}
@@ -69,14 +77,27 @@ handle_packets(void *arg)
 	return (NULL);
 }
 
-int
+static int
 conn_output(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df)
 {
+#if defined(__Userspace_os_Windows)
+	SOCKET *fdp;
+#else
 	int *fdp;
+#endif
 
+#if defined(__Userspace_os_Windows)
+	fdp = (SOCKET *)addr;
+#else
 	fdp = (int *)addr;
+#endif
+#if defined(__Userspace_os_Windows)
+	if (send(*fdp, buffer, length, 0) == SOCKET_ERROR) {
+		return(WSAGetLastError());
+#else
 	if (send(*fdp, buffer, length, 0) < 0) {
 		return(errno);
+#endif
 	} else {
 		return (0);
 	}
@@ -114,9 +135,9 @@ main(int argc, char *argv[])
 	struct sockaddr_in sin;
 	struct sockaddr_conn sconn;
 #if defined(__Userspace_os_Windows)
-	int fd;
-#else
 	SOCKET fd;
+#else
+	int fd;
 #endif
 	struct socket *s;
 #if defined(__Userspace_os_Windows)
