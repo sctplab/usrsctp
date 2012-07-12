@@ -112,7 +112,11 @@ main(int argc, char *argv[])
 	struct sockaddr_conn sconn;
 	int fd;
 	struct socket *s;
+#if defined(__Userspace_os_Windows)
+	HANDLE tid;
+#else
 	pthread_t tid;
+#endif
 
 	/* set up a connected UDP socket */
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
@@ -140,9 +144,11 @@ main(int argc, char *argv[])
 	}
 	usrsctp_init(0, conn_output);
 	usrsctp_sysctl_set_sctp_debug_on(0x0);
-	if (pthread_create(&tid, NULL, &handle_packets, (void *)&fd) != 0) {
-		printf("pthread_create failed\n");
-	}
+#if defined(__Userspace_os_Windows)
+	tid = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_packets, (void *)&fd, 0, NULL);
+#else
+	pthread_create(&tid, NULL, &handle_packets, (void *)&fd);
+#endif
 	if ((s = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 	}
@@ -169,7 +175,11 @@ main(int argc, char *argv[])
 	}
 	usrsctp_close(s);
 	while (usrsctp_finish() != 0) {
+#if defined (__Userspace_os_Windows)
+		Sleep(1000);
+#else
 		sleep(1);
+#endif
 	}
 	return (0);
 }
