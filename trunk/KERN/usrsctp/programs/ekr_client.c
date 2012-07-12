@@ -42,6 +42,9 @@
 #include <errno.h>
 #include <pthread.h>
 #include <unistd.h>
+#else
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #endif
 #include <usrsctp.h>
 
@@ -109,7 +112,11 @@ main(int argc, char *argv[])
 {
 	struct sockaddr_in sin;
 	struct sockaddr_conn sconn;
+#if defined(__Userspace_os_Windows)
 	int fd;
+#else
+	SOCKET fd;
+#endif
 	struct socket *s;
 #if defined(__Userspace_os_Windows)
 	HANDLE tid;
@@ -119,10 +126,17 @@ main(int argc, char *argv[])
 	struct sctp_sndinfo sndinfo;
 	char buffer[BUFFER_SIZE];
 
+	usrsctp_init(0, conn_output);
 	/* set up a connected UDP socket */
+#if defined(__Userspace_os_Windows)
+	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
+		printf("socket() failed with error: %ld\n", WSAGetLastError());
+	}
+#else
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 		perror("socket");
 	}
+#endif
 	memset(&sin, 0, sizeof(struct sockaddr_in));
 	sin.sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
@@ -130,9 +144,15 @@ main(int argc, char *argv[])
 #endif
 	sin.sin_port = htons(atoi(argv[2]));
 	sin.sin_addr.s_addr = inet_addr(argv[1]);
+#if defined(__Userspace_os_Windows)
+	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
+		printf("bind() failed with error: %ld\n", WSAGetLastError());
+	}
+#else
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
 		perror("bind");
 	}
+#endif
 	memset(&sin, 0, sizeof(struct sockaddr_in));
 	sin.sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
@@ -140,10 +160,15 @@ main(int argc, char *argv[])
 #endif
 	sin.sin_port = htons(atoi(argv[4]));
 	sin.sin_addr.s_addr = inet_addr(argv[3]);
-	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
-		perror("bind");
+#if defined(__Userspace_os_Windows)
+	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
+		printf("connect() failed with error: %ld\n", WSAGetLastError());
 	}
-	usrsctp_init(0, conn_output);
+#else
+	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
+		perror("connect");
+	}
+#endif
 	usrsctp_sysctl_set_sctp_debug_on(0x0);
 #if defined(__Userspace_os_Windows)
 	tid = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_packets, (void *)&fd, 0, NULL);

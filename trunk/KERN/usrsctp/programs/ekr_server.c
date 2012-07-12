@@ -129,7 +129,7 @@ main(int argc, char *argv[])
 	/* set up a connected UDP socket */
 #if defined(__Userspace_os_Windows)
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
-        	printf("socket() failed with error: %ld\n", WSAGetLastError());
+		printf("socket() failed with error: %ld\n", WSAGetLastError());
 	}
 #else
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
@@ -145,7 +145,7 @@ main(int argc, char *argv[])
 	sin.sin_addr.s_addr = inet_addr(argv[1]);
 #if defined(__Userspace_os_Windows)
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
-        	printf("bind() failed with error: %ld\n", WSAGetLastError());
+		printf("bind() failed with error: %ld\n", WSAGetLastError());
 	}
 #else
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
@@ -161,7 +161,7 @@ main(int argc, char *argv[])
 	sin.sin_addr.s_addr = inet_addr(argv[3]);
 #if defined(__Userspace_os_Windows)
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
-        	printf("connect() failed with error: %ld\n", WSAGetLastError());
+		printf("connect() failed with error: %ld\n", WSAGetLastError());
 	}
 #else
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
