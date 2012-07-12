@@ -111,7 +111,11 @@ main(int argc, char *argv[])
 	struct sockaddr_conn sconn;
 	int fd;
 	struct socket *s;
+#if defined(__Userspace_os_Windows)
+	HANDLE tid;
+#else
 	pthread_t tid;
+#endif
 	struct sctp_sndinfo sndinfo;
 	char buffer[BUFFER_SIZE];
 
@@ -179,7 +183,11 @@ main(int argc, char *argv[])
 	}
 	usrsctp_close(s);
 	while (usrsctp_finish() != 0) {
+#if defined (__Userspace_os_Windows)
+		Sleep(1000);
+#else
 		sleep(1);
+#endif
 	}
 	return (0);
 }
