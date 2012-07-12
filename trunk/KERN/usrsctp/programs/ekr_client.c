@@ -145,9 +145,11 @@ main(int argc, char *argv[])
 	}
 	usrsctp_init(0, conn_output);
 	usrsctp_sysctl_set_sctp_debug_on(0x0);
-	if (pthread_create(&tid, NULL, &handle_packets, (void *)&fd) != 0) {
-		printf("pthread_create failed\n");
-	}
+#if defined(__Userspace_os_Windows)
+	tid = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_packets, (void *)&fd, 0, NULL);
+#else
+	pthread_create(&tid, NULL, &handle_packets, (void *)&fd);
+#endif
 	if ((s = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 	}
