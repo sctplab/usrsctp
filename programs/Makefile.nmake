@@ -69,7 +69,7 @@ rtcweb:
 
 ekr_client:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c ekr_client.c
-	link -out:ekt_client.exe ekr_client.obj $(LINKFLAGS)
+	link -out:ekr_client.exe ekr_client.obj $(LINKFLAGS)
 
 ekr_server:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c ekr_server.c
