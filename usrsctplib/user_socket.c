@@ -2048,6 +2048,21 @@ sodisconnect(struct socket *so)
 	return (error);
 }
 
+int
+usrsctp_non_blocking(struct socket *so, int onoff) {
+	if (so == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+	SOCK_LOCK(so);
+	if (onoff != 0) {
+		so->so_state |= SS_NBIO;
+	} else {
+		so->so_state &= ~SS_NBIO;
+	}
+	SOCK_UNLOCK(so);
+	return (0);
+}
 
 int
 soconnect(struct socket *so, struct sockaddr *nam)
