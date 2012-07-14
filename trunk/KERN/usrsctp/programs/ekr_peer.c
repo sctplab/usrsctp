@@ -197,7 +197,11 @@ handle_peer_address_change_event(struct sctp_paddr_change *spc)
 		break;
 	case AF_CONN:
 		sconn = (struct sockaddr_conn *)&spc->spc_aaddr;
+#if defined(__Userspace_os_Windows)
+		_snprintf(addr_buf, INET6_ADDRSTRLEN, "%p", sconn->sconn_addr);
+#else
 		snprintf(addr_buf, INET6_ADDRSTRLEN, "%p", sconn->sconn_addr);
+#endif
 		addr = addr_buf;
 		break;
 	default:
