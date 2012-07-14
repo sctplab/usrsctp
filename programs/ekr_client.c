@@ -71,8 +71,11 @@ handle_packets(void *arg)
 	if ((buf = (char *)malloc(MAX_PACKET_SIZE)) == NULL) {
 		return (NULL);
 	}
-	while ((length = recv(*fdp, buf, MAX_PACKET_SIZE, 0)) > 0) {
-		usrsctp_conninput(fdp, buf, length, 0);
+	for (;;) {
+		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
+		if (length > 0) {
+			usrsctp_conninput(fdp, buf, length, 0);
+		}
 	}
 	free(buf);
 	return (NULL);
@@ -199,16 +202,18 @@ main(int argc, char *argv[])
 	if ((s = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 	}
+#if 1
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
 #ifdef HAVE_SIN_LEN
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif
 	sconn.sconn_port = htons(0);
-	sconn.sconn_addr = NULL;
+	sconn.sconn_addr = &fd;
 	if (usrsctp_bind(s, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_bind");
 	}
+#endif
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
 #ifdef HAVE_SIN_LEN
