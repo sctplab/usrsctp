@@ -833,6 +833,10 @@ usrsctp_sendv(struct socket *so,
 	int retvalsendmsg;
 	int use_sinfo;
 
+	if (so == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
 	memset(&sinfo, 0, sizeof(struct sctp_sndrcvinfo));
 	use_sinfo = 0;
 	switch (infotype) {
@@ -1497,9 +1501,17 @@ usrsctp_socket(int domain, int type, int protocol,
 {
 	struct socket *so;
 
+	if ((protocol = IPPROTO_SCTP) && (SCTP_BASE_VAR(sctp_pcb_initialized) == 0)) {
+		errno = EPROTONOSUPPORT;
+		return (NULL);
+	}
 	if ((receive_cb == NULL) &&
-	   ((send_cb != NULL) || (sb_threshold != 0) || (ulp_info != NULL))) {
+	    ((send_cb != NULL) || (sb_threshold != 0) || (ulp_info != NULL))) {
 		errno = EINVAL;
+		return (NULL);
+	}
+	if ((domain == AF_CONN) && (SCTP_BASE_VAR(conn_output) == NULL)) {
+		errno = EAFNOSUPPORT;
 		return (NULL);
 	}
 	errno = socreate(domain, &so, type, protocol);
@@ -1749,6 +1761,10 @@ usrsctp_bind(struct socket *so, struct sockaddr *name, int namelen)
 {
 	struct sockaddr *sa;
 
+	if (so == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
 	if ((errno = getsockaddr(&sa, (caddr_t)name, namelen)) != 0)
 		return (-1);
 
@@ -2233,6 +2249,9 @@ userspace_shutdown(struct socket *so, int how)
 int
 usrsctp_finish(void)
 {
+	if (SCTP_BASE_VAR(sctp_pcb_initialized) == 0) {
+		return (0);
+	}
 	if (SCTP_INP_INFO_TRYLOCK()) {
 		if (!LIST_EMPTY(&SCTP_BASE_INFO(listhead))) {
 			SCTP_INP_INFO_RUNLOCK();
