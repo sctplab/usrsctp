@@ -70,8 +70,11 @@ handle_packets(void *arg)
 	if ((buf = (char *)malloc(MAX_PACKET_SIZE)) == NULL) {
 		return (NULL);
 	}
-	while ((length = recv(*fdp, buf, MAX_PACKET_SIZE, 0)) > 0) {
-		usrsctp_conninput(fdp, buf, length, 0);
+	for (;;) {
+		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
+		if (length > 0) {
+			usrsctp_conninput(fdp, buf, length, 0);
+		}
 	}
 	free(buf);
 	return (NULL);
