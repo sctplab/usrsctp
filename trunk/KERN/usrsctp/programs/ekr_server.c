@@ -73,7 +73,7 @@ handle_packets(void *arg)
 	for (;;) {
 		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
-			usrsctp_conninput(fdp, buf, length, 0);
+			usrsctp_conninput(fdp, buf, (size_t)length, 0);
 		}
 	}
 	free(buf);
