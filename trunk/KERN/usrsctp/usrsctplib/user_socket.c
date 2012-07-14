@@ -2065,7 +2065,8 @@ sodisconnect(struct socket *so)
 }
 
 int
-usrsctp_set_non_blocking(struct socket *so, int onoff) {
+usrsctp_set_non_blocking(struct socket *so, int onoff)
+{
 	if (so == NULL) {
 		errno = EBADF;
 		return (-1);
@@ -2078,6 +2079,25 @@ usrsctp_set_non_blocking(struct socket *so, int onoff) {
 	}
 	SOCK_UNLOCK(so);
 	return (0);
+}
+
+int
+usrsctp_get_non_blocking(struct socket *so)
+{
+	int result;
+
+	if (so == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+	SOCK_LOCK(so);
+	if (so->so_state | SS_NBIO) {
+		result = 1;
+	} else {
+		result = 0;
+	}
+	SOCK_UNLOCK(so);
+	return (result);
 }
 
 int
