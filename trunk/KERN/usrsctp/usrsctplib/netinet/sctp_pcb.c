@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 237715 2012-06-28 16:01:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 238455 2012-07-14 20:08:03Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5925,6 +5925,7 @@ sctp_destination_is_reachable(struct sctp_tcb *stcb, struct sockaddr *destaddr)
 #else
 		answer = inp->ip_inp.inp.inp_vflag & INP_IPV4;
 #endif
+		break;
 #if defined(__Userspace__)
 	case AF_CONN:
 		answer = inp->ip_inp.inp.inp_vflag & INP_CONN;
