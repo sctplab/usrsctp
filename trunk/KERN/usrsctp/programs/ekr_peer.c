@@ -392,11 +392,14 @@ main(int argc, char *argv[])
 #else
 	pthread_create(&tid, NULL, &handle_packets, (void *)&fd);
 #endif
-	usrsctp_sysctl_set_sctp_debug_on(0xffffffff);
+	usrsctp_sysctl_set_sctp_debug_on(0x0);
 	if ((s = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 	}
 	/* Enable the events of interest. */
+	if (usrsctp_set_non_blocking(s, 1) < 0) {
+		perror("usrsctp_set_non_blocking");
+	}
 	memset(&event, 0, sizeof(event));
 	event.se_assoc_id = SCTP_ALL_ASSOC;
 	event.se_on = 1;
