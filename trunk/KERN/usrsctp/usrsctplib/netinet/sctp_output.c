@@ -5946,21 +5946,8 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			sconn = (struct sockaddr_conn *)to;
 			memcpy(&stc.address, &sconn->sconn_addr, sizeof(void *));
 			stc.addr_type = SCTP_CONN_ADDRESS;
+			memcpy(&stc.laddress, &sconn->sconn_addr, sizeof(void *));
 			stc.scope_id = 0;
-			if (net->src_addr_selected == 0) {
-				/*
-				 * strange case here, the INIT should have
-				 * done the selection.
-				 */
-				net->ro._s_addr = sctp_source_address_selection(inp,
-										stcb, (sctp_route_t *)&net->ro,
-										net, 0, vrf_id);
-				if (net->ro._s_addr == NULL)
-					return;
-
-				net->src_addr_selected = 1;
-			}
-			memcpy(&stc.laddress, &net->ro._s_addr->address.sconn.sconn_addr, sizeof(void *));
 			stc.laddr_type = SCTP_CONN_ADDRESS;
 			break;
 #endif
