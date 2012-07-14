@@ -45,7 +45,8 @@ all: \
 	tsctp \
 	rtcweb \
 	ekr_client \
-	ekr_server
+	ekr_server \
+	ekr_peer
 
 client:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c client.c
@@ -75,6 +76,10 @@ ekr_server:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c ekr_server.c
 	link -out:ekr_server.exe ekr_server.obj $(LINKFLAGS)
 
+ekr_peer:
+	$(CC) $(CFLAGS) $(CVARSDLL) -c ekr_peer.c
+	link -out:ekr_peer.exe ekr_peer.obj $(LINKFLAGS)
+
 clean:
 	del /F client
 	del /F client.obj
@@ -90,3 +95,5 @@ clean:
 	del /F ekr_client.obj
 	del /F ekr_server
 	del /F ekr_server.obj
+	del /F ekr_peer
+	del /F ekr_peer.obj
