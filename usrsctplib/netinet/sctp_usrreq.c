@@ -852,29 +852,32 @@ sctpconn_attach(struct socket *so, int proto SCTP_UNUSED, uint32_t vrf_id)
 }
 
 int
-sctpconn_bind(struct socket *so, struct sockaddr *addr) {
-	void *p = NULL;
-	struct sctp_inpcb *inp = NULL;
+sctpconn_bind(struct socket *so, struct sockaddr *addr)
+{
+	struct sockaddr_conn *sconn;
 	int error;
 
-	if (addr && addr->sa_family != AF_CONN) {
+	if ((addr != NULL) && (addr->sa_family != AF_CONN)) {
 		/* must be a v4 address! */
-		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 		return (EINVAL);
 	}
 #if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
-	if (addr && (addr->sa_len != sizeof(struct sockaddr_conn))) {
-		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+	if ((addr != NULL) && (addr->sa_len != sizeof(struct sockaddr_conn))) {
+		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 		return (EINVAL);
 	}
 #endif
-	inp = (struct sctp_inpcb *)so->so_pcb;
-	if (inp == NULL) {
-		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+	sconn = (struct sockaddr_conn *)addr;
+	if ((sconn != NULL) && (sconn->sconn_addr != NULL)) {
+		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 		return (EINVAL);
 	}
-
-	error = sctp_inpcb_bind(so, addr, NULL, p);
+	if (so->so_pcb == NULL) {
+		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+		return (EINVAL);
+	}
+	error = sctp_inpcb_bind(so, addr, NULL, NULL);
 	return (error);
 }
 
