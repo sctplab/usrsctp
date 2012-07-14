@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 238087 2012-07-03 21:41:19Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 238454 2012-07-14 19:44:39Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3014,14 +3014,12 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 			return (m);
 		}
 	}
-	if ((*inp_p)->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) {
-		if (notification) {
-			sctp_ulp_notify(notification, *stcb, 0, NULL, SCTP_SO_NOT_LOCKED);
-		}
-		if (send_int_conf) {
-			sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_CONFIRMED,
-			                (*stcb), 0, (void *)netl, SCTP_SO_NOT_LOCKED);
-		}
+	if (notification) {
+		sctp_ulp_notify(notification, *stcb, 0, NULL, SCTP_SO_NOT_LOCKED);
+	}
+	if (send_int_conf) {
+		sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_CONFIRMED,
+		                (*stcb), 0, (void *)netl, SCTP_SO_NOT_LOCKED);
 	}
 	return (m);
 }
