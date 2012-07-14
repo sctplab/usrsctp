@@ -29,7 +29,7 @@
 #
 
 EXTRA_DIST = Makefile.nmake tsctp.c daytime_server.c discard_server.c client.c rtcweb.c ekr_client.c ekr_server.c
-noinst_PROGRAMS = tsctp daytime_server discard_server client rtcweb ekr_client ekr_server
+noinst_PROGRAMS = tsctp daytime_server discard_server client rtcweb ekr_client ekr_server ekr_peer
 tsctp_SOURCES = tsctp.c
 tsctp_LDADD = ../usrsctplib/libusrsctp.la
 daytime_server_SOURCES = daytime_server.c
@@ -44,5 +44,7 @@ ekr_server_SOURCES = ekr_server.c
 ekr_server_LDADD = ../usrsctplib/libusrsctp.la
 ekr_client_SOURCES = ekr_client.c
 ekr_client_LDADD = ../usrsctplib/libusrsctp.la
+ekr_peer_SOURCES = ekr_peer.c
+ekr_peer_LDADD = ../usrsctplib/libusrsctp.la
 INCLUDES = -I$(srcdir)/../usrsctplib
 
