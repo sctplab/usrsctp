@@ -927,7 +927,7 @@ void
 usrsctp_conninput(void *, void *, size_t, uint8_t);
 
 int
-usrsctp_non_blocking(struct socket *, int);
+usrsctp_set_non_blocking(struct socket *, int);
 
 #define USRSCTP_SYSCTL_DECL(__field)           \
 void usrsctp_sysctl_set_ ## __field(uint32_t value);\
