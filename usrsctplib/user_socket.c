@@ -760,9 +760,6 @@ userspace_sctp_sendmsg(struct socket *so,
 	struct sctp_sndrcvinfo sndrcvinfo, *sinfo = &sndrcvinfo;
 	struct uio auio;
 	struct iovec iov[1];
-	int error = 0;
-	int uflags = 0;
-	int retvalsendmsg;
 
 	sinfo->sinfo_ppid = ppid;
 	sinfo->sinfo_flags = flags;
@@ -774,13 +771,13 @@ userspace_sctp_sendmsg(struct socket *so,
 
 	/* Perform error checks on destination (to) */
 	if (tolen > SOCK_MAXADDRLEN){
-		error = (ENAMETOOLONG);
-		goto sendmsg_return;
+		errno = ENAMETOOLONG;
+		return (-1);
 	}
 	if ((tolen > 0) &&
 	    ((to == NULL) || (tolen < sizeof(struct sockaddr)))) {
 		errno = EINVAL;
-		goto sendmsg_return;
+		return (-1);
 	}
 	/* Adding the following as part of defensive programming, in case the application
 	   does not do it when preparing the destination address.*/
@@ -799,18 +796,12 @@ userspace_sctp_sendmsg(struct socket *so,
 	auio.uio_rw = UIO_WRITE;
 	auio.uio_offset = 0;			/* XXX */
 	auio.uio_resid = len;
-	error = sctp_lower_sosend(so, to, &auio, NULL, NULL, uflags, sinfo);
-sendmsg_return:
-	if (error == 0)
-		retvalsendmsg = len - auio.uio_resid;
-	else if (error == EWOULDBLOCK) {
-		errno = EWOULDBLOCK;
-		retvalsendmsg = -1;
+	errno = sctp_lower_sosend(so, to, &auio, NULL, NULL, 0, sinfo);
+	if (errno == 0) {
+		return (len - auio.uio_resid);
 	} else {
-		SCTP_PRINTF("%s: error = %d\n", __func__, error);
-		retvalsendmsg = -1;
+		return (-1);
 	}
-	return (retvalsendmsg);
 }
 
 
@@ -828,9 +819,6 @@ usrsctp_sendv(struct socket *so,
 	struct sctp_sndrcvinfo sinfo;
 	struct uio auio;
 	struct iovec iov[1];
-	int error = 0;
-	int uflags = 0;
-	int retvalsendmsg;
 	int use_sinfo;
 
 	if (so == NULL) {
@@ -904,9 +892,8 @@ usrsctp_sendv(struct socket *so,
 	/* Perform error checks on destination (to) */
 	if (addrcnt > 1) {
 		errno = EINVAL;
-		goto sendmsg_return;
+		return (-1);
 	}
-
 
 	iov[0].iov_base = (caddr_t)data;
 	iov[0].iov_len = len;
@@ -917,19 +904,12 @@ usrsctp_sendv(struct socket *so,
 	auio.uio_rw = UIO_WRITE;
 	auio.uio_offset = 0;			/* XXX */
 	auio.uio_resid = len;
-	error = sctp_lower_sosend(so, to, &auio, NULL, NULL, uflags, use_sinfo ? &sinfo : NULL);
-sendmsg_return:
-	if (error == 0)
-		retvalsendmsg = len - auio.uio_resid;
-	else if (error == EWOULDBLOCK) {
-		errno = EWOULDBLOCK;
-		retvalsendmsg = -1;
+	errno = sctp_lower_sosend(so, to, &auio, NULL, NULL, flags, use_sinfo ? &sinfo : NULL);
+	if (errno == 0) {
+		return (len - auio.uio_resid);
 	} else {
-		SCTP_PRINTF("%s: error = %d\n", __func__, error);
-		retvalsendmsg = -1;
+		return(-1);
 	}
-
-	return (retvalsendmsg);
 }
 
 
