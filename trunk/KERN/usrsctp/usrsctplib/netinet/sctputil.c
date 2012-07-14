@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 237715 2012-06-28 16:01:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 238458 2012-07-14 21:25:14Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3033,7 +3033,7 @@ sctp_notify_send_failed2(struct sctp_tcb *stcb, uint32_t error,
 	SCTP_BUF_LEN(m_notify) = 0;
 	if (sctp_stcb_is_feature_on(stcb->sctp_ep, stcb, SCTP_PCB_FLAGS_RECVNSENDFAILEVNT)) {
 		ssfe = mtod(m_notify, struct sctp_send_failed_event *);
-		ssfe->ssfe_type = SCTP_SEND_FAILED;
+		ssfe->ssfe_type = SCTP_SEND_FAILED_EVENT;
 		ssfe->ssfe_flags = SCTP_DATA_UNSENT;
 		ssfe->ssfe_length = length;
 		ssfe->ssfe_error = error;
