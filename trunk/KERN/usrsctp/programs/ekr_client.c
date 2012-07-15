@@ -209,7 +209,7 @@ main(int argc, char *argv[])
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif
 	sconn.sconn_port = htons(0);
-	sconn.sconn_addr = &fd;
+	sconn.sconn_addr = NULL;
 	if (usrsctp_bind(s, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_bind");
 	}
