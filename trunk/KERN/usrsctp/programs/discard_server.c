@@ -52,18 +52,45 @@ static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
            size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
 {
-	char name[INET6_ADDRSTRLEN];
+	char namebuf[INET6_ADDRSTRLEN];
+	char *name;
+	uint16_t port;
 
 	if (data) {
 		if (flags & MSG_NOTIFICATION) {
 			printf("Notification of length %d received.\n", (int)datalen);
 		} else {
+			switch (addr.sa.sa_family) {
+#ifdef INET
+			case AF_INET:
+				name = inet_ntop(AF_INET, &addr.sin.sin_addr, namebuf, INET6_ADDRSTRLEN):
+				port = ntohs(addr.sin.sin_port);
+				break;
+#endif
+#ifdef INET6
+			case AF_INET6:
+				inet_ntop(AF_INET6, &addr.sin6.sin6_addr, name, INET6_ADDRSTRLEN),
+				port = ntohs(addr.sin6.sin6_port);
+				break;
+#endif
+			case AF_CONN:
+#if defined(__Userspace_os_Windows)
+				_snprintf(namebuf, INET6_ADDRSTRLEN, "%p", &addr.sconn.sconn_addr);
+#else
+				snprintf(namebuf, INET6_ADDRSTRLEN, "%p", &addr.sconn.sconn_addr);
+#endif
+				name = namebuf;
+				port = ntohs(addr.sconn.sconn_port);
+				break;
+			default:
+				name = NULL;
+				port = 0;
+				break;
+			}
 			printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d, context %u.\n",
 			       (int)datalen,
-			       addr.sa.sa_family == AF_INET ?
-			           inet_ntop(AF_INET, &addr.sin.sin_addr, name, INET6_ADDRSTRLEN):
-			           inet_ntop(AF_INET6, &addr.sin6.sin6_addr, name, INET6_ADDRSTRLEN),
-			       ntohs(addr.sin.sin_port),
+			       name,
+			       port,
 			       rcv.rcv_sid,
 			       rcv.rcv_ssn,
 			       rcv.rcv_tsn,
