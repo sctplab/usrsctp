@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 238003 2012-07-02 16:44:09Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 238475 2012-07-15 11:04:49Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -42,7 +42,7 @@ __FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 238003 2012-07-02 16:44:09Z
 #include <netinet/sctp_pcb.h>
 #include <netinet/sctp_header.h>
 #include <netinet/sctp_var.h>
-#if defined(INET6)
+#ifdef INET6
 #include <netinet6/sctp6_var.h>
 #endif
 #include <netinet/sctp_sysctl.h>
@@ -66,7 +66,7 @@ __FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 238003 2012-07-02 16:44:09Z
 #endif
 #ifdef IPSEC
 #include <netipsec/ipsec.h>
-#if defined(INET6)
+#ifdef INET6
 #include <netipsec/ipsec6.h>
 #endif /* INET6 */
 #endif /* IPSEC */
@@ -1568,14 +1568,14 @@ sctp6_in6getaddr(struct socket *so, struct sockaddr *nam, uint32_t *namelen)
 int
 sctp6_in6getaddr(struct socket *so, struct mbuf *nam)
 {
-#if defined(INET)
+#ifdef INET
 	struct sockaddr *addr = mtod(nam, struct sockaddr *);
 #endif
 #else
 static int
 sctp6_in6getaddr(struct socket *so, struct mbuf *nam)
 {
-#if defined(INET)
+#ifdef INET
 	struct sockaddr *addr = mtod(nam, struct sockaddr *);
 #endif
 #endif
@@ -1631,7 +1631,7 @@ sctp6_getpeeraddr(struct socket *so, struct sockaddr *nam, uint32_t *namelen)
 int
 sctp6_getpeeraddr(struct socket *so, struct mbuf *nam)
 {
-#if defined(INET)
+#ifdef INET
 	struct sockaddr *addr = mtod(nam, struct sockaddr *);
 #endif
 #else
@@ -1639,7 +1639,7 @@ static
 int
 sctp6_getpeeraddr(struct socket *so, struct mbuf *nam)
 {
-#if defined(INET)
+#ifdef INET
 	struct sockaddr *addr = mtod(nam, struct sockaddr *);
 #endif
 

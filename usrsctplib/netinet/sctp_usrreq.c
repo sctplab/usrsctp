@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 237715 2012-06-28 16:01:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 238475 2012-07-15 11:04:49Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -42,7 +42,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 237715 2012-06-28 16:01:08Z t
 #include <netinet/sctp_pcb.h>
 #include <netinet/sctp_header.h>
 #include <netinet/sctp_var.h>
-#if defined(INET6)
+#ifdef INET6
 #if defined(__Userspace_os_FreeBSD)
 #include <netinet6/sctp6_var.h>
 #endif
@@ -191,7 +191,7 @@ sctp_finish(void)
 	}
 #endif
 #endif
-#if defined(INET)
+#ifdef INET
 	if (SCTP_BASE_VAR(userspace_rawsctp) != -1) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadraw), INFINITE);
@@ -207,7 +207,7 @@ sctp_finish(void)
 #endif
 	}
 #endif
-#if defined(INET6)
+#ifdef INET6
 	if (SCTP_BASE_VAR(userspace_rawsctp6) != -1) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadraw6), INFINITE);

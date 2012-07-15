@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 238455 2012-07-14 20:08:03Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 238475 2012-07-15 11:04:49Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3532,6 +3532,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 
 		memset(&store_sa, 0, sizeof(store_sa));
 		switch (addr->sa_family) {
+#ifdef INET
 		case AF_INET:
 		{
 			struct sockaddr_in *sin;
@@ -3541,6 +3542,8 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 			sin->sin_port = 0;
 			break;
 		}
+#endif
+#ifdef INET6
 		case AF_INET6:
 		{
 			struct sockaddr_in6 *sin6;
@@ -3550,6 +3553,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 			sin6->sin6_port = 0;
 			break;
 		}
+#endif
 #if defined(__Userspace__)
 		case AF_CONN:
 		{
@@ -5912,6 +5916,7 @@ sctp_destination_is_reachable(struct sctp_tcb *stcb, struct sockaddr *destaddr)
 	}
 	/* NOTE: all "scope" checks are done when local addresses are added */
 	switch (destaddr->sa_family) {
+#ifdef INET6
 	case AF_INET6:
 #if !(defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__))
 		answer = inp->inp_vflag & INP_IPV6;
@@ -5919,6 +5924,8 @@ sctp_destination_is_reachable(struct sctp_tcb *stcb, struct sockaddr *destaddr)
 		answer = inp->ip_inp.inp.inp_vflag & INP_IPV6;
 #endif
 		break;
+#endif
+#ifdef INET
 	case AF_INET:
 #if !(defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__))
 		answer = inp->inp_vflag & INP_IPV4;
@@ -5926,6 +5933,7 @@ sctp_destination_is_reachable(struct sctp_tcb *stcb, struct sockaddr *destaddr)
 		answer = inp->ip_inp.inp.inp_vflag & INP_IPV4;
 #endif
 		break;
+#endif
 #if defined(__Userspace__)
 	case AF_CONN:
 		answer = inp->ip_inp.inp.inp_vflag & INP_CONN;
@@ -6043,7 +6051,7 @@ sctp_add_local_addr_ep(struct sctp_inpcb *inp, struct sctp_ifa *ifa, uint32_t ac
 #endif
 			break;
 #endif
-#ifdef INET6
+#ifdef INET
 		case AF_INET:
 #if !(defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__))
 			inp->inp_vflag |= INP_IPV4;

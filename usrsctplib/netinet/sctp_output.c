@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 238294 2012-07-09 10:59:39Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 238475 2012-07-15 11:04:49Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -8739,12 +8739,14 @@ again_one_more_time:
 		}
 		/* now lets add any data within the MTU constraints */
 		switch (((struct sockaddr *)&net->ro._l_addr)->sa_family) {
+#ifdef INET
 		case AF_INET:
 			if (net->mtu > (sizeof(struct ip) + sizeof(struct sctphdr)))
 				omtu = net->mtu - (sizeof(struct ip) + sizeof(struct sctphdr));
 			else
 				omtu = 0;
 			break;
+#endif
 #ifdef INET6
 		case AF_INET6:
 			if (net->mtu > (sizeof(struct ip6_hdr) + sizeof(struct sctphdr)))
@@ -12916,7 +12918,7 @@ sctp_lower_sosend(struct socket *so,
 	if (addr) {
 		union sctp_sockstore *raddr = (union sctp_sockstore *)addr;
 		switch (raddr->sa.sa_family) {
-#if defined(INET)
+#ifdef INET
 		case AF_INET:
 #if defined(__FreeBSD__) || defined(__APPLE__)
 			if (raddr->sin.sin_len != sizeof(struct sockaddr_in)) {
@@ -12928,7 +12930,7 @@ sctp_lower_sosend(struct socket *so,
 			port = raddr->sin.sin_port;
 			break;
 #endif
-#if defined(INET6)
+#ifdef INET6
 		case AF_INET6:
 #if defined(__FreeBSD__) || defined(__APPLE__)
 			if (raddr->sin6.sin6_len != sizeof(struct sockaddr_in6)) {
