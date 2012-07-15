@@ -338,7 +338,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 	PIP_ADAPTER_ADDRESSES pAdapterAddrs, pAdapterAddrs6, pAdapt;
 	PIP_ADAPTER_UNICAST_ADDRESS pUnicast;
 
-#if defined(INET)
+#ifdef INET
 	AdapterAddrsSize = 0;
 
 	if ((Err = GetAdaptersAddresses(AF_INET, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
@@ -385,7 +385,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 	if (pAdapterAddrs)
 		FREE(pAdapterAddrs);
 #endif
-#if defined(INET6)
+#ifdef INET6
 	AdapterAddrsSize = 0;
 
 	if ((Err = GetAdaptersAddresses(AF_INET6, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
