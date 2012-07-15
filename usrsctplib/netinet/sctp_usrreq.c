@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 238475 2012-07-15 11:04:49Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 238501 2012-07-15 20:16:17Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -183,7 +183,9 @@ sctp_finish(void)
 	sctp_stop_main_timer();
 #endif
 #if defined(__Userspace__)
+#if defined(INET) || defined(INET6)
 	recv_thread_destroy();
+#endif
 #if !defined(__Userspace_os_Windows)
 #if defined(INET) || defined(INET6)
 	if (SCTP_BASE_VAR(userspace_route) != -1) {
@@ -5991,7 +5993,6 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 	case SCTP_BINDX_ADD_ADDR:
 	{
 		struct sctp_getaddresses *addrs;
-		size_t sz;
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
 		struct thread *td;
 
@@ -6001,8 +6002,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				    optsize);
 #ifdef INET
 		if (addrs->addr->sa_family == AF_INET) {
-			sz = sizeof(struct sctp_getaddresses) - sizeof(struct sockaddr) + sizeof(struct sockaddr_in);
-			if (optsize < sz) {
+			if (optsize < sizeof(struct sctp_getaddresses) - sizeof(struct sockaddr) + sizeof(struct sockaddr_in)) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 				error = EINVAL;
 				break;
@@ -6017,8 +6017,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 #endif
 #ifdef INET6
 		if (addrs->addr->sa_family == AF_INET6) {
-			sz = sizeof(struct sctp_getaddresses) - sizeof(struct sockaddr) + sizeof(struct sockaddr_in6);
-			if (optsize < sz) {
+			if (optsize < sizeof(struct sctp_getaddresses) - sizeof(struct sockaddr) + sizeof(struct sockaddr_in6)) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 				error = EINVAL;
 				break;
@@ -6044,7 +6043,6 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 	case SCTP_BINDX_REM_ADDR:
 	{
 		struct sctp_getaddresses *addrs;
-		size_t sz;
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
 		struct thread *td;
 		td = (struct thread *)p;
@@ -6053,8 +6051,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		SCTP_CHECK_AND_CAST(addrs, optval, struct sctp_getaddresses, optsize);
 #ifdef INET
 		if (addrs->addr->sa_family == AF_INET) {
-			sz = sizeof(struct sctp_getaddresses) - sizeof(struct sockaddr) + sizeof(struct sockaddr_in);
-			if (optsize < sz) {
+			if (optsize < sizeof(struct sctp_getaddresses) - sizeof(struct sockaddr) + sizeof(struct sockaddr_in)) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 				error = EINVAL;
 				break;
@@ -6069,8 +6066,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 #endif
 #ifdef INET6
 		if (addrs->addr->sa_family == AF_INET6) {
-			sz = sizeof(struct sctp_getaddresses) - sizeof(struct sockaddr) + sizeof(struct sockaddr_in6);
-			if (optsize < sz) {
+			if (optsize < sizeof(struct sctp_getaddresses) - sizeof(struct sockaddr) + sizeof(struct sockaddr_in6)) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 				error = EINVAL;
 				break;
