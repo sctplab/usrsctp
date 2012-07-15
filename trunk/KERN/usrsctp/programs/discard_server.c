@@ -214,6 +214,8 @@ main(int argc, char *argv[])
 						        (flags & MSG_EOR) ? 1 : 0);
 					}
 				}
+			} else {
+				break;
 			}
 		}
 	}
