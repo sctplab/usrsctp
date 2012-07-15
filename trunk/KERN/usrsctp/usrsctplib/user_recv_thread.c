@@ -28,7 +28,7 @@
  *
  */
 
-#if defined(INET) || #defined(INET6)
+#if defined(INET) || defined(INET6)
 #include <sys/types.h>
 #if !defined(__Userspace_os_Windows)
 #include <sys/socket.h>
