@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 238475 2012-07-15 11:04:49Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 238501 2012-07-15 20:16:17Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3834,6 +3834,7 @@ sctp_get_ect(struct sctp_tcb *stcb)
 	}
 }
 
+#if defined(INET) || defined(INET6)
 static void
 sctp_handle_no_route(struct sctp_tcb *stcb,
                      struct sctp_nets *net,
@@ -3877,6 +3878,7 @@ sctp_handle_no_route(struct sctp_tcb *stcb,
 		}
 	}
 }
+#endif
 
 static int
 sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
@@ -3921,16 +3923,19 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 	/* Will need ifdefs around this */
 #ifdef __Panda__
 	pakhandle_type o_pak;
-#else
-	struct mbuf *o_pak;
 #endif
 	struct mbuf *newm;
 	struct sctphdr *sctphdr;
 	int packet_length;
 	int ret;
 	uint32_t vrf_id;
+#if defined(INET) || defined(INET6)
+#if !defined(__Panda__)
+	struct mbuf *o_pak;
+#endif
 	sctp_route_t *ro = NULL;
 	struct udphdr *udp = NULL;
+#endif
 	uint8_t tos_value;
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 	struct socket *so = NULL;
