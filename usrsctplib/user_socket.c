@@ -531,16 +531,43 @@ sonewconn(struct socket *head, int connstatus)
 	so->so_options = head->so_options &~ SO_ACCEPTCONN;
 	so->so_linger = head->so_linger;
 	so->so_state = head->so_state | SS_NOFDREF;
-	so->so_proto = head->so_proto;
+	so->so_dom = head->so_dom;
 #ifdef MAC
 	SOCK_LOCK(head);
 	mac_create_socket_from_socket(head, so);
 	SOCK_UNLOCK(head);
 #endif
-	if (soreserve(so, head->so_snd.sb_hiwat, head->so_rcv.sb_hiwat) ||
-	    sctp_attach(so, IPPROTO_SCTP, SCTP_DEFAULT_VRFID)) {
+	if (soreserve(so, head->so_snd.sb_hiwat, head->so_rcv.sb_hiwat)) {
 		sodealloc(so);
 		return (NULL);
+	}
+	switch (head->so_dom) {
+#ifdef INET
+	case AF_INET:
+		if (sctp_attach(so, IPPROTO_SCTP, SCTP_DEFAULT_VRFID)) {
+			sodealloc(so);
+			return (NULL);
+		}
+		break;
+#endif
+#ifdef INET6
+	case AF_INET6:
+		if (sctp6_attach(so, IPPROTO_SCTP, SCTP_DEFAULT_VRFID)) {
+			sodealloc(so);
+			return (NULL);
+		}
+		break;
+#endif
+	case AF_CONN:
+		if (sctpconn_attach(so, IPPROTO_SCTP, SCTP_DEFAULT_VRFID)) {
+			sodealloc(so);
+			return (NULL);
+		}
+		break;
+	default:
+		sodealloc(so);
+		return (NULL);
+		break;
 	}
 	so->so_rcv.sb_lowat = head->so_rcv.sb_lowat;
 	so->so_snd.sb_lowat = head->so_snd.sb_lowat;
@@ -1213,12 +1240,15 @@ usrsctp_recvv(struct socket *so,
 	struct iovec iov[SCTP_SMALL_IOVEC_SIZE];
 	struct iovec *tiov;
 	int iovlen = 1;
-	int error = 0;
-	int ulen, i, retval;
+	int ulen, i;
 	struct sctp_rcvinfo *rcv;
 	struct sctp_recvv_rn *rn;
 	struct sctp_extrcvinfo seinfo;
 
+	if (so == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
 	iov[0].iov_base = dbuf;
 	iov[0].iov_len = len;
 
@@ -1231,19 +1261,18 @@ usrsctp_recvv(struct socket *so,
 	tiov = iov;
 	for (i = 0; i <iovlen; i++, tiov++) {
 		if ((auio.uio_resid += tiov->iov_len) < 0) {
-			error = EINVAL;
-			SCTP_PRINTF("%s: error = %d\n", __func__, error);
+			errno = EINVAL;
 			return (-1);
 		}
 	}
 	ulen = auio.uio_resid;
-	error = sctp_sorecvmsg(so, &auio, (struct mbuf **)NULL,
+	errno = sctp_sorecvmsg(so, &auio, (struct mbuf **)NULL,
 		    from, *fromlen, msg_flags,
 		    (struct sctp_sndrcvinfo *)&seinfo, 1);
-	if (error) {
+	if (errno) {
 		if (auio.uio_resid != (int)ulen &&
-		    (error == ERESTART || error == EINTR || error == EWOULDBLOCK)) {
-			error = 0;
+		    (errno == ERESTART || errno == EINTR || errno == EWOULDBLOCK)) {
+			errno = 0;
 		}
 	}
 	if ((*msg_flags & MSG_NOTIFICATION) == 0) {
@@ -1297,12 +1326,10 @@ usrsctp_recvv(struct socket *so,
 			*infolen = 0;
 		}
 	}
-	if (error == 0) {
+	if (errno == 0) {
 		/* ready return value */
-		retval = (int)ulen - auio.uio_resid;
-		return (retval);
+		return((int)ulen - auio.uio_resid);
 	} else {
-		SCTP_PRINTF("%s: error = %d\n", __func__, error);
 		return (-1);
 	}
 }
@@ -1348,6 +1375,7 @@ socreate(int dom, struct socket **aso, int type, int proto)
 	TAILQ_INIT(&so->so_comp);
 	so->so_type = type;
 	so->so_count = 1;
+	so->so_dom = dom;
 	/*
 	 * Auto-sizing of socket buffers is managed by the protocols and
 	 * the appropriate flags must be set in the pru_attach function.
