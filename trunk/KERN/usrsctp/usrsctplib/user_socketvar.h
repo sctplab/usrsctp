@@ -130,7 +130,7 @@ struct socket {
 	short	so_state;		/* (b) internal state flags SS_* */
 	int	so_qstate;		/* (e) internal state flags SQ_* */
 	void	*so_pcb;		/* protocol control block */
-	struct	protosw *so_proto;	/* (a) protocol handle */
+	int	so_dom;
 /*
  * Variables for connection queuing.
  * Socket where accepts occur is so_head in all subsidiary sockets.
