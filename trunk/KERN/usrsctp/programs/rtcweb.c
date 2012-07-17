@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtcweb.c,v 1.25 2012-07-11 05:49:51 tuexen Exp $
+ * $Id: rtcweb.c,v 1.26 2012-07-17 13:50:02 tuexen Exp $
  */
 
 /*
@@ -1285,7 +1285,9 @@ main(int argc, char *argv[])
 	} else {
 		usrsctp_init(9899, NULL);
 	}
+#ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(0);
+#endif
 	usrsctp_sysctl_set_sctp_blackhole(2);
 
 	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &peer_connection)) == NULL) {

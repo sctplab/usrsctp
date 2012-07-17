@@ -193,7 +193,9 @@ main(int argc, char *argv[])
 		perror("connect");
 	}
 #endif
+#ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(0x0);
+#endif
 #if defined(__Userspace_os_Windows)
 	tid = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_packets, (void *)&fd, 0, NULL);
 #else

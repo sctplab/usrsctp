@@ -131,7 +131,9 @@ main(int argc, char *argv[])
 	} else {
 		usrsctp_init(9899, NULL);
 	}
+#ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(0);
+#endif
 	usrsctp_sysctl_set_sctp_blackhole(2);
 
 	if ((sock = usrsctp_socket(AF_INET6, SOCK_SEQPACKET, IPPROTO_SCTP, use_cb?receive_cb:NULL, NULL, 0, NULL)) == NULL) {
