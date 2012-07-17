@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 238475 2012-07-15 11:04:49Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 238550 2012-07-17 13:03:47Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5588,6 +5588,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		/* now clean up any chunks here */
 		TAILQ_FOREACH_SAFE(sp, &outs->outqueue, next, nsp) {
 			TAILQ_REMOVE(&outs->outqueue, sp, next);
+			sctp_free_spbufspace(stcb, asoc, sp);
 			if (sp->data) {
 				if (so) {
 					/* Still an open socket - report */
@@ -5598,19 +5599,14 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 					sctp_m_freem(sp->data);
 					sp->data = NULL;
 					sp->tail_mbuf = NULL;
+					sp->length = 0;
 				}
 			}
 			if (sp->net) {
 				sctp_free_remote_addr(sp->net);
 				sp->net = NULL;
 			}
-			sctp_free_spbufspace(stcb, asoc, sp);
-			if (sp->holds_key_ref)
-				sctp_auth_key_release(stcb, sp->auth_keyid, SCTP_SO_LOCKED);
-			/* Free the zone stuff  */
-			SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_strmoq), sp);
-			SCTP_DECR_STRMOQ_COUNT();
-			/*sa_ignore FREED_MEMORY*/
+			sctp_free_a_strmoq(stcb, sp, SCTP_SO_LOCKED);
 		}
 	}
 	/*sa_ignore FREED_MEMORY*/
