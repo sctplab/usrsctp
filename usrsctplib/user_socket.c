@@ -1889,8 +1889,6 @@ user_accept(struct socket *aso,  struct sockaddr **name, socklen_t *namelen, str
 
 	if (name) {
 		*name = NULL;
-		if (*namelen < 0)
-			return (EINVAL);
 	}
 
 	if ((head->so_options & SO_ACCEPTCONN) == 0) {
