@@ -2231,6 +2231,21 @@ int userspace_connect(struct socket *so, struct sockaddr *name, int namelen)
 void
 usrsctp_close(struct socket *so) {
 	if (so != NULL) {
+		if (so->so_options & SO_ACCEPTCONN) {
+			struct socket *sp;
+
+			ACCEPT_LOCK();
+			while ((sp = TAILQ_FIRST(&so->so_comp)) != NULL) {
+				TAILQ_REMOVE(&so->so_comp, sp, so_list);
+				so->so_qlen--;
+				sp->so_qstate &= ~SQ_COMP;
+				sp->so_head = NULL;
+				ACCEPT_UNLOCK();
+				soabort(sp);
+				ACCEPT_LOCK();
+			}
+			ACCEPT_UNLOCK();
+		}
 		ACCEPT_LOCK();
 		SOCK_LOCK(so);
 		sorele(so);
