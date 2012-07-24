@@ -96,10 +96,10 @@ conn_output(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df
 #endif
 #if defined(__Userspace_os_Windows)
 	if (send(*fdp, buffer, length, 0) == SOCKET_ERROR) {
-		return(WSAGetLastError());
+		return (WSAGetLastError());
 #else
 	if (send(*fdp, buffer, length, 0) < 0) {
-		return(errno);
+		return (errno);
 #endif
 	} else {
 		return (0);
