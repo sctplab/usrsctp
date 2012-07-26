@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 238501 2012-07-15 20:16:17Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 238790 2012-07-26 08:10:29Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UIO_H_
@@ -1120,6 +1120,7 @@ struct sctpstat {
 #define SCTP_STAT_DECR_COUNTER64(_x) SCTP_STAT_DECR(_x)
 #define SCTP_STAT_DECR_GAUGE32(_x) SCTP_STAT_DECR(_x)
 
+#if defined(__Userspace__)
 union sctp_sockstore {
 #if defined(INET)
 	struct sockaddr_in sin;
@@ -1127,11 +1128,16 @@ union sctp_sockstore {
 #if defined(INET6)
 	struct sockaddr_in6 sin6;
 #endif
-#if defined(__Userspace__)
 	struct sockaddr_conn sconn;
-#endif
 	struct sockaddr sa;
 };
+#else
+union sctp_sockstore {
+	struct sockaddr_in sin;
+	struct sockaddr_in6 sin6;
+	struct sockaddr sa;
+};
+#endif
 
 
 /***********************************/
