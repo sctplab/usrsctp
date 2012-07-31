@@ -273,6 +273,12 @@ static void *
 recv_function_raw(void *arg)
 {
 	struct mbuf **recvmbuf;
+	struct ip *iphdr;
+	struct sctphdr *sh;
+	uint16_t port;
+	int offset, compute_crc = 1, ecn = 0;
+	struct sctp_chunkhdr *ch;
+	struct sockaddr_in src, dst;
 #if !defined(__Userspace_os_Windows)
 	struct iovec recv_iovec[MAXLEN_MBUF_CHAIN];
 	int iovcnt = MAXLEN_MBUF_CHAIN;
@@ -292,6 +298,9 @@ recv_function_raw(void *arg)
 	int iovlen = MCLBYTES;
 	int want_ext = (iovlen > MLEN)? 1 : 0;
 	int want_header = 0;
+	
+	bzero((void *)&src, sizeof(struct sockaddr_in));
+	bzero((void *)&dst, sizeof(struct sockaddr_in));
 
 	recvmbuf = malloc(sizeof(struct mbuf *) * MAXLEN_MBUF_CHAIN);
 
@@ -357,12 +366,60 @@ recv_function_raw(void *arg)
 				(to_fill)++;
 			} while (ncounter > 0);
 		}
+		
+		iphdr = mtod(recvmbuf[0], struct ip *);
+		sh = (struct sctphdr *)((caddr_t)iphdr + sizeof(struct ip));
+		ch = (struct sctp_chunkhdr *)((caddr_t)sh + sizeof(struct sctphdr));
+		offset = sizeof(struct ip) + sizeof(struct sctphdr);
+		
+		if (iphdr->ip_tos != 0) {
+			ecn = iphdr->ip_tos & 0x02;
+		}
+		
+		dst.sin_family = AF_INET;
+#ifdef HAVE_SIN_LEN
+		dst.sin_len = sizeof(struct sockaddr_in);
+#endif
+		dst.sin_addr = iphdr->ip_dst;
+		dst.sin_port = sh->dest_port;
+
+		src.sin_family = AF_INET;
+#ifdef HAVE_SIN_LEN
+		src.sin_len = sizeof(struct sockaddr_in);
+#endif
+		src.sin_addr = iphdr->ip_src;
+		src.sin_port = sh->src_port;
+		
+		/* SCTP does not allow broadcasts or multicasts */
+		if (IN_MULTICAST(ntohl(dst.sin_addr.s_addr))) {
+			return NULL;
+		}
+		if (SCTP_IS_IT_BROADCAST(dst.sin_addr, recvmbuf[0])) {
+			return NULL;
+		}
+
+		port = 0;
+		
+		if ((src.sin_addr.s_addr == dst.sin_addr.s_addr) ||
+	     (SCTP_IS_IT_LOOPBACK(recvmbuf[0]))) {
+			compute_crc = 0;
+		}
+
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
-		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_input with off=%d\n", (int)sizeof(struct ip));
+		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_input with off=%d\n", offset);
 
 		/* process incoming data */
 		/* sctp_input frees this mbuf. */
-		sctp_input_with_port(recvmbuf[0], sizeof(struct ip), 0);
+		
+		sctp_common_input_processing(&recvmbuf[0], sizeof(struct ip), offset, n, 
+		                             (struct sockaddr *)&src,
+		                             (struct sockaddr *)&dst,
+		                             sh, ch,
+		                             compute_crc,
+		                             ecn,
+		                             SCTP_DEFAULT_VRFID, port);
+		                             
+		/*sctp_input_with_port(recvmbuf[0], sizeof(struct ip), 0);*/
 	}
 	for (i = 0; i < MAXLEN_MBUF_CHAIN; i++) {
 		m_free(recvmbuf[i]);
@@ -399,16 +456,16 @@ recv_function_raw6(void *arg)
 	WSAMSG win_msg;
 	char ControlBuffer[1024];
 #endif
-	struct mbuf *ip6_m;
-	struct ip6_hdr *ip6;
 	struct sockaddr_in6 src, dst;
+	struct sctphdr *sh;
 	int offset;
+	struct sctp_chunkhdr *ch;
 
 	/*Initially the entire set of mbufs is to be allocated.
 	  to_fill indicates this amount. */
 	int to_fill = MAXLEN_MBUF_CHAIN;
 	/* iovlen is the size of each mbuf in the chain */
-	int i, n, ncounter = 0;
+	int i, n, ncounter = 0, compute_crc = 1;
 	int iovlen = MCLBYTES;
 	int want_ext = (iovlen > MLEN)? 1 : 0;
 	int want_header = 0;
@@ -513,24 +570,38 @@ recv_function_raw6(void *arg)
 			}
 		}
 #endif
-		ip6_m = sctp_get_mbuf_for_msg(sizeof(struct ip6_hdr), 1, M_DONTWAIT, 1, MT_DATA);
-		ip6 = mtod(ip6_m, struct ip6_hdr *);
-		bzero((void *)ip6, sizeof(struct ip6_hdr));
-		ip6->ip6_vfc = IPV6_VERSION;
-		ip6->ip6_plen = htons(n);
-		ip6->ip6_src = src.sin6_addr;
-		ip6->ip6_dst = dst.sin6_addr;
 
-		SCTP_HEADER_LEN(ip6_m) = (int)sizeof(struct ip6_hdr) + n;
-		SCTP_BUF_LEN(ip6_m) = sizeof(struct ip6_hdr);
-		SCTP_BUF_NEXT(ip6_m) = recvmbuf6[0];
+		sh = mtod(recvmbuf6[0], struct sctphdr *);
+		ch = (struct sctp_chunkhdr *)((caddr_t)sh + sizeof(struct sctphdr));
+		offset = sizeof(struct sctphdr);
+
+		dst.sin6_family = AF_INET6;
+#ifdef HAVE_SIN_LEN
+		dst.sin6_len = sizeof(struct sockaddr_in6);
+#endif
+		dst.sin6_port = sh->dest_port;
+
+		src.sin6_family = AF_INET6;
+#ifdef HAVE_SIN_LEN
+		src.sin6_len = sizeof(struct sockaddr_in6);
+#endif
+		src.sin6_port = sh->src_port;
+		if ((memcmp(&src, &dst, sizeof(struct sockaddr_in6)) == 0)) {
+			compute_crc = 0;
+		}
+
 		/* process incoming data */
 		/* sctp_input frees this mbuf. */
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
-		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp6_input with off=%d\n", (int)sizeof(struct ip6_hdr));
-
-		offset = sizeof(struct ip6_hdr);
-		sctp6_input_with_port(&ip6_m, &offset, 0);
+		SCTPDBG(SCTP_DEBUG_USR, " - calling common_input_processing with off=%d\n", offset);
+		sctp_common_input_processing(&recvmbuf6[0], 0, offset, n, 
+		                             (struct sockaddr *)&src,
+		                             (struct sockaddr *)&dst,
+		                             sh, ch,
+		                             0,
+		                             0,
+		                             SCTP_DEFAULT_VRFID, 0);
+		/*sctp6_input_with_port(&ip6_m, &offset, 0);*/
 	}
 	for (i = 0; i < MAXLEN_MBUF_CHAIN; i++) {
 		m_free(recvmbuf6[i]);
@@ -554,12 +625,13 @@ recv_function_udp(void *arg)
 	  to_fill indicates this amount. */
 	int to_fill = MAXLEN_MBUF_CHAIN;
 	/* iovlen is the size of each mbuf in the chain */
-	int i, n, ncounter;
+	int i, n, ncounter, offset;
 	int iovlen = MCLBYTES;
 	int want_ext = (iovlen > MLEN)? 1 : 0;
 	int want_header = 0;
-	struct ip *ip;
-	struct mbuf *ip_m;
+	struct sctphdr *sh;
+	uint16_t port;
+	struct sctp_chunkhdr *ch;
 	struct sockaddr_in src, dst;
 	char cmsgbuf[DSTADDR_DATASIZE];
 #if !defined(__Userspace_os_Windows)
@@ -673,7 +745,7 @@ recv_function_udp(void *arg)
 #ifdef HAVE_SIN_LEN
 				dst.sin_len = sizeof(struct sockaddr_in);
 #endif
-				dst.sin_port = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
+				/*dst.sin_port = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));*/
 				memcpy((void *)&dst.sin_addr, (const void *) dstaddr(cmsgptr), sizeof(struct in_addr));
 			}
 		}
@@ -681,13 +753,13 @@ recv_function_udp(void *arg)
 		for (pCMsgHdr = WSA_CMSG_FIRSTHDR(&win_msg); pCMsgHdr != NULL; pCMsgHdr = WSA_CMSG_NXTHDR(&win_msg, pCMsgHdr)) {
 			if ((pCMsgHdr->cmsg_level == IPPROTO_IP) && (pCMsgHdr->cmsg_type == DSTADDR_SOCKOPT)) {
 				dst.sin_family = AF_INET;
-				dst.sin_port = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
+				/*dst.sin_port = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));*/
 				memcpy((void *)&dst.sin_addr, (const void *) dstaddr(pCMsgHdr), sizeof(struct in_addr));
 			}
 		}
 #endif
 
-		ip_m = sctp_get_mbuf_for_msg(sizeof(struct ip), 1, M_DONTWAIT, 1, MT_DATA);
+		/*ip_m = sctp_get_mbuf_for_msg(sizeof(struct ip), 1, M_DONTWAIT, 1, MT_DATA);
 
 		ip = mtod(ip_m, struct ip *);
 		bzero((void *)ip, sizeof(struct ip));
@@ -701,14 +773,39 @@ recv_function_udp(void *arg)
 		ip->ip_dst = dst.sin_addr;
 		SCTP_HEADER_LEN(ip_m) = sizeof(struct ip) + n;
 		SCTP_BUF_LEN(ip_m) = sizeof(struct ip);
-		SCTP_BUF_NEXT(ip_m) = udprecvmbuf[0];
-
+		SCTP_BUF_NEXT(ip_m) = udprecvmbuf[0];*/
+		
+		
+	/* SCTP does not allow broadcasts or multicasts */
+	if (IN_MULTICAST(ntohl(dst.sin_addr.s_addr))) {
+		return NULL;
+	}
+	if (SCTP_IS_IT_BROADCAST(dst.sin_addr, udprecvmbuf[0])) {
+		return NULL;
+	}
+		
+		/*offset = sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr);*/
+		sh = mtod(udprecvmbuf[0], struct sctphdr *);
+		ch = (struct sctp_chunkhdr *)((caddr_t)sh + sizeof(struct sctphdr));
+		offset = sizeof(struct sctphdr);
+		port = src.sin_port;
+		src.sin_port = sh->src_port;
+		dst.sin_port = sh->dest_port;
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
-		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_input with off=%d\n", (int)sizeof(struct ip));
+		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_input with off=%d\n", offset);
 
 		/* process incoming data */
 		/* sctp_input frees this mbuf. */
-		sctp_input_with_port(ip_m, sizeof(struct ip), src.sin_port);
+		sctp_common_input_processing(&udprecvmbuf[0], 0, offset, n, 
+		                             (struct sockaddr *)&src,
+		                             (struct sockaddr *)&dst,
+		                             sh, ch,
+#if !defined(SCTP_WITH_NO_CSUM)
+		                             1,
+#endif
+		                             0,
+		                             SCTP_DEFAULT_VRFID, port);
+		/*sctp_input_with_port(ip_m, sizeof(struct ip), src.sin_port);*/
 	}
 	for (i = 0; i < MAXLEN_MBUF_CHAIN; i++) {
 		m_free(udprecvmbuf[i]);
@@ -736,9 +833,10 @@ recv_function_udp6(void *arg)
 	int iovlen = MCLBYTES;
 	int want_ext = (iovlen > MLEN)? 1 : 0;
 	int want_header = 0;
-	struct ip6_hdr *ip6;
-	struct mbuf *ip6_m;
 	struct sockaddr_in6 src, dst;
+	struct sctphdr *sh;
+	uint16_t port;
+	struct sctp_chunkhdr *ch;
 	char cmsgbuf[CMSG_SPACE(sizeof (struct in6_pktinfo))];
 #if !defined(__Userspace_os_Windows)
 	struct iovec iov[MAXLEN_MBUF_CHAIN];
@@ -755,8 +853,7 @@ recv_function_udp6(void *arg)
 #endif
 
 	udprecvmbuf6 = malloc(sizeof(struct mbuf *) * MAXLEN_MBUF_CHAIN);
-
-	for (;;) {
+	while (1) {
 		for (i = 0; i < to_fill; i++) {
 			/* Not getting the packet header. Tests with chain of one run
 			   as usual without having the packet header.
@@ -804,6 +901,10 @@ recv_function_udp6(void *arg)
 		                   &WSARecvMsg_GUID, sizeof WSARecvMsg_GUID,
 		                   &WSARecvMsg, sizeof WSARecvMsg,
 		                   &ncounter, NULL, NULL);
+		if (nResult == SOCKET_ERROR) {
+			m_ErrorCode = WSAGetLastError();
+			WSARecvMsg = NULL;
+		}
 		if (nResult == 0) {
 			win_msg.name = (void *)&src;
 			win_msg.namelen = sizeof(struct sockaddr_in6);
@@ -852,7 +953,7 @@ recv_function_udp6(void *arg)
 #if !defined(__Userspace_os_Linux)
 				dst.sin6_len = sizeof(struct sockaddr_in6);
 #endif
-				dst.sin6_port = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
+				/*dst.sin6_port = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));*/
 				memcpy((void *)&dst.sin6_addr, (const void *) (&((struct in6_pktinfo *)CMSG_DATA(cmsgptr))->ipi6_addr), sizeof(struct in6_addr));
 			}
 		}
@@ -860,13 +961,13 @@ recv_function_udp6(void *arg)
     for (pCMsgHdr = WSA_CMSG_FIRSTHDR(&win_msg); pCMsgHdr != NULL; pCMsgHdr = WSA_CMSG_NXTHDR(&win_msg, pCMsgHdr)) {
 			if ((pCMsgHdr->cmsg_level == IPPROTO_IPV6) && (pCMsgHdr->cmsg_type == IPV6_PKTINFO)) {
 				dst.sin6_family = AF_INET6;
-				dst.sin6_port = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
+				/*dst.sin6_port = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));*/
 				memcpy((void *)&dst.sin6_addr, (const void *) dstaddr(pCMsgHdr), sizeof(struct in6_addr));
 			}
 		}
 #endif
 
-		ip6_m = sctp_get_mbuf_for_msg(sizeof(struct ip6_hdr), 1, M_DONTWAIT, 1, MT_DATA);
+		/*ip6_m = sctp_get_mbuf_for_msg(sizeof(struct ip6_hdr), 1, M_DONTWAIT, 1, MT_DATA);
 
 		ip6 = mtod(ip6_m, struct ip6_hdr *);
 		bzero((void *)ip6, sizeof(struct ip6_hdr));
@@ -876,15 +977,39 @@ recv_function_udp6(void *arg)
 		ip6->ip6_dst = dst.sin6_addr;
 		SCTP_HEADER_LEN(ip6_m) = (int)sizeof(struct ip6_hdr) + n;
 		SCTP_BUF_LEN(ip6_m) = sizeof(struct ip6_hdr);
-		SCTP_BUF_NEXT(ip6_m) = udprecvmbuf6[0];
+		SCTP_BUF_NEXT(ip6_m) = udprecvmbuf6[0];*/
 
+	/* SCTP does not allow broadcasts or multicasts */
+	if (IN6_IS_ADDR_MULTICAST(&dst.sin6_addr)) {
+		return NULL;
+	}
+		
+		sh = mtod(udprecvmbuf6[0], struct sctphdr *);
+		ch = (struct sctp_chunkhdr *)((caddr_t)sh + sizeof(struct sctphdr));
+		offset = sizeof(struct sctphdr);
+		
+		port = src.sin6_port;
+		src.sin6_port = sh->src_port;
+		dst.sin6_port = sh->dest_port;
+		
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
-		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_input with off=%d\n", (int)sizeof(struct ip));
+		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_input with off=%d\n", (int)sizeof(struct sctphdr));
 
 		/* process incoming data */
 		/* sctp_input frees this mbuf. */
-		offset = sizeof(struct ip6_hdr);
-		sctp6_input_with_port(&ip6_m, &offset, src.sin6_port);
+		/*offset = sizeof(struct ip6_hdr);
+		sctp6_input_with_port(&ip6_m, &offset, src.sin6_port);*/
+		
+				sctp_common_input_processing(&udprecvmbuf6[0], 0, offset, n, 
+		                             (struct sockaddr *)&src,
+		                             (struct sockaddr *)&dst,
+		                             sh, ch,
+#if !defined(SCTP_WITH_NO_CSUM)
+		                             1,
+#endif
+		                             0,
+		                             SCTP_DEFAULT_VRFID, port);
+		                             
 	}
 	for (i = 0; i < MAXLEN_MBUF_CHAIN; i++) {
 		m_free(udprecvmbuf6[i]);
@@ -905,7 +1030,11 @@ setReceiveBufferSize(int sfd, int new_size)
 	int ch = new_size;
 
 	if (setsockopt (sfd, SOL_SOCKET, SO_RCVBUF, (void*)&ch, sizeof(ch)) < 0) {
+#if defined (__Userspace_os_Windows)
+		SCTPDBG(SCTP_DEBUG_USR, "Can't set recv-buffers size (errno = %d).\n", WSAGetLastError());
+#else
 		SCTPDBG(SCTP_DEBUG_USR, "Can't set recv-buffers size (errno = %d).\n", errno);
+#endif
 	}
 	return;
 }
@@ -916,7 +1045,11 @@ setSendBufferSize(int sfd, int new_size)
 	int ch = new_size;
 
 	if (setsockopt (sfd, SOL_SOCKET, SO_SNDBUF, (void*)&ch, sizeof(ch)) < 0) {
-		SCTPDBG(SCTP_DEBUG_USR, "Can't set recv-buffers size (errno = %d).\n", errno);
+#if defined (__Userspace_os_Windows)
+		SCTPDBG(SCTP_DEBUG_USR, "Can't set send-buffers size (errno = %d).\n", WSAGetLastError());
+#else
+		SCTPDBG(SCTP_DEBUG_USR, "Can't set send-buffers size (errno = %d).\n", errno);
+#endif
 	}
 	return;
 }
@@ -986,22 +1119,28 @@ recv_thread_init(void)
 #if defined(INET)
 	if (SCTP_BASE_VAR(userspace_rawsctp) == -1) {
 		if ((SCTP_BASE_VAR(userspace_rawsctp) = socket(AF_INET, SOCK_RAW, IPPROTO_SCTP)) < 0) {
+#if defined(__Userspace_os_Windows)
+			SCTPDBG(SCTP_DEBUG_USR, "Can't create raw socket for IPv4 (errno = %d).\n", WSAGetLastError());
+#else
 			SCTPDBG(SCTP_DEBUG_USR, "Can't create raw socket for IPv4 (errno = %d).\n", errno);
+#endif
 		} else {
 			/* complete setting up the raw SCTP socket */
 			if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp), IPPROTO_IP, IP_HDRINCL,(const void*)&hdrincl, sizeof(int)) < 0) {
-				SCTPDBG(SCTP_DEBUG_USR, "Can't set IP_HDRINCL (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set IP_HDRINCL (errno = %d).\n", WSAGetLastError());
 				closesocket(SCTP_BASE_VAR(userspace_rawsctp));
 #else
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set IP_HDRINCL (errno = %d).\n", errno);
 				close(SCTP_BASE_VAR(userspace_rawsctp));
 #endif
 				SCTP_BASE_VAR(userspace_rawsctp) = -1;
 			} else if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp), SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0) {
-				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/IPv4 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/IPv4 (errno = %d).\n", WSAGetLastError());
 				closesocket(SCTP_BASE_VAR(userspace_rawsctp));
 #else
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/IPv4 (errno = %d).\n", errno);
 				close(SCTP_BASE_VAR(userspace_rawsctp));
 #endif
 				SCTP_BASE_VAR(userspace_rawsctp) = -1;
@@ -1014,10 +1153,11 @@ recv_thread_init(void)
 				addr_ipv4.sin_port        = htons(0);
 				addr_ipv4.sin_addr.s_addr = htonl(INADDR_ANY);
 				if (bind(SCTP_BASE_VAR(userspace_rawsctp), (const struct sockaddr *)&addr_ipv4, sizeof(struct sockaddr_in)) < 0) {
-					SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/IPv4 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
+					SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/IPv4 (errno = %d).\n", WSAGetLastError());
 					closesocket(SCTP_BASE_VAR(userspace_rawsctp));
 #else
+					SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/IPv4 (errno = %d).\n", errno);
 					close(SCTP_BASE_VAR(userspace_rawsctp));
 #endif
 					SCTP_BASE_VAR(userspace_rawsctp) = -1;
@@ -1030,21 +1170,27 @@ recv_thread_init(void)
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp) == -1) {
 		if ((SCTP_BASE_VAR(userspace_udpsctp) = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+#if defined(__Userspace_os_Windows)
+			SCTPDBG(SCTP_DEBUG_USR, "Can't create socket for SCTP/UDP/IPv4 (errno = %d).\n", WSAGetLastError());
+#else
 			SCTPDBG(SCTP_DEBUG_USR, "Can't create socket for SCTP/UDP/IPv4 (errno = %d).\n", errno);
+#endif
 		} else {
 			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp), IPPROTO_IP, DSTADDR_SOCKOPT, (const void *)&on, (int)sizeof(int)) < 0) {
-				SCTPDBG(SCTP_DEBUG_USR, "Can't set DSTADDR_SOCKOPT on socket for SCTP/UDP/IPv4 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set DSTADDR_SOCKOPT on socket for SCTP/UDP/IPv4 (errno = %d).\n", WSAGetLastError());
 				closesocket(SCTP_BASE_VAR(userspace_udpsctp));
 #else
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set DSTADDR_SOCKOPT on socket for SCTP/UDP/IPv4 (errno = %d).\n", errno);
 				close(SCTP_BASE_VAR(userspace_udpsctp));
 #endif
 				SCTP_BASE_VAR(userspace_udpsctp) = -1;
 			} else if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp), SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0) {
-				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/UDP/IPv4 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/UDP/IPv4 (errno = %d).\n", WSAGetLastError());
 				closesocket(SCTP_BASE_VAR(userspace_udpsctp));
 #else
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/UDP/IPv4 (errno = %d).\n", errno);
 				close(SCTP_BASE_VAR(userspace_udpsctp));
 #endif
 				SCTP_BASE_VAR(userspace_udpsctp) = -1;
@@ -1057,10 +1203,11 @@ recv_thread_init(void)
 				addr_ipv4.sin_port        = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
 				addr_ipv4.sin_addr.s_addr = htonl(INADDR_ANY);
 				if (bind(SCTP_BASE_VAR(userspace_udpsctp), (const struct sockaddr *)&addr_ipv4, sizeof(struct sockaddr_in)) < 0) {
-					SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/UDP/IPv4 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
+					SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/UDP/IPv4 (errno = %d).\n", WSAGetLastError());
 					closesocket(SCTP_BASE_VAR(userspace_udpsctp));
 #else
+					SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/UDP/IPv4 (errno = %d).\n", errno);
 					close(SCTP_BASE_VAR(userspace_udpsctp));
 #endif
 					SCTP_BASE_VAR(userspace_udpsctp) = -1;
@@ -1075,38 +1222,49 @@ recv_thread_init(void)
 #if defined(INET6)
 	if (SCTP_BASE_VAR(userspace_rawsctp6) == -1) {
 		if ((SCTP_BASE_VAR(userspace_rawsctp6) = socket(AF_INET6, SOCK_RAW, IPPROTO_SCTP)) < 0) {
+#if defined(__Userspace_os_Windows)
+			SCTPDBG(SCTP_DEBUG_USR, "Can't create socket for SCTP/IPv6 (errno = %d).\n", WSAGetLastError());
+#else
 			SCTPDBG(SCTP_DEBUG_USR, "Can't create socket for SCTP/IPv6 (errno = %d).\n", errno);
+#endif
 		} else {
 			/* complete setting up the raw SCTP socket */
 #if defined(IPV6_RECVPKTINFO)
-			if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), IPPROTO_IPV6, IPV6_RECVPKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
-				SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_RECVPKTINFO on socket for SCTP/IPv6 (errno = %d).\n", errno);
+			if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), IPPROTO_IPV6, IPV6_RECVPKTINFO, (const void *)&on, sizeof(on)) < 0) {
 #if defined(__Userspace_os_Windows)
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_RECVPKTINFO on socket for SCTP/IPv6 (errno = %d).\n", WSAGetLastError());
 				closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
 #else
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_RECVPKTINFO on socket for SCTP/IPv6 (errno = %d).\n", errno);
 				close(SCTP_BASE_VAR(userspace_rawsctp6));
 #endif
 				SCTP_BASE_VAR(userspace_rawsctp6) = -1;
 			} else {
 #else
 			if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), IPPROTO_IPV6, IPV6_PKTINFO,(const void*)&on, sizeof(on)) < 0) {
-				SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_PKTINFO on socket for SCTP/IPv6 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_PKTINFO on socket for SCTP/IPv6 (errno = %d).\n", WSAGetLastError());
 				closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
 #else
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_PKTINFO on socket for SCTP/IPv6 (errno = %d).\n", errno);
 				close(SCTP_BASE_VAR(userspace_rawsctp6));
 #endif
 				SCTP_BASE_VAR(userspace_rawsctp6) = -1;
 			} else {
 #endif
 				if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), IPPROTO_IPV6, IPV6_V6ONLY, (const void*)&on, (socklen_t)sizeof(on)) < 0) {
+#if defined(__Userspace_os_Windows)
+					SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_V6ONLY on socket for SCTP/IPv6 (errno = %d).\n", WSAGetLastError());
+#else
 					SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_V6ONLY on socket for SCTP/IPv6 (errno = %d).\n", errno);
+#endif
 				}
 				if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0) {
-					SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/IPv6 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
+					SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/IPv6 (errno = %d).\n", WSAGetLastError());
 					closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
 #else
+					SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/IPv6 (errno = %d).\n", errno);
 					close(SCTP_BASE_VAR(userspace_rawsctp6));
 #endif
 					SCTP_BASE_VAR(userspace_rawsctp6) = -1;
@@ -1119,10 +1277,11 @@ recv_thread_init(void)
 					addr_ipv6.sin6_port        = htons(0);
 					addr_ipv6.sin6_addr        = in6addr_any;
 					if (bind(SCTP_BASE_VAR(userspace_rawsctp6), (const struct sockaddr *)&addr_ipv6, sizeof(struct sockaddr_in6)) < 0) {
-						SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/IPv6 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
+						SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/IPv6 (errno = %d).\n", WSAGetLastError());
 						closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
 #else
+						SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/IPv6 (errno = %d).\n", errno);
 						close(SCTP_BASE_VAR(userspace_rawsctp6));
 #endif
 						SCTP_BASE_VAR(userspace_rawsctp6) = -1;
@@ -1136,37 +1295,48 @@ recv_thread_init(void)
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp6) == -1) {
 		if ((SCTP_BASE_VAR(userspace_udpsctp6) = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+#if defined(__Userspace_os_Windows)
+			SCTPDBG(SCTP_DEBUG_USR, "Can't create socket for SCTP/UDP/IPv6 (errno = %d).\n", WSAGetLastError());
+#else
 			SCTPDBG(SCTP_DEBUG_USR, "Can't create socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
+#endif
 		}
 #if defined(IPV6_RECVPKTINFO)
 		if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), IPPROTO_IPV6, IPV6_RECVPKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
-			SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_RECVPKTINFO on socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
+			SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_RECVPKTINFO on socket for SCTP/UDP/IPv6 (errno = %d).\n", WSAGetLastError());
 			closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
 #else
+			SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_RECVPKTINFO on socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
 			close(SCTP_BASE_VAR(userspace_udpsctp6));
 #endif
 			SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 		} else {
 #else
 		if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), IPPROTO_IPV6, IPV6_PKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
-			SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_PKTINFO on socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
+			SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_PKTINFO on socket for SCTP/UDP/IPv6 (errno = %d).\n", WSAGetLastError());
 			closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
 #else
+			SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_PKTINFO on socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
 			close(SCTP_BASE_VAR(userspace_udpsctp6));
 #endif
 			SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 		} else {
 #endif
 			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), IPPROTO_IPV6, IPV6_V6ONLY, (const void *)&on, (socklen_t)sizeof(on)) < 0) {
+#if defined(__Userspace_os_Windows)
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_V6ONLY on socket for SCTP/UDP/IPv6 (errno = %d).\n", WSAGetLastError());
+#else
 				SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_V6ONLY on socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
+#endif
 			}
 			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0) {
-				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
 #if defined(__Userspace_os_Windows)
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/UDP/IPv6 (errno = %d).\n", WSAGetLastError());
 				closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
 #else
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
 				close(SCTP_BASE_VAR(userspace_udpsctp6));
 #endif
 				SCTP_BASE_VAR(userspace_udpsctp6) = -1;
@@ -1178,11 +1348,12 @@ recv_thread_init(void)
 				addr_ipv6.sin6_family      = AF_INET6;
 				addr_ipv6.sin6_port        = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
 				addr_ipv6.sin6_addr        = in6addr_any;
-				if (bind(SCTP_BASE_VAR(userspace_udpsctp6), (const struct sockaddr *)&addr_ipv6, sizeof(struct sockaddr_in6)) < 0) {
-					SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
+				if (bind(SCTP_BASE_VAR(userspace_udpsctp6), (const struct sockaddr *)&addr_ipv6, sizeof(struct sockaddr_in6)) < 0) {				
 #if defined(__Userspace_os_Windows)
+					SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/UDP/IPv6 (errno = %d).\n", WSAGetLastError());
 					closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
 #else
+					SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
 					close(SCTP_BASE_VAR(userspace_udpsctp6));
 #endif
 					SCTP_BASE_VAR(userspace_udpsctp6) = -1;
