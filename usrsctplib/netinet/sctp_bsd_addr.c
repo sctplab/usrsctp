@@ -437,10 +437,10 @@ sctp_init_ifns_for_vrf(int vrfid)
 static void
 sctp_init_ifns_for_vrf(int vrfid)
 {
-  /* __Userspace__ TODO struct ifaddr is defined in net/if_var.h
-   * This struct contains struct ifnet, which is also defined in
-   * net/if_var.h. Currently a zero byte if_var.h file is present for Linux boxes
-   */
+	/* __Userspace__ TODO struct ifaddr is defined in net/if_var.h
+	 * This struct contains struct ifnet, which is also defined in
+	 * net/if_var.h. Currently a zero byte if_var.h file is present for Linux boxes
+	 */
 	int rc;
 	struct ifaddrs *ifa = NULL;
 	struct sctp_ifa *sctp_ifa;
@@ -489,13 +489,13 @@ sctp_init_ifns_for_vrf(int vrfid)
 static void
 sctp_init_ifns_for_vrf(int vrfid)
 {
-  /* Here we must apply ANY locks needed by the
-   * IFN we access and also make sure we lock
-   * any IFA that exists as we float through the
-   * list of IFA's
-   */
+	/* Here we must apply ANY locks needed by the
+	 * IFN we access and also make sure we lock
+	 * any IFA that exists as we float through the
+	 * list of IFA's
+	 */
 	errno_t error;
-	ifnet_t *ifnetlist;
+	struct ifnet **ifnetlist;
 	uint32_t i, count;
 	char name[SCTP_IFNAMSIZ];
 	struct ifnet *ifn;
@@ -504,12 +504,9 @@ sctp_init_ifns_for_vrf(int vrfid)
 	struct sctp_ifa *sctp_ifa;
 	uint32_t ifa_flags;
 
-	ifnetlist = NULL;
-	count = 0;
-	error = ifnet_list_get(IFNET_FAMILY_ANY, &ifnetlist, &count);
-	if (error != 0) {
+	if ((error = ifnet_list_get(IFNET_FAMILY_ANY, &ifnetlist, &count)) != 0) {;
 		SCTP_PRINTF("ifnet_list_get failed %d\n", error);
-		goto out;
+		return;
 	}
 	for (i = 0; i < count; i++) {
 		ifn = ifnetlist[i];
@@ -560,9 +557,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 			}
 		}
 	}
- out:
-	if (ifnetlist != 0)
-		ifnet_list_free(ifnetlist);
+	ifnet_list_free(ifnetlist);
 }
 #endif
 
