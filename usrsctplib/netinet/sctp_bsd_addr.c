@@ -494,18 +494,17 @@ sctp_init_ifns_for_vrf(int vrfid)
 	 * any IFA that exists as we float through the
 	 * list of IFA's
 	 */
-	errno_t error;
 	struct ifnet **ifnetlist;
-	uint32_t i, count;
+	uint32_t i, j, count;
 	char name[SCTP_IFNAMSIZ];
 	struct ifnet *ifn;
+	struct ifaddr **ifaddrlist;
 	struct ifaddr *ifa;
 	struct in6_ifaddr *ifa6;
 	struct sctp_ifa *sctp_ifa;
 	uint32_t ifa_flags;
 
-	if ((error = ifnet_list_get(IFNET_FAMILY_ANY, &ifnetlist, &count)) != 0) {;
-		SCTP_PRINTF("ifnet_list_get failed %d\n", error);
+	if (ifnet_list_get(IFNET_FAMILY_ANY, &ifnetlist, &count) != 0) {
 		return;
 	}
 	for (i = 0; i < count; i++) {
@@ -513,7 +512,11 @@ sctp_init_ifns_for_vrf(int vrfid)
 		if (SCTP_BASE_SYSCTL(sctp_ignore_vmware_interfaces) && sctp_is_vmware_interface(ifn)) {
 			continue;
 		}
-		TAILQ_FOREACH(ifa, &ifn->if_addrlist, ifa_list) {
+		if (ifnet_get_address_list(ifn, &ifaddrlist) != 0) {
+			continue;
+		}
+		for (j = 0; ifaddrlist[j] != NULL; j++) {
+			ifa = ifaddrlist[j];
 			if (ifa->ifa_addr == NULL) {
 				continue;
 			}
@@ -527,7 +530,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 					continue;
 				}
 			} else {
-				if (((struct sockaddr_in *)ifa->ifa_addr)->sin_addr.s_addr == 0) {
+				if (((struct sockaddr_in *)ifa->ifa_addr)->sin_addr.s_addr == INADDR_ANY) {
 					continue;
 				}
 			}
@@ -535,7 +538,6 @@ sctp_init_ifns_for_vrf(int vrfid)
 				/* non desired type */
 				continue;
 			}
-
 			if (ifa->ifa_addr->sa_family == AF_INET6) {
 				ifa6 = (struct in6_ifaddr *)ifa;
 				ifa_flags = ifa6->ia6_flags;
@@ -556,6 +558,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 				sctp_ifa->localifa_flags &= ~SCTP_ADDR_DEFER_USE;
 			}
 		}
+		ifnet_free_address_list(ifaddrlist);
 	}
 	ifnet_list_free(ifnetlist);
 }
@@ -769,31 +772,27 @@ sctp_add_or_del_interfaces(int (*pred)(struct ifnet *), int add)
 void
 sctp_add_or_del_interfaces(int (*pred)(struct ifnet *), int add)
 {
-	errno_t error;
-	ifnet_t *ifnetlist;
-	uint32_t i, count;
-	struct ifnet *ifn;
-	struct ifaddr *ifa;
+	struct ifnet **ifnetlist;
+	struct ifaddr **ifaddrlist;
+	uint32_t i, j, count;
 
-	ifnetlist = NULL;
-	count = 0;
-	error = ifnet_list_get(IFNET_FAMILY_ANY, &ifnetlist, &count);
-	if (error != 0) {
-		SCTP_PRINTF("ifnet_list_get failed %d\n", error);
-		goto out;
+	if (ifnet_list_get(IFNET_FAMILY_ANY, &ifnetlist, &count) != 0) {
+		return;
 	}
 	for (i = 0; i < count; i++) {
-		ifn = ifnetlist[i];
-		if (!(*pred)(ifn)) {
+		if (!(*pred)(ifnetlist[i])) {
 			continue;
 		}
-		TAILQ_FOREACH(ifa, &ifn->if_addrlist, ifa_list) {
-			sctp_addr_change(ifa, add ? RTM_ADD : RTM_DELETE);
+		if (ifnet_get_address_list(ifnetlist[i], &ifaddrlist) != 0) {
+			continue;
 		}
+		for (j = 0; ifaddrlist[j] != NULL; j++) {
+			sctp_addr_change(ifaddrlist[j], add ? RTM_ADD : RTM_DELETE);
+		}
+		ifnet_free_address_list(ifaddrlist);
 	}
-out:
-	if (ifnetlist != 0)
-		ifnet_list_free(ifnetlist);
+	ifnet_list_free(ifnetlist);
+	return;
 }
 #endif
 
