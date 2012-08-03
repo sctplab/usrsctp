@@ -268,12 +268,16 @@ sctp_gather_internal_ifa_flags(struct sctp_ifa *ifa)
 
 #if !defined(__Userspace__)
 static uint32_t
-sctp_is_desired_interface_type(struct ifaddr *ifa)
+sctp_is_desired_interface_type(struct ifnet *ifn)
 {
 	int result;
 
 	/* check the interface type to see if it's one we care about */
-	switch (ifa->ifa_ifp->if_type) {
+#if defined(__APPLE__)
+	switch(ifnet_type(ifn)) {
+#else
+	switch (ifn->if_type) {
+#endif
 	case IFT_ETHER:
 	case IFT_ISO88023:
 	case IFT_ISO88024:
@@ -316,7 +320,7 @@ sctp_is_desired_interface_type(struct ifaddr *ifa)
 int
 sctp_is_vmware_interface(struct ifnet *ifn)
 {
-	return (strncmp(ifn->if_name, "vmnet", 5) == 0);
+	return (strncmp(ifnet_name(ifn), "vmnet", 5) == 0);
 }
 #endif
 
@@ -512,6 +516,10 @@ sctp_init_ifns_for_vrf(int vrfid)
 		if (SCTP_BASE_SYSCTL(sctp_ignore_vmware_interfaces) && sctp_is_vmware_interface(ifn)) {
 			continue;
 		}
+		if (sctp_is_desired_interface_type(ifn) == 0) {
+			/* non desired type */
+			continue;
+		}
 		if (ifnet_get_address_list(ifn, &ifaddrlist) != 0) {
 			continue;
 		}
@@ -534,21 +542,17 @@ sctp_init_ifns_for_vrf(int vrfid)
 					continue;
 				}
 			}
-			if (sctp_is_desired_interface_type(ifa) == 0) {
-				/* non desired type */
-				continue;
-			}
 			if (ifa->ifa_addr->sa_family == AF_INET6) {
 				ifa6 = (struct in6_ifaddr *)ifa;
 				ifa_flags = ifa6->ia6_flags;
 			} else {
 				ifa_flags = 0;
 			}
-			snprintf(name, SCTP_IFNAMSIZ, "%s%d", ifn->if_name, ifn->if_unit);
+			snprintf(name, SCTP_IFNAMSIZ, "%s%d", ifnet_name(ifn), ifnet_unit(ifn));
 			sctp_ifa = sctp_add_addr_to_vrf(vrfid,
 			                                (void *)ifn,
-			                                ifn->if_index,
-			                                ifn->if_type,
+			                                ifnet_index(ifn),
+			                                ifnet_type(ifn),
 			                                name,
 			                                (void *)ifa,
 			                                ifa->ifa_addr,
@@ -583,6 +587,10 @@ sctp_init_ifns_for_vrf(int vrfid)
 
 	IFNET_RLOCK();
 	TAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_list) {
+		if (sctp_is_desired_interface_type(ifn) == 0) {
+			/* non desired type */
+			continue;
+		}
 #if (__FreeBSD_version >= 803000 && __FreeBSD_version < 900000) || __FreeBSD_version > 900000
 		IF_ADDR_RLOCK(ifn);
 #else
@@ -611,11 +619,6 @@ sctp_init_ifns_for_vrf(int vrfid)
 			default:
 				continue;
 			}
-			if (sctp_is_desired_interface_type(ifa) == 0) {
-				/* non desired type */
-				continue;
-			}
-
 			switch (ifa->ifa_addr->sa_family) {
 #ifdef INET
 			case AF_INET:
@@ -697,6 +700,10 @@ sctp_addr_change(struct ifaddr *ifa, int cmd)
 	if (ifa->ifa_addr == NULL) {
 		return;
 	}
+	if (sctp_is_desired_interface_type(ifa->ifa_ifp) == 0) {
+		/* non desired type */
+		return;
+	}
 	switch (ifa->ifa_addr->sa_family) {
 #ifdef INET
 	case AF_INET:
@@ -718,30 +725,25 @@ sctp_addr_change(struct ifaddr *ifa, int cmd)
 		/* non inet/inet6 skip */
 		return;
 	}
-
-	if (sctp_is_desired_interface_type(ifa) == 0) {
-		/* non desired type */
-		return;
-	}
 	if (cmd == RTM_ADD) {
 		(void)sctp_add_addr_to_vrf(SCTP_DEFAULT_VRFID, (void *)ifa->ifa_ifp,
-		                           ifa->ifa_ifp->if_index, ifa->ifa_ifp->if_type,
-#ifdef __APPLE__
-		                           ifa->ifa_ifp->if_name,
+#if defined(__APPLE__)
+		                           ifnet_index(ifa->ifa_ifp), ifnet_type(ifa->ifa_ifp), ifnet_name(ifa->ifa_ifp),
 #else
-		                           ifa->ifa_ifp->if_xname,
+		                           ifa->ifa_ifp->if_index, ifa->ifa_ifp->if_type, ifa->ifa_ifp->if_xname,
 #endif
 		                           (void *)ifa, ifa->ifa_addr, ifa_flags, 1);
 	} else {
 
 		sctp_del_addr_from_vrf(SCTP_DEFAULT_VRFID, ifa->ifa_addr,
-		                       ifa->ifa_ifp->if_index,
-#ifdef __APPLE__
-		                       ifa->ifa_ifp->if_name
+#if defined(__APPLE__)
+		                       ifnet_index(ifa->ifa_ifp),
+		                       ifnet_name(ifa->ifa_ifp));
 #else
-		                       ifa->ifa_ifp->if_xname
+		                       ifa->ifa_ifp->if_index,
+		                       ifa->ifa_ifp->if_xname);
 #endif
-		                       );
+		                      
 		/* We don't bump refcount here so when it completes
 		 * the final delete will happen.
 		 */
