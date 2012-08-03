@@ -8164,7 +8164,7 @@ again_one_more_time:
 		} else {
 			skip_data_for_this_net = 0;
 		}
-#if !(defined(__Panda__) || defined(__Windows__) || defined(__Userspace__))
+#if !(defined(__Panda__) || defined(__Windows__) || defined(__Userspace__) || defined(__APPLE__))
 		if ((net->ro.ro_rt) && (net->ro.ro_rt->rt_ifp)) {
 			/*
 			 * if we have a route and an ifp check to see if we
