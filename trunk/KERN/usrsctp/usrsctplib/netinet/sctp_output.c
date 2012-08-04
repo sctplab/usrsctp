@@ -77,7 +77,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 238501 2012-07-15 20:16:17Z t
 #define APPLE_FILE_NO 3
 #endif
 
-#if defined(APPLE_LION)
+#if !(defined(APPLE_LEOPARD) || defined(APPLE_SNOWLEOPARD))
 #define SCTP_MAX_LINKHDR 16
 #endif
 
@@ -4369,10 +4369,10 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #ifdef SCTP_EMBEDDED_V6_SCOPE
 		/* KAME hack: embed scopeid */
 #if defined(__APPLE__)
-#if defined(APPLE_LION)
-		if (in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL, NULL) != 0)
-#else
+#if defined(APPLE_LEOPARD) || defined(APPLE_SNOWLEOPARD)
 		if (in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL) != 0)
+#else
+		if (in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL, NULL) != 0)
 #endif
 #elif defined(SCTP_KAME)
 		if (sa6_embedscope(sin6, MODULE_GLOBAL(ip6_use_defzone)) != 0)
@@ -4452,10 +4452,10 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 				sin6 = (struct sockaddr_in6 *)&net->ro._l_addr;
 				/* KAME hack: embed scopeid */
 #if defined(__APPLE__)
-#if defined(APPLE_LION)
-				if (in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL, NULL) != 0)
-#else
+#if defined(APPLE_LEOPARD) || defined(APPLE_SNOWLEOPARD)
 				if (in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL) != 0)
+#else
+				if (in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL, NULL) != 0)
 #endif
 #elif defined(SCTP_KAME)
 				if (sa6_embedscope(sin6, MODULE_GLOBAL(ip6_use_defzone)) != 0)
@@ -4497,10 +4497,10 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			sin6 = (struct sockaddr_in6 *)&ro->ro_dst;
 			/* KAME hack: embed scopeid */
 #if defined(__APPLE__)
-#if defined(APPLE_LION)
-			if (in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL, NULL) != 0)
-#else
+#if defined(APPLE_LEOPARD) || defined(APPLE_SNOWLEOPARD)
 			if (in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL) != 0)
+#else
+			if (in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL, NULL) != 0)
 #endif
 #elif defined(SCTP_KAME)
 			if (sa6_embedscope(sin6, MODULE_GLOBAL(ip6_use_defzone)) != 0)
@@ -4740,11 +4740,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			}
 #if !defined(__Panda__) && !defined(__Userspace__)
 			else if (ifp) {
-#if defined(__APPLE__)
-#if !defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION)
-#define ND_IFINFO(ifp) (&nd_ifinfo[ifp->if_index])
-#endif
-#elif defined(__Windows__)
+#if defined(__Windows__)
 #define ND_IFINFO(ifp)	(ifp)
 #define linkmtu		if_mtu
 #endif
@@ -6993,10 +6989,10 @@ sctp_sendall(struct sctp_inpcb *inp, struct uio *uio, struct mbuf *m,
 	/* get length and mbuf chain */
 	if (uio) {
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-		ca->sndlen = uio_resid(uio);
-#else
+#if defined(APPLE_LEOPARD)
 		ca->sndlen = uio->uio_resid;
+#else
+		ca->sndlen = uio_resid(uio);
 #endif
 #else
 		ca->sndlen = uio->uio_resid;
@@ -11231,10 +11227,10 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 	if (port) {
 		len += sizeof(struct udphdr);
 	}
-#if defined(APPLE_LION)
-	mout = sctp_get_mbuf_for_msg(len + SCTP_MAX_LINKHDR, 1, M_DONTWAIT, 1, MT_DATA);
-#else
+#if defined(APPLE_LEOPARD) || defined(APPLE_SNOWLEOPARD)
 	mout = sctp_get_mbuf_for_msg(len + max_linkhdr, 1, M_DONTWAIT, 1, MT_DATA);
+#else
+	mout = sctp_get_mbuf_for_msg(len + SCTP_MAX_LINKHDR, 1, M_DONTWAIT, 1, MT_DATA);
 #endif
 	if (mout == NULL) {
 		if (cause) {
@@ -11242,10 +11238,10 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		}
 		return;
 	}
-#if defined(APPLE_LION)
-	SCTP_BUF_RESV_UF(mout, SCTP_MAX_LINKHDR);
-#else
+#if defined(APPLE_LEOPARD) || defined(APPLE_SNOWLEOPARD)
 	SCTP_BUF_RESV_UF(mout, max_linkhdr);
+#else
+	SCTP_BUF_RESV_UF(mout, SCTP_MAX_LINKHDR);
 #endif
 	SCTP_BUF_LEN(mout) = len;
 	SCTP_BUF_NEXT(mout) = cause;
@@ -12424,10 +12420,10 @@ sctp_copy_resume(struct uio *uio,
 	struct mbuf *m, *head;
 
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-        left = min(uio_resid(uio), max_send_len);
-#else
+#if defined(APPLE_LEOPARD)
         left = min(uio->uio_resid, max_send_len);
+#else
+        left = min(uio_resid(uio), max_send_len);
 #endif
 #else
         left = min(uio->uio_resid, max_send_len);
@@ -12618,19 +12614,19 @@ sctp_copy_it_in(struct sctp_tcb *stcb,
 
 	sp->stream = srcv->sinfo_stream;
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-	sp->length = min(uio_resid(uio), max_send_len);
-#else
+#if defined(APPLE_LEOPARD)
 	sp->length = min(uio->uio_resid, max_send_len);
+#else
+	sp->length = min(uio_resid(uio), max_send_len);
 #endif
 #else
 	sp->length = min(uio->uio_resid, max_send_len);
 #endif
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-	if ((sp->length == (uint32_t)uio_resid(uio)) &&
-#else
+#if defined(APPLE_LEOPARD)
 	if ((sp->length == (uint32_t)uio->uio_resid) &&
+#else
+	if ((sp->length == (uint32_t)uio_resid(uio)) &&
 #endif
 #else
 	if ((sp->length == (uint32_t)uio->uio_resid) &&
@@ -12854,10 +12850,10 @@ sctp_lower_sosend(struct socket *so,
 	atomic_add_int(&inp->total_sends, 1);
 	if (uio) {
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-		if (uio_resid(uio) < 0) {
-#else
+#if defined(APPLE_LEOPARD)
 		if (uio->uio_resid < 0) {
+#else
+		if (uio_resid(uio) < 0) {
 #endif
 #else
 		if (uio->uio_resid < 0) {
@@ -12866,10 +12862,10 @@ sctp_lower_sosend(struct socket *so,
 			return (EINVAL);
 		}
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-		sndlen = uio_resid(uio);
-#else
+#if defined(APPLE_LEOPARD)
 		sndlen = uio->uio_resid;
+#else
+		sndlen = uio_resid(uio);
 #endif
 #else
 		sndlen = uio->uio_resid;
@@ -13563,10 +13559,10 @@ skip_preblock:
 			}
 		}
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-		while (uio_resid(uio) > 0) {
-#else
+#if defined(APPLE_LEOPARD)
 		while (uio->uio_resid > 0) {
+#else
+		while (uio_resid(uio) > 0) {
 #endif
 #else
 		while (uio->uio_resid > 0) {
@@ -13582,10 +13578,10 @@ skip_preblock:
 			if ((max_len > SCTP_BASE_SYSCTL(sctp_add_more_threshold)) ||
 			    (max_len && (SCTP_SB_LIMIT_SND(so) < SCTP_BASE_SYSCTL(sctp_add_more_threshold))) ||
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-			    (uio_resid(uio) && (uio_resid(uio) <= (int)max_len))) {
-#else
+#if defined(APPLE_LEOPARD)
 			    (uio->uio_resid && (uio->uio_resid <= (int)max_len))) {
+#else
+			    (uio_resid(uio) && (uio_resid(uio) <= (int)max_len))) {
 #endif
 #else
 			    (uio->uio_resid && (uio->uio_resid <= (int)max_len))) {
@@ -13642,10 +13638,10 @@ skip_preblock:
 
 				/* Did we reach EOR? */
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-				if ((uio_resid(uio) == 0) &&
-#else
+#if defined(APPLE_LEOPARD)
 				if ((uio->uio_resid == 0) &&
+#else
+				if ((uio_resid(uio) == 0) &&
 #endif
 #else
 				if ((uio->uio_resid == 0) &&
@@ -13660,10 +13656,10 @@ skip_preblock:
 				SCTP_TCB_SEND_UNLOCK(stcb);
 			}
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-			if (uio_resid(uio) == 0) {
-#else
+#if defined(APPLE_LEOPARD)
 			if (uio->uio_resid == 0) {
+#else
+			if (uio_resid(uio) == 0) {
 #endif
 #else
 			if (uio->uio_resid == 0) {
@@ -13800,12 +13796,12 @@ skip_preblock:
 						      min(SCTP_BASE_SYSCTL(sctp_add_more_threshold), SCTP_SB_LIMIT_SND(so)))) {
 				if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_BLK_LOGGING_ENABLE) {
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-					sctp_log_block(SCTP_BLOCK_LOG_INTO_BLK,
-						       asoc, uio_resid(uio));
-#else
+#if defined(APPLE_LEOPARD)
 					sctp_log_block(SCTP_BLOCK_LOG_INTO_BLK,
 						       asoc, uio->uio_resid);
+#else
+					sctp_log_block(SCTP_BLOCK_LOG_INTO_BLK,
+						       asoc, uio_resid(uio));
 #endif
 #else
 					sctp_log_block(SCTP_BLOCK_LOG_INTO_BLK,
@@ -13865,10 +13861,10 @@ skip_preblock:
 		}
 		SCTP_TCB_SEND_UNLOCK(stcb);
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-		if (uio_resid(uio) == 0) {
-#else
+#if defined(APPLE_LEOPARD)
 		if (uio->uio_resid == 0) {
+#else
+		if (uio_resid(uio) == 0) {
 #endif
 #else
 		if (uio->uio_resid == 0) {

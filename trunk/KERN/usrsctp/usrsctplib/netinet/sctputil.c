@@ -5592,10 +5592,10 @@ sctp_sorecvmsg(struct socket *so,
 		in_flags = 0;
 	}
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-	slen = uio_resid(uio);
-#else
+#if defined(APPLE_LEOPARD)
 	slen = uio->uio_resid;
+#else
+	slen = uio_resid(uio);
 #endif
 #else
 	slen = uio->uio_resid;
@@ -5631,12 +5631,12 @@ sctp_sorecvmsg(struct socket *so,
 	in_eeor_mode = sctp_is_feature_on(inp, SCTP_PCB_FLAGS_EXPLICIT_EOR);
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) &SCTP_RECV_RWND_LOGGING_ENABLE) {
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-		sctp_misc_ints(SCTP_SORECV_ENTER,
-			       rwnd_req, in_eeor_mode, so->so_rcv.sb_cc, uio_resid(uio));
-#else
+#if defined(APPLE_LEOPARD)
 		sctp_misc_ints(SCTP_SORECV_ENTER,
 			       rwnd_req, in_eeor_mode, so->so_rcv.sb_cc, uio->uio_resid);
+#else
+		sctp_misc_ints(SCTP_SORECV_ENTER,
+			       rwnd_req, in_eeor_mode, so->so_rcv.sb_cc, uio_resid(uio));
 #endif
 #else
 		sctp_misc_ints(SCTP_SORECV_ENTER,
@@ -5649,12 +5649,12 @@ sctp_sorecvmsg(struct socket *so,
 #endif
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) &SCTP_RECV_RWND_LOGGING_ENABLE) {
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-		sctp_misc_ints(SCTP_SORECV_ENTERPL,
-			       rwnd_req, block_allowed, so->so_rcv.sb_cc, uio_resid(uio));
-#else
+#if defined(APPLE_LEOPARD)
 		sctp_misc_ints(SCTP_SORECV_ENTERPL,
 			       rwnd_req, block_allowed, so->so_rcv.sb_cc, uio->uio_resid);
+#else
+		sctp_misc_ints(SCTP_SORECV_ENTERPL,
+			       rwnd_req, block_allowed, so->so_rcv.sb_cc, uio_resid(uio));
 #endif
 #else
 		sctp_misc_ints(SCTP_SORECV_ENTERPL,
@@ -6155,10 +6155,10 @@ sctp_sorecvmsg(struct socket *so,
 		while (m) {
 			/* Move out all we can */
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-			cp_len = (int)uio_resid(uio);
-#else
+#if defined(APPLE_LEOPARD)
 			cp_len = (int)uio->uio_resid;
+#else
+			cp_len = (int)uio_resid(uio);
 #endif
 #else
 			cp_len = (int)uio->uio_resid;
@@ -6288,10 +6288,10 @@ sctp_sorecvmsg(struct socket *so,
 				}
 			}
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-			if ((out_flags & MSG_EOR) || (uio_resid(uio) == 0)) {
-#else
+#if defined(APPLE_LEOPARD)
 			if ((out_flags & MSG_EOR) || (uio->uio_resid == 0)) {
+#else
+			if ((out_flags & MSG_EOR) || (uio_resid(uio) == 0)) {
 #endif
 #else
 			if ((out_flags & MSG_EOR) || (uio->uio_resid == 0)) {
@@ -6376,10 +6376,10 @@ sctp_sorecvmsg(struct socket *so,
 			goto release;
 		}
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-		if ((uio_resid(uio) == 0) ||
-#else
+#if defined(APPLE_LEOPARD)
 		if ((uio->uio_resid == 0) ||
+#else
+		if ((uio_resid(uio) == 0) ||
 #endif
 #else
 		if ((uio->uio_resid == 0) ||
@@ -6525,10 +6525,10 @@ sctp_sorecvmsg(struct socket *so,
 			out_flags |= MSG_NOTIFICATION;
 		}
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-		uio_setresid(uio, control->length);
-#else
+#if defined(APPLE_LEOPARD)
 		uio->uio_resid = control->length;
+#else
+		uio_setresid(uio, control->length);
 #endif
 #else
 		uio->uio_resid = control->length;
@@ -6643,13 +6643,13 @@ sctp_sorecvmsg(struct socket *so,
 			sctp_misc_ints(SCTP_SORECV_DONE,
 				       freed_so_far,
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-				       ((uio) ? (slen-uio_resid(uio)) : slen),
+#if defined(APPLE_LEOPARD)
+				       ((uio) ? (slen - uio->uio_resid) : slen),
 #else
-				       ((uio) ? (slen-uio->uio_resid) : slen),
+				       ((uio) ? (slen - uio_resid(uio)) : slen),
 #endif
 #else
-				       ((uio) ? (slen-uio->uio_resid) : slen),
+				       ((uio) ? (slen - uio->uio_resid) : slen),
 #endif
 				       stcb->asoc.my_rwnd,
 				       so->so_rcv.sb_cc);
@@ -6657,13 +6657,13 @@ sctp_sorecvmsg(struct socket *so,
 			sctp_misc_ints(SCTP_SORECV_DONE,
 				       freed_so_far,
 #if defined(__APPLE__)
-#if defined(APPLE_SNOWLEOPARD) || defined(APPLE_LION)
-				       ((uio) ? (slen-uio_resid(uio)) : slen),
+#if defined(APPLE_LEOPARD)
+				       ((uio) ? (slen - uio->uio_resid) : slen),
 #else
-				       ((uio) ? (slen-uio->uio_resid) : slen),
+				       ((uio) ? (slen - uio_resid(uio)) : slen),
 #endif
 #else
-				       ((uio) ? (slen-uio->uio_resid) : slen),
+				       ((uio) ? (slen - uio->uio_resid) : slen),
 #endif
 				       0,
 				       so->so_rcv.sb_cc);
