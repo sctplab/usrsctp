@@ -1488,10 +1488,10 @@ sctp_pathmtu_timer(struct sctp_inpcb *inp,
 					struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&net->ro._l_addr;
 					/* KAME hack: embed scopeid */
 #if defined(__APPLE__)
-#if defined(APPLE_LION)
-					(void)in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL, NULL);
-#else
+#if defined(APPLE_LEOPARD) || defined(APPLE_SNOWLEOPARD)
 					(void)in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL);
+#else
+					(void)in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL, NULL);
 #endif
 #elif defined(SCTP_KAME)
 					(void)sa6_embedscope(sin6, MODULE_GLOBAL(ip6_use_defzone));

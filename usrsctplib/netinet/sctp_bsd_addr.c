@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 237540 2012-06-24 21:25:54Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 239035 2012-08-04 08:03:30Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
