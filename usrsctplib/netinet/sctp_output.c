@@ -77,8 +77,10 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 238501 2012-07-15 20:16:17Z t
 #define APPLE_FILE_NO 3
 #endif
 
+#if defined(__APPLE__)
 #if !(defined(APPLE_LEOPARD) || defined(APPLE_SNOWLEOPARD))
 #define SCTP_MAX_LINKHDR 16
+#endif
 #endif
 
 #define SCTP_MAX_GAPS_INARRAY 4
@@ -11227,10 +11229,14 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 	if (port) {
 		len += sizeof(struct udphdr);
 	}
+#if defined(__APPLE__)
 #if defined(APPLE_LEOPARD) || defined(APPLE_SNOWLEOPARD)
 	mout = sctp_get_mbuf_for_msg(len + max_linkhdr, 1, M_DONTWAIT, 1, MT_DATA);
 #else
 	mout = sctp_get_mbuf_for_msg(len + SCTP_MAX_LINKHDR, 1, M_DONTWAIT, 1, MT_DATA);
+#endif
+#else
+	mout = sctp_get_mbuf_for_msg(len + max_linkhdr, 1, M_DONTWAIT, 1, MT_DATA);
 #endif
 	if (mout == NULL) {
 		if (cause) {
@@ -11238,10 +11244,14 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		}
 		return;
 	}
+#if defined(__APPLE__)
 #if defined(APPLE_LEOPARD) || defined(APPLE_SNOWLEOPARD)
 	SCTP_BUF_RESV_UF(mout, max_linkhdr);
 #else
 	SCTP_BUF_RESV_UF(mout, SCTP_MAX_LINKHDR);
+#endif
+#else
+	SCTP_BUF_RESV_UF(mout, max_linkhdr);
 #endif
 	SCTP_BUF_LEN(mout) = len;
 	SCTP_BUF_NEXT(mout) = cause;
