@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 238550 2012-07-17 13:03:47Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 239041 2012-08-04 20:40:36Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2360,8 +2360,6 @@ sctp_findassoc_by_vtag(struct sockaddr *from, struct sockaddr *to, uint32_t vtag
 	unsigned int i;
 #endif
 
-	*netp = NULL;
-	*inp_p = NULL;
 	SCTP_INP_INFO_RLOCK();
 	head = &SCTP_BASE_INFO(sctp_asochash)[SCTP_PCBHASH_ASOC(vtag,
 	    SCTP_BASE_INFO(hashasocmark))];
