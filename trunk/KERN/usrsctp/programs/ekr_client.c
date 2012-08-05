@@ -142,6 +142,7 @@ main(int argc, char *argv[])
 	int fd;
 #endif
 	struct socket *s;
+	struct linger l;
 #if defined(__Userspace_os_Windows)
 	HANDLE tid;
 #else
@@ -235,6 +236,12 @@ main(int argc, char *argv[])
 	if (usrsctp_sendv(s, buffer, BUFFER_SIZE, NULL, 0, (void *)&sndinfo,
 	                  (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("usrsctp_sendv");
+	}
+	
+	l.l_onoff = 1;
+	l.l_linger = 0;
+	if (usrsctp_setsockopt(s, SOL_SOCKET, SO_LINGER, (const void *)&l, (socklen_t)sizeof(struct linger)) < 0) {
+		perror("usrsctp_setsockopt");
 	}
 	usrsctp_close(s);
 	while (usrsctp_finish() != 0) {
