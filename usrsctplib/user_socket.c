@@ -2319,19 +2319,45 @@ int
 usrsctp_setsockopt(struct socket *so, int level, int option_name,
                      const void *option_value, socklen_t option_len)
 {
-	if (level != IPPROTO_SCTP) {
-		errno = ENOPROTOOPT;
-		return (-1);
-	}
 	if (so == NULL) {
 		errno = EBADF;
 		return (-1);
 	}
-	errno = sctp_setopt(so, option_name, (void *) option_value, option_len, NULL);
-	if (errno) {
+	switch (level) {
+	case SOL_SOCKET:
+	{
+		switch (option_name) {
+		case SO_LINGER:
+			if (option_len < sizeof(struct linger)) {
+				errno = EINVAL;
+				return (-1);
+			} else {
+				struct linger *l;
+
+				l = (struct linger *)option_value;
+				so->so_linger = l->l_linger;
+				if (l->l_onoff) {
+					so->so_options |= SO_LINGER;
+				} else {
+					so->so_options &= ~SO_LINGER;
+				}
+				return (0);
+			}
+		default:
+			errno = EINVAL;
+			return (-1);
+		}
+	}
+	case IPPROTO_SCTP:
+		errno = sctp_setopt(so, option_name, (void *) option_value, option_len, NULL);
+		if (errno) {
+			return (-1);
+		} else {
+			return (0);
+		}
+	default:
+		errno = ENOPROTOOPT;
 		return (-1);
-	} else {
-		return (0);
 	}
 }
 
@@ -2351,19 +2377,48 @@ int
 usrsctp_getsockopt(struct socket *so, int level, int option_name,
                      void *option_value, socklen_t *option_len)
 {
-	if (level != IPPROTO_SCTP) {
-		errno = ENOPROTOOPT;
-		return (-1);
-	}
 	if (so == NULL) {
 		errno = EBADF;
 		return (-1);
 	}
-	errno = sctp_getopt(so, option_name, option_value, (size_t *)option_len, NULL);
-	if (errno) {
+	if (option_len == NULL) {
+		errno = EFAULT;
 		return (-1);
-	} else {
-		return (0);
+	}
+	switch (level) {
+	case SOL_SOCKET:
+		switch (option_name) {
+		case SO_LINGER:
+			if (*option_len < sizeof(struct linger)) {
+				errno = EINVAL;
+				return (-1);
+			} else {
+				struct linger *l;
+
+				l = (struct linger *)option_value;
+				l->l_linger = so->so_linger;
+				if (so->so_options & SO_LINGER) {
+					l->l_onoff = 1;
+				} else {
+					l->l_onoff = 0;
+				}
+				*option_len = sizeof(struct linger);
+				return (0);
+			}
+		default:
+			errno = EINVAL;
+			return (-1);
+		}
+	case IPPROTO_SCTP:
+		errno = sctp_getopt(so, option_name, option_value, (size_t *)option_len, NULL);
+		if (errno) {
+			return (-1);
+		} else {
+			return (0);
+		}
+	default:
+		errno = ENOPROTOOPT;
+		return (-1);
 	}
 }
 
