@@ -162,7 +162,7 @@ Start copy: Copied code for __Userspace__ */
 	struct malloc_type type[1] = {					\
 		{ NULL, 0, 0, 0, 0, 0, M_MAGIC, shortdesc, NULL, NULL,	\
 		    NULL, 0, NULL, NULL, 0, 0 }				\
-	};
+	}
 
 /* Removed "extern" in __Userspace__ code */
 /* If we need to use MALLOC_DECLARE before using MALLOC then
@@ -205,7 +205,7 @@ Start copy: Copied code for __Userspace__ */
 	SYSINIT(type##_init, SI_SUB_KMEM, SI_ORDER_SECOND, malloc_init,	\
 	    type);							\
 	SYSUNINIT(type##_uninit, SI_SUB_KMEM, SI_ORDER_ANY,		\
-	    malloc_uninit, type);
+	    malloc_uninit, type)
 
 
 #define	MALLOC_DECLARE(type) \
