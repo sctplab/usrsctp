@@ -75,9 +75,9 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 #endif
 			case AF_CONN:
 #if defined(__Userspace_os_Windows)
-				_snprintf(namebuf, INET6_ADDRSTRLEN, "%p", &addr.sconn.sconn_addr);
+				_snprintf(namebuf, INET6_ADDRSTRLEN, "%p", addr.sconn.sconn_addr);
 #else
-				snprintf(namebuf, INET6_ADDRSTRLEN, "%p", &addr.sconn.sconn_addr);
+				snprintf(namebuf, INET6_ADDRSTRLEN, "%p", addr.sconn.sconn_addr);
 #endif
 				name = namebuf;
 				port = ntohs(addr.sconn.sconn_port);
