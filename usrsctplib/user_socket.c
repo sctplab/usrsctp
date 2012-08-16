@@ -400,7 +400,8 @@ soisdisconnecting(struct socket *so)
         so->so_snd.sb_state |= SBS_CANTSENDMORE;
         sowwakeup_locked(so);
         wakeup("dummy",so);
-        // requires 2 args but this was in orig        wakeup(&so->so_timeo);
+        /* requires 2 args but this was in orig */
+        /* wakeup(&so->so_timeo); */
 }
 
 
