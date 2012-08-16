@@ -111,7 +111,7 @@ static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
            size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
 {
-	printf("Message received on sock = %p.\n", sock);
+	printf("Message received on sock = %p.\n", (void *)sock);
 	if (data) {
 		if ((flags & MSG_NOTIFICATION) == 0) {
 			printf("Msg of length %d received via %p:%u on stream %d with SSN %u and TSN %u, PPID %d, context %u.\n",
@@ -225,7 +225,7 @@ main(int argc, char *argv[])
 	if ((s_l = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 	}
-	printf("s_c = %p, s_l = %p.\n", s_c, s_l);
+	printf("s_c = %p, s_l = %p.\n", (void *)s_c, (void *)s_l);
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
 #ifdef HAVE_SIN_LEN
@@ -252,7 +252,7 @@ main(int argc, char *argv[])
 	if ((s_s = usrsctp_accept(s_l, NULL, NULL)) == NULL) {
 		perror("usrsctp_accept");
 	}
-	printf("accepted socket %p.\n", s_s);
+	printf("accepted socket %p.\n", (void *)s_s);
 	usrsctp_close(s_l);
 	memset(line, 'A', LINE_LENGTH);
 	sndinfo.snd_sid = 1;
