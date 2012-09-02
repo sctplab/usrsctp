@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 238550 2012-07-17 13:03:47Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 240007 2012-09-02 12:37:30Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2456,7 +2456,7 @@ sctp_calculate_rto(struct sctp_tcb *stcb,
 	}
 	timevalsub(&now, old);
 	/* store the current RTT in us */
-	net->rtt = (uint64_t)10000000 * (uint64_t)now.tv_sec +
+	net->rtt = (uint64_t)1000000 * (uint64_t)now.tv_sec +
 	           (uint64_t)now.tv_usec;
 	/* computer rtt in ms */
 	rtt = net->rtt / 1000;
