@@ -7238,7 +7238,7 @@ sctp_listen(struct socket *so, struct proc *p)
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) {
 		/* remove the ACCEPTCONN flag for one-to-many sockets */
 #if defined(__Userspace__)
-		so->so_options &= ~SO_ACCEPTCONN;
+		so->so_options &= ~SCTP_SO_ACCEPTCONN;
 #else
 		so->so_options &= ~SO_ACCEPTCONN;
 #endif
