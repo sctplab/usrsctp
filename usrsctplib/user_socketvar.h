@@ -49,7 +49,6 @@
 #if !defined(MSG_NOTIFICATION)
 #define MSG_NOTIFICATION 0x2000         /* SCTP notification */
 #endif
-#define	SO_ACCEPTFILTER	0x1000		/* there is an accept filter */
 #define SS_CANTRCVMORE 0x020
 #define SS_CANTSENDMORE 0x010
 
