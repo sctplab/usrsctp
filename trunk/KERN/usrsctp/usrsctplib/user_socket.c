@@ -470,31 +470,16 @@ soisconnected(struct socket *so)
 	so->so_state |= SS_ISCONNECTED;
 	head = so->so_head;
 	if (head != NULL && (so->so_qstate & SQ_INCOMP)) {
-		if ((so->so_options & SO_ACCEPTFILTER) == 0) {
-			SOCK_UNLOCK(so);
-			TAILQ_REMOVE(&head->so_incomp, so, so_list);
-			head->so_incqlen--;
-			so->so_qstate &= ~SQ_INCOMP;
-			TAILQ_INSERT_TAIL(&head->so_comp, so, so_list);
-			head->so_qlen++;
-			so->so_qstate |= SQ_COMP;
-			ACCEPT_UNLOCK();
-			sorwakeup(head);
-			wakeup_one(&head->so_timeo);
-		} else {
-			ACCEPT_UNLOCK();
-			/*
-			so->so_upcall = head->so_accf->so_accept_filter->accf_callback;
-			so->so_upcallarg = head->so_accf->so_accept_filter_arg;
-			*/
-			so->so_rcv.sb_flags |= SB_UPCALL;
-			so->so_options &= ~SO_ACCEPTFILTER;
-			SOCK_UNLOCK(so);
-			/*
-			so->so_upcall(so, so->so_upcallarg, M_DONTWAIT);
-			*/
-		}
-
+		SOCK_UNLOCK(so);
+		TAILQ_REMOVE(&head->so_incomp, so, so_list);
+		head->so_incqlen--;
+		so->so_qstate &= ~SQ_INCOMP;
+		TAILQ_INSERT_TAIL(&head->so_comp, so, so_list);
+		head->so_qlen++;
+		so->so_qstate |= SQ_COMP;
+		ACCEPT_UNLOCK();
+		sorwakeup(head);
+		wakeup_one(&head->so_timeo);
 		return;
 	}
 	SOCK_UNLOCK(so);
@@ -525,8 +510,6 @@ sonewconn(struct socket *head, int connstatus)
 	so = soalloc();
 	if (so == NULL)
 		return (NULL);
-	if ((head->so_options & SO_ACCEPTFILTER) != 0)
-		connstatus = 0;
 	so->so_head = head;
 	so->so_type = head->so_type;
 	so->so_options = head->so_options &~ SO_ACCEPTCONN;
