@@ -905,8 +905,13 @@ sctp_close(struct socket *so)
 #endif
 	if (((flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
 	    (atomic_cmpset_int(&inp->sctp_flags, flags, (flags | SCTP_PCB_FLAGS_SOCKET_GONE | SCTP_PCB_FLAGS_CLOSE_IP)))) {
+#if defined(__Userspace__)
+		if (((so->so_options & SCTP_SO_LINGER) && (so->so_linger == 0)) ||
+		    (so->so_rcv.sb_cc > 0)) {
+#else
 		if (((so->so_options & SO_LINGER) && (so->so_linger == 0)) ||
 		    (so->so_rcv.sb_cc > 0)) {
+#endif
 #ifdef SCTP_LOG_CLOSING
 			sctp_log_closing(inp, NULL, 13);
 #endif
@@ -968,8 +973,13 @@ sctp_detach(struct socket *so)
 #endif
 	if (((flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
 	    (atomic_cmpset_int(&inp->sctp_flags, flags, (flags | SCTP_PCB_FLAGS_SOCKET_GONE | SCTP_PCB_FLAGS_CLOSE_IP)))) {
+#if defined(__Userspace__)
+		if (((so->so_options & SCTP_SO_LINGER) && (so->so_linger == 0)) ||
+		    (so->so_rcv.sb_cc > 0)) {
+#else
 		if (((so->so_options & SO_LINGER) && (so->so_linger == 0)) ||
 		    (so->so_rcv.sb_cc > 0)) {
+#endif
 #ifdef SCTP_LOG_CLOSING
 			sctp_log_closing(inp, NULL, 13);
 #endif
@@ -1155,9 +1165,15 @@ sctp_disconnect(struct socket *so)
 				SCTP_INP_RUNLOCK(inp);
 				return (0);
 			}
+#if defined(__Userspace__)
+			if (((so->so_options & SCTP_SO_LINGER) &&
+			    (so->so_linger == 0)) ||
+			    (so->so_rcv.sb_cc > 0)) {
+#else
 			if (((so->so_options & SO_LINGER) &&
 			    (so->so_linger == 0)) ||
 			    (so->so_rcv.sb_cc > 0)) {
+#endif
 				if (SCTP_GET_STATE(asoc) !=
 				    SCTP_STATE_COOKIE_WAIT) {
 					/* Left with Data unread */
@@ -7221,13 +7237,21 @@ sctp_listen(struct socket *so, struct proc *p)
 #endif
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) {
 		/* remove the ACCEPTCONN flag for one-to-many sockets */
+#if defined(__Userspace__)
 		so->so_options &= ~SO_ACCEPTCONN;
+#else
+		so->so_options &= ~SO_ACCEPTCONN;
+#endif
 	}
 
 #if __FreeBSD_version >= 700000 || defined(__Windows__) || defined(__Userspace__)
 	if (backlog == 0) {
 		/* turning off listen */
+#if defined(__Userspace__)
+		so->so_options &= ~SCTP_SO_ACCEPTCONN;
+#else
 		so->so_options &= ~SO_ACCEPTCONN;
+#endif
 	}
 #endif
 	SOCK_UNLOCK(so);

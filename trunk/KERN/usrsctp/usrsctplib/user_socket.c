@@ -311,7 +311,7 @@ sofree(struct socket *so)
 	    (so->so_qstate & SQ_INCOMP) == 0,
 	    ("sofree: so_head == NULL, but still SQ_COMP(%d) or SQ_INCOMP(%d)",
 	    so->so_qstate & SQ_COMP, so->so_qstate & SQ_INCOMP));
-	if (so->so_options & SO_ACCEPTCONN) {
+	if (so->so_options & SCTP_SO_ACCEPTCONN) {
 		KASSERT((TAILQ_EMPTY(&so->so_comp)), ("sofree: so_comp populated"));
 		KASSERT((TAILQ_EMPTY(&so->so_incomp)), ("sofree: so_comp populated"));
 	}
@@ -512,7 +512,7 @@ sonewconn(struct socket *head, int connstatus)
 		return (NULL);
 	so->so_head = head;
 	so->so_type = head->so_type;
-	so->so_options = head->so_options &~ SO_ACCEPTCONN;
+	so->so_options = head->so_options &~ SCTP_SO_ACCEPTCONN;
 	so->so_linger = head->so_linger;
 	so->so_state = head->so_state | SS_NOFDREF;
 	so->so_dom = head->so_dom;
@@ -1813,7 +1813,7 @@ solisten_proto(struct socket *so, int backlog)
 	if (backlog < 0 || backlog > somaxconn)
 		backlog = somaxconn;
 	so->so_qlimit = backlog;
-	so->so_options |= SO_ACCEPTCONN;
+	so->so_options |= SCTP_SO_ACCEPTCONN;
 }
 
 
@@ -1875,7 +1875,7 @@ user_accept(struct socket *aso,  struct sockaddr **name, socklen_t *namelen, str
 		*name = NULL;
 	}
 
-	if ((head->so_options & SO_ACCEPTCONN) == 0) {
+	if ((head->so_options & SCTP_SO_ACCEPTCONN) == 0) {
 		error = EINVAL;
 		goto done;
 	}
@@ -2095,7 +2095,7 @@ soconnect(struct socket *so, struct sockaddr *nam)
 {
 	int error;
 
-	if (so->so_options & SO_ACCEPTCONN)
+	if (so->so_options & SCTP_SO_ACCEPTCONN)
 		return (EOPNOTSUPP);
 	/*
 	 * If protocol is connection-based, can only connect once.
@@ -2213,7 +2213,7 @@ int userspace_connect(struct socket *so, struct sockaddr *name, int namelen)
 void
 usrsctp_close(struct socket *so) {
 	if (so != NULL) {
-		if (so->so_options & SO_ACCEPTCONN) {
+		if (so->so_options & SCTP_SO_ACCEPTCONN) {
 			struct socket *sp;
 
 			ACCEPT_LOCK();
@@ -2321,9 +2321,9 @@ usrsctp_setsockopt(struct socket *so, int level, int option_name,
 				l = (struct linger *)option_value;
 				so->so_linger = l->l_linger;
 				if (l->l_onoff) {
-					so->so_options |= SO_LINGER;
+					so->so_options |= SCTP_SO_LINGER;
 				} else {
-					so->so_options &= ~SO_LINGER;
+					so->so_options &= ~SCTP_SO_LINGER;
 				}
 				return (0);
 			}
@@ -2381,7 +2381,7 @@ usrsctp_getsockopt(struct socket *so, int level, int option_name,
 
 				l = (struct linger *)option_value;
 				l->l_linger = so->so_linger;
-				if (so->so_options & SO_LINGER) {
+				if (so->so_options & SCTP_SO_LINGER) {
 					l->l_onoff = 1;
 				} else {
 					l->l_onoff = 0;
