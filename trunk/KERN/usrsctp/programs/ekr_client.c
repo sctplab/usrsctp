@@ -205,7 +205,13 @@ main(int argc, char *argv[])
 	if ((s = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 	}
-#if 1
+
+	l.l_onoff = 1;
+	l.l_linger = 0;
+	if (usrsctp_setsockopt(s, SOL_SOCKET, SO_LINGER, (const void *)&l, (socklen_t)sizeof(struct linger)) < 0) {
+		perror("usrsctp_setsockopt");
+	}
+
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
 #ifdef HAVE_SIN_LEN
@@ -216,7 +222,7 @@ main(int argc, char *argv[])
 	if (usrsctp_bind(s, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_bind");
 	}
-#endif
+
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
 #ifdef HAVE_SIN_LEN
@@ -238,11 +244,6 @@ main(int argc, char *argv[])
 		perror("usrsctp_sendv");
 	}
 	
-	l.l_onoff = 1;
-	l.l_linger = 0;
-	if (usrsctp_setsockopt(s, SOL_SOCKET, SO_LINGER, (const void *)&l, (socklen_t)sizeof(struct linger)) < 0) {
-		perror("usrsctp_setsockopt");
-	}
 	usrsctp_close(s);
 	while (usrsctp_finish() != 0) {
 #if defined (__Userspace_os_Windows)
