@@ -879,19 +879,6 @@ usrsctp_sendv(struct socket *so,
                        unsigned int infotype,
                        int flags);
 
-/*ssize_t
-usrsctp_sendmsg(struct socket *so,
-                        const void *data,
-                        size_t len,
-                        struct sockaddr *to,
-                        socklen_t tolen,
-                        uint32_t ppid,
-                        uint32_t flags,
-                        uint32_t stream_no,
-                        uint32_t timetolive,
-                        uint32_t context);*/
-
-
 ssize_t
 usrsctp_recvv(struct socket *so,
               void *dbuf,
@@ -1027,6 +1014,7 @@ USRSCTP_SYSCTL_DECL(sctp_debug_on)
 #define SCTP_DEBUG_NONE 0x00000000
 #define SCTP_DEBUG_ALL  0xffffffff
 #endif
+#undef USRSCTP_SYSCTL_DECL
 #ifdef  __cplusplus
 }
 #endif
