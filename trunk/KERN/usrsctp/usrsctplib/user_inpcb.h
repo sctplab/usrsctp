@@ -157,7 +157,9 @@ struct inpcb {
 		/* IP6 options for outgoing packets */
 		struct	ip6_pktopts *inp6_outputopts;
 		/* IP multicast options */
+#if 0
 		struct	ip6_moptions *inp6_moptions;
+#endif
 		/* ICMPv6 code type filter */
 		struct	icmp6_filter *inp6_icmp6filt;
 		/* IPV6_CHECKSUM setsockopt */
@@ -178,7 +180,9 @@ struct inpcb {
 #define	in6p_vflag	inp_vflag
 #define	in6p_options	inp_depend6.inp6_options
 #define	in6p_outputopts	inp_depend6.inp6_outputopts
+#if 0
 #define	in6p_moptions	inp_depend6.inp6_moptions
+#endif
 #define	in6p_icmp6filt	inp_depend6.inp6_icmp6filt
 #define	in6p_cksum	inp_depend6.inp6_cksum
 #define	in6p_flags	inp_flags  /* for KAME src sync over BSD*'s */
