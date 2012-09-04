@@ -202,13 +202,15 @@ typedef char* caddr_t;
 #define random() rand()
 #define srandom(s) srand(s)
 #define	MSG_EOR		0x8		/* data completes record */
+#define	MSG_DONTWAIT	0x80		/* this message should be nonblocking */
+
 #if defined(CMSG_DATA)
 #undef CMSG_DATA
 #endif
 #define CMSG_DATA(x)   WSA_CMSG_DATA(x)
 #define CMSG_ALIGN(x)  WSA_CMSGDATA_ALIGN(x)
-
-#define	MSG_DONTWAIT	0x80		/* this message should be nonblocking */
+#define CMSG_SPACE(x)  WSA_CMSG_SPACE(x)
+#define CMSG_LEN(x)    WSA_CMSG_LEN(x)
 
 /****  from sctp_os_windows.h ***************/
 #define SCTP_IFN_IS_IFT_LOOP(ifn)	((ifn)->ifn_type == IFT_LOOP)
