@@ -35,6 +35,7 @@
 #include <WS2tcpip.h>
 #include <stdlib.h>
 #include <crtdbg.h>
+#include <sys/timeb.h>
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
