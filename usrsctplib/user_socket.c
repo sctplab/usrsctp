@@ -2749,7 +2749,7 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	if ((m = sctp_get_mbuf_for_msg(length, 1, M_DONTWAIT, 0, MT_DATA)) == NULL) {
 		return;
 	}
-	m_copyback(m, 0, length, buffer);
+	m_copyback(m, 0, length, (caddr_t)buffer);
 	if (SCTP_BUF_LEN(m) < sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr)) {
 		if ((m = m_pullup(m, sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr))) == NULL) {
 			SCTP_STAT_INCR(sctps_hdrops);
