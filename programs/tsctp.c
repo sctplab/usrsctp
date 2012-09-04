@@ -113,7 +113,7 @@ void stop_sender(int sig)
 
 #ifdef _WIN32
 static void
-gettimeofday(struct timeval *tv void *ignore)
+gettimeofday(struct timeval *tv, void *ignore)
 {
 	struct timeb tb;
 
