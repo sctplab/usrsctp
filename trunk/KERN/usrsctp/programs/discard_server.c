@@ -36,7 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#if !defined(__Userspace_os_Windows)
+#ifndef _WIN32
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -74,7 +74,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 				break;
 #endif
 			case AF_CONN:
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 				_snprintf(namebuf, INET6_ADDRSTRLEN, "%p", addr.sconn.sconn_addr);
 #else
 				snprintf(namebuf, INET6_ADDRSTRLEN, "%p", addr.sconn.sconn_addr);
@@ -137,27 +137,27 @@ main(int argc, char *argv[])
 	usrsctp_sysctl_set_sctp_blackhole(2);
 
 	if ((sock = usrsctp_socket(AF_INET6, SOCK_SEQPACKET, IPPROTO_SCTP, use_cb?receive_cb:NULL, NULL, 0, NULL)) == NULL) {
-		perror("userspace_socket");
+		perror("usrsctp_socket");
 	}
 	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, (const void*)&on, (socklen_t)sizeof(int)) < 0) {
-		perror("setsockopt");
+		perror("usrsctp_setsockopt SCTP_I_WANT_MAPPED_V4_ADDR");
 	}
 	memset(&av, 0, sizeof(struct sctp_assoc_value));
 	av.assoc_id = SCTP_ALL_ASSOC;
 	av.assoc_value = 47;
 
 	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_CONTEXT, (const void*)&av, (socklen_t)sizeof(struct sctp_assoc_value)) < 0) {
-		perror("setsockopt");
+		perror("usrsctp_setsockopt SCTP_CONTEXT");
 	}
 	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_RECVRCVINFO, &on, sizeof(int)) < 0) {
-		perror("setsockopt SCTP_RECVRCVINFO");
+		perror("usrsctp_setsockopt SCTP_RECVRCVINFO");
 	}
 	if (argc > 2) {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET6;
 		encaps.sue_port = htons(atoi(argv[2]));
 		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
-			perror("setsockopt");
+			perror("usrsctp_setsockopt SCTP_REMOTE_UDP_ENCAPS_PORT");
 		}
 	}
 	memset(&event, 0, sizeof(event));
@@ -166,7 +166,7 @@ main(int argc, char *argv[])
 	for (i = 0; i < (unsigned int)(sizeof(event_types)/sizeof(uint16_t)); i++) {
 		event.se_type = event_types[i];
 		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(struct sctp_event)) < 0) {
-			perror("userspace_setsockopt");
+			perror("usrsctp_setsockopt SCTP_EVENT");
 		}
 	}
 	memset((void *)&addr, 0, sizeof(struct sockaddr_in6));
@@ -177,14 +177,14 @@ main(int argc, char *argv[])
 	addr.sin6_port = htons(9);
 	addr.sin6_addr = in6addr_any;
 	if (usrsctp_bind(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in6)) < 0) {
-		perror("userspace_bind");
+		perror("usrsctp_bind");
 	}
 	if (usrsctp_listen(sock, 1) < 0) {
-		perror("userspace_listen");
+		perror("usrsctp_listen");
 	}
 	while (1) {
 		if (use_cb) {
-#if defined (__Userspace_os_Windows)
+#ifdef _WIN32
 			Sleep(1*1000);
 #else
 			sleep(1);
@@ -223,7 +223,7 @@ main(int argc, char *argv[])
 	}
 	usrsctp_close(sock);
 	while (usrsctp_finish() != 0) {
-#if defined (__Userspace_os_Windows)
+#ifdef _WIN32
 		Sleep(1000);
 #else
 		sleep(1);

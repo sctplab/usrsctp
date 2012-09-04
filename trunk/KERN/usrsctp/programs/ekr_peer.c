@@ -28,14 +28,14 @@
  * SUCH DAMAGE.
  */
 
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#if !defined(__Userspace_os_Windows)
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -55,7 +55,7 @@
 static void *
 handle_packets(void *arg)
 {
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	SOCKET *fdp;
 #else
 	int *fdp;
@@ -63,7 +63,7 @@ handle_packets(void *arg)
 	char *buf;
 	ssize_t length;
 
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	fdp = (SOCKET *)arg;
 #else
 	fdp = (int *)arg;
@@ -84,18 +84,18 @@ handle_packets(void *arg)
 static int
 conn_output(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df)
 {
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	SOCKET *fdp;
 #else
 	int *fdp;
 #endif
 
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	fdp = (SOCKET *)addr;
 #else
 	fdp = (int *)addr;
 #endif
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	if (send(*fdp, buffer, length, 0) == SOCKET_ERROR) {
 		return (WSAGetLastError());
 #else
@@ -197,7 +197,7 @@ handle_peer_address_change_event(struct sctp_paddr_change *spc)
 		break;
 	case AF_CONN:
 		sconn = (struct sockaddr_conn *)&spc->spc_aaddr;
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 		_snprintf(addr_buf, INET6_ADDRSTRLEN, "%p", sconn->sconn_addr);
 #else
 		snprintf(addr_buf, INET6_ADDRSTRLEN, "%p", sconn->sconn_addr);
@@ -334,13 +334,13 @@ main(int argc, char *argv[])
 	                          SCTP_PEER_ADDR_CHANGE,
 	                          SCTP_SEND_FAILED_EVENT};
 	unsigned int i;
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	SOCKET fd;
 #else
 	int fd;
 #endif
 	struct socket *s;
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	HANDLE tid;
 #else
 	pthread_t tid;
@@ -350,7 +350,7 @@ main(int argc, char *argv[])
 
 	usrsctp_init(0, conn_output);
 	/* set up a connected UDP socket */
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
 		printf("socket() failed with error: %ld\n", WSAGetLastError());
 	}
@@ -366,7 +366,7 @@ main(int argc, char *argv[])
 #endif
 	sin.sin_port = htons(atoi(argv[2]));
 	sin.sin_addr.s_addr = inet_addr(argv[1]);
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
 		printf("bind() failed with error: %ld\n", WSAGetLastError());
 	}
@@ -382,7 +382,7 @@ main(int argc, char *argv[])
 #endif
 	sin.sin_port = htons(atoi(argv[4]));
 	sin.sin_addr.s_addr = inet_addr(argv[3]);
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
 		printf("connect() failed with error: %ld\n", WSAGetLastError());
 	}
@@ -391,7 +391,7 @@ main(int argc, char *argv[])
 		perror("connect");
 	}
 #endif
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	tid = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_packets, (void *)&fd, 0, NULL);
 #else
 	pthread_create(&tid, NULL, &handle_packets, (void *)&fd);
@@ -436,7 +436,7 @@ main(int argc, char *argv[])
 		perror("usrsctp_connect");
 	}
 	for (;;) {
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 		if (gets_s(line, LINE_LENGTH) == NULL) {
 #else
 		if (fgets(line, LINE_LENGTH, stdin) == NULL) {
@@ -445,7 +445,7 @@ main(int argc, char *argv[])
 				perror("usrsctp_shutdown");
 			}
 			while (usrsctp_finish() != 0) {
-#if defined (__Userspace_os_Windows)
+#ifdef _WIN32
 				Sleep(1000);
 #else
 				sleep(1);
@@ -465,7 +465,7 @@ main(int argc, char *argv[])
 	}
 	usrsctp_close(s);
 	while (usrsctp_finish() != 0) {
-#if defined (__Userspace_os_Windows)
+#ifdef _WIN32
 		Sleep(1000);
 #else
 		sleep(1);

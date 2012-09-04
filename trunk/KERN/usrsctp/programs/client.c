@@ -35,11 +35,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if !defined(__Userspace_os_Windows)
+#ifndef _WIN32
 #include <unistd.h>
 #endif
 #include <sys/types.h>
-#if !defined(__Userspace_os_Windows)
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -81,7 +81,7 @@ main(int argc, char *argv[])
 #endif
 	usrsctp_sysctl_set_sctp_blackhole(2);
 	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
-		perror("userspace_socket ipv6");
+		perror("usrsctp_socket ipv6");
 	}
 	if (argc > 4) {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
@@ -105,11 +105,11 @@ main(int argc, char *argv[])
 	addr6.sin6_port = htons(atoi(argv[2]));
 	if (inet_pton(AF_INET6, argv[1], &addr6.sin6_addr) == 1) {
 		if (usrsctp_connect(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
-			perror("userspace_connect");
+			perror("usrsctp_connect");
 		}
 	} else if (inet_pton(AF_INET, argv[1], &addr4.sin_addr) == 1) {
 		if (usrsctp_connect(sock, (struct sockaddr *)&addr4, sizeof(struct sockaddr_in)) < 0) {
-			perror("userspace_connect");
+			perror("usrsctp_connect");
 		}
 	} else {
 		printf("Illegal destination address.\n");
@@ -122,14 +122,14 @@ main(int argc, char *argv[])
 		usrsctp_shutdown(sock, SHUT_WR);
 	}
 	while (!done) {
-#if defined (__Userspace_os_Windows)
+#ifdef _WIN32
 		Sleep(1*1000);
 #else
 		sleep(1);
 #endif
 	}
 	while (usrsctp_finish() != 0) {
-#if defined (__Userspace_os_Windows)
+#ifdef _WIN32
 		Sleep(1000);
 #else
 		sleep(1);

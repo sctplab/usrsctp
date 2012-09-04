@@ -30,7 +30,7 @@
  */
 
 #include <sys/types.h>
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <stdlib.h>
@@ -111,13 +111,25 @@ void stop_sender(int sig)
 	done = 1;
 }
 
+#ifdef _WIN32
+static void
+gettimeofday(struct timeval *tv void *ignore)
+{
+	struct timeb tb;
+
+	ftime(&tb);
+	tv->tv_sec = tb.time;
+ 	tv->tv_usec = tb.millitm * 1000;
+}
+#endif
+
 static void*
 handle_connection(void *arg)
 {
 	ssize_t n;
 	unsigned long long sum = 0;
 	char *buf;
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	HANDLE tid;
 #else
 	pthread_t tid;
@@ -142,7 +154,7 @@ handle_connection(void *arg)
 	struct sctp_nxtinfo nxt;
 
 	conn_sock = *(struct socket **)arg;
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	tid = GetCurrentThread();
 #else
 	tid = pthread_self();
@@ -158,21 +170,13 @@ handle_connection(void *arg)
 	n = usrsctp_recvv(conn_sock, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn,
 	                 &infolen, &infotype, &flags);
 
-#if defined (__Userspace_os_Windows)
-	getwintimeofday(&start_time);
-#else
 	gettimeofday(&start_time, NULL);
-#endif
 	first_length = 0;
 	while (n > 0) {
 		recv_calls++;
 		if (flags & MSG_NOTIFICATION) {
 			notifications++;
-#if defined (__Userspace_os_Windows)
-			getwintimeofday(&note_time);
-#else
 			gettimeofday(&note_time, NULL);
-#endif
 			printf("notification arrived at %f\n", note_time.tv_sec+(double)note_time.tv_usec/1000000.0);
 			snp = (union sctp_notification*)&buf;
 			if (snp->sn_header.sn_type==SCTP_PEER_ADDR_CHANGE)
@@ -200,11 +204,7 @@ handle_connection(void *arg)
 	}
 	if (n < 0)
 		perror("sctp_recvv");
-#if defined (__Userspace_os_Windows)
-	getwintimeofday(&now);
-#else
 	gettimeofday(&now, NULL);
-#endif
 	timersub(&now, &start_time, &diff_time);
 	seconds = diff_time.tv_sec + (double)diff_time.tv_usec/1000000.0;
 	printf("%u, %lu, %lu, %lu, %llu, %f, %f\n",
@@ -280,11 +280,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 	double seconds;
 
 	if (data == NULL) {
-#if defined (__Userspace_os_Windows)
-		getwintimeofday(&now);
-#else
 		gettimeofday(&now, NULL);
-#endif
 		timersub(&now, &start_time, &diff_time);
 		seconds = diff_time.tv_sec + (double)diff_time.tv_usec/1000000.0;
 		printf("%u, %lu, %llu, %f, %f\n",
@@ -297,11 +293,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 	}
 	if (first_length == 0) {
 		first_length = datalen;
-#if defined (__Userspace_os_Windows)
-		getwintimeofday(&start_time);
-#else
 		gettimeofday(&start_time, NULL);
-#endif
 	}
 	sum += datalen;
 	messages++;
@@ -313,7 +305,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 
 int main(int argc, char **argv)
 {
-#if !defined (__Userspace_os_Windows)
+#ifndef _WIN32
 	char c;
 #endif
 	socklen_t addr_len;
@@ -327,7 +319,7 @@ int main(int argc, char **argv)
 	struct sctp_assoc_value av;
 	struct sctp_udpencaps encaps;
 	struct sctp_sndinfo sndinfo;
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	HANDLE tid;
 #else
 	pthread_t tid;
@@ -335,7 +327,7 @@ int main(int argc, char **argv)
 	int fragpoint = 0;
 	unsigned int runtime = 0;
 	struct sctp_setadaptation ind = {0};
-#if defined (__Userspace_os_Windows)
+#ifdef _WIN32
 	char *opt;
 	int optind;
 #endif
@@ -354,7 +346,7 @@ int main(int argc, char **argv)
 	memset((void *) &remote_addr, 0, sizeof(struct sockaddr_in));
 	memset((void *) &local_addr, 0, sizeof(struct sockaddr_in));
 
-#if !defined (__Userspace_os_Windows)
+#ifndef _WIN32
 	while ((c = getopt(argc, argv, "a:cp:l:E:f:n:T:uU:vVD")) != -1)
 		switch(c) {
 			case 'a':
@@ -577,7 +569,7 @@ int main(int argc, char **argv)
 					printf("usrsctp_accept failed.  exiting...\n");
 					continue;
 				}
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 				tid = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_connection, (void *)conn_sock, 0, NULL);
 #else
 				pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock);
@@ -624,11 +616,7 @@ int main(int argc, char **argv)
 
 		buffer = malloc(length);
 		memset(buffer, 'b', length);
-#if defined (__Userspace_os_Windows)
-		getwintimeofday(&start_time);
-#else
 		gettimeofday(&start_time, NULL);
-#endif
 		if (verbose) {
 			printf("Start sending %ld messages...\n", (long)number_of_messages);
 			fflush(stdout);
@@ -637,7 +625,7 @@ int main(int argc, char **argv)
 		done = 0;
 
 		if (runtime > 0) {
-#if !defined (__Userspace_os_Windows)
+#ifndef _WIN32
 			signal(SIGALRM, stop_sender);
 			alarm(runtime);
 #else
@@ -672,7 +660,7 @@ int main(int argc, char **argv)
 			}
 			messages++;
 			while (!done && (messages < (number_of_messages - 1))) {
-#if defined (__Userspace_os_Windows)
+#ifdef _WIN32
 				Sleep(1000);
 #else
 				sleep(1);
@@ -707,11 +695,7 @@ int main(int argc, char **argv)
 			printf("done.\n");
 
 		usrsctp_close(psock);
-#if defined (__Userspace_os_Windows)
-		getwintimeofday(&now);
-#else
 		gettimeofday(&now, NULL);
-#endif
 		timersub(&now, &start_time, &diff_time);
 		seconds = diff_time.tv_sec + (double)diff_time.tv_usec/1000000;
 		printf("%s of %ld messages of length %u took %f seconds.\n",
@@ -721,7 +705,7 @@ int main(int argc, char **argv)
 	}
 
 	while (usrsctp_finish() != 0) {
-#if defined (__Userspace_os_Windows)
+#ifdef _WIN32
 		Sleep(1000);
 #else
 		sleep(1);
