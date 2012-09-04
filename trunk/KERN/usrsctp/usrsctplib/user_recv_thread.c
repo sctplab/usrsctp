@@ -1069,13 +1069,12 @@ recv_thread_init(void)
 #else
 	unsigned int timeout = SOCKET_TIMEOUT; /* Timeout in milliseconds */
 #endif
-#if !defined(__Userspace_os_Windows)
+#if defined(__Userspace_os_Darwin) || defined(__Userspace_os_FreeBSD)
 	if (SCTP_BASE_VAR(userspace_route) == -1) {
-#if !defined(__Userspace_os_Linux)
 		if ((SCTP_BASE_VAR(userspace_route) = socket(AF_ROUTE, SOCK_RAW, 0)) < 0) {
 			SCTPDBG(SCTP_DEBUG_USR, "Can't create routing socket (errno = %d).\n", errno);
 		}
-#else
+#if 0
 		struct sockaddr_nl sanl;
 
 		if ((SCTP_BASE_VAR(userspace_route) = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE)) < 0) {
