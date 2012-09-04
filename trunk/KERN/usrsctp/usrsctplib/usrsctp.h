@@ -85,7 +85,10 @@ extern "C" {
 typedef uint32_t sctp_assoc_t;
 
 #define AF_CONN 123
-#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+/* The definition of struct sockaddr_conn MUST be in
+ * tune with other sockaddr_* structures.
+ */
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 struct sockaddr_conn {
 	uint8_t sconn_len;
 	uint8_t sconn_family;
