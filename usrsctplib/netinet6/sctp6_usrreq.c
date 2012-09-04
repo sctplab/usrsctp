@@ -115,6 +115,7 @@ in6_sin6_2_sin_in_sock(struct sockaddr *nam)
 }
 #endif
 
+#if !defined(__Userspace__)
 int
 #if defined(__APPLE__)
 sctp6_input_with_port(struct mbuf **i_pak, int *offp, uint16_t port)
@@ -329,7 +330,6 @@ sctp6_input(struct mbuf **i_pak, int *offp)
 }
 #endif
 
-#if !defined(__Userspace__)
 #if defined(__Panda__)
 void
 #else
