@@ -119,5 +119,7 @@ AC_TRY_COMPILE([#ifdef HAVE_SYS_TYPES_H
                [AC_MSG_RESULT(int)
                 AC_DEFINE(socklen_t, int, [Define a type for socklen_t.])])
 
+AC_C_BIGENDIAN
+
 AC_SUBST([LIBCFLAGS])
 AC_OUTPUT(Makefile usrsctplib/Makefile programs/Makefile)
