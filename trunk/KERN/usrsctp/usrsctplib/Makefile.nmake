@@ -71,7 +71,6 @@ usrsctp_HEADERS = \
 	user_ip6_var.h \
 	user_malloc.h \
 	user_mbuf.h \
-	user_radix.h \
 	user_recv_thread.h \
 	user_route.h \
 	user_socketvar.h \
