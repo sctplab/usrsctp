@@ -87,7 +87,10 @@ AC_CHECK_TYPE(ssize_t)
 AC_CHECK_FUNCS(socket, , AC_CHECK_LIB(socket, socket))
 AC_CHECK_FUNCS(inet_addr, , AC_CHECK_LIB(nsl, inet_addr))
 
-AC_CHECK_HEADERS(sys/types.h)
+AC_CHECK_HEADER(sys/types.h)
+AC_CHECK_HEADER(linux/if_addr.h)
+AC_CHECK_HEADER(linux/rtnetlink.h)
+
 AC_CHECK_MEMBER(struct sockaddr_in.sin_len,
                 AC_DEFINE(HAVE_SIN_LEN, 1, [Define this if your IPv4 has sin_len in sockaddr_in struct.]),,
                 [#ifdef HAVE_SYS_TYPES_H
