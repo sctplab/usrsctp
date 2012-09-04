@@ -2727,7 +2727,7 @@ free_mbuf:
 #endif
 
 void
-usrsctp_conninput(void *addr, void *buffer, size_t length, uint8_t ecn_bits)
+usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bits)
 {
 	struct sockaddr_conn src, dst;
 	struct mbuf *m;
