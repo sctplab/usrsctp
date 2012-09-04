@@ -228,7 +228,7 @@ main(int argc, char *argv[])
 	printf("s_c = %p, s_l = %p.\n", (void *)s_c, (void *)s_l);
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
-#ifdef HAVE_SIN_LEN
+#ifdef HAVE_SCONN_LEN
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif
 	sconn.sconn_port = htons(5001);
@@ -241,7 +241,7 @@ main(int argc, char *argv[])
 	}
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
-#ifdef HAVE_SIN_LEN
+#ifdef HAVE_SCONN_LEN
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif
 	sconn.sconn_port = htons(5001);

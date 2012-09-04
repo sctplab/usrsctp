@@ -318,8 +318,10 @@ main(int argc, char *argv[])
     printf("Connecting to %s %s\n",argv[3],argv[4]);
     memset((void *)&addr4, 0, sizeof(struct sockaddr_in));
     memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
-#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SIN_LEN
     addr4.sin_len = sizeof(struct sockaddr_in);
+#endif
+#ifdef HAVE_SIN6_LEN
     addr6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
     addr4.sin_family = AF_INET;

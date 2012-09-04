@@ -612,7 +612,7 @@ sctp_handle_heartbeat_ack(struct sctp_heartbeat_chunk *cp,
 		if (cp->heartbeat.hb_info.addr_len == sizeof(struct sockaddr_in)) {
 			sin = (struct sockaddr_in *)&store;
 			sin->sin_family = cp->heartbeat.hb_info.addr_family;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SIN_LEN
 			sin->sin_len = cp->heartbeat.hb_info.addr_len;
 #endif
 			sin->sin_port = stcb->rport;
@@ -628,7 +628,7 @@ sctp_handle_heartbeat_ack(struct sctp_heartbeat_chunk *cp,
 		if (cp->heartbeat.hb_info.addr_len == sizeof(struct sockaddr_in6)) {
 			sin6 = (struct sockaddr_in6 *)&store;
 			sin6->sin6_family = cp->heartbeat.hb_info.addr_family;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SIN6_LEN
 			sin6->sin6_len = cp->heartbeat.hb_info.addr_len;
 #endif
 			sin6->sin6_port = stcb->rport;
@@ -644,7 +644,7 @@ sctp_handle_heartbeat_ack(struct sctp_heartbeat_chunk *cp,
 		if (cp->heartbeat.hb_info.addr_len == sizeof(struct sockaddr_conn)) {
 			sconn = (struct sockaddr_conn *)&store;
 			sconn->sconn_family = cp->heartbeat.hb_info.addr_family;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SCONN_LEN
 			sconn->sconn_len = cp->heartbeat.hb_info.addr_len;
 #endif
 			sconn->sconn_port = stcb->rport;
@@ -2330,7 +2330,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 		sin = (struct sockaddr_in *)initack_src;
 		memset(sin, 0, sizeof(*sin));
 		sin->sin_family = AF_INET;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SIN_LEN
 		sin->sin_len = sizeof(struct sockaddr_in);
 #endif
 		sin->sin_addr.s_addr = cookie->laddress[0];
@@ -2342,7 +2342,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 		sin6 = (struct sockaddr_in6 *)initack_src;
 		memset(sin6, 0, sizeof(*sin6));
 		sin6->sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SIN6_LEN
 		sin6->sin6_len = sizeof(struct sockaddr_in6);
 #endif
 		sin6->sin6_scope_id = cookie->scope_id;
@@ -2356,7 +2356,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 		sconn = (struct sockaddr_conn *)initack_src;
 		memset(sconn, 0, sizeof(struct sockaddr_conn));
 		sconn->sconn_family = AF_CONN;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SCONN_LEN
 		sconn->sconn_len = sizeof(struct sockaddr_conn);
 #endif
 		memcpy(&sconn->sconn_addr, cookie->laddress, sizeof(void *));
@@ -2685,7 +2685,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 	case SCTP_IPV6_ADDRESS:
 		memset(&sin6, 0, sizeof(sin6));
 		sin6.sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SIN6_LEN
 		sin6.sin6_len = sizeof(sin6);
 #endif
 		sin6.sin6_port = sh->src_port;
@@ -2699,7 +2699,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 	case SCTP_IPV4_ADDRESS:
 		memset(&sin, 0, sizeof(sin));
 		sin.sin_family = AF_INET;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SIN_LEN
 		sin.sin_len = sizeof(sin);
 #endif
 		sin.sin_port = sh->src_port;
@@ -2711,7 +2711,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 	case SCTP_CONN_ADDRESS:
 		memset(&sconn, 0, sizeof(struct sockaddr_conn));
 		sconn.sconn_family = AF_CONN;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SCONN_LEN
 		sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif
 		sconn.sconn_port = sh->src_port;
@@ -6271,14 +6271,14 @@ sctp_input(i_pak, va_alist)
 	offset -= sizeof(struct sctp_chunkhdr);
 	memset(&src, 0, sizeof(struct sockaddr_in));
 	src.sin_family = AF_INET;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SIN_LEN
 	src.sin_len = sizeof(struct sockaddr_in);
 #endif
 	src.sin_port = sh->src_port;
 	src.sin_addr = ip->ip_src;
 	memset(&dst, 0, sizeof(struct sockaddr_in));
 	dst.sin_family = AF_INET;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SIN_LEN
 	dst.sin_len = sizeof(struct sockaddr_in);
 #endif
 	dst.sin_port = sh->dest_port;

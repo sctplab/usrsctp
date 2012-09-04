@@ -1044,20 +1044,15 @@ typedef int SHA512_CTX;
 /* end OOTB only stuff */
 
 #define AF_CONN 123
-#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 struct sockaddr_conn {
+#ifdef HAVE_SCONN_LEN
 	uint8_t sconn_len;
+#endif
 	uint8_t sconn_family;
 	uint16_t sconn_port;
 	void *sconn_addr;
 };
-#else
-struct sockaddr_conn {
-	uint16_t sconn_family;
-	uint16_t sconn_port;
-	void *sconn_addr;
-};
-#endif
+
 /*
  * IP output routines
  */

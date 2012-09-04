@@ -3561,7 +3561,7 @@ sctp_process_cmsgs_for_init(struct sctp_tcb *stcb, struct mbuf *control, int *er
 				}
 				memset(&sin, 0, sizeof(struct sockaddr_in));
 				sin.sin_family = AF_INET;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SIN_LEN
 				sin.sin_len = sizeof(struct sockaddr_in);
 #endif
 				sin.sin_port = stcb->rport;
@@ -3587,7 +3587,7 @@ sctp_process_cmsgs_for_init(struct sctp_tcb *stcb, struct mbuf *control, int *er
 				}
 				memset(&sin6, 0, sizeof(struct sockaddr_in6));
 				sin6.sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SIN6_LEN
 				sin6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 				sin6.sin6_port = stcb->rport;
@@ -3676,7 +3676,7 @@ sctp_findassociation_cmsgs(struct sctp_inpcb **inp_p,
 				}
 				memset(&sin, 0, sizeof(struct sockaddr_in));
 				sin.sin_family = AF_INET;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SIN_LEN
 				sin.sin_len = sizeof(struct sockaddr_in);
 #endif
 				sin.sin_port = port;
@@ -3692,7 +3692,7 @@ sctp_findassociation_cmsgs(struct sctp_inpcb **inp_p,
 				}
 				memset(&sin6, 0, sizeof(struct sockaddr_in6));
 				sin6.sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SIN6_LEN
 				sin6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 				sin6.sin6_port = port;
@@ -4389,7 +4389,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		if (net == NULL) {
 			memset(&ip6route, 0, sizeof(ip6route));
 			ro = (sctp_route_t *)&ip6route;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows) /*__Userspace__ */
+#ifdef HAVE_SIN6_LEN
 			memcpy(&ro->ro_dst, sin6, sin6->sin6_len);
 #else
 			memcpy(&ro->ro_dst, sin6, sizeof(struct sockaddr_in6));
@@ -4435,7 +4435,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		 */
 		bzero(&lsa6_tmp, sizeof(lsa6_tmp));
 		lsa6_tmp.sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows) /*__Userspace__ */
+#ifdef HAVE_SIN6_LEN
 		lsa6_tmp.sin6_len = sizeof(lsa6_tmp);
 #endif
 		lsa6 = &lsa6_tmp;
@@ -4562,7 +4562,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		 */
 		bzero(&lsa6_storage, sizeof(lsa6_storage));
 		lsa6_storage.sin6_family = AF_INET6;
-#if !defined(__Windows__)
+#ifdef HAVE_SIN6_LEN
 		lsa6_storage.sin6_len = sizeof(lsa6_storage);
 #endif
 #ifdef SCTP_KAME
@@ -5466,14 +5466,14 @@ sctp_are_there_new_addresses(struct sctp_association *asoc,
 #ifdef INET
 	memset(&sin4, 0, sizeof(sin4));
 	sin4.sin_family = AF_INET;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SIN_LEN
 	sin4.sin_len = sizeof(sin4);
 #endif
 #endif
 #ifdef INET6
 	memset(&sin6, 0, sizeof(sin6));
 	sin6.sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SIN6_LEN
 	sin6.sin6_len = sizeof(sin6);
 #endif
 #endif
@@ -12931,7 +12931,7 @@ sctp_lower_sosend(struct socket *so,
 		switch (raddr->sa.sa_family) {
 #ifdef INET
 		case AF_INET:
-#if defined(__FreeBSD__) || defined(__APPLE__)
+#ifdef HAVE_SIN_LEN
 			if (raddr->sin.sin_len != sizeof(struct sockaddr_in)) {
 				SCTP_LTRACE_ERR_RET(inp, stcb, net, SCTP_FROM_SCTP_OUTPUT, EINVAL);
 				error = EINVAL;
@@ -12943,7 +12943,7 @@ sctp_lower_sosend(struct socket *so,
 #endif
 #ifdef INET6
 		case AF_INET6:
-#if defined(__FreeBSD__) || defined(__APPLE__)
+#ifdef HAVE_SIN6_LEN
 			if (raddr->sin6.sin6_len != sizeof(struct sockaddr_in6)) {
 				SCTP_LTRACE_ERR_RET(inp, stcb, net, SCTP_FROM_SCTP_OUTPUT, EINVAL);
 				error = EINVAL;
@@ -12955,7 +12955,7 @@ sctp_lower_sosend(struct socket *so,
 #endif
 #if defined(__Userspace__)
 		case AF_CONN:
-#if defined(__FreeBSD__) || defined(__APPLE__)
+#ifdef HAVE_SCONN_LEN
 			if (raddr->sconn.sconn_len != sizeof(struct sockaddr_conn)) {
 				SCTP_LTRACE_ERR_RET(inp, stcb, net, SCTP_FROM_SCTP_OUTPUT, EINVAL);
 				error = EINVAL;
@@ -14256,7 +14256,7 @@ sctp_v6src_match_nexthop(struct sockaddr_in6 *src6, sctp_route_t *ro)
 	LIST_FOREACH(pfxrtr, &pfx->ndpr_advrtrs, pfr_entry) {
 		memset(&gw6, 0, sizeof(struct sockaddr_in6));
 		gw6.sin6_family = AF_INET6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux)
+#ifdef HAVE_SIN6_LEN
 		gw6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 		memcpy(&gw6.sin6_addr, &pfxrtr->router->rtaddr,
