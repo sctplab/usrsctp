@@ -46,6 +46,7 @@
 #include <netinet/sctp_os.h>
 #include <netinet/sctp_var.h>
 #include <netinet/sctp_pcb.h>
+#if 0
 #if defined(__Userspace_os_Linux)
 #include <linux/netlink.h>
 #ifdef HAVE_LINUX_IF_ADDR_H
@@ -53,6 +54,7 @@
 #endif
 #ifdef HAVE_LINUX_RTNETLINK_H
 #include <linux/rtnetlink.h>
+#endif
 #endif
 #endif
 #if defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Darwin)
@@ -79,7 +81,7 @@ void recv_thread_destroy(void);
 	((caddr_t) ap + (ap->sa_len ? ROUNDUP(ap->sa_len, sizeof (uint32_t)) : sizeof(uint32_t)))
 #endif
 
-#if !defined(__Userspace_os_Windows) && !defined(__Userspace_os_Linux)
+#if defined(__Userspace_os_Darwin) || defined(__Userspace_os_FreeBSD)
 static void
 sctp_get_rtaddrs(int addrs, struct sockaddr *sa, struct sockaddr **rti_info)
 {
@@ -94,9 +96,7 @@ sctp_get_rtaddrs(int addrs, struct sockaddr *sa, struct sockaddr **rti_info)
 		}
 	}
 }
-#endif
 
-#if !defined(__Userspace_os_Windows)
 static void
 sctp_handle_ifamsg(unsigned char type, unsigned short index, struct sockaddr *sa)
 {
@@ -154,10 +154,7 @@ sctp_handle_ifamsg(unsigned char type, unsigned short index, struct sockaddr *sa
 		                       ifa->ifa_name);
 	}
 }
-#endif
 
-#if !defined(__Userspace_os_Windows)
-#if !defined(__Userspace_os_Linux)
 static void *
 recv_function_route(void *arg)
 {
@@ -197,7 +194,10 @@ recv_function_route(void *arg)
 	}
 	pthread_exit(NULL);
 }
-#else /*Userspace_os_Linux*/
+#endif
+
+#if 0
+/* This does not yet work on Linux */
 static void *
 recv_function_route(void *arg)
 {
@@ -277,7 +277,6 @@ recv_function_route(void *arg)
 	}
 	pthread_exit(NULL);
 }
-#endif
 #endif
 
 #ifdef INET
@@ -1360,6 +1359,7 @@ recv_thread_init(void)
 	}
 #endif
 #if !defined(__Userspace_os_Windows)
+#if defined(__Userspace_os_Darwin) || defined(__Userspace_os_FreeBSD)
 #if defined(INET) || defined(INET6)
 	if (SCTP_BASE_VAR(userspace_route) != -1) {
 		int rc;
@@ -1370,6 +1370,7 @@ recv_thread_init(void)
 			SCTP_BASE_VAR(userspace_route) = -1;
 		}
 	}
+#endif
 #endif
 #if defined(INET)
 	if (SCTP_BASE_VAR(userspace_rawsctp) != -1) {
@@ -1450,7 +1451,7 @@ recv_thread_init(void)
 void
 recv_thread_destroy(void)
 {
-#if !defined(__Userspace_os_Windows)
+#if defined(__Userspace_os_Darwin) || defined(__Userspace_os_FreeBSD)
 #if defined(INET) || defined(INET6)
 	if (SCTP_BASE_VAR(userspace_route) != -1) {
 		close(SCTP_BASE_VAR(userspace_route));
