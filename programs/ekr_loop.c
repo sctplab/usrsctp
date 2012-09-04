@@ -28,14 +28,14 @@
  * SUCH DAMAGE.
  */
 
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#if !defined(__Userspace_os_Windows)
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -55,7 +55,7 @@
 static void *
 handle_packets(void *arg)
 {
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	SOCKET *fdp;
 #else
 	int *fdp;
@@ -63,7 +63,7 @@ handle_packets(void *arg)
 	char *buf;
 	ssize_t length;
 
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	fdp = (SOCKET *)arg;
 #else
 	fdp = (int *)arg;
@@ -84,18 +84,18 @@ handle_packets(void *arg)
 static int
 conn_output(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df)
 {
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	SOCKET *fdp;
 #else
 	int *fdp;
 #endif
 
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	fdp = (SOCKET *)addr;
 #else
 	fdp = (int *)addr;
 #endif
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	if (send(*fdp, buffer, length, 0) == SOCKET_ERROR) {
 		return (WSAGetLastError());
 #else
@@ -134,13 +134,13 @@ main(int argc, char *argv[])
 {
 	struct sockaddr_in sin_s, sin_c;
 	struct sockaddr_conn sconn;
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	SOCKET fdc, fds;
 #else
 	int fd_c, fd_s;
 #endif
 	struct socket *s_c, *s_s, *s_l;
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	HANDLE tid_c, tid_s;
 #else
 	pthread_t tid_c, tid_s;
@@ -150,7 +150,7 @@ main(int argc, char *argv[])
 
 	usrsctp_init(0, conn_output);
 	/* set up a connected UDP socket */
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	if ((fd_c = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
 		printf("socket() failed with error: %ld\n", WSAGetLastError());
 	}
@@ -179,7 +179,7 @@ main(int argc, char *argv[])
 #endif
 	sin_s.sin_port = htons(9899);
 	sin_s.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	if (bind(fd_c, (struct sockaddr *)&sin_c, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
 		printf("bind() failed with error: %ld\n", WSAGetLastError());
 	}
@@ -194,7 +194,7 @@ main(int argc, char *argv[])
 		perror("bind");
 	}
 #endif
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	if (connect(fd_c, (struct sockaddr *)&sin_s, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
 		printf("connect() failed with error: %ld\n", WSAGetLastError());
 	}
@@ -209,7 +209,7 @@ main(int argc, char *argv[])
 		perror("connect");
 	}
 #endif
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	tid_c = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_packets, (void *)&fd_c, 0, NULL);
 	tid_s_ = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_packets, (void *)&fd_s, 0, NULL);
 #else
@@ -264,7 +264,7 @@ main(int argc, char *argv[])
 	                 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("usrsctp_sendv");
 	}
-#if defined (__Userspace_os_Windows)
+#ifdef _WIN32
 		Sleep(1000);
 #else
 		sleep(1);
@@ -272,7 +272,7 @@ main(int argc, char *argv[])
 	usrsctp_close(s_c);
 	usrsctp_close(s_s);
 	while (usrsctp_finish() != 0) {
-#if defined (__Userspace_os_Windows)
+#ifdef _WIN32
 		Sleep(1000);
 #else
 		sleep(1);

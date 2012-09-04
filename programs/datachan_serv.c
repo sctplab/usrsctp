@@ -32,14 +32,14 @@
  * Usage: daytime_server [local_encaps_port] [remote_encaps_port]
  */
 
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#if !defined(__Userspace_os_Windows)
+#ifndef _WIN32
 #include <unistd.h>
 #include <time.h>
 #include <sys/socket.h>
@@ -511,7 +511,7 @@ main(int argc, char *argv[])
 	}
 	usrsctp_close(sock);
 	while (usrsctp_finish() != 0) {
-#if defined (__Userspace_os_Windows)
+#ifdef _WIN32
 		Sleep(1000);
 #else
 		sleep(1);

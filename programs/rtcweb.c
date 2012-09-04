@@ -36,7 +36,7 @@
  */
 
 #include <sys/types.h>
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
 #include <WinSock2.h>
 #include <WS2tcpip.h>
@@ -91,7 +91,7 @@ struct peer_connection {
 	struct channel *o_stream_channel[NUMBER_OF_STREAMS];
 	uint16_t o_stream_buffer[NUMBER_OF_STREAMS];
 	uint32_t o_stream_buffer_counter;
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	CRITICAL_SECTION mutex;
 #else
 	pthread_mutex_t mutex;
@@ -111,7 +111,7 @@ struct peer_connection {
 
 #define DATA_CHANNEL_FLAG_OUT_OF_ORDER_ALLOWED 0x0001
 
-#if !defined(__Userspace_os_Windows)
+#ifndef _WIN32
 #define SCTP_PACKED __attribute__((packed))
 #else
 #pragma pack (push, 1)
@@ -138,7 +138,7 @@ struct rtcweb_datachannel_ack {
 	uint8_t  msg_type; /* DATA_CHANNEL_ACK */
 } SCTP_PACKED;
 
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 #pragma pack()
 #endif
 
@@ -168,7 +168,7 @@ init_peer_connection(struct peer_connection *pc)
 	}
 	pc->o_stream_buffer_counter = 0;
 	pc->sock = NULL;
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	InitializeCriticalSection(&(pc->mutex));
 #else
 	pthread_mutex_init(&pc->mutex, NULL);
@@ -178,7 +178,7 @@ init_peer_connection(struct peer_connection *pc)
 static void
 lock_peer_connection(struct peer_connection *pc)
 {
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	EnterCriticalSection(&(pc->mutex));
 #else
 	pthread_mutex_lock(&pc->mutex);
@@ -188,7 +188,7 @@ lock_peer_connection(struct peer_connection *pc)
 static void
 unlock_peer_connection(struct peer_connection *pc)
 {
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 	LeaveCriticalSection(&(pc->mutex));
 #else
 	pthread_mutex_unlock(&pc->mutex);
@@ -1377,7 +1377,7 @@ main(int argc, char *argv[])
 	unlock_peer_connection(&peer_connection);
 
 	for (;;) {
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 		if (gets_s(line, LINE_LENGTH) == NULL) {
 #else
 		if (fgets(line, LINE_LENGTH, stdin) == NULL) {
@@ -1386,7 +1386,7 @@ main(int argc, char *argv[])
 				perror("usrsctp_shutdown");
 			}
 			while (usrsctp_finish() != 0) {
-#if defined (__Userspace_os_Windows)
+#ifdef _WIN32
 				Sleep(1000);
 #else
 				sleep(1);
@@ -1412,7 +1412,7 @@ main(int argc, char *argv[])
 				perror("usrsctp_shutdown");
 			}
 			while (usrsctp_finish() != 0) {
-#if defined (__Userspace_os_Windows)
+#ifdef _WIN32
 				Sleep(1000);
 #else
 				sleep(1);
@@ -1442,7 +1442,7 @@ main(int argc, char *argv[])
 				if (msg) {
 					msg++;
 					lock_peer_connection(&peer_connection);
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 					if (send_user_message(&peer_connection, &peer_connection.channels[id], msg, strlen(msg))) {
 #else
 					if (send_user_message(&peer_connection, &peer_connection.channels[id], msg, strlen(msg) - 1)) {
@@ -1455,7 +1455,7 @@ main(int argc, char *argv[])
 				}
 			}
 		} else if (sscanf(line, "sleep %u", &seconds) == 1) {
-#if defined(__Userspace_os_Windows)
+#ifdef _WIN32
 			Sleep(seconds * 1000);
 #else
 			sleep(seconds);
