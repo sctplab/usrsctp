@@ -939,10 +939,6 @@ usrsctp_finish(void);
 int
 usrsctp_shutdown(struct socket *so, int how);
 
-#if defined(__Userspace_os_Windows)
-void getwintimeofday(struct timeval *tv);
-#endif
-
 void
 usrsctp_conninput(void *, const void *, size_t, uint8_t);
 
