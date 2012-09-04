@@ -170,7 +170,7 @@ main(int argc, char *argv[])
 		}
 	}
 	memset((void *)&addr, 0, sizeof(struct sockaddr_in6));
-#ifdef HAVE_SIN_LEN
+#ifdef HAVE_SIN6_LEN
 	addr.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 	addr.sin6_family = AF_INET6;

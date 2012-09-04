@@ -576,13 +576,13 @@ recv_function_raw6(void *arg)
 		offset = sizeof(struct sctphdr);
 
 		dst.sin6_family = AF_INET6;
-#ifdef HAVE_SIN_LEN
+#ifdef HAVE_SIN6_LEN
 		dst.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 		dst.sin6_port = sh->dest_port;
 
 		src.sin6_family = AF_INET6;
-#ifdef HAVE_SIN_LEN
+#ifdef HAVE_SIN6_LEN
 		src.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 		src.sin6_port = sh->src_port;
@@ -950,7 +950,7 @@ recv_function_udp6(void *arg)
 		for (cmsgptr = CMSG_FIRSTHDR(&msg); cmsgptr != NULL; cmsgptr = CMSG_NXTHDR(&msg, cmsgptr)) {
 			if ((cmsgptr->cmsg_level == IPPROTO_IPV6) && (cmsgptr->cmsg_type == IPV6_PKTINFO)) {
 				dst.sin6_family = AF_INET6;
-#if !defined(__Userspace_os_Linux)
+#ifdef HAVE_SIN6_LEN
 				dst.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 				/*dst.sin6_port = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));*/
@@ -1270,7 +1270,7 @@ recv_thread_init(void)
 					SCTP_BASE_VAR(userspace_rawsctp6) = -1;
 				} else {
 					memset((void *)&addr_ipv6, 0, sizeof(struct sockaddr_in6));
-#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SIN6_LEN
 					addr_ipv6.sin6_len         = sizeof(struct sockaddr_in6);
 #endif
 					addr_ipv6.sin6_family      = AF_INET6;
@@ -1342,7 +1342,7 @@ recv_thread_init(void)
 				SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 			} else {
 				memset((void *)&addr_ipv6, 0, sizeof(struct sockaddr_in6));
-#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SIN6_LEN
 				addr_ipv6.sin6_len         = sizeof(struct sockaddr_in6);
 #endif
 				addr_ipv6.sin6_family      = AF_INET6;

@@ -91,6 +91,17 @@ AC_CHECK_MEMBER(struct sockaddr_in.sin_len,
                  #endif
                  #include <netinet/in.h>])
 
+AC_CHECK_MEMBER(struct sockaddr_in6.sin6_len,
+                AC_DEFINE(HAVE_SIN6_LEN, 1, [Define this if your IPv6 has sin6_len in sockaddr_in6 struct.]),,
+                [#ifdef HAVE_SYS_TYPES_H
+                 #include <sys/types.h>
+                 #endif
+                 #include <netinet/in.h>])
+
+AC_CHECK_MEMBER(struct sockaddr_conn.sconn_len,
+                AC_DEFINE(HAVE_SCONN_LEN, 1, [Define this if your userland stack has sconn_len in sockaddr_conn struct.]),,
+                [#include "usrsctplib/usrsctp.h">])
+
 AC_MSG_CHECKING(for socklen_t)
 AC_TRY_COMPILE([#ifdef HAVE_SYS_TYPES_H
                 #include <sys/types.h>
