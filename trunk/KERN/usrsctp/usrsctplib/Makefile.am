@@ -77,4 +77,6 @@ libusrsctp_la_SOURCES  = user_atomic.h \
                          netinet/sctputil.c netinet/sctputil.h \
                          netinet6/sctp6_var.h \
                          netinet6/sctp6_usrreq.c
+libusrsctp_la_CFLAGS = $(LIBCFLAGS)
 include_HEADERS = usrsctp.h
+
