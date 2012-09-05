@@ -266,7 +266,7 @@ m_clget(struct mbuf *m, int how)
 	caddr_t mclust_ret;
 
 	if (m->m_flags & M_EXT) {
-		SCTPDBG(SCTP_DEBUG_USR, "%s: %p mbuf already has cluster\n", __func__, m);
+		SCTPDBG(SCTP_DEBUG_USR, "%s: %p mbuf already has cluster\n", __func__, (void *)m);
 	}
 	m->m_ext.ext_buf = (char *)NULL;
 #if USING_MBUF_CONSTRUCTOR
@@ -585,7 +585,7 @@ mb_dtor_clust(void *mem, void *arg)
 void
 m_tag_delete(struct mbuf *m, struct m_tag *t)
 {
-	KASSERT(m && t, ("m_tag_delete: null argument, m %p t %p", m, t));
+	KASSERT(m && t, ("m_tag_delete: null argument, m %p t %p", (void *)m, (void *)t));
 	m_tag_unlink(m, t);
 	m_tag_free(t);
 }
@@ -614,11 +614,11 @@ m_tag_delete_chain(struct mbuf *m, struct m_tag *t)
 static void
 sctp_print_mbuf_chain(struct mbuf *m)
 {
-	SCTP_DEBUG_USR(SCTP_DEBUG_USR, "Printing mbuf chain %p.\n", m);
+	SCTP_DEBUG_USR(SCTP_DEBUG_USR, "Printing mbuf chain %p.\n", (void *)m);
 	for(; m; m=m->m_next) {
-		SCTP_DEBUG_USR(SCTP_DEBUG_USR, "%p: m_len = %ld, m_type = %x, m_next = %p.\n", m, m->m_len, m->m_type, m->m_next);
+		SCTP_DEBUG_USR(SCTP_DEBUG_USR, "%p: m_len = %ld, m_type = %x, m_next = %p.\n", (void *)m, m->m_len, m->m_type, (void *)m->m_next);
 		if (m->m_flags & M_EXT)
-			SCTP_DEBUG_USR(SCTP_DEBUG_USR, "%p: extend_size = %d, extend_buffer = %p, ref_cnt = %d.\n", m, m->m_ext.ext_size, m->m_ext.ext_buf, *(m->m_ext.ref_cnt));
+			SCTP_DEBUG_USR(SCTP_DEBUG_USR, "%p: extend_size = %d, extend_buffer = %p, ref_cnt = %d.\n", (void *)m, m->m_ext.ext_size, (void *)m->m_ext.ext_buf, *(m->m_ext.ref_cnt));
 	}
 }
 #endif
@@ -1078,7 +1078,7 @@ m_tag_copy_chain(struct mbuf *to, struct mbuf *from, int how)
 {
 	struct m_tag *p, *t, *tprev = NULL;
 
-	KASSERT(to && from, ("m_tag_copy_chain: null argument, to %p from %p", to, from));
+	KASSERT(to && from, ("m_tag_copy_chain: null argument, to %p from %p", (void *)to, (void *)from));
 	m_tag_delete_chain(to, NULL);
 	SLIST_FOREACH(p, &from->m_pkthdr.tags, m_tag_link) {
 		t = m_tag_copy(p, how);
