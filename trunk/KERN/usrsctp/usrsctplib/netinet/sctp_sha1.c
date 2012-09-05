@@ -194,18 +194,18 @@ SHA1_Final(unsigned char *digest, struct sha1_context *ctx)
 			sha1_process_a_block(ctx,
 			    (unsigned int *)ctx->sha_block);
 			/* init last block, a bit different than the rest */
-			ctx->sha_block[0] = 0x80;
+			ctx->sha_block[0] = '\x80';
 			for (i = 1; i < sizeof(ctx->sha_block); i++) {
 				ctx->sha_block[i] = 0x0;
 			}
 		} else if (left_to_fill == 1) {
-			ctx->sha_block[ctx->how_many_in_block] = 0x80;
+			ctx->sha_block[ctx->how_many_in_block] = '\x80';
 			sha1_process_a_block(ctx,
 			    (unsigned int *)ctx->sha_block);
 			/* init last block */
 			memset(ctx->sha_block, 0, sizeof(ctx->sha_block));
 		} else {
-			ctx->sha_block[ctx->how_many_in_block] = 0x80;
+			ctx->sha_block[ctx->how_many_in_block] = '\x80';
 			for (i = (ctx->how_many_in_block + 1);
 			    i < sizeof(ctx->sha_block);
 			    i++) {
@@ -228,7 +228,7 @@ SHA1_Final(unsigned char *digest, struct sha1_context *ctx)
 		 * network byte order size in the last spot and process the
 		 * block.
 		 */
-		ctx->sha_block[ctx->how_many_in_block] = 0x80;
+		ctx->sha_block[ctx->how_many_in_block] = '\x80';
 		for (i = (ctx->how_many_in_block + 1);
 		    i < sizeof(ctx->sha_block);
 		    i++) {
