@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 240114 2012-09-04 22:40:49Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 240148 2012-09-05 18:52:01Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -716,7 +716,7 @@ sctp_auditing(int from, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			}
 			if (lnet->flight_size != tot_out) {
 				SCTP_PRINTF("net:%p flight was %d corrected to %d\n",
-					    lnet, lnet->flight_size,
+					    (void *)lnet, lnet->flight_size,
 					    tot_out);
 				lnet->flight_size = tot_out;
 			}
@@ -1478,7 +1478,7 @@ sctp_timeout_handler(void *t)
 	if (tmr->self != (void *)tmr) {
 		/*
 		 * SCTP_PRINTF("Stale SCTP timer fired (%p), ignoring...\n",
-		 * tmr);
+		 *             (void *)tmr);
 		 */
 #if defined(__FreeBSD__) && __FreeBSD_version >= 801000
 		CURVNET_RESTORE();
@@ -2180,7 +2180,7 @@ sctp_timer_start(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	}
 	if ((to_ticks <= 0) || (tmr == NULL)) {
 		SCTPDBG(SCTP_DEBUG_TIMER1, "%s: %d:software error to_ticks:%d tmr:%p not set ??\n",
-			__FUNCTION__, t_type, to_ticks, tmr);
+			__FUNCTION__, t_type, to_ticks, (void *)tmr);
 		return;
 	}
 	if (SCTP_OS_TIMER_PENDING(&tmr->timer)) {
@@ -6952,7 +6952,7 @@ sctp_hashfreedestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask)
 			while (start != NULL) {
 				temp = start;
 				start = start->le_next;
-				SCTP_PRINTF("%s: %p \n", __func__, temp);
+				SCTP_PRINTF("%s: %p \n", __func__, (void *)temp);
 				FREE(temp, type);
 			}
 		}
