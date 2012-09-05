@@ -1863,7 +1863,7 @@ user_accept(struct socket *aso,  struct sockaddr **name, socklen_t *namelen, str
 	struct sockaddr *sa = NULL;
 	int error;
 	struct socket *head = aso;
-        struct socket *so;
+        struct socket *so = NULL;
 
 
 	if (name) {
