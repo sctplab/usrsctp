@@ -505,11 +505,7 @@ struct sx {int dummy;};
 #include <netinet/ip_options.h>
 #endif
 
-#if !defined(__Userspace_os_Windows)
-#define SCTP_PRINTF(params...)	printf(params)
-#else
 #define SCTP_PRINTF(...)   printf(__VA_ARGS__)
-#endif
 
 #if defined(__FreeBSD__)
 #ifndef in6pcb
@@ -566,16 +562,6 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 
 #if defined(SCTP_DEBUG)
 #include <netinet/sctp_constants.h>
-#if !defined(__Userspace_os_Windows)
-#define SCTPDBG(level, params...)					\
-{									\
-    do {								\
-	if (SCTP_BASE_SYSCTL(sctp_debug_on) & level ) {					\
-	    SCTP_PRINTF(params);						\
-	}								\
-    } while (0);							\
-}
-#else
 #define SCTPDBG(level, ...)  \
 {                              \
     do {    \
@@ -584,7 +570,6 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 	}        \
 	} while (0);     \
 }
-#endif
 #define SCTPDBG_ADDR(level, addr)					\
 {									\
     do {								\
@@ -594,7 +579,7 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
     } while (0);							\
 }
 #else
-#define SCTPDBG(level, params...)
+#define SCTPDBG(level, ...)
 #define SCTPDBG_ADDR(level, addr)
 #endif
 
@@ -608,11 +593,11 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 #define SCTP_LTRACE_ERR_RET_PKT(m, inp, stcb, net, file, err) \
 	if (sctp_logging_level & SCTP_LTRACE_ERROR_ENABLE) \
 		SCTP_PRINTF("mbuf:%p inp:%p stcb:%p net:%p file:%x line:%d error:%d\n", \
-		            m, inp, stcb, net, file, __LINE__, err);
+		            (void *)m, (void *)inp, (void *)stcb, (void *)net, file, __LINE__, err);
 #define SCTP_LTRACE_ERR_RET(inp, stcb, net, file, err) \
 	if (sctp_logging_level & SCTP_LTRACE_ERROR_ENABLE) \
 		SCTP_PRINTF("inp:%p stcb:%p net:%p file:%x line:%d error:%d\n", \
-		            inp, stcb, net, file, __LINE__, err);
+		            (void *)inp, (void *)stcb, (void *)net, file, __LINE__, err);
 #else
 #define SCTP_LTRACE_ERR_RET_PKT(m, inp, stcb, net, file, err)
 #define SCTP_LTRACE_ERR_RET(inp, stcb, net, file, err)
