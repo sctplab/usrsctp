@@ -950,13 +950,8 @@ struct mbuf* mbufalloc(size_t size, void* data, unsigned char fill)
 
         if (data != NULL){
             /* fill in user data */
-#if defined (__Userspace_os_Windows)
-			char *datap = (char*)data + cpsz;
-			memcpy(mtod(m, caddr_t), (void*)datap, willcpy);
-#else
-            memcpy(mtod(m, caddr_t), data+cpsz, willcpy);
-#endif
-        }else if (fill != '\0'){
+            memcpy(mtod(m, caddr_t), ((char *)data) + cpsz, willcpy);
+        } else if (fill != '\0') {
             memset(mtod(m, caddr_t), fill, willcpy);
         }
 
