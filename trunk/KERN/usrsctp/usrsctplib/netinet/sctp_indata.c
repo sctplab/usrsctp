@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 237715 2012-06-28 16:01:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 240148 2012-09-05 18:52:01Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4439,7 +4439,7 @@ sctp_handle_sack(struct mbuf *m, int offset_seg, int offset_dup,
 			            cum_ack, send_s);
 			if (tp1) {
 				SCTP_PRINTF("Got send_s from tsn:%x + 1 of tp1:%p\n",
-				            tp1->rec.data.TSN_seq, tp1);
+				            tp1->rec.data.TSN_seq, (void *)tp1);
 			}
 		hopeless_peer:
 			*abort_now = 1;

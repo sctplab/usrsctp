@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_cc_functions.c 235828 2012-05-23 11:26:28Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_cc_functions.c 240148 2012-09-05 18:52:01Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1075,7 +1075,7 @@ sctp_cwnd_update_exit_pf_common(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_n
 	          old_cwnd, net->cwnd);
 #endif
 	SCTPDBG(SCTP_DEBUG_INDATA1, "Destination %p moved from PF to reachable with cwnd %d.\n",
-	        net, net->cwnd);
+	        (void *)net, net->cwnd);
 }
 
 

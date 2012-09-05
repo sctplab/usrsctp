@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 235828 2012-05-23 11:26:28Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 240148 2012-09-05 18:52:01Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -593,7 +593,7 @@ sctp_auth_key_acquire(struct sctp_tcb *stcb, uint16_t key_id)
 		atomic_add_int(&skey->refcount, 1);
 		SCTPDBG(SCTP_DEBUG_AUTH2,
 			"%s: stcb %p key %u refcount acquire to %d\n",
-			__FUNCTION__, stcb, key_id, skey->refcount);
+			__FUNCTION__, (void *)stcb, key_id, skey->refcount);
 	}
 }
 
@@ -614,7 +614,7 @@ sctp_auth_key_release(struct sctp_tcb *stcb, uint16_t key_id, int so_locked
 		sctp_free_sharedkey(skey);
 		SCTPDBG(SCTP_DEBUG_AUTH2,
 			"%s: stcb %p key %u refcount release to %d\n",
-			__FUNCTION__, stcb, key_id, skey->refcount);
+			__FUNCTION__, (void *)stcb, key_id, skey->refcount);
 
 		/* see if a notification should be generated */
 		if ((skey->refcount <= 1) && (skey->deactivated)) {
@@ -623,7 +623,7 @@ sctp_auth_key_release(struct sctp_tcb *stcb, uint16_t key_id, int so_locked
 					key_id, 0, so_locked);
 			SCTPDBG(SCTP_DEBUG_AUTH2,
 				"%s: stcb %p key %u no longer used, %d\n",
-				__FUNCTION__, stcb, key_id, skey->refcount);
+				__FUNCTION__, (void *)stcb, key_id, skey->refcount);
 		}
 	}
 }
