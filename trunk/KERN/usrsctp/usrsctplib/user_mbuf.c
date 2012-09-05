@@ -1382,7 +1382,7 @@ m_split(struct mbuf *m0, int len0, int wait)
 	u_int len = len0, remain;
 
 	/* MBUF_CHECKSLEEP(wait); */
-	for (m = m0; m && len > m->m_len; m = m->m_next)
+	for (m = m0; m && (int)len > m->m_len; m = m->m_next)
 		len -= m->m_len;
 	if (m == NULL)
 		return (NULL);

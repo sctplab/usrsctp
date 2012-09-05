@@ -46,6 +46,7 @@
 #include <netinet/sctp_os.h>
 #include <netinet/sctp_var.h>
 #include <netinet/sctp_pcb.h>
+#include <netinet/sctp_input.h>
 #if 0
 #if defined(__Userspace_os_Linux)
 #include <linux/netlink.h>
