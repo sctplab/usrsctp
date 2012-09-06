@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_cc_functions.c 240148 2012-09-05 18:52:01Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_cc_functions.c 240158 2012-09-06 07:03:56Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2006,15 +2006,11 @@ measure_achieved_throughput(struct sctp_nets *net)
 	}
 
 	net->cc_mod.htcp_ca.bytecount += net->net_ack;
-
-#if !defined(__Windows__) && !defined(__Userspace_os_Windows)
-	if (net->cc_mod.htcp_ca.bytecount >= net->cwnd - ((net->cc_mod.htcp_ca.alpha>>7? : 1)*net->mtu)
-#else
-	if (net->cc_mod.htcp_ca.bytecount >= net->cwnd - (((net->cc_mod.htcp_ca.alpha >> 7) ? net->cc_mod.htcp_ca.alpha : 1) * net->mtu)
-#endif
-			&& now - net->cc_mod.htcp_ca.lasttime >= net->cc_mod.htcp_ca.minRTT
-			&& net->cc_mod.htcp_ca.minRTT > 0) {
+	if ((net->cc_mod.htcp_ca.bytecount >= net->cwnd - (((net->cc_mod.htcp_ca.alpha >> 7) ? (net->cc_mod.htcp_ca.alpha >> 7) : 1) * net->mtu)) &&
+	    (now - net->cc_mod.htcp_ca.lasttime >= net->cc_mod.htcp_ca.minRTT) &&
+	    (net->cc_mod.htcp_ca.minRTT > 0)) {
 		uint32_t cur_Bi = net->cc_mod.htcp_ca.bytecount/net->mtu*hz/(now - net->cc_mod.htcp_ca.lasttime);
+
 		if (htcp_ccount(&net->cc_mod.htcp_ca) <= 3) {
 			/* just after backoff */
 			net->cc_mod.htcp_ca.minB = net->cc_mod.htcp_ca.maxB = net->cc_mod.htcp_ca.Bi = cur_Bi;
