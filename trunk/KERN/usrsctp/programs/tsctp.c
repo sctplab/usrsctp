@@ -148,11 +148,9 @@ handle_connection(void *arg)
 	union sctp_notification *snp;
 	struct sctp_paddr_change *spc;
 	struct timeval note_time;
-	unsigned int infotype = 0;
+	unsigned int infotype;
 	struct sctp_recvv_rn rn;
 	socklen_t infolen = sizeof(struct sctp_recvv_rn);
-	struct sctp_rcvinfo rcv;
-	struct sctp_nxtinfo nxt;
 
 	conn_sock = *(struct socket **)arg;
 #ifdef _WIN32
@@ -165,9 +163,8 @@ handle_connection(void *arg)
 	buf = malloc(BUFFERSIZE);
 	flags = 0;
 	len = (socklen_t)sizeof(struct sockaddr_in);
-	rn.recvv_rcvinfo = rcv;
-	rn.recvv_nxtinfo = nxt;
-
+	infotype = 0;
+	memset(&rn, 0, sizeof(struct sctp_recvv_rn));
 	n = usrsctp_recvv(conn_sock, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn,
 	                 &infolen, &infotype, &flags);
 
@@ -200,6 +197,7 @@ handle_connection(void *arg)
 		len = (socklen_t)sizeof(struct sockaddr_in);
 		infolen = sizeof(struct sctp_recvv_rn);
 		infotype = 0;
+		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
 		n = usrsctp_recvv(conn_sock, (void *) buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn,
 	                      &infolen, &infotype, &flags);
 	}
