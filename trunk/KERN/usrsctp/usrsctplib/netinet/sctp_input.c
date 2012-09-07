@@ -3641,7 +3641,7 @@ struct sctp_stream_reset_out_request *
 sctp_find_stream_reset(struct sctp_tcb *stcb, uint32_t seq, struct sctp_tmit_chunk **bchk)
 {
 	struct sctp_association *asoc;
-	struct sctp_stream_reset_out_req *req;
+	struct sctp_chunkhdr *ch;
 	struct sctp_stream_reset_out_request *r;
 	struct sctp_tmit_chunk *chk;
 	int len, clen;
@@ -3664,8 +3664,8 @@ sctp_find_stream_reset(struct sctp_tcb *stcb, uint32_t seq, struct sctp_tmit_chu
 		*bchk = chk;
 	}
 	clen = chk->send_size;
-	req = mtod(chk->data, struct sctp_stream_reset_out_req *);
-	r = &req->sr_req;
+	ch = mtod(chk->data, struct sctp_chunkhdr *);
+	r = (struct sctp_stream_reset_out_request *)(ch + 1);
 	if (ntohl(r->request_seq) == seq) {
 		/* found it */
 		return (r);
@@ -4192,7 +4192,7 @@ __attribute__ ((noinline))
 #endif
 static int
 sctp_handle_stream_reset(struct sctp_tcb *stcb, struct mbuf *m, int offset,
-			 struct sctp_stream_reset_out_req *sr_req)
+			 struct sctp_chunkhdr *ch_req)
 {
 	int chk_length, param_len, ptype;
 	struct sctp_paramhdr pstore;
@@ -4207,7 +4207,7 @@ sctp_handle_stream_reset(struct sctp_tcb *stcb, struct mbuf *m, int offset,
 	int num_param = 0;
 
 	/* now it may be a reset or a reset-response */
-	chk_length = ntohs(sr_req->ch.chunk_length);
+	chk_length = ntohs(ch_req->chunk_length);
 
 	/* setup for adding the response */
 	sctp_alloc_a_chunk(stcb, chk);
@@ -5553,7 +5553,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 				 */
 				stcb->asoc.peer_supports_strreset = 1;
 			}
-			if (sctp_handle_stream_reset(stcb, m, *offset, (struct sctp_stream_reset_out_req *)ch)) {
+			if (sctp_handle_stream_reset(stcb, m, *offset, ch)) {
 				/* stop processing */
 				*offset = length;
 				return (NULL);
