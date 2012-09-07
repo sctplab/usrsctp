@@ -135,7 +135,7 @@ main(int argc, char *argv[])
 	struct sockaddr_in sin_s, sin_c;
 	struct sockaddr_conn sconn;
 #ifdef _WIN32
-	SOCKET fdc, fds;
+	SOCKET fd_c, fd_s;
 #else
 	int fd_c, fd_s;
 #endif
