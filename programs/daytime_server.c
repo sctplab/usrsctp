@@ -101,7 +101,7 @@ main(int argc, char *argv[])
 		}
 		time(&now);
 #ifdef _WIN32
-		_snprintf(buffer, sizeof(buffer), _TRUNCATE, "%s", ctime(&now));
+		_snprintf(buffer, sizeof(buffer), "%s", ctime(&now));
 #else
 		snprintf(buffer, sizeof(buffer), "%s", ctime(&now));
 #endif
