@@ -118,7 +118,8 @@ main(int argc, char *argv[])
 	unsigned int i;
 	struct sctp_assoc_value av;
 	const int on = 1;
-	int n, flags;
+	ssize_t n;
+	int flags;
 	socklen_t from_len;
 	char buffer[BUFFER_SIZE];
 	char name[INET6_ADDRSTRLEN];
@@ -197,11 +198,11 @@ main(int argc, char *argv[])
 			                  &infolen, &infotype, &flags);
 			if (n > 0) {
 				if (flags & MSG_NOTIFICATION) {
-					printf("Notification of length %d received.\n", n);
+					printf("Notification of length %llu received.\n", (unsigned long long)n);
 				} else {
 					if (infotype == SCTP_RECVV_RCVINFO) {
-						printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d, context %u, complete %d.\n",
-						        n,
+						printf("Msg of length %llu received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d, context %u, complete %d.\n",
+						        (unsigned long long)n,
 						        inet_ntop(AF_INET6, &addr.sin6_addr, name, INET6_ADDRSTRLEN), ntohs(addr.sin6_port),
 						        rcv_info.rcv_sid,
 						        rcv_info.rcv_ssn,
@@ -210,8 +211,8 @@ main(int argc, char *argv[])
 						        rcv_info.rcv_context,
 						        (flags & MSG_EOR) ? 1 : 0);
 					} else {
-						printf("Msg of length %d received from %s:%u, complete %d.\n",
-						        n,
+						printf("Msg of length %llu received from %s:%u, complete %d.\n",
+						        (unsigned long long)n,
 						        inet_ntop(AF_INET6, &addr.sin6_addr, name, INET6_ADDRSTRLEN), ntohs(addr.sin6_port),
 						        (flags & MSG_EOR) ? 1 : 0);
 					}
