@@ -4423,14 +4423,17 @@ sctp_print_address(struct sockaddr *sa)
 			    ntohs(sin6->sin6_port),
 			    sin6->sin6_scope_id);
 #else
-		SCTP_PRINTF("IPv6 address: %s:port:%d scope:%u\n",
 #if defined(__FreeBSD__) && __FreeBSD_version >= 700000
+		SCTP_PRINTF("IPv6 address: %s:port:%d scope:%u\n",
 			    ip6_sprintf(ip6buf, &sin6->sin6_addr),
-#else
-			    ip6_sprintf(&sin6->sin6_addr),
-#endif
 			    ntohs(sin6->sin6_port),
 			    sin6->sin6_scope_id);
+#else
+		SCTP_PRINTF("IPv6 address: %s:port:%d scope:%u\n",
+			    ip6_sprintf(&sin6->sin6_addr),
+			    ntohs(sin6->sin6_port),
+			    sin6->sin6_scope_id);
+#endif
 #endif
 		break;
 	}
