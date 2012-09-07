@@ -32,6 +32,9 @@
  * Usage: discard_server [local_encaps_port] [remote_encaps_port]
  */
 
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
