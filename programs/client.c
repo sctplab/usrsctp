@@ -43,6 +43,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#else
+#include <io.h>
 #endif
 #include <usrsctp.h>
 
@@ -56,7 +58,11 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		done = 1;
 		usrsctp_close(sock);
 	} else {
+#ifdef _WIN32
+		_write(fileno(stdout), data, datalen);
+#else
 		write(fileno(stdout), data, datalen);
+#endif
 		free(data);
 	}
 	return 1;
