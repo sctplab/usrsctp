@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 235828 2012-05-23 11:26:28Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 240198 2012-09-07 13:36:42Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_STRUCTS_H_
@@ -81,8 +81,8 @@ TAILQ_HEAD(sctpnetlisthead, sctp_nets);
 struct sctp_stream_reset_list {
 	TAILQ_ENTRY(sctp_stream_reset_list) next_resp;
 	uint32_t tsn;
-	int number_entries;
-	struct sctp_stream_reset_out_request req;
+	uint32_t number_entries;
+	uint16_t list_of_streams[];
 };
 
 TAILQ_HEAD(sctp_resethead, sctp_stream_reset_list);
