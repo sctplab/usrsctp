@@ -119,7 +119,7 @@ gettimeofday(struct timeval *tv, void *ignore)
 	struct timeb tb;
 
 	ftime(&tb);
-	tv->tv_sec = tb.time;
+	tv->tv_sec = (long)tb.time;
  	tv->tv_usec = tb.millitm * 1000;
 }
 #endif
@@ -128,7 +128,7 @@ static void*
 handle_connection(void *arg)
 {
 	ssize_t n;
-	unsigned long long sum = 0;
+	unsigned long long sum = 0, first_length = 0;
 	char *buf;
 #ifdef _WIN32
 	HANDLE tid;
@@ -141,7 +141,6 @@ handle_connection(void *arg)
 	unsigned long messages = 0;
 	unsigned long recv_calls = 0;
 	unsigned long notifications = 0;
-	unsigned int first_length;
 	int flags;
 	struct sockaddr_in addr;
 	socklen_t len;
@@ -169,7 +168,6 @@ handle_connection(void *arg)
 	                 &infolen, &infotype, &flags);
 
 	gettimeofday(&start_time, NULL);
-	first_length = 0;
 	while (n > 0) {
 		recv_calls++;
 		if (flags & MSG_NOTIFICATION) {
@@ -206,7 +204,7 @@ handle_connection(void *arg)
 	gettimeofday(&now, NULL);
 	timersub(&now, &start_time, &diff_time);
 	seconds = diff_time.tv_sec + (double)diff_time.tv_usec/1000000.0;
-	printf("%u, %lu, %lu, %lu, %llu, %f, %f\n",
+	printf("%llu, %lu, %lu, %lu, %llu, %f, %f\n",
 	        first_length, messages, recv_calls, notifications, sum, seconds, (double)first_length * (double)messages / seconds);
 	fflush(stdout);
 	usrsctp_close(conn_sock);
