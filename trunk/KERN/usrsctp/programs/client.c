@@ -77,7 +77,7 @@ main(int argc, char *argv[])
 		usrsctp_init(9899, NULL);
 	}
 #ifdef SCTP_DEBUG
-	usrsctp_sysctl_set_sctp_debug_on(0);
+	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
 #endif
 	usrsctp_sysctl_set_sctp_blackhole(2);
 	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {

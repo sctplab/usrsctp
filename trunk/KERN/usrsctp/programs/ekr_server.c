@@ -193,7 +193,7 @@ main(int argc, char *argv[])
 	}
 #endif
 #ifdef SCTP_DEBUG
-	usrsctp_sysctl_set_sctp_debug_on(0x0);
+	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
 #endif
 #ifdef _WIN32
 	tid = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_packets, (void *)&fd, 0, NULL);

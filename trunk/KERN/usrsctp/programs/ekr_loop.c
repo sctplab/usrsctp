@@ -211,13 +211,13 @@ main(int argc, char *argv[])
 #endif
 #ifdef _WIN32
 	tid_c = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_packets, (void *)&fd_c, 0, NULL);
-	tid_s_ = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_packets, (void *)&fd_s, 0, NULL);
+	tid_s = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_packets, (void *)&fd_s, 0, NULL);
 #else
 	pthread_create(&tid_c, NULL, &handle_packets, (void *)&fd_c);
 	pthread_create(&tid_s, NULL, &handle_packets, (void *)&fd_s);
 #endif
 #ifdef SCTP_DEBUG
-	usrsctp_sysctl_set_sctp_debug_on(0x0);
+	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
 #endif
 	if ((s_c = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
