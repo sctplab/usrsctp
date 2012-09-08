@@ -226,19 +226,33 @@ main(void)
 		perror("usrsctp_socket");
 	}
 	printf("s_c = %p, s_l = %p.\n", (void *)s_c, (void *)s_l);
+	/* Bind the client side. */
+	memset(&sconn, 0, sizeof(struct sockaddr_conn));
+	sconn.sconn_family = AF_CONN;
+#ifdef HAVE_SCONN_LEN
+	sconn.sconn_len = sizeof(struct sockaddr_conn);
+#endif
+	sconn.sconn_port = htons(5002);
+	sconn.sconn_addr = &fd_c;
+	if (usrsctp_bind(s_c, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
+		perror("usrsctp_bind");
+	}
+	/* Bind the server side. */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
 #ifdef HAVE_SCONN_LEN
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif
 	sconn.sconn_port = htons(5001);
-	sconn.sconn_addr = NULL;
+	sconn.sconn_addr = &fd_s;
 	if (usrsctp_bind(s_l, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_bind");
 	}
+	/* Make server side passive... */
 	if (usrsctp_listen(s_l, 1) < 0) {
 		perror("usrsctp_listen");
 	}
+	/* Start the handshake */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
 #ifdef HAVE_SCONN_LEN
