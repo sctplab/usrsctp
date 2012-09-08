@@ -130,7 +130,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 }
 
 int
-main(int argc, char *argv[])
+main(void)
 {
 	struct sockaddr_in sin_s, sin_c;
 	struct sockaddr_conn sconn;
