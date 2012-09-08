@@ -252,7 +252,7 @@ main(void)
 	if (usrsctp_listen(s_l, 1) < 0) {
 		perror("usrsctp_listen");
 	}
-	/* Start the handshake */
+	/* Initiate the handshake */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
 #ifdef HAVE_SCONN_LEN
@@ -279,9 +279,9 @@ main(void)
 		perror("usrsctp_sendv");
 	}
 #ifdef _WIN32
-		Sleep(1000);
+	Sleep(1000);
 #else
-		sleep(1);
+	sleep(1);
 #endif
 	usrsctp_close(s_c);
 	usrsctp_close(s_s);
