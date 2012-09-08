@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 240148 2012-09-05 18:52:01Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 240250 2012-09-08 20:54:54Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1879,12 +1879,6 @@ sctp_addr_mgmt_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 {
 	int status;
 
-#if defined(__APPLE__)
-	struct timeval timenow;
-
-	getmicrotime(&timenow);
-#endif
-
 	if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUNDALL) == 0 ||
 	    sctp_is_feature_off(inp, SCTP_PCB_FLAGS_DO_ASCONF)) {
 		/* subset bound, no ASCONF allowed case, so ignore */
@@ -2452,11 +2446,6 @@ sctp_find_valid_localaddr(struct sctp_tcb *stcb, int addr_locked)
 	struct sctp_ifn *sctp_ifn;
 	struct sctp_ifa *sctp_ifa;
 
-#if defined(__APPLE__)
-	struct timeval timenow;
-
-	getmicrotime(&timenow);
-#endif
 	if (addr_locked == SCTP_ADDR_NOT_LOCKED)
 		SCTP_IPI_ADDR_RLOCK();
 	vrf = sctp_find_vrf(stcb->asoc.vrf_id);
@@ -3198,11 +3187,6 @@ sctp_addr_mgmt_ep_sa(struct sctp_inpcb *inp, struct sockaddr *sa,
 {
 	struct sctp_ifa *ifa;
 	struct sctp_laddr *laddr, *nladdr;
-#if defined(__APPLE__)
-	struct timeval timenow;
-
-	getmicrotime(&timenow);
-#endif
 
 #if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 	if (sa->sa_len == 0) {
