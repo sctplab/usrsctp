@@ -622,15 +622,15 @@ struct sctp_generic_recvmsg_args {
  /*
    Source: /src/sys/gnu/fs/xfs/FreeBSD/xfs_ioctl.c
  */
- static __inline__ int
+static __inline__ int
 copy_to_user(void *dst, void *src, int len) {
-	memcpy(dst,src,len);
+	memcpy(dst, src, len);
 	return 0;
 }
 
- static __inline__ int
+static __inline__ int
 copy_from_user(void *dst, void *src, int len) {
-	memcpy(dst,src,len);
+	memcpy(dst, src, len);
 	return 0;
 }
 
@@ -919,7 +919,7 @@ usrsctp_sendv(struct socket *so,
 	if (errno == 0) {
 		return (len - auio.uio_resid);
 	} else {
-		return(-1);
+		return (-1);
 	}
 }
 
@@ -1307,7 +1307,7 @@ usrsctp_recvv(struct socket *so,
 	}
 	if (errno == 0) {
 		/* ready return value */
-		return((int)ulen - auio.uio_resid);
+		return ((int)ulen - auio.uio_resid);
 	} else {
 		return (-1);
 	}
@@ -1726,19 +1726,6 @@ sobind(struct socket *so, struct sockaddr *nam)
 	}
 }
 
-
-/* Taken from  /src/sys/kern/uipc_syscalls.c
- * kern_bind modified for __Userspace__
- */
-
-int
-user_bind(struct socket *so, struct sockaddr *sa)
-{
-	int error;
-	error = sobind(so, sa);
-	return (error);
-}
-
 /* Taken from  /src/sys/kern/uipc_syscalls.c
  * and modified for __Userspace__
  */
@@ -1755,7 +1742,7 @@ usrsctp_bind(struct socket *so, struct sockaddr *name, int namelen)
 	if ((errno = getsockaddr(&sa, (caddr_t)name, namelen)) != 0)
 		return (-1);
 
-	errno = user_bind(so, sa);
+	errno = sobind(so, sa);
 	FREE(sa, M_SONAME);
 	if (errno) {
 		return (-1);
@@ -1767,7 +1754,7 @@ usrsctp_bind(struct socket *so, struct sockaddr *name, int namelen)
 int
 userspace_bind(struct socket *so, struct sockaddr *name, int namelen)
 {
-	return(usrsctp_bind(so, name, namelen));
+	return (usrsctp_bind(so, name, namelen));
 }
 
 /* Taken from  /src/sys/kern/uipc_socket.c
@@ -1832,7 +1819,7 @@ usrsctp_listen(struct socket *so, int backlog)
 int
 userspace_listen(struct socket *so, int backlog)
 {
-	return(usrsctp_listen(so, backlog));
+	return (usrsctp_listen(so, backlog));
 }
 
 /* Taken from  /src/sys/kern/uipc_socket.c
@@ -2202,7 +2189,7 @@ int usrsctp_connect(struct socket *so, struct sockaddr *name, int namelen)
 
 int userspace_connect(struct socket *so, struct sockaddr *name, int namelen)
 {
-	return(usrsctp_connect(so, name, namelen));
+	return (usrsctp_connect(so, name, namelen));
 }
 
 void
