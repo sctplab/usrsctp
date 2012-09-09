@@ -856,11 +856,9 @@ sctpconn_attach(struct socket *so, int proto SCTP_UNUSED, uint32_t vrf_id)
 int
 sctpconn_bind(struct socket *so, struct sockaddr *addr)
 {
-	struct sockaddr_conn *sconn;
 	int error;
 
 	if ((addr != NULL) && (addr->sa_family != AF_CONN)) {
-		/* must be a v4 address! */
 		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 		return (EINVAL);
 	}
@@ -870,11 +868,6 @@ sctpconn_bind(struct socket *so, struct sockaddr *addr)
 		return (EINVAL);
 	}
 #endif
-	sconn = (struct sockaddr_conn *)addr;
-	if ((sconn != NULL) && (sconn->sconn_addr != NULL)) {
-		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
-		return (EINVAL);
-	}
 	if (so->so_pcb == NULL) {
 		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 		return (EINVAL);

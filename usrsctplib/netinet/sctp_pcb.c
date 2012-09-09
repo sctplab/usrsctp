@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 240148 2012-09-05 18:52:01Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 240263 2012-09-09 08:14:04Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3132,14 +3132,14 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 			sin = (struct sockaddr_in *)addr;
 			lport = sin->sin_port;
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800000
- 				/*
- 				 * For LOOPBACK the prison_local_ip4() call will transmute the ip address
- 				 * to the proper value.
- 				 */
- 				if (p && (error = prison_local_ip4(p->td_ucred, &sin->sin_addr)) != 0) {
- 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
- 					return (error);
-  				}
+ 			/*
+ 			 * For LOOPBACK the prison_local_ip4() call will transmute the ip address
+ 			 * to the proper value.
+ 			 */
+ 			if (p && (error = prison_local_ip4(p->td_ucred, &sin->sin_addr)) != 0) {
+ 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+ 				return (error);
+  			}
 #endif
 			if (sin->sin_addr.s_addr != INADDR_ANY) {
 				bindall = 0;
@@ -3161,19 +3161,17 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 				return (EINVAL);
 			}
 #endif
-
 			lport = sin6->sin6_port;
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800000
-
-  				/*
- 				 * For LOOPBACK the prison_local_ip6() call will transmute the ipv6 address
- 				 * to the proper value.
-  				 */
- 				if (p && (error = prison_local_ip6(p->td_ucred, &sin6->sin6_addr,
- 				    (SCTP_IPV6_V6ONLY(inp) != 0))) != 0) {
- 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
- 					return (error);
- 				}
+  			/*
+ 			 * For LOOPBACK the prison_local_ip6() call will transmute the ipv6 address
+ 			 * to the proper value.
+  			 */
+ 			if (p && (error = prison_local_ip6(p->td_ucred, &sin6->sin6_addr,
+ 			    (SCTP_IPV6_V6ONLY(inp) != 0))) != 0) {
+ 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+ 				return (error);
+ 			}
 #endif
 			if (!IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
 				bindall = 0;
@@ -3218,6 +3216,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		case AF_CONN:
 		{
 			struct sockaddr_conn *sconn;
+
 #if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
 			if (addr->sa_len != sizeof(struct sockaddr_conn)) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
@@ -3246,7 +3245,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 	SCTP_INP_INCR_REF(inp);
 	if (lport) {
 		/*
-		 * Did the caller specify a port? if so we must see if a ep
+		 * Did the caller specify a port? if so we must see if an ep
 		 * already has this one bound.
 		 */
 		/* got to be root to get at low ports */
@@ -3356,9 +3355,8 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		SCTP_INP_WLOCK(inp);
 		if (bindall) {
 			/* verify that no lport is not used by a singleton */
-		  if ((port_reuse_active == 0) &&
-		      (inp_tmp = sctp_isport_inuse(inp, lport, vrf_id))
-		       ) {
+			if ((port_reuse_active == 0) &&
+			    (inp_tmp = sctp_isport_inuse(inp, lport, vrf_id))) {
 				/* Sorry someone already has this one bound */
 				if ((sctp_is_feature_on(inp, SCTP_PCB_FLAGS_PORTREUSE)) &&
 				    (sctp_is_feature_on(inp_tmp, SCTP_PCB_FLAGS_PORTREUSE))) {
@@ -3496,8 +3494,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		if (SCTP_BASE_SYSCTL(sctp_mobility_base) == 0) {
 			sctp_mobility_feature_off(inp, SCTP_MOBILITY_BASE);
 			sctp_mobility_feature_off(inp, SCTP_MOBILITY_PRIM_DELETED);
-		}
-		else {
+		} else {
 			sctp_mobility_feature_on(inp, SCTP_MOBILITY_BASE);
 			sctp_mobility_feature_off(inp, SCTP_MOBILITY_PRIM_DELETED);
 		}
@@ -3507,8 +3504,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		if (SCTP_BASE_SYSCTL(sctp_mobility_fasthandoff) == 0) {
 			sctp_mobility_feature_off(inp, SCTP_MOBILITY_FASTHANDOFF);
 			sctp_mobility_feature_off(inp, SCTP_MOBILITY_PRIM_DELETED);
-		}
-		else {
+		} else {
 			sctp_mobility_feature_on(inp, SCTP_MOBILITY_FASTHANDOFF);
 			sctp_mobility_feature_off(inp, SCTP_MOBILITY_PRIM_DELETED);
 		}
@@ -3569,9 +3565,9 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		 * zero out the port to find the address! yuck! can't do
 		 * this earlier since need port for sctp_pcb_findep()
 		 */
-		if (sctp_ifap != NULL)
+		if (sctp_ifap != NULL) {
 			ifa = sctp_ifap;
-		else {
+		} else {
 			/* Note for BSD we hit here always other
 			 * O/S's will pass things in via the
 			 * sctp_ifap argument (Panda).
