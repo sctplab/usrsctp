@@ -62,14 +62,14 @@
 #include <net/route.h>
 #endif
 /* local macros and datatypes used to get IP addresses system independently */
-#if defined IP_RECVDSTADDR
-# define DSTADDR_SOCKOPT IP_RECVDSTADDR
-# define DSTADDR_DATASIZE (CMSG_SPACE(sizeof(struct in_addr)))
-# define dstaddr(x) (CMSG_DATA(x))
-#elif defined IP_PKTINFO
+#if defined IP_PKTINFO
 # define DSTADDR_SOCKOPT IP_PKTINFO
 # define DSTADDR_DATASIZE (CMSG_SPACE(sizeof(struct in_pktinfo)))
 # define dstaddr(x) (&(((struct in_pktinfo *)(CMSG_DATA(x)))->ipi_addr))
+#elif defined IP_RECVDSTADDR
+# define DSTADDR_SOCKOPT IP_RECVDSTADDR
+# define DSTADDR_DATASIZE (CMSG_SPACE(sizeof(struct in_addr)))
+# define dstaddr(x) (CMSG_DATA(x))
 #else
 # error "can't determine socket option to use to get UDP IP"
 #endif

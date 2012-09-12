@@ -50,8 +50,8 @@ userland_mutex_t accept_mtx = PTHREAD_MUTEX_INITIALIZER;
 userland_cond_t accept_cond = PTHREAD_COND_INITIALIZER;
 #else
 #include <user_socketvar.h>
-CRITICAL_SECTION accept_mtx;
-CONDITION_VARIABLE accept_cond;
+userland_mutex_t accept_mtx;
+userland_cond_t accept_cond;
 #endif
 
 MALLOC_DEFINE(M_PCB, "sctp_pcb", "sctp pcb");
