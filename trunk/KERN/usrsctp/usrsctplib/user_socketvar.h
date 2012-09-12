@@ -237,8 +237,8 @@ struct socket {
  * until such time as it proves to be a good idea.
  */
 #if defined(__Userspace_os_Windows)
-extern CRITICAL_SECTION accept_mtx;
-extern CONDITION_VARIABLE accept_cond;
+extern userland_mutex_t accept_mtx;
+extern userland_cond_t accept_cond;
 #define ACCEPT_LOCK_ASSERT()
 #define	ACCEPT_LOCK() do { \
 	EnterCriticalSection(&accept_mtx); \

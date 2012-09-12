@@ -209,4 +209,54 @@ win_if_nametoindex(const char *ifname)
 	free(addresses);
 	return index;
 }
+
+#if defined (_WIN32_WINNT)
+/* These functions are written based on the code at 
+ * http://www.cs.wustl.edu/~schmidt/win32-cv-1.html
+ */
+
+void
+InitializeXPConditionVariable(userland_cond_t *cv)
+{
+	cv->waiters_count = 0;
+	InitializeCriticalSection(&(cv->waiters_count_lock));
+	cv->events_[C_SIGNAL] = CreateEvent (NULL, FALSE, FALSE, NULL);
+	cv->events_[C_BROADCAST] = CreateEvent (NULL, TRUE, FALSE, NULL);
+}
+
+int
+SleepXPConditionVariable(userland_cond_t *cv, userland_mutex_t *mtx)
+{
+	int result, last_waiter;
+
+	EnterCriticalSection(&cv->waiters_count_lock);
+	cv->waiters_count++;
+	LeaveCriticalSection(&cv->waiters_count_lock);
+	LeaveCriticalSection (mtx);
+	result = WaitForMultipleObjects(2, cv->events_, FALSE, INFINITE);
+	if (result==-1) {
+		result = GetLastError();
+	}
+	EnterCriticalSection(&cv->waiters_count_lock);
+	cv->waiters_count--;
+	last_waiter = 
+		result == (C_SIGNAL + C_BROADCAST && (cv->waiters_count == 0));
+	LeaveCriticalSection(&cv->waiters_count_lock);
+	if (last_waiter)
+		ResetEvent(cv->events_[C_BROADCAST]);
+	EnterCriticalSection (mtx);
+	return result;
+}
+
+void
+WakeAllXPConditionVariable(userland_cond_t *cv)
+{
+	int have_waiters;
+	EnterCriticalSection(&cv->waiters_count_lock);
+	have_waiters = cv->waiters_count > 0;
+	LeaveCriticalSection(&cv->waiters_count_lock);
+	if (have_waiters)
+		SetEvent (cv->events_[C_BROADCAST]);
+}
+#endif
 #endif
