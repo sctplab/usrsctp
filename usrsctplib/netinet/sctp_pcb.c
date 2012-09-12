@@ -674,7 +674,7 @@ sctp_add_addr_to_vrf(uint32_t vrf_id, void *ifn, uint32_t ifn_index,
 	atomic_add_int(&sctp_ifnp->refcount, 1);
 	sctp_ifap->vrf_id = vrf_id;
 	sctp_ifap->ifa = ifa;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 	memcpy(&sctp_ifap->address, addr, addr->sa_len);
 #else
 	if (addr->sa_family == AF_INET) {
@@ -3122,7 +3122,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
 				return (EINVAL);
 			}
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 			if (addr->sa_len != sizeof(*sin)) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
 				return (EINVAL);
@@ -3155,7 +3155,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 
 			sin6 = (struct sockaddr_in6 *)addr;
 
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 			if (addr->sa_len != sizeof(*sin6)) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
 				return (EINVAL);
@@ -3217,7 +3217,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		{
 			struct sockaddr_conn *sconn;
 
-#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 			if (addr->sa_len != sizeof(struct sockaddr_conn)) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
 				return (EINVAL);
@@ -4433,9 +4433,6 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 	SCTP_INCR_RADDR_COUNT();
 	bzero(net, sizeof(struct sctp_nets));
 	(void)SCTP_GETTIME_TIMEVAL(&net->start_time);
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
-	memcpy(&net->ro._l_addr, newaddr, newaddr->sa_len);
-#endif
 	switch (newaddr->sa_family) {
 #ifdef INET
 	case AF_INET:

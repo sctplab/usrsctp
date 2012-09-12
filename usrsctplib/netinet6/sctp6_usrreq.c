@@ -513,7 +513,7 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 	vrf_id = SCTP_DEFAULT_VRFID;
 #endif
 
-#if !defined(__Windows__)
+#ifdef HAVE_SA_LEN
 	if (pktdst->sa_family != AF_INET6 ||
 	    pktdst->sa_len != sizeof(struct sockaddr_in6))
 #else
@@ -853,7 +853,7 @@ sctp6_bind(struct socket *so, struct mbuf *nam, struct proc *p)
 		switch (addr->sa_family) {
 #ifdef INET
 		case AF_INET:
-#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 			if (addr->sa_len != sizeof(struct sockaddr_in)) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP6_USRREQ, EINVAL);
 				return (EINVAL);
@@ -863,7 +863,7 @@ sctp6_bind(struct socket *so, struct mbuf *nam, struct proc *p)
 #endif
 #ifdef INET6
 		case AF_INET6:
-#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 			if (addr->sa_len != sizeof(struct sockaddr_in6)) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP6_USRREQ, EINVAL);
 				return (EINVAL);
@@ -1193,7 +1193,7 @@ sctp6_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 	switch (addr->sa_family) {
 #ifdef INET
 	case AF_INET:
-#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 		if (addr->sa_len != sizeof(struct sockaddr_in)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP6_USRREQ, EINVAL);
 			return (EINVAL);
@@ -1203,7 +1203,7 @@ sctp6_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 #endif
 #ifdef INET6
 	case AF_INET6:
-#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 		if (addr->sa_len != sizeof(struct sockaddr_in6)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP6_USRREQ, EINVAL);
 			return (EINVAL);

@@ -77,7 +77,7 @@
 void recv_thread_destroy(void);
 #define MAXLEN_MBUF_CHAIN 32 /* What should this value be? */
 #define ROUNDUP(a, size) (((a) & ((size)-1)) ? (1 + ((a) | ((size)-1))) : (a))
-#if !defined(__Userspace_os_Windows)
+#if defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Darwin)
 #define NEXT_SA(ap) ap = (struct sockaddr *) \
 	((caddr_t) ap + (ap->sa_len ? ROUNDUP(ap->sa_len, sizeof (uint32_t)) : sizeof(uint32_t)))
 #endif

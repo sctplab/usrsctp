@@ -743,7 +743,7 @@ getsockaddr(namp, uaddr, len)
 	if (error) {
 		FREE(sa, M_SONAME);
 	} else {
-#if !defined(__Userspace_os_Linux) && !defined (__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 		sa->sa_len = len;
 #endif
 		*namp = sa;
@@ -792,7 +792,7 @@ userspace_sctp_sendmsg(struct socket *so,
 	}
 	/* Adding the following as part of defensive programming, in case the application
 	   does not do it when preparing the destination address.*/
-#if !defined(__Userspace_os_Linux) && !defined (__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 	if (to != NULL) {
 		to->sa_len = tolen;
 	}
@@ -1119,7 +1119,7 @@ userspace_sctp_sendmbuf(struct socket *so,
     }
     /* Adding the following as part of defensive programming, in case the application
        does not do it when preparing the destination address.*/
-#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
     to->sa_len = tolen;
 #endif
 
@@ -1935,7 +1935,7 @@ user_accept(struct socket *aso,  struct sockaddr **name, socklen_t *namelen, str
 		goto done;
 	}
 	if (name) {
-#if !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 		/* check sa_len before it is destroyed */
 		if (*namelen > sa->sa_len)
 			*namelen = sa->sa_len;
