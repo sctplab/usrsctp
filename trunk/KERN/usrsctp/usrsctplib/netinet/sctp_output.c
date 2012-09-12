@@ -4083,7 +4083,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		if (net == NULL) {
 			ro = &iproute;
 			memset(&iproute, 0, sizeof(iproute));
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 			memcpy(&ro->ro_dst, to, to->sa_len);
 #else
 			memcpy(&ro->ro_dst, to, sizeof(struct sockaddr_in));
@@ -11628,10 +11628,29 @@ sctp_send_hb(struct sctp_tcb *stcb, struct sctp_nets *net,int so_locked
 	hb->heartbeat.hb_info.time_value_2 = now.tv_usec;
 	/* Did our user request this one, put it in */
 	hb->heartbeat.hb_info.addr_family = net->ro._l_addr.sa.sa_family;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 	hb->heartbeat.hb_info.addr_len = net->ro._l_addr.sa.sa_len;
 #else
-	hb->heartbeat.hb_info.addr_len = sizeof(struct sockaddr_in);
+	switch (net->ro._l_addr.sa.sa_family) {
+#ifdef INET
+	case AF_INET:
+		hb->heartbeat.hb_info.addr_len = sizeof(struct sockaddr_in);
+		break;
+#endif
+#ifdef INET6
+	case AF_INET6:
+		hb->heartbeat.hb_info.addr_len = sizeof(struct sockaddr_in6);
+		break;
+#endif
+#if defined(__Userspace__)
+	case AF_CONN:
+		hb->heartbeat.hb_info.addr_len = sizeof(struct sockaddr_conn);
+		break;
+#endif
+	default:
+		hb->heartbeat.hb_info.addr_len = 0;
+		break;
+	}
 #endif
 	if (net->dest_state & SCTP_ADDR_UNCONFIRMED) {
 		/*

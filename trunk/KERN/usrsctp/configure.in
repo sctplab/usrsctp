@@ -91,6 +91,13 @@ AC_CHECK_HEADER(sys/types.h)
 AC_CHECK_HEADER(linux/if_addr.h)
 AC_CHECK_HEADER(linux/rtnetlink.h)
 
+AC_CHECK_MEMBER(struct sockaddr.sa_len,
+                AC_DEFINE(HAVE_SA_LEN, 1, [Define this if your stack has sa_len in sockaddr struct.]),,
+                [#ifdef HAVE_SYS_TYPES_H
+                 #include <sys/types.h>
+                 #endif
+                 #include <netinet/in.h>])
+
 AC_CHECK_MEMBER(struct sockaddr_in.sin_len,
                 AC_DEFINE(HAVE_SIN_LEN, 1, [Define this if your IPv4 has sin_len in sockaddr_in struct.]),,
                 [#ifdef HAVE_SYS_TYPES_H

@@ -6070,13 +6070,13 @@ sctp_sorecvmsg(struct socket *so,
 	}
 #endif
 	if (fromlen && from) {
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 		cp_len = min((size_t)fromlen, (size_t)control->whoFrom->ro._l_addr.sa.sa_len);
 #endif
 		switch (control->whoFrom->ro._l_addr.sa.sa_family) {
 #ifdef INET6
 			case AF_INET6:
-#if defined(__Windows__) || defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
+#ifndef HAVE_SA_LEN
 				cp_len = min((size_t)fromlen, sizeof(struct sockaddr_in6));
 #endif
 				((struct sockaddr_in6 *)from)->sin6_port = control->port_from;
@@ -6084,7 +6084,7 @@ sctp_sorecvmsg(struct socket *so,
 #endif
 #ifdef INET
 			case AF_INET:
-#if defined(__Windows__) || defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
+#ifndef HAVE_SA_LEN
 				cp_len = min((size_t)fromlen, sizeof(struct sockaddr_in));
 #endif
 				((struct sockaddr_in *)from)->sin_port = control->port_from;
@@ -6092,14 +6092,14 @@ sctp_sorecvmsg(struct socket *so,
 #endif
 #if defined(__Userspace__)
 			case AF_CONN:
-#if defined(__Windows__) || defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
+#ifndef HAVE_SA_LEN
 				cp_len = min((size_t)fromlen, sizeof(struct sockaddr_conn));
 #endif
 				((struct sockaddr_conn *)from)->sconn_port = control->port_from;
 				break;
 #endif
 			default:
-#if defined(__Windows__) || defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
+#ifndef HAVE_SA_LEN
 				cp_len = min((size_t)fromlen, sizeof(struct sockaddr));
 #endif
 				break;
@@ -6781,7 +6781,7 @@ sctp_soreceive(	struct socket *so,
 	if (psa) {
 		from = (struct sockaddr *)sockbuf;
 		fromlen = sizeof(sockbuf);
-#if !defined(__Windows__)
+#ifdef HAVE_SA_LEN
 		from->sa_len = 0;
 #endif
 	} else {
@@ -6804,7 +6804,7 @@ sctp_soreceive(	struct socket *so,
 	}
 	if (psa) {
 		/* copy back the address info */
-#if !defined(__Windows__)
+#ifdef HAVE_SA_LEN
 		if (from && from->sa_len) {
 #else
 		if (from) {
@@ -7072,7 +7072,7 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 		case AF_INET:
 			(*num_v4) += 1;
 			incr = sizeof(struct sockaddr_in);
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 			if (sa->sa_len != incr) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
 				*error = EINVAL;
@@ -7097,7 +7097,7 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 			}
 			(*num_v6) += 1;
 			incr = sizeof(struct sockaddr_in6);
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 			if (sa->sa_len != incr) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
 				*error = EINVAL;
@@ -7174,7 +7174,7 @@ sctp_bindx_add_address(struct socket *so, struct sctp_inpcb *inp,
 #ifdef INET6
 	if (sa->sa_family == AF_INET6) {
 		struct sockaddr_in6 *sin6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 		if (sa->sa_len != sizeof(struct sockaddr_in6)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
 			*error = EINVAL;
@@ -7203,7 +7203,7 @@ sctp_bindx_add_address(struct socket *so, struct sctp_inpcb *inp,
 #endif
 #ifdef INET
 	if (sa->sa_family == AF_INET) {
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 		if (sa->sa_len != sizeof(struct sockaddr_in)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
 			*error = EINVAL;
@@ -7324,7 +7324,7 @@ sctp_bindx_delete_address(struct sctp_inpcb *inp,
 #ifdef INET6
 	if (sa->sa_family == AF_INET6) {
 		struct sockaddr_in6 *sin6;
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 		if (sa->sa_len != sizeof(struct sockaddr_in6)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
 			*error = EINVAL;
@@ -7353,7 +7353,7 @@ sctp_bindx_delete_address(struct sctp_inpcb *inp,
 #endif
 #ifdef INET
 	if (sa->sa_family == AF_INET) {
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#ifdef HAVE_SA_LEN
 		if (sa->sa_len != sizeof(struct sockaddr_in)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
 			*error = EINVAL;
