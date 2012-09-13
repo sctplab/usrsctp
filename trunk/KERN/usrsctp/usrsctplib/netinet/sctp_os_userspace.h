@@ -51,7 +51,7 @@
 #include <Windows.h>
 #include "user_environment.h"
 typedef CRITICAL_SECTION userland_mutex_t;
-#if _WIN32_WINNT < 0x0600
+#if WINVER < 0x0600
 enum {
 	C_SIGNAL = 0,
 	C_BROADCAST = 1,
@@ -226,7 +226,7 @@ typedef char* caddr_t;
 #endif
 #define CMSG_DATA(x)   WSA_CMSG_DATA(x)
 #define CMSG_ALIGN(x)  WSA_CMSGDATA_ALIGN(x)
-#if _WIN32_WINNT < 0x0600
+#if WINVER < 0x0600
 #define CMSG_SPACE(x)  WSA_CMSG_SPACE(x)
 #define CMSG_LEN(x)    WSA_CMSG_LEN(x)
 #endif
