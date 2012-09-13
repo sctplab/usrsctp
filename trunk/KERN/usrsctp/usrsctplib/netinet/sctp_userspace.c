@@ -27,7 +27,7 @@
  */
 
 
-#if defined (__Userspace_os_Windows)
+#ifdef _WIN32
 #include <netinet/sctp_pcb.h>
 #include <sys/timeb.h>
 #include <iphlpapi.h>
@@ -35,7 +35,7 @@
 #endif
 #include <netinet/sctp_os_userspace.h>
 
-#if !defined (__Userspace_os_Windows)
+#ifndef _WIN32
 int
 sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)
 {
@@ -55,7 +55,7 @@ sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)
 }
 #endif
 
-#if defined (__Userspace_os_Windows)
+#ifdef _WIN32
 int
 sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)
 {
@@ -210,7 +210,7 @@ win_if_nametoindex(const char *ifname)
 	return index;
 }
 
-#if defined (_WIN32_WINNT)
+#if _WIN32_WINNT < 0x0600
 /* These functions are written based on the code at 
  * http://www.cs.wustl.edu/~schmidt/win32-cv-1.html
  */
