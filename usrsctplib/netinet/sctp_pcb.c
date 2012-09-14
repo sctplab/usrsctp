@@ -4161,18 +4161,18 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 #endif
 
 #ifdef INET6
-#if !(defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__))
-	if (inp->inp_vflag & INP_IPV6) {
-#else
+#if !(defined(__Panda__) || defined(__Windows__) || defined(__Userspace__))
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	if (ip_pcb->inp_vflag & INP_IPV6) {
+#else
+	if (inp->inp_vflag & INP_IPV6) {
 #endif
 		struct in6pcb *in6p;
 
 		in6p = (struct in6pcb *)inp;
-#if !(defined(__Panda__) || defined(__Windows__) || defined(__Userspace__))
 		ip6_freepcbopts(in6p->in6p_outputopts);
-#endif
 	}
+#endif
 #endif				/* INET6 */
 #if !(defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__))
 	inp->inp_vflag = 0;
