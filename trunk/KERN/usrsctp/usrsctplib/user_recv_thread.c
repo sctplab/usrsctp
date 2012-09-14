@@ -295,8 +295,8 @@ recv_function_raw(void *arg)
 	struct sctp_chunkhdr *ch;
 	struct sockaddr_in src, dst;
 #if !defined(__Userspace_os_Windows)
+	struct msghdr msg;
 	struct iovec recv_iovec[MAXLEN_MBUF_CHAIN];
-	int iovcnt = MAXLEN_MBUF_CHAIN;
 #else
 	WSABUF recv_iovec[MAXLEN_MBUF_CHAIN];
 	int nResult, m_ErrorCode;
@@ -353,7 +353,14 @@ recv_function_raw(void *arg)
 		}
 		n = ncounter;
 #else
-		ncounter = n = readv(SCTP_BASE_VAR(userspace_rawsctp), recv_iovec, iovcnt);
+		bzero((void *)&msg, sizeof(struct msghdr));
+		msg.msg_name = NULL;
+		msg.msg_namelen = 0;
+		msg.msg_iov = recv_iovec;
+		msg.msg_iovlen = MAXLEN_MBUF_CHAIN;
+		msg.msg_control = NULL;
+		msg.msg_controllen = 0;
+		ncounter = n = recvmsg(SCTP_BASE_VAR(userspace_rawsctp), &msg, 0);
 		if (n < 0) {
 			if (errno == EAGAIN) {
 				continue;
