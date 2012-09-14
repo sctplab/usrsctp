@@ -2398,7 +2398,7 @@ userspace_getsockopt(struct socket *so, int level, int option_name,
 #ifdef INET
 void
 sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
-                         struct route *ro, void *stcb,
+                         sctp_route_t *ro, void *stcb,
                          uint32_t vrf_id)
 {
 	struct mbuf *m;

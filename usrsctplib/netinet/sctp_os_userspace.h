@@ -455,12 +455,6 @@ struct sx {int dummy;};
 #endif
 /* #include <netinet/in_pcb.h> ported to userspace */
 #include <user_inpcb.h>
-#if defined(__Userspace_os_FreeBSD)
-/* all of these were 0 byte files */
-/* #include <netinet/in_var.h> */
-/* #include <netinet/ip_var.h> */
-/* #include <netinet/icmp_var.h> */
-#endif
 
 /* for getifaddrs */
 #include <sys/types.h>
@@ -817,50 +811,53 @@ sctp_hashfreedestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask);
 /*
  * routes, output, etc.
  */
-/* using user_route.h definitions for now, but may wish to do net/route.h later... */
-typedef struct route	sctp_route_t;
-typedef struct rtentry	sctp_rtentry_t;
 
-static inline void sctp_userspace_rtalloc(sctp_route_t *ro) {
+typedef struct sctp_route	sctp_route_t;
+typedef struct sctp_rtentry	sctp_rtentry_t;
 
-    if(ro->ro_rt != NULL) {
-        ro->ro_rt->rt_refcnt++;
-        return;
-    }
+static inline void sctp_userspace_rtalloc(sctp_route_t *ro)
+{
+	if (ro->ro_rt != NULL) {
+		ro->ro_rt->rt_refcnt++;
+		return;
+	}
 
-    ro->ro_rt = (sctp_rtentry_t *) malloc(sizeof(sctp_rtentry_t));
-    if(ro->ro_rt == NULL)
-        return;
+	ro->ro_rt = (sctp_rtentry_t *) malloc(sizeof(sctp_rtentry_t));
+	if (ro->ro_rt == NULL)
+		return;
 
-    /* initialize */
-    memset(ro->ro_rt, 0, sizeof(sctp_rtentry_t));
-    ro->ro_rt->rt_refcnt = 1;
+	/* initialize */
+	memset(ro->ro_rt, 0, sizeof(sctp_rtentry_t));
+	ro->ro_rt->rt_refcnt = 1;
 
-    /* set MTU */
-    /* TODO set this based on the ro->ro_dst, looking up MTU with routing socket */
+	/* set MTU */
+	/* TODO set this based on the ro->ro_dst, looking up MTU with routing socket */
 #if 0
-    if(userspace_rawroute == -1) {
-        userspace_rawroute = socket(AF_ROUTE, SOCK_RAW, 0);
-        if(userspace_rawroute == -1)
-            return;
-    }
+	if (userspace_rawroute == -1) {
+		userspace_rawroute = socket(AF_ROUTE, SOCK_RAW, 0);
+		if (userspace_rawroute == -1)
+			return;
+	}
 #endif
-    ro->ro_rt->rt_rmx.rmx_mtu = 1500; /* FIXME temporary solution */
+	ro->ro_rt->rt_rmx.rmx_mtu = 1500; /* FIXME temporary solution */
 
-    /* TODO enable the ability to obtain interface index of route for
-     *  SCTP_GET_IF_INDEX_FROM_ROUTE macro.
-     */
+	/* TODO enable the ability to obtain interface index of route for
+	 *  SCTP_GET_IF_INDEX_FROM_ROUTE macro.
+	 */
 }
 #define SCTP_RTALLOC(ro, vrf_id) sctp_userspace_rtalloc((sctp_route_t *)ro)
 
 /* dummy rtfree needed once user_route.h is included */
-static inline void sctp_userspace_rtfree(struct rtentry *rt) {
-    if(rt == NULL)
-        return;
-    if(--rt->rt_refcnt > 0)
-        return;
-    free(rt);
-    rt = NULL;
+static inline void sctp_userspace_rtfree(sctp_rtentry_t *rt)
+{
+	if(rt == NULL) {
+		return;
+	}
+	if(--rt->rt_refcnt > 0) {
+		return;
+	}
+	free(rt);
+	rt = NULL;
 }
 #define rtfree(arg1) sctp_userspace_rtfree(arg1)
 
@@ -1078,8 +1075,8 @@ struct sockaddr_conn {
 /* need sctphdr to get port in SCTP_IP_OUTPUT. sctphdr defined in sctp.h  */
 #include <netinet/sctp.h>
 extern void sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
-                                            struct route *ro, void *stcb,
-                                            uint32_t vrf_id);
+                                     sctp_route_t *ro, void *stcb,
+                                     uint32_t vrf_id);
 
 #define SCTP_IP_OUTPUT(result, o_pak, ro, stcb, vrf_id) sctp_userspace_ip_output(&result, o_pak, ro, stcb, vrf_id);
 
@@ -1095,7 +1092,7 @@ extern void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 #if 0
 #define SCTP_IP6_OUTPUT(result, o_pak, ro, ifp, stcb, vrf_id) \
 { \
- 	if (stcb && stcb->sctp_ep) \
+	if (stcb && stcb->sctp_ep) \
 		result = ip6_output(o_pak, \
 				    ((struct in6pcb *)(stcb->sctp_ep))->in6p_outputopts, \
 				    (ro), 0, 0, ifp, NULL); \
@@ -1105,8 +1102,7 @@ extern void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 #endif
 
 struct mbuf *
-sctp_get_mbuf_for_msg(unsigned int space_needed,
-		      int want_header, int how, int allonebuf, int type);
+sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header, int how, int allonebuf, int type);
 
 
 /* with the current included files, this is defined in Linux but

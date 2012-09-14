@@ -43,8 +43,9 @@
  * to a routing entry.  These are often held by protocols
  * in their control blocks, e.g. inpcb.
  */
-struct route {
-	struct	rtentry *ro_rt;
+
+struct sctp_route {
+	struct	sctp_rtentry *ro_rt;
 	struct	sockaddr ro_dst;
 };
 
@@ -52,7 +53,7 @@ struct route {
  * These numbers are used by reliable protocols for determining
  * retransmission behavior and are included in the routing structure.
  */
-struct rt_metrics_lite {
+struct sctp_rt_metrics_lite {
 	u_long	rmx_mtu;	/* MTU for this path */
 #if 0
 	u_long	rmx_expire;	/* lifetime for route, e.g. redirect */
@@ -68,8 +69,8 @@ struct rt_metrics_lite {
  * gateways are marked so that the output routines know to address the
  * gateway rather than the ultimate destination.
  */
-struct rtentry {
-#if 0	
+struct sctp_rtentry {
+#if 0
 	struct	radix_node rt_nodes[2];	/* tree glue, and other values */
 	/*
 	 * XXX struct rtentry must begin with a struct radix_node (or two!)
@@ -83,7 +84,7 @@ struct rtentry {
 #endif
 	struct	ifnet *rt_ifp;		/* the answer: interface to use */
 	struct	ifaddr *rt_ifa;		/* the answer: interface address to use */
-	struct	rt_metrics_lite rt_rmx;	/* metrics used by rx'ing protocols */
+	struct	sctp_rt_metrics_lite rt_rmx;	/* metrics used by rx'ing protocols */
 	long	rt_refcnt;		/* # held references */
 #if 0
 	struct	sockaddr *rt_genmask;	/* for generation of cloned routes */
@@ -94,8 +95,7 @@ struct rtentry {
 	struct	mtx rt_mtx;		/* mutex for routing entry */
 };
 
-#define	RT_LOCK_INIT(_rt) \
-	mtx_init(&(_rt)->rt_mtx, "rtentry", NULL, MTX_DEF | MTX_DUPOK)
+#define	RT_LOCK_INIT(_rt)	mtx_init(&(_rt)->rt_mtx, "rtentry", NULL, MTX_DEF | MTX_DUPOK)
 #define	RT_LOCK(_rt)		mtx_lock(&(_rt)->rt_mtx)
 #define	RT_UNLOCK(_rt)		mtx_unlock(&(_rt)->rt_mtx)
 #define	RT_LOCK_DESTROY(_rt)	mtx_destroy(&(_rt)->rt_mtx)
@@ -113,19 +113,18 @@ struct rtentry {
 		("bogus refcnt %ld", (_rt)->rt_refcnt));	\
 	(_rt)->rt_refcnt--;					\
 } while (0)
-
 #define	RTFREE_LOCKED(_rt) do {					\
-		if ((_rt)->rt_refcnt <= 1)			\
+		if ((_rt)->rt_refcnt <= 1) {			\
 			rtfree(_rt);				\
-		else {						\
+		} else {					\
 			RT_REMREF(_rt);				\
 			RT_UNLOCK(_rt);				\
 		}						\
 		/* guard against invalid refs */		\
-		_rt = 0;					\
+		_rt = NULL;					\
 	} while (0)
-#define        RTFREE(_rt) do {                                        \
-               RT_LOCK(_rt);                                   \
-               RTFREE_LOCKED(_rt);                             \
-        } while (0)
+#define	RTFREE(_rt) do {					\
+		RT_LOCK(_rt);					\
+		RTFREE_LOCKED(_rt);				\
+} while (0)
 #endif
