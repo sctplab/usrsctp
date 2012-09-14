@@ -226,11 +226,9 @@ static int clust_constructor_dup(caddr_t m_clust, struct mbuf* m)
 {
 	u_int *refcnt;
 	int type, size;
-	sctp_zone_t zone;
 
 	/* Assigning cluster of MCLBYTES. TODO: Add jumbo frame functionality */
 	type = EXT_CLUSTER;
-	zone = zone_clust;
 	size = MCLBYTES;
 
 	refcnt = SCTP_ZONE_GET(zone_ext_refcnt, u_int);
