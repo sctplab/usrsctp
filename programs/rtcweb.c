@@ -630,6 +630,7 @@ handle_open_request_message(struct peer_connection *pc,
 		pr_policy = SCTP_PR_SCTP_TTL;
 		break;
 	default:
+		pr_policy = SCTP_PR_SCTP_NONE;
 		/* XXX error handling */
 		break;
 	}

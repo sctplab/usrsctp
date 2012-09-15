@@ -205,6 +205,12 @@ handle_peer_address_change_event(struct sctp_paddr_change *spc)
 		addr = addr_buf;
 		break;
 	default:
+#ifdef _WIN32
+		_snprintf(addr_buf, INET6_ADDRSTRLEN, "Unknown family %d", spc->spc_aaddr.ss_family);
+#else
+		snprintf(addr_buf, INET6_ADDRSTRLEN, "Unknown family %d", spc->spc_aaddr.ss_family);
+#endif
+		addr = addr_buf;
 		break;
 	}
 	printf("Peer address %s is now ", addr);
