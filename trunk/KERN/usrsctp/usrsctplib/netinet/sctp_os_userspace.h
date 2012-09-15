@@ -224,11 +224,13 @@ typedef char* caddr_t;
 #ifdef CMSG_DATA
 #undef CMSG_DATA
 #endif
-#define CMSG_DATA(x)   WSA_CMSG_DATA(x)
-#define CMSG_ALIGN(x)  WSA_CMSGDATA_ALIGN(x)
+#define CMSG_DATA(x) WSA_CMSG_DATA(x)
+#define CMSG_ALIGN(x) WSA_CMSGDATA_ALIGN(x)
 #if WINVER < 0x0600
-#define CMSG_SPACE(x)  WSA_CMSG_SPACE(x)
-#define CMSG_LEN(x)    WSA_CMSG_LEN(x)
+#define CMSG_FIRSTHDR(x) WSA_CMSG_FIRSTHDR(x)
+#define CMSG_NXTHDR(x) WSA_CMSG_NXTHDR(x)
+#define CMSG_SPACE(x) WSA_CMSG_SPACE(x)
+#define CMSG_LEN(x) WSA_CMSG_LEN(x)
 #endif
 
 /****  from sctp_os_windows.h ***************/
