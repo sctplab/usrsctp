@@ -47,7 +47,7 @@ linux*)
   LIBCFLAGS="$LIBCFLAGS  -D__Userspace_os_Linux"
   ;;
 freebsd*)
-  CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread"
+  CFLAGS="$CFLAGS -pedantic -Wall -Werror -Qunused-arguments -pthread"
   LIBCFLAGS="$LIBCFLAGS -U__FreeBSD__ -D__Userspace_os_FreeBSD"
   ;;
 solaris*)
