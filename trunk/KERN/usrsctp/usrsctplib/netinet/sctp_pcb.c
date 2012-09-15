@@ -1802,6 +1802,9 @@ sctp_endpoint_probe(struct sockaddr *nam, struct sctppcbhead *head,
 #ifdef INET6
 	sin6 = NULL;
 #endif
+#if defined(__Userspace__)
+	sconn = NULL;
+#endif
 	switch (nam->sa_family) {
 #ifdef INET
 	case AF_INET:
