@@ -31,24 +31,23 @@ dnl
 AC_INIT(usrsctplib/netinet/sctp.h)
 AM_INIT_AUTOMAKE(libusrsctp, 0.9.2.1)
 
-AC_PROG_CC
+AC_PROG_CC_C99
 AC_PROG_LIBTOOL
 AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([m4])
 
-CFLAGS="$CFLAGS -g -O0"
 LIBCFLAGS="-DUSE_SCTP_SHA1 -DSCTP_PROCESS_LEVEL_LOCKS -DSCTP_SIMPLE_ALLOCATOR -D__Userspace__"
 case $host_os in
 darwin*)
-  CFLAGS="$CFLAGS -std=c99 -pedantic -Wall -Werror -D__APPLE_USE_RFC_2292"
+  CFLAGS="$CFLAGS -pedantic -Wall -Werror -D__APPLE_USE_RFC_2292"
   LIBCFLAGS="$LIBCFLAGS -U__APPLE__ -D__Userspace_os_Darwin"
   ;;
 linux*)
-  CFLAGS="$CFLAGS -std=gnu99 -pedantic -Wall -Werror -pthread"
+  CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread"
   LIBCFLAGS="$LIBCFLAGS  -D__Userspace_os_Linux"
   ;;
 freebsd*)
-  CFLAGS="$CFLAGS -std=c99 -pedantic -Wall -Werror -pthread"
+  CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread"
   LIBCFLAGS="$LIBCFLAGS -U__FreeBSD__ -D__Userspace_os_FreeBSD"
   ;;
 solaris*)
