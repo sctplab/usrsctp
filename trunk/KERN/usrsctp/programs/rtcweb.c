@@ -760,7 +760,7 @@ handle_data_message(struct peer_connection *pc,
 	} else {
 		/* Assuming DATA_CHANNEL_PPID_DOMSTRING */
 		/* XXX: Protect for non 0 terminated buffer */
-		printf("Message received of length %lu on channel with id %d: %.*s\n",
+		printf("Message received of length %zu on channel with id %d: %.*s\n",
 		       length, channel->id, (int)length, buffer);
 	}
 	return;
@@ -814,7 +814,7 @@ handle_message(struct peer_connection *pc, char *buffer, size_t length, uint32_t
 		handle_data_message(pc, buffer, length, i_stream);
 		break;
 	default:
-		printf("Message of length %lu, PPID %u on stream %u received.\n",
+		printf("Message of length %zu, PPID %u on stream %u received.\n",
 		       length, ppid, i_stream);
 		break;
 	}
