@@ -789,7 +789,6 @@ extern int sctp6_connect(struct socket *so, struct sockaddr *addr);
 extern int sctpconn_connect(struct socket *so, struct sockaddr *addr);
 #endif
 extern struct mbuf* mbufalloc(size_t size, void* data, unsigned char fill);
-extern struct mbuf* mbufallocfromiov(int iovlen, struct iovec *srciov);
 extern void sctp_finish(void);
 
 /* ------------------------------------------------ */
