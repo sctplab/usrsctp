@@ -736,7 +736,7 @@ getsockaddr(namp, uaddr, len)
 
 	if (len > SOCK_MAXADDRLEN)
 		return (ENAMETOOLONG);
-	if (len < offsetof(struct sockaddr, sa_data[0]))
+	if (len < offsetof(struct sockaddr, sa_data))
 		return (EINVAL);
 	MALLOC(sa, struct sockaddr *, len, M_SONAME, M_WAITOK);
 	error = copyin(uaddr, sa, len);
@@ -1113,7 +1113,7 @@ userspace_sctp_sendmbuf(struct socket *so,
         error = (ENAMETOOLONG);
         goto sendmsg_return;
     }
-    if (tolen < offsetof(struct sockaddr, sa_data[0])){
+    if (tolen < offsetof(struct sockaddr, sa_data)){
         error = (EINVAL);
         goto sendmsg_return;
     }
