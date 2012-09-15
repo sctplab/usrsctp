@@ -908,6 +908,12 @@ handle_peer_address_change_event(struct sctp_paddr_change *spc)
 		addr = inet_ntop(AF_INET6, &sin6->sin6_addr, addr_buf, INET6_ADDRSTRLEN);
 		break;
 	default:
+#ifdef _WIN32
+		_snprintf(addr_buf, INET6_ADDRSTRLEN, "Unknown family %d", spc->spc_aaddr.ss_family);
+#else
+		snprintf(addr_buf, INET6_ADDRSTRLEN, "Unknown family %d", spc->spc_aaddr.ss_family);
+#endif
+		addr = addr_buf;
 		break;
 	}
 	printf("Peer address %s is now ", addr);
