@@ -61,7 +61,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 #ifdef _WIN32
 		_write(_fileno(stdout), data, datalen);
 #else
-		write(fileno(stdout), data, datalen);
+		(void)write(fileno(stdout), data, datalen);
 #endif
 		free(data);
 	}
