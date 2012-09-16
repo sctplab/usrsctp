@@ -48,7 +48,7 @@ linux*)
   ;;
 freebsd*)
   CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread"
-  if test "x$CC" = "xclang"; then
+  if $CC --version | grep -q clang; then
     LDFLAGS="$LDFLAGS -Qunused-arguments"
   fi
   LIBCFLAGS="$LIBCFLAGS -U__FreeBSD__ -D__Userspace_os_FreeBSD"
