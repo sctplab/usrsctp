@@ -228,7 +228,7 @@ typedef char* caddr_t;
 #define CMSG_ALIGN(x) WSA_CMSGDATA_ALIGN(x)
 #if WINVER < 0x0600
 #define CMSG_FIRSTHDR(x) WSA_CMSG_FIRSTHDR(x)
-#define CMSG_NXTHDR(x) WSA_CMSG_NXTHDR(x)
+#define CMSG_NXTHDR(x, y) WSA_CMSG_NXTHDR(x, y)
 #define CMSG_SPACE(x) WSA_CMSG_SPACE(x)
 #define CMSG_LEN(x) WSA_CMSG_LEN(x)
 #endif
