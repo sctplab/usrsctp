@@ -543,6 +543,13 @@ struct sctp_event_subscribe {
 #define SCTP_RESET_ASSOC                0x00000902 /* sctp_assoc_t */
 #define SCTP_ADD_STREAMS                0x00000903 /* struct sctp_add_streams */
 
+struct sctp_initmsg {
+	uint16_t sinit_num_ostreams;
+	uint16_t sinit_max_instreams;
+	uint16_t sinit_max_attempts;
+	uint16_t sinit_max_init_timeo;
+};
+
 struct sctp_rtoinfo {
 	sctp_assoc_t srto_assoc_id;
 	uint32_t srto_initial;
