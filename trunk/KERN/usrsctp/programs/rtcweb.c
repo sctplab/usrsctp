@@ -965,9 +965,27 @@ handle_stream_reset_event(struct peer_connection *pc, struct sctp_stream_reset_e
 	uint32_t n, i;
 	struct channel *channel;
 
+	n = (strrst->strreset_length - sizeof(struct sctp_stream_reset_event)) / sizeof(uint16_t);
+	printf("Stream reset event: flags = %x, ", strrst->strreset_flags);
+	if (strrst->strreset_flags & SCTP_STREAM_RESET_INCOMING_SSN) {
+		if (strrst->strreset_flags & SCTP_STREAM_RESET_OUTGOING_SSN) {
+			printf("incoming/");
+		}
+		printf("incoming ");
+	}
+	if (strrst->strreset_flags & SCTP_STREAM_RESET_OUTGOING_SSN) {
+		printf("outgoing ");
+	}
+	printf("stream ids = ");
+	for (i = 0; i < n; i++) {
+		if (i > 0) {
+			printf(", ");
+		}
+		printf("%d", strrst->strreset_stream_list[i]);
+	}
+	printf(".\n");	
 	if (!(strrst->strreset_flags & SCTP_STREAM_RESET_DENIED) &&
 	    !(strrst->strreset_flags & SCTP_STREAM_RESET_FAILED)) {
-		n = (strrst->strreset_length - sizeof(struct sctp_stream_reset_event)) / sizeof(uint16_t);
 		for (i = 0; i < n; i++) {
 			if (strrst->strreset_flags & SCTP_STREAM_RESET_INCOMING_SSN) {
 				channel = find_channel_by_i_stream(pc, strrst->strreset_stream_list[i]);
@@ -1280,6 +1298,7 @@ main(int argc, char *argv[])
 	struct sctp_assoc_value av;
 	struct sctp_event event;
 	struct sctp_udpencaps encaps;
+	struct sctp_initmsg initmsg;
 	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
 	                          SCTP_PEER_ADDR_CHANGE,
 	                          SCTP_REMOTE_ERROR,
@@ -1333,7 +1352,13 @@ main(int argc, char *argv[])
 			perror("setsockopt SCTP_EVENT");
 		}
 	}
-
+	memset(&initmsg, 0, sizeof(struct sctp_initmsg));
+	initmsg.sinit_num_ostreams = 5;
+	initmsg.sinit_max_instreams = 65535;
+	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_INITMSG, &initmsg, sizeof(struct sctp_initmsg)) < 0) {
+		perror("setsockopt SCTP_INITMSG");
+	}
+	
 	if (argc == 5) {
 		/* operating as client */
 		memset(&addr, 0, sizeof(struct sockaddr_in));
