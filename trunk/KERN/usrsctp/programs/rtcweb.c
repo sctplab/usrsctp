@@ -1016,6 +1016,8 @@ handle_stream_change_event(struct peer_connection *pc, struct sctp_stream_change
 	uint32_t i;
 	struct channel *channel;
 
+	printf("Stream change event: streams (in/out) = (%u/%u), flags = %x.\n",
+	       strchg->strchange_instrms, strchg->strchange_outstrms, strchg->strchange_flags);
 	for (i = 0; i < NUMBER_OF_CHANNELS; i++) {
 		channel = &(pc->channels[i]);
 		if ((channel->state == DATA_CHANNEL_CONNECTING) &&
