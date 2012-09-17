@@ -647,10 +647,10 @@ recv_function_udp(void *arg)
 	uint16_t port;
 	struct sctp_chunkhdr *ch;
 	struct sockaddr_in src, dst;
-#if defined(IP_RECVDSTADDR)
-	char cmsgbuf[CMSG_SPACE(sizeof(struct in_addr))];
-#else
+#if defined(IP_PKTINFO)
 	char cmsgbuf[CMSG_SPACE(sizeof(struct in_pktinfo))];
+#else
+	char cmsgbuf[CMSG_SPACE(sizeof(struct in_addr))];
 #endif
 #if !defined(SCTP_WITH_NO_CSUM)
 	int compute_crc = 1;
@@ -760,7 +760,7 @@ recv_function_udp(void *arg)
 		}
 
 		for (cmsgptr = CMSG_FIRSTHDR(&msg); cmsgptr != NULL; cmsgptr = CMSG_NXTHDR(&msg, cmsgptr)) {
-#if defined IP_PKTINFO
+#if defined(IP_PKTINFO)
 			if ((cmsgptr->cmsg_level == IPPROTO_IP) && (cmsgptr->cmsg_type == IP_PKTINFO)) {
 				struct in_pktinfo *info;
 
@@ -772,8 +772,7 @@ recv_function_udp(void *arg)
 				memcpy((void *)&dst.sin_addr, (const void *)&(info->ipi_addr), sizeof(struct in_addr));
 				break;
 			}
-#endif
-#if defined IP_RECVDSTADDR
+#elif defined(IP_RECVDSTADDR)
 			if ((cmsgptr->cmsg_level == IPPROTO_IP) && (cmsgptr->cmsg_type == IP_RECVDSTADDR)) {
 				struct in_addr *addr;
 
@@ -1172,23 +1171,23 @@ recv_thread_init(void)
 			SCTPDBG(SCTP_DEBUG_USR, "Can't create socket for SCTP/UDP/IPv4 (errno = %d).\n", errno);
 #endif
 		} else {
-#if defined(IP_RECVDSTADDR)
-			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp), IPPROTO_IP, IP_RECVDSTADDR, (const void *)&on, (int)sizeof(int)) < 0) {
-#else
+#if defined(IP_PKTINFO)
 			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp), IPPROTO_IP, IP_PKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
+#else
+			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp), IPPROTO_IP, IP_RECVDSTADDR, (const void *)&on, (int)sizeof(int)) < 0) {
 #endif
 #if defined(__Userspace_os_Windows)
-#if defined(IP_RECVDSTADDR)
-				SCTPDBG(SCTP_DEBUG_USR, "Can't set IP_RECVDSTADDR on socket for SCTP/UDP/IPv4 (errno = %d).\n", WSAGetLastError());
-#else
+#if defined(IP_PKTINFO)
 				SCTPDBG(SCTP_DEBUG_USR, "Can't set IP_PKTINFO on socket for SCTP/UDP/IPv4 (errno = %d).\n", WSAGetLastError());
+#else
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set IP_RECVDSTADDR on socket for SCTP/UDP/IPv4 (errno = %d).\n", WSAGetLastError());
 #endif
 				closesocket(SCTP_BASE_VAR(userspace_udpsctp));
 #else
-#if defined(IP_RECVDSTADDR)
-				SCTPDBG(SCTP_DEBUG_USR, "Can't set IP_RECVDSTADDR on socket for SCTP/UDP/IPv4 (errno = %d).\n", errno);
-#else
+#if defined(IP_PKTINFO)
 				SCTPDBG(SCTP_DEBUG_USR, "Can't set IP_PKTINFO on socket for SCTP/UDP/IPv4 (errno = %d).\n", errno);
+#else
+				SCTPDBG(SCTP_DEBUG_USR, "Can't set IP_RECVDSTADDR on socket for SCTP/UDP/IPv4 (errno = %d).\n", errno);
 #endif
 				close(SCTP_BASE_VAR(userspace_udpsctp));
 #endif
