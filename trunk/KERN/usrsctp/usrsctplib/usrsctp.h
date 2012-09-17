@@ -43,7 +43,6 @@ extern "C" {
 #include <ws2def.h>
 #else
 #include <sys/socket.h>
-/*  to make sure some OSs define in6_pktinfo */
 #include <netinet/in.h>
 #endif
 
