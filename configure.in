@@ -43,7 +43,7 @@ darwin*)
   LIBCFLAGS="$LIBCFLAGS -U__APPLE__ -D__Userspace_os_Darwin"
   ;;
 linux*)
-  CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread"
+  CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread -D_GNU_SOURCE"
   LIBCFLAGS="$LIBCFLAGS  -D__Userspace_os_Linux"
   ;;
 freebsd*)
