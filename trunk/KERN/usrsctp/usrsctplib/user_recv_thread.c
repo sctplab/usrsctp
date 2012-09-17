@@ -772,7 +772,7 @@ recv_function_udp(void *arg)
 				memcpy((void *)&dst.sin_addr, (const void *)&(info->ipi_addr), sizeof(struct in_addr));
 				break;
 			}
-#elif defined(IP_RECVDSTADDR)
+#else
 			if ((cmsgptr->cmsg_level == IPPROTO_IP) && (cmsgptr->cmsg_type == IP_RECVDSTADDR)) {
 				struct in_addr *addr;
 
