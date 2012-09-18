@@ -2258,7 +2258,7 @@ usrsctp_getsockopt(struct socket *so, int level, int option_name,
 	case SOL_SOCKET:
 		switch (option_name) {
 		case SO_LINGER:
-			if (*option_len < sizeof(struct linger)) {
+			if (*option_len < (socklen_t)sizeof(struct linger)) {
 				errno = EINVAL;
 				return (-1);
 			} else {
@@ -2271,7 +2271,7 @@ usrsctp_getsockopt(struct socket *so, int level, int option_name,
 				} else {
 					l->l_onoff = 0;
 				}
-				*option_len = sizeof(struct linger);
+				*option_len = (socklen_t)sizeof(struct linger);
 				return (0);
 			}
 		default:
@@ -2279,12 +2279,18 @@ usrsctp_getsockopt(struct socket *so, int level, int option_name,
 			return (-1);
 		}
 	case IPPROTO_SCTP:
-		errno = sctp_getopt(so, option_name, option_value, (size_t *)option_len, NULL);
+	{
+		size_t len;
+
+		len = (size_t)*option_len;
+		errno = sctp_getopt(so, option_name, option_value, &len, NULL);
+		*option_len = (socklen_t)len;
 		if (errno) {
 			return (-1);
 		} else {
 			return (0);
 		}
+	}
 	default:
 		errno = ENOPROTOOPT;
 		return (-1);
