@@ -2197,7 +2197,7 @@ usrsctp_setsockopt(struct socket *so, int level, int option_name,
 	{
 		switch (option_name) {
 		case SO_LINGER:
-			if (option_len < sizeof(struct linger)) {
+			if (option_len < (socklen_t)sizeof(struct linger)) {
 				errno = EINVAL;
 				return (-1);
 			} else {
@@ -2218,7 +2218,7 @@ usrsctp_setsockopt(struct socket *so, int level, int option_name,
 		}
 	}
 	case IPPROTO_SCTP:
-		errno = sctp_setopt(so, option_name, (void *) option_value, option_len, NULL);
+		errno = sctp_setopt(so, option_name, (void *) option_value, (size_t)option_len, NULL);
 		if (errno) {
 			return (-1);
 		} else {
