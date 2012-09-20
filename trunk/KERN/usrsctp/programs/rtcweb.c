@@ -719,6 +719,7 @@ handle_open_ack_message(struct peer_connection *pc,
 	channel = find_channel_by_i_stream(pc, i_stream);
 	if (channel == NULL) {
 		/* XXX: some error handling */
+		return;
 	}
 	if (channel->state == DATA_CHANNEL_OPEN) {
 		return;
