@@ -122,7 +122,7 @@ sbwait(struct sockbuf *sb)
 {
 #if defined(__Userspace__) /* __Userspace__ */
 
-        SOCKBUF_LOCK_ASSERT(sb);
+	SOCKBUF_LOCK_ASSERT(sb);
 
 	sb->sb_flags |= SB_WAIT;
 #if defined (__Userspace_os_Windows)
@@ -603,9 +603,9 @@ struct sctp_generic_sendmsg_args {
 	caddr_t msg;
 	int mlen;
 	caddr_t to;
-        socklen_t tolen;  /* was __socklen_t */
+	socklen_t tolen;  /* was __socklen_t */
 	struct sctp_sndrcvinfo * sinfo;
-        int flags;
+	int flags;
 };
 
 struct sctp_generic_recvmsg_args {
@@ -662,7 +662,7 @@ copyiniov(struct iovec *iovp, u_int iovcnt, struct iovec **iov, int error)
 	*iov = malloc(iovlen); /*, M_IOV, M_WAITOK); */
 	error = copyin(iovp, *iov, iovlen);
 	if (error) {
-                free(*iov); /*, M_IOV); */
+		free(*iov); /*, M_IOV); */
 		*iov = NULL;
 	}
 	return (error);
@@ -818,14 +818,14 @@ userspace_sctp_sendmsg(struct socket *so,
 
 ssize_t
 usrsctp_sendv(struct socket *so,
-                       const void *data,
-                       size_t len,
-                       struct sockaddr *to,
-                       int addrcnt,
-                       void *info,
-                       socklen_t infolen,
-                       unsigned int infotype,
-                       int flags)
+              const void *data,
+              size_t len,
+              struct sockaddr *to,
+              int addrcnt,
+              void *info,
+              socklen_t infolen,
+              unsigned int infotype,
+              int flags)
 {
 	struct sctp_sndrcvinfo sinfo;
 	struct uio auio;
@@ -1711,7 +1711,7 @@ solisten_proto(struct socket *so, int backlog)
 int
 usrsctp_listen(struct socket *so, int backlog)
 {
-        errno = solisten(so, backlog);
+	errno = solisten(so, backlog);
 	if (errno) {
 		return (-1);
 	} else {
@@ -1753,7 +1753,7 @@ user_accept(struct socket *aso,  struct sockaddr **name, socklen_t *namelen, str
 	struct sockaddr *sa = NULL;
 	int error;
 	struct socket *head = aso;
-        struct socket *so = NULL;
+	struct socket *so = NULL;
 
 
 	if (name) {
@@ -1816,10 +1816,10 @@ user_accept(struct socket *aso,  struct sockaddr **name, socklen_t *namelen, str
 	ACCEPT_UNLOCK();
 
 
-        /*
-         * The original accept returns fd value via td->td_retval[0] = fd;
-         * we will return the socket for accepted connection.
-         */
+	/*
+	 * The original accept returns fd value via td->td_retval[0] = fd;
+	 * we will return the socket for accepted connection.
+	 */
 
 	sa = 0;
 	error = soaccept(so, &sa);
@@ -1852,7 +1852,7 @@ noconnection:
 	}
 
 done:
-        *ptr_accept_ret_sock = so;
+	*ptr_accept_ret_sock = so;
 	return (error);
 }
 
@@ -2186,7 +2186,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize, void *
 
 int
 usrsctp_setsockopt(struct socket *so, int level, int option_name,
-                     const void *option_value, socklen_t option_len)
+                   const void *option_value, socklen_t option_len)
 {
 	if (so == NULL) {
 		errno = EBADF;
@@ -2244,7 +2244,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 
 int
 usrsctp_getsockopt(struct socket *so, int level, int option_name,
-                     void *option_value, socklen_t *option_len)
+                   void *option_value, socklen_t *option_len)
 {
 	if (so == NULL) {
 		errno = EBADF;
