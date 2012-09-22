@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 240198 2012-09-07 13:36:42Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 240842 2012-09-22 22:04:17Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3258,7 +3258,7 @@ sctp_handle_ecn_cwr(struct sctp_cwr_chunk *cp, struct sctp_tcb *stcb, struct sct
 {
 	/*
 	 * Here we get a CWR from the peer. We must look in the outqueue and
-	 * make sure that we have a covered ECNE in teh control chunk part.
+	 * make sure that we have a covered ECNE in the control chunk part.
 	 * If so remove it.
 	 */
 	struct sctp_tmit_chunk *chk;
@@ -5523,24 +5523,6 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 				if (locked_tcb) {
 					SCTP_TCB_UNLOCK(locked_tcb);
 				}
-				*offset = length;
-				return (NULL);
-			}
-
-			if (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) {
-				/* We are not interested anymore */
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
-				so = SCTP_INP_SO(inp);
-				atomic_add_int(&stcb->asoc.refcnt, 1);
-				SCTP_TCB_UNLOCK(stcb);
-				SCTP_SOCKET_LOCK(so, 1);
-				SCTP_TCB_LOCK(stcb);
-				atomic_subtract_int(&stcb->asoc.refcnt, 1);
-#endif
-				(void)sctp_free_assoc(inp, stcb, SCTP_NORMAL_PROC, SCTP_FROM_SCTP_INPUT+SCTP_LOC_30);
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
-				SCTP_SOCKET_UNLOCK(so, 1);
-#endif
 				*offset = length;
 				return (NULL);
 			}
