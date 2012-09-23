@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 240826 2012-09-22 14:39:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 240848 2012-09-23 07:23:18Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6718,7 +6718,7 @@ sctp_copy_mbufchain(struct mbuf *clonechain,
 	}
 }
 
-int
+static int
 sctp_med_chunk_output(struct sctp_inpcb *inp,
 		      struct sctp_tcb *stcb,
 		      struct sctp_association *asoc,
