@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 240507 2012-09-14 18:32:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 242325 2012-10-29 20:42:48Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7689,7 +7689,11 @@ sctp_recv_udp_tunneled_packet(struct mbuf *m, int off, struct inpcb *ignored)
 	switch (iph->ip_v) {
 #ifdef INET
 	case IPVERSION:
+#if __FreeBSD_version >= 1000000
+		iph->ip_len = htons(ntohs(iph->ip_len) - sizeof(struct udphdr));
+#else
 		iph->ip_len -= sizeof(struct udphdr);
+#endif
 		sctp_input_with_port(m, off, port);
 		break;
 #endif
