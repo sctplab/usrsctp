@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 238501 2012-07-15 20:16:17Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 241913 2012-10-22 21:09:03Z glebius $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -329,7 +329,11 @@ sctp_notify_mbuf(struct sctp_inpcb *inp,
 		SCTP_TCB_UNLOCK(stcb);
 		return;
 	}
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1000000
+	totsz = ntohs(ip->ip_len);
+#else
 	totsz = ip->ip_len;
+#endif
 
 	nxtsz = ntohs(icmph->icmp_nextmtu);
 	if (nxtsz == 0) {

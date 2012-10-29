@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 240848 2012-09-23 07:23:18Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 242326 2012-10-29 20:44:29Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4046,15 +4046,23 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		}
                 if ((nofragment_flag) && (port == 0)) {
 #if defined(__FreeBSD__)
+#if __FreeBSD_version >= 1000000
+			ip->ip_off = htons(IP_DF);
+#else
 			ip->ip_off = IP_DF;
+#endif
 #elif defined(WITH_CONVERT_IP_OFF) || defined(__APPLE__) || defined(__Userspace__)
 			ip->ip_off = IP_DF;
 #else
 			ip->ip_off = htons(IP_DF);
 #endif
-		} else
+		} else {
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1000000
+			ip->ip_off = htons(0);
+#else
 			ip->ip_off = 0;
-
+#endif
+		}
 #if defined(__FreeBSD__)
 		/* FreeBSD has a function for ip_id's */
 		ip->ip_id = ip_newid();
@@ -4072,7 +4080,11 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #else
 		ip->ip_ttl = inp->inp_ip_ttl;
 #endif
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1000000
+		ip->ip_len = htons(packet_length);
+#else
 		ip->ip_len = packet_length;
+#endif
 		ip->ip_tos = tos_value;
 		if (port) {
 			ip->ip_p = IPPROTO_UDP;
@@ -11419,7 +11431,13 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 			udp->uh_sum = 0;
 #endif
 		}
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Userspace__)
+#if defined(__FreeBSD__)
+#if __FreeBSD_version >= 1000000
+		ip->ip_len = htons(len);
+#else
+		ip->ip_len = len;
+#endif
+#elif defined(__APPLE__) || defined(__Userspace__)
 		ip->ip_len = len;
 #else
 		ip->ip_len = htons(len);

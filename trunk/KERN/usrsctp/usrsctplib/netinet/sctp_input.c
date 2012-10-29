@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 240842 2012-09-22 22:04:17Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 241923 2012-10-23 08:33:13Z glebius $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6270,7 +6270,13 @@ sctp_input(i_pak, va_alist)
 #if defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
 	ip->ip_len = ntohs(ip->ip_len);
 #endif
-#if defined(__FreeBSD__)  || defined(__APPLE__)
+#if defined(__FreeBSD__)
+#if __FreeBSD_version >= 1000000
+	length = ntohs(ip->ip_len);
+#else
+	length = ip->ip_len + iphlen;
+#endif
+#elif defined(__APPLE__)
 	length = ip->ip_len + iphlen;
 #elif defined(__Userspace__)
 #if defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
