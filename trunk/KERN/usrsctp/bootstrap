@@ -35,6 +35,8 @@ elif [ -e /usr/bin/libtoolize ] ; then
     libtoolize --force
 elif [ -e /usr/local/bin/libtoolize ] ; then
     libtoolize --force
+elif [ -e /usr/local/bin/glibtoolize ] ; then
+    glibtoolize --force
 else
    echo "ERROR: I cannot find libtoolize or glibtoolize!"
    exit 1
