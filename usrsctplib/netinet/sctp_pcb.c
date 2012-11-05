@@ -3098,7 +3098,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 	if (addr) {
 		SCTPDBG(SCTP_DEBUG_PCB1, "Bind called port:%d\n",
 			ntohs(((struct sockaddr_in *)addr)->sin_port));
-		SCTPDBG(SCTP_DEBUG_PCB1, "Addr :");
+		SCTPDBG(SCTP_DEBUG_PCB1, "Addr: ");
 		SCTPDBG_ADDR(SCTP_DEBUG_PCB1, addr);
 	}
 #endif
@@ -3251,6 +3251,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		 * Did the caller specify a port? if so we must see if an ep
 		 * already has this one bound.
 		 */
+I_AM_HERE;
 		/* got to be root to get at low ports */
 #if !defined(__Windows__)
 		if (ntohs(lport) < IPPORT_RESERVED) {
@@ -3462,6 +3463,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		}
 		lport = htons(candidate);
 	}
+I_AM_HERE;
 	SCTP_INP_DECR_REF(inp);
 	if (inp->sctp_flags & (SCTP_PCB_FLAGS_SOCKET_GONE |
 			       SCTP_PCB_FLAGS_SOCKET_ALLGONE)) {
@@ -3525,6 +3527,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		struct sctp_ifa *ifa;
 		struct sockaddr_storage store_sa;
 
+I_AM_HERE;
 		memset(&store_sa, 0, sizeof(store_sa));
 		switch (addr->sa_family) {
 #ifdef INET
@@ -3578,6 +3581,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 			ifa = sctp_find_ifa_by_addr((struct sockaddr *)&store_sa,
 						    vrf_id, SCTP_ADDR_NOT_LOCKED);
 		}
+#if 0
 		if (ifa == NULL) {
 			/* Can't find an interface with that address */
 			SCTP_INP_WUNLOCK(inp);
@@ -3585,6 +3589,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EADDRNOTAVAIL);
 			return (EADDRNOTAVAIL);
 		}
+#endif
 #ifdef INET6
 		if (addr->sa_family == AF_INET6) {
 			/* GAK, more FIXME IFA lock? */
@@ -3605,6 +3610,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		sctp_feature_off(inp, SCTP_PCB_FLAGS_AUTO_ASCONF);
 
 		/* add this address to the endpoint list */
+#if 0
 		error = sctp_insert_laddr(&inp->sctp_addr_list, ifa, 0);
 		if (error != 0) {
 			SCTP_INP_WUNLOCK(inp);
@@ -3612,6 +3618,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 			return (error);
 		}
 		inp->laddr_count++;
+#endif
 	}
 	/* find the bucket */
 	if (port_reuse_active) {
