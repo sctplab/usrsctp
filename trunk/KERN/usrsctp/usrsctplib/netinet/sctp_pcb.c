@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 240849 2012-09-23 07:43:10Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 242714 2012-11-07 22:11:38Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5661,6 +5661,15 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 	}
 	/* sent queue SHOULD be empty */
 	TAILQ_FOREACH_SAFE(chk, &asoc->sent_queue, sctp_next, nchk) {
+		if (chk->sent != SCTP_DATAGRAM_NR_MARKED) {
+			if (asoc->strmout[chk->rec.data.stream_number].chunks_on_queues > 0) {
+				asoc->strmout[chk->rec.data.stream_number].chunks_on_queues--;
+#ifdef INVARIANTS
+			} else {
+				panic("No chunks on the queues for sid %u.", chk->rec.data.stream_number);
+#endif
+			}
+		}
 		TAILQ_REMOVE(&asoc->sent_queue, chk, sctp_next);
 		if (chk->data) {
 			if (so) {
