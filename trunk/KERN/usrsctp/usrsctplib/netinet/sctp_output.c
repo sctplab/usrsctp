@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 242627 2012-11-05 20:55:17Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 242709 2012-11-07 21:25:32Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -10521,7 +10521,8 @@ sctp_fill_in_rest:
 		unsigned int cnt_of_skipped = 0;
 
 		TAILQ_FOREACH(at, &asoc->sent_queue, sctp_next) {
-			if (at->sent != SCTP_FORWARD_TSN_SKIP) {
+			if ((at->sent != SCTP_FORWARD_TSN_SKIP) &&
+			    (at->sent != SCTP_DATAGRAM_NR_MARKED)) {
 				/* no more to look at */
 				break;
 			}
