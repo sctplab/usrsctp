@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 242627 2012-11-05 20:55:17Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 242714 2012-11-07 22:11:38Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_STRUCTS_H_
@@ -634,6 +634,7 @@ union scheduling_parameters {
 struct sctp_stream_out {
 	struct sctp_streamhead outqueue;
 	union scheduling_parameters ss_params;
+	uint32_t chunks_on_queues;
 	uint16_t stream_no;
 	uint16_t next_sequence_send;	/* next one I expect to send out */
 	uint8_t last_msg_incomplete;

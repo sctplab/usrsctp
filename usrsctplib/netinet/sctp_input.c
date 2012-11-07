@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 242627 2012-11-05 20:55:17Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 242714 2012-11-07 22:11:38Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -334,6 +334,13 @@ sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb)
 			if (chk->rec.data.stream_number >= newcnt) {
 				TAILQ_REMOVE(&asoc->send_queue, chk, sctp_next);
 				asoc->send_queue_cnt--;
+				if (asoc->strmout[chk->rec.data.stream_number].chunks_on_queues > 0) {
+					asoc->strmout[chk->rec.data.stream_number].chunks_on_queues--;
+#ifdef INVARIANTS
+				} else {
+					panic("No chunks on the queues for sid %u.", chk->rec.data.stream_number);
+#endif
+				}
 				if (chk->data != NULL) {
 					sctp_free_bufspace(stcb, asoc, chk, 1);
 					sctp_ulp_notify(SCTP_NOTIFY_UNSENT_DG_FAIL, stcb,
