@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 242714 2012-11-07 22:11:38Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 243157 2012-11-16 19:39:10Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1121,6 +1121,7 @@ sctp_init_asoc(struct sctp_inpcb *m, struct sctp_tcb *stcb,
 		 */
 		asoc->strmout[i].next_sequence_send = 0x0;
 		TAILQ_INIT(&asoc->strmout[i].outqueue);
+		asoc->strmout[i].chunks_on_queues = 0;
 		asoc->strmout[i].stream_no = i;
 		asoc->strmout[i].last_msg_incomplete = 0;
 		asoc->ss_functions.sctp_ss_init_stream(&asoc->strmout[i], NULL);
@@ -3885,7 +3886,7 @@ sctp_report_all_outbound(struct sctp_tcb *stcb, uint16_t error, int holds_lock, 
 	TAILQ_FOREACH_SAFE(chk, &asoc->sent_queue, sctp_next, nchk) {
 		TAILQ_REMOVE(&asoc->sent_queue, chk, sctp_next);
 		asoc->sent_queue_cnt--;
-		if (chk->sent != SCTP_DATAGRAM_NR_MARKED) {
+		if (chk->sent != SCTP_DATAGRAM_NR_ACKED) {
 			if (asoc->strmout[chk->rec.data.stream_number].chunks_on_queues > 0) {
 				asoc->strmout[chk->rec.data.stream_number].chunks_on_queues--;
 #ifdef INVARIANTS

@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 242709 2012-11-07 21:25:32Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 243157 2012-11-16 19:39:10Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3553,8 +3553,9 @@ sctp_process_cmsgs_for_init(struct sctp_tcb *stcb, struct mbuf *control, int *er
 						stcb->asoc.pre_open_streams = stcb->asoc.streamoutcnt;
 					}
 					for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
-						stcb->asoc.strmout[i].next_sequence_send = 0;
 						TAILQ_INIT(&stcb->asoc.strmout[i].outqueue);
+						stcb->asoc.strmout[i].chunks_on_queues = 0;
+						stcb->asoc.strmout[i].next_sequence_send = 0;
 						stcb->asoc.strmout[i].stream_no = i;
 						stcb->asoc.strmout[i].last_msg_incomplete = 0;
 						stcb->asoc.ss_functions.sctp_ss_init_stream(&stcb->asoc.strmout[i], NULL);
@@ -7805,6 +7806,7 @@ sctp_move_to_outqueue(struct sctp_tcb *stcb,
 		*locked = 1;
 	}
 	asoc->chunks_on_out_queue++;
+	strq->chunks_on_queues++;
 	TAILQ_INSERT_TAIL(&asoc->send_queue, chk, sctp_next);
 	asoc->send_queue_cnt++;
  out_of:
@@ -10522,7 +10524,7 @@ sctp_fill_in_rest:
 
 		TAILQ_FOREACH(at, &asoc->sent_queue, sctp_next) {
 			if ((at->sent != SCTP_FORWARD_TSN_SKIP) &&
-			    (at->sent != SCTP_DATAGRAM_NR_MARKED)) {
+			    (at->sent != SCTP_DATAGRAM_NR_ACKED)) {
 				/* no more to look at */
 				break;
 			}
@@ -12327,6 +12329,7 @@ sctp_send_str_reset_req(struct sctp_tcb *stcb,
 		stcb->asoc.ss_functions.sctp_ss_clear(stcb, &stcb->asoc, 0, 1);
 		for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
 			TAILQ_INIT(&stcb->asoc.strmout[i].outqueue);
+			stcb->asoc.strmout[i].chunks_on_queues = oldstream[i].chunks_on_queues;
 			stcb->asoc.strmout[i].next_sequence_send = oldstream[i].next_sequence_send;
 			stcb->asoc.strmout[i].last_msg_incomplete = oldstream[i].last_msg_incomplete;
 			stcb->asoc.strmout[i].stream_no = i;
@@ -12347,8 +12350,9 @@ sctp_send_str_reset_req(struct sctp_tcb *stcb,
 		/* now the new streams */
 		stcb->asoc.ss_functions.sctp_ss_init(stcb, &stcb->asoc, 1);
 		for (i = stcb->asoc.streamoutcnt; i < (stcb->asoc.streamoutcnt + adding_o); i++) {
-			stcb->asoc.strmout[i].next_sequence_send = 0x0;
 			TAILQ_INIT(&stcb->asoc.strmout[i].outqueue);
+			stcb->asoc.strmout[i].chunks_on_queues = 0;
+			stcb->asoc.strmout[i].next_sequence_send = 0x0;
 			stcb->asoc.strmout[i].stream_no = i;
 			stcb->asoc.strmout[i].last_msg_incomplete = 0;
 			stcb->asoc.ss_functions.sctp_ss_init_stream(&stcb->asoc.strmout[i], NULL);
