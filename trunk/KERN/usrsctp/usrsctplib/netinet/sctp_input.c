@@ -6133,14 +6133,13 @@ sctp_print_mbuf_chain(struct mbuf *m)
 #endif
 
 #ifdef INET
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__)
+#if !defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
 void
 sctp_input_with_port(struct mbuf *i_pak, int off, uint16_t port)
-#else
-#if defined(__Panda__)
+#elif defined(__Panda__)
 void
 sctp_input(pakhandle_type i_pak)
-
 #else
 void
 #if __STDC__
@@ -6148,8 +6147,6 @@ sctp_input(struct mbuf *i_pak,...)
 #else
 sctp_input(i_pak, va_alist)
 	struct mbuf *i_pak;
-
-#endif
 #endif
 #endif
 {
@@ -6169,7 +6166,7 @@ sctp_input(i_pak, va_alist)
 	uint32_t mflowid;
 	uint8_t use_mflowid;
 #endif
-#if !(defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined (__Userspace__))
+#if !(defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__))
 	uint16_t port = 0;
 #endif
 
@@ -6391,4 +6388,5 @@ sctp_input(struct mbuf *m, int off)
 #endif
 	sctp_input_with_port(m, off, 0);
 }
+#endif
 #endif

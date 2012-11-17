@@ -416,20 +416,10 @@ void sctp_input(struct mbuf *, int);
 #endif
 void sctp_pathmtu_adjustment(struct sctp_tcb *, uint16_t);
 #endif
-#if defined(__APPLE__) || defined(__Userspace__)
-#ifdef INET6
-int sctp6_input_with_port(struct mbuf **, int *, uint16_t);
-#endif
-#endif
 #else
 #if defined(__Panda__)
 void sctp_input(pakhandle_type i_pak);
 #elif defined(__Userspace__)
-void sctp_input_with_port(struct mbuf *, int, uint16_t);
-#ifdef INET6
-int sctp6_input_with_port(struct mbuf **, int *, uint16_t);
-#endif
-void sctp_input(struct mbuf *, int);
 void sctp_pathmtu_adjustment(struct sctp_tcb *, uint16_t);
 #else
 void sctp_input(struct mbuf *,...);
