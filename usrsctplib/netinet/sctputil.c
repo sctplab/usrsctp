@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 243157 2012-11-16 19:39:10Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 243186 2012-11-17 20:04:04Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -41,7 +41,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 243157 2012-11-16 19:39:10Z tuex
 #include <netinet/sctp_var.h>
 #include <netinet/sctp_sysctl.h>
 #ifdef INET6
-#if defined(__Userspace__)
+#if defined(__Userspace__) || defined(__FreeBSD__)
 #include <netinet6/sctp6_var.h>
 #endif
 #endif
@@ -55,6 +55,11 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 243157 2012-11-16 19:39:10Z tuex
 #include <netinet/sctp_bsd_addr.h>
 #if defined(__Userspace__)
 #include <netinet/sctp_constants.h>
+#endif
+#if defined(__FreeBSD__)
+#include <netinet/udp.h>
+#include <netinet/udp_var.h>
+#include <sys/proc.h>
 #endif
 
 #if defined(__APPLE__)
@@ -7637,25 +7642,14 @@ sctp_log_trace(uint32_t subsys, const char *str SCTP_UNUSED, uint32_t a, uint32_
 
 #endif
 #if defined(__FreeBSD__)
-/* XXX: Remove the #ifdef after tunneling over IPv6 works also on FreeBSD. */
-#ifdef INET
-/* We will need to add support
- * to bind the ports and such here
- * so we can do UDP tunneling. In
- * the mean-time, we return error
- */
-#include <netinet/udp.h>
-#include <netinet/udp_var.h>
-#include <sys/proc.h>
-#ifdef INET6
-#include <netinet6/sctp6_var.h>
-#endif
-
 #if __FreeBSD_version >= 800044
 static void
 sctp_recv_udp_tunneled_packet(struct mbuf *m, int off, struct inpcb *ignored)
 {
 	struct ip *iph;
+#ifdef INET6
+	struct ip6_hdr *ip6;
+#endif
 	struct mbuf *sp, *last;
 	struct udphdr *uhdr;
 	uint16_t port;
@@ -7709,10 +7703,10 @@ sctp_recv_udp_tunneled_packet(struct mbuf *m, int off, struct inpcb *ignored)
 #endif
 #ifdef INET6
 	case IPV6_VERSION >> 4:
-		/* Not yet supported. */
-		goto out;
+		ip6 = mtod(m, struct ip6_hdr *);
+		ip6->ip6_plen = htons(ntohs(ip6->ip6_plen) - sizeof(struct udphdr));
+		sctp6_input_with_port(&m, &off, port);
 		break;
-
 #endif
 	default:
 		goto out;
@@ -7727,17 +7721,21 @@ sctp_recv_udp_tunneled_packet(struct mbuf *m, int off, struct inpcb *ignored)
 void
 sctp_over_udp_stop(void)
 {
-	struct socket *sop;
 	/*
 	 * This function assumes sysctl caller holds sctp_sysctl_info_lock() for writting!
 	 */
-	if (SCTP_BASE_INFO(udp_tun_socket) == NULL) {
-		/* Nothing to do */
-		return;
+#ifdef INET
+	if (SCTP_BASE_INFO(udp4_tun_socket) != NULL) {
+		soclose(SCTP_BASE_INFO(udp4_tun_socket));
+		SCTP_BASE_INFO(udp4_tun_socket) = NULL;
 	}
-	sop = SCTP_BASE_INFO(udp_tun_socket);
-	soclose(sop);
-	SCTP_BASE_INFO(udp_tun_socket) = NULL;
+#endif
+#ifdef INET6
+	if (SCTP_BASE_INFO(udp6_tun_socket) != NULL) {
+		soclose(SCTP_BASE_INFO(udp6_tun_socket));
+		SCTP_BASE_INFO(udp6_tun_socket) = NULL;
+	}
+#endif
 }
 
 int
@@ -7746,53 +7744,83 @@ sctp_over_udp_start(void)
 #if __FreeBSD_version >= 800044
 	uint16_t port;
 	int ret;
+#ifdef INET
 	struct sockaddr_in sin;
-	struct socket *sop = NULL;
-	struct thread *th;
-	struct ucred *cred;
+#endif
+#ifdef INET6
+	struct sockaddr_in6 sin6;
+#endif
 	/*
 	 * This function assumes sysctl caller holds sctp_sysctl_info_lock() for writting!
 	 */
 	port = SCTP_BASE_SYSCTL(sctp_udp_tunneling_port);
-	if (port == 0) {
+	if (ntohs(port) == 0) {
 		/* Must have a port set */
 		return (EINVAL);
 	}
-	if (SCTP_BASE_INFO(udp_tun_socket) != NULL) {
+#ifdef INET
+	if (SCTP_BASE_INFO(udp4_tun_socket) != NULL) {
 		/* Already running -- must stop first */
 		return (EALREADY);
 	}
-	th = curthread;
-	cred = th->td_ucred;
-	if ((ret = socreate(PF_INET, &sop,
-	                    SOCK_DGRAM, IPPROTO_UDP, cred, th))) {
-		return (ret);
+#endif
+#ifdef INET6
+	if (SCTP_BASE_INFO(udp6_tun_socket) != NULL) {
+		/* Already running -- must stop first */
+		return (EALREADY);
 	}
-	SCTP_BASE_INFO(udp_tun_socket) = sop;
-	/* call the special UDP hook */
-	ret =  udp_set_kernel_tunneling(sop, sctp_recv_udp_tunneled_packet);
-	if (ret) {
-		goto exit_stage_left;
-	}
-	/* Ok we have a socket, bind it to the port*/
-	memset(&sin, 0, sizeof(sin));
-	sin.sin_len = sizeof(sin);
-	sin.sin_family = AF_INET;
-	sin.sin_port = htons(port);
-	ret = sobind(sop, (struct sockaddr *)&sin, th);
-	if (ret) {
-		/* Close up we cant get the port */
-		exit_stage_left:
+#endif
+#ifdef INET
+	if ((ret = socreate(PF_INET, &SCTP_BASE_INFO(udp4_tun_socket),
+	                    SOCK_DGRAM, IPPROTO_UDP,
+	                    curthread->td_ucred, curthread))) {
 		sctp_over_udp_stop();
 		return (ret);
 	}
-	/* Ok we should now get UDP packets directly to our input routine
-	 * sctp_recv_upd_tunneled_packet().
-	 */
+	/* Call the special UDP hook. */
+	if ((ret = udp_set_kernel_tunneling(SCTP_BASE_INFO(udp4_tun_socket),
+	                                    sctp_recv_udp_tunneled_packet))) {
+		sctp_over_udp_stop();
+		return (ret);
+	}
+	/* Ok, we have a socket, bind it to the port. */
+	memset(&sin, 0, sizeof(struct sockaddr_in));
+	sin.sin_len = sizeof(struct sockaddr_in);
+	sin.sin_family = AF_INET;
+	sin.sin_port = htons(port);
+	if ((ret = sobind(SCTP_BASE_INFO(udp4_tun_socket),
+	                  (struct sockaddr *)&sin, curthread))) {
+		sctp_over_udp_stop();
+		return (ret);
+	}
+#endif
+#ifdef INET6
+	if ((ret = socreate(PF_INET6, &SCTP_BASE_INFO(udp6_tun_socket),
+	                    SOCK_DGRAM, IPPROTO_UDP,
+	                    curthread->td_ucred, curthread))) {
+		sctp_over_udp_stop();
+		return (ret);
+	}
+	/* Call the special UDP hook. */
+	if ((ret = udp_set_kernel_tunneling(SCTP_BASE_INFO(udp6_tun_socket),
+	                                    sctp_recv_udp_tunneled_packet))) {
+		sctp_over_udp_stop();
+		return (ret);
+	}
+	/* Ok, we have a socket, bind it to the port. */
+	memset(&sin6, 0, sizeof(struct sockaddr_in6));
+	sin6.sin6_len = sizeof(struct sockaddr_in6);
+	sin6.sin6_family = AF_INET6;
+	sin6.sin6_port = htons(port);
+	if ((ret = sobind(SCTP_BASE_INFO(udp6_tun_socket),
+	                  (struct sockaddr *)&sin6, curthread))) {
+		sctp_over_udp_stop();
+		return (ret);
+	}
+#endif
 	return (0);
 #else
-	return (1);
+	return (ENOTSUP);
 #endif
 }
-#endif
 #endif
