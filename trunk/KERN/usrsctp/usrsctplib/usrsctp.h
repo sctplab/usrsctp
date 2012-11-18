@@ -844,11 +844,9 @@ struct sctp_timeouts {
 
 /******************** System calls *************/
 
-
 void
 usrsctp_init(uint16_t,
              int (*)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df));
-
 
 struct socket *
 usrsctp_socket(int domain, int type, int protocol,
@@ -909,12 +907,10 @@ int
 usrsctp_listen(struct socket *so,
                  int backlog);
 
-
 struct socket *
 usrsctp_accept(struct socket *so,
                  struct sockaddr * aname,
                  socklen_t * anamelen);
-
 
 int
 usrsctp_connect(struct socket *so,
