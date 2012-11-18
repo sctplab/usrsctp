@@ -870,6 +870,22 @@ usrsctp_getsockopt(struct socket *so,
                    void *option_value,
                    socklen_t *option_len);
 
+int
+usrsctp_getpaddrs(struct socket *so,
+                  sctp_assoc_t id,
+                  struct sockaddr **raddrs);
+
+void
+usrsctp_freepaddrs(struct sockaddr *addrs);
+
+int
+usrsctp_getladdrs(struct socket *so,
+                  sctp_assoc_t id,
+                  struct sockaddr **raddrs);
+
+void
+usrsctp_freeladdrs(struct sockaddr *addrs);
+
 ssize_t
 usrsctp_sendv(struct socket *so,
               const void *data,
