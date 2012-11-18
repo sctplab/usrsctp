@@ -858,28 +858,28 @@ usrsctp_socket(int domain, int type, int protocol,
 
 int
 usrsctp_setsockopt(struct socket *so,
-                     int level,
-                     int option_name,
-                     const void *option_value,
-                     socklen_t option_len);
+                   int level,
+                   int option_name,
+                   const void *option_value,
+                   socklen_t option_len);
 
 int
 usrsctp_getsockopt(struct socket *so,
-                     int level,
-                     int option_name,
-                     void *option_value,
-                     socklen_t *option_len);
+                   int level,
+                   int option_name,
+                   void *option_value,
+                   socklen_t *option_len);
 
 ssize_t
 usrsctp_sendv(struct socket *so,
-                       const void *data,
-                       size_t len,
-                       struct sockaddr *to,
-                       int addrcnt,
-                       void *info,
-                       socklen_t infolen,
-                       unsigned int infotype,
-                       int flags);
+              const void *data,
+              size_t len,
+              struct sockaddr *to,
+              int addrcnt,
+              void *info,
+              socklen_t infolen,
+              unsigned int infotype,
+              int flags);
 
 ssize_t
 usrsctp_recvv(struct socket *so,
@@ -894,28 +894,28 @@ usrsctp_recvv(struct socket *so,
 
 int
 usrsctp_bind(struct socket *so,
-               struct sockaddr *name,
-               socklen_t namelen);
+             struct sockaddr *name,
+             socklen_t namelen);
 
 int
 usrsctp_bindx(struct socket *so,
-                struct sockaddr *addrs,
-                int addrcnt,
-                int flags);
+              struct sockaddr *addrs,
+              int addrcnt,
+              int flags);
 
 int
 usrsctp_listen(struct socket *so,
-                 int backlog);
+               int backlog);
 
 struct socket *
 usrsctp_accept(struct socket *so,
-                 struct sockaddr * aname,
-                 socklen_t * anamelen);
+               struct sockaddr * aname,
+               socklen_t * anamelen);
 
 int
 usrsctp_connect(struct socket *so,
-                  struct sockaddr *name,
-                  socklen_t namelen);
+                struct sockaddr *name,
+                socklen_t namelen);
 
 void
 usrsctp_close(struct socket *so);
