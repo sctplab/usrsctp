@@ -2529,7 +2529,6 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 #if defined(__Userspace_os_Linux) || defined (__Userspace_os_Windows)
 		/* need to put certain fields into network order for Linux */
 		ip->ip_len = htons(ip->ip_len);
-		ip->ip_tos = htons(ip->ip_tos);
 		ip->ip_off = 0;
 #endif
 	}
