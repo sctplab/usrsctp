@@ -933,6 +933,11 @@ usrsctp_connect(struct socket *so,
                 struct sockaddr *name,
                 socklen_t namelen);
 
+int
+usrsctp_connectx(struct socket *so,
+                 const struct sockaddr *addrs, int addrcnt,
+                 sctp_assoc_t *id);
+
 void
 usrsctp_close(struct socket *so);
 

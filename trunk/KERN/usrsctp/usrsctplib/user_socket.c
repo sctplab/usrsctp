@@ -38,7 +38,9 @@
 #include <netinet/sctp_var.h>
 #include <netinet/sctp_sysctl.h>
 #include <netinet/sctp_input.h>
-
+#ifdef INET6
+#include <netinet6/sctp6_var.h>
+#endif
 #if defined(__Userspace_os_Linux)
 #define __FAVOR_BSD    /* (on Ubuntu at least) enables UDP header field names like BSD in RFC 768 */
 #endif
@@ -2095,6 +2097,8 @@ int userspace_connect(struct socket *so, struct sockaddr *name, int namelen)
 	return (usrsctp_connect(so, name, namelen));
 }
 
+#define SCTP_STACK_BUF_SIZE         2048
+
 void
 usrsctp_close(struct socket *so) {
 	if (so != NULL) {
@@ -2302,6 +2306,234 @@ userspace_getsockopt(struct socket *so, int level, int option_name,
                      void *option_value, socklen_t *option_len)
 {
 	return (usrsctp_getsockopt(so, level, option_name, option_value, option_len));
+}
+
+int
+usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
+{
+	struct sctp_getaddresses *gaddrs;
+	struct sockaddr *sa;
+	struct sockaddr_in *sin;
+	struct sockaddr_in6 *sin6;
+	int i;
+	size_t argsz;
+	uint16_t sport = 0;
+
+	/* validate the flags */
+	if ((flags != SCTP_BINDX_ADD_ADDR) &&
+	    (flags != SCTP_BINDX_REM_ADDR)) {
+		errno = EFAULT;
+		return (-1);
+	}
+	/* validate the address count and list */
+	if ((addrcnt <= 0) || (addrs == NULL)) {
+		errno = EINVAL;
+		return (-1);
+	}
+	/* First pre-screen the addresses */
+	sa = addrs;
+	for (i = 0; i < addrcnt; i++) {
+		switch (sa->sa_family) {
+#ifdef INET
+		case AF_INET:
+#ifdef HAVE_SA_LEN
+			if (sa->sa_len != sizeof(struct sockaddr_in)) {
+				errno = EINVAL;
+				return (-1);
+			}
+#endif
+			sin = (struct sockaddr_in *)sa;
+			if (sin->sin_port) {
+				/* non-zero port, check or save */
+				if (sport) {
+					/* Check against our port */
+					if (sport != sin->sin_port) {
+						errno = EINVAL;
+						return (-1);
+					}
+				} else {
+					/* save off the port */
+					sport = sin->sin_port;
+				}
+			}
+#ifndef HAVE_SA_LEN
+		sa = (struct sockaddr *)((caddr_t)sa + sizeof(struct sockaddr_in));
+#endif
+			break;
+#endif
+#ifdef INET6
+		case AF_INET6:
+#ifdef HAVE_SA_LEN
+			if (sa->sa_len != sizeof(struct sockaddr_in6)) {
+				errno = EINVAL;
+				return (-1);
+			}
+#endif
+			sin6 = (struct sockaddr_in6 *)sa;
+			if (sin6->sin6_port) {
+				/* non-zero port, check or save */
+				if (sport) {
+					/* Check against our port */
+					if (sport != sin6->sin6_port) {
+						errno = EINVAL;
+						return (-1);
+					}
+				} else {
+					/* save off the port */
+					sport = sin6->sin6_port;
+				}
+			}
+#ifndef HAVE_SA_LEN
+		sa = (struct sockaddr *)((caddr_t)sa + sizeof(struct sockaddr_in6));
+#endif
+			break;
+#endif
+		default:
+			/* Invalid address family specified. */
+			errno = EINVAL;
+			return (-1);
+		}
+#ifdef HAVE_SA_LEN
+		sa = (struct sockaddr *)((caddr_t)sa + sa->sa_len);
+#endif
+	}
+	/*
+	 * Now if there was a port mentioned, assure that the first address
+	 * has that port to make sure it fails or succeeds correctly.
+	 */
+	if (sport) {
+		sin = (struct sockaddr_in *)sa;
+		sin->sin_port = sport;
+	}
+	argsz = sizeof(struct sctp_getaddresses) +
+	        sizeof(struct sockaddr_storage);
+	if ((gaddrs = (struct sctp_getaddresses *)malloc(argsz)) == NULL) {
+		errno = ENOMEM;
+		return (-1);
+	}
+	sa = addrs;
+	for (i = 0; i < addrcnt; i++) {
+#ifndef HAVE_SA_LEN
+		size_t sa_len;
+#endif 
+		memset(gaddrs, 0, argsz);
+		gaddrs->sget_assoc_id = 0;
+#ifdef HAVE_SA_LEN
+		memcpy(gaddrs->addr, sa, sa->sa_len);
+		if (usrsctp_setsockopt(so, IPPROTO_SCTP, flags, gaddrs, (socklen_t)argsz) != 0) {
+			free(gaddrs);
+			return (-1);
+		}
+		sa = (struct sockaddr *)((caddr_t)sa + sa->sa_len);
+#else
+		switch (sa->sa_family) {
+#ifdef INET
+		case AF_INET:
+			sa_len = sizeof(struct sockaddr_in);
+			break;
+#endif
+#ifdef INET6
+		case AF_INET6:
+			sa_len = sizeof(struct sockaddr_in6);
+			break;
+#endif
+		default:
+			sa_len = 0;
+			break;
+		}
+		memcpy(gaddrs->addr, sa, sa_len);
+		if (usrsctp_setsockopt(so, IPPROTO_SCTP, flags, gaddrs, (socklen_t)argsz) != 0) {
+			free(gaddrs);
+			return (-1);
+		}
+		sa = (struct sockaddr *)((caddr_t)sa + sa_len);
+#endif
+	}
+	free(gaddrs);
+	return (0);
+}
+
+int
+usrsctp_connectx(struct socket *so,
+                 const struct sockaddr *addrs, int addrcnt,
+                 sctp_assoc_t *id)
+{
+	char buf[SCTP_STACK_BUF_SIZE];
+	int i, ret, cnt, *aa;
+	char *cpto;
+	const struct sockaddr *at;
+	sctp_assoc_t *p_id;
+	size_t len = sizeof(int);
+
+	/* validate the address count and list */
+	if ((addrs == NULL) || (addrcnt <= 0)) {
+		errno = EINVAL;
+		return (-1);
+	}
+	at = addrs;
+	cnt = 0;
+	cpto = ((caddr_t)buf + sizeof(int));
+	/* validate all the addresses and get the size */
+	for (i = 0; i < addrcnt; i++) {
+		switch (at->sa_family) {
+#ifdef INET
+		case AF_INET:
+#ifdef HAVE_SA_LEN
+			if (at->sa_len != sizeof(struct sockaddr_in)) {
+				errno = EINVAL;
+				return (-1);
+			}
+#endif
+			memcpy(cpto, at, sizeof(struct sockaddr_in));
+			cpto = ((caddr_t)cpto + sizeof(struct sockaddr_in));
+			len += sizeof(struct sockaddr_in);
+			at = (struct sockaddr *)((caddr_t)at + sizeof(struct sockaddr_in));
+			break;
+#endif
+#ifdef INET6
+		case AF_INET6:
+#ifdef HAVE_SA_LEN
+			if (at->sa_len != sizeof(struct sockaddr_in6)) {
+				errno = EINVAL;
+				return (-1);
+			}
+#endif
+			if (IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)at)->sin6_addr)) {
+				in6_sin6_2_sin((struct sockaddr_in *)cpto, (struct sockaddr_in6 *)at);
+				cpto = ((caddr_t)cpto + sizeof(struct sockaddr_in));
+				len += sizeof(struct sockaddr_in);
+			} else {
+				memcpy(cpto, at, sizeof(struct sockaddr_in6));
+				cpto = ((caddr_t)cpto + sizeof(struct sockaddr_in6));
+				len += sizeof(struct sockaddr_in6);
+			}
+			at = (struct sockaddr *)((caddr_t)at + sizeof(struct sockaddr_in6));
+			break;
+#endif
+		default:
+			errno = EINVAL;
+			return (-1);
+		}
+		if (len > (sizeof(buf) - sizeof(int))) {
+			/* Never enough memory */
+			errno = E2BIG;
+			return (-1);
+		}
+		cnt++;
+	}
+	/* do we have any? */
+	if (cnt == 0) {
+		errno = EINVAL;
+		return (-1);
+	}
+	aa = (int *)buf;
+	*aa = cnt;
+	ret = usrsctp_setsockopt(so, IPPROTO_SCTP, SCTP_CONNECT_X, (void *)buf, (socklen_t)len);
+	if ((ret == 0) && id) {
+		p_id = (sctp_assoc_t *)buf;
+		*id = *p_id;
+	}
+	return (ret);
 }
 
 int
