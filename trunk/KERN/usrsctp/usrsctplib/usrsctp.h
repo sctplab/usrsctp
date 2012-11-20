@@ -913,6 +913,9 @@ usrsctp_bind(struct socket *so,
              struct sockaddr *name,
              socklen_t namelen);
 
+#define SCTP_BINDX_ADD_ADDR 0x00008001
+#define SCTP_BINDX_REM_ADDR 0x00008002
+
 int
 usrsctp_bindx(struct socket *so,
               struct sockaddr *addrs,
