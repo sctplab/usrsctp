@@ -3007,6 +3007,42 @@ free_mbuf:
 }
 #endif
 
+#if 0
+#define HEADER "\n0000 "
+#define TRAILER "# SCTP_PACKET\n"
+
+void
+usrsctp_dumppacket(unsigned char *packet, size_t len)
+{
+	size_t i, pos;
+	char *buf;
+
+	if ((buf = malloc(strlen(HEADER) + 3 * len + strlen(TRAILER) + 1)) == NULL) {
+		return;
+	}
+	pos = 0;
+	stpcpy(buf + pos, HEADER);
+	pos += strlen(HEADER);
+	for (i = 0; i < len; i++) {
+		uint8_t byte, low, high;
+
+		byte = (uint8_t)packet[i];
+		high = byte / 16;
+		low = byte % 16;
+		buf[pos++] = high < 10 ? '0' + high : 'a' + (high - 10);
+		buf[pos++] = low < 10 ? '0' + low : 'a' + (low - 10);
+		buf[pos++] = ' ';
+	}
+	stpcpy(buf + pos, TRAILER);
+	pos += strlen(TRAILER);
+	buf[pos++] = '\0';
+	fflush(stdout);
+	printf("%s", buf);
+	fflush(stdout);
+	free(buf);
+}
+#endif
+
 void
 usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bits)
 {
@@ -3015,6 +3051,9 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	struct sctphdr *sh;
 	struct sctp_chunkhdr *ch;
 
+#if 0
+	usrsctp_dumppacket((unsigned char *)buffer, length);
+#endif
 	memset(&src, 0, sizeof(struct sockaddr_conn));
 	src.sconn_family = AF_CONN;
 #ifdef HAVE_SCONN_LEN
