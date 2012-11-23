@@ -1750,11 +1750,10 @@ soaccept(struct socket *so, struct sockaddr **nam)
  * kern_accept modified for __Userspace__
  */
 int
-user_accept(struct socket *aso,  struct sockaddr **name, socklen_t *namelen, struct socket **ptr_accept_ret_sock)
+user_accept(struct socket *head,  struct sockaddr **name, socklen_t *namelen, struct socket **ptr_accept_ret_sock)
 {
 	struct sockaddr *sa = NULL;
 	int error;
-	struct socket *head = aso;
 	struct socket *so = NULL;
 
 
