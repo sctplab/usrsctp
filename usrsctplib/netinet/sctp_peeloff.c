@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_peeloff.c 235828 2012-05-23 11:26:28Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_peeloff.c 243516 2012-11-25 14:25:08Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -169,7 +169,7 @@ sctp_do_peeloff(struct socket *head, struct socket *so, sctp_assoc_t assoc_id)
 	return (0);
 }
 
-
+#if defined(HAVE_SCTP_PEELOFF_SOCKOPT)
 struct socket *
 sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
 {
@@ -313,3 +313,4 @@ sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
 	return (newso);
 #endif
 }
+#endif
