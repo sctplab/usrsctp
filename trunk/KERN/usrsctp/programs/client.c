@@ -74,10 +74,12 @@ int
 main(int argc, char *argv[])
 {
 	struct socket *sock;
+	struct sockaddr *addr, *addrs;
 	struct sockaddr_in addr4;
 	struct sockaddr_in6 addr6;
 	struct sctp_udpencaps encaps;
 	char buffer[80];
+	int i, n;
 
 	if (argc > 3) {
 		usrsctp_init(atoi(argv[3]), NULL);
@@ -88,8 +90,8 @@ main(int argc, char *argv[])
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
 #endif
 	usrsctp_sysctl_set_sctp_blackhole(2);
-	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
-		perror("usrsctp_socket ipv6");
+	if ((sock = usrsctp_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
+		perror("usrsctp_socket");
 	}
 	if (argc > 4) {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
@@ -121,6 +123,102 @@ main(int argc, char *argv[])
 		}
 	} else {
 		printf("Illegal destination address.\n");
+	}
+	if ((n = usrsctp_getladdrs(sock, 0, &addrs)) < 0) {
+		perror("usrsctp_getladdrs");
+	} else {
+		addr = addrs;
+		printf("Local addresses: ");
+		for (i = 0; i < n; i++) {
+			if (i > 0) {
+				printf("%s", ", ");
+			}
+			switch (addr->sa_family) {
+			case AF_INET:
+			{
+				struct sockaddr_in *sin;
+				char buf[INET_ADDRSTRLEN];
+				const char *name;
+
+				sin = (struct sockaddr_in *)addr;
+   				name = inet_ntop(AF_INET, (const void *)&sin->sin_addr, buf, INET_ADDRSTRLEN);
+   				printf("%s", name);
+#ifndef HAVE_SA_LEN
+				addr = (struct sockaddr *)((caddr_t)addr + sizeof(struct sockaddr_in));
+#endif
+				break;
+			}
+			case AF_INET6:
+			{
+				struct sockaddr_in6 *sin6;
+				char buf[INET6_ADDRSTRLEN];
+				const char *name;
+
+				sin6 = (struct sockaddr_in6 *)addr;
+   				name = inet_ntop(AF_INET6, (const void *)&sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
+   				printf("%s", name);
+#ifndef HAVE_SA_LEN
+				addr = (struct sockaddr *)((caddr_t)addr + sizeof(struct sockaddr_in6));
+#endif
+				break;
+			}
+			default:
+				break;
+			}
+#ifdef HAVE_SA_LEN
+			addr = (struct sockaddr *)((caddr_t)addr + addr->sa_len);
+#endif
+		}
+		printf(".\n");
+		usrsctp_freeladdrs(addrs);
+	}
+	if ((n = usrsctp_getpaddrs(sock, 0, &addrs)) < 0) {
+		perror("usrsctp_getpaddrs");
+	} else {
+		addr = addrs;
+		printf("Peer addresses: ");
+		for (i = 0; i < n; i++) {
+			if (i > 0) {
+				printf("%s", ", ");
+			}
+			switch (addr->sa_family) {
+			case AF_INET:
+			{
+				struct sockaddr_in *sin;
+				char buf[INET_ADDRSTRLEN];
+				const char *name;
+
+				sin = (struct sockaddr_in *)addr;
+   				name = inet_ntop(AF_INET, (const void *)&sin->sin_addr, buf, INET_ADDRSTRLEN);
+   				printf("%s", name);
+#ifndef HAVE_SA_LEN
+				addr = (struct sockaddr *)((caddr_t)addr + sizeof(struct sockaddr_in));
+#endif
+				break;
+			}
+			case AF_INET6:
+			{
+				struct sockaddr_in6 *sin6;
+				char buf[INET6_ADDRSTRLEN];
+				const char *name;
+
+				sin6 = (struct sockaddr_in6 *)addr;
+   				name = inet_ntop(AF_INET6, (const void *)&sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
+   				printf("%s", name);
+#ifndef HAVE_SA_LEN
+				addr = (struct sockaddr *)((caddr_t)addr + sizeof(struct sockaddr_in6));
+#endif
+				break;
+			}
+			default:
+				break;
+			}
+#ifdef HAVE_SA_LEN
+			addr = (struct sockaddr *)((caddr_t)addr + addr->sa_len);
+#endif
+		}
+		printf(".\n");
+		usrsctp_freepaddrs(addrs);
 	}
 	while ((fgets(buffer, sizeof(buffer), stdin) != NULL) && !done) {
 		usrsctp_sendv(sock, buffer, strlen(buffer), NULL, 0,
