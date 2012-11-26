@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 241913 2012-10-22 21:09:03Z glebius $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 243558 2012-11-26 08:50:00Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1378,7 +1378,8 @@ sctp_shutdown(struct socket *so)
 	}
 	SCTP_INP_RLOCK(inp);
 	/* For UDP model this is a invalid call */
-	if (inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) {
+	if (!((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
+	      (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL))) {
 		/* Restore the flags that the soshutdown took away. */
 #if (defined(__FreeBSD__) && __FreeBSD_version >= 502115) || defined(__Windows__)
 		SOCKBUF_LOCK(&so->so_rcv);
