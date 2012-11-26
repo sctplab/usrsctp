@@ -114,11 +114,11 @@ main(int argc, char *argv[])
 	addr4.sin_port = htons(atoi(argv[2]));
 	addr6.sin6_port = htons(atoi(argv[2]));
 	if (inet_pton(AF_INET6, argv[1], &addr6.sin6_addr) == 1) {
-		if (usrsctp_connectx(sock, (struct sockaddr *)&addr6, 1, NULL) < 0) {
+		if (usrsctp_connect(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
 			perror("usrsctp_connect");
 		}
 	} else if (inet_pton(AF_INET, argv[1], &addr4.sin_addr) == 1) {
-		if (usrsctp_connectx(sock, (struct sockaddr *)&addr4, 1, NULL) < 0) {
+		if (usrsctp_connect(sock, (struct sockaddr *)&addr4, sizeof(struct sockaddr_in)) < 0) {
 			perror("usrsctp_connect");
 		}
 	} else {
@@ -221,11 +221,12 @@ main(int argc, char *argv[])
 		usrsctp_freepaddrs(addrs);
 	}
 	while ((fgets(buffer, sizeof(buffer), stdin) != NULL) && !done) {
-		usrsctp_sendv(sock, buffer, strlen(buffer), NULL, 0,
-				                  NULL, 0, SCTP_SENDV_NOINFO, 0);
+		usrsctp_sendv(sock, buffer, strlen(buffer), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
 	}
 	if (!done) {
-		usrsctp_shutdown(sock, SHUT_WR);
+		if (usrsctp_shutdown(sock, SHUT_WR) < 0) {
+			perror("usrsctp_shutdown");
+		}
 	}
 	while (!done) {
 #ifdef _WIN32
