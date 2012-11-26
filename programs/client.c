@@ -50,6 +50,10 @@
 
 int done = 0;
 
+#ifdef _WIN32
+typedef char* caddr_t;
+#endif
+
 static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
            size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
@@ -141,7 +145,7 @@ main(int argc, char *argv[])
 				const char *name;
 
 				sin = (struct sockaddr_in *)addr;
-   				name = inet_ntop(AF_INET, (const void *)&sin->sin_addr, buf, INET_ADDRSTRLEN);
+   				name = inet_ntop(AF_INET, &sin->sin_addr, buf, INET_ADDRSTRLEN);
    				printf("%s", name);
 #ifndef HAVE_SA_LEN
 				addr = (struct sockaddr *)((caddr_t)addr + sizeof(struct sockaddr_in));
@@ -155,7 +159,7 @@ main(int argc, char *argv[])
 				const char *name;
 
 				sin6 = (struct sockaddr_in6 *)addr;
-   				name = inet_ntop(AF_INET6, (const void *)&sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
+   				name = inet_ntop(AF_INET6, &sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
    				printf("%s", name);
 #ifndef HAVE_SA_LEN
 				addr = (struct sockaddr *)((caddr_t)addr + sizeof(struct sockaddr_in6));
@@ -189,7 +193,7 @@ main(int argc, char *argv[])
 				const char *name;
 
 				sin = (struct sockaddr_in *)addr;
-   				name = inet_ntop(AF_INET, (const void *)&sin->sin_addr, buf, INET_ADDRSTRLEN);
+   				name = inet_ntop(AF_INET, &sin->sin_addr, buf, INET_ADDRSTRLEN);
    				printf("%s", name);
 #ifndef HAVE_SA_LEN
 				addr = (struct sockaddr *)((caddr_t)addr + sizeof(struct sockaddr_in));
@@ -203,7 +207,7 @@ main(int argc, char *argv[])
 				const char *name;
 
 				sin6 = (struct sockaddr_in6 *)addr;
-   				name = inet_ntop(AF_INET6, (const void *)&sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
+   				name = inet_ntop(AF_INET6, &sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
    				printf("%s", name);
 #ifndef HAVE_SA_LEN
 				addr = (struct sockaddr *)((caddr_t)addr + sizeof(struct sockaddr_in6));
