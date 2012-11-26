@@ -2343,7 +2343,9 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 	struct sctp_getaddresses *gaddrs;
 	struct sockaddr *sa;
 	struct sockaddr_in *sin;
+#ifdef INET6
 	struct sockaddr_in6 *sin6;
+#endif
 	int i;
 	size_t argsz;
 	uint16_t sport = 0;
