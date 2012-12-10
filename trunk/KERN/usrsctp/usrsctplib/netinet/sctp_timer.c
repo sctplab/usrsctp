@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 243157 2012-11-16 19:39:10Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 243882 2012-12-05 08:04:20Z glebius $");
 #endif
 
 #define _IP_VHL
@@ -160,7 +160,7 @@ sctp_threshold_management(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		struct mbuf *oper;
 
 		oper = sctp_get_mbuf_for_msg((sizeof(struct sctp_paramhdr) + sizeof(uint32_t)),
-					       0, M_DONTWAIT, 1, MT_DATA);
+					       0, M_NOWAIT, 1, MT_DATA);
 		if (oper) {
 			struct sctp_paramhdr *ph;
 			uint32_t *ippp;
@@ -1061,7 +1061,7 @@ sctp_cookie_timer(struct sctp_inpcb *inp,
 			struct mbuf *oper;
 
 			oper = sctp_get_mbuf_for_msg((sizeof(struct sctp_paramhdr) + sizeof(uint32_t)),
-						       0, M_DONTWAIT, 1, MT_DATA);
+						       0, M_NOWAIT, 1, MT_DATA);
 			if (oper) {
 				struct sctp_paramhdr *ph;
 				uint32_t *ippp;

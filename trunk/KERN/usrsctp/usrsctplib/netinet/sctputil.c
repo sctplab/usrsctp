@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 243186 2012-11-17 20:04:04Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 243882 2012-12-05 08:04:20Z glebius $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2656,7 +2656,7 @@ sctp_add_pad_tombuf(struct mbuf *m, int padlen)
 		/* Hard way we must grow the mbuf */
 		struct mbuf *tmp;
 
-		tmp = sctp_get_mbuf_for_msg(padlen, 0, M_DONTWAIT, 1, MT_DATA);
+		tmp = sctp_get_mbuf_for_msg(padlen, 0, M_NOWAIT, 1, MT_DATA);
 		if (tmp == NULL) {
 			/* Out of space GAK! we are in big trouble. */
 			SCTP_LTRACE_ERR_RET_PKT(m, NULL, NULL, NULL, SCTP_FROM_SCTPUTIL, ENOBUFS);
@@ -2724,11 +2724,11 @@ sctp_notify_assoc_change(uint16_t state, struct sctp_tcb *stcb,
 		} else if ((state == SCTP_COMM_LOST) || (state == SCTP_CANT_STR_ASSOC)) {
 			notif_len += abort_len;
 		}
-		m_notify = sctp_get_mbuf_for_msg(notif_len, 0, M_DONTWAIT, 1, MT_DATA);
+		m_notify = sctp_get_mbuf_for_msg(notif_len, 0, M_NOWAIT, 1, MT_DATA);
 		if (m_notify == NULL) {
 			/* Retry with smaller value. */
 			notif_len = sizeof(struct sctp_assoc_change);
-			m_notify = sctp_get_mbuf_for_msg(notif_len, 0, M_DONTWAIT, 1, MT_DATA);
+			m_notify = sctp_get_mbuf_for_msg(notif_len, 0, M_NOWAIT, 1, MT_DATA);
 			if (m_notify == NULL) {
 				goto set_error;
 			}
@@ -2846,7 +2846,7 @@ sctp_notify_peer_addr_change(struct sctp_tcb *stcb, uint32_t state,
 		/* event not enabled */
 		return;
 	}
-	m_notify = sctp_get_mbuf_for_msg(sizeof(struct sctp_paddr_change), 0, M_DONTWAIT, 1, MT_DATA);
+	m_notify = sctp_get_mbuf_for_msg(sizeof(struct sctp_paddr_change), 0, M_NOWAIT, 1, MT_DATA);
 	if (m_notify == NULL)
 		return;
 	SCTP_BUF_LEN(m_notify) = 0;
@@ -2951,7 +2951,7 @@ sctp_notify_send_failed(struct sctp_tcb *stcb, uint8_t sent, uint32_t error,
 	} else {
 		length = sizeof(struct sctp_send_failed);
 	}
-	m_notify = sctp_get_mbuf_for_msg(length, 0, M_DONTWAIT, 1, MT_DATA);
+	m_notify = sctp_get_mbuf_for_msg(length, 0, M_NOWAIT, 1, MT_DATA);
 	if (m_notify == NULL)
 		/* no space left */
 		return;
@@ -3064,7 +3064,7 @@ sctp_notify_send_failed2(struct sctp_tcb *stcb, uint32_t error,
 	} else {
 		length = sizeof(struct sctp_send_failed);
 	}
-	m_notify = sctp_get_mbuf_for_msg(length, 0, M_DONTWAIT, 1, MT_DATA);
+	m_notify = sctp_get_mbuf_for_msg(length, 0, M_NOWAIT, 1, MT_DATA);
 	if (m_notify == NULL) {
 		/* no space left */
 		return;
@@ -3154,7 +3154,7 @@ sctp_notify_adaptation_layer(struct sctp_tcb *stcb)
 		return;
 	}
 
-	m_notify = sctp_get_mbuf_for_msg(sizeof(struct sctp_adaption_event), 0, M_DONTWAIT, 1, MT_DATA);
+	m_notify = sctp_get_mbuf_for_msg(sizeof(struct sctp_adaption_event), 0, M_NOWAIT, 1, MT_DATA);
 	if (m_notify == NULL)
 		/* no space left */
 		return;
@@ -3210,7 +3210,7 @@ sctp_notify_partial_delivery_indication(struct sctp_tcb *stcb, uint32_t error,
 		return;
 	}
 
-	m_notify = sctp_get_mbuf_for_msg(sizeof(struct sctp_pdapi_event), 0, M_DONTWAIT, 1, MT_DATA);
+	m_notify = sctp_get_mbuf_for_msg(sizeof(struct sctp_pdapi_event), 0, M_NOWAIT, 1, MT_DATA);
 	if (m_notify == NULL)
 		/* no space left */
 		return;
@@ -3321,7 +3321,7 @@ sctp_notify_shutdown_event(struct sctp_tcb *stcb)
 		return;
 	}
 
-	m_notify = sctp_get_mbuf_for_msg(sizeof(struct sctp_shutdown_event), 0, M_DONTWAIT, 1, MT_DATA);
+	m_notify = sctp_get_mbuf_for_msg(sizeof(struct sctp_shutdown_event), 0, M_NOWAIT, 1, MT_DATA);
 	if (m_notify == NULL)
 		/* no space left */
 		return;
@@ -3370,7 +3370,7 @@ sctp_notify_sender_dry_event(struct sctp_tcb *stcb,
 		return;
 	}
 
-	m_notify = sctp_get_mbuf_for_msg(sizeof(struct sctp_sender_dry_event), 0, M_DONTWAIT, 1, MT_DATA);
+	m_notify = sctp_get_mbuf_for_msg(sizeof(struct sctp_sender_dry_event), 0, M_NOWAIT, 1, MT_DATA);
 	if (m_notify == NULL) {
 		/* no space left */
 		return;
@@ -3422,7 +3422,7 @@ sctp_notify_stream_reset_add(struct sctp_tcb *stcb, uint16_t numberin, uint16_t 
 		return;
 	}
 	stcb->asoc.peer_req_out = 0;
-	m_notify = sctp_get_mbuf_for_msg(MCLBYTES, 0, M_DONTWAIT, 1, MT_DATA);
+	m_notify = sctp_get_mbuf_for_msg(MCLBYTES, 0, M_NOWAIT, 1, MT_DATA);
 	if (m_notify == NULL)
 		/* no space left */
 		return;
@@ -3478,7 +3478,7 @@ sctp_notify_stream_reset_tsn(struct sctp_tcb *stcb, uint32_t sending_tsn, uint32
 		/* event not enabled */
 		return;
 	}
-	m_notify = sctp_get_mbuf_for_msg(MCLBYTES, 0, M_DONTWAIT, 1, MT_DATA);
+	m_notify = sctp_get_mbuf_for_msg(MCLBYTES, 0, M_NOWAIT, 1, MT_DATA);
 	if (m_notify == NULL)
 		/* no space left */
 		return;
@@ -3538,7 +3538,7 @@ sctp_notify_stream_reset(struct sctp_tcb *stcb,
 		return;
 	}
 
-	m_notify = sctp_get_mbuf_for_msg(MCLBYTES, 0, M_DONTWAIT, 1, MT_DATA);
+	m_notify = sctp_get_mbuf_for_msg(MCLBYTES, 0, M_NOWAIT, 1, MT_DATA);
 	if (m_notify == NULL)
 		/* no space left */
 		return;
@@ -3605,11 +3605,11 @@ sctp_notify_remote_error(struct sctp_tcb *stcb, uint16_t error, struct sctp_erro
 		chunk_len = 0;
 	}
 	notif_len = sizeof(struct sctp_remote_error) + chunk_len;
-	m_notify = sctp_get_mbuf_for_msg(notif_len, 0, M_DONTWAIT, 1, MT_DATA);
+	m_notify = sctp_get_mbuf_for_msg(notif_len, 0, M_NOWAIT, 1, MT_DATA);
 	if (m_notify == NULL) {
 		/* Retry with smaller value. */
 		notif_len = sizeof(struct sctp_remote_error);
-		m_notify = sctp_get_mbuf_for_msg(notif_len, 0, M_DONTWAIT, 1, MT_DATA);
+		m_notify = sctp_get_mbuf_for_msg(notif_len, 0, M_NOWAIT, 1, MT_DATA);
 		if (m_notify == NULL) {
 			return;
 		}
@@ -5058,7 +5058,7 @@ sctp_generate_invmanparam(int err)
 	/* Return a MBUF with a invalid mandatory parameter */
 	struct mbuf *m;
 
-	m = sctp_get_mbuf_for_msg(sizeof(struct sctp_paramhdr), 0, M_DONTWAIT, 1, MT_DATA);
+	m = sctp_get_mbuf_for_msg(sizeof(struct sctp_paramhdr), 0, M_NOWAIT, 1, MT_DATA);
 	if (m) {
 		struct sctp_paramhdr *ph;
 
@@ -7666,7 +7666,7 @@ sctp_recv_udp_tunneled_packet(struct mbuf *m, int off, struct inpcb *ignored)
 	 * IP header in m, place the
 	 * rest in the sp.
 	 */
-	sp = m_split(m, off, M_DONTWAIT);
+	sp = m_split(m, off, M_NOWAIT);
 	if (sp == NULL) {
 		/* Gak, drop packet, we can't do a split */
 		goto out;

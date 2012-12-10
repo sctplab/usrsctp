@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 243564 2012-11-26 16:43:32Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 243882 2012-12-05 08:04:20Z glebius $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3826,7 +3826,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 				struct mbuf *op_err;
 
 				op_err = sctp_get_mbuf_for_msg((sizeof(struct sctp_paramhdr) + sizeof(uint32_t)),
-							       0, M_DONTWAIT, 1, MT_DATA);
+							       0, M_NOWAIT, 1, MT_DATA);
 				if (op_err) {
 					/* Fill in the user initiated abort */
 					struct sctp_paramhdr *ph;
@@ -3911,7 +3911,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 					struct mbuf *op_err;
 				abort_anyway:
 					op_err = sctp_get_mbuf_for_msg((sizeof(struct sctp_paramhdr) + sizeof(uint32_t)),
-								       0, M_DONTWAIT, 1, MT_DATA);
+								       0, M_NOWAIT, 1, MT_DATA);
 					if (op_err) {
 						/* Fill in the user initiated abort */
 						struct sctp_paramhdr *ph;
@@ -3995,7 +3995,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 			uint32_t *ippp;
 
 			op_err = sctp_get_mbuf_for_msg((sizeof(struct sctp_paramhdr) + sizeof(uint32_t)),
-						       0, M_DONTWAIT, 1, MT_DATA);
+						       0, M_NOWAIT, 1, MT_DATA);
 			if (op_err) {
 				/* Fill in the user initiated abort */
 				struct sctp_paramhdr *ph;
