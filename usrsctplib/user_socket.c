@@ -937,7 +937,7 @@ struct mbuf* mbufalloc(size_t size, void* data, unsigned char fill)
 
     /* First one gets a header equal to sizeof(struct sctp_data_chunk) */
     left = size;
-    head = m = sctp_get_mbuf_for_msg((left + resv_upfront), 1, M_WAIT, 0, MT_DATA);
+    head = m = sctp_get_mbuf_for_msg((left + resv_upfront), 1, M_WAITOK, 0, MT_DATA);
     if (m == NULL) {
         SCTP_PRINTF("%s: ENOMEN: Memory allocation failure\n", __func__);
         return (NULL);
@@ -962,7 +962,7 @@ struct mbuf* mbufalloc(size_t size, void* data, unsigned char fill)
         left -= willcpy;
         cpsz += willcpy;
         if (left > 0) {
-            SCTP_BUF_NEXT(m) = sctp_get_mbuf_for_msg(left, 0, M_WAIT, 0, MT_DATA);
+            SCTP_BUF_NEXT(m) = sctp_get_mbuf_for_msg(left, 0, M_WAITOK, 0, MT_DATA);
             if (SCTP_BUF_NEXT(m) == NULL) {
                 /*
                  * the head goes back to caller, he can free
@@ -1600,7 +1600,7 @@ sowakeup(struct socket *so, struct sockbuf *sb)
 	if ((so->so_state & SS_ASYNC) && so->so_sigio != NULL)
 		pgsigio(&so->so_sigio, SIGIO, 0);
 	if (sb->sb_flags & SB_UPCALL)
-		(*so->so_upcall)(so, so->so_upcallarg, M_DONTWAIT);
+		(*so->so_upcall)(so, so->so_upcallarg, M_NOWAIT);
 	if (sb->sb_flags & SB_AIO)
 		aio_swake(so, sb);
 	mtx_assert(SOCKBUF_MTX(sb), MA_NOTOWNED);
@@ -3104,7 +3104,7 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	dst.sconn_len = sizeof(struct sockaddr_conn);
 #endif
 	dst.sconn_addr = addr;
-	if ((m = sctp_get_mbuf_for_msg(length, 1, M_DONTWAIT, 0, MT_DATA)) == NULL) {
+	if ((m = sctp_get_mbuf_for_msg(length, 1, M_NOWAIT, 0, MT_DATA)) == NULL) {
 		return;
 	}
 	m_copyback(m, 0, length, (caddr_t)buffer);
