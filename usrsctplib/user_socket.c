@@ -3038,37 +3038,61 @@ free_mbuf:
 }
 #endif
 
-#if 0
-#define HEADER "\n0000 "
+#ifdef _WIN32
+static void
+gettimeofday(struct timeval *tv, void *ignore)
+{
+	struct timeb tb;
+
+	ftime(&tb);
+	tv->tv_sec = (long)tb.time;
+	tv->tv_usec = tb.millitm * 1000;
+}
+#endif
+
+#define PREAMBLE_FORMAT "\n%c %02d:%02d:%02d.%06d "
+#define PREAMBLE_LENGTH 19
+#define HEADER "0000 "
 #define TRAILER "# SCTP_PACKET\n"
 
 char *
-usrsctp_dumppacket(unsigned char *packet, size_t len)
+usrsctp_dumppacket(void *buf, size_t len, int outbound)
 {
 	size_t i, pos;
-	char *buf;
+	char *dump_buf, *packet;
+	struct timeval tv;
+	struct tm *t;
 
-	if ((buf = malloc(strlen(HEADER) + 3 * len + strlen(TRAILER) + 1)) == NULL) {
+	if ((len == 0) || (packet == NULL)) {
 		return (NULL);
 	}
-	/* XXX: Add timestamp header */
+	if ((dump_buf = malloc(PREAMBLE_LENGTH + strlen(HEADER) + 3 * len + strlen(TRAILER) + 1)) == NULL) {
+		return (NULL);
+	}
 	pos = 0;
-	stpcpy(buf + pos, HEADER);
+	gettimeofday(&tv, NULL);
+	t = localtime(&tv.tv_sec);
+	snprintf(dump_buf, PREAMBLE_LENGTH + 1, PREAMBLE_FORMAT,
+	         outbound ? 'O' : 'I',
+	         t->tm_hour, t->tm_min, t->tm_sec, tv.tv_usec);
+	pos += PREAMBLE_LENGTH;
+	stpcpy(dump_buf + pos, HEADER);
 	pos += strlen(HEADER);
+	packet = (char *)buf;
 	for (i = 0; i < len; i++) {
 		uint8_t byte, low, high;
 
 		byte = (uint8_t)packet[i];
 		high = byte / 16;
 		low = byte % 16;
-		buf[pos++] = high < 10 ? '0' + high : 'a' + (high - 10);
-		buf[pos++] = low < 10 ? '0' + low : 'a' + (low - 10);
-		buf[pos++] = ' ';
+		dump_buf[pos++] = high < 10 ? '0' + high : 'a' + (high - 10);
+		dump_buf[pos++] = low < 10 ? '0' + low : 'a' + (low - 10);
+		dump_buf[pos++] = ' ';
 	}
-	stpcpy(buf + pos, TRAILER);
+	stpcpy(dump_buf + pos, TRAILER);
 	pos += strlen(TRAILER);
-	buf[pos++] = '\0';
-	return (buf);
+	dump_buf[pos++] = '\0';
+	return (dump_buf);
 }
 
 void
@@ -3076,7 +3100,6 @@ usrsctp_freedumpbuffer(char *buf)
 {
 	free(buf);
 }
-#endif
 
 void
 usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bits)
@@ -3085,13 +3108,7 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	struct mbuf *m;
 	struct sctphdr *sh;
 	struct sctp_chunkhdr *ch;
-#if 0
-	char *buf;
 
-	buf = usrsctp_dumppacket((unsigned char *)buffer, length);
-	printf("%s", buf);
-	usrsctp_freedumpbuffer(buf);
-#endif
 	memset(&src, 0, sizeof(struct sockaddr_conn));
 	src.sconn_family = AF_CONN;
 #ifdef HAVE_SCONN_LEN
