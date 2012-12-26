@@ -56,6 +56,9 @@ userland_cond_t accept_cond = PTHREAD_COND_INITIALIZER;
 userland_mutex_t accept_mtx;
 userland_cond_t accept_cond;
 #endif
+#ifdef _WIN32
+#include <sys/timeb.h>
+#endif
 
 MALLOC_DEFINE(M_PCB, "sctp_pcb", "sctp pcb");
 MALLOC_DEFINE(M_SONAME, "sctp_soname", "sctp soname");
