@@ -57,6 +57,7 @@ userland_mutex_t accept_mtx;
 userland_cond_t accept_cond;
 #endif
 #ifdef _WIN32
+#include <time.h>
 #include <sys/timeb.h>
 #endif
 
@@ -3041,18 +3042,6 @@ free_mbuf:
 }
 #endif
 
-#ifdef _WIN32
-static void
-gettimeofday(struct timeval *tv, void *ignore)
-{
-	struct timeb tb;
-
-	ftime(&tb);
-	tv->tv_sec = (long)tb.time;
-	tv->tv_usec = tb.millitm * 1000;
-}
-#endif
-
 #define PREAMBLE_FORMAT "\n%c %02d:%02d:%02d.%06d "
 #define PREAMBLE_LENGTH 19
 #define HEADER "0000 "
@@ -3063,23 +3052,36 @@ usrsctp_dumppacket(void *buf, size_t len, int outbound)
 {
 	size_t i, pos;
 	char *dump_buf, *packet;
+#ifdef _WIN32
+	struct timeb tb;
+	struct tm t;
+#else
 	struct timeval tv;
 	struct tm *t;
+#endif
 
-	if ((len == 0) || (packet == NULL)) {
+	if ((len == 0) || (buf == NULL)) {
 		return (NULL);
 	}
 	if ((dump_buf = malloc(PREAMBLE_LENGTH + strlen(HEADER) + 3 * len + strlen(TRAILER) + 1)) == NULL) {
 		return (NULL);
 	}
 	pos = 0;
+#ifdef _WIN32
+	ftime(&tb);
+	localtime_s(&t, &tb.time);
+	_snprintf_s(dump_buf, PREAMBLE_LENGTH + 1, PREAMBLE_LENGTH, PREAMBLE_FORMAT,
+	          outbound ? 'O' : 'I',
+	          t.tm_hour, t.tm_min, t.tm_sec, 1000 * tb.millitm);	
+#else
 	gettimeofday(&tv, NULL);
 	t = localtime(&tv.tv_sec);
 	snprintf(dump_buf, PREAMBLE_LENGTH + 1, PREAMBLE_FORMAT,
 	         outbound ? 'O' : 'I',
 	         t->tm_hour, t->tm_min, t->tm_sec, tv.tv_usec);
+#endif
 	pos += PREAMBLE_LENGTH;
-	stpcpy(dump_buf + pos, HEADER);
+	strcpy(dump_buf + pos, HEADER);
 	pos += strlen(HEADER);
 	packet = (char *)buf;
 	for (i = 0; i < len; i++) {
@@ -3092,7 +3094,7 @@ usrsctp_dumppacket(void *buf, size_t len, int outbound)
 		dump_buf[pos++] = low < 10 ? '0' + low : 'a' + (low - 10);
 		dump_buf[pos++] = ' ';
 	}
-	stpcpy(dump_buf + pos, TRAILER);
+	strcpy(dump_buf + pos, TRAILER);
 	pos += strlen(TRAILER);
 	dump_buf[pos++] = '\0';
 	return (dump_buf);
