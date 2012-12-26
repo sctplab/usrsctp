@@ -61,6 +61,7 @@ handle_packets(void *arg)
 	int *fdp;
 #endif
 	char *buf;
+	char *dump_buf;
 	ssize_t length;
 
 #ifdef _WIN32
@@ -74,6 +75,9 @@ handle_packets(void *arg)
 	for (;;) {
 		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
+			dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND);
+			printf("%s", dump_buf);
+			usrsctp_freedumpbuffer(dump_buf);
 			usrsctp_conninput(fdp, buf, (size_t)length, 0);
 		}
 	}
@@ -82,8 +86,9 @@ handle_packets(void *arg)
 }
 
 static int
-conn_output(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df)
+conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 {
+	char *dump_buf;
 #ifdef _WIN32
 	SOCKET *fdp;
 #else
@@ -95,11 +100,14 @@ conn_output(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df
 #else
 	fdp = (int *)addr;
 #endif
+	dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_OUTBOUND);
+	printf("%s", dump_buf);
+	usrsctp_freedumpbuffer(dump_buf);
 #ifdef _WIN32
-	if (send(*fdp, buffer, length, 0) == SOCKET_ERROR) {
+	if (send(*fdp, buf, length, 0) == SOCKET_ERROR) {
 		return (WSAGetLastError());
 #else
-	if (send(*fdp, buffer, length, 0) < 0) {
+	if (send(*fdp, buf, length, 0) < 0) {
 		return (errno);
 #endif
 	} else {
@@ -233,7 +241,7 @@ main(void)
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif
 	sconn.sconn_port = htons(5002);
-	sconn.sconn_addr = &fd_c;
+	sconn.sconn_addr = NULL;
 	if (usrsctp_bind(s_c, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_bind");
 	}
@@ -244,7 +252,7 @@ main(void)
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif
 	sconn.sconn_port = htons(5001);
-	sconn.sconn_addr = &fd_s;
+	sconn.sconn_addr = NULL;
 	if (usrsctp_bind(s_l, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_bind");
 	}

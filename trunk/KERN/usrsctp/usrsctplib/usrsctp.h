@@ -962,8 +962,11 @@ usrsctp_set_non_blocking(struct socket *, int);
 int
 usrsctp_get_non_blocking(struct socket *);
 
+#define SCTP_DUMP_OUTBOUND 1
+#define SCTP_DUMP_INBOUND  0
+
 char *
-usrsctp_dumppacket(unsigned char *, size_t);
+usrsctp_dumppacket(void *, size_t, int);
 
 void
 usrsctp_freedumpbuffer(char *);
