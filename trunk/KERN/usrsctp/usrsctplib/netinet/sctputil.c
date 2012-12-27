@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 243882 2012-12-05 08:04:20Z glebius $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 244728 2012-12-27 08:02:58Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5395,7 +5395,7 @@ sctp_get_ifa_hash_val(struct sockaddr *addr)
 	}
 #endif
 #ifdef INET6
-	case INET6:
+	case AF_INET6:
 	{
 		struct sockaddr_in6 *sin6;
 		uint32_t hash_of_addr;
@@ -5414,6 +5414,17 @@ sctp_get_ifa_hash_val(struct sockaddr *addr)
 #endif
 		hash_of_addr = (hash_of_addr ^ (hash_of_addr >> 16));
 		return (hash_of_addr);
+	}
+#endif
+#if defined(__Userspace__)
+	case AF_CONN:
+	{
+		struct sockaddr_conn *sconn;
+		uint64_t temp;
+
+		sconn = (struct sockaddr_conn *)addr;
+		temp = (uint64_t)sconn->sconn_addr;
+		return ((uint32_t)(temp ^ (temp >> 16)));
 	}
 #endif
 	default:
