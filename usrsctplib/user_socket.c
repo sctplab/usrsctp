@@ -3071,8 +3071,8 @@ usrsctp_dumppacket(void *buf, size_t len, int outbound)
 	ftime(&tb);
 	localtime_s(&t, &tb.time);
 	_snprintf_s(dump_buf, PREAMBLE_LENGTH + 1, PREAMBLE_LENGTH, PREAMBLE_FORMAT,
-	          outbound ? 'O' : 'I',
-	          t.tm_hour, t.tm_min, t.tm_sec, 1000 * tb.millitm);	
+	            outbound ? 'O' : 'I',
+	            t.tm_hour, t.tm_min, t.tm_sec, 1000 * tb.millitm);	
 #else
 	gettimeofday(&tv, NULL);
 	t = localtime(&tv.tv_sec);
@@ -3081,7 +3081,11 @@ usrsctp_dumppacket(void *buf, size_t len, int outbound)
 	         t->tm_hour, t->tm_min, t->tm_sec, tv.tv_usec);
 #endif
 	pos += PREAMBLE_LENGTH;
+#ifdef _WIN32
+	strncpy_s(dump_buf + pos, strlen(HEADER), HEADER, strlen(HEADER));
+#else
 	strcpy(dump_buf + pos, HEADER);
+#endif	
 	pos += strlen(HEADER);
 	packet = (char *)buf;
 	for (i = 0; i < len; i++) {
@@ -3094,7 +3098,11 @@ usrsctp_dumppacket(void *buf, size_t len, int outbound)
 		dump_buf[pos++] = low < 10 ? '0' + low : 'a' + (low - 10);
 		dump_buf[pos++] = ' ';
 	}
+#ifdef _WIN32
+	strncpy_s(dump_buf + pos, strlen(TRAILER), TRAILER, strlen(TRAILER));
+#else
 	strcpy(dump_buf + pos, TRAILER);
+#endif
 	pos += strlen(TRAILER);
 	dump_buf[pos++] = '\0';
 	return (dump_buf);
