@@ -80,19 +80,19 @@ ekr_peer:
 	link -out:ekr_peer.exe ekr_peer.obj $(LINKFLAGS)
 
 clean:
-	del /F client
+	del /F client.exe
 	del /F client.obj
-	del /F daytime_server
+	del /F daytime_server.exe
 	del /F daytime_server.obj
-	del /F discard_server
+	del /F discard_server.exe
 	del /F discard_server.obj
-	del /F tsctp
+	del /F tsctp.exe
 	del /F tsctp.obj
-	del /F rtcweb
+	del /F rtcweb.exe
 	del /F rtcweb.obj
-	del /F ekr_client
+	del /F ekr_client.exe
 	del /F ekr_client.obj
-	del /F ekr_server
+	del /F ekr_server.exe
 	del /F ekr_server.obj
-	del /F ekr_peer
+	del /F ekr_peer.exe
 	del /F ekr_peer.obj
