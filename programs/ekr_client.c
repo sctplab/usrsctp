@@ -75,9 +75,10 @@ handle_packets(void *arg)
 	for (;;) {
 		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
-			dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND);
-			printf("%s", dump_buf);
-			usrsctp_freedumpbuffer(dump_buf);
+			if ((dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
+				printf("%s", dump_buf);
+				usrsctp_freedumpbuffer(dump_buf);
+			}
 			usrsctp_conninput(fdp, buf, (size_t)length, 0);
 		}
 	}
@@ -100,9 +101,10 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 #else
 	fdp = (int *)addr;
 #endif
-	dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_OUTBOUND);
-	printf("%s", dump_buf);
-	usrsctp_freedumpbuffer(dump_buf);
+	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
+		printf("%s", dump_buf);
+		usrsctp_freedumpbuffer(dump_buf);
+	}
 #ifdef _WIN32
 	if (send(*fdp, buf, length, 0) == SOCKET_ERROR) {
 		return (WSAGetLastError());
@@ -251,7 +253,7 @@ main(int argc, char *argv[])
 	                  (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("usrsctp_sendv");
 	}
-	
+
 	usrsctp_close(s);
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
