@@ -3082,7 +3082,7 @@ usrsctp_dumppacket(void *buf, size_t len, int outbound)
 #endif
 	pos += PREAMBLE_LENGTH;
 #ifdef _WIN32
-	strncpy_s(dump_buf + pos, strlen(HEADER), HEADER, strlen(HEADER));
+	strncpy_s(dump_buf + pos, strlen(HEADER) + 1, HEADER, strlen(HEADER));
 #else
 	strcpy(dump_buf + pos, HEADER);
 #endif	
@@ -3099,7 +3099,7 @@ usrsctp_dumppacket(void *buf, size_t len, int outbound)
 		dump_buf[pos++] = ' ';
 	}
 #ifdef _WIN32
-	strncpy_s(dump_buf + pos, strlen(TRAILER), TRAILER, strlen(TRAILER));
+	strncpy_s(dump_buf + pos, strlen(TRAILER) + 1, TRAILER, strlen(TRAILER));
 #else
 	strcpy(dump_buf + pos, TRAILER);
 #endif
