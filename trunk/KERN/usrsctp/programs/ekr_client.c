@@ -76,7 +76,7 @@ handle_packets(void *arg)
 		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
 			if ((dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
-				printf("%s", dump_buf);
+				fprintf(stderr, "%s", dump_buf);
 				usrsctp_freedumpbuffer(dump_buf);
 			}
 			usrsctp_conninput(fdp, buf, (size_t)length, 0);
@@ -102,7 +102,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 	fdp = (int *)addr;
 #endif
 	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
-		printf("%s", dump_buf);
+		fprintf(stderr, "%s", dump_buf);
 		usrsctp_freedumpbuffer(dump_buf);
 	}
 #ifdef _WIN32
@@ -207,6 +207,7 @@ main(int argc, char *argv[])
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
 #endif
+	usrsctp_register_address((void *)&fd);
 #ifdef _WIN32
 	tid = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_packets, (void *)&fd, 0, NULL);
 #else
@@ -255,6 +256,7 @@ main(int argc, char *argv[])
 	}
 
 	usrsctp_close(s);
+	usrsctp_deregister_address((void *)&fd);
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
 		Sleep(1000);

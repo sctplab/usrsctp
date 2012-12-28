@@ -76,7 +76,7 @@ handle_packets(void *arg)
 		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
 			if ((dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
-				printf("%s", dump_buf);
+				fprintf(stderr, "%s", dump_buf);
 				usrsctp_freedumpbuffer(dump_buf);
 			}
 			usrsctp_conninput(fdp, buf, (size_t)length, 0);
@@ -102,7 +102,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 	fdp = (int *)addr;
 #endif
 	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
-		printf("%s", dump_buf);
+		fprintf(stderr, "%s", dump_buf);
 		usrsctp_freedumpbuffer(dump_buf);
 	}
 #ifdef _WIN32
@@ -227,8 +227,10 @@ main(void)
 	pthread_create(&tid_s, NULL, &handle_packets, (void *)&fd_s);
 #endif
 #ifdef SCTP_DEBUG
-	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
+	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
 #endif
+	usrsctp_register_address((void *)&fd_c);
+	usrsctp_register_address((void *)&fd_s);
 	if ((s_c = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 	}
@@ -242,8 +244,8 @@ main(void)
 #ifdef HAVE_SCONN_LEN
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif
-	sconn.sconn_port = htons(5002);
-	sconn.sconn_addr = NULL;
+	sconn.sconn_port = htons(5001);
+	sconn.sconn_addr = &fd_c;
 	if (usrsctp_bind(s_c, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_bind");
 	}
@@ -254,7 +256,7 @@ main(void)
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif
 	sconn.sconn_port = htons(5001);
-	sconn.sconn_addr = NULL;
+	sconn.sconn_addr = &fd_s;
 	if (usrsctp_bind(s_l, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_bind");
 	}
@@ -295,6 +297,9 @@ main(void)
 #endif
 	usrsctp_close(s_c);
 	usrsctp_close(s_s);
+	usrsctp_deregister_address((void *)&fd_c);
+	usrsctp_deregister_address((void *)&fd_s);
+
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
 		Sleep(1000);
