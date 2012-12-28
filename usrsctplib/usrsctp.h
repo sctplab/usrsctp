@@ -962,6 +962,12 @@ usrsctp_set_non_blocking(struct socket *, int);
 int
 usrsctp_get_non_blocking(struct socket *);
 
+void
+usrsctp_register_address(void *);
+
+void
+usrsctp_deregister_address(void *);
+
 #define SCTP_DUMP_OUTBOUND 1
 #define SCTP_DUMP_INBOUND  0
 

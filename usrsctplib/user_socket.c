@@ -3042,6 +3042,47 @@ free_mbuf:
 }
 #endif
 
+void
+usrsctp_register_address(void *addr)
+{
+	struct sockaddr_conn sconn;
+
+	memset(&sconn, 0, sizeof(struct sockaddr_conn));
+	sconn.sconn_family = AF_CONN;
+#ifdef HAVE_SCONN_LEN
+	sconn.sconn_len = sizeof(struct sockaddr_conn);
+#endif
+	sconn.sconn_port = 0;
+	sconn.sconn_addr = addr;
+	sctp_add_addr_to_vrf(SCTP_DEFAULT_VRFID,
+	                     NULL,
+	                     0xffffffff,
+	                     0,
+	                     "conn",
+	                     NULL,
+	                     (struct sockaddr *)&sconn,
+	                     0,
+	                     0);
+}
+
+void
+usrsctp_deregister_address(void *addr)
+{
+	struct sockaddr_conn sconn;
+
+	memset(&sconn, 0, sizeof(struct sockaddr_conn));
+	sconn.sconn_family = AF_CONN;
+#ifdef HAVE_SCONN_LEN
+	sconn.sconn_len = sizeof(struct sockaddr_conn);
+#endif
+	sconn.sconn_port = 0;
+	sconn.sconn_addr = addr;
+	sctp_del_addr_from_vrf(SCTP_DEFAULT_VRFID,
+	                       (struct sockaddr *)&sconn,
+	                       0xffffffff,
+	                       "conn");
+}
+
 #define PREAMBLE_FORMAT "\n%c %02d:%02d:%02d.%06d "
 #define PREAMBLE_LENGTH 19
 #define HEADER "0000 "
