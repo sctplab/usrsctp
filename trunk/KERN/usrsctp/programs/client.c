@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2012 Michael Tuexen
+ * Copyright (C) 2011-2013 Michael Tuexen
  *
  * All rights reserved.
  *
@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #ifndef _WIN32
 #include <unistd.h>
 #endif
@@ -74,6 +75,16 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 	return 1;
 }
 
+void
+debug_printf(const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	vprintf(format, ap);
+	va_end(ap);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -86,9 +97,9 @@ main(int argc, char *argv[])
 	int i, n;
 
 	if (argc > 3) {
-		usrsctp_init(atoi(argv[3]), NULL);
+		usrsctp_init(atoi(argv[3]), NULL, debug_printf);
 	} else {
-		usrsctp_init(9899, NULL);
+		usrsctp_init(9899, NULL, debug_printf);
 	}
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);

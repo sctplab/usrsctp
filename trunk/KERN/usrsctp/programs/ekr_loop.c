@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2012 Michael Tuexen
+ * Copyright (C) 2011-2013 Michael Tuexen
  *
  * All rights reserved.
  *
@@ -31,6 +31,7 @@
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
 #endif
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -139,6 +140,16 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 	return 1;
 }
 
+void
+debug_printf(const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	vprintf(format, ap);
+	va_end(ap);
+}
+
 int
 main(void)
 {
@@ -158,7 +169,7 @@ main(void)
 	struct sctp_sndinfo sndinfo;
 	char line[LINE_LENGTH];
 
-	usrsctp_init(0, conn_output);
+	usrsctp_init(0, conn_output, debug_printf);
 	/* set up a connected UDP socket */
 #ifdef _WIN32
 	if ((fd_c = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {

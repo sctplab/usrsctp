@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2012 Michael Tuexen
+ * Copyright (C) 2011-2013 Michael Tuexen
  *
  * All rights reserved.
  *
@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <stdarg.h>
 #ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -142,6 +143,16 @@ receive_cb(struct socket *s, union sctp_sockstore addr, void *data,
 	return 1;
 }
 
+void
+debug_printf(const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	vprintf(format, ap);
+	va_end(ap);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -159,7 +170,7 @@ main(int argc, char *argv[])
 	pthread_t tid;
 #endif
 
-	usrsctp_init(0, conn_output);
+	usrsctp_init(0, conn_output, debug_printf);
 	/* set up a connected UDP socket */
 #ifdef _WIN32
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
