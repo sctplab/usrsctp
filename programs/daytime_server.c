@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Michael Tuexen
+ * Copyright (C) 2012-2013 Michael Tuexen
  *
  * All rights reserved.
  *
@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include <sys/types.h>
 #include <time.h>
 #ifndef _WIN32
@@ -47,6 +48,16 @@
 #include <arpa/inet.h>
 #endif
 #include <usrsctp.h>
+
+void
+debug_printf(const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	vprintf(format, ap);
+	va_end(ap);
+}
 
 #define DAYTIME_PPID 40
 int
@@ -61,9 +72,9 @@ main(int argc, char *argv[])
 	struct sctp_sndinfo sndinfo;
 
 	if (argc > 1) {
-		usrsctp_init(atoi(argv[1]), NULL);
+		usrsctp_init(atoi(argv[1]), NULL, debug_printf);
 	} else {
-		usrsctp_init(9899, NULL);
+		usrsctp_init(9899, NULL, debug_printf);
 	}
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);

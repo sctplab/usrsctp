@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2005 -2012 Michael Tuexen
- * Copyright (C) 2011 -2012 Irene Ruengeler
+ * Copyright (C) 2005-2013 Michael Tuexen
+ * Copyright (C) 2011-2013 Irene Ruengeler
  *
  * All rights reserved.
  *
@@ -44,6 +44,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #endif
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -299,6 +300,15 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 	return 1;
 }
 
+void
+debug_printf(const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	vprintf(format, ap);
+	va_end(ap);
+}
 
 int main(int argc, char **argv)
 {
@@ -501,7 +511,7 @@ int main(int argc, char **argv)
 	local_addr.sin_port = htons(local_port);
 	local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	usrsctp_init(local_udp_port, NULL);
+	usrsctp_init(local_udp_port, NULL, debug_printf);
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
 #endif

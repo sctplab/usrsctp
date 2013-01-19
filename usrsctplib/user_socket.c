@@ -75,9 +75,10 @@ extern int sctpconn_attach(struct socket *so, int proto, uint32_t vrf_id);
 
 void
 usrsctp_init(uint16_t port,
-             int (*conn_output)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df))
+             int (*conn_output)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df),
+             void (*debug_printf)(const char *format, ...))
 {
-	sctp_init(port, conn_output);
+	sctp_init(port, conn_output, debug_printf);
 }
 
 
@@ -1827,7 +1828,6 @@ user_accept(struct socket *head,  struct sockaddr **name, socklen_t *namelen, st
 	 * we will return the socket for accepted connection.
 	 */
 
-	sa = 0;
 	error = soaccept(so, &sa);
 	if (error) {
 		/*

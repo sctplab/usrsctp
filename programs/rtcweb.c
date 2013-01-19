@@ -1,6 +1,6 @@
 /*-
- * Copyright (C) 2012 Michael Tuexen
- * Copyright (C) 2012 Irene Ruengeler
+ * Copyright (C) 2012-2013 Michael Tuexen
+ * Copyright (C) 2012-2013 Irene Ruengeler
  *
  * All rights reserved.
  *
@@ -50,6 +50,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #endif
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1285,6 +1286,16 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 	return (1);
 }
 
+void
+debug_printf(const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	vprintf(format, ap);
+	va_end(ap);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -1310,9 +1321,9 @@ main(int argc, char *argv[])
 	                          SCTP_STREAM_CHANGE_EVENT};
 
 	if (argc > 1) {
-		usrsctp_init(atoi(argv[1]), NULL);
+		usrsctp_init(atoi(argv[1]), NULL, debug_printf);
 	} else {
-		usrsctp_init(9899, NULL);
+		usrsctp_init(9899, NULL, debug_printf);
 	}
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
