@@ -3113,13 +3113,13 @@ usrsctp_dumppacket(void *buf, size_t len, int outbound)
 	localtime_s(&t, &tb.time);
 	_snprintf_s(dump_buf, PREAMBLE_LENGTH + 1, PREAMBLE_LENGTH, PREAMBLE_FORMAT,
 	            outbound ? 'O' : 'I',
-	            t.tm_hour, t.tm_min, t.tm_sec, 1000 * tb.millitm);	
+	            t.tm_hour, t.tm_min, t.tm_sec, (long)(1000 * tb.millitm));
 #else
 	gettimeofday(&tv, NULL);
 	t = localtime(&tv.tv_sec);
 	snprintf(dump_buf, PREAMBLE_LENGTH + 1, PREAMBLE_FORMAT,
 	         outbound ? 'O' : 'I',
-	         t->tm_hour, t->tm_min, t->tm_sec, tv.tv_usec);
+	         t->tm_hour, t->tm_min, t->tm_sec, (long)tv.tv_usec);
 #endif
 	pos += PREAMBLE_LENGTH;
 #ifdef _WIN32
