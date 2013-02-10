@@ -695,7 +695,7 @@ sctp_add_addr_to_vrf(uint32_t vrf_id, void *ifn, uint32_t ifn_index,
 #endif
 #if defined(__Userspace__)
 	case AF_CONN:
-		memcpy(&sctp_ifap->address, addr, sizeof(struct sockaddr_sconn));
+		memcpy(&sctp_ifap->address, addr, sizeof(struct sockaddr_conn));
 		break;
 #endif
 	default:
