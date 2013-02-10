@@ -31,10 +31,10 @@
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
 #endif
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include <sys/types.h>
 #ifndef _WIN32
 #include <sys/socket.h>
@@ -136,9 +136,116 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 			       rcv.rcv_context);
 		}
 		free(data);
+	} else {
+		usrsctp_deregister_address(ulp_info);
+		usrsctp_close(sock);
 	}
 	return 1;
 }
+
+#if 0
+static void
+print_addresses(struct socket *sock)
+{
+	int i, n;
+	struct sockaddr *addrs, *addr;
+
+	n = usrsctp_getladdrs(sock, 0, &addrs);
+	addr = addrs;
+	for (i = 0; i < n; i++) {
+		switch (addr->sa_family) {
+		case AF_INET:
+		{
+			struct sockaddr_in *sin;
+			char buf[INET_ADDRSTRLEN];
+			const char *name;
+
+			sin = (struct sockaddr_in *)addr;
+			name = inet_ntop(AF_INET, &sin->sin_addr, buf, INET_ADDRSTRLEN);
+			printf("%s:%d", name, ntohs(sin->sin_port));
+			break;
+		}
+		case AF_INET6:
+		{
+			struct sockaddr_in6 *sin6;
+			char buf[INET6_ADDRSTRLEN];
+			const char *name;
+
+			sin6 = (struct sockaddr_in6 *)addr;
+			name = inet_ntop(AF_INET6, &sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
+			printf("%s:%d", name, ntohs(sin6->sin6_port));
+			break;
+		}
+		case AF_CONN:
+		{
+			struct sockaddr_conn *sconn;
+
+			sconn = (struct sockaddr_conn *)addr;
+			printf("%p:%d", sconn->sconn_addr, ntohs(sconn->sconn_port));
+			break;
+		}
+		default:
+			printf("Unknown family: %d", addr->sa_family);
+			break;
+		}
+		addr = (struct sockaddr *)((caddr_t)addr + addr->sa_len);
+		if (i != n - 1) {
+			printf(",");
+		}
+	}
+	if (n > 0) {
+		usrsctp_freeladdrs(addrs);
+	}
+	printf("<->");
+	n = usrsctp_getpaddrs(sock, 0, &addrs);
+	addr = addrs;
+	for (i = 0; i < n; i++) {
+		switch (addr->sa_family) {
+		case AF_INET:
+		{
+			struct sockaddr_in *sin;
+			char buf[INET_ADDRSTRLEN];
+			const char *name;
+
+			sin = (struct sockaddr_in *)addr;
+			name = inet_ntop(AF_INET, &sin->sin_addr, buf, INET_ADDRSTRLEN);
+			printf("%s:%d", name, ntohs(sin->sin_port));
+			break;
+		}
+		case AF_INET6:
+		{
+			struct sockaddr_in6 *sin6;
+			char buf[INET6_ADDRSTRLEN];
+			const char *name;
+
+			sin6 = (struct sockaddr_in6 *)addr;
+			name = inet_ntop(AF_INET6, &sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
+			printf("%s:%d", name, ntohs(sin6->sin6_port));
+			break;
+		}
+		case AF_CONN:
+		{
+			struct sockaddr_conn *sconn;
+
+			sconn = (struct sockaddr_conn *)addr;
+			printf("%p:%d", sconn->sconn_addr, ntohs(sconn->sconn_port));
+			break;
+		}
+		default:
+			printf("Unknown family: %d", addr->sa_family);
+			break;
+		}
+		addr = (struct sockaddr *)((caddr_t)addr + addr->sa_len);
+		if (i != n - 1) {
+			printf(",");
+		}
+	}
+	if (n > 0) {
+		usrsctp_freepaddrs(addrs);
+	}
+	printf("\n");
+}
+#endif
 
 void
 debug_printf(const char *format, ...)
@@ -240,15 +347,15 @@ main(void)
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
 #endif
+	usrsctp_sysctl_set_sctp_ecn_enable(0);
 	usrsctp_register_address((void *)&fd_c);
 	usrsctp_register_address((void *)&fd_s);
-	if ((s_c = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
+	if ((s_c = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_c)) == NULL) {
 		perror("usrsctp_socket");
 	}
-	if ((s_l = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
+	if ((s_l = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_s)) == NULL) {
 		perror("usrsctp_socket");
 	}
-	printf("s_c = %p, s_l = %p.\n", (void *)s_c, (void *)s_l);
 	/* Bind the client side. */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
@@ -289,7 +396,6 @@ main(void)
 	if ((s_s = usrsctp_accept(s_l, NULL, NULL)) == NULL) {
 		perror("usrsctp_accept");
 	}
-	printf("accepted socket %p.\n", (void *)s_s);
 	usrsctp_close(s_l);
 	memset(line, 'A', LINE_LENGTH);
 	sndinfo.snd_sid = 1;
@@ -301,15 +407,8 @@ main(void)
 	                 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("usrsctp_sendv");
 	}
-#ifdef _WIN32
-	Sleep(1000);
-#else
-	sleep(1);
-#endif
-	usrsctp_close(s_c);
-	usrsctp_close(s_s);
-	usrsctp_deregister_address((void *)&fd_c);
-	usrsctp_deregister_address((void *)&fd_s);
+	usrsctp_shutdown(s_c, SHUT_WR);
+	usrsctp_shutdown(s_s, SHUT_WR);
 
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
