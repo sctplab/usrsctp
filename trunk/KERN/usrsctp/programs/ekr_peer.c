@@ -328,6 +328,9 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 			       rcv.rcv_context);
 		}
 		free(data);
+	} else {
+		usrsctp_deregister_address(ulp_info);
+		usrsctp_close(sock);
 	}
 	return 1;
 }
@@ -417,8 +420,9 @@ main(int argc, char *argv[])
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
 #endif
+	usrsctp_register_address((void *)&fd);
 	usrsctp_sysctl_set_sctp_ecn_enable(0);
-	if ((s = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
+	if ((s = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd)) == NULL) {
 		perror("usrsctp_socket");
 	}
 	/* Enable the events of interest. */
@@ -440,7 +444,7 @@ main(int argc, char *argv[])
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif
 	sconn.sconn_port = htons(atoi(argv[5]));
-	sconn.sconn_addr = NULL;
+	sconn.sconn_addr = &fd;
 	if (usrsctp_bind(s, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_bind");
 	}
@@ -481,14 +485,6 @@ main(int argc, char *argv[])
 	                          (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 			perror("usrsctp_sendv");
 		}
-	}
-	usrsctp_close(s);
-	while (usrsctp_finish() != 0) {
-#ifdef _WIN32
-		Sleep(1000);
-#else
-		sleep(1);
-#endif
 	}
 	return (0);
 }

@@ -138,6 +138,9 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 			       rcv.rcv_context);
 		}
 		free(data);
+	} else {
+		usrsctp_deregister_address(ulp_info);
+		usrsctp_close(sock);
 	}
 	return 1;
 }
@@ -225,7 +228,7 @@ main(int argc, char *argv[])
 #else
 	pthread_create(&tid, NULL, &handle_packets, (void *)&fd);
 #endif
-	if ((s = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
+	if ((s = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd)) == NULL) {
 		perror("usrsctp_socket");
 	}
 
@@ -267,8 +270,7 @@ main(int argc, char *argv[])
 		perror("usrsctp_sendv");
 	}
 
-	usrsctp_close(s);
-	usrsctp_deregister_address((void *)&fd);
+	usrsctp_shutdown(s, SHUT_WR);
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
 		Sleep(1000);
