@@ -7971,7 +7971,7 @@ register_recv_cb(struct socket *so,
 	SCTP_INP_WLOCK(inp);
 	inp->recv_callback = receive_cb;
 	SCTP_INP_WUNLOCK(inp);
-	return 1;
+	return (1);
 }
 
 int
@@ -7992,7 +7992,7 @@ register_send_cb(struct socket *so, uint32_t sb_threshold, int (*send_cb)(struct
 	 * of the send buffer if this is called a second time e.g. if the
 	 * threshold changes.
 	 */
-	return 1;
+	return (1);
 }
 
 int
@@ -8007,6 +8007,6 @@ register_ulp_info (struct socket *so, void *ulp_info)
 	SCTP_INP_WLOCK(inp);
 	inp->ulp_info = ulp_info;
 	SCTP_INP_WUNLOCK(inp);
-	return 1;
+	return (1);
 }
 #endif
