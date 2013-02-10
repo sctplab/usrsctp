@@ -3083,7 +3083,7 @@ usrsctp_deregister_address(void *addr)
 	                       "conn");
 }
 
-#define PREAMBLE_FORMAT "\n%c %02d:%02d:%02d.%06d "
+#define PREAMBLE_FORMAT "\n%c %02d:%02d:%02d.%06ld "
 #define PREAMBLE_LENGTH 19
 #define HEADER "0000 "
 #define TRAILER "# SCTP_PACKET\n"
