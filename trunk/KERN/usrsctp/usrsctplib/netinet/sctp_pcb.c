@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 246674 2013-02-11 13:57:03Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 246687 2013-02-11 21:02:49Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2940,7 +2940,8 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	m->pre_open_stream_count = SCTP_BASE_SYSCTL(sctp_nr_outgoing_streams_default);
 
 	/* Add adaptation cookie */
-	m->adaptation_layer_indicator = 0x504C5253;
+	m->adaptation_layer_indicator = 0;
+	m->adaptation_layer_indicator_provided = 0;
 
 	/* seed random number generator */
 	m->random_counter = 1;
