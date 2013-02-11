@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 246595 2013-02-09 17:26:14Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 246674 2013-02-11 13:57:03Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6799,7 +6799,7 @@ sctp_sendall_iterator(struct sctp_inpcb *inp, struct sctp_tcb *stcb, void *ptr,
 			if (m) {
 				ph = mtod(m, struct sctp_paramhdr *);
 				ph->param_type = htons(SCTP_CAUSE_USER_INITIATED_ABT);
-				ph->param_length = htons(ca->sndlen);
+				ph->param_length = htons(sizeof(struct sctp_paramhdr) + ca->sndlen);
 			}
 			/* We add one here to keep the assoc from
 			 * dis-appearing on us.
@@ -13375,10 +13375,11 @@ sctp_lower_sosend(struct socket *so,
 		}
 		if (mm) {
 			struct sctp_paramhdr *ph;
+
 			/* now move forward the data pointer */
 			ph = mtod(mm, struct sctp_paramhdr *);
 			ph->param_type = htons(SCTP_CAUSE_USER_INITIATED_ABT);
-			ph->param_length = htons((sizeof(struct sctp_paramhdr) + tot_out));
+			ph->param_length = htons(sizeof(struct sctp_paramhdr) + tot_out);
 			ph++;
 			SCTP_BUF_LEN(mm) = tot_out + sizeof(struct sctp_paramhdr);
 			if (top == NULL) {

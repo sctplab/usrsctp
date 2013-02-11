@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 246588 2013-02-09 08:27:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 246674 2013-02-11 13:57:03Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4243,19 +4243,15 @@ again:
 			abort_out_now:
 				*abort_now = 1;
 				/* XXX */
-				oper = sctp_get_mbuf_for_msg((sizeof(struct sctp_paramhdr) + sizeof(uint32_t)),
+				oper = sctp_get_mbuf_for_msg(sizeof(struct sctp_paramhdr),
 							     0, M_NOWAIT, 1, MT_DATA);
 				if (oper) {
 					struct sctp_paramhdr *ph;
-					uint32_t *ippp;
 
-					SCTP_BUF_LEN(oper) = sizeof(struct sctp_paramhdr) +
-						sizeof(uint32_t);
+					SCTP_BUF_LEN(oper) = sizeof(struct sctp_paramhdr);
 					ph = mtod(oper, struct sctp_paramhdr *);
 					ph->param_type = htons(SCTP_CAUSE_USER_INITIATED_ABT);
 					ph->param_length = htons(SCTP_BUF_LEN(oper));
-					ippp = (uint32_t *) (ph + 1);
-					*ippp = htonl(SCTP_FROM_SCTP_INDATA + SCTP_LOC_24);
 				}
 				stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA + SCTP_LOC_24;
 				sctp_abort_an_association(stcb->sctp_ep, stcb, oper, SCTP_SO_NOT_LOCKED);
@@ -5000,19 +4996,15 @@ sctp_handle_sack(struct mbuf *m, int offset_seg, int offset_dup,
 			abort_out_now:
 				*abort_now = 1;
 				/* XXX */
-				oper = sctp_get_mbuf_for_msg((sizeof(struct sctp_paramhdr) + sizeof(uint32_t)),
+				oper = sctp_get_mbuf_for_msg(sizeof(struct sctp_paramhdr),
 				                             0, M_NOWAIT, 1, MT_DATA);
 				if (oper) {
 					struct sctp_paramhdr *ph;
-					uint32_t *ippp;
 
-					SCTP_BUF_LEN(oper) = sizeof(struct sctp_paramhdr) +
-						sizeof(uint32_t);
+					SCTP_BUF_LEN(oper) = sizeof(struct sctp_paramhdr);
 					ph = mtod(oper, struct sctp_paramhdr *);
 					ph->param_type = htons(SCTP_CAUSE_USER_INITIATED_ABT);
 					ph->param_length = htons(SCTP_BUF_LEN(oper));
-					ippp = (uint32_t *) (ph + 1);
-					*ippp = htonl(SCTP_FROM_SCTP_INDATA + SCTP_LOC_31);
 				}
 				stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA + SCTP_LOC_31;
 				sctp_abort_an_association(stcb->sctp_ep, stcb, oper, SCTP_SO_NOT_LOCKED);
