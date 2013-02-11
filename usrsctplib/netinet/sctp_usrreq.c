@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 246674 2013-02-11 13:57:03Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 246687 2013-02-11 21:02:49Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5401,6 +5401,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		SCTP_CHECK_AND_CAST(adap_bits, optval, struct sctp_setadaptation, optsize);
 		SCTP_INP_WLOCK(inp);
 		inp->sctp_ep.adaptation_layer_indicator = adap_bits->ssb_adaptation_ind;
+		inp->sctp_ep.adaptation_layer_indicator_provided = 1;
 		SCTP_INP_WUNLOCK(inp);
 		break;
 	}
