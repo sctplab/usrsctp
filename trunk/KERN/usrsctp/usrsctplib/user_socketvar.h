@@ -54,20 +54,22 @@
 #define SS_CANTRCVMORE 0x020
 #define SS_CANTSENDMORE 0x010
 
-#if defined (__Userspace_os_FreeBSD) || defined(__Userspace_os_Darwin) || defined (__Userspace_os_Windows)
+#if defined (__Userspace_os_FreeBSD) || defined(__Userspace_os_OpenBSD) || defined(__Userspace_os_Darwin) || defined (__Userspace_os_Windows)
 #define UIO_MAXIOV 1024
 #define ERESTART (-1)
 #endif
 
-#if !defined(__Userspace_os_Darwin)
+#if !defined(__Userspace_os_Darwin) && !defined(__Userspace_os_OpenBSD)
 enum	uio_rw { UIO_READ, UIO_WRITE };
 #endif
 
+#if !defined(__Userspace_os_OpenBSD)
 /* Segment flag values. */
 enum uio_seg {
 	UIO_USERSPACE,		/* from user data space */
 	UIO_SYSSPACE		/* from system space */
 };
+#endif
 
 struct proc {
     int stub; /* struct proc is a dummy for __Userspace__ */
