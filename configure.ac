@@ -53,6 +53,10 @@ freebsd*)
   fi
   LIBCFLAGS="$LIBCFLAGS -U__FreeBSD__ -D__Userspace_os_FreeBSD"
   ;;
+openbsd*)
+  CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread"
+  LIBCFLAGS="$LIBCFLAGS -U__OpenBSD__ -D__Userspace_os_OpenBSD"
+  ;;
 solaris*)
   CFLAGS="$CFLAGS -D_XPG4_2"
   ;;
