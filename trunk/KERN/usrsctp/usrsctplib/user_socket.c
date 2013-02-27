@@ -3154,6 +3154,7 @@ usrsctp_dumppacket(void *buf, size_t len, int outbound)
 #else
 	struct timeval tv;
 	struct tm *t;
+	time_t sec;
 #endif
 
 	if ((len == 0) || (buf == NULL)) {
@@ -3171,7 +3172,8 @@ usrsctp_dumppacket(void *buf, size_t len, int outbound)
 	            t.tm_hour, t.tm_min, t.tm_sec, (long)(1000 * tb.millitm));
 #else
 	gettimeofday(&tv, NULL);
-	t = localtime(&tv.tv_sec);
+	sec = (time_t)tv.tv_sec;
+	t = localtime((const time_t *)&sec);
 	snprintf(dump_buf, PREAMBLE_LENGTH + 1, PREAMBLE_FORMAT,
 	         outbound ? 'O' : 'I',
 	         t->tm_hour, t->tm_min, t->tm_sec, (long)tv.tv_usec);
