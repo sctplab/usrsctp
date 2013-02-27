@@ -717,8 +717,6 @@ uiomove(void *cp, int n, struct uio *uio)
 			else
 				bcopy(iov->iov_base, cp, cnt);
 			break;
-		case UIO_NOCOPY:
-			break;
 		}
 		iov->iov_base = (char *)iov->iov_base + cnt;
 		iov->iov_len -= cnt;
