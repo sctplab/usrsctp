@@ -5811,7 +5811,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 #endif
 	if (inp == NULL) {
 		SCTP_STAT_INCR(sctps_noport);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 900001
+#if defined(__FreeBSD__) && (((__FreeBSD_version < 900000) && (__FreeBSD_version >= 804000)) || (__FreeBSD_version > 900000))
 		if (badport_bandlim(BANDLIM_SCTP_OOTB) < 0) {
 			goto out;
 		}
