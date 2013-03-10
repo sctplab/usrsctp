@@ -5822,7 +5822,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		{
 			stc.addr_type = SCTP_IPV6_ADDRESS;
 			memcpy(&stc.address, &src6->sin6_addr, sizeof(struct in6_addr));
-#if defined(__FreeBSD__) && __FreeBSD_version > 900000
+#if defined(__FreeBSD__) && (((__FreeBSD_version < 900000) && (__FreeBSD_version >= 804000)) || (__FreeBSD_version > 900000))
 			stc.scope_id = in6_getscope(&src6->sin6_addr);
 #else
 			stc.scope_id = 0;
