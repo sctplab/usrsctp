@@ -4670,6 +4670,10 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			SCTP_STAT_INCR(sctps_sendnocrc);
 #else
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if __FreeBSD_version < 900000
+			sctphdr->checksum = sctp_calculate_cksum(m, sizeof(struct ip6_hdr));
+			SCTP_STAT_INCR(sctps_sendswcrc);
+#else
 #if __FreeBSD_version > 901000
 			m->m_pkthdr.csum_flags = CSUM_SCTP_IPV6;
 #else
@@ -4677,6 +4681,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #endif
 			m->m_pkthdr.csum_data = 0;
 			SCTP_STAT_INCR(sctps_sendhwcrc);
+#endif
 #else
 			if (!(SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) &&
 			      (stcb) && (stcb->asoc.scope.loopback_scope))) {
@@ -11530,7 +11535,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #if defined(SCTP_WITH_NO_CSUM)
 			SCTP_STAT_INCR(sctps_sendnocrc);
 #else
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(__FreeBSD__) && __FreeBSD_version >= 900000
 #if __FreeBSD_version > 901000
 			mout->m_pkthdr.csum_flags = CSUM_SCTP_IPV6;
 #else
