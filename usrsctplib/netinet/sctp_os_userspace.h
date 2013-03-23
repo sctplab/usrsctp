@@ -64,9 +64,11 @@ typedef struct
 	HANDLE events_[C_MAX_EVENTS];
 } userland_cond_t;
 #define InitializeConditionVariable(cond) InitializeXPConditionVariable(cond)
+#define DeleteConditionVariable(cond) DeleteXPConditionVariable(cond)
 #define SleepConditionVariableCS(cond, mtx, time) SleepXPConditionVariable(cond, mtx)
 #define WakeAllConditionVariable(cond) WakeAllXPConditionVariable(cond)
 #else
+#define DeleteConditionVariable(cond)
 typedef CONDITION_VARIABLE userland_cond_t;
 #endif
 typedef HANDLE userland_thread_t;
