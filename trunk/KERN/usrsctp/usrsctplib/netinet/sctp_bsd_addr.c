@@ -367,6 +367,9 @@ sctp_init_ifns_for_vrf(int vrfid)
 	for (pAdapt = pAdapterAddrs; pAdapt; pAdapt = pAdapt->Next) {
 		if (pAdapt->IfType == IF_TYPE_IEEE80211 || pAdapt->IfType == IF_TYPE_ETHERNET_CSMACD) {
 			for (pUnicast = pAdapt->FirstUnicastAddress; pUnicast; pUnicast = pUnicast->Next) {
+				if (IN4_ISLINKLOCAL_ADDRESS(&(((struct sockaddr_in *)(pUnicast->Address.lpSockaddr))->sin_addr))) {
+					continue;
+				}
 				ifa = (struct ifaddrs*)malloc(sizeof(struct ifaddrs));
 				ifa->ifa_name = strdup(pAdapt->AdapterName);
 				ifa->ifa_flags = pAdapt->Flags;
