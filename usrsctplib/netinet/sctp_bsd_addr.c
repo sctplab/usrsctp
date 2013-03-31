@@ -366,23 +366,25 @@ sctp_init_ifns_for_vrf(int vrfid)
 	/* Enumerate through each returned adapter and save its information */
 	for (pAdapt = pAdapterAddrs; pAdapt; pAdapt = pAdapt->Next) {
 		if (pAdapt->IfType == IF_TYPE_IEEE80211 || pAdapt->IfType == IF_TYPE_ETHERNET_CSMACD) {
-			ifa = (struct ifaddrs*)malloc(sizeof(struct ifaddrs));
-			ifa->ifa_name = strdup(pAdapt->AdapterName);
-			ifa->ifa_flags = pAdapt->Flags;
-			ifa->ifa_addr = (struct sockaddr *)malloc(sizeof(struct sockaddr_in));
-			memcpy(ifa->ifa_addr, pAdapt->FirstUnicastAddress->Address.lpSockaddr, sizeof(struct sockaddr_in));
+			for (pUnicast = pAdapt->FirstUnicastAddress; pUnicast; pUnicast = pUnicast->Next) {
+				ifa = (struct ifaddrs*)malloc(sizeof(struct ifaddrs));
+				ifa->ifa_name = strdup(pAdapt->AdapterName);
+				ifa->ifa_flags = pAdapt->Flags;
+				ifa->ifa_addr = (struct sockaddr *)malloc(sizeof(struct sockaddr_in));
+				memcpy(ifa->ifa_addr, pUnicast->Address.lpSockaddr, sizeof(struct sockaddr_in));
 
-			sctp_ifa = sctp_add_addr_to_vrf(0,
-			                                ifa,
-			                                pAdapt->IfIndex,
-			                                (pAdapt->IfType == IF_TYPE_IEEE80211)?MIB_IF_TYPE_ETHERNET:pAdapt->IfType,
-			                                ifa->ifa_name,
-			                                (void *)ifa,
-			                                ifa->ifa_addr,
-			                                ifa->ifa_flags,
-			                                0);
-			if (sctp_ifa) {
-				sctp_ifa->localifa_flags &= ~SCTP_ADDR_DEFER_USE;
+				sctp_ifa = sctp_add_addr_to_vrf(0,
+				                                ifa,
+				                                pAdapt->IfIndex,
+				                                (pAdapt->IfType == IF_TYPE_IEEE80211)?MIB_IF_TYPE_ETHERNET:pAdapt->IfType,
+				                                ifa->ifa_name,
+				                                (void *)ifa,
+				                                ifa->ifa_addr,
+				                                ifa->ifa_flags,
+				                                0);
+				if (sctp_ifa) {
+					sctp_ifa->localifa_flags &= ~SCTP_ADDR_DEFER_USE;
+				}
 			}
 		}
 	}
