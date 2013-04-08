@@ -932,14 +932,14 @@ usrsctp_sendv(struct socket *so,
 
 struct mbuf* mbufalloc(size_t size, void* data, unsigned char fill)
 {
-    size_t left;
+    int left;
     int resv_upfront = sizeof(struct sctp_data_chunk);
     int cancpy, willcpy;
     struct mbuf *m, *head;
     int cpsz=0;
 
     /* First one gets a header equal to sizeof(struct sctp_data_chunk) */
-    left = size;
+    left = (int)size;
     head = m = sctp_get_mbuf_for_msg((left + resv_upfront), 1, M_WAITOK, 0, MT_DATA);
     if (m == NULL) {
         SCTP_PRINTF("%s: ENOMEN: Memory allocation failure\n", __func__);
@@ -1561,8 +1561,8 @@ soreserve(struct socket *so, u_long sndcc, u_long rcvcc)
 		so->so_rcv.sb_lowat = 1;
 	if (so->so_snd.sb_lowat == 0)
 		so->so_snd.sb_lowat = MCLBYTES;
-	if (so->so_snd.sb_lowat > so->so_snd.sb_hiwat)
-		so->so_snd.sb_lowat = so->so_snd.sb_hiwat;
+	if (so->so_snd.sb_lowat > (int)so->so_snd.sb_hiwat)
+		so->so_snd.sb_lowat = (int)so->so_snd.sb_hiwat;
 	SOCKBUF_UNLOCK(&so->so_rcv);
 	SOCKBUF_UNLOCK(&so->so_snd);
 	return (0);
@@ -3236,7 +3236,7 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 		return;
 	}
 	m_copyback(m, 0, length, (caddr_t)buffer);
-	if (SCTP_BUF_LEN(m) < sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr)) {
+	if (SCTP_BUF_LEN(m) < (int)(sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr))) {
 		if ((m = m_pullup(m, sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr))) == NULL) {
 			SCTP_STAT_INCR(sctps_hdrops);
 			return;
