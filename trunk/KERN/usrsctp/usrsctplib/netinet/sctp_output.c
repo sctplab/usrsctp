@@ -4736,6 +4736,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #else
 			if (ro->ro_rt) {
 				RTFREE(ro->ro_rt);
+				ro->ro_rt = NULL;
 			}
 #endif
 		} else {
@@ -11508,6 +11509,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		/* Free the route if we got one back */
 		if (ro.ro_rt) {
 			RTFREE(ro.ro_rt);
+			ro.ro_rt = NULL;
 		}
 #else
 		SCTP_IP_OUTPUT(ret, o_pak, NULL, NULL, vrf_id);
