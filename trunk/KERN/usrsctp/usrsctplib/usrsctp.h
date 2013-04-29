@@ -37,6 +37,10 @@ extern "C" {
 
 #include <sys/types.h>
 #ifdef _WIN32
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4200)
+#endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <ws2ipdef.h>
@@ -1061,6 +1065,11 @@ USRSCTP_SYSCTL_DECL(sctp_debug_on)
 #define SCTP_DEBUG_ALL  0xffffffff
 #endif
 #undef USRSCTP_SYSCTL_DECL
+#ifdef _WIN32
+#ifdef _MSC_VER
+#pragma warning(pop) 
+#endif
+#endif
 #ifdef  __cplusplus
 }
 #endif
