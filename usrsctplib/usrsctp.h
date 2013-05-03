@@ -38,7 +38,6 @@ extern "C" {
 #include <sys/types.h>
 #ifdef _WIN32
 #ifdef _MSC_VER
-#pragma warning(push)
 #pragma warning(disable: 4200)
 #endif
 #include <winsock2.h>
@@ -1067,7 +1066,7 @@ USRSCTP_SYSCTL_DECL(sctp_debug_on)
 #undef USRSCTP_SYSCTL_DECL
 #ifdef _WIN32
 #ifdef _MSC_VER
-#pragma warning(pop) 
+#pragma warning(default: 4200)
 #endif
 #endif
 #ifdef  __cplusplus
