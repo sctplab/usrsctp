@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 246687 2013-02-11 21:02:49Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 250466 2013-05-10 18:09:38Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2529,7 +2529,7 @@ sctp_findassociation_addr(struct mbuf *m, int offset,
 	if (sh->v_tag) {
 		/* we only go down this path if vtag is non-zero */
 		stcb = sctp_findassoc_by_vtag(src, dst, ntohl(sh->v_tag),
-		                                inp_p, netp, sh->src_port, sh->dest_port, 0, vrf_id, 0);
+		                              inp_p, netp, sh->src_port, sh->dest_port, 0, vrf_id, 0);
 		if (stcb) {
 			return (stcb);
 		}
@@ -2545,11 +2545,11 @@ sctp_findassociation_addr(struct mbuf *m, int offset,
 	}
 	if (inp_p) {
 		stcb = sctp_findassociation_addr_sa(src, dst, inp_p, netp,
-		    find_tcp_pool, vrf_id);
+		                                    find_tcp_pool, vrf_id);
 		inp = *inp_p;
 	} else {
 		stcb = sctp_findassociation_addr_sa(src, dst, &inp, netp,
-		    find_tcp_pool, vrf_id);
+		                                    find_tcp_pool, vrf_id);
 	}
 	SCTPDBG(SCTP_DEBUG_PCB1, "stcb:%p inp:%p\n", (void *)stcb, (void *)inp);
 	if (stcb == NULL && inp) {
@@ -2735,8 +2735,13 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	inp->ip_inp.inp.inp_socket = so;
 #ifdef INET6
 #if !defined(__Userspace__) && !defined(__Windows__)
-	if (MODULE_GLOBAL(ip6_auto_flowlabel)) {
-		inp->ip_inp.inp.inp_flags |= IN6P_AUTOFLOWLABEL;
+	if (INP_SOCKAF(so) == AF_INET6) {
+		if (MODULE_GLOBAL(ip6_auto_flowlabel)) {
+			inp->ip_inp.inp.inp_flags |= IN6P_AUTOFLOWLABEL;
+		}
+		if (MODULE_GLOBAL(ip6_v6only)) {
+			inp->ip_inp.inp.inp_flags |= IN6P_IPV6_V6ONLY;
+		}
 	}
 #endif
 #endif
