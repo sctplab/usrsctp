@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 247412 2013-02-27 19:51:47Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 250756 2013-05-17 22:26:05Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2807,8 +2807,14 @@ set_error:
 				stcb->sctp_socket->so_error = ECONNRESET;
 			}
 		} else {
-			SCTP_LTRACE_ERR_RET(NULL, stcb, NULL, SCTP_FROM_SCTPUTIL, ECONNABORTED);
-			stcb->sctp_socket->so_error = ECONNABORTED;
+			if ((SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_COOKIE_WAIT) ||
+			    (SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_COOKIE_ECHOED)) {
+				SCTP_LTRACE_ERR_RET(NULL, stcb, NULL, SCTP_FROM_SCTPUTIL, ETIMEDOUT);
+				stcb->sctp_socket->so_error = ETIMEDOUT;
+			} else {
+				SCTP_LTRACE_ERR_RET(NULL, stcb, NULL, SCTP_FROM_SCTPUTIL, ECONNABORTED);
+				stcb->sctp_socket->so_error = ECONNABORTED;
+			}
 		}
 	}
 	/* Wake ANY sleepers */
