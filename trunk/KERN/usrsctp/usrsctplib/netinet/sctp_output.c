@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 246687 2013-02-11 21:02:49Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 250754 2013-05-17 21:45:52Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -11084,6 +11084,7 @@ sctp_send_abort_tcb(struct sctp_tcb *stcb, struct mbuf *operr, int so_locked
 	struct sctp_abort_chunk *abort;
 	struct sctp_auth_chunk *auth = NULL;
 	struct sctp_nets *net;
+	uint32_t vtag;
 	uint32_t auth_offset = 0;
 	uint16_t cause_len, chunk_len, padding_len;
 
@@ -11146,7 +11147,14 @@ sctp_send_abort_tcb(struct sctp_tcb *stcb, struct mbuf *operr, int so_locked
 	/* Fill in the ABORT chunk header. */
 	abort = mtod(m_abort, struct sctp_abort_chunk *);
 	abort->ch.chunk_type = SCTP_ABORT_ASSOCIATION;
-	abort->ch.chunk_flags = 0;
+	if (stcb->asoc.peer_vtag == 0) {
+		/* This happens iff the assoc is in COOKIE-WAIT state. */
+		vtag = stcb->asoc.my_vtag;
+		abort->ch.chunk_flags = SCTP_HAD_NO_TCB;
+	} else {
+		vtag = stcb->asoc.peer_vtag;
+		abort->ch.chunk_flags = 0;
+	}
 	abort->ch.chunk_length = htons(chunk_len);
 	/* Add padding, if necessary. */
 	if (padding_len > 0) {
@@ -11158,7 +11166,7 @@ sctp_send_abort_tcb(struct sctp_tcb *stcb, struct mbuf *operr, int so_locked
 	(void)sctp_lowlevel_chunk_output(stcb->sctp_ep, stcb, net,
 	                                 (struct sockaddr *)&net->ro._l_addr,
 	                                 m_out, auth_offset, auth, stcb->asoc.authinfo.active_keyid, 1, 0, 0,
-	                                 stcb->sctp_ep->sctp_lport, stcb->rport, htonl(stcb->asoc.peer_vtag),
+	                                 stcb->sctp_ep->sctp_lport, stcb->rport, htonl(vtag),
 	                                 stcb->asoc.primary_destination->port, NULL,
 #if defined(__FreeBSD__)
 	                                 0, 0,
