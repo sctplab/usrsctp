@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 250756 2013-05-17 22:26:05Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 251054 2013-05-28 09:25:58Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2756,7 +2756,7 @@ sctp_notify_assoc_change(uint16_t state, struct sctp_tcb *stcb,
 				if (stcb->asoc.peer_supports_prsctp) {
 					sac->sac_info[i++] = SCTP_ASSOC_SUPPORTS_PR;
 				}
-					if (stcb->asoc.peer_supports_auth) {
+				if (stcb->asoc.peer_supports_auth) {
 					sac->sac_info[i++] = SCTP_ASSOC_SUPPORTS_AUTH;
 				}
 				if (stcb->asoc.peer_supports_asconf) {
@@ -2774,17 +2774,17 @@ sctp_notify_assoc_change(uint16_t state, struct sctp_tcb *stcb,
 		}
 		SCTP_BUF_LEN(m_notify) = sac->sac_length;
 		control = sctp_build_readq_entry(stcb, stcb->asoc.primary_destination,
-						 0, 0, stcb->asoc.context, 0, 0, 0,
-						 m_notify);
+		                                 0, 0, stcb->asoc.context, 0, 0, 0,
+		                                 m_notify);
 		if (control != NULL) {
 			control->length = SCTP_BUF_LEN(m_notify);
 			/* not that we need this */
 			control->tail_mbuf = m_notify;
 			control->spec_flags = M_NOTIFICATION;
 			sctp_add_to_readq(stcb->sctp_ep, stcb,
-					  control,
-					  &stcb->sctp_socket->so_rcv, 1, SCTP_READ_LOCK_NOT_HELD,
-					  so_locked);
+			                  control,
+			                  &stcb->sctp_socket->so_rcv, 1, SCTP_READ_LOCK_NOT_HELD,
+			                  so_locked);
 		} else {
 			sctp_m_freem(m_notify);
 		}
@@ -2935,10 +2935,10 @@ sctp_notify_peer_addr_change(struct sctp_tcb *stcb, uint32_t state,
 	/* not that we need this */
 	control->tail_mbuf = m_notify;
 	sctp_add_to_readq(stcb->sctp_ep, stcb,
-			  control,
-			  &stcb->sctp_socket->so_rcv, 1,
-			  SCTP_READ_LOCK_NOT_HELD,
-			  SCTP_SO_NOT_LOCKED);
+	                  control,
+	                  &stcb->sctp_socket->so_rcv, 1,
+	                  SCTP_READ_LOCK_NOT_HELD,
+	                  SCTP_SO_NOT_LOCKED);
 }
 
 
@@ -3690,8 +3690,8 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		sctp_unlock_assert(SCTP_INP_SO(stcb->sctp_ep));
 	}
 #endif
-	if (stcb && ((stcb->asoc.state & SCTP_STATE_COOKIE_WAIT) ||
-	             (stcb->asoc.state &  SCTP_STATE_COOKIE_ECHOED))) {
+	if ((stcb->asoc.state & SCTP_STATE_COOKIE_WAIT) ||
+	    (stcb->asoc.state &  SCTP_STATE_COOKIE_ECHOED)) {
 		if ((notification == SCTP_NOTIFY_INTERFACE_DOWN) ||
 		    (notification == SCTP_NOTIFY_INTERFACE_UP) ||
 		    (notification == SCTP_NOTIFY_INTERFACE_CONFIRMED)) {
@@ -3710,7 +3710,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		}
 		if (stcb->asoc.peer_supports_auth == 0) {
 			sctp_ulp_notify(SCTP_NOTIFY_NO_PEER_AUTH, stcb, 0,
-					NULL, so_locked);
+			                NULL, so_locked);
 		}
 		break;
 	case SCTP_NOTIFY_ASSOC_DOWN:
@@ -3761,7 +3761,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		}
 	case SCTP_NOTIFY_SPECIAL_SP_FAIL:
 		sctp_notify_send_failed2(stcb, error,
-					 (struct sctp_stream_queue_pending *)data, so_locked);
+		                         (struct sctp_stream_queue_pending *)data, so_locked);
 		break;
 	case SCTP_NOTIFY_SENT_DG_FAIL:
 		sctp_notify_send_failed(stcb, 1, error,
@@ -3769,7 +3769,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		break;
 	case SCTP_NOTIFY_UNSENT_DG_FAIL:
 		sctp_notify_send_failed(stcb, 0, error,
-					(struct sctp_tmit_chunk *)data, so_locked);
+		                        (struct sctp_tmit_chunk *)data, so_locked);
 		break;
 	case SCTP_NOTIFY_PARTIAL_DELVIERY_INDICATION:
 		{
@@ -3780,16 +3780,16 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		break;
 		}
 	case SCTP_NOTIFY_ASSOC_LOC_ABORTED:
-		if ((stcb) && (((stcb->asoc.state & SCTP_STATE_MASK) == SCTP_STATE_COOKIE_WAIT) ||
-			       ((stcb->asoc.state & SCTP_STATE_MASK) == SCTP_STATE_COOKIE_ECHOED))) {
+		if (((stcb->asoc.state & SCTP_STATE_MASK) == SCTP_STATE_COOKIE_WAIT) ||
+		    ((stcb->asoc.state & SCTP_STATE_MASK) == SCTP_STATE_COOKIE_ECHOED)) {
 			sctp_notify_assoc_change(SCTP_CANT_STR_ASSOC, stcb, error, data, 0, so_locked);
 		} else {
 			sctp_notify_assoc_change(SCTP_COMM_LOST, stcb, error, data, 0, so_locked);
 		}
 		break;
 	case SCTP_NOTIFY_ASSOC_REM_ABORTED:
-		if ((stcb) && (((stcb->asoc.state & SCTP_STATE_MASK) == SCTP_STATE_COOKIE_WAIT) ||
-				((stcb->asoc.state & SCTP_STATE_MASK) == SCTP_STATE_COOKIE_ECHOED))) {
+		if (((stcb->asoc.state & SCTP_STATE_MASK) == SCTP_STATE_COOKIE_WAIT) ||
+		    ((stcb->asoc.state & SCTP_STATE_MASK) == SCTP_STATE_COOKIE_ECHOED)) {
 			sctp_notify_assoc_change(SCTP_CANT_STR_ASSOC, stcb, error, data, 1, so_locked);
 		} else {
 			sctp_notify_assoc_change(SCTP_COMM_LOST, stcb, error, data, 1, so_locked);
@@ -3799,7 +3799,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		sctp_notify_assoc_change(SCTP_RESTART, stcb, error, NULL, 0, so_locked);
 		if (stcb->asoc.peer_supports_auth == 0) {
 			sctp_ulp_notify(SCTP_NOTIFY_NO_PEER_AUTH, stcb, 0,
-					NULL, so_locked);
+			                NULL, so_locked);
 		}
 		break;
 	case SCTP_NOTIFY_STR_RESET_SEND:
@@ -3810,7 +3810,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		break;
 	case SCTP_NOTIFY_STR_RESET_FAILED_OUT:
 		sctp_notify_stream_reset(stcb, error, ((uint16_t *) data),
-					 (SCTP_STREAM_RESET_OUTGOING_SSN|SCTP_STREAM_RESET_FAILED));
+		                         (SCTP_STREAM_RESET_OUTGOING_SSN|SCTP_STREAM_RESET_FAILED));
 		break;
 	case SCTP_NOTIFY_STR_RESET_DENIED_OUT:
 		sctp_notify_stream_reset(stcb, error, ((uint16_t *) data),
@@ -3818,7 +3818,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		break;
 	case SCTP_NOTIFY_STR_RESET_FAILED_IN:
 		sctp_notify_stream_reset(stcb, error, ((uint16_t *) data),
-					 (SCTP_STREAM_RESET_INCOMING|SCTP_STREAM_RESET_FAILED));
+		                         (SCTP_STREAM_RESET_INCOMING|SCTP_STREAM_RESET_FAILED));
 		break;
 	case SCTP_NOTIFY_STR_RESET_DENIED_IN:
 		sctp_notify_stream_reset(stcb, error, ((uint16_t *) data),
@@ -3830,29 +3830,29 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		break;
 	case SCTP_NOTIFY_ASCONF_DELETE_IP:
 		sctp_notify_peer_addr_change(stcb, SCTP_ADDR_REMOVED, data,
-		    error);
+		                             error);
 		break;
 	case SCTP_NOTIFY_ASCONF_SET_PRIMARY:
 		sctp_notify_peer_addr_change(stcb, SCTP_ADDR_MADE_PRIM, data,
-		    error);
+		                             error);
 		break;
 	case SCTP_NOTIFY_PEER_SHUTDOWN:
 		sctp_notify_shutdown_event(stcb);
 		break;
 	case SCTP_NOTIFY_AUTH_NEW_KEY:
 		sctp_notify_authentication(stcb, SCTP_AUTH_NEW_KEY, error,
-					   (uint16_t)(uintptr_t)data,
-					   so_locked);
+		                           (uint16_t)(uintptr_t)data,
+		                           so_locked);
 		break;
 	case SCTP_NOTIFY_AUTH_FREE_KEY:
 		sctp_notify_authentication(stcb, SCTP_AUTH_FREE_KEY, error,
-					   (uint16_t)(uintptr_t)data,
-					   so_locked);
+		                           (uint16_t)(uintptr_t)data,
+		                           so_locked);
 		break;
 	case SCTP_NOTIFY_NO_PEER_AUTH:
 		sctp_notify_authentication(stcb, SCTP_AUTH_NO_AUTH, error,
-					   (uint16_t)(uintptr_t)data,
-					   so_locked);
+		                           (uint16_t)(uintptr_t)data,
+		                           so_locked);
 		break;
 	case SCTP_NOTIFY_SENDER_DRY:
 		sctp_notify_sender_dry_event(stcb, so_locked);
