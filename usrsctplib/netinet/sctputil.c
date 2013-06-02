@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 251054 2013-05-28 09:25:58Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 251248 2013-06-02 10:35:08Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4161,7 +4161,7 @@ sctp_abort_an_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	if (stcb == NULL) {
 		/* Got to have a TCB */
 		if (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) {
-			if (LIST_FIRST(&inp->sctp_asoc_list) == NULL) {
+			if (LIST_EMPTY(&inp->sctp_asoc_list)) {
 #if defined(__APPLE__)
 				if (!so_locked) {
 					SCTP_SOCKET_LOCK(so, 1);
@@ -4228,7 +4228,7 @@ sctp_handle_ootb(struct mbuf *m, int iphlen, int offset,
 	SCTP_STAT_INCR_COUNTER32(sctps_outoftheblue);
 	/* Generate a TO address for future reference */
 	if (inp && (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
-		if (LIST_FIRST(&inp->sctp_asoc_list) == NULL) {
+		if (LIST_EMPTY(&inp->sctp_asoc_list)) {
 #if defined(__APPLE__)
 			SCTP_SOCKET_LOCK(SCTP_INP_SO(inp), 1);
 #endif
@@ -4968,7 +4968,7 @@ sctp_append_to_readq(struct sctp_inpcb *inp,
 			if ((buffer = malloc(control->length)) == NULL) {
 				return (-1);
 			}
-			so = inp->sctp_socket;
+			so = stcb->sctp_socket;
 			for (m = control->data; m; m = SCTP_BUF_NEXT(m)) {
 				sctp_sbfree(control, control->stcb, &so->so_rcv, m);
 			}
