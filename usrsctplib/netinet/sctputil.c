@@ -4743,7 +4743,7 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 			char *buffer;
 			struct sctp_rcvinfo rcv;
 			union sctp_sockstore addr;
-			int flags = 0;
+			int flags;
 
 			if ((buffer = malloc(control->length)) == NULL) {
 				return;
@@ -4785,11 +4785,9 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 				addr.sa = control->whoFrom->ro._l_addr.sa;
 				break;
 			}
+			flags = MSG_EOR;
 			if (control->spec_flags & M_NOTIFICATION) {
 				flags |= MSG_NOTIFICATION;
-			}
-			if (control->spec_flags & M_EOR) {
-				flags |= MSG_EOR;
 			}
 			inp->recv_callback(so, addr, buffer, control->length, rcv, flags, inp->ulp_info);
 			SCTP_TCB_LOCK(stcb);
@@ -4963,7 +4961,7 @@ sctp_append_to_readq(struct sctp_inpcb *inp,
 			char *buffer;
 			struct sctp_rcvinfo rcv;
 			union sctp_sockstore addr;
-			int flags = 0;
+			int flags;
 
 			if ((buffer = malloc(control->length)) == NULL) {
 				return (-1);
@@ -5005,11 +5003,9 @@ sctp_append_to_readq(struct sctp_inpcb *inp,
 				addr.sa = control->whoFrom->ro._l_addr.sa;
 				break;
 			}
+			flags = 0;
 			if (control->spec_flags & M_NOTIFICATION) {
 				flags |= MSG_NOTIFICATION;
-			}
-			if (control->spec_flags & M_EOR) {
-				flags |= MSG_EOR;
 			}
 			inp->recv_callback(so, addr, buffer, control->length, rcv, flags, inp->ulp_info);
 			SCTP_TCB_LOCK(stcb);
