@@ -29,7 +29,7 @@
  */
 
 /*
- * Usage: client remote_addr remote_port [local_encaps_port] [remote_encaps_port]
+ * Usage: client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port]
  */
 
 #include <stdio.h>
@@ -96,8 +96,8 @@ main(int argc, char *argv[])
 	char buffer[80];
 	int i, n;
 
-	if (argc > 3) {
-		usrsctp_init(atoi(argv[3]), NULL, debug_printf);
+	if (argc > 4) {
+		usrsctp_init(atoi(argv[4]), NULL, debug_printf);
 	} else {
 		usrsctp_init(9899, NULL, debug_printf);
 	}
@@ -108,10 +108,22 @@ main(int argc, char *argv[])
 	if ((sock = usrsctp_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 	}
-	if (argc > 4) {
+	if (argc > 3) {
+		memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
+#ifdef HAVE_SIN6_LEN
+		addr6.sin6_len = sizeof(struct sockaddr_in6);
+#endif
+		addr6.sin6_family = AF_INET6;
+		addr6.sin6_port = htons(atoi(argv[3]));
+		addr6.sin6_addr = in6addr_any;
+		if (usrsctp_bind(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
+			perror("bind");
+		}
+	}
+	if (argc > 5) {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET6;
-		encaps.sue_port = htons(atoi(argv[4]));
+		encaps.sue_port = htons(atoi(argv[5]));
 		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
 			perror("setsockopt");
 		}
