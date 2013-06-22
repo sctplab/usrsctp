@@ -1927,19 +1927,19 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 	    cookie->tie_tag_peer_vtag != 0) {
 		struct sctpasochead *head;
 		if (asoc->peer_supports_nat) {
-		  /* This is a gross gross hack.
-		   * just call the cookie_new code since we
-		   * are allowing a duplicate association. I hope
-		   * this works...
-		   */
-		  return (sctp_process_cookie_new(m, iphlen, offset, src, dst,
-		                                  sh, cookie, cookie_len,
-						  inp, netp, init_src,notification,
-						  auth_skipped, auth_offset, auth_len,
+			/* This is a gross gross hack.
+			 * Just call the cookie_new code since we
+			 * are allowing a duplicate association.
+			 * I hope this works...
+			 */
+			return (sctp_process_cookie_new(m, iphlen, offset, src, dst,
+			                                sh, cookie, cookie_len,
+			                                inp, netp, init_src,notification,
+			                                auth_skipped, auth_offset, auth_len,
 #if defined(__FreeBSD__)
-						  use_mflowid, mflowid,
+			                                use_mflowid, mflowid,
 #endif
-						  vrf_id, port));
+			                                vrf_id, port));
 		}
 		/*
 		 * case A in Section 5.2.4 Table 2: XXMM (peer restarted)
@@ -3599,7 +3599,7 @@ process_chunk_drop(struct sctp_tcb *stcb, struct sctp_chunk_desc *desc,
 }
 
 void
-sctp_reset_in_stream(struct sctp_tcb *stcb, uint32_t number_entries, uint16_t * list)
+sctp_reset_in_stream(struct sctp_tcb *stcb, uint32_t number_entries, uint16_t *list)
 {
 	uint32_t i;
 	uint16_t temp;
@@ -3627,24 +3627,25 @@ sctp_reset_in_stream(struct sctp_tcb *stcb, uint32_t number_entries, uint16_t * 
 }
 
 static void
-sctp_reset_out_streams(struct sctp_tcb *stcb, int number_entries, uint16_t * list)
+sctp_reset_out_streams(struct sctp_tcb *stcb, uint32_t number_entries, uint16_t *list)
 {
-	int i;
+	uint32_t i;
+	uint16_t temp;
 
-	if (number_entries == 0) {
-		for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
-			stcb->asoc.strmout[i].next_sequence_send = 0;
-		}
-	} else if (number_entries) {
+	if (number_entries > 0) {
 		for (i = 0; i < number_entries; i++) {
-			uint16_t temp;
-
 			temp = ntohs(list[i]);
 			if (temp >= stcb->asoc.streamoutcnt) {
 				/* no such stream */
 				continue;
 			}
 			stcb->asoc.strmout[temp].next_sequence_send = 0;
+			stcb->asoc.strmout[temp].state = SCTP_STREAM_OPEN;
+		}
+	} else {
+		for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
+			stcb->asoc.strmout[i].next_sequence_send = 0;
+			stcb->asoc.strmout[i].state = SCTP_STREAM_OPEN;
 		}
 	}
 	sctp_ulp_notify(SCTP_NOTIFY_STR_RESET_SEND, stcb, number_entries, (void *)list, SCTP_SO_NOT_LOCKED);
@@ -3732,7 +3733,7 @@ sctp_handle_stream_reset_response(struct sctp_tcb *stcb,
 	struct sctp_association *asoc = &stcb->asoc;
 	struct sctp_tmit_chunk *chk;
 	struct sctp_stream_reset_out_request *srparam;
-	int number_entries;
+	uint32_t number_entries;
 
 	if (asoc->stream_reset_outstanding == 0) {
 		/* duplicate */
@@ -4079,7 +4080,7 @@ sctp_handle_str_reset_add_strm(struct sctp_tcb *stcb, struct sctp_tmit_chunk *ch
 		if (!(asoc->local_strreset_support & SCTP_ENABLE_CHANGE_ASSOC_REQ)) {
 			asoc->last_reset_action[0] = SCTP_STREAM_RESET_RESULT_DENIED;
 		} else if ((num_stream > stcb->asoc.max_inbound_streams) ||
-		    (num_stream > 0xffff)) {
+		           (num_stream > 0xffff)) {
 			/* We must reject it they ask for to many */
   denied:
 			stcb->asoc.last_reset_action[0] = SCTP_STREAM_RESET_RESULT_DENIED;
