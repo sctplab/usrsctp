@@ -1926,6 +1926,10 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 	    cookie->tie_tag_peer_vtag == asoc->peer_vtag_nonce &&
 	    cookie->tie_tag_peer_vtag != 0) {
 		struct sctpasochead *head;
+#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+		struct socket *so;
+#endif
+
 		if (asoc->peer_supports_nat) {
 			/* This is a gross gross hack.
 			 * Just call the cookie_new code since we
@@ -1992,6 +1996,10 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			    asoc->mapping_array_size);
 		}
 		SCTP_TCB_UNLOCK(stcb);
+#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+		so = SCTP_INP_SO(stcb->sctp_ep);
+		SCTP_SOCKET_LOCK(so, 1);
+#endif
 		SCTP_INP_INFO_WLOCK();
 		SCTP_INP_WLOCK(stcb->sctp_ep);
 		SCTP_TCB_LOCK(stcb);
@@ -1999,7 +2007,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		/* send up all the data */
 		SCTP_TCB_SEND_LOCK(stcb);
 
-		sctp_report_all_outbound(stcb, 0, 1, SCTP_SO_NOT_LOCKED);
+		sctp_report_all_outbound(stcb, 0, 1, SCTP_SO_LOCKED);
 		for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
 			stcb->asoc.strmout[i].chunks_on_queues = 0;
 			stcb->asoc.strmout[i].stream_no = i;
@@ -2025,6 +2033,9 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		SCTP_TCB_SEND_UNLOCK(stcb);
 		SCTP_INP_WUNLOCK(stcb->sctp_ep);
 		SCTP_INP_INFO_WUNLOCK();
+#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+		SCTP_SOCKET_UNLOCK(so, 1);
+#endif
 
 		retval = sctp_process_init(init_cp, stcb);
 		if (retval < 0) {
