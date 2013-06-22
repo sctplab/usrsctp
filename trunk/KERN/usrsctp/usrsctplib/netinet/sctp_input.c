@@ -3651,12 +3651,10 @@ sctp_reset_out_streams(struct sctp_tcb *stcb, uint32_t number_entries, uint16_t 
 				continue;
 			}
 			stcb->asoc.strmout[temp].next_sequence_send = 0;
-			stcb->asoc.strmout[temp].state = SCTP_STREAM_OPEN;
 		}
 	} else {
 		for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
 			stcb->asoc.strmout[i].next_sequence_send = 0;
-			stcb->asoc.strmout[i].state = SCTP_STREAM_OPEN;
 		}
 	}
 	sctp_ulp_notify(SCTP_NOTIFY_STR_RESET_SEND, stcb, number_entries, (void *)list, SCTP_SO_NOT_LOCKED);
