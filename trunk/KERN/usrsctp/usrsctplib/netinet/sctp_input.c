@@ -1068,12 +1068,13 @@ sctp_handle_shutdown_ack(struct sctp_shutdown_ack_chunk *cp SCTP_UNUSED,
 		SCTP_SOCKET_UNLOCK(so, 1);
 #endif
 	}
-	/* are the queues empty? */
+#ifdef INVARIANTS
 	if (!TAILQ_EMPTY(&asoc->send_queue) ||
 	    !TAILQ_EMPTY(&asoc->sent_queue) ||
 	    !stcb->asoc.ss_functions.sctp_ss_is_empty(stcb, asoc)) {
-		sctp_report_all_outbound(stcb, 0, 0, SCTP_SO_NOT_LOCKED);
+		panic("Queues are not empty when handling SHUTDOWN-ACK");
 	}
+#endif
 	/* stop the timer */
 	sctp_timer_stop(SCTP_TIMER_TYPE_SHUTDOWN, stcb->sctp_ep, stcb, net, SCTP_FROM_SCTP_INPUT+SCTP_LOC_9);
 	/* send SHUTDOWN-COMPLETE */
@@ -3347,13 +3348,14 @@ sctp_handle_shutdown_complete(struct sctp_shutdown_complete_chunk *cp SCTP_UNUSE
 	/* notify upper layer protocol */
 	if (stcb->sctp_socket) {
 		sctp_ulp_notify(SCTP_NOTIFY_ASSOC_DOWN, stcb, 0, NULL, SCTP_SO_NOT_LOCKED);
-		/* are the queues empty? they should be */
-		if (!TAILQ_EMPTY(&asoc->send_queue) ||
-		    !TAILQ_EMPTY(&asoc->sent_queue) ||
-		    !stcb->asoc.ss_functions.sctp_ss_is_empty(stcb, asoc)) {
-			sctp_report_all_outbound(stcb, 0, 0, SCTP_SO_NOT_LOCKED);
-		}
 	}
+#ifdef INVARIANTS
+	if (!TAILQ_EMPTY(&asoc->send_queue) ||
+	    !TAILQ_EMPTY(&asoc->sent_queue) ||
+	    !stcb->asoc.ss_functions.sctp_ss_is_empty(stcb, asoc)) {
+		panic("Queues are not empty when handling SHUTDOWN-COMPLETE");
+	}
+#endif
 	/* stop the timer */
 	sctp_timer_stop(SCTP_TIMER_TYPE_SHUTDOWNACK, stcb->sctp_ep, stcb, net, SCTP_FROM_SCTP_INPUT+SCTP_LOC_22);
 	SCTP_STAT_INCR_COUNTER32(sctps_shutdown);
