@@ -5715,6 +5715,7 @@ sctp_validate_no_locks(struct sctp_inpcb *inp)
 {
 #ifndef __APPLE__
 	struct sctp_tcb *lstcb;
+
 	LIST_FOREACH(lstcb, &inp->sctp_asoc_list, sctp_tcblist) {
 		if (mtx_owned(&lstcb->tcb_mtx)) {
 			panic("Own lock on stcb at return from input");

@@ -1162,11 +1162,11 @@ sctp_disconnect(struct socket *so)
 			}
 #if defined(__Userspace__)
 			if (((so->so_options & SCTP_SO_LINGER) &&
-			    (so->so_linger == 0)) ||
+			     (so->so_linger == 0)) ||
 			    (so->so_rcv.sb_cc > 0)) {
 #else
 			if (((so->so_options & SO_LINGER) &&
-			    (so->so_linger == 0)) ||
+			     (so->so_linger == 0)) ||
 			    (so->so_rcv.sb_cc > 0)) {
 #endif
 				if (SCTP_GET_STATE(asoc) !=

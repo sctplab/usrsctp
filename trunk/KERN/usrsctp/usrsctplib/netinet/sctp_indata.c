@@ -1742,7 +1742,6 @@ sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		sctp_alloc_a_readq(stcb, control);
 		sctp_build_readq_entry_mac(control, stcb, asoc->context, net, tsn,
 					   protocol_id,
-					   stcb->asoc.context,
 					   strmno, strmseq,
 					   chunk_flags,
 					   dmbuf);
@@ -1868,7 +1867,6 @@ failed_express_del:
 		sctp_alloc_a_readq(stcb, control);
 		sctp_build_readq_entry_mac(control, stcb, asoc->context, net, tsn,
 		    protocol_id,
-		    stcb->asoc.context,
 		    strmno, strmseq,
 		    chunk_flags,
 		    dmbuf);
