@@ -5706,7 +5706,7 @@ sctp_sorecvmsg(struct socket *so,
 	if (rwnd_req < SCTP_MIN_RWND)
 		rwnd_req = SCTP_MIN_RWND;
 	in_eeor_mode = sctp_is_feature_on(inp, SCTP_PCB_FLAGS_EXPLICIT_EOR);
-	if (SCTP_BASE_SYSCTL(sctp_logging_level) &SCTP_RECV_RWND_LOGGING_ENABLE) {
+	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_RECV_RWND_LOGGING_ENABLE) {
 #if defined(__APPLE__)
 #if defined(APPLE_LEOPARD)
 		sctp_misc_ints(SCTP_SORECV_ENTER,
