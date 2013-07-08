@@ -1328,7 +1328,7 @@ sctp_sorecvmsg(struct socket *so,
 #if !(defined(_KERNEL)) && !(defined(__Userspace__))
 
 __BEGIN_DECLS
-#if defined(__FreeBSD__) && __FreeBSD_version < 1000000
+#if defined(__FreeBSD__) && __FreeBSD_version < 902000
 int	sctp_peeloff __P((int, sctp_assoc_t));
 int	sctp_bindx __P((int, struct sockaddr *, int, int));
 int	sctp_connectx __P((int, const struct sockaddr *, int, sctp_assoc_t *));
