@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 252779 2013-07-05 10:08:49Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 253099 2013-07-09 14:38:26Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5865,7 +5865,11 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 #ifdef INET
 		case AF_INET:
 			if (ipsec4_in_reject(m, &inp->ip_inp.inp)) {
+#if defined(__FreeBSD__) && (__FreeBSD_version > 1000036)
+				IPSECSTAT_INC(in_polvio);
+#else
 				MODULE_GLOBAL(ipsec4stat).in_polvio++;
+#endif
 				SCTP_STAT_INCR(sctps_hdrops);
 				goto out;
 			}
@@ -5874,7 +5878,11 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 #ifdef INET6
 		case AF_INET6:
 			if (ipsec6_in_reject(m, &inp->ip_inp.inp)) {
+#if defined(__FreeBSD__) && (__FreeBSD_version > 1000036)
+				IPSEC6STAT_INC(in_polvio);
+#else
 				MODULE_GLOBAL(ipsec6stat).in_polvio++;
+#endif
 				SCTP_STAT_INCR(sctps_hdrops);
 				goto out;
 			}
