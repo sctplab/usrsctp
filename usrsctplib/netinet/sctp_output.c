@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 250754 2013-05-17 21:45:52Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 253472 2013-07-19 21:16:59Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4847,9 +4847,7 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked
 	struct mbuf *m;
 	struct sctp_nets *net;
 	struct sctp_init_chunk *init;
-#if defined(INET) || defined(INET6)
 	struct sctp_supported_addr_param *sup_addr;
-#endif
 	struct sctp_adaptation_layer_indication *ali;
 	struct sctp_supported_chunk_types_param *pr_supported;
 	struct sctp_paramhdr *ph;
