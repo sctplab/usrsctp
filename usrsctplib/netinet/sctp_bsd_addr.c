@@ -336,11 +336,13 @@ sctp_is_vmware_interface(struct ifnet *ifn)
 static void
 sctp_init_ifns_for_vrf(int vrfid)
 {
+#if defined(INET) || defined(INET6)
 	struct ifaddrs *ifa;
 	struct sctp_ifa *sctp_ifa;
 	DWORD Err, AdapterAddrsSize;
 	PIP_ADAPTER_ADDRESSES pAdapterAddrs, pAdapterAddrs6, pAdapt;
 	PIP_ADAPTER_UNICAST_ADDRESS pUnicast;
+#endif
 
 #ifdef INET
 	AdapterAddrsSize = 0;
