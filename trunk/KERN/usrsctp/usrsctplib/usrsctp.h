@@ -42,8 +42,6 @@ extern "C" {
 #endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <ws2ipdef.h>
-#include <ws2def.h>
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
