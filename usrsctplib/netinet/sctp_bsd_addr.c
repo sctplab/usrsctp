@@ -340,7 +340,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 	struct ifaddrs *ifa;
 	struct sctp_ifa *sctp_ifa;
 	DWORD Err, AdapterAddrsSize;
-	PIP_ADAPTER_ADDRESSES pAdapterAddrs, pAdapterAddrs6, pAdapt;
+	PIP_ADAPTER_ADDRESSES pAdapterAddrs, pAdapt;
 	PIP_ADAPTER_UNICAST_ADDRESS pUnicast;
 #endif
 
@@ -407,17 +407,17 @@ sctp_init_ifns_for_vrf(int vrfid)
 		}
 	}
 	/* Allocate memory from sizing information */
-	if ((pAdapterAddrs6 = (PIP_ADAPTER_ADDRESSES) GlobalAlloc(GPTR, AdapterAddrsSize)) == NULL) {
+	if ((pAdapterAddrs = (PIP_ADAPTER_ADDRESSES) GlobalAlloc(GPTR, AdapterAddrsSize)) == NULL) {
 		SCTP_PRINTF("Memory allocation error!\n");
 		return;
 	}
 	/* Get actual adapter information */
-	if ((Err = GetAdaptersAddresses(AF_INET6, 0, NULL, pAdapterAddrs6, &AdapterAddrsSize)) != ERROR_SUCCESS) {
+	if ((Err = GetAdaptersAddresses(AF_INET6, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
 		SCTP_PRINTF("GetAdaptersV6Addresses() failed with error code %d\n", Err);
 		return;
 	}
 	/* Enumerate through each returned adapter and save its information */
-	for (pAdapt = pAdapterAddrs6; pAdapt; pAdapt = pAdapt->Next) {
+	for (pAdapt = pAdapterAddrs; pAdapt; pAdapt = pAdapt->Next) {
 		if (pAdapt->IfType == IF_TYPE_IEEE80211 || pAdapt->IfType == IF_TYPE_ETHERNET_CSMACD) {
 			for (pUnicast = pAdapt->FirstUnicastAddress; pUnicast; pUnicast = pUnicast->Next) {
 				ifa = (struct ifaddrs*)malloc(sizeof(struct ifaddrs));
@@ -440,8 +440,8 @@ sctp_init_ifns_for_vrf(int vrfid)
 			}
 		}
 	}
-	if (pAdapterAddrs6)
-		FREE(pAdapterAddrs6);
+	if (pAdapterAddrs)
+		FREE(pAdapterAddrs);
 #endif
 }
 #elif defined(__Userspace__)
