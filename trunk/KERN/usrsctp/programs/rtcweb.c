@@ -903,7 +903,7 @@ handle_peer_address_change_event(struct sctp_paddr_change *spc)
 	switch (spc->spc_aaddr.ss_family) {
 	case AF_INET:
 		sin = (struct sockaddr_in *)&spc->spc_aaddr;
-		addr = inet_ntop(AF_INET, &sin->sin_addr, addr_buf, INET6_ADDRSTRLEN);
+		addr = inet_ntop(AF_INET, &sin->sin_addr, addr_buf, INET_ADDRSTRLEN);
 		break;
 	case AF_INET6:
 		sin6 = (struct sockaddr_in6 *)&spc->spc_aaddr;
