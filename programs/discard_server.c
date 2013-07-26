@@ -67,7 +67,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 			switch (addr.sa.sa_family) {
 #ifdef INET
 			case AF_INET:
-				name = inet_ntop(AF_INET, &addr.sin.sin_addr, namebuf, INET6_ADDRSTRLEN);
+				name = inet_ntop(AF_INET, &addr.sin.sin_addr, namebuf, INET_ADDRSTRLEN);
 				port = ntohs(addr.sin.sin_port);
 				break;
 #endif
