@@ -85,13 +85,14 @@ sctp_init(void)
 
 #endif
 #if defined(__Userspace_os_Windows)
+#if defined(INET) || defined(INET6)
 	WSADATA wsaData;
-	int Ret;
 
-	if ((Ret = WSAStartup(MAKEWORD(2,2), &wsaData))!=0) {
+	if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
 		SCTP_PRINTF("WSAStartup failed\n");
 		exit (-1);
 	}
+#endif
 	InitializeConditionVariable(&accept_cond);
 	InitializeCriticalSection(&accept_mtx);
 #endif
