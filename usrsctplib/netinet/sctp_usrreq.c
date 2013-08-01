@@ -238,6 +238,9 @@ sctp_finish(void)
 	sctp_pcb_finish();
 #if defined(__Windows__)
 	sctp_finish_sysctls();
+#if defined(INET) || defined(INET6)
+	WSACleanup();
+#endif
 #endif
 }
 
