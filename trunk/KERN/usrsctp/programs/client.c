@@ -93,6 +93,7 @@ main(int argc, char *argv[])
 	struct sockaddr_in addr4;
 	struct sockaddr_in6 addr6;
 	struct sctp_udpencaps encaps;
+	struct sctpstat stat;
 	char buffer[80];
 	int i, n;
 
@@ -262,6 +263,9 @@ main(int argc, char *argv[])
 		sleep(1);
 #endif
 	}
+	usrsctp_get_stat(&stat);
+	printf("Number of packets (sent/received): (%u/%u).\n",
+	       stat.sctps_outpackets, stat.sctps_inpackets);
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
 		Sleep(1000);
