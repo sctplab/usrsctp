@@ -360,6 +360,8 @@ recv_function_raw(void *arg)
 		}
 #endif
 		SCTP_HEADER_LEN(recvmbuf[0]) = n; /* length of total packet */
+		SCTP_STAT_INCR(sctps_recvpackets);
+		SCTP_STAT_INCR_COUNTER64(sctps_inpackets);
 
 		if (n <= iovlen) {
 			SCTP_BUF_LEN(recvmbuf[0]) = n;
@@ -553,6 +555,8 @@ recv_function_raw6(void *arg)
 		}
 #endif
 		SCTP_HEADER_LEN(recvmbuf6[0]) = n; /* length of total packet */
+		SCTP_STAT_INCR(sctps_recvpackets);
+		SCTP_STAT_INCR_COUNTER64(sctps_inpackets);
 
 		if (n <= iovlen) {
 			SCTP_BUF_LEN(recvmbuf6[0]) = n;
@@ -740,6 +744,8 @@ recv_function_udp(void *arg)
 		n = ncounter;
 #endif
 		SCTP_HEADER_LEN(udprecvmbuf[0]) = n; /* length of total packet */
+		SCTP_STAT_INCR(sctps_recvpackets);
+		SCTP_STAT_INCR_COUNTER64(sctps_inpackets);
 
 		if (n <= iovlen) {
 			SCTP_BUF_LEN(udprecvmbuf[0]) = n;
@@ -945,6 +951,8 @@ recv_function_udp6(void *arg)
 		n = ncounter;
 #endif
 		SCTP_HEADER_LEN(udprecvmbuf6[0]) = n; /* length of total packet */
+		SCTP_STAT_INCR(sctps_recvpackets);
+		SCTP_STAT_INCR_COUNTER64(sctps_inpackets);
 
 		if (n <= iovlen) {
 			SCTP_BUF_LEN(udprecvmbuf6[0]) = n;
@@ -1507,4 +1515,6 @@ recv_thread_destroy(void)
 	}
 #endif
 }
+#else
+int foo;
 #endif

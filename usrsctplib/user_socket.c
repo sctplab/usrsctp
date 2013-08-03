@@ -3160,6 +3160,8 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	struct sctphdr *sh;
 	struct sctp_chunkhdr *ch;
 
+	SCTP_STAT_INCR(sctps_recvpackets);
+	SCTP_STAT_INCR_COUNTER64(sctps_inpackets);
 	memset(&src, 0, sizeof(struct sockaddr_conn));
 	src.sconn_family = AF_CONN;
 #ifdef HAVE_SCONN_LEN
@@ -3351,3 +3353,7 @@ USRSCTP_SYSCTL_GET_DEF(sctp_initial_cwnd)
 USRSCTP_SYSCTL_GET_DEF(sctp_debug_on)
 #endif
 
+void usrsctp_get_stat(struct sctpstat *stat)
+{
+	*stat = SCTP_BASE_STATS;
+}
