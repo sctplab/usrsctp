@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 246687 2013-02-11 21:02:49Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 254248 2013-08-12 13:52:15Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_PCB_H_
@@ -469,8 +469,8 @@ struct sctp_inpcb {
 
 	/* back pointer to our socket */
 	struct socket *sctp_socket;
+	uint64_t sctp_features;	/* Feature flags */
 	uint32_t sctp_flags;	/* INP state flag set */
-	uint32_t sctp_features;	/* Feature flags */
 	uint32_t sctp_mobility_features; /* Mobility  Feature flags */
 	struct sctp_pcb sctp_ep;/* SCTP ep data */
 	/* head of the hash of all associations */

@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 252585 2013-07-03 18:48:43Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 254248 2013-08-12 13:52:15Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1431,7 +1431,6 @@ sctp_does_tsn_belong_to_reasm(struct sctp_association *asoc,
 	}
 	return (0);
 }
-
 
 static int
 sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,

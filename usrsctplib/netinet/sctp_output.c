@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 253472 2013-07-19 21:16:59Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 254248 2013-08-12 13:52:15Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7324,18 +7324,18 @@ sctp_can_we_split_this(struct sctp_tcb *stcb,
 
 static uint32_t
 sctp_move_to_outqueue(struct sctp_tcb *stcb,
-	struct sctp_stream_out *strq,
-	uint32_t goal_mtu,
-	uint32_t frag_point,
-	int *locked,
-        int *giveup,
-	int eeor_mode,
-        int *bail,
-	int so_locked
+                      struct sctp_stream_out *strq,
+                      uint32_t goal_mtu,
+                      uint32_t frag_point,
+                      int *locked,
+                      int *giveup,
+                      int eeor_mode,
+                      int *bail,
+                      int so_locked
 #if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
-	SCTP_UNUSED
+                      SCTP_UNUSED
 #endif
-)
+	)
 {
 	/* Move from the stream to the send_queue keeping track of the total */
 	struct sctp_association *asoc;
@@ -7349,7 +7349,7 @@ sctp_move_to_outqueue(struct sctp_tcb *stcb,
 
 	SCTP_TCB_LOCK_ASSERT(stcb);
 	asoc = &stcb->asoc;
- one_more_time:
+one_more_time:
 	/*sa_ignore FREED_MEMORY*/
 	sp = TAILQ_FIRST(&strq->outqueue);
 	if (sp == NULL) {
@@ -7384,11 +7384,11 @@ sctp_move_to_outqueue(struct sctp_tcb *stcb,
 			if ((sp->put_last_out == 0) && (sp->discard_rest == 0)) {
 				SCTP_PRINTF("Gak, put out entire msg with NO end!-1\n");
 				SCTP_PRINTF("sender_done:%d len:%d msg_comp:%d put_last_out:%d send_lock:%d\n",
-				             sp->sender_all_done,
-				             sp->length,
-				             sp->msg_is_complete,
-				             sp->put_last_out,
-				             send_lock_up);
+				            sp->sender_all_done,
+				            sp->length,
+				            sp->msg_is_complete,
+				            sp->put_last_out,
+				            send_lock_up);
 			}
 			if ((TAILQ_NEXT(sp, next) == NULL) && (send_lock_up  == 0)) {
 				SCTP_TCB_SEND_LOCK(stcb);
@@ -7461,7 +7461,7 @@ sctp_move_to_outqueue(struct sctp_tcb *stcb,
 	if (stcb->asoc.state & SCTP_STATE_CLOSED_SOCKET) {
 		sp->msg_is_complete = 1;
 	}
- re_look:
+re_look:
 	length = sp->length;
 	if (sp->msg_is_complete) {
 		/* The message is complete */
@@ -7560,7 +7560,7 @@ sctp_move_to_outqueue(struct sctp_tcb *stcb,
 		sp->data = sp->tail_mbuf = NULL;
 	} else {
 		struct mbuf *m;
-  dont_do_it:
+	dont_do_it:
 		chk->data = SCTP_M_COPYM(sp->data, 0, to_move, M_NOWAIT);
 		chk->last_mbuf = NULL;
 		if (chk->data == NULL) {
@@ -7825,7 +7825,7 @@ sctp_move_to_outqueue(struct sctp_tcb *stcb,
 	strq->chunks_on_queues++;
 	TAILQ_INSERT_TAIL(&asoc->send_queue, chk, sctp_next);
 	asoc->send_queue_cnt++;
- out_of:
+out_of:
 	if (send_lock_up) {
 		SCTP_TCB_SEND_UNLOCK(stcb);
 	}
@@ -7979,7 +7979,7 @@ sctp_med_chunk_output(struct sctp_inpcb *inp,
 #endif
 	)
 {
-	/*
+	/**
 	 * Ok this is the generic chunk service queue. we must do the
 	 * following: - Service the stream queue that is next, moving any
 	 * message (note I must get a complete message i.e. FIRST/MIDDLE and
