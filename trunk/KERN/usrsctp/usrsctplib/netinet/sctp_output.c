@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 254248 2013-08-12 13:52:15Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 254338 2013-08-14 21:51:32Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5729,6 +5729,14 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	}
 	SCTP_BUF_LEN(m) = sizeof(struct sctp_init_chunk);
 
+	/*
+	 * We might not overwrite the identification[] completely and on
+	 * some platforms time_entered will contain some padding.
+	 * Therefore zero out the cookie to avoid putting
+	 * uninitialized memory on the wire.
+	 */
+	memset(&stc, 0, sizeof(struct sctp_state_cookie));
+
 	/* the time I built cookie */
 	(void)SCTP_GETTIME_TIMEVAL(&stc.time_entered);
 
@@ -5891,6 +5899,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			memcpy(&stc.laddress, &dstconn->sconn_addr, sizeof(void *));
 			stc.laddr_type = SCTP_CONN_ADDRESS;
 			/* scope_id is only for v6 */
+			stc.scope_id = 0;
 			break;
 		}
 #endif
@@ -5986,11 +5995,19 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 #if defined(__Userspace__)
 		case AF_CONN:
 			sconn = (struct sockaddr_conn *)to;
+			stc.address[0] = 0;
+			stc.address[1] = 0;
+			stc.address[2] = 0;
+			stc.address[3] = 0;
 			memcpy(&stc.address, &sconn->sconn_addr, sizeof(void *));
 			stc.addr_type = SCTP_CONN_ADDRESS;
+			stc.laddress[0] = 0;
+			stc.laddress[1] = 0;
+			stc.laddress[2] = 0;
+			stc.laddress[3] = 0;
 			memcpy(&stc.laddress, &sconn->sconn_addr, sizeof(void *));
-			stc.scope_id = 0;
 			stc.laddr_type = SCTP_CONN_ADDRESS;
+			stc.scope_id = 0;
 			break;
 #endif
 		}
