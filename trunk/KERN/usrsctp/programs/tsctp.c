@@ -313,7 +313,7 @@ debug_printf(const char *format, ...)
 int main(int argc, char **argv)
 {
 #ifndef _WIN32
-	char c;
+	int c;
 #endif
 	socklen_t addr_len;
 	struct sockaddr_in local_addr;
