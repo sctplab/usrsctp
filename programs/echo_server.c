@@ -250,7 +250,7 @@ main(int argc, char *argv[])
 							snd_info.snd_ppid = rcv_info.rcv_ppid;
 							snd_info.snd_context = 0;
 							snd_info.snd_assoc_id = rcv_info.rcv_assoc_id;
-							if (usrsctp_sendv(sock, buffer, n, NULL, 0, &snd_info, sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
+							if (usrsctp_sendv(sock, buffer, (size_t)n, NULL, 0, &snd_info, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 								perror("sctp_sendv");
 							}
 						}
