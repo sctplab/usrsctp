@@ -5433,10 +5433,10 @@ sctp_get_ifa_hash_val(struct sockaddr *addr)
 	case AF_CONN:
 	{
 		struct sockaddr_conn *sconn;
-		uint64_t temp;
+		uintptr_t temp;
 
 		sconn = (struct sockaddr_conn *)addr;
-		temp = (uint64_t)sconn->sconn_addr;
+		temp = (uintptr_t)sconn->sconn_addr;
 		return ((uint32_t)(temp ^ (temp >> 16)));
 	}
 #endif
