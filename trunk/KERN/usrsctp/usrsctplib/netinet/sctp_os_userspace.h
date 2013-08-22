@@ -1073,6 +1073,11 @@ struct sockaddr_conn {
 };
 
 /*
+ * SCTP protocol specific mbuf flags.
+ */
+#define	M_NOTIFICATION		M_PROTO5	/* SCTP notification */
+
+/*
  * IP output routines
  */
 
