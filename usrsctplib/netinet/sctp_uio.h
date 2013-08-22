@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 242327 2012-10-29 20:47:32Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 254672 2013-08-22 20:29:57Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UIO_H_
@@ -1174,7 +1174,11 @@ union sctp_sockstore {
 struct xsctp_inpcb {
 	uint32_t last;
 	uint32_t flags;
+#if defined(__FreeBSD__) && __FreeBSD_version < 1000048
 	uint32_t features;
+#else
+	uint64_t features;
+#endif
 	uint32_t total_sends;
 	uint32_t total_recvs;
 	uint32_t total_nospaces;
@@ -1185,7 +1189,11 @@ struct xsctp_inpcb {
 #if defined(__Windows__)
 	uint16_t padding;
 #endif
+#if defined(__FreeBSD__) && __FreeBSD_version < 1000048
 	uint32_t extra_padding[32]; /* future */
+#else
+	uint32_t extra_padding[31]; /* future */
+#endif
 };
 
 struct xsctp_tcb {
