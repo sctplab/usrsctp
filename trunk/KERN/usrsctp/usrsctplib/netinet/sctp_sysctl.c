@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 254670 2013-08-22 19:28:13Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 254672 2013-08-22 20:29:57Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -492,7 +492,11 @@ sctp_assoclist(SYSCTL_HANDLER_ARGS)
 		xinpcb.last = 0;
 		xinpcb.local_port = ntohs(inp->sctp_lport);
 		xinpcb.flags = inp->sctp_flags;
+#if defined(__FreeBSD__) && __FreeBSD_version < 1000048
 		xinpcb.features = (uint32_t)inp->sctp_features;
+#else
+		xinpcb.features = inp->sctp_features;
+#endif
 		xinpcb.total_sends = inp->total_sends;
 		xinpcb.total_recvs = inp->total_recvs;
 		xinpcb.total_nospaces = inp->total_nospaces;
