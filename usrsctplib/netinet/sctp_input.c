@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 253571 2013-07-23 14:14:24Z ae $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 254854 2013-08-25 12:44:03Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6229,6 +6229,13 @@ sctp_input(i_pak, va_alist)
 	}
 #endif
 #if defined(__FreeBSD__)
+#if __FreeBSD_version > 1000049
+	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
+	        "sctp_input(): Packet of length %d received on %s with csum_flags 0x%b.\n",
+	        m->m_pkthdr.len,
+	        if_name(m->m_pkthdr.rcvif),
+	        (int)m->m_pkthdr.csum_flags, CSUM_BITS);
+#else
 #if __FreeBSD_version >= 800000
 	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
 	        "sctp_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
