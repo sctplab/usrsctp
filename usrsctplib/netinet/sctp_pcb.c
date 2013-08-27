@@ -68,9 +68,6 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 252779 2013-07-05 10:08:49Z tuex
 #include <sys/unistd.h>
 #endif
 #if defined(__Userspace__)
-#if !defined(__Userspace_os_Windows)
-#include <sys/unistd.h>
-#endif
 #include <user_socketvar.h>
 #endif
 
