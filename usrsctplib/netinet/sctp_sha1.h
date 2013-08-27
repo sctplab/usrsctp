@@ -36,8 +36,8 @@ __FBSDID("$FreeBSD$");
 #endif
 
 
-#ifndef __SCTP_SLA1_h__
-#define __SCTP_SLA1_h__
+#ifndef __NETINET_SCTP_SHA1_H__
+#define __NETINET_SCTP_SHA1_H__
 
 #include <sys/types.h>
 
@@ -94,5 +94,5 @@ void SHA1_Init(struct sha1_context *);
 void SHA1_Update(struct sha1_context *, const unsigned char *, int);
 void SHA1_Final(unsigned char *, struct sha1_context *);
 
-#endif				/* _KERNEL */
+#endif
 #endif
