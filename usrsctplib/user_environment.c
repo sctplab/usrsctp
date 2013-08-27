@@ -33,9 +33,6 @@
 #include <stdlib.h>
 #if !defined (__Userspace_os_Windows)
 #include <stdint.h>
-#if !defined(__Userspace_os_FreeBSD)
-#include <sys/sysctl.h>
-#endif
 #include <netinet/sctp_os_userspace.h>
 #endif
 #include <user_environment.h>
