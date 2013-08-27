@@ -390,6 +390,9 @@ struct udphdr {
 #if defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_OpenBSD)
 #include <pthread.h>
 #endif
+#if defined(__Userspace_os_Android)
+typedef u_int16_t in_port_t;
+#endif
 typedef pthread_mutex_t userland_mutex_t;
 typedef pthread_cond_t userland_cond_t;
 typedef pthread_t userland_thread_t;
@@ -584,21 +587,21 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 
 #if defined(SCTP_DEBUG)
 #include <netinet/sctp_constants.h>
-#define SCTPDBG(level, ...)  \
-{                              \
-    do {    \
-	if (SCTP_BASE_SYSCTL(sctp_debug_on) & level) {  \
-	    SCTP_PRINTF(__VA_ARGS__);           \
-	}        \
-	} while (0);     \
+#define SCTPDBG(level, ...)					\
+{								\
+	do {							\
+		if (SCTP_BASE_SYSCTL(sctp_debug_on) & level) {	\
+			SCTP_PRINTF(__VA_ARGS__);		\
+		}						\
+	} while (0);						\
 }
 #define SCTPDBG_ADDR(level, addr)					\
 {									\
-    do {								\
-	if (SCTP_BASE_SYSCTL(sctp_debug_on) & level ) {					\
-	    sctp_print_address(addr);					\
-	}								\
-    } while (0);							\
+	do {								\
+		if (SCTP_BASE_SYSCTL(sctp_debug_on) & level ) {		\
+		    sctp_print_address(addr);				\
+		}							\
+	} while (0);							\
 }
 #else
 #define SCTPDBG(level, ...)
