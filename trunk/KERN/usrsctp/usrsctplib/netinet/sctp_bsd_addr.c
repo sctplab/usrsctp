@@ -448,10 +448,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 static void
 sctp_init_ifns_for_vrf(int vrfid)
 {
-	/* __Userspace__ TODO struct ifaddr is defined in net/if_var.h
-	 * This struct contains struct ifnet, which is also defined in
-	 * net/if_var.h. Currently a zero byte if_var.h file is present for Linux boxes
-	 */
+#if defined(INET) || defined(INET6)
 	int rc;
 	struct ifaddrs *ifa = NULL;
 	struct sctp_ifa *sctp_ifa;
@@ -461,24 +458,39 @@ sctp_init_ifns_for_vrf(int vrfid)
 	if (rc != 0) {
 		return;
 	}
-
 	for (ifa = g_interfaces; ifa; ifa = ifa->ifa_next) {
 		if (ifa->ifa_addr == NULL) {
 			continue;
 		}
+#if !defined(INET)
+		if (ifa->ifa_addr->sa_family != AF_INET6) {
+			/* non inet6 skip */
+			continue;
+		}
+#elif !defined(INET6)
+		if (ifa->ifa_addr->sa_family != AF_INET) {
+			/* non inet skip */
+			continue;
+		}
+#else
 		if ((ifa->ifa_addr->sa_family != AF_INET) && (ifa->ifa_addr->sa_family != AF_INET6)) {
 			/* non inet/inet6 skip */
 			continue;
 		}
+#endif
+#if defined(INET6)
 		if ((ifa->ifa_addr->sa_family == AF_INET6) &&
 		    IN6_IS_ADDR_UNSPECIFIED(&((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_addr)) {
 			/* skip unspecifed addresses */
 			continue;
 		}
+#endif
+#if defined(INET)
 		if (ifa->ifa_addr->sa_family == AF_INET &&
 		    ((struct sockaddr_in *)ifa->ifa_addr)->sin_addr.s_addr == 0) {
 			continue;
 		}
+#endif
 		ifa_flags = 0;
 		sctp_ifa = sctp_add_addr_to_vrf(vrfid,
 		                                ifa,
@@ -493,6 +505,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 			sctp_ifa->localifa_flags &= ~SCTP_ADDR_DEFER_USE;
 		}
 	}
+#endif
 }
 #endif
 
