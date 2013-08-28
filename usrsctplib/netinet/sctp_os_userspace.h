@@ -95,7 +95,6 @@ typedef HANDLE userland_thread_t;
 #define ssize_t    __int64
 #define size_t     __int32
 #define in_addr_t  unsigned __int32
-#define in_port_t  unsigned __int16
 #define n_time     unsigned __int32
 #define sa_family_t unsigned __int8
 #define IFNAMSIZ   64
@@ -389,9 +388,6 @@ struct udphdr {
 #include <sys/socket.h>
 #if defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_OpenBSD)
 #include <pthread.h>
-#endif
-#if defined(__Userspace_os_Android)
-typedef u_int16_t in_port_t;
 #endif
 typedef pthread_mutex_t userland_mutex_t;
 typedef pthread_cond_t userland_cond_t;
