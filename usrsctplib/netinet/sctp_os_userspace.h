@@ -229,12 +229,22 @@ int win_if_nametoindex(const char *);
 #ifdef CMSG_DATA
 #undef CMSG_DATA
 #endif
+/*
+ * The following definitions should apply iff WINVER < 0x0600
+ * but that check doesn't work in all cases. So be more pedantic...
+ */
 #define CMSG_DATA(x) WSA_CMSG_DATA(x)
 #define CMSG_ALIGN(x) WSA_CMSGDATA_ALIGN(x)
-#if WINVER < 0x0600
+#ifndef CMSG_FIRSTHDR
 #define CMSG_FIRSTHDR(x) WSA_CMSG_FIRSTHDR(x)
+#endif
+#ifndef CMSG_NXTHDR
 #define CMSG_NXTHDR(x, y) WSA_CMSG_NXTHDR(x, y)
+#endif
+#ifndef CMSG_SPACE
 #define CMSG_SPACE(x) WSA_CMSG_SPACE(x)
+#endif
+#ifndef CMSG_LEN
 #define CMSG_LEN(x) WSA_CMSG_LEN(x)
 #endif
 
