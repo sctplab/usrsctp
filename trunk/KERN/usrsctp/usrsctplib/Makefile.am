@@ -28,6 +28,7 @@
 # SUCH DAMAGE.
 #
 
+AUTOMAKE_OPTIONS       = subdir-objects
 EXTRA_DIST             = Makefile.nmake
 lib_LTLIBRARIES        = libusrsctp.la
 libusrsctp_la_SOURCES  = user_atomic.h \
