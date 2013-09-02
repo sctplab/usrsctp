@@ -82,6 +82,11 @@ sctp_sha1_final(unsigned char *digest, struct sctp_sha1_context *ctx)
 #else
 
 #include <string.h>
+#if defined(__Userspace_os_Windows)
+#include <winsock2.h>
+#elif !defined(__Windows__)
+#include <arpa/inet.h>
+#endif
 
 #define F1(B,C,D) (((B & C) | ((~B) & D)))	/* 0  <= t <= 19 */
 #define F2(B,C,D) (B ^ C ^ D)	/* 20 <= t <= 39 */
