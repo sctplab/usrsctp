@@ -49,7 +49,6 @@ usrsctp_OBJECTS = \
 	sctp_callout.obj \
 	sctp_cc_functions.obj \
 	sctp_crc32.obj \
-	sctp_hashdriver.obj \
 	sctp_indata.obj \
 	sctp_input.obj \
 	sctp_output.obj \
@@ -85,7 +84,6 @@ usrsctp_HEADERS = \
 	netinet\sctp_callout.h \
 	netinet\sctp_constants.h \
 	netinet\sctp_crc32.h \
-	netinet\sctp_hashdriver.h \
 	netinet\sctp_header.h \
 	netinet\sctp_indata.h \
 	netinet\sctp_input.h \
@@ -140,9 +138,6 @@ sctp_cc_functions.obj : netinet\sctp_cc_functions.c $(usrsctp_HEADERS)
 
 sctp_crc32.obj : netinet\sctp_crc32.c $(usrsctp_HEADERS)
 	cl $(CVARSDLL) $(CFLAGS) -c netinet\sctp_crc32.c
-
-sctp_hashdriver.obj : netinet\sctp_hashdriver.c $(usrsctp_HEADERS)
-	cl $(CVARSDLL) $(CFLAGS) -c netinet\sctp_hashdriver.c
 
 sctp_indata.obj : netinet\sctp_indata.c $(usrsctp_HEADERS)
 	cl $(CVARSDLL) $(CFLAGS) -c netinet\sctp_indata.c

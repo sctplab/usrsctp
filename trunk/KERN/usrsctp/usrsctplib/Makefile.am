@@ -54,7 +54,6 @@ libusrsctp_la_SOURCES  = user_atomic.h \
                          netinet/sctp_cc_functions.c \
                          netinet/sctp_constants.h \
                          netinet/sctp_crc32.c netinet/sctp_crc32.h \
-                         netinet/sctp_hashdriver.c netinet/sctp_hashdriver.h \
                          netinet/sctp_header.h \
                          netinet/sctp_indata.c netinet/sctp_indata.h \
                          netinet/sctp_input.c netinet/sctp_input.h \
