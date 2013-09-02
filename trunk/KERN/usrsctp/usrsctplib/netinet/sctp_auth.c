@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 243882 2012-12-05 08:04:20Z glebius $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 255160 2013-09-02 22:48:41Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -703,16 +703,12 @@ sctp_auth_add_hmacid(sctp_hmaclist_t *list, uint16_t hmac_id)
 			"SCTP: HMAC id list full, ignoring add %u\n", hmac_id);
 		return (-1);
 	}
+#if defined(SCTP_SUPPORT_HMAC_SHA256)
 	if ((hmac_id != SCTP_AUTH_HMAC_ID_SHA1) &&
-#ifdef HAVE_SHA224
-	    (hmac_id != SCTP_AUTH_HMAC_ID_SHA224) &&
+	    (hmac_id != SCTP_AUTH_HMAC_ID_SHA256)) {
+#else
+	if (hmac_id != SCTP_AUTH_HMAC_ID_SHA1) {
 #endif
-#ifdef HAVE_SHA2
-	    (hmac_id != SCTP_AUTH_HMAC_ID_SHA256) &&
-	    (hmac_id != SCTP_AUTH_HMAC_ID_SHA384) &&
-	    (hmac_id != SCTP_AUTH_HMAC_ID_SHA512) &&
-#endif
-	    1) {
 		return (-1);
 	}
 	/* Now is it already in the list */
@@ -752,11 +748,18 @@ sctp_default_supported_hmaclist(void)
 {
 	sctp_hmaclist_t *new_list;
 
+#if defined(SCTP_SUPPORT_HMAC_SHA256)
 	new_list = sctp_alloc_hmaclist(2);
+#else
+	new_list = sctp_alloc_hmaclist(1);
+#endif
 	if (new_list == NULL)
 		return (NULL);
-	(void)sctp_auth_add_hmacid(new_list, SCTP_AUTH_HMAC_ID_SHA1);
+#if defined(SCTP_SUPPORT_HMAC_SHA256)
+	/* We prefer SHA256, so list it first */
 	(void)sctp_auth_add_hmacid(new_list, SCTP_AUTH_HMAC_ID_SHA256);
+#endif
+	(void)sctp_auth_add_hmacid(new_list, SCTP_AUTH_HMAC_ID_SHA1);
 	return (new_list);
 }
 
@@ -812,19 +815,13 @@ int
 sctp_verify_hmac_param (struct sctp_auth_hmac_algo *hmacs, uint32_t num_hmacs)
 {
 	uint32_t i;
-	uint16_t hmac_id;
-	uint32_t sha1_supported = 0;
 
 	for (i = 0; i < num_hmacs; i++) {
-		hmac_id = ntohs(hmacs->hmac_ids[i]);
-		if (hmac_id == SCTP_AUTH_HMAC_ID_SHA1)
-	 		sha1_supported = 1;
+		if (ntohs(hmacs->hmac_ids[i]) == SCTP_AUTH_HMAC_ID_SHA1) {
+	 		return (0);
+		}
 	}
-	/* all HMAC id's are supported */
-	if (sha1_supported == 0)
-		return (-1);
-	else
-		return (0);
+	return (-1);
 }
 
 sctp_authinfo_t *
@@ -878,17 +875,9 @@ sctp_get_hmac_digest_len(uint16_t hmac_algo)
 	switch (hmac_algo) {
 	case SCTP_AUTH_HMAC_ID_SHA1:
 		return (SCTP_AUTH_DIGEST_LEN_SHA1);
-#ifdef HAVE_SHA224
-	case SCTP_AUTH_HMAC_ID_SHA224:
-		return (SCTP_AUTH_DIGEST_LEN_SHA224);
-#endif
-#ifdef HAVE_SHA2
+#if defined(SCTP_SUPPORT_HMAC_SHA256)
 	case SCTP_AUTH_HMAC_ID_SHA256:
 		return (SCTP_AUTH_DIGEST_LEN_SHA256);
-	case SCTP_AUTH_HMAC_ID_SHA384:
-		return (SCTP_AUTH_DIGEST_LEN_SHA384);
-	case SCTP_AUTH_HMAC_ID_SHA512:
-		return (SCTP_AUTH_DIGEST_LEN_SHA512);
 #endif
 	default:
 		/* unknown HMAC algorithm: can't do anything */
@@ -901,16 +890,10 @@ sctp_get_hmac_block_len(uint16_t hmac_algo)
 {
 	switch (hmac_algo) {
 	case SCTP_AUTH_HMAC_ID_SHA1:
-#ifdef HAVE_SHA224
-	case SCTP_AUTH_HMAC_ID_SHA224:
-#endif
 		return (64);
-#ifdef HAVE_SHA2
+#if defined(SCTP_SUPPORT_HMAC_SHA256)
 	case SCTP_AUTH_HMAC_ID_SHA256:
 		return (64);
-	case SCTP_AUTH_HMAC_ID_SHA384:
-	case SCTP_AUTH_HMAC_ID_SHA512:
-		return (128);
 #endif
 	case SCTP_AUTH_HMAC_ID_RSVD:
 	default:
@@ -927,21 +910,11 @@ sctp_hmac_init(uint16_t hmac_algo, sctp_hash_context_t *ctx)
 {
 	switch (hmac_algo) {
 	case SCTP_AUTH_HMAC_ID_SHA1:
-		SHA1_Init(&ctx->sha1);
+		SCTP_SHA1_INIT(&ctx->sha1);
 		break;
-#ifdef HAVE_SHA224
-	case SCTP_AUTH_HMAC_ID_SHA224:
-		break;
-#endif
-#ifdef HAVE_SHA2
+#if defined(SCTP_SUPPORT_HMAC_SHA256)
 	case SCTP_AUTH_HMAC_ID_SHA256:
-		SHA256_Init(&ctx->sha256);
-		break;
-	case SCTP_AUTH_HMAC_ID_SHA384:
-		SHA384_Init(&ctx->sha384);
-		break;
-	case SCTP_AUTH_HMAC_ID_SHA512:
-		SHA512_Init(&ctx->sha512);
+		SCTP_SHA256_INIT(&ctx->sha256);
 		break;
 #endif
 	case SCTP_AUTH_HMAC_ID_RSVD:
@@ -957,21 +930,11 @@ sctp_hmac_update(uint16_t hmac_algo, sctp_hash_context_t *ctx,
 {
 	switch (hmac_algo) {
 	case SCTP_AUTH_HMAC_ID_SHA1:
-		SHA1_Update(&ctx->sha1, text, textlen);
+		SCTP_SHA1_UPDATE(&ctx->sha1, text, textlen);
 		break;
-#ifdef HAVE_SHA224
-	case SCTP_AUTH_HMAC_ID_SHA224:
-		break;
-#endif
-#ifdef HAVE_SHA2
+#if defined(SCTP_SUPPORT_HMAC_SHA256)
 	case SCTP_AUTH_HMAC_ID_SHA256:
-		SHA256_Update(&ctx->sha256, text, textlen);
-		break;
-	case SCTP_AUTH_HMAC_ID_SHA384:
-		SHA384_Update(&ctx->sha384, text, textlen);
-		break;
-	case SCTP_AUTH_HMAC_ID_SHA512:
-		SHA512_Update(&ctx->sha512, text, textlen);
+		SCTP_SHA256_UPDATE(&ctx->sha256, text, textlen);
 		break;
 #endif
 	case SCTP_AUTH_HMAC_ID_RSVD:
@@ -987,22 +950,11 @@ sctp_hmac_final(uint16_t hmac_algo, sctp_hash_context_t *ctx,
 {
 	switch (hmac_algo) {
 	case SCTP_AUTH_HMAC_ID_SHA1:
-		SHA1_Final(digest, &ctx->sha1);
+		SCTP_SHA1_FINAL(digest, &ctx->sha1);
 		break;
-#ifdef HAVE_SHA224
-	case SCTP_AUTH_HMAC_ID_SHA224:
-		break;
-#endif
-#ifdef HAVE_SHA2
+#if defined(SCTP_SUPPORT_HMAC_SHA256)
 	case SCTP_AUTH_HMAC_ID_SHA256:
-		SHA256_Final(digest, &ctx->sha256);
-		break;
-	case SCTP_AUTH_HMAC_ID_SHA384:
-		/* SHA384 is truncated SHA512 */
-		SHA384_Final(digest, &ctx->sha384);
-		break;
-	case SCTP_AUTH_HMAC_ID_SHA512:
-		SHA512_Final(digest, &ctx->sha512);
+		SCTP_SHA256_FINAL(digest, &ctx->sha256);
 		break;
 #endif
 	case SCTP_AUTH_HMAC_ID_RSVD:

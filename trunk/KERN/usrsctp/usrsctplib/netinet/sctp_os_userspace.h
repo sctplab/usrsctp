@@ -529,6 +529,8 @@ struct sx {int dummy;};
 #include <sys/filedesc.h>
 #endif
 
+#include "netinet/sctp_sha1.h"
+
 #if __FreeBSD_version >= 700000
 #include <netinet/ip_options.h>
 #endif
@@ -601,13 +603,13 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 		}						\
 	} while (0);						\
 }
-#define SCTPDBG_ADDR(level, addr)					\
-{									\
-	do {								\
-		if (SCTP_BASE_SYSCTL(sctp_debug_on) & level ) {		\
-		    sctp_print_address(addr);				\
-		}							\
-	} while (0);							\
+#define SCTPDBG_ADDR(level, addr)				\
+{								\
+	do {							\
+		if (SCTP_BASE_SYSCTL(sctp_debug_on) & level ) {	\
+		    sctp_print_address(addr);			\
+		}						\
+	} while (0);						\
 }
 #else
 #define SCTPDBG(level, ...)
@@ -665,17 +667,17 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 /*
  * general memory allocation
  */
-#define SCTP_MALLOC(var, type, size, name) \
-    do { \
-	MALLOC(var, type, size, name, M_NOWAIT); \
-    } while (0)
+#define SCTP_MALLOC(var, type, size, name)				\
+	do {								\
+		MALLOC(var, type, size, name, M_NOWAIT);		\
+	} while (0)
 
 #define SCTP_FREE(var, type)	FREE(var, type)
 
-#define SCTP_MALLOC_SONAME(var, type, size) \
-    do { \
-	MALLOC(var, type, size, M_SONAME, (M_WAITOK | M_ZERO)); \
-    } while (0)
+#define SCTP_MALLOC_SONAME(var, type, size)				\
+	do {								\
+		MALLOC(var, type, size, M_SONAME, (M_WAITOK | M_ZERO));	\
+	} while (0)
 
 #define SCTP_FREE_SONAME(var)	FREE(var, M_SONAME)
 
@@ -989,72 +991,18 @@ int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af);
 /* This is re-pulse ourselves for sendbuf */
 #define SCTP_ZERO_COPY_SENDQ_EVENT(inp, so)
 
-
-/*
- * SCTP AUTH
- */
-/* USE_SCTP_SHA1 is defined if you need sctp_sha1.[ch].  SHA1_* functions are defined
- *  there.  On Linux, they are also defined in libcrypto.a once you install
- *  the libssl-dev package (on Ubuntu, at least).
- */
-/* #define USE_SCTP_SHA1 */
-
-/* #define HAVE_SHA2 sha2.h exists on Linux? */
-
-
 #define SCTP_READ_RANDOM(buf, len)	read_random(buf, len)
 
-
-#ifdef USE_SCTP_SHA1
-#include <netinet/sctp_sha1.h>
-#else
-#if 0 /*this was old _KERNEL code... */
-#include <crypto/sha1.h>
-/* map standard crypto API names */
-#define SHA1_Init	SHA1Init
-#define SHA1_Update	SHA1Update
-#define SHA1_Final(x,y)	SHA1Final((caddr_t)x, y)
-#endif
-#endif
-
-#if defined(HAVE_SHA2)
-#include <crypto/sha2/sha2.h>
-#endif
-#if 0
-/*  going to have to port so generic across OS's... */
-#if 1 /* openssl header files on FreeBSD 6.3 on Emulab and libssl-dev for Ubuntu */
-#include <openssl/md5.h>
-#include <openssl/sha.h>
-/* libssl-dev calls this SHA_CTX, but it's refered to as SHA1_CTX within the
- *  SCTP stack code so here we typedef (or macro?) to equate the two.
- */
-typedef SHA_CTX SHA1_CTX;
-
-#else /* only _KERNEL? */
-
-#include <sys/md5.h>
-/* map standard crypto API names */
-#define MD5_Init	MD5Init
-#define MD5_Update	MD5Update
-#define MD5_Final	MD5Final
-#endif
-#endif
-
+#define SCTP_SHA1_CTX		struct sctp_sha1_context
+#define SCTP_SHA1_INIT		sctp_sha1_init
+#define SCTP_SHA1_UPDATE	sctp_sha1_update
+#define SCTP_SHA1_FINAL(x,y)	sctp_sha1_final((unsigned char *)x, y)
 
 /* start OOTB only stuff */
-
-
 /* TODO IFT_LOOP is in net/if_types.h on Linux */
 #define IFT_LOOP 0x18
 
 /* sctp_pcb.h */
-/* typedef int SHA1_CTX; */
-/* typedef int MD5_CTX; */
-#ifdef HAVE_SHA2
-typedef int SHA256_CTX;
-typedef int SHA384_CTX;
-typedef int SHA512_CTX;
-#endif
 
 #if defined(__Userspace_os_Windows)
 #define SHUT_RD 1

@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 254672 2013-08-22 20:29:57Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 255160 2013-09-02 22:48:41Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UIO_H_
@@ -690,11 +690,9 @@ struct sctp_hmacalgo {
 /* AUTH hmac_id */
 #define SCTP_AUTH_HMAC_ID_RSVD		0x0000
 #define SCTP_AUTH_HMAC_ID_SHA1		0x0001	/* default, mandatory */
+#if defined(SCTP_SUPPORT_HMAC_SHA256)
 #define SCTP_AUTH_HMAC_ID_SHA256	0x0003
-#define SCTP_AUTH_HMAC_ID_SHA224	0x0004
-#define SCTP_AUTH_HMAC_ID_SHA384	0x0005
-#define SCTP_AUTH_HMAC_ID_SHA512	0x0006
-
+#endif
 
 /* SCTP_AUTH_ACTIVE_KEY / SCTP_AUTH_DELETE_KEY */
 struct sctp_authkeyid {
