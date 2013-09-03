@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 246588 2013-02-09 08:27:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 255190 2013-09-03 19:31:59Z tuexen $");
 #endif
 
 #define _IP_VHL
@@ -442,7 +442,7 @@ sctp_recover_sent_list(struct sctp_tcb *stcb)
 				}
 			}
 			TAILQ_REMOVE(&asoc->sent_queue, chk, sctp_next);
-			if (chk->pr_sctp_on) {
+			if (PR_SCTP_ENABLED(chk->flags)) {
 				if (asoc->pr_sctp_cnt != 0)
 					asoc->pr_sctp_cnt--;
 			}
