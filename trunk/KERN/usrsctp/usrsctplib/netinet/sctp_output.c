@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 255162 2013-09-02 23:27:53Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 255190 2013-09-03 19:31:59Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6443,7 +6443,6 @@ sctp_get_frag_point(struct sctp_tcb *stcb,
 static void
 sctp_set_prsctp_policy(struct sctp_stream_queue_pending *sp)
 {
-	sp->pr_sctp_on = 0;
 	/*
 	 * We assume that the user wants PR_SCTP_TTL if the user
 	 * provides a positive lifetime but does not specify any
@@ -6453,7 +6452,6 @@ sctp_set_prsctp_policy(struct sctp_stream_queue_pending *sp)
 	 */
 	if (PR_SCTP_ENABLED(sp->sinfo_flags)) {
 		sp->act_flags |= PR_SCTP_POLICY(sp->sinfo_flags);
-		sp->pr_sctp_on = 1;
 	} else {
 		return;
 	}
@@ -7795,13 +7793,8 @@ re_look:
 		}
 		chk->send_size += pads;
 	}
-	/* We only re-set the policy if it is on */
-	if (sp->pr_sctp_on) {
-		sctp_set_prsctp_policy(sp);
+	if (PR_SCTP_ENABLED(chk->flags)) {
 		asoc->pr_sctp_cnt++;
-		chk->pr_sctp_on = 1;
-	} else {
-		chk->pr_sctp_on = 0;
 	}
 	if (sp->msg_is_complete && (sp->length == 0) && (sp->sender_all_done)) {
 		/* All done pull and kill the message */

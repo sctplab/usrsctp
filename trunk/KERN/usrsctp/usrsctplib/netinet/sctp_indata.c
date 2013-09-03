@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 254248 2013-08-12 13:52:15Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 255190 2013-09-03 19:31:59Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4740,7 +4740,7 @@ sctp_handle_sack(struct mbuf *m, int offset_seg, int offset_dup,
 			}
 		}
 		TAILQ_REMOVE(&asoc->sent_queue, tp1, sctp_next);
-		if (tp1->pr_sctp_on) {
+		if (PR_SCTP_ENABLED(tp1->flags)) {
 			if (asoc->pr_sctp_cnt != 0)
 				asoc->pr_sctp_cnt--;
 		}
