@@ -41,7 +41,16 @@ __FBSDID("$FreeBSD$");
 
 #include <sys/types.h>
 #if defined(SCTP_USE_NSS_SHA1)
+#if defined(__Userspace_os_Darwin)
+/* The NSS sources require __APPLE__ to be defined.
+ * XXX: Remove this ugly hack once the platform defines have been cleaned up.
+ */
+#define __APPLE__
+#endif
 #include <pk11pub.h>
+#if defined(__Userspace_os_Darwin)
+#undef __APPLE__
+#endif
 #elif defined(SCTP_USE_OPENSSL_SHA1)
 #include <openssl/sha.h>
 #endif
