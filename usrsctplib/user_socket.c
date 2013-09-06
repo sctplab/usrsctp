@@ -1429,7 +1429,6 @@ u_long sb_max_adj =
 
 static	u_long sb_efficiency = 8;	/* parameter for sbreserve() */
 
-#if defined (__Userspace__)
 /*
  * Allot mbufs to a sockbuf.  Attempt to scale mbmax so that mbcnt doesn't
  * become limiting if buffering efficiency is near the normal case.
@@ -1439,48 +1438,22 @@ sbreserve_locked(struct sockbuf *sb, u_long cc, struct socket *so)
 {
 	SOCKBUF_LOCK_ASSERT(sb);
 	sb->sb_mbmax = (u_int)min(cc * sb_efficiency, sb_max);
+	sb->sb_hiwat = cc;
 	if (sb->sb_lowat > (int)sb->sb_hiwat)
 		sb->sb_lowat = (int)sb->sb_hiwat;
 	return (1);
 }
-#else /* kernel version for reference */
-/*
- * Allot mbufs to a sockbuf.  Attempt to scale mbmax so that mbcnt doesn't
- * become limiting if buffering efficiency is near the normal case.
- */
-int
-sbreserve_locked(struct sockbuf *sb, u_long cc, struct socket *so,
-    struct thread *td)
+
+static int
+sbreserve(struct sockbuf *sb, u_long cc, struct socket *so)
 {
-	rlim_t sbsize_limit;
+	int error;
 
-	SOCKBUF_LOCK_ASSERT(sb);
-
-	/*
-	 * td will only be NULL when we're in an interrupt (e.g. in
-	 * tcp_input()).
-	 *
-	 * XXXRW: This comment needs updating, as might the code.
-	 */
-	if (cc > sb_max_adj)
-		return (0);
-	if (td != NULL) {
-		PROC_LOCK(td->td_proc);
-		sbsize_limit = lim_cur(td->td_proc, RLIMIT_SBSIZE);
-		PROC_UNLOCK(td->td_proc);
-	} else
-		sbsize_limit = RLIM_INFINITY;
-	if (!chgsbsize(so->so_cred->cr_uidinfo, &sb->sb_hiwat, cc,
-	    sbsize_limit))
-		return (0);
-	sb->sb_mbmax = min(cc * sb_efficiency, sb_max);
-	if (sb->sb_lowat > sb->sb_hiwat)
-		sb->sb_lowat = sb->sb_hiwat;
-	return (1);
+	SOCKBUF_LOCK(sb);
+	error = sbreserve_locked(sb, cc, so);
+	SOCKBUF_UNLOCK(sb);
+	return (error);
 }
-#endif
-
-
 
 #if defined(__Userspace__)
 int
@@ -2228,6 +2201,38 @@ usrsctp_setsockopt(struct socket *so, int level, int option_name,
 	case SOL_SOCKET:
 	{
 		switch (option_name) {
+		case SO_RCVBUF:
+			if (option_len < (socklen_t)sizeof(int)) {
+				errno = EINVAL;
+				return (-1);
+			} else {
+				int *buf_size;
+
+				buf_size = (int *)option_value;
+				if (*buf_size < 1) {
+					errno = EINVAL;
+					return (-1);
+				}
+				sbreserve(&so->so_rcv, (u_long)*buf_size, so);
+				return (0);
+			}
+			break;
+		case SO_SNDBUF:
+			if (option_len < (socklen_t)sizeof(int)) {
+				errno = EINVAL;
+				return (-1);
+			} else {
+				int *buf_size;
+
+				buf_size = (int *)option_value;
+				if (*buf_size < 1) {
+					errno = EINVAL;
+					return (-1);
+				}
+				sbreserve(&so->so_snd, (u_long)*buf_size, so);
+				return (0);
+			}
+			break;
 		case SO_LINGER:
 			if (option_len < (socklen_t)sizeof(struct linger)) {
 				errno = EINVAL;
@@ -2289,6 +2294,32 @@ usrsctp_getsockopt(struct socket *so, int level, int option_name,
 	switch (level) {
 	case SOL_SOCKET:
 		switch (option_name) {
+		case SO_RCVBUF:
+			if (*option_len < (socklen_t)sizeof(int)) {
+				errno = EINVAL;
+				return (-1);
+			} else {
+				int *buf_size;
+
+				buf_size = (int *)option_value;
+				*buf_size = so->so_rcv.sb_hiwat;;
+				*option_len = (socklen_t)sizeof(int);
+				return (0);
+			}
+			break;
+		case SO_SNDBUF:
+			if (*option_len < (socklen_t)sizeof(int)) {
+				errno = EINVAL;
+				return (-1);
+			} else {
+				int *buf_size;
+
+				buf_size = (int *)option_value;
+				*buf_size = so->so_snd.sb_hiwat;
+				*option_len = (socklen_t)sizeof(int);
+				return (0);
+			}
+			break;
 		case SO_LINGER:
 			if (*option_len < (socklen_t)sizeof(struct linger)) {
 				errno = EINVAL;
