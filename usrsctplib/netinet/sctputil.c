@@ -4954,9 +4954,19 @@ sctp_append_to_readq(struct sctp_inpcb *inp,
 	 * is populated in the outbound sinfo structure from the true cumack
 	 * if the association exists...
 	 */
+	control->sinfo_tsn = control->sinfo_cumtsn = ctls_cumack;
 #if defined(__Userspace__)
 	if (inp->recv_callback) {
-		if (control->end_added == 1) {
+		uint32_t pd_point, length;
+
+		length = control->length;
+		if (stcb != NULL && stcb->sctp_socket != NULL) {
+			pd_point = min(SCTP_SB_LIMIT_RCV(stcb->sctp_socket) >> SCTP_PARTIAL_DELIVERY_SHIFT,
+			               stcb->sctp_ep->partial_delivery_point);
+		} else {
+			pd_point = inp->partial_delivery_point;
+		}
+		if ((control->end_added == 1) || (length >= pd_point)) {
 			struct socket *so;
 			char *buffer;
 			struct sctp_rcvinfo rcv;
@@ -4970,8 +4980,6 @@ sctp_append_to_readq(struct sctp_inpcb *inp,
 			for (m = control->data; m; m = SCTP_BUF_NEXT(m)) {
 				sctp_sbfree(control, control->stcb, &so->so_rcv, m);
 			}
-			atomic_add_int(&stcb->asoc.refcnt, 1);
-			SCTP_TCB_UNLOCK(stcb);
 			m_copydata(control->data, 0, control->length, buffer);
 			memset(&rcv, 0, sizeof(struct sctp_rcvinfo));
 			rcv.rcv_sid = control->sinfo_stream;
@@ -5004,23 +5012,32 @@ sctp_append_to_readq(struct sctp_inpcb *inp,
 				break;
 			}
 			flags = 0;
+			if (control->end_added == 1) {
+				flags |= MSG_EOR;
+			}
 			if (control->spec_flags & M_NOTIFICATION) {
 				flags |= MSG_NOTIFICATION;
 			}
-			inp->recv_callback(so, addr, buffer, control->length, rcv, flags, inp->ulp_info);
-			SCTP_TCB_LOCK(stcb);
-			atomic_subtract_int(&stcb->asoc.refcnt, 1);
 			sctp_m_freem(control->data);
 			control->data = NULL;
+			control->tail_mbuf = NULL;
 			control->length = 0;
-			sctp_free_a_readq(stcb, control);
+			if (control->end_added) {
+				sctp_free_a_readq(stcb, control);
+			} else {
+				control->some_taken = 1;
+			}
+			atomic_add_int(&stcb->asoc.refcnt, 1);
+			SCTP_TCB_UNLOCK(stcb);
+			inp->recv_callback(so, addr, buffer, length, rcv, flags, inp->ulp_info);
+			SCTP_TCB_LOCK(stcb);
+			atomic_subtract_int(&stcb->asoc.refcnt, 1);
 		}
 		if (inp)
 			SCTP_INP_READ_UNLOCK(inp);
 		return (0);
 	}
 #endif
-	control->sinfo_tsn = control->sinfo_cumtsn = ctls_cumack;
 	if (inp) {
 		SCTP_INP_READ_UNLOCK(inp);
 	}
