@@ -50,7 +50,7 @@
 #include <usrsctp.h>
 
 #define MAX_PACKET_SIZE (1<<16)
-#define LINE_LENGTH 80
+#define LINE_LENGTH (1<<20)
 #define DISCARD_PPID 39
 
 static void *
@@ -122,10 +122,10 @@ static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
            size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
 {
-	printf("Message received on sock = %p.\n", (void *)sock);
+	printf("Message %p received on sock = %p.\n", data, (void *)sock);
 	if (data) {
 		if ((flags & MSG_NOTIFICATION) == 0) {
-			printf("Msg of length %d received via %p:%u on stream %d with SSN %u and TSN %u, PPID %d, context %u.\n",
+			printf("Messsage of length %d received via %p:%u on stream %d with SSN %u and TSN %u, PPID %d, context %u, flags %x.\n",
 			       (int)datalen,
 			       addr.sconn.sconn_addr,
 			       ntohs(addr.sconn.sconn_port),
@@ -133,7 +133,8 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 			       rcv.rcv_ssn,
 			       rcv.rcv_tsn,
 			       ntohl(rcv.rcv_ppid),
-			       rcv.rcv_context);
+			       rcv.rcv_context,
+			       flags);
 		}
 		free(data);
 	} else {
@@ -273,6 +274,8 @@ main(void)
 #else
 	pthread_t tid_c, tid_s;
 #endif
+	int cur_buf_size, snd_buf_size, rcv_buf_size;
+	socklen_t opt_len;
 	struct sctp_sndinfo sndinfo;
 	char line[LINE_LENGTH];
 
@@ -353,9 +356,41 @@ main(void)
 	if ((s_c = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_c)) == NULL) {
 		perror("usrsctp_socket");
 	}
+	opt_len = (socklen_t)sizeof(int);
+	cur_buf_size = 0;
+	if (usrsctp_getsockopt(s_c, SOL_SOCKET, SO_SNDBUF, &cur_buf_size, &opt_len) < 0) {
+		perror("usrsctp_getsockopt");
+	}
+	printf("Change send socket buffer size from %d ", cur_buf_size);
+	snd_buf_size = 1<<20; /* 1 MB */
+	if (usrsctp_setsockopt(s_c, SOL_SOCKET, SO_SNDBUF, &snd_buf_size, sizeof(int)) < 0) {
+		perror("usrsctp_setsockopt");
+	}
+	opt_len = (socklen_t)sizeof(int);
+	cur_buf_size = 0;
+	if (usrsctp_getsockopt(s_c, SOL_SOCKET, SO_SNDBUF, &cur_buf_size, &opt_len) < 0) {
+		perror("usrsctp_getsockopt");
+	}
+	printf("to %d.\n", cur_buf_size);
 	if ((s_l = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_s)) == NULL) {
 		perror("usrsctp_socket");
 	}
+	opt_len = (socklen_t)sizeof(int);
+	cur_buf_size = 0;
+	if (usrsctp_getsockopt(s_l, SOL_SOCKET, SO_RCVBUF, &cur_buf_size, &opt_len) < 0) {
+		perror("usrsctp_getsockopt");
+	}
+	printf("Change receive socket buffer size from %d ", cur_buf_size);
+	rcv_buf_size = 1<<16; /* 64 KB */
+	if (usrsctp_setsockopt(s_l, SOL_SOCKET, SO_RCVBUF, &rcv_buf_size, sizeof(int)) < 0) {
+		perror("usrsctp_setsockopt");
+	}
+	opt_len = (socklen_t)sizeof(int);
+	cur_buf_size = 0;
+	if (usrsctp_getsockopt(s_l, SOL_SOCKET, SO_RCVBUF, &cur_buf_size, &opt_len) < 0) {
+		perror("usrsctp_getsockopt");
+	}
+	printf("to %d.\n", cur_buf_size);
 	/* Bind the client side. */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
@@ -403,12 +438,12 @@ main(void)
 	sndinfo.snd_ppid = htonl(DISCARD_PPID);
 	sndinfo.snd_context = 0;
 	sndinfo.snd_assoc_id = 0;
+	/* Send a 1 MB message */
 	if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
 	                 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("usrsctp_sendv");
 	}
 	usrsctp_shutdown(s_c, SHUT_WR);
-	usrsctp_shutdown(s_s, SHUT_WR);
 
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
