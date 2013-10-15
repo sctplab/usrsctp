@@ -39,7 +39,7 @@ AC_CONFIG_MACRO_DIR([m4])
 LIBCFLAGS="-DSCTP_PROCESS_LEVEL_LOCKS -DSCTP_SIMPLE_ALLOCATOR -D__Userspace__"
 case $host_os in
 darwin*)
-  CFLAGS="$CFLAGS -pedantic -Wall -Werror -D__APPLE_USE_RFC_2292"
+  CFLAGS="$CFLAGS -pedantic -Wall -std=c99 -Werror -D__APPLE_USE_RFC_2292"
   LIBCFLAGS="$LIBCFLAGS -U__APPLE__ -D__Userspace_os_Darwin"
   ;;
 linux*)
