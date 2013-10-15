@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 253858 2013-08-01 12:05:23Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 256556 2013-10-15 20:21:27Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5595,11 +5595,9 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 								SCTP_FROM_SCTP_USRREQ+SCTP_LOC_10);
 					}
 					net->dest_state |= SCTP_ADDR_NO_PMTUD;
-					if (paddrp->spp_pathmtu > SCTP_DEFAULT_MINSEGMENT) {
-						net->mtu = paddrp->spp_pathmtu + ovh;
-						if (net->mtu < stcb->asoc.smallest_mtu) {
-							sctp_pathmtu_adjustment(stcb, net->mtu);
-						}
+					net->mtu = paddrp->spp_pathmtu + ovh;
+					if (net->mtu < stcb->asoc.smallest_mtu) {
+						sctp_pathmtu_adjustment(stcb, net->mtu);
 					}
 				}
 				if (paddrp->spp_flags & SPP_PMTUD_ENABLE) {
@@ -5720,11 +5718,9 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 									SCTP_FROM_SCTP_USRREQ+SCTP_LOC_10);
 						}
 						net->dest_state |= SCTP_ADDR_NO_PMTUD;
-						if (paddrp->spp_pathmtu > SCTP_DEFAULT_MINSEGMENT) {
-							net->mtu = paddrp->spp_pathmtu + ovh;
-							if (net->mtu < stcb->asoc.smallest_mtu) {
-								sctp_pathmtu_adjustment(stcb, net->mtu);
-							}
+						net->mtu = paddrp->spp_pathmtu + ovh;
+						if (net->mtu < stcb->asoc.smallest_mtu) {
+							sctp_pathmtu_adjustment(stcb, net->mtu);
 						}
 					}
 					sctp_stcb_feature_on(inp, stcb, SCTP_PCB_FLAGS_DO_NOT_PMTUD);
