@@ -4776,11 +4776,9 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 				addr.sin6 = control->whoFrom->ro._l_addr.sin6;
 				break;
 #endif
-#if defined(__Userspace__)
 			case AF_CONN:
 				addr.sconn = control->whoFrom->ro._l_addr.sconn;
 				break;
-#endif
 			default:
 				addr.sa = control->whoFrom->ro._l_addr.sa;
 				break;
@@ -4792,6 +4790,8 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 			inp->recv_callback(so, addr, buffer, control->length, rcv, flags, inp->ulp_info);
 			SCTP_TCB_LOCK(stcb);
 			atomic_subtract_int(&stcb->asoc.refcnt, 1);
+			sctp_free_remote_addr(control->whoFrom);
+			control->whoFrom = NULL;
 			sctp_m_freem(control->data);
 			control->data = NULL;
 			control->length = 0;
@@ -5002,11 +5002,9 @@ sctp_append_to_readq(struct sctp_inpcb *inp,
 				addr.sin6 = control->whoFrom->ro._l_addr.sin6;
 				break;
 #endif
-#if defined(__Userspace__)
 			case AF_CONN:
 				addr.sconn = control->whoFrom->ro._l_addr.sconn;
 				break;
-#endif
 			default:
 				addr.sa = control->whoFrom->ro._l_addr.sa;
 				break;
@@ -5023,6 +5021,8 @@ sctp_append_to_readq(struct sctp_inpcb *inp,
 			control->tail_mbuf = NULL;
 			control->length = 0;
 			if (control->end_added) {
+				sctp_free_remote_addr(control->whoFrom);
+				control->whoFrom = NULL;
 				sctp_free_a_readq(stcb, control);
 			} else {
 				control->some_taken = 1;
