@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 252779 2013-07-05 10:08:49Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 257272 2013-10-28 20:32:37Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4377,7 +4377,7 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 #endif
 		if (set_scope) {
 #ifdef SCTP_DONT_DO_PRIVADDR_SCOPE
-			stcb->ipv4_local_scope = 1;
+			stcb->asoc.scope.ipv4_local_scope = 1;
 #else
 			if (IN4_ISPRIVATE_ADDRESS(&sin->sin_addr)) {
 				stcb->asoc.scope.ipv4_local_scope = 1;
