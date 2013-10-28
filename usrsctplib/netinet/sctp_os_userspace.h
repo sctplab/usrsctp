@@ -1120,14 +1120,17 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header, int how, int a
 #endif
 
 #if defined(__Userspace_os_Linux)
+#if !defined(TAILQ_FOREACH_SAFE)
 #define TAILQ_FOREACH_SAFE(var, head, field, tvar)             \
          for ((var) = ((head)->tqh_first);                     \
               (var) && ((tvar) = TAILQ_NEXT((var), field), 1); \
               (var) = (tvar))
-
+#endif
+#if !defined(LIST_FOREACH_SAFE)
 #define LIST_FOREACH_SAFE(var, head, field, tvar)              \
          for ((var) = ((head)->lh_first);                      \
               (var) && ((tvar) = LIST_NEXT((var), field), 1);  \
               (var) = (tvar))
+#endif
 #endif
 #endif
