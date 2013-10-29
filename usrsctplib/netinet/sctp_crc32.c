@@ -40,8 +40,8 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_crc32.c 235828 2012-05-23 11:26:28Z tu
 #include <netinet/sctp_crc32.h>
 #include <netinet/sctp_pcb.h>
 
-#if !defined(SCTP_WITH_NO_CSUM)
 
+#if !defined(SCTP_WITH_NO_CSUM)
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800000
 #else
 /**
