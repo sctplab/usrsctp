@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 255190 2013-09-03 19:31:59Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 257359 2013-10-29 20:04:50Z tuexen $");
 #endif
 
 #define _IP_VHL
@@ -551,7 +551,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 	TAILQ_FOREACH_SAFE(chk, &stcb->asoc.sent_queue, sctp_next, nchk) {
 		if (SCTP_TSN_GE(stcb->asoc.last_acked_seq, chk->rec.data.TSN_seq)) {
 			/* Strange case our list got out of order? */
-			SCTP_PRINTF("Our list is out of order? last_acked:%x chk:%x",
+			SCTP_PRINTF("Our list is out of order? last_acked:%x chk:%x\n",
 			            (unsigned int)stcb->asoc.last_acked_seq, (unsigned int)chk->rec.data.TSN_seq);
 			recovery_cnt++;
 #ifdef INVARIANTS

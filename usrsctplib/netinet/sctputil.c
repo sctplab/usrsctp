@@ -6998,7 +6998,7 @@ sctp_hashinit_flags(int elements, struct malloc_type *type,
 		hashtbl = malloc((u_long)hashsize * sizeof(*hashtbl));
 	else {
 #ifdef INVARIANTS
-		SCTP_PRINTF("flag incorrect in hashinit_flags");
+		SCTP_PRINTF("flag incorrect in hashinit_flags.\n");
 #endif
 		return (NULL);
 	}
@@ -7022,7 +7022,7 @@ sctp_hashdestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask)
 	hashtbl = vhashtbl;
 	for (hp = hashtbl; hp <= &hashtbl[hashmask]; hp++)
 		if (!LIST_EMPTY(hp)) {
-			SCTP_PRINTF("hashdestroy: hash not empty");
+			SCTP_PRINTF("hashdestroy: hash not empty.\n");
 			return;
 		}
 	FREE(hashtbl, type);
