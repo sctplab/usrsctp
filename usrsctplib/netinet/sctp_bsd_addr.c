@@ -210,7 +210,7 @@ sctp_startup_iterator(void)
 			   SCTP_KTHREAD_PAGES,
 			   SCTP_KTRHEAD_NAME);
 #elif defined(__APPLE__)
-        (void)kernel_thread_start((thread_continue_t)sctp_iterator_thread, NULL, &sctp_it_ctl.thread_proc);
+	(void)kernel_thread_start((thread_continue_t)sctp_iterator_thread, NULL, &sctp_it_ctl.thread_proc);
 #elif defined(__Userspace__)
 #if defined(__Userspace_os_Windows)
 	if ((sctp_it_ctl.thread_proc = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&sctp_iterator_thread, NULL, 0, NULL)) == NULL) {
