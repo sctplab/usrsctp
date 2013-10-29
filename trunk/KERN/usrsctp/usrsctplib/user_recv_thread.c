@@ -414,22 +414,24 @@ recv_function_raw(void *arg)
 
 		port = 0;
 
-#if !defined(SCTP_WITH_NO_CSUM)
+#if defined(SCTP_WITH_NO_CSUM)
+		SCTP_STAT_INCR(sctps_recvnocrc);
+#else
 		if (src.sin_addr.s_addr == dst.sin_addr.s_addr) {
 			compute_crc = 0;
+			SCTP_STAT_INCR(sctps_recvnocrc);
+		} else {
+			SCTP_STAT_INCR(sctps_recvswcrc);
 		}
 #endif
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
 		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_common_input_processing with off=%d\n", offset);
-
 		sctp_common_input_processing(&recvmbuf[0], sizeof(struct ip), offset, n, 
 		                             (struct sockaddr *)&src,
 		                             (struct sockaddr *)&dst,
 		                             sh, ch,
 #if !defined(SCTP_WITH_NO_CSUM)
 		                             compute_crc,
-#else
-		                             0,
 #endif
 		                             ecn,
 		                             SCTP_DEFAULT_VRFID, port);
@@ -601,9 +603,14 @@ recv_function_raw6(void *arg)
 		src.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 		src.sin6_port = sh->src_port;
-#if !defined(SCTP_WITH_NO_CSUM)
+#if defined(SCTP_WITH_NO_CSUM)
+		SCTP_STAT_INCR(sctps_recvnocrc);
+#else
 		if (memcmp(&src.sin6_addr, &dst.sin6_addr, sizeof(struct in6_addr)) == 0) {
 			compute_crc = 0;
+			SCTP_STAT_INCR(sctps_recvnocrc);
+		} else {
+			SCTP_STAT_INCR(sctps_recvswcrc);
 		}
 #endif
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
@@ -614,8 +621,6 @@ recv_function_raw6(void *arg)
 		                             sh, ch,
 #if !defined(SCTP_WITH_NO_CSUM)
 		                             compute_crc,
-#else
-		                             0,
 #endif
 		                             0,
 		                             SCTP_DEFAULT_VRFID, 0);
@@ -808,9 +813,14 @@ recv_function_udp(void *arg)
 		port = src.sin_port;
 		src.sin_port = sh->src_port;
 		dst.sin_port = sh->dest_port;
-#if !defined(SCTP_WITH_NO_CSUM)
+#if defined(SCTP_WITH_NO_CSUM)
+		SCTP_STAT_INCR(sctps_recvnocrc);
+#else
 		if (src.sin_addr.s_addr == dst.sin_addr.s_addr) {
 			compute_crc = 0;
+			SCTP_STAT_INCR(sctps_recvnocrc);
+		} else {
+			SCTP_STAT_INCR(sctps_recvswcrc);
 		}
 #endif
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
@@ -821,8 +831,6 @@ recv_function_udp(void *arg)
 		                             sh, ch,
 #if !defined(SCTP_WITH_NO_CSUM)
 		                             compute_crc,
-#else
-		                             0,
 #endif
 		                             0,
 		                             SCTP_DEFAULT_VRFID, port);
@@ -998,9 +1006,14 @@ recv_function_udp6(void *arg)
 		port = src.sin6_port;
 		src.sin6_port = sh->src_port;
 		dst.sin6_port = sh->dest_port;
-#if !defined(SCTP_WITH_NO_CSUM)
+#if defined(SCTP_WITH_NO_CSUM)
+		SCTP_STAT_INCR(sctps_recvnocrc);
+#else
 		if ((memcmp(&src.sin6_addr, &dst.sin6_addr, sizeof(struct in6_addr)) == 0)) {
 			compute_crc = 0;
+			SCTP_STAT_INCR(sctps_recvnocrc);
+		} else {
+			SCTP_STAT_INCR(sctps_recvswcrc);
 		}
 #endif
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
