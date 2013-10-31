@@ -365,6 +365,7 @@ soabort(so)
 #else
 		error = EAFNOSUPPORT;
 #endif
+	}
 #elif defined(INET)
 	error = sctp_abort(so);
 #else
