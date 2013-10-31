@@ -351,16 +351,19 @@ soabort(so)
 	struct socket *so;
 {
 	int error;
+#if defined(INET6)
 	struct sctp_inpcb *inp;
-
-	inp = (struct sctp_inpcb *)so->so_pcb;
+#endif
 
 #if defined(INET6)
-	if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6)
+	inp = (struct sctp_inpcb *)so->so_pcb;
+	if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) {
 		error = sctp6_abort(so);
+	} else {
 #if defined(INET)
-	else
 		error = sctp_abort(so);
+#else
+		error = EAFNOSUPPORT;
 #endif
 #elif defined(INET)
 	error = sctp_abort(so);
@@ -2519,6 +2522,7 @@ usrsctp_connectx(struct socket *so,
                  const struct sockaddr *addrs, int addrcnt,
                  sctp_assoc_t *id)
 {
+#if defined(INET) || defined(INET6)
 	char buf[SCTP_STACK_BUF_SIZE];
 	int i, ret, cnt, *aa;
 	char *cpto;
@@ -2595,6 +2599,10 @@ usrsctp_connectx(struct socket *so,
 		*id = *p_id;
 	}
 	return (ret);
+#else
+	errno = EINVAL;
+	return (-1);
+#endif
 }
 
 int
