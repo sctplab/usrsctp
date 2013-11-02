@@ -94,7 +94,6 @@ typedef HANDLE userland_thread_t;
 #define u_short    unsigned __int16
 #define ssize_t    __int64
 #define size_t     __int32
-#define in_addr_t  unsigned __int32
 #define n_time     unsigned __int32
 #define sa_family_t unsigned __int8
 #define IFNAMSIZ   64

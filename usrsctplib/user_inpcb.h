@@ -369,12 +369,7 @@ extern struct callout ipport_tick_callout;
 void	in_pcbpurgeif0(struct inpcbinfo *, struct ifnet *);
 int	in_pcballoc(struct socket *, struct inpcbinfo *);
 int	in_pcbbind(struct inpcb *, struct sockaddr *, struct ucred *);
-int	in_pcbbind_setup(struct inpcb *, struct sockaddr *, in_addr_t *,
-	    u_short *, struct ucred *);
 int	in_pcbconnect(struct inpcb *, struct sockaddr *, struct ucred *);
-int	in_pcbconnect_setup(struct inpcb *, struct sockaddr *, in_addr_t *,
-	    u_short *, in_addr_t *, u_short *, struct inpcb **,
-	    struct ucred *);
 void	in_pcbdetach(struct inpcb *);
 void	in_pcbdisconnect(struct inpcb *);
 void	in_pcbdrop(struct inpcb *);
