@@ -82,7 +82,9 @@ struct sctp_base_info system_base_info;
 #endif
 
 #if defined(__Userspace__)
+#if defined(INET) || defined(INET6)
 struct ifaddrs *g_interfaces;
+#endif
 #endif
 /* FIX: we don't handle multiple link local scopes */
 /* "scopeless" replacement IN6_ARE_ADDR_EQUAL */
@@ -6885,7 +6887,9 @@ sctp_pcb_finish(void)
 	SCTP_HASH_FREE(SCTP_BASE_INFO(vrf_ifn_hash), SCTP_BASE_INFO(vrf_ifn_hashmark));
 #if defined(__Userspace__) && !defined(__Userspace_os_Windows)
 	/* free memory allocated by getifaddrs call */
+#if defined(INET) || defined(INET6)
 	freeifaddrs(g_interfaces);
+#endif
 #endif
 
 	/* free the TIMEWAIT list elements malloc'd in the function
