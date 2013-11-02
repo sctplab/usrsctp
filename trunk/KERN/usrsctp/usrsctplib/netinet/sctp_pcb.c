@@ -2319,8 +2319,8 @@ sctp_findassociation_special_addr(struct mbuf *m, int offset,
     struct sockaddr *dst)
 {
 	struct sctp_paramhdr *phdr, parm_buf;
-	struct sctp_tcb *stcb;
 #if defined(INET) || defined(INET6)
+	struct sctp_tcb *stcb;
 	uint16_t ptype;
 #endif
 	uint16_t plen;
@@ -2348,7 +2348,6 @@ sctp_findassociation_special_addr(struct mbuf *m, int offset,
 	sin6.sin6_port = sh->src_port;
 #endif
 
-	stcb = NULL;
 	offset += sizeof(struct sctp_init_chunk);
 
 	phdr = sctp_get_next_param(m, offset, &parm_buf, sizeof(parm_buf));
