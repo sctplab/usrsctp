@@ -6921,9 +6921,7 @@ sctp_pcb_finish(void)
 	SCTP_IPI_COUNT_DESTROY();
 #endif
 	SCTP_STATLOG_DESTROY();
-#if !defined(__Userspace__)
 	SCTP_INP_INFO_LOCK_DESTROY();
-#endif
 
 	SCTP_WQ_ADDR_DESTROY();
 
