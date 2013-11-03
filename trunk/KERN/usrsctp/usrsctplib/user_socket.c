@@ -161,7 +161,6 @@ sbwait(struct sockbuf *sb)
 static struct socket *
 soalloc(void)
 {
-#if defined(__Userspace__)
 	struct socket *so;
 
 	/*
@@ -176,9 +175,10 @@ soalloc(void)
 
 	so = (struct socket *)malloc(sizeof(struct socket));
 
-	if (so == NULL)
+	if (so == NULL) {
 		return (NULL);
-	bzero(so, sizeof(struct socket));
+	}
+	memset(so, 0, sizeof(struct socket));
 
 	/* __Userspace__ Initializing the socket locks here */
 	SOCKBUF_LOCK_INIT(&so->so_snd, "so_snd");
@@ -191,96 +191,25 @@ soalloc(void)
 	   What about gencnt and numopensockets?*/
 	TAILQ_INIT(&so->so_aiojobq);
 	return (so);
-#else
-	/* Putting the kernel version for reference. The #else
-	   should be removed once the __Userspace__
-	   version is tested.
-	 */
-	struct socket *so;
-
-	so = uma_zalloc(socket_zone, M_NOWAIT | M_ZERO);
-	if (so == NULL)
-		return (NULL);
-#ifdef MAC
-	if (mac_init_socket(so, M_NOWAIT) != 0) {
-		uma_zfree(socket_zone, so);
-		return (NULL);
-	}
-#endif
-	SOCKBUF_LOCK_INIT(&so->so_snd, "so_snd");
-	SOCKBUF_LOCK_INIT(&so->so_rcv, "so_rcv");
-	sx_init(&so->so_snd.sb_sx, "so_snd_sx");
-	sx_init(&so->so_rcv.sb_sx, "so_rcv_sx");
-	TAILQ_INIT(&so->so_aiojobq);
-	mtx_lock(&so_global_mtx);
-	so->so_gencnt = ++so_gencnt;
-	++numopensockets;
-	mtx_unlock(&so_global_mtx);
-	return (so);
-#endif
 }
 
-#if defined(__Userspace__)
-/*
- * Free the storage associated with a socket at the socket layer.
- */
 static void
 sodealloc(struct socket *so)
 {
 
 	KASSERT(so->so_count == 0, ("sodealloc(): so_count %d", so->so_count));
 	KASSERT(so->so_pcb == NULL, ("sodealloc(): so_pcb != NULL"));
-
-	SOCKBUF_LOCK_DESTROY(&so->so_snd);
-	SOCKBUF_LOCK_DESTROY(&so->so_rcv);
 
 	SOCKBUF_COND_DESTROY(&so->so_snd);
 	SOCKBUF_COND_DESTROY(&so->so_rcv);
 
-        SOCK_COND_DESTROY(so);
+	SOCK_COND_DESTROY(so);
+
+	SOCKBUF_LOCK_DESTROY(&so->so_snd);
+	SOCKBUF_LOCK_DESTROY(&so->so_rcv);
 
 	free(so);
 }
-
-#else /* kernel version for reference. */
-/*
- * Free the storage associated with a socket at the socket layer, tear down
- * locks, labels, etc.  All protocol state is assumed already to have been
- * torn down (and possibly never set up) by the caller.
- */
-static void
-sodealloc(struct socket *so)
-{
-
-	KASSERT(so->so_count == 0, ("sodealloc(): so_count %d", so->so_count));
-	KASSERT(so->so_pcb == NULL, ("sodealloc(): so_pcb != NULL"));
-
-	mtx_lock(&so_global_mtx);
-	so->so_gencnt = ++so_gencnt;
-	--numopensockets;	/* Could be below, but faster here. */
-	mtx_unlock(&so_global_mtx);
-	if (so->so_rcv.sb_hiwat)
-		(void)chgsbsize(so->so_cred->cr_uidinfo,
-		    &so->so_rcv.sb_hiwat, 0, RLIM_INFINITY);
-	if (so->so_snd.sb_hiwat)
-		(void)chgsbsize(so->so_cred->cr_uidinfo,
-		    &so->so_snd.sb_hiwat, 0, RLIM_INFINITY);
-#ifdef INET
-	/* remove acccept filter if one is present. */
-	if (so->so_accf != NULL)
-		do_setopt_accept_filter(so, NULL);
-#endif
-#ifdef MAC
-	mac_destroy_socket(so);
-#endif
-	crfree(so->so_cred);
-	sx_destroy(&so->so_snd.sb_sx);
-	sx_destroy(&so->so_rcv.sb_sx);
-	SOCKBUF_LOCK_DESTROY(&so->so_snd);
-	SOCKBUF_LOCK_DESTROY(&so->so_rcv);
-	uma_zfree(socket_zone, so);
-}
-#endif
 
 /* Taken from  /src/sys/kern/uipc_socket.c
  * and modified for __Userspace__
@@ -2176,6 +2105,7 @@ usrsctp_finish(void)
 			SCTP_INP_INFO_RUNLOCK();
 			return (-1);
 		}
+		SCTP_INP_INFO_RUNLOCK();
 	} else {
 		return (-1);
 	}
