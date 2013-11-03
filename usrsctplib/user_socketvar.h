@@ -102,7 +102,6 @@ struct uio {
  */
 #if defined (__Userspace_os_Windows)
 #define AF_ROUTE  17
-typedef __int32 u_quad_t;
 typedef __int32 pid_t;
 typedef unsigned __int32 uid_t;
 enum sigType {
@@ -111,7 +110,6 @@ enum sigType {
 	MAX_EVENTS = 2
 };
 #endif
-typedef	u_quad_t so_gen_t;
 
 /*-
  * Locking key to struct socket:
@@ -215,7 +213,7 @@ struct socket {
 	struct	label *so_label;	/* (b) MAC label for socket */
 	struct	label *so_peerlabel;	/* (b) cached MAC label for peer */
 	/* NB: generation count must not be first. */
-	so_gen_t so_gencnt;		/* (h) generation count */
+	uint32_t so_gencnt;		/* (h) generation count */
 	void	*so_emuldata;		/* (b) private data for emulators */
  	struct so_accf {
 		struct	accept_filter *so_accept_filter;

@@ -49,7 +49,6 @@ struct inpcbpolicy;
  */
 LIST_HEAD(inpcbhead, inpcb);
 LIST_HEAD(inpcbporthead, inpcbport);
-typedef	u_quad_t	inp_gen_t;
 
 /*
  * PCB with AF_INET6 null bind'ed laddr can receive AF_INET input packet.
@@ -169,7 +168,6 @@ struct inpcb {
 	LIST_ENTRY(inpcb) inp_portlist;
 	struct	inpcbport *inp_phd;	/* head of this list */
 #define inp_zero_size offsetof(struct inpcb, inp_gencnt)
-	inp_gen_t	inp_gencnt;	/* generation count of this instance */
 	struct mtx	inp_mtx;
 
 #define	in6p_faddr	inp_inc.inc6_faddr
@@ -197,26 +195,6 @@ struct inpcb {
  * to roll over in a year.  This seems sufficiently unlikely that we simply
  * don't concern ourselves with that possibility.
  */
-
-/*
- * Interface exported to userland by various protocols which use inpcbs.  Hack
- * alert -- only define if struct xsocket is in scope.
- */
-#ifdef _SYS_SOCKETVAR_H_
-struct	xinpcb {
-	size_t	xi_len;		/* length of this structure */
-	struct	inpcb xi_inp;
-	struct	xsocket xi_socket;
-	u_quad_t	xi_alignment_hack;
-};
-
-struct	xinpgen {
-	size_t	xig_len;	/* length of this structure */
-	u_int	xig_count;	/* number of PCBs at this time */
-	inp_gen_t xig_gen;	/* generation count at this time */
-	so_gen_t xig_sogen;	/* socket generation count at this time */
-};
-#endif /* _SYS_SOCKETVAR_H_ */
 
 struct inpcbport {
 	LIST_ENTRY(inpcbport) phd_hash;
@@ -264,7 +242,6 @@ struct inpcbinfo {
 	 * Generation count--incremented each time a connection is allocated
 	 * or freed.
 	 */
-	u_quad_t		 ipi_gencnt;
 	struct mtx		 ipi_mtx;
 
 	/*
