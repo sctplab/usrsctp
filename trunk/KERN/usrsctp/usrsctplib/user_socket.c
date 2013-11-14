@@ -3167,6 +3167,9 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 #endif
 	                             ecn_bits,
 	                             SCTP_DEFAULT_VRFID, 0);
+	if (m) {
+		sctp_m_freem(m);
+	}
 	return;
 }
 
