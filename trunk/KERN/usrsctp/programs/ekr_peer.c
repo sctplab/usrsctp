@@ -62,24 +62,20 @@ handle_packets(void *arg)
 #else
 	int *fdp;
 #endif
-	char *buf;
 	ssize_t length;
+	char buf[MAX_PACKET_SIZE];
 
 #ifdef _WIN32
 	fdp = (SOCKET *)arg;
 #else
 	fdp = (int *)arg;
 #endif
-	if ((buf = (char *)malloc(MAX_PACKET_SIZE)) == NULL) {
-		return (NULL);
-	}
 	for (;;) {
 		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
 			usrsctp_conninput(fdp, buf, (size_t)length, 0);
 		}
 	}
-	free(buf);
 	return (NULL);
 }
 
@@ -486,5 +482,16 @@ main(int argc, char *argv[])
 			perror("usrsctp_sendv");
 		}
 	}
+	while (usrsctp_finish() != 0) {
+#ifdef _WIN32
+		Sleep(1000);
+#else
+		sleep(1);
+#endif
+	}
+#ifndef _WIN32
+	pthread_cancel(tid);
+	pthread_join(tid, NULL);
+#endif
 	return (0);
 }
