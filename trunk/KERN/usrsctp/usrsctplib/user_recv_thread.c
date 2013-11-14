@@ -435,6 +435,9 @@ recv_function_raw(void *arg)
 #endif
 		                             ecn,
 		                             SCTP_DEFAULT_VRFID, port);
+		if (recvmbuf[0]) {
+			m_freem(recvmbuf[0]);
+		}
 	}
 	for (i = 0; i < MAXLEN_MBUF_CHAIN; i++) {
 		m_free(recvmbuf[i]);
@@ -624,6 +627,9 @@ recv_function_raw6(void *arg)
 #endif
 		                             0,
 		                             SCTP_DEFAULT_VRFID, 0);
+		if (recvmbuf6[0]) {
+			m_freem(recvmbuf6[0]);
+		}
 	}
 	for (i = 0; i < MAXLEN_MBUF_CHAIN; i++) {
 		m_free(recvmbuf6[i]);
@@ -834,6 +840,9 @@ recv_function_udp(void *arg)
 #endif
 		                             0,
 		                             SCTP_DEFAULT_VRFID, port);
+		if (udprecvmbuf[0]) {
+			m_freem(udprecvmbuf[0]);
+		}
 	}
 	for (i = 0; i < MAXLEN_MBUF_CHAIN; i++) {
 		m_free(udprecvmbuf[i]);
@@ -1027,7 +1036,9 @@ recv_function_udp6(void *arg)
 #endif
 		                             0,
 		                             SCTP_DEFAULT_VRFID, port);
-		                             
+		if (udprecvmbuf6[0]) {
+			m_freem(udprecvmbuf6[0]);
+		}
 	}
 	for (i = 0; i < MAXLEN_MBUF_CHAIN; i++) {
 		m_free(udprecvmbuf6[i]);
