@@ -183,7 +183,7 @@ recv_function_route(void *arg)
 			}
 		}
 	}
-	pthread_exit(NULL);
+	return (NULL);
 }
 #endif
 
@@ -266,7 +266,7 @@ recv_function_route(void *arg)
 			}
 		}
 	}
-	pthread_exit(NULL);
+	return (NULL);
 }
 #endif
 
@@ -406,10 +406,10 @@ recv_function_raw(void *arg)
 		
 		/* SCTP does not allow broadcasts or multicasts */
 		if (IN_MULTICAST(ntohl(dst.sin_addr.s_addr))) {
-			return NULL;
+			return (NULL);
 		}
 		if (SCTP_IS_IT_BROADCAST(dst.sin_addr, recvmbuf[0])) {
-			return NULL;
+			return (NULL);
 		}
 
 		port = 0;
@@ -444,11 +444,6 @@ recv_function_raw(void *arg)
 	}
 	/* free the array itself */
 	free(recvmbuf);
-#if defined (__Userspace_os_Windows)
-	ExitThread(0);
-#else
-	pthread_exit(NULL);
-#endif
 	return (NULL);
 }
 #endif
@@ -636,11 +631,6 @@ recv_function_raw6(void *arg)
 	}
 	/* free the array itself */
 	free(recvmbuf6);
-#if defined (__Userspace_os_Windows)
-	ExitThread(0);
-#else
-	pthread_exit(NULL);
-#endif
 	return (NULL);
 }
 #endif
@@ -806,10 +796,10 @@ recv_function_udp(void *arg)
 
 		/* SCTP does not allow broadcasts or multicasts */
 		if (IN_MULTICAST(ntohl(dst.sin_addr.s_addr))) {
-			return NULL;
+			return (NULL);
 		}
 		if (SCTP_IS_IT_BROADCAST(dst.sin_addr, udprecvmbuf[0])) {
-			return NULL;
+			return (NULL);
 		}
 
 		/*offset = sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr);*/
@@ -849,11 +839,6 @@ recv_function_udp(void *arg)
 	}
 	/* free the array itself */
 	free(udprecvmbuf);
-#if defined (__Userspace_os_Windows)
-	ExitThread(0);
-#else
-	pthread_exit(NULL);
-#endif
 	return (NULL);
 }
 #endif
@@ -1005,7 +990,7 @@ recv_function_udp6(void *arg)
 
 		/* SCTP does not allow broadcasts or multicasts */
 		if (IN6_IS_ADDR_MULTICAST(&dst.sin6_addr)) {
-			return NULL;
+			return (NULL);
 		}
 		
 		sh = mtod(udprecvmbuf6[0], struct sctphdr *);
@@ -1045,11 +1030,6 @@ recv_function_udp6(void *arg)
 	}
 	/* free the array itself */
 	free(udprecvmbuf6);
-#if defined (__Userspace_os_Windows)
-	ExitThread(0);
-#else
-	pthread_exit(NULL);
-#endif
 	return (NULL);
 }
 #endif
