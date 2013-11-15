@@ -160,20 +160,13 @@ sctp_iterator_thread(void *v SCTP_UNUSED)
 	SCTP_IPI_ITERATOR_WQ_UNLOCK();
 #if defined(__Userspace__)
 	sctp_wakeup_iterator();
-#if !defined(__Userspace_os_Windows)
-	pthread_exit(NULL);
-#else
-	ExitThread(0);
-#endif
+	return (NULL);
 #else
 	wakeup(&sctp_it_ctl.iterator_flags);
 	thread_terminate(current_thread());
-#endif
 #ifdef INVARIANTS
 	panic("Hmm. thread_terminate() continues...");
 #endif
-#if defined(__Userspace__)
-	return (NULL);
 #endif
 #endif
 }
