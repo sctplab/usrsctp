@@ -200,6 +200,7 @@ sctp_finish(void)
 	if (SCTP_BASE_VAR(userspace_rawsctp) != -1) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadraw), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(recvthreadraw));
 #else
 		pthread_join(SCTP_BASE_VAR(recvthreadraw), NULL);
 #endif
@@ -207,6 +208,7 @@ sctp_finish(void)
 	if (SCTP_BASE_VAR(userspace_udpsctp) != -1) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadudp), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(recvthreadudp));
 #else
 		pthread_join(SCTP_BASE_VAR(recvthreadudp), NULL);
 #endif
@@ -216,6 +218,7 @@ sctp_finish(void)
 	if (SCTP_BASE_VAR(userspace_rawsctp6) != -1) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadraw6), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(recvthreadraw6));
 #else
 		pthread_join(SCTP_BASE_VAR(recvthreadraw6), NULL);
 #endif
@@ -223,6 +226,7 @@ sctp_finish(void)
 	if (SCTP_BASE_VAR(userspace_udpsctp6) != -1) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadudp6), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(recvthreadudp6));
 #else
 		pthread_join(SCTP_BASE_VAR(recvthreadudp6), NULL);
 #endif
@@ -231,6 +235,7 @@ sctp_finish(void)
 	SCTP_BASE_VAR(timer_thread_should_exit) = 1;
 #if defined(__Userspace_os_Windows)
 	WaitForSingleObject(SCTP_BASE_VAR(timer_thread), INFINITE);
+	CloseHandle(SCTP_BASE_VAR(timer_thread));
 #else
 	pthread_join(SCTP_BASE_VAR(timer_thread), NULL);
 #endif
