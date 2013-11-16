@@ -188,8 +188,6 @@ sctp_startup_iterator(void)
 	sctp_it_ctl.iterator_running = 0;
 	sctp_it_ctl.iterator_flags = 0;
 	sctp_it_ctl.cur_it = NULL;
-	SCTP_ITERATOR_LOCK_INIT();
-	SCTP_IPI_ITERATOR_WQ_INIT();
 	TAILQ_INIT(&sctp_it_ctl.iteratorhead);
 #if defined(__FreeBSD__)
 #if __FreeBSD_version <= 701000
