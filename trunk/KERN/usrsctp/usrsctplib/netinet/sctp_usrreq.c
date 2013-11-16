@@ -241,6 +241,15 @@ sctp_finish(void)
 #endif
 #endif
 	sctp_pcb_finish();
+#if defined(__Userspace__)
+#if defined(__Userspace_os_Windows)
+	DeleteConditionVariable(&accept_cond);
+	DeleteCriticalSection(&accept_mtx);
+#else
+	pthread_cond_destroy(&accept_cond);
+	pthread_mutex_destroy(&accept_mtx);
+#endif
+#endif
 #if defined(__Windows__)
 	sctp_finish_sysctls();
 #if defined(INET) || defined(INET6)
