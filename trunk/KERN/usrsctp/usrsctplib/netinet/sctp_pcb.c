@@ -6734,7 +6734,8 @@ sctp_pcb_init()
 	for (i = 0; i < SCTP_STACK_VTAG_HASH_SIZE; i++) {
 		LIST_INIT(&SCTP_BASE_INFO(vtag_timewait)[i]);
 	}
-
+	SCTP_ITERATOR_LOCK_INIT();
+	SCTP_IPI_ITERATOR_WQ_INIT();
 #if defined(SCTP_PROCESS_LEVEL_LOCKS)
 #if defined(__Userspace_os_Windows)
 	InitializeConditionVariable(&sctp_it_ctl.iterator_wakeup);
@@ -6835,8 +6836,6 @@ sctp_pcb_finish(void)
 	} while ((sctp_it_ctl.iterator_flags & SCTP_ITERATOR_EXITED) == 0);
 	thread_deallocate(sctp_it_ctl.thread_proc);
 	SCTP_IPI_ITERATOR_WQ_UNLOCK();
-	SCTP_IPI_ITERATOR_WQ_DESTROY();
-	SCTP_ITERATOR_LOCK_DESTROY();
 #endif
 #if defined(__Windows__)
 	if (sctp_it_ctl.iterator_thread_obj != NULL) {
@@ -6851,7 +6850,27 @@ sctp_pcb_finish(void)
 		ObDereferenceObject(sctp_it_ctl.iterator_thread_obj);
 	}
 #endif
-
+#if defined(__Userspace__)
+	if (sctp_it_ctl.thread_proc) {
+#if defined(__Userspace_os_Windows)
+		WaitForSingleObject(sctp_it_ctl.thread_proc, INFINITE);
+		CloseHandle(sctp_it_ctl.thread_proc);
+		sctp_it_ctl.thread_proc = NULL;
+#else
+		pthread_join(sctp_it_ctl.thread_proc, NULL);
+		sctp_it_ctl.thread_proc = 0;
+#endif
+	}
+#endif
+#if defined(SCTP_PROCESS_LEVEL_LOCKS)
+#if defined(__Userspace_os_Windows)
+	DeleteConditionVariable(&sctp_it_ctl.iterator_wakeup);
+#else
+	pthread_cond_destroy(&sctp_it_ctl.iterator_wakeup);
+#endif
+#endif
+	SCTP_IPI_ITERATOR_WQ_DESTROY();
+ 	SCTP_ITERATOR_LOCK_DESTROY();
 	SCTP_OS_TIMER_STOP(&SCTP_BASE_INFO(addr_wq_timer.timer));
 	SCTP_WQ_ADDR_LOCK();
 	LIST_FOREACH_SAFE(wi, &SCTP_BASE_INFO(addr_wq), sctp_nxt_addr, nwi) {
