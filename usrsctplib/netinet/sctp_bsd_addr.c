@@ -174,44 +174,32 @@ sctp_iterator_thread(void *v SCTP_UNUSED)
 void
 sctp_startup_iterator(void)
 {
-	static int called = 0;
-#if defined(__FreeBSD__) || (defined(__Userspace__) && !defined(__Userspace_os_Windows))
-	int ret;
-#endif
-
-	if (called) {
+	if (sctp_it_ctl.thread_proc) {
 		/* You only get one */
 		return;
 	}
-	/* init the iterator head */
-	called = 1;
-	sctp_it_ctl.iterator_running = 0;
-	sctp_it_ctl.iterator_flags = 0;
-	sctp_it_ctl.cur_it = NULL;
 	TAILQ_INIT(&sctp_it_ctl.iteratorhead);
 #if defined(__FreeBSD__)
 #if __FreeBSD_version <= 701000
-	ret = kthread_create(sctp_iterator_thread,
+	kthread_create(sctp_iterator_thread,
 #else
-	ret = kproc_create(sctp_iterator_thread,
+	kproc_create(sctp_iterator_thread,
 #endif
-			   (void *)NULL,
-			   &sctp_it_ctl.thread_proc,
-			   RFPROC,
-			   SCTP_KTHREAD_PAGES,
-			   SCTP_KTRHEAD_NAME);
+	             (void *)NULL,
+	             &sctp_it_ctl.thread_proc,
+	             RFPROC,
+	             SCTP_KTHREAD_PAGES,
+	             SCTP_KTRHEAD_NAME);
 #elif defined(__APPLE__)
-	(void)kernel_thread_start((thread_continue_t)sctp_iterator_thread, NULL, &sctp_it_ctl.thread_proc);
+	kernel_thread_start((thread_continue_t)sctp_iterator_thread, NULL, &sctp_it_ctl.thread_proc);
 #elif defined(__Userspace__)
 #if defined(__Userspace_os_Windows)
 	if ((sctp_it_ctl.thread_proc = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&sctp_iterator_thread, NULL, 0, NULL)) == NULL) {
-		SCTP_PRINTF("ERROR; Creating sctp_iterator_thread failed\n");
-	}
 #else
-	if ((ret = pthread_create(&sctp_it_ctl.thread_proc, NULL, &sctp_iterator_thread, NULL))) {
-		SCTP_PRINTF("ERROR; return code from sctp_iterator_thread pthread_create() is %d\n", ret);
-	}
+	if (pthread_create(&sctp_it_ctl.thread_proc, NULL, &sctp_iterator_thread, NULL)) {
 #endif
+		SCTP_PRINTF("ERROR: Creating sctp_iterator_thread failed.\n");
+	}
 #endif
 }
 
