@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 258221 2013-11-16 15:04:49Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 258224 2013-11-16 15:34:14Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -971,7 +971,9 @@ sctp_does_stcb_own_this_addr(struct sctp_tcb *stcb, struct sockaddr *to)
 					 */
 					continue;
 				}
-				
+				if (sctp_ifa->address.sa.sa_family != to->sa_family) {
+					continue;
+				}
 				switch (sctp_ifa->address.sa.sa_family) {
 #ifdef INET
 				case AF_INET:
