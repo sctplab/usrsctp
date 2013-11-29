@@ -785,6 +785,7 @@ sctp_calculate_cksum(struct mbuf *m, uint32_t offset)
 #endif				/* !defined(SCTP_WITH_NO_CSUM) */
 
 
+#if defined(__FreeBSD__)
 void
 sctp_delayed_cksum(struct mbuf *m, uint32_t offset)
 {
@@ -813,4 +814,5 @@ sctp_delayed_cksum(struct mbuf *m, uint32_t offset)
 	*(uint32_t *) (m->m_data + offset) = checksum;
 #endif
 }
+#endif
 
