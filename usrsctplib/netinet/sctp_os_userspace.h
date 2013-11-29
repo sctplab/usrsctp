@@ -77,25 +77,32 @@ typedef HANDLE userland_thread_t;
 #define ADDRESS_FAMILY	unsigned __int8
 #define IPVERSION  4
 #define MAXTTL     255
+/* VS2010 comes with stdint.h */
+#if _MSC_VER >= 1600
+#include <stdint.h>
+#else
 #define uint64_t   unsigned __int64
+#define uint32_t   unsigned __int32
+#define int32_t    __int32
+#define uint16_t   unsigned __int16
+#define int16_t    __int16
+#define uint8_t    unsigned __int8
+#define int8_t     __int8
+#endif
+#ifndef _SIZE_T_DEFINED
+#define size_t     __int32
+#endif
 #define u_long     unsigned __int64
 #define u_int      unsigned __int32
-#define uint32_t   unsigned __int32
 #define u_int32_t  unsigned __int32
-#define int32_t	   __int32
-#define int16_t	   __int16
-#define uint16_t   unsigned __int16
 #define u_int16_t  unsigned __int16
-#define uint8_t    unsigned __int8
 #define u_int8_t   unsigned __int8
-#define int8_t     __int8
 #define u_char     unsigned char
 #define n_short    unsigned __int16
 #define u_short    unsigned __int16
-#define ssize_t    __int64
-#define size_t     __int32
 #define n_time     unsigned __int32
 #define sa_family_t unsigned __int8
+#define ssize_t    __int64
 #define IFNAMSIZ   64
 #define __func__	__FUNCTION__
 
