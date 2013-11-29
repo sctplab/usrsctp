@@ -1747,8 +1747,33 @@ user_accept(struct socket *head,  struct sockaddr **name, socklen_t *namelen, st
 	if (name) {
 #ifdef HAVE_SA_LEN
 		/* check sa_len before it is destroyed */
-		if (*namelen > sa->sa_len)
+		if (*namelen > sa->sa_len) {
 			*namelen = sa->sa_len;
+		}
+#else
+		socklen_t sa_len;
+
+		switch (sa->sa_family) {
+#ifdef INET
+		case AF_INET:
+			sa_len = sizeof(struct sockaddr_in);
+			break;
+#endif
+#ifdef INET6
+		case AF_INET6:
+			sa_len = sizeof(struct sockaddr_in6);
+			break;
+#endif
+		case AF_CONN:
+			sa_len = sizeof(struct sockaddr_conn);
+			break;
+		default:
+			sa_len = 0;
+			break;
+		}
+		if (*namelen > sa_len) {
+			*namelen = sa_len;
+		}
 #endif
 		*name = sa;
 		sa = NULL;
