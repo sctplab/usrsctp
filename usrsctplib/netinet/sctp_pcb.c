@@ -6792,33 +6792,9 @@ sctp_pcb_finish(void)
 	struct sctp_tagblock *twait_block, *prev_twait_block;
 	struct sctp_laddr *wi, *nwi;
 	int i;
-#if defined(__FreeBSD__)
 	struct sctp_iterator *it, *nit;
 	
-	/* In FreeBSD the iterator thread never exits
-	 * but we do clean up.
-	 * The only way FreeBSD reaches here is if we have VRF's
-	 * but we still add the ifdef to make it compile on old versions.
-	 */
-	SCTP_IPI_ITERATOR_WQ_LOCK();
-	TAILQ_FOREACH_SAFE(it, &sctp_it_ctl.iteratorhead, sctp_nxt_itr, nit) {
-		if (it->vn != curvnet) {
-			continue;
-		}
-		TAILQ_REMOVE(&sctp_it_ctl.iteratorhead, it, sctp_nxt_itr);
-		if (it->function_atend != NULL) {
-			(*it->function_atend) (it->pointer, it->val);
-		}
-		SCTP_FREE(it,SCTP_M_ITER);
-	}
-	SCTP_IPI_ITERATOR_WQ_UNLOCK();
-	SCTP_ITERATOR_LOCK();
-	if ((sctp_it_ctl.cur_it) &&
-	    (sctp_it_ctl.cur_it->vn == curvnet)) {
-		sctp_it_ctl.iterator_flags |= SCTP_ITERATOR_STOP_CUR_IT;
-	}
-	SCTP_ITERATOR_UNLOCK();
-#else
+#if !defined(__FreeBSD__)
 	/* Notify the iterator to exit. */
 	SCTP_IPI_ITERATOR_WQ_LOCK();
 	sctp_it_ctl.iterator_flags |= SCTP_ITERATOR_MUST_EXIT;
@@ -6866,6 +6842,33 @@ sctp_pcb_finish(void)
 #else
 	pthread_cond_destroy(&sctp_it_ctl.iterator_wakeup);
 #endif
+#endif
+	/* In FreeBSD the iterator thread never exits
+	 * but we do clean up.
+	 * The only way FreeBSD reaches here is if we have VRF's
+	 * but we still add the ifdef to make it compile on old versions.
+	 */
+	SCTP_IPI_ITERATOR_WQ_LOCK();
+	TAILQ_FOREACH_SAFE(it, &sctp_it_ctl.iteratorhead, sctp_nxt_itr, nit) {
+#if defined(__FreeBSD__) && __FreeBSD_Version >= 801000
+		if (it->vn != curvnet) {
+			continue;
+		}
+#endif
+		TAILQ_REMOVE(&sctp_it_ctl.iteratorhead, it, sctp_nxt_itr);
+		if (it->function_atend != NULL) {
+			(*it->function_atend) (it->pointer, it->val);
+		}
+		SCTP_FREE(it,SCTP_M_ITER);
+	}
+	SCTP_IPI_ITERATOR_WQ_UNLOCK();
+#if defined(__FreeBSD__) && __FreeBSD_Version >= 801000
+	SCTP_ITERATOR_LOCK();
+	if ((sctp_it_ctl.cur_it) &&
+	    (sctp_it_ctl.cur_it->vn == curvnet)) {
+		sctp_it_ctl.iterator_flags |= SCTP_ITERATOR_STOP_CUR_IT;
+	}
+	SCTP_ITERATOR_UNLOCK();
 #endif
 #if !defined(__FreeBSD__)
 	SCTP_IPI_ITERATOR_WQ_DESTROY();
