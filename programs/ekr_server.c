@@ -136,7 +136,7 @@ receive_cb(struct socket *s, union sctp_sockstore addr, void *data,
 	} else {
 		usrsctp_close(s);
 	}
-	return 1;
+	return (1);
 }
 
 void

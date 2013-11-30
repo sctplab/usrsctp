@@ -243,7 +243,7 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 				exit(1);
 			} else {
 				/* send until EWOULDBLOCK then exit callback. */
-				return 1;
+				return (1);
 			}
 		}
 		messages++;
@@ -260,14 +260,14 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 				exit(1);
 			} else {
 				/* send until EWOULDBLOCK then exit callback. */
-				return 1;
+				return (1);
 			}
 		}
 		messages++;
 		done = 2;
 	}
 
-	return 1;
+	return (1);
 }
 
 static int
@@ -287,7 +287,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		first_length = 0;
 		sum = 0;
 		messages = 0;
-		return 1;
+		return (1);
 	}
 	if (first_length == 0) {
 		first_length = datalen;
@@ -297,7 +297,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 	messages++;
 
   free(data);
-	return 1;
+	return (1);
 }
 
 void

@@ -118,7 +118,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		}
 		free(data);
 	}
-	return 1;
+	return (1);
 }
 
 void
