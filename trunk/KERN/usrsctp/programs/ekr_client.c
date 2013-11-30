@@ -162,7 +162,6 @@ main(int argc, char *argv[])
 	int fd;
 #endif
 	struct socket *s;
-	struct linger l;
 #ifdef _WIN32
 	HANDLE tid;
 #else
@@ -226,12 +225,6 @@ main(int argc, char *argv[])
 #endif
 	if ((s = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd)) == NULL) {
 		perror("usrsctp_socket");
-	}
-
-	l.l_onoff = 1;
-	l.l_linger = 0;
-	if (usrsctp_setsockopt(s, SOL_SOCKET, SO_LINGER, (const void *)&l, (socklen_t)sizeof(struct linger)) < 0) {
-		perror("usrsctp_setsockopt");
 	}
 
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
