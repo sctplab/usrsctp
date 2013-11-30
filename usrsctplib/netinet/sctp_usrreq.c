@@ -84,6 +84,7 @@ sctp_init(void)
 	u_long sb_max_adj;
 
 #endif
+#if defined(__Userspace__)
 #if defined(__Userspace_os_Windows)
 #if defined(INET) || defined(INET6)
 	WSADATA wsaData;
@@ -95,6 +96,10 @@ sctp_init(void)
 #endif
 	InitializeConditionVariable(&accept_cond);
 	InitializeCriticalSection(&accept_mtx);
+#else
+	pthread_cond_init(&accept_cond, NULL);
+	pthread_mutex_init(&accept_mtx, NULL);
+#endif
 #endif
 	/* Initialize and modify the sysctled variables */
 	sctp_init_sysctls();
