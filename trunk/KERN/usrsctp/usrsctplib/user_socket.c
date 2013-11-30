@@ -48,14 +48,11 @@
 #if !defined (__Userspace_os_Windows)
 #include <netinet/udp.h>
 #include <arpa/inet.h>
-/* Statically initializing accept_mtx and accept_cond since there is no call for ACCEPT_LOCK_INIT() */
-userland_mutex_t accept_mtx = PTHREAD_MUTEX_INITIALIZER;
-userland_cond_t accept_cond = PTHREAD_COND_INITIALIZER;
 #else
 #include <user_socketvar.h>
+#endif
 userland_mutex_t accept_mtx;
 userland_cond_t accept_cond;
-#endif
 #ifdef _WIN32
 #include <time.h>
 #include <sys/timeb.h>
