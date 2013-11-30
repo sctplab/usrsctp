@@ -6856,7 +6856,7 @@ sctp_pcb_finish(void)
 	 */
 	SCTP_IPI_ITERATOR_WQ_LOCK();
 	TAILQ_FOREACH_SAFE(it, &sctp_it_ctl.iteratorhead, sctp_nxt_itr, nit) {
-#if defined(__FreeBSD__) && __FreeBSD_Version >= 801000
+#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
 		if (it->vn != curvnet) {
 			continue;
 		}
@@ -6868,7 +6868,7 @@ sctp_pcb_finish(void)
 		SCTP_FREE(it,SCTP_M_ITER);
 	}
 	SCTP_IPI_ITERATOR_WQ_UNLOCK();
-#if defined(__FreeBSD__) && __FreeBSD_Version >= 801000
+#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
 	SCTP_ITERATOR_LOCK();
 	if ((sctp_it_ctl.cur_it) &&
 	    (sctp_it_ctl.cur_it->vn == curvnet)) {
