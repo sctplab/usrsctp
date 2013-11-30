@@ -138,7 +138,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		usrsctp_deregister_address(ulp_info);
 		usrsctp_close(sock);
 	}
-	return 1;
+	return (1);
 }
 
 void
