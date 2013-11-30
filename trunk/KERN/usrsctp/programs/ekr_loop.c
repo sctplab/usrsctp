@@ -448,11 +448,28 @@ main(void)
 		sleep(1);
 #endif
 	}
-#ifndef _WIN32
+#ifdef _WIN32
+	TerminateThread(tid_c, 0);
+	WaitForSingleObject(tid_c, INFINITE);
+	TerminateThread(tid_s, 0);
+	WaitForSingleObject(tid_s, INFINITE);
+	if (closesocket(fd_c) == SOCKET_ERROR) {
+		printf("closesocket() failed with error: %ld\n", WSAGetLastError());
+	}
+	if (closesocket(fd_s) == SOCKET_ERROR) {
+		printf("closesocket() failed with error: %ld\n", WSAGetLastError());
+	}
+#else
 	pthread_cancel(tid_c);
 	pthread_join(tid_c, NULL);
 	pthread_cancel(tid_s);
 	pthread_join(tid_s, NULL);
+	if (close(fd_c) < 0) {
+		perror("close");
+	}
+	if (close(fd_s) < 0) {
+		perror("close");
+	}
 #endif
 	return (0);
 }
