@@ -273,10 +273,10 @@ main(int argc, char *argv[])
 #else
 		sleep(1);
 #endif
+	}
 #ifndef _WIN32
 	pthread_cancel(tid);
 	pthread_join(tid, NULL);
 #endif
-	}
 	return (0);
 }
