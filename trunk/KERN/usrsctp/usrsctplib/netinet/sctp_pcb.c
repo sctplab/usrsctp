@@ -6736,8 +6736,14 @@ sctp_pcb_init()
 	for (i = 0; i < SCTP_STACK_VTAG_HASH_SIZE; i++) {
 		LIST_INIT(&SCTP_BASE_INFO(vtag_timewait)[i]);
 	}
-	SCTP_ITERATOR_LOCK_INIT();
-	SCTP_IPI_ITERATOR_WQ_INIT();
+	/*
+	 * Only initialize non-VNET global mutexes for the
+	 * default instance.
+	 */
+	if (IS_DEFAULT_VNET(curvnet)) {
+		SCTP_ITERATOR_LOCK_INIT();
+		SCTP_IPI_ITERATOR_WQ_INIT();
+	}
 #if defined(SCTP_PROCESS_LEVEL_LOCKS)
 #if defined(__Userspace_os_Windows)
 	InitializeConditionVariable(&sctp_it_ctl.iterator_wakeup);
