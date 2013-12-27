@@ -3439,7 +3439,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 
 		if (stcb) {
 			/* simply copy out the sockaddr_storage... */
-			int len;
+			size_t len;
 
 			len = *optsize;
 #ifdef HAVE_SA_LEN
