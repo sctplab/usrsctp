@@ -2772,6 +2772,8 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 			ip = mtod(m, struct ip *);
 		}
 		udp = (struct udphdr *)(ip + 1);
+	} else {
+		udp = NULL;
 	}
 
 	if (!use_udp_tunneling) {
@@ -2928,6 +2930,8 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 			ip6 = mtod(m, struct ip6_hdr *);
 		}
 		udp = (struct udphdr *)(ip6 + 1);
+	} else {
+		udp = NULL;
 	}
 
 	if (!use_udp_tunneling) {
