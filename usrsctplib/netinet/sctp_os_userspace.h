@@ -402,7 +402,7 @@ struct udphdr {
 #else /* !defined(Userspace_os_Windows) */
 #include <sys/cdefs.h> /* needed? added from old __FreeBSD__ */
 #include <sys/socket.h>
-#if defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_OpenBSD) || defined(__Userspace_os_Linux)
+#if defined(__Userspace_os_DragonFly) || defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Linux) || defined(__Userspace_os_NetBSD) || defined(__Userspace_os_OpenBSD)
 #include <pthread.h>
 #endif
 typedef pthread_mutex_t userland_mutex_t;
@@ -416,7 +416,9 @@ typedef pthread_t userland_thread_t;
 #define MA_OWNED 7 /* sys/mutex.h typically on FreeBSD */
 #if !defined(__Userspace_os_FreeBSD)
 struct mtx {int dummy;};
+#if !defined(__Userspace_os_NetBSD)
 struct selinfo {int dummy;};
+#endif
 struct sx {int dummy;};
 #endif
 
@@ -519,7 +521,7 @@ struct sx {int dummy;};
 #include <netinet/ip6.h>
 #include <netinet/icmp6.h>
 #endif
-#if defined(__Userspace_os_Linux) || defined(__Userspace_os_Darwin) || defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_OpenBSD) ||defined(__Userspace_os_Windows)
+#if defined(__Userspace_os_Darwin) || defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Linux) || defined(__Userspace_os_NetBSD) || defined(__Userspace_os_OpenBSD) || defined(__Userspace_os_Windows)
 #include "user_ip6_var.h"
 #else
 #include <netinet6/ip6_var.h>
@@ -1089,9 +1091,11 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header, int how, int a
 /* with the current included files, this is defined in Linux but
  *  in FreeBSD, it is behind a _KERNEL in sys/socket.h ...
  */
-#if defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_OpenBSD)
+#if defined(__Userspace_os_DragonFly) || defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_OpenBSD)
 /* stolen from /usr/include/sys/socket.h */
 #define CMSG_ALIGN(n)   _ALIGN(n)
+#elif defined(__Userspace_os_NetBSD)
+#define CMSG_ALIGN(n)   (((n) + __ALIGNBYTES) & ~__ALIGNBYTES)
 #elif defined(__Userspace_os_Darwin)
 #if !defined(__DARWIN_ALIGNBYTES)
 #define	__DARWIN_ALIGNBYTES	(sizeof(__darwin_size_t) - 1)
@@ -1140,5 +1144,9 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header, int how, int a
               (var) && ((tvar) = LIST_NEXT((var), field), 1);  \
               (var) = (tvar))
 #endif
+#endif
+#if defined(__Userspace_os_DragonFly)
+#define TAILQ_FOREACH_SAFE TAILQ_FOREACH_MUTABLE
+#define LIST_FOREACH_SAFE LIST_FOREACH_MUTABLE
 #endif
 #endif

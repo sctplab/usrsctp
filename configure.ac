@@ -42,9 +42,9 @@ darwin*)
   CFLAGS="$CFLAGS -pedantic -Wall -std=c99 -Werror -D__APPLE_USE_RFC_2292"
   LIBCFLAGS="$LIBCFLAGS -U__APPLE__ -D__Userspace_os_Darwin"
   ;;
-linux*)
-  CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread -D_GNU_SOURCE"
-  LIBCFLAGS="$LIBCFLAGS  -D__Userspace_os_Linux"
+dragonfly*)
+  CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread"
+  LIBCFLAGS="$LIBCFLAGS -U__DragonFly__ -D__Userspace_os_DragonFly"
   ;;
 freebsd*)
   CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread"
@@ -52,6 +52,14 @@ freebsd*)
     LDFLAGS="$LDFLAGS -Qunused-arguments"
   fi
   LIBCFLAGS="$LIBCFLAGS -U__FreeBSD__ -D__Userspace_os_FreeBSD"
+  ;;
+linux*)
+  CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread -D_GNU_SOURCE"
+  LIBCFLAGS="$LIBCFLAGS  -D__Userspace_os_Linux"
+  ;;
+netbsd*)
+  CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread"
+  LIBCFLAGS="$LIBCFLAGS -U__NetBSD__ -D__Userspace_os_NetBSD"
   ;;
 openbsd*)
   CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread"

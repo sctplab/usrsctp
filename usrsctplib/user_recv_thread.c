@@ -35,7 +35,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <pthread.h>
-#if !defined(__Userspace_os_FreeBSD)
+#if !defined(__Userspace_os_DragonFly) && !defined(__Userspace_os_FreeBSD) && !defined(__Userspace_os_NetBSD)
 #include <sys/uio.h>
 #else
 #include <user_ip6_var.h>
@@ -56,7 +56,7 @@
 #endif
 #endif
 #endif
-#if defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Darwin)
+#if defined(__Userspace_os_Darwin) || defined(__Userspace_os_DragonFly) || defined(__Userspace_os_FreeBSD)
 #include <net/route.h>
 #endif
 /* local macros and datatypes used to get IP addresses system independently */
@@ -67,12 +67,12 @@
 void recv_thread_destroy(void);
 #define MAXLEN_MBUF_CHAIN 32 /* What should this value be? */
 #define ROUNDUP(a, size) (((a) & ((size)-1)) ? (1 + ((a) | ((size)-1))) : (a))
-#if defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Darwin)
+#if defined(__Userspace_os_Darwin) || defined(__Userspace_os_DragonFly) || defined(__Userspace_os_FreeBSD)
 #define NEXT_SA(ap) ap = (struct sockaddr *) \
 	((caddr_t) ap + (ap->sa_len ? ROUNDUP(ap->sa_len, sizeof (uint32_t)) : sizeof(uint32_t)))
 #endif
 
-#if defined(__Userspace_os_Darwin) || defined(__Userspace_os_FreeBSD)
+#if defined(__Userspace_os_Darwin) || defined(__Userspace_os_DragonFly) || defined(__Userspace_os_FreeBSD)
 static void
 sctp_get_rtaddrs(int addrs, struct sockaddr *sa, struct sockaddr **rti_info)
 {
@@ -1086,7 +1086,7 @@ recv_thread_init(void)
 #else
 	unsigned int timeout = SOCKET_TIMEOUT; /* Timeout in milliseconds */
 #endif
-#if defined(__Userspace_os_Darwin) || defined(__Userspace_os_FreeBSD)
+#if defined(__Userspace_os_Darwin) || defined(__Userspace_os_DragonFly) || defined(__Userspace_os_FreeBSD)
 	if (SCTP_BASE_VAR(userspace_route) == -1) {
 		if ((SCTP_BASE_VAR(userspace_route) = socket(AF_ROUTE, SOCK_RAW, 0)) < 0) {
 			SCTPDBG(SCTP_DEBUG_USR, "Can't create routing socket (errno = %d).\n", errno);
@@ -1387,7 +1387,7 @@ recv_thread_init(void)
 	}
 #endif
 #if !defined(__Userspace_os_Windows)
-#if defined(__Userspace_os_Darwin) || defined(__Userspace_os_FreeBSD)
+#if defined(__Userspace_os_Darwin) || defined(__Userspace_os_DragonFly) || defined(__Userspace_os_FreeBSD)
 #if defined(INET) || defined(INET6)
 	if (SCTP_BASE_VAR(userspace_route) != -1) {
 		int rc;
@@ -1479,7 +1479,7 @@ recv_thread_init(void)
 void
 recv_thread_destroy(void)
 {
-#if defined(__Userspace_os_Darwin) || defined(__Userspace_os_FreeBSD)
+#if defined(__Userspace_os_Darwin) || defined(__Userspace_os_DragonFly) || defined(__Userspace_os_FreeBSD)
 #if defined(INET) || defined(INET6)
 	if (SCTP_BASE_VAR(userspace_route) != -1) {
 		close(SCTP_BASE_VAR(userspace_route));
