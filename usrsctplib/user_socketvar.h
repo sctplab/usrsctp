@@ -737,7 +737,7 @@ void	socantsendmore(struct socket *so);
 
 /* can we read something from so? */
 #define	soreadable(so) \
-    ((so)->so_rcv.sb_cc >= (so)->so_rcv.sb_lowat || \
+    ((int)((so)->so_rcv.sb_cc) >= (so)->so_rcv.sb_lowat || \
 	((so)->so_rcv.sb_state & SBS_CANTRCVMORE) || \
 	!TAILQ_EMPTY(&(so)->so_comp) || (so)->so_error)
 
