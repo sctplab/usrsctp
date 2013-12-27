@@ -463,8 +463,10 @@ sctp6_notify(struct sctp_inpcb *inp,
 	    (icmph->icmp6_code == ICMP_UNREACH_ISOLATED) ||
 	    (icmph->icmp6_code == ICMP_UNREACH_NET_PROHIB) ||
 	    (icmph->icmp6_code == ICMP_UNREACH_HOST_PROHIB) ||
-#ifdef __Panda__
+#if defined(__Panda__)
             (icmph->icmp6_code == ICMP_UNREACH_ADMIN)) {
+#elif defined(__Userspace_os_NetBSD)
+            (icmph->icmp6_code == ICMP_UNREACH_ADMIN_PROHIBIT)) {
 #else
             (icmph->icmp6_code == ICMP_UNREACH_FILTER_PROHIB)) {
 #endif

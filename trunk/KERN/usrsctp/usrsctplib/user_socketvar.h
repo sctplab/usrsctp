@@ -42,7 +42,7 @@
 /* #include <sys/_lock.h>  was 0 byte file */
 /* #include <sys/_mutex.h> was 0 byte file */
 /* #include <sys/_sx.h> */ /*__Userspace__ alternative?*/
-#if !defined(__Userspace_os_Windows) && !defined(__Userspace_os_FreeBSD)
+#if !defined(__Userspace_os_DragonFly) && !defined(__Userspace_os_FreeBSD) && !defined(__Userspace_os_NetBSD) && !defined(__Userspace_os_Windows) 
 #include <sys/uio.h>
 #endif
 #define SOCK_MAXADDRLEN 255
@@ -54,16 +54,16 @@
 #define SS_CANTRCVMORE 0x020
 #define SS_CANTSENDMORE 0x010
 
-#if defined (__Userspace_os_FreeBSD) || defined(__Userspace_os_OpenBSD) || defined(__Userspace_os_Darwin) || defined (__Userspace_os_Windows)
+#if defined(__Userspace_os_Darwin) || defined(__Userspace_os_DragonFly) || defined (__Userspace_os_FreeBSD) || defined(__Userspace_os_OpenBSD) || defined (__Userspace_os_Windows)
 #define UIO_MAXIOV 1024
 #define ERESTART (-1)
 #endif
 
-#if !defined(__Userspace_os_Darwin) && !defined(__Userspace_os_OpenBSD)
+#if !defined(__Userspace_os_Darwin) && defined(__Userspace_os_NetBSD) && !defined(__Userspace_os_OpenBSD)
 enum	uio_rw { UIO_READ, UIO_WRITE };
 #endif
 
-#if !defined(__Userspace_os_OpenBSD)
+#if !defined(__Userspace_os_NetBSD) && !defined(__Userspace_os_OpenBSD)
 /* Segment flag values. */
 enum uio_seg {
 	UIO_USERSPACE,		/* from user data space */
