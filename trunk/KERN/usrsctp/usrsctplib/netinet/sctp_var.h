@@ -436,12 +436,12 @@ void sctp_drain(void);
 void sctp_init(uint16_t,
                int (*)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df),
                void (*)(const char *, ...));
-#else
-#if defined(__FreeBSD__) && __FreeBSD_version < 902000
+#elif defined(__FreeBSD__) && __FreeBSD_version < 902000
 void sctp_init __P((void));
+#elif defined(__APPLE__) && (!defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) &&!defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION))
+void sctp_init(struct protosw *pp, struct domain *dp);
 #else
 void sctp_init(void);
-#endif
 #endif
 void sctp_finish(void);
 #if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)

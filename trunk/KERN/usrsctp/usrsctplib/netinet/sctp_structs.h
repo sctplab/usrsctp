@@ -236,6 +236,9 @@ struct sctp_net_route {
 #endif
 #endif
 #if defined(__APPLE__)
+#if !defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION)
+	struct ifaddr *ro_srcia;
+#endif
 #if !defined(APPLE_LEOPARD)
 	uint32_t ro_flags;
 #endif
