@@ -4349,7 +4349,11 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			 * This means especially, that it is not set at the
 			 * SCTP layer. So use the value from the IP layer.
 			 */
+#if defined(__APPLE__) && (!defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION))
+			flowlabel = ntohl(inp->ip_inp.inp.inp_flow);
+#else
 			flowlabel = ntohl(((struct in6pcb *)inp)->in6p_flowinfo);
+#endif
 		}
 		flowlabel &= 0x000fffff;
 		len = sizeof(struct ip6_hdr) + sizeof(struct sctphdr);
@@ -4429,7 +4433,11 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			 * SCTP layer. So use the value from the IP layer.
 			 */
 #if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Panda__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__APPLE__) && (!defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION))
+			tos_value = (ntohl(inp->ip_inp.inp.inp_flow) >> 20) & 0xff;
+#else
 			tos_value = (ntohl(((struct in6pcb *)inp)->in6p_flowinfo) >> 20) & 0xff;
+#endif
 #endif
 		}
 		tos_value &= 0xfc;

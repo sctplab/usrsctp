@@ -189,6 +189,7 @@ struct sctp_epinfo {
 
 #if defined(__APPLE__)
 	struct inpcbhead inplisthead;
+	struct inpcbinfo sctbinfo;
 #endif
 	/* ep zone info */
 	sctp_zone_t ipi_zone_ep;
@@ -223,20 +224,12 @@ struct sctp_epinfo {
 	userland_mutex_t wq_addr_mtx;
 #elif defined(__APPLE__)
 #ifdef _KERN_LOCKS_H_
-	lck_grp_attr_t *mtx_grp_attr;
-	lck_grp_t *mtx_grp;
-	lck_attr_t *mtx_attr;
-	lck_rw_t *ipi_ep_mtx;
 	lck_mtx_t *ipi_addr_mtx;
 	lck_mtx_t *ipi_count_mtx;
 	lck_mtx_t *ipi_pktlog_mtx;
 	lck_mtx_t *logging_mtx;
 	lck_mtx_t *wq_addr_mtx;
 #else
-	void *mtx_grp_attr;
-	void *mtx_grp;
-	void *mtx_attr;
-	void *ipi_ep_mtx;
 	void *ipi_count_mtx;
 	void *logging_mtx;
 #endif /* _KERN_LOCKS_H_ */
