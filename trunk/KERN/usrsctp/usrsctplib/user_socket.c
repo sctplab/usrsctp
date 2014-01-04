@@ -2392,7 +2392,7 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 				}
 			}
 #ifndef HAVE_SA_LEN
-		sa = (struct sockaddr *)((caddr_t)sa + sizeof(struct sockaddr_in));
+			sa = (struct sockaddr *)((caddr_t)sa + sizeof(struct sockaddr_in));
 #endif
 			break;
 #endif
@@ -2419,26 +2419,18 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 				}
 			}
 #ifndef HAVE_SA_LEN
-		sa = (struct sockaddr *)((caddr_t)sa + sizeof(struct sockaddr_in6));
+			sa = (struct sockaddr *)((caddr_t)sa + sizeof(struct sockaddr_in6));
 #endif
 			break;
 #endif
 		default:
 			/* Invalid address family specified. */
-			errno = EINVAL;
+			errno = EAFNOSUPPORT;
 			return (-1);
 		}
 #ifdef HAVE_SA_LEN
 		sa = (struct sockaddr *)((caddr_t)sa + sa->sa_len);
 #endif
-	}
-	/*
-	 * Now if there was a port mentioned, assure that the first address
-	 * has that port to make sure it fails or succeeds correctly.
-	 */
-	if (sport) {
-		sin = (struct sockaddr_in *)sa;
-		sin->sin_port = sport;
 	}
 	argsz = sizeof(struct sctp_getaddresses) +
 	        sizeof(struct sockaddr_storage);
@@ -2477,6 +2469,23 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 			break;
 		}
 		memcpy(gaddrs->addr, sa, sa_len);
+		/*
+		 * Now, if there was a port mentioned, assure that the
+		 * first address has that port to make sure it fails or
+		 * succeeds correctly.
+		 */
+		if ((i == 0) && (sport != 0)) {
+			switch (gaddrs->addr->sa_family) {
+			case AF_INET:
+				sin = (struct sockaddr_in *)gaddrs->addr;
+				sin->sin_port = sport;
+				break;
+			case AF_INET6:
+				sin6 = (struct sockaddr_in6 *)gaddrs->addr;
+				sin6->sin6_port = sport;
+				break;
+			}
+		}
 		if (usrsctp_setsockopt(so, IPPROTO_SCTP, flags, gaddrs, (socklen_t)argsz) != 0) {
 			free(gaddrs);
 			return (-1);
