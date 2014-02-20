@@ -165,7 +165,7 @@ struct mbstat {
  */
 #define	MLEN		((int)(MSIZE - sizeof(struct m_hdr)))	/* normal data len */
 #define	MHLEN		((int)(MLEN - sizeof(struct pkthdr)))	/* data len w/pkthdr */
-#define	MINCLSIZE	(MHLEN + 1)	/* smallest amount to put in cluster */
+#define	MINCLSIZE	((int)(MHLEN + 1))	/* smallest amount to put in cluster */
 #define	M_MAXCOMPRESS	(MHLEN / 2)	/* max amount to copy for compression */
 
 
