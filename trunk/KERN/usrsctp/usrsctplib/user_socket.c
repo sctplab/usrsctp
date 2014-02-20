@@ -722,7 +722,7 @@ userspace_sctp_sendmsg(struct socket *so,
 		return (-1);
 	}
 	if ((tolen > 0) &&
-	    ((to == NULL) || (tolen < sizeof(struct sockaddr)))) {
+	    ((to == NULL) || (tolen < (socklen_t)sizeof(struct sockaddr)))) {
 		errno = EINVAL;
 		return (-1);
 	}
@@ -892,7 +892,7 @@ userspace_sctp_sendmbuf(struct socket *so,
         error = (ENAMETOOLONG);
         goto sendmsg_return;
     }
-    if (tolen < offsetof(struct sockaddr, sa_data)){
+    if (tolen < (socklen_t)offsetof(struct sockaddr, sa_data)){
         error = (EINVAL);
         goto sendmsg_return;
     }
@@ -1082,7 +1082,7 @@ usrsctp_recvv(struct socket *so,
 		inp = (struct sctp_inpcb *)so->so_pcb;
 		if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVNXTINFO) &&
 		    sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVRCVINFO) &&
-		    *infolen >= sizeof(struct sctp_recvv_rn) &&
+		    *infolen >= (socklen_t)sizeof(struct sctp_recvv_rn) &&
 		    seinfo.sreinfo_next_flags & SCTP_NEXT_MSG_AVAIL) {
 			rn = (struct sctp_recvv_rn *)info;
 			rn->recvv_rcvinfo.rcv_sid = seinfo.sinfo_stream;
@@ -1110,7 +1110,7 @@ usrsctp_recvv(struct socket *so,
 			*infolen = (socklen_t)sizeof(struct sctp_recvv_rn);
 			*infotype = SCTP_RECVV_RN;
 		} else if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVRCVINFO) &&
-		           *infolen >= sizeof(struct sctp_rcvinfo)) {
+		           *infolen >= (socklen_t)sizeof(struct sctp_rcvinfo)) {
 			rcv = (struct sctp_rcvinfo *)info;
 			rcv->rcv_sid = seinfo.sinfo_stream;
 			rcv->rcv_ssn = seinfo.sinfo_ssn;
