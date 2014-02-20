@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 254854 2013-08-25 12:44:03Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 262252 2014-02-20 20:14:43Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -464,7 +464,6 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 
 	/* First verify that we have no illegal param's */
 	abort_flag = 0;
-	op_err = NULL;
 
 	op_err = sctp_arethere_unrecognized_parameters(m,
 						       (offset + sizeof(struct sctp_init_chunk)),
@@ -1611,7 +1610,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			return (NULL);
 
 		}
- 		switch SCTP_GET_STATE(asoc) {
+ 		switch (SCTP_GET_STATE(asoc)) {
 			case SCTP_STATE_COOKIE_WAIT:
 			case SCTP_STATE_COOKIE_ECHOED:
 				/*
