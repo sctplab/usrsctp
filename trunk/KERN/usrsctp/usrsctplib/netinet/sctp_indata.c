@@ -3690,6 +3690,7 @@ sctp_fs_audit(struct sctp_association *asoc)
 	struct sctp_tmit_chunk *chk;
 	int inflight = 0, resend = 0, inbetween = 0, acked = 0, above = 0;
 	int entry_flight, entry_cnt, ret;
+
 	entry_flight = asoc->total_flight;
 	entry_cnt = asoc->total_flight_count;
 	ret = 0;
