@@ -2346,13 +2346,17 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 {
 	struct sctp_getaddresses *gaddrs;
 	struct sockaddr *sa;
+#ifdef INET
 	struct sockaddr_in *sin;
+#endif
 #ifdef INET6
 	struct sockaddr_in6 *sin6;
 #endif
 	int i;
 	size_t argsz;
+#if defined(INET) || defined(INET6)
 	uint16_t sport = 0;
+#endif
 
 	/* validate the flags */
 	if ((flags != SCTP_BINDX_ADD_ADDR) &&
