@@ -2476,14 +2476,18 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 		 */
 		if ((i == 0) && (sport != 0)) {
 			switch (gaddrs->addr->sa_family) {
+#ifdef INET
 			case AF_INET:
 				sin = (struct sockaddr_in *)gaddrs->addr;
 				sin->sin_port = sport;
 				break;
+#endif
+#ifdef INET6
 			case AF_INET6:
 				sin6 = (struct sockaddr_in6 *)gaddrs->addr;
 				sin6->sin6_port = sport;
 				break;
+#endif
 			}
 		}
 		if (usrsctp_setsockopt(so, IPPROTO_SCTP, flags, gaddrs, (socklen_t)argsz) != 0) {
