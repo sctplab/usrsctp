@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 262252 2014-02-20 20:14:43Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 263096 2014-03-12 17:18:15Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4242,7 +4242,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #else
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800000
 			m->m_pkthdr.csum_flags = CSUM_SCTP;
-			m->m_pkthdr.csum_data = 0;
+			m->m_pkthdr.csum_data = offsetof(struct sctphdr, checksum);
 			SCTP_STAT_INCR(sctps_sendhwcrc);
 #else
 			if (!(SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) &&
@@ -4697,7 +4697,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #else
 			m->m_pkthdr.csum_flags = CSUM_SCTP;
 #endif
-			m->m_pkthdr.csum_data = 0;
+			m->m_pkthdr.csum_data = offsetof(struct sctphdr, checksum);
 			SCTP_STAT_INCR(sctps_sendhwcrc);
 #endif
 #else
@@ -11532,7 +11532,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #else
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800000
 			mout->m_pkthdr.csum_flags = CSUM_SCTP;
-			mout->m_pkthdr.csum_data = 0;
+			mout->m_pkthdr.csum_data = offsetof(struct sctphdr, checksum);
 			SCTP_STAT_INCR(sctps_sendhwcrc);
 #else
 			shout->checksum = sctp_calculate_cksum(mout, sizeof(struct ip));
@@ -11584,7 +11584,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #else
 			mout->m_pkthdr.csum_flags = CSUM_SCTP;
 #endif
-			mout->m_pkthdr.csum_data = 0;
+			mout->m_pkthdr.csum_data = offsetof(struct sctphdr, checksum);
 			SCTP_STAT_INCR(sctps_sendhwcrc);
 #else
 			shout->checksum = sctp_calculate_cksum(mout, sizeof(struct ip6_hdr));
