@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 243186 2012-11-17 20:04:04Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 263237 2014-03-16 12:32:16Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UTIL_H_
@@ -202,6 +202,7 @@ sctp_abort_an_association(struct sctp_inpcb *, struct sctp_tcb *,
 void sctp_handle_ootb(struct mbuf *, int, int,
                       struct sockaddr *, struct sockaddr *,
                       struct sctphdr *, struct sctp_inpcb *,
+                      struct mbuf *,
 #if defined(__FreeBSD__)
                       uint8_t, uint32_t,
 #endif
@@ -269,7 +270,7 @@ sctp_release_pr_sctp_chunk(struct sctp_tcb *, struct sctp_tmit_chunk *,
 #endif
 );
 
-struct mbuf *sctp_generate_invmanparam(int);
+struct mbuf *sctp_generate_cause(uint16_t, char *);
 
 void sctp_bindx_add_address(struct socket *so, struct sctp_inpcb *inp,
 			    struct sockaddr *sa, sctp_assoc_t assoc_id,

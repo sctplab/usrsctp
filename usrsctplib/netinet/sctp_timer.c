@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 257359 2013-10-29 20:04:50Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 263237 2014-03-16 12:32:16Z tuexen $");
 #endif
 
 #define _IP_VHL
@@ -157,24 +157,12 @@ sctp_threshold_management(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	 */
 	if (stcb->asoc.overall_error_count > threshold) {
 		/* Abort notification sends a ULP notify */
-		struct mbuf *oper;
+		struct mbuf *op_err;
 
-		oper = sctp_get_mbuf_for_msg((sizeof(struct sctp_paramhdr) + sizeof(uint32_t)),
-					       0, M_NOWAIT, 1, MT_DATA);
-		if (oper) {
-			struct sctp_paramhdr *ph;
-			uint32_t *ippp;
-
-			SCTP_BUF_LEN(oper) = sizeof(struct sctp_paramhdr) +
-			    sizeof(uint32_t);
-			ph = mtod(oper, struct sctp_paramhdr *);
-			ph->param_type = htons(SCTP_CAUSE_PROTOCOL_VIOLATION);
-			ph->param_length = htons(SCTP_BUF_LEN(oper));
-			ippp = (uint32_t *) (ph + 1);
-			*ippp = htonl(SCTP_FROM_SCTP_TIMER+SCTP_LOC_1);
-		}
+		op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION,
+		                             "Association error couter exceeded");
 		inp->last_abort_code = SCTP_FROM_SCTP_TIMER+SCTP_LOC_1;
-		sctp_abort_an_association(inp, stcb, oper, SCTP_SO_NOT_LOCKED);
+		sctp_abort_an_association(inp, stcb, op_err, SCTP_SO_NOT_LOCKED);
 		return (1);
 	}
 	return (0);
@@ -1058,24 +1046,12 @@ sctp_cookie_timer(struct sctp_inpcb *inp,
 	if (cookie == NULL) {
 		if (SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_COOKIE_ECHOED) {
 			/* FOOBAR! */
-			struct mbuf *oper;
+			struct mbuf *op_err;
 
-			oper = sctp_get_mbuf_for_msg((sizeof(struct sctp_paramhdr) + sizeof(uint32_t)),
-						       0, M_NOWAIT, 1, MT_DATA);
-			if (oper) {
-				struct sctp_paramhdr *ph;
-				uint32_t *ippp;
-
-				SCTP_BUF_LEN(oper) = sizeof(struct sctp_paramhdr) +
-				    sizeof(uint32_t);
-				ph = mtod(oper, struct sctp_paramhdr *);
-				ph->param_type = htons(SCTP_CAUSE_PROTOCOL_VIOLATION);
-				ph->param_length = htons(SCTP_BUF_LEN(oper));
-				ippp = (uint32_t *) (ph + 1);
-				*ippp = htonl(SCTP_FROM_SCTP_TIMER+SCTP_LOC_3);
-			}
+			op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION,
+			                             "Cookie timer expired, but no cookie");
 			inp->last_abort_code = SCTP_FROM_SCTP_TIMER+SCTP_LOC_4;
-			sctp_abort_an_association(inp, stcb, oper, SCTP_SO_NOT_LOCKED);
+			sctp_abort_an_association(inp, stcb, op_err, SCTP_SO_NOT_LOCKED);
 		} else {
 #ifdef INVARIANTS
 			panic("Cookie timer expires in wrong state?");

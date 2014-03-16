@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 258765 2013-11-30 12:51:19Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 263237 2014-03-16 12:32:16Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3907,17 +3907,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 				/* Left with Data unread */
 				struct mbuf *op_err;
 
-				op_err = sctp_get_mbuf_for_msg(sizeof(struct sctp_paramhdr),
-							       0, M_NOWAIT, 1, MT_DATA);
-				if (op_err) {
-					/* Fill in the user initiated abort */
-					struct sctp_paramhdr *ph;
-
-					SCTP_BUF_LEN(op_err) = sizeof(struct sctp_paramhdr);
-					ph = mtod(op_err, struct sctp_paramhdr *);
-					ph->param_type = htons(SCTP_CAUSE_USER_INITIATED_ABT);
-					ph->param_length = htons(SCTP_BUF_LEN(op_err));
-				}
+				op_err = sctp_generate_cause(SCTP_CAUSE_USER_INITIATED_ABT, "");
 				asoc->sctp_ep->last_abort_code = SCTP_FROM_SCTP_PCB+SCTP_LOC_3;
 				sctp_send_abort_tcb(asoc, op_err, SCTP_SO_LOCKED);
 				SCTP_STAT_INCR_COUNTER32(sctps_aborted);
@@ -3987,17 +3977,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 				    (asoc->asoc.state & SCTP_STATE_PARTIAL_MSG_LEFT)) {
 					struct mbuf *op_err;
 				abort_anyway:
-					op_err = sctp_get_mbuf_for_msg(sizeof(struct sctp_paramhdr),
-								       0, M_NOWAIT, 1, MT_DATA);
-					if (op_err) {
-						/* Fill in the user initiated abort */
-						struct sctp_paramhdr *ph;
-
-						SCTP_BUF_LEN(op_err) = sizeof(struct sctp_paramhdr);
-						ph = mtod(op_err, struct sctp_paramhdr *);
-						ph->param_type = htons(SCTP_CAUSE_USER_INITIATED_ABT);
-						ph->param_length = htons(SCTP_BUF_LEN(op_err));
-					}
+					op_err = sctp_generate_cause(SCTP_CAUSE_USER_INITIATED_ABT, "");
 					asoc->sctp_ep->last_abort_code = SCTP_FROM_SCTP_PCB+SCTP_LOC_5;
 					sctp_send_abort_tcb(asoc, op_err, SCTP_SO_LOCKED);
 					SCTP_STAT_INCR_COUNTER32(sctps_aborted);
@@ -4064,17 +4044,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 		    ((asoc->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED) == 0)) {
 			struct mbuf *op_err;
 
-			op_err = sctp_get_mbuf_for_msg(sizeof(struct sctp_paramhdr),
-						       0, M_NOWAIT, 1, MT_DATA);
-			if (op_err) {
-				/* Fill in the user initiated abort */
-				struct sctp_paramhdr *ph;
-
-				SCTP_BUF_LEN(op_err) = sizeof(struct sctp_paramhdr);
-				ph = mtod(op_err, struct sctp_paramhdr *);
-				ph->param_type = htons(SCTP_CAUSE_USER_INITIATED_ABT);
-				ph->param_length = htons(SCTP_BUF_LEN(op_err));
-			}
+			op_err = sctp_generate_cause(SCTP_CAUSE_USER_INITIATED_ABT, "");
 			asoc->sctp_ep->last_abort_code = SCTP_FROM_SCTP_PCB+SCTP_LOC_7;
 			sctp_send_abort_tcb(asoc, op_err, SCTP_SO_LOCKED);
 			SCTP_STAT_INCR_COUNTER32(sctps_aborted);
