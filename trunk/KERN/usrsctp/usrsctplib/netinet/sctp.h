@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 263094 2014-03-12 15:30:40Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 263237 2014-03-16 12:32:16Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_H_
@@ -379,6 +379,12 @@ struct sctp_paramhdr {
 /*
  * error cause parameters (user visible)
  */
+struct sctp_gen_error_cause {
+	uint16_t code;
+	uint16_t length;
+	uint8_t info[];
+} SCTP_PACKED;
+
 struct sctp_error_cause {
 	uint16_t code;
 	uint16_t length;

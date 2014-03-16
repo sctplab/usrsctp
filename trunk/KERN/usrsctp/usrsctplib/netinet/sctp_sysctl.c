@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 254672 2013-08-22 20:29:57Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 263237 2014-03-16 12:32:16Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -128,7 +128,7 @@ sctp_init_sysctls()
 	SCTP_BASE_SYSCTL(sctp_steady_step) = SCTPCTL_RTTVAR_STEADYS_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_use_dccc_ecn) = SCTPCTL_RTTVAR_DCCCECN_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_blackhole) = SCTPCTL_BLACKHOLE_DEFAULT;
-
+	SCTP_BASE_SYSCTL(sctp_diag_info_code) = SCTPCTL_DIAG_INFO_CODE_DEFAULT;
 #if defined(SCTP_LOCAL_TRACE_BUF)
 #if defined(__Windows__)
 	/* On Windows, the resource for global variables is limited. */
@@ -743,7 +743,7 @@ sysctl_sctp_check(SYSCTL_HANDLER_ARGS)
 #endif
 	int error;
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800056
+#if defined(__FreeBSD__) && __FreeBSD_version >= 800056 && __FreeBSD_version < 1000100
 #ifdef VIMAGE
 	error = vnet_sysctl_handle_int(oidp, oidp->oid_arg1, oidp->oid_arg2, req);
 #else
@@ -836,6 +836,7 @@ sysctl_sctp_check(SYSCTL_HANDLER_ARGS)
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_enable_sack_immediately), SCTPCTL_SACK_IMMEDIATELY_ENABLE_MIN, SCTPCTL_SACK_IMMEDIATELY_ENABLE_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_inits_include_nat_friendly), SCTPCTL_NAT_FRIENDLY_INITS_MIN, SCTPCTL_NAT_FRIENDLY_INITS_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_blackhole), SCTPCTL_BLACKHOLE_MIN, SCTPCTL_BLACKHOLE_MAX);
+		RANGECHK(SCTP_BASE_SYSCTL(sctp_diag_info_code), SCTPCTL_DIAG_INFO_CODE_MIN, SCTPCTL_DIAG_INFO_CODE_MAX);
 
 #ifdef SCTP_DEBUG
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_debug_on), SCTPCTL_DEBUG_MIN, SCTPCTL_DEBUG_MAX);
@@ -1345,8 +1346,12 @@ SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, use_dcccecn, CTLTYPE_UINT|CTLFLAG_RW,
 		 SCTPCTL_RTTVAR_DCCCECN_DESC);
 
 SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, blackhole, CTLTYPE_UINT|CTLFLAG_RW,
-			 &SCTP_BASE_SYSCTL(sctp_blackhole), 0, sysctl_sctp_check, "IU",
-			 SCTPCTL_BLACKHOLE_DESC);
+                 &SCTP_BASE_SYSCTL(sctp_blackhole), 0, sysctl_sctp_check, "IU",
+                 SCTPCTL_BLACKHOLE_DESC);
+
+SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, diag_info_code, CTLTYPE_UINT|CTLFLAG_RW,
+                 &SCTP_BASE_SYSCTL(sctp_diag_info_code), 0, sysctl_sctp_check, "IU",
+                 SCTPCTL_DIAG_INFO_CODE_DESC);
 
 #ifdef SCTP_DEBUG
 SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, debug, CTLTYPE_UINT|CTLFLAG_RW,
@@ -1675,6 +1680,10 @@ void sysctl_setup_sctp(void)
 	sysctl_add_oid(&sysctl_oid_top, "blackhole", CTLTYPE_INT|CTLFLAG_RW,
 		       &SCTP_BASE_SYSCTL(sctp_blackhole), 0, sysctl_sctp_check,
 		       SCTPCTL_BLACKHOLE_DESC);
+
+	sysctl_add_oid(&sysctl_oid_top, "diag_info_code", CTLTYPE_INT|CTLFLAG_RW,
+		       &SCTP_BASE_SYSCTL(sctp_diag_info_code), 0, sysctl_sctp_check,
+		       SCTPCTL_DIAG_INFO_CODE_DESC);
 
 #ifdef SCTP_DEBUG
 	sysctl_add_oid(&sysctl_oid_top, "debug", CTLTYPE_INT|CTLFLAG_RW,
