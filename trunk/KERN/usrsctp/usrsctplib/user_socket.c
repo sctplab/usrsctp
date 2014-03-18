@@ -2478,6 +2478,7 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 		 * first address has that port to make sure it fails or
 		 * succeeds correctly.
 		 */
+#if defined(INET) || defined(INET6)
 		if ((i == 0) && (sport != 0)) {
 			switch (gaddrs->addr->sa_family) {
 #ifdef INET
@@ -2494,6 +2495,7 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 #endif
 			}
 		}
+#endif
 		if (usrsctp_setsockopt(so, IPPROTO_SCTP, flags, gaddrs, (socklen_t)argsz) != 0) {
 			free(gaddrs);
 			return (-1);
