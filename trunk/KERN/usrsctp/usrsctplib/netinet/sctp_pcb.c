@@ -6517,7 +6517,7 @@ sctp_startup_mcore_threads(void)
 	}
 }
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_cc_version >= 1100000
+#if defined(__FreeBSD__) && __FreeBSD_cc_version >= 1200000
 static struct mbuf *
 sctp_netisr_hdlr(struct mbuf *m, uintptr_t source)
 {
@@ -6742,7 +6742,7 @@ sctp_pcb_init()
 	 */
 	sctp_init_vrf_list(SCTP_DEFAULT_VRF);
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_cc_version >= 1100000
+#if defined(__FreeBSD__) && __FreeBSD_cc_version >= 1200000
 	if (ip_register_flow_handler(sctp_netisr_hdlr, IPPROTO_SCTP)) {
 		SCTP_PRINTF("***SCTP- Error can't register netisr handler***\n");
 	}
