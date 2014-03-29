@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 263237 2014-03-16 12:32:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 263921 2014-03-29 20:21:36Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_CONSTANTS_H_
@@ -41,20 +41,10 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 263237 2014-03-16 12:32:16
 #if defined(__Userspace_os_Windows)
 extern void getwintimeofday(struct timeval *tv);
 #endif
+
 /* IANA assigned port number for SCTP over UDP encapsulation */
-#ifdef __FreeBSD__
-/* For freebsd we cannot bind the port at
- * startup. Otherwise what will happen is
- * we really won't be bound. The user must
- * put it into the sysctl... or we need
- * to build a special timer for this to allow
- * us to wait 1 second or so after the system
- * comes up.
- */
-#define SCTP_OVER_UDP_TUNNELING_PORT 0
-#else
 #define SCTP_OVER_UDP_TUNNELING_PORT 9899
-#endif
+
 /* Number of packets to get before sack sent by default */
 #define SCTP_DEFAULT_SACK_FREQ 2
 
