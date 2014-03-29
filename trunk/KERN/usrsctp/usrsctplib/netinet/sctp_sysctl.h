@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.h 263237 2014-03-16 12:32:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.h 263921 2014-03-29 20:21:36Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_SYSCTL_H_
@@ -483,7 +483,11 @@ struct sctp_sysctl {
 #define SCTPCTL_UDP_TUNNELING_PORT_DESC		"Set the SCTP/UDP tunneling port"
 #define SCTPCTL_UDP_TUNNELING_PORT_MIN		0
 #define SCTPCTL_UDP_TUNNELING_PORT_MAX		65535
+#if defined(__FreeBSD__)
+#define SCTPCTL_UDP_TUNNELING_PORT_DEFAULT	0
+#else
 #define SCTPCTL_UDP_TUNNELING_PORT_DEFAULT	SCTP_OVER_UDP_TUNNELING_PORT
+#endif
 
 /* Enable sending of the SACK-IMMEDIATELY bit */
 #define SCTPCTL_SACK_IMMEDIATELY_ENABLE_DESC	"Enable sending of the SACK-IMMEDIATELY-bit."
