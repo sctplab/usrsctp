@@ -6533,13 +6533,13 @@ sctp_sorecvmsg(struct socket *so,
 			SOCKBUF_LOCK(&so->so_rcv);
 			hold_sblock = 1;
 		}
-#if defined(__APPLE__)
-		sbunlock(&so->so_rcv, 1);
-#endif
 		if ((copied_so_far) && (control->length == 0) &&
 		    (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_FRAG_INTERLEAVE))) {
 			goto release;
 		}
+#if defined(__APPLE__)
+		sbunlock(&so->so_rcv, 1);
+#endif
 		if (so->so_rcv.sb_cc <= control->held_length) {
 			error = sbwait(&so->so_rcv);
 			if (error) {
