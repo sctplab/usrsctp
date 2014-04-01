@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 263237 2014-03-16 12:32:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 264017 2014-04-01 18:38:04Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7745,7 +7745,8 @@ re_look:
 	chk->pad_inplace = 0;
 	chk->no_fr_allowed = 0;
 	chk->rec.data.stream_seq = strq->next_sequence_send;
-	if (rcv_flags & SCTP_DATA_LAST_FRAG) {
+	if ((rcv_flags & SCTP_DATA_LAST_FRAG) &&
+	    !(rcv_flags & SCTP_DATA_UNORDERED)) {
 		strq->next_sequence_send++;
 	}
 	chk->rec.data.stream_number = sp->stream;
