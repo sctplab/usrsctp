@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 263237 2014-03-16 12:32:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 264679 2014-04-19 19:21:06Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2339,7 +2339,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 			continue;
 		}
 		if (ch->ch.chunk_type == SCTP_DATA) {
-			if ((size_t)chk_length < sizeof(struct sctp_data_chunk) + 1) {
+			if ((size_t)chk_length < sizeof(struct sctp_data_chunk)) {
 				/*
 				 * Need to send an abort since we had a
 				 * invalid data chunk.
@@ -2350,6 +2350,23 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 				snprintf(msg, sizeof(msg), "DATA chunk of length %d",
 				         chk_length);
 				op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
+				stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA+SCTP_LOC_19;
+				sctp_abort_association(inp, stcb, m, iphlen,
+				                       src, dst, sh, op_err,
+#if defined(__FreeBSD__)
+				                       use_mflowid, mflowid,
+#endif
+				                       vrf_id, port);
+				return (2);
+			}
+			if ((size_t)chk_length == sizeof(struct sctp_data_chunk)) {
+				/*
+				 * Need to send an abort since we had an
+				 * empty data chunk.
+				 */
+				struct mbuf *op_err;
+
+				op_err = sctp_generate_no_user_data_cause(ch->dp.tsn);
 				stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA+SCTP_LOC_19;
 				sctp_abort_association(inp, stcb, m, iphlen,
 				                       src, dst, sh, op_err,
