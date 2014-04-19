@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 264679 2014-04-19 19:21:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 264682 2014-04-19 20:55:51Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1018,7 +1018,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 					 * Huh, need the correct STR here,
 					 * they must be the same.
 					 */
-					SCTP_PRINTF("Prev check - Gak, Evil plot, sid:%d not the same as at:%d\n",
+					SCTPDBG(SCTP_DEBUG_INDATA1, "Prev check - Gak, Evil plot, sid:%d not the same as at:%d\n",
 						    chk->rec.data.stream_number,
 						    prev->rec.data.stream_number);
 					snprintf(msg, sizeof(msg),
