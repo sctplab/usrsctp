@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 263237 2014-03-16 12:32:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 264679 2014-04-19 19:21:06Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5102,6 +5102,25 @@ sctp_generate_cause(uint16_t code, char *info)
 		cause->code = htons(code);
 		cause->length = htons((uint16_t)len);
 		memcpy(cause->info, info, info_len);
+	}
+	return (m);
+}
+
+struct mbuf *
+sctp_generate_no_user_data_cause(uint32_t tsn)
+{
+	struct mbuf *m;
+	struct sctp_error_no_user_data *no_user_data_cause;
+	size_t len;
+
+	len = sizeof(struct sctp_error_no_user_data);
+	m = sctp_get_mbuf_for_msg(len, 0, M_NOWAIT, 1, MT_DATA);
+	if (m != NULL) {
+		SCTP_BUF_LEN(m) = len;
+		no_user_data_cause = mtod(m, struct sctp_error_no_user_data *);
+		no_user_data_cause->cause.code = htons(SCTP_CAUSE_NO_USER_DATA);
+		no_user_data_cause->cause.length = htons((uint16_t)len);
+		no_user_data_cause->tsn = tsn; /* tsn is passed in as NBO */
 	}
 	return (m);
 }
