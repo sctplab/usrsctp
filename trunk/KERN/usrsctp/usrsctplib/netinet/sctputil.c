@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 264679 2014-04-19 19:21:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 264701 2014-04-20 18:15:23Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4253,9 +4253,6 @@ sctp_handle_ootb(struct mbuf *m, int iphlen, int offset,
 		case SCTP_INIT:
 			contains_init_chunk = 1;
 			break;
-		case SCTP_COOKIE_ECHO:
-			/* We hit here only if the assoc is being freed */
-			return;
 		case SCTP_PACKET_DROPPED:
 			/* we don't respond to pkt-dropped */
 			return;
