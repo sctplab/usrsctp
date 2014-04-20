@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 264682 2014-04-19 20:55:51Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 264704 2014-04-20 21:11:39Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -844,7 +844,6 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 {
 	struct mbuf *op_err;
 	char msg[SCTP_DIAG_INFO_LEN];
-	
 	uint32_t cum_ackp1, prev_tsn, post_tsn;
 	struct sctp_tmit_chunk *at, *prev, *next;
 
@@ -1019,14 +1018,32 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 					 * they must be the same.
 					 */
 					SCTPDBG(SCTP_DEBUG_INDATA1, "Prev check - Gak, Evil plot, sid:%d not the same as at:%d\n",
-						    chk->rec.data.stream_number,
-						    prev->rec.data.stream_number);
+					        chk->rec.data.stream_number,
+					        prev->rec.data.stream_number);
 					snprintf(msg, sizeof(msg),
 					         "Expect SID=%4.4x, got TSN=%8.8x, SID=%4.4x, SSN=%4.4x",
 					         prev->rec.data.stream_number,
 					         chk->rec.data.TSN_seq,
 					         chk->rec.data.stream_number,
 					         chk->rec.data.stream_seq);
+					op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
+					stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA+SCTP_LOC_7;
+					sctp_abort_an_association(stcb->sctp_ep, stcb, op_err, SCTP_SO_NOT_LOCKED);
+					*abort_flag = 1;
+					return;
+				}
+				if ((chk->rec.data.rcv_flags & SCTP_DATA_UNORDERED) !=
+				    (prev->rec.data.rcv_flags & SCTP_DATA_UNORDERED)) {
+					/*
+					 * Huh, need the same ordering here,
+					 * they must be the same.
+					 */
+					SCTPDBG(SCTP_DEBUG_INDATA1, "Prev check - Gak, Evil plot, U-bit not constant\n");
+					snprintf(msg, sizeof(msg),
+					         "Expect U-bit=%d for TSN=%8.8x, got U-bit=%d",
+					         (prev->rec.data.rcv_flags & SCTP_DATA_UNORDERED) ? 1 : 0,
+					         chk->rec.data.TSN_seq,
+					         (chk->rec.data.rcv_flags & SCTP_DATA_UNORDERED) ? 1 : 0);
 					op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
 					stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA+SCTP_LOC_7;
 					sctp_abort_an_association(stcb->sctp_ep, stcb, op_err, SCTP_SO_NOT_LOCKED);
@@ -1137,6 +1154,24 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 					         chk->rec.data.TSN_seq,
 					         chk->rec.data.stream_number,
 					         chk->rec.data.stream_seq);
+					op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
+					stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA+SCTP_LOC_12;
+					sctp_abort_an_association(stcb->sctp_ep, stcb, op_err, SCTP_SO_NOT_LOCKED);
+					*abort_flag = 1;
+					return;
+				}
+				if ((chk->rec.data.rcv_flags & SCTP_DATA_UNORDERED) !=
+				    (next->rec.data.rcv_flags & SCTP_DATA_UNORDERED)) {
+					/*
+					 * Huh, need the same ordering here,
+					 * they must be the same.
+					 */
+					SCTPDBG(SCTP_DEBUG_INDATA1, "Next check - Gak, Evil plot, U-bit not constant\n");
+					snprintf(msg, sizeof(msg),
+					         "Expect U-bit=%d for TSN=%8.8x, got U-bit=%d",
+					         (next->rec.data.rcv_flags & SCTP_DATA_UNORDERED) ? 1 : 0,
+					         chk->rec.data.TSN_seq,
+					         (chk->rec.data.rcv_flags & SCTP_DATA_UNORDERED) ? 1 : 0);
 					op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
 					stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA+SCTP_LOC_12;
 					sctp_abort_an_association(stcb->sctp_ep, stcb, op_err, SCTP_SO_NOT_LOCKED);
