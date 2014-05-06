@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 263922 2014-03-29 21:26:45Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 265455 2014-05-06 16:51:07Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3177,7 +3177,6 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 	uint32_t vrf_id;
 
 	lport = 0;
-	error = 0;
 	bindall = 1;
 	inp = (struct sctp_inpcb *)so->so_pcb;
 #if defined(INET) || (defined(INET6) && defined(__APPLE__)) || defined(__FreeBSD__) || defined(__APPLE__)
@@ -3375,15 +3374,6 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 			}
 #endif
 		}
-#if !defined(__Panda__) && !defined(__Userspace__)
-		if (p == NULL) {
-			SCTP_INP_DECR_REF(inp);
-			SCTP_INP_WUNLOCK(inp);
-			SCTP_INP_INFO_WUNLOCK();
-			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
-			return (error);
-		}
-#endif
 #endif /* __Windows__ */
 		SCTP_INP_WUNLOCK(inp);
 		if (bindall) {
