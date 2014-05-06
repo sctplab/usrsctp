@@ -3152,13 +3152,13 @@ extern void in6_sin6_2_sin(struct sockaddr_in *, struct sockaddr_in6 *sin6);
 int
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
 sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
-		struct sctp_ifa *sctp_ifap, struct thread *p)
+                struct sctp_ifa *sctp_ifap, struct thread *p)
 #elif defined(__Windows__)
 sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
-		struct sctp_ifa *sctp_ifap, PKTHREAD p)
+                struct sctp_ifa *sctp_ifap, PKTHREAD p)
 #else
 sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
-		struct sctp_ifa *sctp_ifap, struct proc *p)
+                struct sctp_ifa *sctp_ifap, struct proc *p)
 #endif
 {
 	/* bind a ep to a socket address */
@@ -3224,14 +3224,14 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 			sin = (struct sockaddr_in *)addr;
 			lport = sin->sin_port;
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800000
- 			/*
- 			 * For LOOPBACK the prison_local_ip4() call will transmute the ip address
- 			 * to the proper value.
- 			 */
- 			if (p && (error = prison_local_ip4(p->td_ucred, &sin->sin_addr)) != 0) {
- 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
- 				return (error);
-  			}
+			/*
+			 * For LOOPBACK the prison_local_ip4() call will transmute the ip address
+			 * to the proper value.
+			 */
+			if (p && (error = prison_local_ip4(p->td_ucred, &sin->sin_addr)) != 0) {
+				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+				return (error);
+			}
 #endif
 			if (sin->sin_addr.s_addr != INADDR_ANY) {
 				bindall = 0;
@@ -3255,15 +3255,15 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 #endif
 			lport = sin6->sin6_port;
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800000
-  			/*
- 			 * For LOOPBACK the prison_local_ip6() call will transmute the ipv6 address
- 			 * to the proper value.
-  			 */
- 			if (p && (error = prison_local_ip6(p->td_ucred, &sin6->sin6_addr,
- 			    (SCTP_IPV6_V6ONLY(inp) != 0))) != 0) {
- 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
- 				return (error);
- 			}
+			/*
+			 * For LOOPBACK the prison_local_ip6() call will transmute the ipv6 address
+			 * to the proper value.
+			 */
+			if (p && (error = prison_local_ip6(p->td_ucred, &sin6->sin6_addr,
+			    (SCTP_IPV6_V6ONLY(inp) != 0))) != 0) {
+				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+				return (error);
+			}
 #endif
 			if (!IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
 				bindall = 0;
@@ -3331,7 +3331,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 	SCTP_INP_INFO_WLOCK();
 	SCTP_INP_WLOCK(inp);
 	/* Setup a vrf_id to be the default for the non-bind-all case. */
- 	vrf_id = inp->def_vrf_id;
+	vrf_id = inp->def_vrf_id;
 
 	/* increase our count due to the unlock we do */
 	SCTP_INP_INCR_REF(inp);
@@ -3355,7 +3355,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 #elif defined(__APPLE__)
 				  suser(p->p_ucred, &p->p_acflag)
 #elif defined(__Userspace__) /* must be true to use raw socket */
-                                  1
+				  1
 #else
 				  suser(p, 0)
 #endif
@@ -3464,7 +3464,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		}
 	} else {
 		uint16_t first, last, candidate;
-                uint16_t count;
+		uint16_t count;
 		int done;
 
 #if defined(__Windows__)
@@ -3472,12 +3472,12 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		last = 0xffff;
 #else
 #if defined(__Userspace__)
-                /* TODO ensure uid is 0, etc... */
+		/* TODO ensure uid is 0, etc... */
 #elif defined(__FreeBSD__) || defined(__APPLE__)
-                if (ip_inp->inp_flags & INP_HIGHPORT) {
-                        first = MODULE_GLOBAL(ipport_hifirstauto);
-                        last  = MODULE_GLOBAL(ipport_hilastauto);
-                } else if (ip_inp->inp_flags & INP_LOWPORT) {
+		if (ip_inp->inp_flags & INP_HIGHPORT) {
+			first = MODULE_GLOBAL(ipport_hifirstauto);
+			last = MODULE_GLOBAL(ipport_hilastauto);
+		} else if (ip_inp->inp_flags & INP_LOWPORT) {
 			if (p && (error =
 #ifdef __FreeBSD__
 #if __FreeBSD_version > 602000
@@ -3499,14 +3499,14 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
 				return (error);
 			}
-                        first = MODULE_GLOBAL(ipport_lowfirstauto);
-                        last  = MODULE_GLOBAL(ipport_lowlastauto);
-                } else {
+			first = MODULE_GLOBAL(ipport_lowfirstauto);
+			last = MODULE_GLOBAL(ipport_lowlastauto);
+		} else {
 #endif
  			first = MODULE_GLOBAL(ipport_firstauto);
  			last = MODULE_GLOBAL(ipport_lastauto);
 #if defined(__FreeBSD__) || defined(__APPLE__)
-                }
+		}
 #endif
 #endif /* __Windows__ */
 		if (first > last) {
@@ -3707,7 +3707,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		/* Put it into tcp 1-2-1 hash */
 		head = &SCTP_BASE_INFO(sctp_tcpephash)[SCTP_PCBHASH_ALLADDR(lport, SCTP_BASE_INFO(hashtcpmark))];
 		inp->sctp_flags |= SCTP_PCB_FLAGS_IN_TCPPOOL;
-	}  else {
+	} else {
 		head = &SCTP_BASE_INFO(sctp_ephash)[SCTP_PCBHASH_ALLADDR(lport, SCTP_BASE_INFO(hashmark))];
 	}
 	/* put it in the bucket */
