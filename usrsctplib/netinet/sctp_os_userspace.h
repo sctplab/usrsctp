@@ -224,7 +224,7 @@ int win_if_nametoindex(const char *);
 
 #define bzero(buf, len) memset(buf, 0, len)
 #define bcopy(srcKey, dstKey, len) memcpy(dstKey, srcKey, len)
-#define snprintf(data, size, format, name) _snprintf_s(data, size, _TRUNCATE, format, name)
+#define snprintf(data, size, format, ...) _snprintf_s(data, size, _TRUNCATE, format, __VA_ARGS__)
 #define inline __inline
 #define __inline__ __inline
 #define random() rand()
