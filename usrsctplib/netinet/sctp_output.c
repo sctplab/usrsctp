@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 264017 2014-04-01 18:38:04Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 267105 2014-06-05 12:51:12Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -12532,8 +12532,8 @@ sctp_copy_resume(struct uio *uio,
 	m = m_uiotombuf(uio, M_WAITOK, max_send_len, 0,
 			(user_marks_eor ? M_EOR : 0));
 	if (m == NULL) {
-		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOMEM);
-		*error = ENOMEM;
+		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOBUFS);
+		*error = ENOBUFS;
 	} else {
 		*sndout = m_length(m, NULL);
 		*new_tail = m_last(m);
@@ -12545,8 +12545,8 @@ sctp_copy_resume(struct uio *uio,
 	m = m_uiotombuf(uio, M_WAITOK, max_send_len, 0,
 		(M_PKTHDR | (user_marks_eor ? M_EOR : 0)));
 	if (m == NULL) {
-		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOMEM);
-		*error = ENOMEM;
+		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOBUFS);
+		*error = ENOBUFS;
 	} else {
 		*sndout = m_length(m, NULL);
 		*new_tail = m_last(m);
@@ -12558,18 +12558,18 @@ sctp_copy_resume(struct uio *uio,
 
 #if defined(__APPLE__)
 #if defined(APPLE_LEOPARD)
-        left = min(uio->uio_resid, max_send_len);
+	left = min(uio->uio_resid, max_send_len);
 #else
-        left = min(uio_resid(uio), max_send_len);
+	left = min(uio_resid(uio), max_send_len);
 #endif
 #else
-        left = min(uio->uio_resid, max_send_len);
+	left = min(uio->uio_resid, max_send_len);
 #endif
 	/* Always get a header just in case */
 	head = sctp_get_mbuf_for_msg(left, 0, M_WAITOK, 0, MT_DATA);
 	if (head == NULL) {
-		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOMEM);
-		*error = ENOMEM;
+		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOBUFS);
+		*error = ENOBUFS;
 		return (NULL);
 	}
 	cancpy = M_TRAILINGSPACE(head);
@@ -12590,8 +12590,8 @@ sctp_copy_resume(struct uio *uio,
 		if (SCTP_BUF_NEXT(m) == NULL) {
 			sctp_m_freem(head);
 			*new_tail = NULL;
-			SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOMEM);
-			*error = ENOMEM;
+			SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOBUFS);
+			*error = ENOBUFS;
 			return (NULL);
 		}
 		m = SCTP_BUF_NEXT(m);
@@ -12619,17 +12619,17 @@ sctp_copy_resume(struct uio *uio,
 
 static int
 sctp_copy_one(struct sctp_stream_queue_pending *sp,
-	      struct uio *uio,
-	      int resv_upfront)
+              struct uio *uio,
+              int resv_upfront)
 {
 	int left;
 #if defined(__Panda__)
 	left = sp->length;
 	sp->data = m_uiotombuf(uio, M_WAITOK, sp->length,
-			       resv_upfront, 0);
+	                       resv_upfront, 0);
 	if (sp->data == NULL) {
-		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOMEM);
-		return (ENOMEM);
+		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOBUFS);
+		return (ENOBUFS);
 	}
 
 	sp->tail_mbuf = m_last(sp->data);
@@ -12638,10 +12638,10 @@ sctp_copy_one(struct sctp_stream_queue_pending *sp,
 #elif defined(__FreeBSD__) && __FreeBSD_version > 602000
 	left = sp->length;
 	sp->data = m_uiotombuf(uio, M_WAITOK, sp->length,
-			       resv_upfront, 0);
+	                       resv_upfront, 0);
 	if (sp->data == NULL) {
-		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOMEM);
-		return (ENOMEM);
+		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOBUFS);
+		return (ENOBUFS);
 	}
 
 	sp->tail_mbuf = m_last(sp->data);
@@ -12655,8 +12655,8 @@ sctp_copy_one(struct sctp_stream_queue_pending *sp,
 	left = sp->length;
 	head = m = sctp_get_mbuf_for_msg((left + resv_upfront), 0, M_WAITOK, 0, MT_DATA);
 	if (m == NULL) {
-		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOMEM);
-		return (ENOMEM);
+		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOBUFS);
+		return (ENOBUFS);
 	}
 	/*-
 	 * Add this one for m in now, that way if the alloc fails we won't
@@ -12683,8 +12683,8 @@ sctp_copy_one(struct sctp_stream_queue_pending *sp,
 				 * the rest
 				 */
 				sctp_m_freem(head);
-				SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOMEM);
-				return (ENOMEM);
+				SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOBUFS);
+				return (ENOBUFS);
 			}
 			m = SCTP_BUF_NEXT(m);
 			cancpy = M_TRAILINGSPACE(m);
