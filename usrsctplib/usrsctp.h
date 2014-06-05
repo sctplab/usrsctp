@@ -35,6 +35,7 @@
 extern "C" {
 #endif
 
+#include <errno.h>
 #include <sys/types.h>
 #ifdef _WIN32
 #ifdef _MSC_VER
