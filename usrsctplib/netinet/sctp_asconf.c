@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 257803 2013-11-07 17:08:09Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 267674 2014-06-20 13:26:49Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1296,7 +1296,7 @@ sctp_asconf_queue_mgmt(struct sctp_tcb *stcb, struct sctp_ifa *ifa,
 	{
 		struct sockaddr_in *sin;
 
-		sin= (struct sockaddr_in *)&ifa->address.sa;
+		sin = (struct sockaddr_in *)&ifa->address.sa;
 		aa->ap.addrp.ph.param_type = SCTP_IPV4_ADDRESS;
 		aa->ap.addrp.ph.param_length = (sizeof(struct sctp_ipv4addr_param));
 		aa->ap.aph.ph.param_length = sizeof(struct sctp_asconf_paramhdr) +
@@ -1900,14 +1900,26 @@ sctp_addr_mgmt_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	 * this is boundall or subset bound w/ASCONF allowed
 	 */
 
-	/* first, make sure it's a good address family */
+	/* first, make sure that the address is IPv4 or IPv6 and not jailed */
 	switch (ifa->address.sa.sa_family) {
 #ifdef INET6
 	case AF_INET6:
+#if defined(__FreeBSD__)
+		if (prison_check_ip6(inp->ip_inp.inp.inp_cred,
+		                     &ifa->address.sin6.sin6_addr) != 0) {
+			return;
+		}
+#endif
 		break;
 #endif
 #ifdef INET
 	case AF_INET:
+#if defined(__FreeBSD__)
+		if (prison_check_ip4(inp->ip_inp.inp.inp_cred,
+		                     &ifa->address.sin.sin_addr) != 0) {
+			return;
+		}
+#endif
 		break;
 #endif
 	default:
@@ -2134,6 +2146,12 @@ sctp_asconf_iterator_stcb(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				/* we skip unspecifed addresses */
 				continue;
 			}
+#if defined(__FreeBSD__)
+			if (prison_check_ip6(inp->ip_inp.inp.inp_cred,
+			                     &sin6->sin6_addr) != 0) {
+				continue;
+			}
+#endif
 			if (IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr)) {
 				if (stcb->asoc.scope.local_scope == 0) {
 					continue;
@@ -2164,6 +2182,12 @@ sctp_asconf_iterator_stcb(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				/* we skip unspecifed addresses */
 				continue;
 			}
+#if defined(__FreeBSD__)
+			if (prison_check_ip4(inp->ip_inp.inp.inp_cred,
+			                     &sin->sin_addr) != 0) {
+				continue;
+			}
+#endif
 			if (stcb->asoc.scope.ipv4_local_scope == 0 &&
 			    IN4_ISPRIVATE_ADDRESS(&sin->sin_addr)) {
 				continue;
@@ -2221,7 +2245,7 @@ sctp_asconf_iterator_stcb(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		} else if (type == SCTP_SET_PRIM_ADDR) {
 			if ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_BOUNDALL) == 0) {
 				/* must validate the ifa is in the ep */
-				if (sctp_is_addr_in_ep(stcb->sctp_ep,ifa) == 0) {
+				if (sctp_is_addr_in_ep(stcb->sctp_ep, ifa) == 0) {
 					continue;
 				}
 			} else {
@@ -2477,6 +2501,12 @@ sctp_find_valid_localaddr(struct sctp_tcb *stcb, int addr_locked)
 						/* skip unspecifed addresses */
 						continue;
 					}
+#if defined(__FreeBSD__)
+					if (prison_check_ip4(stcb->sctp_ep->ip_inp.inp.inp_cred,
+					                     &sin->sin_addr) != 0) {
+						continue;
+					}
+#endif
 					if (stcb->asoc.scope.ipv4_local_scope == 0 &&
 					    IN4_ISPRIVATE_ADDRESS(&sin->sin_addr))
 						continue;
@@ -2505,6 +2535,12 @@ sctp_find_valid_localaddr(struct sctp_tcb *stcb, int addr_locked)
 						/* we skip unspecifed addresses */
 						continue;
 					}
+#if defined(__FreeBSD__)
+					if (prison_check_ip6(stcb->sctp_ep->ip_inp.inp.inp_cred,
+					                     &sin6->sin6_addr) != 0) {
+						continue;
+					}
+#endif
 					if (stcb->asoc.scope.local_scope == 0 &&
 					    IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr))
 						continue;
@@ -3116,6 +3152,12 @@ sctp_check_address_list_all(struct sctp_tcb *stcb, struct mbuf *m, int offset,
 #ifdef INET
 			case AF_INET:
 				sin = (struct sockaddr_in *)&sctp_ifa->address.sin;
+#if defined(__FreeBSD__)
+				if (prison_check_ip4(stcb->sctp_ep->ip_inp.inp.inp_cred,
+				                     &sin->sin_addr) != 0) {
+					continue;
+				}
+#endif
 				if ((ipv4_scope == 0) &&
 				    (IN4_ISPRIVATE_ADDRESS(&sin->sin_addr))) {
 					/* private address not in scope */
@@ -3126,6 +3168,12 @@ sctp_check_address_list_all(struct sctp_tcb *stcb, struct mbuf *m, int offset,
 #ifdef INET6
 			case AF_INET6:
 				sin6 = (struct sockaddr_in6 *)&sctp_ifa->address.sin6;
+#if defined(__FreeBSD__)
+				if (prison_check_ip6(stcb->sctp_ep->ip_inp.inp.inp_cred,
+				                     &sin6->sin6_addr) != 0) {
+					continue;
+				}
+#endif
 				if ((local_scope == 0) &&
 				    (IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr))) {
 					continue;
@@ -3413,6 +3461,12 @@ sctp_asconf_send_nat_state_update(struct sctp_tcb *stcb,
 #ifdef INET
 				case AF_INET:
 					to = &sctp_ifap->address.sin;
+#if defined(__FreeBSD__)
+					if (prison_check_ip4(stcb->sctp_ep->ip_inp.inp.inp_cred,
+					                     &to->sin_addr) != 0) {
+						continue;
+					}
+#endif
 					if (IN4_ISPRIVATE_ADDRESS(&to->sin_addr)) {
 						continue;
 					}
@@ -3424,6 +3478,12 @@ sctp_asconf_send_nat_state_update(struct sctp_tcb *stcb,
 #ifdef INET6
 				case AF_INET6:
 					to6 = &sctp_ifap->address.sin6;
+#if defined(__FreeBSD__)
+					if (prison_check_ip6(stcb->sctp_ep->ip_inp.inp.inp_cred,
+					                     &to6->sin6_addr) != 0) {
+						continue;
+					}
+#endif
 					if (IN6_IS_ADDR_LOOPBACK(&to6->sin6_addr)) {
 						continue;
 					}

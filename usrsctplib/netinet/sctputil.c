@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 264701 2014-04-20 18:15:23Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 267674 2014-06-20 13:26:49Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7566,6 +7566,12 @@ sctp_local_addr_count(struct sctp_tcb *stcb)
 							/* skip unspecified addrs */
 							continue;
 						}
+#if defined(__FreeBSD__)
+						if (prison_check_ip4(stcb->sctp_ep->ip_inp.inp.inp_cred,
+						                     &sin->sin_addr) != 0) {
+							continue;
+						}
+#endif
 						if ((ipv4_local_scope == 0) &&
 						    (IN4_ISPRIVATE_ADDRESS(&sin->sin_addr))) {
 							continue;
@@ -7589,6 +7595,12 @@ sctp_local_addr_count(struct sctp_tcb *stcb)
 						if (IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
 							continue;
 						}
+#if defined(__FreeBSD__)
+						if (prison_check_ip6(stcb->sctp_ep->ip_inp.inp.inp_cred,
+						                     &sin6->sin6_addr) != 0) {
+							continue;
+						}
+#endif
 						if (IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr)) {
 							if (local_scope == 0)
 								continue;
