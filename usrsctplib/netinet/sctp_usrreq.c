@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 267682 2014-06-20 17:45:00Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 267688 2014-06-20 20:17:39Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7248,35 +7248,34 @@ sctp_listen(struct socket *so, struct proc *p)
 	if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_PORTREUSE)) {
 		/* See if we have a listener */
 		struct sctp_inpcb *tinp;
-		union sctp_sockstore store, *sp;
+		union sctp_sockstore store;
 
-		sp = &store;
 		if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUNDALL) == 0) {
 			/* not bound all */
 			struct sctp_laddr *laddr;
 
 			LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
 				memcpy(&store, &laddr->ifa->address, sizeof(store));
-				switch (sp->sa.sa_family) {
+				switch (store.sa.sa_family) {
 #ifdef INET
 				case AF_INET:
-					sp->sin.sin_port = inp->sctp_lport;
+					store.sin.sin_port = inp->sctp_lport;
 					break;
 #endif
 #ifdef INET6
 				case AF_INET6:
-					sp->sin6.sin6_port = inp->sctp_lport;
+					store.sin6.sin6_port = inp->sctp_lport;
 					break;
 #endif
 #if defined(__Userspace__)
 				case AF_CONN:
-					sp->sconn.sconn_port = inp->sctp_lport;
+					store.sconn.sconn_port = inp->sctp_lport;
 					break;
 #endif
 				default:
 					break;
 				}
-				tinp = sctp_pcb_findep(&sp->sa, 0, 0, inp->def_vrf_id);
+				tinp = sctp_pcb_findep(&store.sa, 0, 0, inp->def_vrf_id);
 				if (tinp && (tinp != inp) &&
 				    ((tinp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) == 0) &&
 				    ((tinp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
@@ -7291,25 +7290,6 @@ sctp_listen(struct socket *so, struct proc *p)
 		} else {
 			/* Setup a local addr bound all */
 			memset(&store, 0, sizeof(store));
-			switch (sp->sa.sa_family) {
-#ifdef INET
-			case AF_INET:
-				store.sin.sin_port = inp->sctp_lport;
-				break;
-#endif
-#ifdef INET6
-			case AF_INET6:
-				sp->sin6.sin6_port = inp->sctp_lport;
-				break;
-#endif
-#if defined(__Userspace__)
-			case AF_CONN:
-				sp->sconn.sconn_port = inp->sctp_lport;
-				break;
-#endif
-			default:
-				break;
-			}
 #ifdef INET6
 			if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) {
 				store.sa.sa_family = AF_INET6;
@@ -7318,15 +7298,47 @@ sctp_listen(struct socket *so, struct proc *p)
 #endif
 			}
 #endif
+#if defined(__Userspace__)
+			if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_CONN) {
+				store.sa.sa_family = AF_CONN;
+#ifdef HAVE_SA_LEN
+				store.sa.sa_len = sizeof(struct sockaddr_conn);
+#endif
+			}
+#endif
 #ifdef INET
+#if defined(__Userspace__)
+			if (((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) == 0) &&
+			    ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_CONN) == 0)) {
+#else
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) == 0) {
+#endif
 				store.sa.sa_family = AF_INET;
 #ifdef HAVE_SA_LEN
 				store.sa.sa_len = sizeof(struct sockaddr_in);
 #endif
 			}
 #endif
-			tinp = sctp_pcb_findep(&sp->sa, 0, 0, inp->def_vrf_id);
+			switch (store.sa.sa_family) {
+#ifdef INET
+			case AF_INET:
+				store.sin.sin_port = inp->sctp_lport;
+				break;
+#endif
+#ifdef INET6
+			case AF_INET6:
+				store.sin6.sin6_port = inp->sctp_lport;
+				break;
+#endif
+#if defined(__Userspace__)
+			case AF_CONN:
+				store.sconn.sconn_port = inp->sctp_lport;
+				break;
+#endif
+			default:
+				break;
+			}
+			tinp = sctp_pcb_findep(&store.sa, 0, 0, inp->def_vrf_id);
 			if (tinp && (tinp != inp) &&
 			    ((tinp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) == 0) &&
 			    ((tinp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
