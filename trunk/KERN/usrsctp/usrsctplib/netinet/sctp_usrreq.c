@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 263237 2014-03-16 12:32:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 267674 2014-06-20 13:26:49Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1684,6 +1684,12 @@ sctp_fill_up_addresses_vrf(struct sctp_inpcb *inp,
 							 */
 							continue;
 						}
+#if defined(__FreeBSD__)
+						if (prison_check_ip4(inp->ip_inp.inp.inp_cred,
+						                     &sin->sin_addr) != 0) {
+							continue;
+						}
+#endif
 						if ((ipv4_local_scope == 0) &&
 						    (IN4_ISPRIVATE_ADDRESS(&sin->sin_addr))) {
 							continue;
@@ -1727,6 +1733,12 @@ sctp_fill_up_addresses_vrf(struct sctp_inpcb *inp,
 							 */
 							continue;
 						}
+#if defined(__FreeBSD__)
+						if (prison_check_ip6(inp->ip_inp.inp.inp_cred,
+						                     &sin6->sin6_addr) != 0) {
+							continue;
+						}
+#endif
 						if (IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr)) {
 							if (local_scope == 0)
 								continue;
@@ -6096,6 +6108,45 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					error = EINVAL;
 					goto out_of_it;
 				}
+#if defined(__FreeBSD__)
+			} else {
+				switch (sspp->sspp_addr.ss_family) {
+#ifdef INET
+				case AF_INET:
+				{
+					struct sockaddr_in *sin;
+
+					sin = (struct sockaddr_in *)&sspp->sspp_addr;
+					if (prison_check_ip4(inp->ip_inp.inp.inp_cred,
+					                     &sin->sin_addr) != 0) {
+						SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+						error = EINVAL;
+						goto out_of_it;
+					}
+					break;
+				}
+#endif
+#ifdef INET6
+				case AF_INET6:
+				{
+					struct sockaddr_in6 *sin6;
+
+					sin6 = (struct sockaddr_in6 *)&sspp->sspp_addr;
+					if (prison_check_ip6(inp->ip_inp.inp.inp_cred,
+					                     &sin6->sin6_addr) != 0) {
+						SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+						error = EINVAL;
+						goto out_of_it;
+					}
+					break;
+				}
+#endif
+				default:
+					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+					error = EINVAL;
+					goto out_of_it;
+				}
+#endif
 			}
 			if (sctp_set_primary_ip_address_sa(stcb,
 							   (struct sockaddr *)&sspp->sspp_addr) != 0) {

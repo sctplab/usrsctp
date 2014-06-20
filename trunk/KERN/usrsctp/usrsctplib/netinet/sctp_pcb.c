@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 265455 2014-05-06 16:51:07Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 267674 2014-06-20 13:26:49Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -992,6 +992,12 @@ sctp_does_stcb_own_this_addr(struct sctp_tcb *stcb, struct sockaddr *to)
 						    IN4_ISPRIVATE_ADDRESS(&sin->sin_addr)) {
 							continue;
 						}
+#if defined(__FreeBSD__)
+						if (prison_check_ip4(stcb->sctp_ep->ip_inp.inp.inp_cred,
+						                     &sin->sin_addr) != 0) {
+							continue;
+						}
+#endif
 						if (sin->sin_addr.s_addr == rsin->sin_addr.s_addr) {
 							SCTP_IPI_ADDR_RUNLOCK();
 							return (1);
@@ -1008,6 +1014,12 @@ sctp_does_stcb_own_this_addr(struct sctp_tcb *stcb, struct sockaddr *to)
 #endif
 						sin6 = &sctp_ifa->address.sin6;
 						rsin6 = (struct sockaddr_in6 *)to;
+#if defined(__FreeBSD__)
+						if (prison_check_ip6(stcb->sctp_ep->ip_inp.inp.inp_cred,
+						                     &sin6->sin6_addr) != 0) {
+							continue;
+						}
+#endif
 						if (IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr)) {
 							if (local_scope == 0)
 								continue;
@@ -1207,6 +1219,41 @@ sctp_tcb_special_locate(struct sctp_inpcb **inp_p, struct sockaddr *from,
 			SCTP_INP_RUNLOCK(inp);
 			continue;
 		}
+#if defined(__FreeBSD__)
+		switch (to->sa_family) {
+#ifdef INET
+		case AF_INET:
+		{
+			struct sockaddr_in *sin;
+
+			sin = (struct sockaddr_in *)to;
+			if (prison_check_ip4(inp->ip_inp.inp.inp_cred,
+			                     &sin->sin_addr) != 0) {
+				SCTP_INP_RUNLOCK(inp);
+				continue;
+			}
+			break;
+		}
+#endif
+#ifdef INET6
+		case AF_INET6:
+		{
+			struct sockaddr_in6 *sin6;
+
+			sin6 = (struct sockaddr_in6 *)to;
+			if (prison_check_ip6(inp->ip_inp.inp.inp_cred,
+			                     &sin6->sin6_addr) != 0) {
+				SCTP_INP_RUNLOCK(inp);
+				continue;
+			}
+			break;
+		}
+#endif
+		default:
+			SCTP_INP_RUNLOCK(inp);
+			continue;
+		}
+#endif
 #ifdef SCTP_MVRF
 		fnd = 0;
 		for (i = 0; i < inp->num_vrfs; i++) {
@@ -1907,23 +1954,43 @@ sctp_endpoint_probe(struct sockaddr *nam, struct sctppcbhead *head,
 		if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUNDALL) &&
 		    (inp->sctp_lport == lport)) {
 			/* got it */
+			switch (nam->sa_family) {
 #ifdef INET
-			if ((nam->sa_family == AF_INET) &&
-			    (inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) &&
-			    SCTP_IPV6_V6ONLY(inp)) {
-				/* IPv4 on a IPv6 socket with ONLY IPv6 set */
-				SCTP_INP_RUNLOCK(inp);
-				continue;
-			}
+			case AF_INET:
+				if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) &&
+				    SCTP_IPV6_V6ONLY(inp)) {
+					/* IPv4 on a IPv6 socket with ONLY IPv6 set */
+					SCTP_INP_RUNLOCK(inp);
+					continue;
+				}
+#if defined(__FreeBSD__)
+				if (prison_check_ip4(inp->ip_inp.inp.inp_cred,
+				                     &sin->sin_addr) != 0) {
+					SCTP_INP_RUNLOCK(inp);
+					continue;
+				}
+#endif
+				break;
 #endif
 #ifdef INET6
-			/* A V6 address and the endpoint is NOT bound V6 */
-			if (nam->sa_family == AF_INET6 &&
-			    (inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) == 0) {
-				SCTP_INP_RUNLOCK(inp);
-				continue;
-			}
+			case AF_INET6:
+				/* A V6 address and the endpoint is NOT bound V6 */
+				if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) == 0) {
+					SCTP_INP_RUNLOCK(inp);
+					continue;
+				}
+#if defined(__FreeBSD__)
+				if (prison_check_ip6(inp->ip_inp.inp.inp_cred,
+				                     &sin6->sin6_addr) != 0) {
+					SCTP_INP_RUNLOCK(inp);
+					continue;
+				}
 #endif
+				break;
+#endif
+			default:
+				break;
+			}
 			/* does a VRF id match? */
 			fnd = 0;
 #ifdef SCTP_MVRF
@@ -2753,6 +2820,9 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	/* setup socket pointers */
 	inp->sctp_socket = so;
 	inp->ip_inp.inp.inp_socket = so;
+#if defined(__FreeBSD__)
+	inp->ip_inp.inp.inp_cred = crhold(so->so_cred);
+#endif
 #ifdef INET6
 #if !defined(__Userspace__) && !defined(__Windows__)
 	if (INP_SOCKAF(so) == AF_INET6) {
@@ -2779,6 +2849,9 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	/* init the small hash table we use to track asocid <-> tcb */
 	inp->sctp_asocidhash = SCTP_HASH_INIT(SCTP_STACK_VTAG_HASH_SIZE, &inp->hashasocidmark);
 	if (inp->sctp_asocidhash == NULL) {
+#if defined(__FreeBSD__)
+		crfree(inp->ip_inp.inp.inp_cred);
+#endif
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_ep), inp);
 		SCTP_INP_INFO_WUNLOCK();
 		return (ENOBUFS);
@@ -2798,6 +2871,9 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	error = 0;
 #endif
 	if (error != 0) {
+#if defined(__FreeBSD__)
+		crfree(inp->ip_inp.inp.inp_cred);
+#endif
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_ep), inp);
 		SCTP_INP_INFO_WUNLOCK();
 		return error;
@@ -2843,6 +2919,9 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 		 */
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EOPNOTSUPP);
 		so->so_pcb = NULL;
+#if defined(__FreeBSD__)
+		crfree(inp->ip_inp.inp.inp_cred);
+#endif
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_ep), inp);
 		return (EOPNOTSUPP);
 	}
@@ -2862,6 +2941,9 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 		SCTP_PRINTF("Out of SCTP-INPCB->hashinit - no resources\n");
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, ENOBUFS);
 		so->so_pcb = NULL;
+#if defined(__FreeBSD__)
+		crfree(inp->ip_inp.inp.inp_cred);
+#endif
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_ep), inp);
 		return (ENOBUFS);
 	}
@@ -2873,6 +2955,9 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, ENOBUFS);
 		so->so_pcb = NULL;
 		SCTP_HASH_FREE(inp->sctp_tcbhash, inp->sctp_hashmark);
+#if defined(__FreeBSD__)
+		crfree(inp->ip_inp.inp.inp_cred);
+#endif
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_ep), inp);
 		return (ENOBUFS);
 	}
@@ -2891,6 +2976,9 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 #endif
 		SCTP_HASH_FREE(inp->sctp_tcbhash, inp->sctp_hashmark);
 		so->so_pcb = NULL;
+#if defined(__FreeBSD__)
+		crfree(inp->ip_inp.inp.inp_cred);
+#endif
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_ep), inp);
 		SCTP_UNLOCK_EXC(SCTP_BASE_INFO(sctbinfo).ipi_lock);
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, ENOMEM);
@@ -4265,6 +4353,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	}
 	/* Now we must put the ep memory back into the zone pool */
 #if defined(__FreeBSD__)
+	crfree(inp->ip_inp.inp.inp_cred);
 	INP_LOCK_DESTROY(&inp->ip_inp.inp);
 #endif
 	SCTP_INP_LOCK_DESTROY(inp);
