@@ -46,7 +46,9 @@
 #define __FAVOR_BSD    /* (on Ubuntu at least) enables UDP header field names like BSD in RFC 768 */
 #endif
 #if !defined (__Userspace_os_Windows)
+#if defined INET || defined INET6
 #include <netinet/udp.h>
+#endif
 #include <arpa/inet.h>
 #else
 #include <user_socketvar.h>

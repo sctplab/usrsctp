@@ -52,8 +52,10 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 267674 2014-06-20 13:26:49Z tuex
 #if defined(__FreeBSD__) && __FreeBSD_version >= 803000
 #include <netinet/sctp_dtrace_define.h>
 #endif
+#if defined INET || defined INET6
 #if !defined(__Userspace_os_Windows)
 #include <netinet/udp.h>
+#endif
 #endif
 #ifdef INET6
 #if defined(__Userspace__)
@@ -4718,9 +4720,11 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 			break;
 		}
 	}
+#if defined INET || defined INET6
 	if (net->port) {
 		net->mtu -= (uint32_t)sizeof(struct udphdr);
 	}
+#endif
 	if (from == SCTP_ALLOC_ASOC) {
 		stcb->asoc.smallest_mtu = net->mtu;
 	}

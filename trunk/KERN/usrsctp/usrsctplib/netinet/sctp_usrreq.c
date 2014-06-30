@@ -56,7 +56,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 267688 2014-06-20 20:17:39Z t
 #include <netinet/sctp_timer.h>
 #include <netinet/sctp_auth.h>
 #include <netinet/sctp_bsd_addr.h>
-#if !defined(__Userspace_os_Windows)
+#if !defined(__Userspace__)
 #include <netinet/udp.h>
 #endif
 
@@ -393,8 +393,6 @@ sctp_notify_mbuf(struct sctp_inpcb *inp,
 
 	SCTP_TCB_UNLOCK(stcb);
 }
-#endif
-#endif
 
 void
 sctp_notify(struct sctp_inpcb *inp,
@@ -489,6 +487,8 @@ sctp_notify(struct sctp_inpcb *inp,
 		SCTP_TCB_UNLOCK(stcb);
 	}
 }
+#endif
+#endif
 
 #ifdef INET
 #if !defined(__Panda__) && !defined(__Userspace__)

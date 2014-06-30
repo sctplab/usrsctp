@@ -474,9 +474,13 @@ struct sx {int dummy;};
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
-#include <netinet/ip_icmp.h>
-#else
+#endif
+#if defined INET
+#if defined(__Userspace_os_Windows)
 #include <user_ip_icmp.h>
+#else
+#include <netinet/ip_icmp.h>
+#endif
 #endif
 /* #include <netinet/in_pcb.h> ported to userspace */
 #include <user_inpcb.h>
