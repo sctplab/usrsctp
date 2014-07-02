@@ -141,7 +141,7 @@ Win_getifaddrs(struct ifaddrs** interfaces)
 		ifa->ifa_name = strdup(pAdapt->AdapterName);
 		ifa->ifa_flags = pAdapt->Flags;
 		ifa->ifa_addr = (struct sockaddr *)addr;
-		memcpy(&addr, &pAdapt->FirstUnicastAddress->Address.lpSockaddr, sizeof(struct sockaddr_in));
+		memcpy(addr, &pAdapt->FirstUnicastAddress->Address.lpSockaddr, sizeof(struct sockaddr_in));
 		interfaces[count] = ifa;
 	}
 #endif
@@ -175,7 +175,7 @@ Win_getifaddrs(struct ifaddrs** interfaces)
 			ifa->ifa_name = strdup(pAdapt->AdapterName);
 			ifa->ifa_flags = pAdapt->Flags;
 			ifa->ifa_addr = (struct sockaddr *)addr6;
-			memcpy(&addr6, &pAdapt->FirstUnicastAddress->Address.lpSockaddr, sizeof(struct sockaddr_in6));
+			memcpy(addr6, &pAdapt->FirstUnicastAddress->Address.lpSockaddr, sizeof(struct sockaddr_in6));
 			interfaces[count] = ifa;
 		}
 	}
