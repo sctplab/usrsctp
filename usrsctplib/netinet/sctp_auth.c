@@ -397,9 +397,9 @@ sctp_compare_key(sctp_key_t *key1, sctp_key_t *key2)
 		val1 = (i < (maxlen - key1len)) ? 0 : *(key_1++);
 		val2 = (i < (maxlen - key2len)) ? 0 : *(key_2++);
 		if (val1 > val2) {
- 			return (1);
+			return (1);
 		} else if (val1 < val2) {
- 			return (-1);
+			return (-1);
 		}
 	}
 	/* keys are equal value, so check lengths */
@@ -800,7 +800,7 @@ sctp_verify_hmac_param (struct sctp_auth_hmac_algo *hmacs, uint32_t num_hmacs)
 
 	for (i = 0; i < num_hmacs; i++) {
 		if (ntohs(hmacs->hmac_ids[i]) == SCTP_AUTH_HMAC_ID_SHA1) {
-	 		return (0);
+			return (0);
 		}
 	}
 	return (-1);

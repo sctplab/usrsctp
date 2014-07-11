@@ -730,11 +730,11 @@ sctp_handle_heartbeat_ack(struct sctp_heartbeat_chunk *cp,
 	/* Mobility adaptation */
 	if (req_prim) {
 		if ((sctp_is_mobility_feature_on(stcb->sctp_ep,
-				       	SCTP_MOBILITY_BASE) ||
-	    	    sctp_is_mobility_feature_on(stcb->sctp_ep,
-			    		SCTP_MOBILITY_FASTHANDOFF)) &&
-	    	    sctp_is_mobility_feature_on(stcb->sctp_ep,
-					SCTP_MOBILITY_PRIM_DELETED)) {
+		                                 SCTP_MOBILITY_BASE) ||
+		    sctp_is_mobility_feature_on(stcb->sctp_ep,
+		                                SCTP_MOBILITY_FASTHANDOFF)) &&
+		    sctp_is_mobility_feature_on(stcb->sctp_ep,
+		                                SCTP_MOBILITY_PRIM_DELETED)) {
 
 			sctp_timer_stop(SCTP_TIMER_TYPE_PRIM_DELETED, stcb->sctp_ep, stcb, NULL, SCTP_FROM_SCTP_TIMER+SCTP_LOC_7);
 			if (sctp_is_mobility_feature_on(stcb->sctp_ep,
@@ -1605,7 +1605,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			return (NULL);
 
 		}
- 		switch (SCTP_GET_STATE(asoc)) {
+		switch (SCTP_GET_STATE(asoc)) {
 			case SCTP_STATE_COOKIE_WAIT:
 			case SCTP_STATE_COOKIE_ECHOED:
 				/*
@@ -1662,7 +1662,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 					atomic_add_int(&stcb->asoc.refcnt, -1);
 					if (stcb->asoc.state & SCTP_STATE_CLOSED_SOCKET) {
 						SCTP_SOCKET_UNLOCK(so, 1);
- 						return (NULL);
+						return (NULL);
 					}
 #endif
 					soisconnected(stcb->sctp_socket);
@@ -2840,7 +2840,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 				sctp_ulp_notify(notification, *stcb, 0, NULL, SCTP_SO_NOT_LOCKED);
 				if (send_int_conf) {
 					sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_CONFIRMED,
-			    		                (*stcb), 0, (void *)netl, SCTP_SO_NOT_LOCKED);
+					                (*stcb), 0, (void *)netl, SCTP_SO_NOT_LOCKED);
 				}
 				return (m);
 			}
@@ -2918,7 +2918,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 			inp->sctp_flags = (SCTP_PCB_FLAGS_TCPTYPE |
 			    SCTP_PCB_FLAGS_CONNECTED |
 			    SCTP_PCB_FLAGS_IN_TCPPOOL |
- 			    SCTP_PCB_FLAGS_UNBOUND |
+			    SCTP_PCB_FLAGS_UNBOUND |
 			    (SCTP_PCB_COPY_FLAGS & (*inp_p)->sctp_flags) |
 			    SCTP_PCB_FLAGS_DONT_WAKE);
 			inp->sctp_features = (*inp_p)->sctp_features;
@@ -4897,7 +4897,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 			SCTPDBG(SCTP_DEBUG_INPUT3, "SCTP_INIT-ACK\n");
 			if (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) {
 				/* We are not interested anymore */
- 				if ((stcb) && (stcb->asoc.total_output_queue_size)) {
+				if ((stcb) && (stcb->asoc.total_output_queue_size)) {
 					;
 				} else {
 					if (locked_tcb != stcb) {
@@ -5898,7 +5898,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 			 * timer is clearing out the assoc, we should
 			 * NOT respond to any packet.. its OOTB.
 			 */
- 			SCTP_TCB_UNLOCK(stcb);
+			SCTP_TCB_UNLOCK(stcb);
 			stcb = NULL;
 			snprintf(msg, sizeof(msg), "OOTB, %s:%d at %s\n", __FILE__, __LINE__, __FUNCTION__);
 			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
@@ -5907,7 +5907,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 #if defined(__FreeBSD__)
 			                 use_mflowid, mflowid,
 #endif
-					 vrf_id, port);
+			                 vrf_id, port);
 			goto out;
 		}
 
@@ -5919,14 +5919,14 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 		                            src, dst, sh, ch,
 		                            inp, stcb, &net, &fwd_tsn_seen,
 #if defined(__FreeBSD__)
-					    use_mflowid, mflowid,
+		                            use_mflowid, mflowid,
 #endif
 		                            vrf_id, port);
 		if (stcb) {
 			/* This covers us if the cookie-echo was there
 			 * and it changes our INP.
 			 */
- 			inp = stcb->sctp_ep;
+			inp = stcb->sctp_ep;
 #if defined(INET) || defined(INET6)
 			if ((net) && (port)) {
 				if (net->port == 0) {

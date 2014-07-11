@@ -218,7 +218,7 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 				 *  t3 handler.
 				 */
 				if (mnet == net) {
- 					if (min_errors == -1) {
+					if (min_errors == -1) {
 						min_errors = mnet->error_count + 1;
 						min_errors_net = mnet;
 					} else if (mnet->error_count + 1 < min_errors) {
@@ -231,7 +231,7 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 					}
 					continue;
 				} else {
- 					if (min_errors == -1) {
+					if (min_errors == -1) {
 						min_errors = mnet->error_count;
 						min_errors_net = mnet;
 					} else if (mnet->error_count < min_errors) {
@@ -335,7 +335,7 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 	do {
 		alt = TAILQ_NEXT(mnet, sctp_next);
 		if (alt == NULL)
- 		{
+		{
 			once++;
 			if (once > 1) {
 				break;
@@ -926,9 +926,9 @@ sctp_t3rxt_timer(struct sctp_inpcb *inp,
 		 */
 		if (net->ro._s_addr) {
 			sctp_free_ifa(net->ro._s_addr);
-	 		net->ro._s_addr = NULL;
+			net->ro._s_addr = NULL;
 		}
- 		net->src_addr_selected = 0;
+		net->src_addr_selected = 0;
 
 		/* Force a route allocation too */
 		if (net->ro.ro_rt) {
@@ -1479,7 +1479,7 @@ sctp_pathmtu_timer(struct sctp_inpcb *inp,
 #elif defined(SCTP_KAME)
 					(void)sa6_embedscope(sin6, MODULE_GLOBAL(ip6_use_defzone));
 #else
-                			(void)in6_embedscope(&sin6->sin6_addr, sin6);
+					(void)in6_embedscope(&sin6->sin6_addr, sin6);
 #endif
 				}
 #endif

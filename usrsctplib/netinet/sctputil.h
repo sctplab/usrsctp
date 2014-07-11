@@ -240,10 +240,10 @@ sctp_recover_scope(struct sockaddr_in6 *, struct sockaddr_in6 *);
 } while (0)
 #else
 #define sctp_recover_scope_mac(addr, store) do { \
-	 if ((addr->sin6_family == AF_INET6) && \
-	     (IN6_IS_SCOPE_LINKLOCAL(&addr->sin6_addr))) { \
+	if ((addr->sin6_family == AF_INET6) && \
+	    (IN6_IS_SCOPE_LINKLOCAL(&addr->sin6_addr))) { \
 		*store = *addr; \
-	 	if (addr->sin6_scope_id == 0) { \
+		if (addr->sin6_scope_id == 0) { \
 			if (!in6_recoverscope(store, &store->sin6_addr, \
 					      NULL)) { \
 				addr = store; \
@@ -252,7 +252,7 @@ sctp_recover_scope(struct sockaddr_in6 *, struct sockaddr_in6 *);
 			in6_clearscope(&addr->sin6_addr); \
 			addr = store; \
 		} \
-	 } \
+	} \
 } while (0)
 #endif
 #endif
@@ -291,42 +291,42 @@ sctp_free_bufspace(struct sctp_tcb *, struct sctp_association *,
 #define sctp_free_bufspace(stcb, asoc, tp1, chk_cnt)  \
 do { \
 	if (tp1->data != NULL) { \
-                atomic_subtract_int(&((asoc)->chunks_on_out_queue), chk_cnt); \
+		atomic_subtract_int(&((asoc)->chunks_on_out_queue), chk_cnt); \
 		if ((asoc)->total_output_queue_size >= tp1->book_size) { \
 			atomic_subtract_int(&((asoc)->total_output_queue_size), tp1->book_size); \
 		} else { \
 			(asoc)->total_output_queue_size = 0; \
 		} \
-   	        if (stcb->sctp_socket && ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) || \
-	            (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL))) { \
+		if (stcb->sctp_socket && ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) || \
+		    (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL))) { \
 			if (stcb->sctp_socket->so_snd.sb_cc >= tp1->book_size) { \
 				atomic_subtract_int(&((stcb)->sctp_socket->so_snd.sb_cc), tp1->book_size); \
 			} else { \
 				stcb->sctp_socket->so_snd.sb_cc = 0; \
 			} \
 		} \
-        } \
+	} \
 } while (0)
 
 #endif
 
 #define sctp_free_spbufspace(stcb, asoc, sp)  \
 do { \
- 	if (sp->data != NULL) { \
+	if (sp->data != NULL) { \
 		if ((asoc)->total_output_queue_size >= sp->length) { \
 			atomic_subtract_int(&(asoc)->total_output_queue_size, sp->length); \
 		} else { \
 			(asoc)->total_output_queue_size = 0; \
 		} \
-   	        if (stcb->sctp_socket && ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) || \
-	            (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL))) { \
+		if (stcb->sctp_socket && ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) || \
+		    (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL))) { \
 			if (stcb->sctp_socket->so_snd.sb_cc >= sp->length) { \
 				atomic_subtract_int(&stcb->sctp_socket->so_snd.sb_cc,sp->length); \
 			} else { \
 				stcb->sctp_socket->so_snd.sb_cc = 0; \
 			} \
 		} \
-        } \
+	} \
 } while (0)
 
 #define sctp_snd_sb_alloc(stcb, sz)  \

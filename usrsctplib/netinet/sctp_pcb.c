@@ -224,8 +224,8 @@ sctp_allocate_vrf(int vrf_id)
 	}
 	SCTP_MALLOC(vrf, struct sctp_vrf *, sizeof(struct sctp_vrf),
 		    SCTP_M_VRF);
- 	if (vrf == NULL) {
- 		/* No memory */
+	if (vrf == NULL) {
+		/* No memory */
 #ifdef INVARIANTS
 		panic("No memory for VRF:%d", vrf_id);
 #endif
@@ -243,7 +243,7 @@ sctp_allocate_vrf(int vrf_id)
 	vrf->vrf_addr_hash = SCTP_HASH_INIT(SCTP_VRF_ADDR_HASH_SIZE,
 					    &vrf->vrf_addr_hashmark);
 	if (vrf->vrf_addr_hash == NULL) {
- 		/* No memory */
+		/* No memory */
 #ifdef INVARIANTS
 		panic("No memory for VRF:%d", vrf_id);
 #endif
@@ -656,7 +656,7 @@ sctp_add_addr_to_vrf(uint32_t vrf_id, void *ifn, uint32_t ifn_index,
 				sctp_remove_ifa_from_ifn(sctp_ifap);
 				/* move the address over to the new ifn */
 				sctp_add_ifa_to_ifn(sctp_ifnp, sctp_ifap);
- 				goto exit_stage_left;
+				goto exit_stage_left;
 			} else {
 				/* repair ifnp which was NULL ? */
 				sctp_ifap->localifa_flags = SCTP_ADDR_VALID;
@@ -3583,8 +3583,8 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 			last = MODULE_GLOBAL(ipport_lowlastauto);
 		} else {
 #endif
- 			first = MODULE_GLOBAL(ipport_firstauto);
- 			last = MODULE_GLOBAL(ipport_lastauto);
+			first = MODULE_GLOBAL(ipport_firstauto);
+			last = MODULE_GLOBAL(ipport_lastauto);
 #if defined(__FreeBSD__) || defined(__APPLE__)
 		}
 #endif
@@ -4615,7 +4615,7 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 	 * this means its an initial value
 	 */
 	net->rto_needed = 1;
- 	net->RTO = 0;
+	net->RTO = 0;
 	net->RTO_measured = 0;
 	stcb->asoc.numnets++;
 	net->ref_count = 1;
@@ -5199,9 +5199,9 @@ sctp_remove_net(struct sctp_tcb *stcb, struct sctp_nets *net)
 		   (by micchie)
 		 */
 		if (sctp_is_mobility_feature_on(stcb->sctp_ep,
-						SCTP_MOBILITY_BASE) ||
+		                                SCTP_MOBILITY_BASE) ||
 		    sctp_is_mobility_feature_on(stcb->sctp_ep,
-			    			SCTP_MOBILITY_FASTHANDOFF)) {
+		                                SCTP_MOBILITY_FASTHANDOFF)) {
 			SCTPDBG(SCTP_DEBUG_ASCONF1, "remove_net: primary dst is deleting\n");
 			if (asoc->deleted_primary != NULL) {
 				SCTPDBG(SCTP_DEBUG_ASCONF1, "remove_net: deleted primary may be already stored\n");
@@ -6955,7 +6955,7 @@ sctp_pcb_finish(void)
 #endif
 #if !defined(__FreeBSD__)
 	SCTP_IPI_ITERATOR_WQ_DESTROY();
- 	SCTP_ITERATOR_LOCK_DESTROY();
+	SCTP_ITERATOR_LOCK_DESTROY();
 #endif
 	SCTP_OS_TIMER_STOP(&SCTP_BASE_INFO(addr_wq_timer.timer));
 	SCTP_WQ_ADDR_LOCK();

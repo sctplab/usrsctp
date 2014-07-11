@@ -416,7 +416,7 @@ sctp_service_reassembly(struct sctp_tcb *stcb, struct sctp_association *asoc)
 			}
 			/* Now free the address and data */
 			sctp_free_a_chunk(stcb, chk, SCTP_SO_NOT_LOCKED);
-        		/*sa_ignore FREED_MEMORY*/
+			/*sa_ignore FREED_MEMORY*/
 		}
 		return;
 	}
@@ -670,8 +670,8 @@ sctp_queue_data_to_stream(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		 * Ok, we did not deliver this guy, find the correct place
 		 * to put it on the queue.
 		 */
-  	        if (SCTP_TSN_GE(asoc->cumulative_tsn, control->sinfo_tsn)) {
-		        goto protocol_error;
+		if (SCTP_TSN_GE(asoc->cumulative_tsn, control->sinfo_tsn)) {
+			goto protocol_error;
 		}
 		if (TAILQ_EMPTY(&strm->inqueue)) {
 			/* Empty queue */
@@ -876,7 +876,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 				snprintf(msg, sizeof(msg),
 				         "Expected B-bit for TSN=%8.8x, SID=%4.4x, SSN=%4.4x",
 				         chk->rec.data.TSN_seq,
-			 	         chk->rec.data.stream_number,
+				         chk->rec.data.stream_number,
 				         chk->rec.data.stream_seq);
 				op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
 				stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA+SCTP_LOC_2;
@@ -893,7 +893,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 				snprintf(msg, sizeof(msg),
 				         "Didn't expect B-bit for TSN=%8.8x, SID=%4.4x, SSN=%4.4x",
 				         chk->rec.data.TSN_seq,
-			 	         chk->rec.data.stream_number,
+				         chk->rec.data.stream_number,
 				         chk->rec.data.stream_seq);
 				op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
 				stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA+SCTP_LOC_3;

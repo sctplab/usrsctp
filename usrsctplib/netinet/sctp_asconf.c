@@ -429,7 +429,7 @@ sctp_process_asconf_delete_ip(struct sockaddr *src,
 		    aparam_length);
 	} else {
 		if (response_required) {
-	 		m_reply = sctp_asconf_success_response(aph->correlation_id);
+			m_reply = sctp_asconf_success_response(aph->correlation_id);
 		}
 		/* notify upper layer */
 		sctp_ulp_notify(SCTP_NOTIFY_ASCONF_DELETE_IP, stcb, 0, sa, SCTP_SO_NOT_LOCKED);
@@ -552,11 +552,11 @@ sctp_process_asconf_set_primary(struct sockaddr *src,
 		   are transmitted to the new primary destination. (by micchie)
 		 */
 		if ((sctp_is_mobility_feature_on(stcb->sctp_ep,
-				       	SCTP_MOBILITY_BASE) ||
+		                                 SCTP_MOBILITY_BASE) ||
 		    sctp_is_mobility_feature_on(stcb->sctp_ep,
-			    		SCTP_MOBILITY_FASTHANDOFF)) &&
+		                                SCTP_MOBILITY_FASTHANDOFF)) &&
 		    sctp_is_mobility_feature_on(stcb->sctp_ep,
-			   		 SCTP_MOBILITY_PRIM_DELETED) &&
+		                                SCTP_MOBILITY_PRIM_DELETED) &&
 		    (stcb->asoc.primary_destination->dest_state &
 		     SCTP_ADDR_UNCONFIRMED) == 0) {
 
@@ -1099,7 +1099,7 @@ sctp_path_check_and_react(struct sctp_tcb *stcb, struct sctp_ifa *newifa)
 			}
 			/* Retransmit unacknowledged DATA chunks immediately */
 			if (sctp_is_mobility_feature_on(stcb->sctp_ep,
-		    		SCTP_MOBILITY_FASTHANDOFF)) {
+			                                SCTP_MOBILITY_FASTHANDOFF)) {
 				sctp_net_immediate_retrans(stcb, net);
 			}
 			/* also, SET PRIMARY is maybe already sent */
@@ -1157,7 +1157,7 @@ sctp_path_check_and_react(struct sctp_tcb *stcb, struct sctp_ifa *newifa)
 			continue;
 		/* Retransmit unacknowledged DATA chunks immediately */
 		if (sctp_is_mobility_feature_on(stcb->sctp_ep,
-		   		SCTP_MOBILITY_FASTHANDOFF)) {
+		                                SCTP_MOBILITY_FASTHANDOFF)) {
 			sctp_net_immediate_retrans(stcb, net);
 		}
 		/* Send SET PRIMARY for this new address */
@@ -1193,9 +1193,9 @@ sctp_asconf_addr_mgmt_ack(struct sctp_tcb *stcb, struct sctp_ifa *addr, uint32_t
 
 #if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Userspace__)
 		if (sctp_is_mobility_feature_on(stcb->sctp_ep,
-						SCTP_MOBILITY_BASE) ||
+		                                SCTP_MOBILITY_BASE) ||
 		    sctp_is_mobility_feature_on(stcb->sctp_ep,
-			    			SCTP_MOBILITY_FASTHANDOFF)) {
+		                                SCTP_MOBILITY_FASTHANDOFF)) {
 			sctp_path_check_and_react(stcb, addr);
 			return;
 		}
@@ -2308,7 +2308,7 @@ sctp_asconf_iterator_end(void *ptr, uint32_t val SCTP_UNUSED)
 int32_t
 sctp_set_primary_ip_address_sa(struct sctp_tcb *stcb, struct sockaddr *sa)
 {
- 	uint32_t vrf_id;
+	uint32_t vrf_id;
 	struct sctp_ifa *ifa;
 
 	/* find the ifa for the desired set primary */
@@ -3250,7 +3250,7 @@ sctp_addr_mgmt_ep_sa(struct sctp_inpcb *inp, struct sockaddr *sa,
 #endif
 	if (sctp_ifap) {
 		ifa = sctp_ifap;
-	} else 	if (type == SCTP_ADD_IP_ADDRESS) {
+	} else if (type == SCTP_ADD_IP_ADDRESS) {
 		/* For an add the address MUST be on the system */
 		ifa = sctp_find_ifa_by_addr(sa, vrf_id, SCTP_ADDR_NOT_LOCKED);
 	} else if (type == SCTP_DEL_IP_ADDRESS) {

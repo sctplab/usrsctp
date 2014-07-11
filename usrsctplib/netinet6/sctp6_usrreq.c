@@ -246,7 +246,7 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto)
 #if defined(__APPLE__)
 	/* XXX: This code should also be used on Apple */
 #endif
- 	if (in6_setscope(&src.sin6_addr, m->m_pkthdr.rcvif, NULL) != 0) {
+	if (in6_setscope(&src.sin6_addr, m->m_pkthdr.rcvif, NULL) != 0) {
 		goto out;
 	}
 #endif
@@ -261,7 +261,7 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto)
 #if defined(__APPLE__)
 	/* XXX: This code should also be used on Apple */
 #endif
- 	if (in6_setscope(&dst.sin6_addr, m->m_pkthdr.rcvif, NULL) != 0) {
+	if (in6_setscope(&dst.sin6_addr, m->m_pkthdr.rcvif, NULL) != 0) {
 		goto out;
 	}
 #endif
@@ -1729,7 +1729,7 @@ struct pr_usrreqs sctp6_usrreqs = {
 	.pru_sockaddr = sctp6_in6getaddr,
 	.pru_sosend = sctp_sosend,
 	.pru_soreceive = sctp_soreceive,
- 	.pru_sopoll = sopoll
+	.pru_sopoll = sopoll
 #elif defined(__Windows__)
 	sctp6_abort,
 	sctp_accept,

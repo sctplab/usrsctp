@@ -4452,7 +4452,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			/* The VRF must be in the VRF list */
 			if (*default_vrfid == inp->m_vrf_ids[i]) {
 				SCTP_INP_WLOCK(inp);
- 				inp->def_vrf_id = *default_vrfid;
+				inp->def_vrf_id = *default_vrfid;
 				SCTP_INP_WUNLOCK(inp);
 				goto sctp_done;
 			}
@@ -4571,7 +4571,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EOPNOTSUPP);
 		error = EOPNOTSUPP;
 #endif
-	 	break;
+		break;
 	}
 	case SCTP_DELAYED_SACK:
 	{
@@ -5662,7 +5662,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					}
 					if (net->dest_state & SCTP_ADDR_REACHABLE) {
 						if (net->error_count > paddrp->spp_pathmaxrxt) {
-					    		net->dest_state &= ~SCTP_ADDR_REACHABLE;
+							net->dest_state &= ~SCTP_ADDR_REACHABLE;
 							sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_DOWN, stcb, 0, net, SCTP_SO_LOCKED);
 						}
 					} else {
@@ -5705,7 +5705,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 						}
 						if (net->dest_state & SCTP_ADDR_REACHABLE) {
 							if (net->error_count > paddrp->spp_pathmaxrxt) {
-						    		net->dest_state &= ~SCTP_ADDR_REACHABLE;
+								net->dest_state &= ~SCTP_ADDR_REACHABLE;
 								sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_DOWN, stcb, 0, net, SCTP_SO_LOCKED);
 							}
 						} else {
@@ -6204,7 +6204,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 #endif
 		{
 		       error = EAFNOSUPPORT;
-  		       break;
+		       break;
 		}
 		sctp_bindx_add_address(so, inp, addrs->addr,
 				       addrs->sget_assoc_id, vrf_id,
@@ -6602,7 +6602,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				} else {
 					if ((net->failure_threshold > thlds->spt_pathpfthld) &&
 					    (net->failure_threshold <= thlds->spt_pathmaxrxt)) {
-					    	net->dest_state |= SCTP_ADDR_PF;
+						net->dest_state |= SCTP_ADDR_PF;
 						sctp_send_hb(stcb, net, SCTP_SO_LOCKED);
 						sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net, SCTP_FROM_SCTP_TIMER + SCTP_LOC_3);
 						sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net);
@@ -6631,7 +6631,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					} else {
 						if ((net->failure_threshold > thlds->spt_pathpfthld) &&
 						    (net->failure_threshold <= thlds->spt_pathmaxrxt)) {
-						    	net->dest_state |= SCTP_ADDR_PF;
+							net->dest_state |= SCTP_ADDR_PF;
 							sctp_send_hb(stcb, net, SCTP_SO_LOCKED);
 							sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net, SCTP_FROM_SCTP_TIMER + SCTP_LOC_3);
 							sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net);
@@ -6928,7 +6928,7 @@ sctp_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 #endif
 	default:
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EAFNOSUPPORT);
- 		return (EAFNOSUPPORT);
+		return (EAFNOSUPPORT);
 	}
 #endif
 	SCTP_INP_INCR_REF(inp);
@@ -7103,7 +7103,7 @@ sctpconn_connect(struct socket *so, struct sockaddr *addr)
 		break;
 	default:
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EAFNOSUPPORT);
- 		return (EAFNOSUPPORT);
+		return (EAFNOSUPPORT);
 	}
 	SCTP_INP_INCR_REF(inp);
 	SCTP_ASOC_CREATE_LOCK(inp);
