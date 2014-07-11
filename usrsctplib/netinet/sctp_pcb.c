@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 268526 2014-07-11 06:52:48Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 268534 2014-07-11 17:31:40Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4668,7 +4668,9 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 #endif
 	SCTP_RTALLOC((sctp_route_t *)&net->ro, stcb->asoc.vrf_id);
 
-#if !defined(__Userspace__)
+#if defined(__Userspace__)
+	net->src_addr_selected = 0;
+#else
 	if (SCTP_ROUTE_HAS_VALID_IFN(&net->ro)) {
 		/* Get source address */
 		net->ro._s_addr = sctp_source_address_selection(stcb->sctp_ep,
@@ -4677,9 +4679,14 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 								net,
 								0,
 								stcb->asoc.vrf_id);
-		/* Now get the interface MTU */
-		if (net->ro._s_addr && net->ro._s_addr->ifn_p) {
-			net->mtu = SCTP_GATHER_MTU_FROM_INTFC(net->ro._s_addr->ifn_p);
+		if (net->ro._s_addr != NULL) {
+			net->src_addr_selected = 1;
+			/* Now get the interface MTU */
+			if (net->ro._s_addr->ifn_p != NULL) {
+				net->mtu = SCTP_GATHER_MTU_FROM_INTFC(net->ro._s_addr->ifn_p);
+			}
+		} else {
+			net->src_addr_selected = 0;
 		}
 		if (net->mtu > 0) {
 			uint32_t rmtu;
@@ -4694,9 +4701,11 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 				 * the route may be leading out the loopback, or
 				 * a different interface.
 				 */
- 				net->mtu = rmtu;
+				net->mtu = rmtu;
 			}
-	        }
+		}
+	} else {
+		net->src_addr_selected = 0;
 	}
 #endif
 	if (net->mtu == 0) {
@@ -4756,7 +4765,6 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 	 */
 	net->find_pseudo_cumack = 1;
 	net->find_rtx_pseudo_cumack = 1;
-	net->src_addr_selected = 0;
 #if defined(__FreeBSD__)
 	/* Choose an initial flowid. */
 	net->flowid = stcb->asoc.my_vtag ^
