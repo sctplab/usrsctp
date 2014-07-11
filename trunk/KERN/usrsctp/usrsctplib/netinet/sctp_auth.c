@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 257804 2013-11-07 18:50:11Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 268431 2014-07-08 21:54:27Z delphij $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1818,6 +1818,7 @@ sctp_notify_authentication(struct sctp_tcb *stcb, uint32_t indication,
 
 	SCTP_BUF_LEN(m_notify) = 0;
 	auth = mtod(m_notify, struct sctp_authkey_event *);
+	memset(auth, 0, sizeof(struct sctp_authkey_event));
 	auth->auth_type = SCTP_AUTHENTICATION_EVENT;
 	auth->auth_flags = 0;
 	auth->auth_length = sizeof(*auth);

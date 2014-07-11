@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 264838 2014-04-23 21:20:55Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 268431 2014-07-08 21:54:27Z delphij $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -261,6 +261,11 @@ sctp_build_ctl_nchunk(struct sctp_inpcb *inp, struct sctp_sndrcvinfo *sinfo)
 #else
 	cmh = mtod(ret, struct cmsghdr *);
 #endif
+	/*
+	 * Make sure that there is no un-initialized padding between
+	 * the cmsg header and cmsg data and after the cmsg data.
+	 */
+	memset(cmh, 0, len);
 	if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVRCVINFO)) {
 		cmh->cmsg_level = IPPROTO_SCTP;
 		cmh->cmsg_len = CMSG_LEN(sizeof(struct sctp_rcvinfo));
