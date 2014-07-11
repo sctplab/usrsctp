@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 267674 2014-06-20 13:26:49Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 268526 2014-07-11 06:52:48Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -57,7 +57,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 267674 2014-06-20 13:26:49Z t
 #if defined(__Userspace_os_Linux)
 #define __FAVOR_BSD    /* (on Ubuntu at least) enables UDP header field names like BSD in RFC 768 */
 #endif
-#if defined INET || defined INET6
+#if defined(INET) || defined(INET6)
 #if !defined(__Userspace_os_Windows)
 #include <netinet/udp.h>
 #endif
@@ -11512,7 +11512,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 	default:
 		break;
 	}
-#if defined INET || defined INET6
+#if defined(INET) || defined(INET6)
 	if (port) {
 		len += sizeof(struct udphdr);
 	}
@@ -11621,7 +11621,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		shout = mtod(mout, struct sctphdr *);
 		break;
 	}
-#if defined INET || defined INET6
+#if defined(INET) || defined(INET6)
 	if (port) {
 		if (htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port)) == 0) {
 			sctp_m_freem(mout);

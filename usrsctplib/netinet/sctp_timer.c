@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 263237 2014-03-16 12:32:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 268526 2014-07-11 06:52:48Z tuexen $");
 #endif
 
 #define _IP_VHL
@@ -54,7 +54,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 263237 2014-03-16 12:32:16Z tu
 #include <netinet/sctp_input.h>
 #include <netinet/sctp.h>
 #include <netinet/sctp_uio.h>
-#if defined INET || defined INET6
+#if defined(INET) || defined(INET6)
 #if !defined(__Userspace_os_Windows)
 #include <netinet/udp.h>
 #endif
@@ -1504,7 +1504,7 @@ sctp_pathmtu_timer(struct sctp_inpcb *inp,
 		}
 		if (net->ro._s_addr) {
 			mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._s_addr.sa, net->ro.ro_rt);
-#if defined INET || defined INET6
+#if defined(INET) || defined(INET6)
 			if (net->port) {
 				mtu -= sizeof(struct udphdr);
 			}
