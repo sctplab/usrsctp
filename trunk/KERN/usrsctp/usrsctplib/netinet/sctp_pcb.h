@@ -110,7 +110,7 @@ struct sctp_ifa {
 				 */
 	union sctp_sockstore address;
 	uint32_t refcount;	/* number of folks refering to this */
-     	uint32_t flags;
+	uint32_t flags;
 	uint32_t localifa_flags;
 	uint32_t vrf_id;	/* vrf_id of this addr (for deleting) */
 	uint8_t src_is_loop;

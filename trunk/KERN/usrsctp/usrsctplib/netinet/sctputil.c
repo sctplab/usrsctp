@@ -1004,7 +1004,7 @@ sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 
 #ifdef SCTP_ASOCLOG_OF_TSNS
 	asoc->tsn_in_at = 0;
- 	asoc->tsn_out_at = 0;
+	asoc->tsn_out_at = 0;
 	asoc->tsn_in_wrapped = 0;
 	asoc->tsn_out_wrapped = 0;
 	asoc->cumack_log_at = 0;
@@ -1273,7 +1273,7 @@ sctp_iterator_work(struct sctp_iterator *it)
 
 	SCTP_INP_INFO_RLOCK();
 	SCTP_ITERATOR_LOCK();
- 	if (it->inp) {
+	if (it->inp) {
 		SCTP_INP_RLOCK(it->inp);
 		SCTP_INP_DECR_REF(it->inp);
 	}
@@ -1816,7 +1816,7 @@ sctp_timeout_handler(void *t)
 			goto out_decr;
 		}
 		SCTP_STAT_INCR(sctps_timoshutdownack);
- 		stcb->asoc.timoshutdownack++;
+		stcb->asoc.timoshutdownack++;
 #ifdef SCTP_AUDITING_ENABLED
 		sctp_auditing(4, inp, stcb, net);
 #endif
@@ -2566,15 +2566,15 @@ sctp_calculate_rto(struct sctp_tcb *stcb,
 		stcb->asoc.sat_network = 0;
 		stcb->asoc.sat_network_lockout = 1;
 	}
- 	/* bound it, per C6/C7 in Section 5.3.1 */
- 	if (new_rto < stcb->asoc.minrto) {
+	/* bound it, per C6/C7 in Section 5.3.1 */
+	if (new_rto < stcb->asoc.minrto) {
 		new_rto = stcb->asoc.minrto;
 	}
 	if (new_rto > stcb->asoc.maxrto) {
 		new_rto = stcb->asoc.maxrto;
 	}
 	/* we are now returning the RTO */
- 	return (new_rto);
+	return (new_rto);
 }
 
 /*
@@ -2892,7 +2892,7 @@ sctp_notify_peer_addr_change(struct sctp_tcb *stcb, uint32_t state,
 			if (sin6->sin6_scope_id == 0) {
 				/* recover scope_id for user */
 #ifdef SCTP_KAME
-		 		(void)sa6_recoverscope(sin6);
+				(void)sa6_recoverscope(sin6);
 #else
 				(void)in6_recoverscope(sin6, &sin6->sin6_addr,
 						       NULL);
@@ -5230,7 +5230,7 @@ sctp_release_pr_sctp_chunk(struct sctp_tcb *stcb, struct sctp_tmit_chunk *tp1,
 		 */
 		TAILQ_FOREACH_SAFE(tp1, &stcb->asoc.send_queue, sctp_next, tp2) {
 			if ((tp1->rec.data.stream_number != stream) ||
-		   	    (tp1->rec.data.stream_seq != seq)) {
+			    (tp1->rec.data.stream_seq != seq)) {
 				break;
 			}
 			/* save to chk in case we have some on stream out

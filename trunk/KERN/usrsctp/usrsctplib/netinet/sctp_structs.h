@@ -714,8 +714,8 @@ struct sctp_nonpad_sndrcvinfo {
 struct sctp_cc_functions {
 	void (*sctp_set_initial_cc_param)(struct sctp_tcb *stcb, struct sctp_nets *net);
 	void (*sctp_cwnd_update_after_sack)(struct sctp_tcb *stcb,
-		 	struct sctp_association *asoc,
-		 	int accum_moved ,int reneged_all, int will_exit);
+	                                    struct sctp_association *asoc,
+	                                    int accum_moved ,int reneged_all, int will_exit);
 	void (*sctp_cwnd_update_exit_pf)(struct sctp_tcb *stcb, struct sctp_nets *net);
 	void (*sctp_cwnd_update_after_fr)(struct sctp_tcb *stcb,
 			struct sctp_association *asoc);
@@ -1218,7 +1218,7 @@ struct sctp_association {
 	uint8_t peer_supports_strreset;
 	uint8_t local_strreset_support;
 
-        uint8_t peer_supports_nat;
+	uint8_t peer_supports_nat;
 	/*
 	 * packet drop's are supported by the peer, we don't really care
 	 * about this but we bookkeep it anyway.

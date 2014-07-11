@@ -2103,14 +2103,14 @@ sctp_add_addresses_to_i_ia(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				if ((sctp_ifap->address.sa.sa_family == AF_INET) &&
 				    (prison_check_ip4(inp->ip_inp.inp.inp_cred,
 				                      &sctp_ifap->address.sin.sin_addr) != 0)) {
-				    	continue;
+					continue;
 				}
 #endif
 #ifdef INET6
 				if ((sctp_ifap->address.sa.sa_family == AF_INET6) &&
 				    (prison_check_ip6(inp->ip_inp.inp.inp_cred,
 				                      &sctp_ifap->address.sin6.sin6_addr) != 0)) {
-				    	continue;
+					continue;
 				}
 #endif
 #endif
@@ -2153,14 +2153,14 @@ sctp_add_addresses_to_i_ia(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 					if ((sctp_ifap->address.sa.sa_family == AF_INET) &&
 					    (prison_check_ip4(inp->ip_inp.inp.inp_cred,
 					                      &sctp_ifap->address.sin.sin_addr) != 0)) {
-					    	continue;
+						continue;
 					}
 #endif
 #ifdef INET6
 					if ((sctp_ifap->address.sa.sa_family == AF_INET6) &&
 					    (prison_check_ip6(inp->ip_inp.inp.inp_cred,
 					                      &sctp_ifap->address.sin6.sin6_addr) != 0)) {
-					    	continue;
+						continue;
 					}
 #endif
 #endif
@@ -2210,7 +2210,7 @@ sctp_add_addresses_to_i_ia(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				continue;
 			}
 			if (laddr->ifa->localifa_flags & SCTP_BEING_DELETED)
-                                /* Address being deleted by the system, dont
+				/* Address being deleted by the system, dont
 				 * list.
 				 */
 				continue;
@@ -2671,7 +2671,7 @@ sctp_choose_boundspecific_stcb(struct sctp_inpcb *inp,
 	sctp_ifn = sctp_find_ifn( ifn, ifn_index);
 
 	/*
- 	 * first question, is the ifn we will emit on in our list?  If so,
+	 * first question, is the ifn we will emit on in our list?  If so,
 	 * we want that one. First we look for a preferred. Second, we go
 	 * for an acceptable.
 	 */
@@ -6417,7 +6417,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		 * address within the stc.. but for now this is a quick
 		 * hack to get the address stuff teased apart.
 		 */
- 		scp.ipv4_addr_legal = stc.ipv4_addr_legal;
+		scp.ipv4_addr_legal = stc.ipv4_addr_legal;
 		scp.ipv6_addr_legal = stc.ipv6_addr_legal;
 #if defined(__Userspace__)
 		scp.conn_addr_legal = stc.conn_addr_legal;
@@ -10443,7 +10443,7 @@ sctp_chunk_output (struct sctp_inpcb *inp,
 	/* Do we have something to send, data or control AND
 	 * a sack timer running, if so piggy-back the sack.
 	 */
- 	if (SCTP_OS_TIMER_PENDING(&stcb->asoc.dack_timer.timer)) {
+	if (SCTP_OS_TIMER_PENDING(&stcb->asoc.dack_timer.timer)) {
 		sctp_send_sack(stcb, so_locked);
 		(void)SCTP_OS_TIMER_STOP(&stcb->asoc.dack_timer.timer);
 	}
@@ -10458,7 +10458,7 @@ sctp_chunk_output (struct sctp_inpcb *inp,
 			 * by peer that carried data. Send cookie-ack only
 			 * and then the next call with get the retran's.
 			 */
- 			(void)sctp_med_chunk_output(inp, stcb, asoc, &num_out, &reason_code, 1,
+			(void)sctp_med_chunk_output(inp, stcb, asoc, &num_out, &reason_code, 1,
 						    from_where,
 						    &now, &now_filled, frag_point, so_locked);
 			return;
