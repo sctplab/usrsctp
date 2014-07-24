@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 268431 2014-07-08 21:54:27Z delphij $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 269075 2014-07-24 18:06:18Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2869,6 +2869,7 @@ sctp_notify_peer_addr_change(struct sctp_tcb *stcb, uint32_t state,
 		return;
 	SCTP_BUF_LEN(m_notify) = 0;
 	spc = mtod(m_notify, struct sctp_paddr_change *);
+	memset(spc, 0, sizeof(struct sctp_paddr_change));
 	spc->spc_type = SCTP_PEER_ADDR_CHANGE;
 	spc->spc_flags = 0;
 	spc->spc_length = sizeof(struct sctp_paddr_change);
@@ -3631,6 +3632,7 @@ sctp_notify_remote_error(struct sctp_tcb *stcb, uint16_t error, struct sctp_erro
 	}
 	SCTP_BUF_NEXT(m_notify) = NULL;
 	sre = mtod(m_notify, struct sctp_remote_error *);
+	memset(sre, 0, notif_len);
 	sre->sre_type = SCTP_REMOTE_ERROR;
 	sre->sre_flags = 0;
 	sre->sre_length = sizeof(struct sctp_remote_error);
