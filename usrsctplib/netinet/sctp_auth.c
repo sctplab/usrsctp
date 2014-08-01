@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 268431 2014-07-08 21:54:27Z delphij $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 269396 2014-08-01 20:49:27Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1976,8 +1976,7 @@ sctp_validate_init_auth_params(struct mbuf *m, int offset, int limit)
 			"SCTP: peer sent chunk list w/o AUTH\n");
 		return (-1);
 	}
-	if (!SCTP_BASE_SYSCTL(sctp_asconf_auth_nochk) && peer_supports_asconf &&
-	    !peer_supports_auth) {
+	if (peer_supports_asconf && !peer_supports_auth) {
 		SCTPDBG(SCTP_DEBUG_AUTH1,
 			"SCTP: peer supports ASCONF but not AUTH\n");
 		return (-1);
