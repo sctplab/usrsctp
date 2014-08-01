@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 268534 2014-07-11 17:31:40Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 269396 2014-08-01 20:49:27Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7649,8 +7649,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 		/* peer does not support auth but sent a chunks list? */
 		return (-31);
 	}
-	if (!SCTP_BASE_SYSCTL(sctp_asconf_auth_nochk) && stcb->asoc.peer_supports_asconf &&
-	    !stcb->asoc.peer_supports_auth) {
+	if (stcb->asoc.peer_supports_asconf && !stcb->asoc.peer_supports_auth) {
 		/* peer supports asconf but not auth? */
 		return (-32);
 	} else if ((stcb->asoc.peer_supports_asconf) && (stcb->asoc.peer_supports_auth) &&
