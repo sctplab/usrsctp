@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 269376 2014-08-01 12:42:37Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 269448 2014-08-02 21:36:40Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2978,7 +2978,7 @@ sctp_strike_gap_ack_chunks(struct sctp_tcb *stcb, struct sctp_association *asoc,
 				num_dests_sacked++;
 		}
 	}
-	if (stcb->asoc.peer_supports_prsctp) {
+	if (stcb->asoc.prsctp_supported) {
 		(void)SCTP_GETTIME_TIMEVAL(&now);
 	}
 	TAILQ_FOREACH(tp1, &asoc->sent_queue, sctp_next) {
@@ -2999,7 +2999,7 @@ sctp_strike_gap_ack_chunks(struct sctp_tcb *stcb, struct sctp_association *asoc,
 			/* done */
 			break;
 		}
-		if (stcb->asoc.peer_supports_prsctp) {
+		if (stcb->asoc.prsctp_supported) {
 			if ((PR_SCTP_TTL_ENABLED(tp1->flags)) && tp1->sent < SCTP_DATAGRAM_ACKED) {
 				/* Is it expired? */
 #ifndef __FreeBSD__
@@ -3252,7 +3252,7 @@ sctp_strike_gap_ack_chunks(struct sctp_tcb *stcb, struct sctp_association *asoc,
 			/* remove from the total flight */
 			sctp_total_flight_decrease(stcb, tp1);
 
-			if ((stcb->asoc.peer_supports_prsctp) &&
+			if ((stcb->asoc.prsctp_supported) &&
 			    (PR_SCTP_RTX_ENABLED(tp1->flags))) {
 				/* Has it been retransmitted tv_sec times? - we store the retran count there. */
 				if (tp1->snd_count > tp1->rec.data.timetodrop.tv_sec) {
@@ -3384,7 +3384,7 @@ sctp_try_advance_peer_ack_point(struct sctp_tcb *stcb,
 	struct timeval now;
 	int now_filled = 0;
 
-	if (asoc->peer_supports_prsctp == 0) {
+	if (asoc->prsctp_supported == 0) {
 		return (NULL);
 	}
 	TAILQ_FOREACH_SAFE(tp1, &asoc->sent_queue, sctp_next, tp2) {
@@ -4068,7 +4068,7 @@ again:
 		asoc->advanced_peer_ack_point = cumack;
 	}
 	/* PR-Sctp issues need to be addressed too */
-	if ((asoc->peer_supports_prsctp) && (asoc->pr_sctp_cnt > 0)) {
+	if ((asoc->prsctp_supported) && (asoc->pr_sctp_cnt > 0)) {
 		struct sctp_tmit_chunk *lchk;
 		uint32_t old_adv_peer_ack_point;
 
@@ -4506,7 +4506,7 @@ sctp_handle_sack(struct mbuf *m, int offset_seg, int offset_dup,
 			sctp_free_bufspace(stcb, asoc, tp1, 1);
 			sctp_m_freem(tp1->data);
 			tp1->data = NULL;
-			if (asoc->peer_supports_prsctp && PR_SCTP_BUF_ENABLED(tp1->flags)) {
+			if (asoc->prsctp_supported && PR_SCTP_BUF_ENABLED(tp1->flags)) {
 				asoc->sent_queue_cnt_removeable--;
 			}
 		}
@@ -4941,7 +4941,7 @@ again:
 		asoc->advanced_peer_ack_point = cum_ack;
 	}
 	/* C2. try to further move advancedPeerAckPoint ahead */
-	if ((asoc->peer_supports_prsctp) && (asoc->pr_sctp_cnt > 0)) {
+	if ((asoc->prsctp_supported) && (asoc->pr_sctp_cnt > 0)) {
 		struct sctp_tmit_chunk *lchk;
 		uint32_t old_adv_peer_ack_point;
 
