@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 269436 2014-08-02 17:35:13Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 269448 2014-08-02 21:36:40Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_STRUCTS_H_
@@ -1200,8 +1200,9 @@ struct sctp_association {
 	 * sum is updated as well.
 	 */
 
-	/* Flag to tell if ECN is allowed */
+	/* Flags whether an extension is supported or not */
 	uint8_t ecn_supported;
+	uint8_t prsctp_supported;
 
 	/* Did the peer make the stream config (add out) request */
 	uint8_t peer_req_out;
@@ -1210,8 +1211,6 @@ struct sctp_association {
 	uint8_t peer_supports_asconf;
 	/* EY - flag to indicate if peer can do nr_sack*/
 	uint8_t peer_supports_nr_sack;
-	/* pr-sctp support flag */
-	uint8_t peer_supports_prsctp;
 	/* peer authentication support flag */
 	uint8_t peer_supports_auth;
 	/* stream resets are supported by the peer */
