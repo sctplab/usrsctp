@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 269376 2014-08-01 12:42:37Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 269436 2014-08-02 17:35:13Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2926,7 +2926,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 			inp->sctp_socket = so;
 			inp->sctp_frag_point = (*inp_p)->sctp_frag_point;
 			inp->sctp_cmt_on_off = (*inp_p)->sctp_cmt_on_off;
-			inp->sctp_ecn_enable = (*inp_p)->sctp_ecn_enable;
+			inp->ecn_supported = (*inp_p)->ecn_supported;
 			inp->partial_delivery_point = (*inp_p)->partial_delivery_point;
 			inp->sctp_context = (*inp_p)->sctp_context;
 			inp->local_strreset_support = (*inp_p)->local_strreset_support;
@@ -6079,7 +6079,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 
 	/* take care of ecn */
 	if ((data_processed == 1) &&
-	    (stcb->asoc.ecn_allowed == 1) &&
+	    (stcb->asoc.ecn_supported == 1) &&
 	    ((ecn_bits & SCTP_CE_BITS) == SCTP_CE_BITS)) {
 		/* Yep, we need to add a ECNE */
 		sctp_send_ecn_echo(stcb, net, high_tsn);
