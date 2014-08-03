@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 269475 2014-08-03 14:10:10Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 269481 2014-08-03 18:12:55Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_STRUCTS_H_
@@ -1204,6 +1204,7 @@ struct sctp_association {
 	uint8_t ecn_supported;
 	uint8_t prsctp_supported;
 	uint8_t nrsack_supported;
+	uint8_t pktdrop_supported;
 
 	/* Did the peer make the stream config (add out) request */
 	uint8_t peer_req_out;
@@ -1217,11 +1218,6 @@ struct sctp_association {
 	uint8_t local_strreset_support;
 
 	uint8_t peer_supports_nat;
-	/*
-	 * packet drop's are supported by the peer, we don't really care
-	 * about this but we bookkeep it anyway.
-	 */
-	uint8_t peer_supports_pktdrop;
 
 	struct sctp_scoping scope;
 	/* flags to handle send alternate net tracking */

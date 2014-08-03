@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 269475 2014-08-03 14:10:10Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 269481 2014-08-03 18:12:55Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5170,7 +5170,9 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked
 	if (stcb->asoc.prsctp_supported == 1) {
 		pr_supported->chunk_types[num_ext++] = SCTP_FORWARD_CUM_TSN;
 	}
-	pr_supported->chunk_types[num_ext++] = SCTP_PACKET_DROPPED;
+	if (stcb->asoc.pktdrop_supported == 1) {
+		pr_supported->chunk_types[num_ext++] = SCTP_PACKET_DROPPED;
+	}
 	pr_supported->chunk_types[num_ext++] = SCTP_STREAM_RESET;
 	if (!SCTP_BASE_SYSCTL(sctp_auth_disable)) {
 		pr_supported->chunk_types[num_ext++] = SCTP_AUTHENTICATION;
@@ -6340,7 +6342,10 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	    ((asoc == NULL) && (inp->prsctp_supported == 1))) {
 		pr_supported->chunk_types[num_ext++] = SCTP_FORWARD_CUM_TSN;
 	}
-	pr_supported->chunk_types[num_ext++] = SCTP_PACKET_DROPPED;
+	if (((asoc != NULL) && (asoc->pktdrop_supported == 1)) ||
+	    ((asoc == NULL) && (inp->pktdrop_supported == 1))) {
+		pr_supported->chunk_types[num_ext++] = SCTP_PACKET_DROPPED;
+	}
 	pr_supported->chunk_types[num_ext++] = SCTP_STREAM_RESET;
 	if (!SCTP_BASE_SYSCTL(sctp_auth_disable)) {
 		pr_supported->chunk_types[num_ext++] = SCTP_AUTHENTICATION;
@@ -12053,7 +12058,7 @@ sctp_send_packet_dropped(struct sctp_tcb *stcb, struct sctp_nets *net,
         }
 	asoc = &stcb->asoc;
 	SCTP_TCB_LOCK_ASSERT(stcb);
-	if (asoc->peer_supports_pktdrop == 0) {
+	if (asoc->pktdrop_supported == 0) {
 		/*-
 		 * peer must declare support before I send one.
 		 */

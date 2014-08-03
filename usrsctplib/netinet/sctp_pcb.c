@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 269475 2014-08-03 14:10:10Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 269481 2014-08-03 18:12:55Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2844,6 +2844,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	inp->ecn_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_ecn_enable);
 	inp->prsctp_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_pr_enable);
 	inp->nrsack_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_nrsack_enable);
+	inp->pktdrop_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_pktdrop_enable);
 #if defined(__Userspace__)
 	inp->ulp_info = NULL;
 	inp->recv_callback = NULL;
@@ -7111,6 +7112,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 	uint8_t ecn_supported;
 	uint8_t prsctp_supported;
 	uint8_t nrsack_supported;
+	uint8_t pktdrop_supported;
 #ifdef INET
 	struct sockaddr_in sin;
 #endif
@@ -7144,6 +7146,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 	ecn_supported = 0;
 	prsctp_supported = 0;
 	nrsack_supported = 0;
+	pktdrop_supported = 0;
 	TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 		/* mark all addresses that we have currently on the list */
 		net->dest_state |= SCTP_ADDR_NOT_IN_ASSOC;
@@ -7479,7 +7482,6 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 				return (-25);
 			}
 			stcb->asoc.peer_supports_asconf = 0;
-			stcb->asoc.peer_supports_pktdrop = 0;
 			stcb->asoc.peer_supports_strreset = 0;
 			stcb->asoc.peer_supports_auth = 0;
 			pr_supported = (struct sctp_supported_chunk_types_param *)phdr;
@@ -7494,7 +7496,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 					prsctp_supported = 1;
 					break;
 				case SCTP_PACKET_DROPPED:
-					stcb->asoc.peer_supports_pktdrop = 1;
+					pktdrop_supported = 1;
 					break;
 				case SCTP_NR_SELECTIVE_ACK:
 					nrsack_supported = 1;
@@ -7643,6 +7645,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 	stcb->asoc.ecn_supported &= ecn_supported;
 	stcb->asoc.prsctp_supported &= prsctp_supported;
 	stcb->asoc.nrsack_supported &= nrsack_supported;
+	stcb->asoc.pktdrop_supported &= pktdrop_supported;
 	/* validate authentication required parameters */
 	if (got_random && got_hmacs) {
 		stcb->asoc.peer_supports_auth = 1;
