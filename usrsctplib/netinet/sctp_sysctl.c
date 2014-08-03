@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 269448 2014-08-02 21:36:40Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 269476 2014-08-03 15:09:13Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -62,6 +62,7 @@ sctp_init_sysctls()
 	SCTP_BASE_SYSCTL(sctp_multiple_asconfs) = SCTPCTL_MULTIPLEASCONFS_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_ecn_enable) = SCTPCTL_ECN_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_pr_enable) = SCTPCTL_PR_ENABLE_DEFAULT;
+	SCTP_BASE_SYSCTL(sctp_nrsack_enable) = SCTPCTL_NRSACK_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_strict_sacks) = SCTPCTL_STRICT_SACKS_DEFAULT;
 #if !(defined(__FreeBSD__) && __FreeBSD_version >= 800000)
 #if !defined(SCTP_WITH_NO_CSUM)
@@ -97,8 +98,6 @@ sctp_init_sysctls()
 	SCTP_BASE_SYSCTL(sctp_nr_incoming_streams_default) = SCTPCTL_INCOMING_STREAMS_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_nr_outgoing_streams_default) = SCTPCTL_OUTGOING_STREAMS_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_cmt_on_off) = SCTPCTL_CMT_ON_OFF_DEFAULT;
-	/* EY */
-	SCTP_BASE_SYSCTL(sctp_nr_sack_on_off) = SCTPCTL_NR_SACK_ON_OFF_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_cmt_use_dac) = SCTPCTL_CMT_USE_DAC_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_use_cwnd_based_maxburst) = SCTPCTL_CWND_MAXBURST_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_auth_disable) = SCTPCTL_AUTH_DISABLE_DEFAULT;
@@ -774,6 +773,7 @@ sysctl_sctp_check(SYSCTL_HANDLER_ARGS)
 #endif
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_ecn_enable), SCTPCTL_ECN_ENABLE_MIN, SCTPCTL_ECN_ENABLE_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_pr_enable), SCTPCTL_PR_ENABLE_MIN, SCTPCTL_PR_ENABLE_MAX);
+		RANGECHK(SCTP_BASE_SYSCTL(sctp_nrsack_enable), SCTPCTL_NRSACK_ENABLE_MIN, SCTPCTL_NRSACK_ENABLE_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_strict_sacks), SCTPCTL_STRICT_SACKS_MIN, SCTPCTL_STRICT_SACKS_MAX);
 #if !(defined(__FreeBSD__) && __FreeBSD_version >= 800000)
 #if !defined(SCTP_WITH_NO_CSUM)
@@ -809,8 +809,6 @@ sysctl_sctp_check(SYSCTL_HANDLER_ARGS)
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_nr_incoming_streams_default), SCTPCTL_INCOMING_STREAMS_MIN, SCTPCTL_INCOMING_STREAMS_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_nr_outgoing_streams_default), SCTPCTL_OUTGOING_STREAMS_MIN, SCTPCTL_OUTGOING_STREAMS_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_cmt_on_off), SCTPCTL_CMT_ON_OFF_MIN, SCTPCTL_CMT_ON_OFF_MAX);
-		/* EY */
-		RANGECHK(SCTP_BASE_SYSCTL(sctp_nr_sack_on_off), SCTPCTL_NR_SACK_ON_OFF_MIN, SCTPCTL_NR_SACK_ON_OFF_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_cmt_use_dac), SCTPCTL_CMT_USE_DAC_MIN, SCTPCTL_CMT_USE_DAC_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_use_cwnd_based_maxburst), SCTPCTL_CWND_MAXBURST_MIN, SCTPCTL_CWND_MAXBURST_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_auth_disable), SCTPCTL_AUTH_DISABLE_MIN, SCTPCTL_AUTH_DISABLE_MAX);
@@ -1087,6 +1085,16 @@ SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, pr_enable, CTLTYPE_UINT|CTLFLAG_RW,
                  &SCTP_BASE_SYSCTL(sctp_pr_enable), 0, sysctl_sctp_check, "IU",
                  SCTPCTL_PR_ENABLE_DESC);
 
+#if defined(__FreeBSD__) && __FreeBSD_version < 1100000
+SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, nr_sack_on_off, CTLTYPE_UINT | CTLFLAG_RW,
+                 &SCTP_BASE_SYSCTL(sctp_nrsack_enable), 0, sysctl_sctp_check, "IU",
+                 SCTPCTL_NRSACK_ENABLE_DESC);
+#else
+SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, nrsack_enable, CTLTYPE_UINT | CTLFLAG_RW,
+                 &SCTP_BASE_SYSCTL(sctp_nrsack_enable), 0, sysctl_sctp_check, "IU",
+                 SCTPCTL_NRSACK_ENABLE_DESC);
+#endif
+
 SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, strict_sacks, CTLTYPE_UINT|CTLFLAG_RW,
                  &SCTP_BASE_SYSCTL(sctp_strict_sacks), 0, sysctl_sctp_check, "IU",
                  SCTPCTL_STRICT_SACKS_DESC);
@@ -1214,10 +1222,6 @@ SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, outgoing_streams, CTLTYPE_UINT|CTLFLA
 SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, cmt_on_off, CTLTYPE_UINT|CTLFLAG_RW,
                  &SCTP_BASE_SYSCTL(sctp_cmt_on_off), 0, sysctl_sctp_check, "IU",
                  SCTPCTL_CMT_ON_OFF_DESC);
-
-SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, nr_sack_on_off, CTLTYPE_UINT | CTLFLAG_RW,
-                 &SCTP_BASE_SYSCTL(sctp_nr_sack_on_off), 0, sysctl_sctp_check, "IU",
-                 SCTPCTL_NR_SACK_ON_OFF_DESC);
 
 SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, cmt_use_dac, CTLTYPE_UINT|CTLFLAG_RW,
                  &SCTP_BASE_SYSCTL(sctp_cmt_use_dac), 0, sysctl_sctp_check, "IU",
@@ -1430,6 +1434,10 @@ void sysctl_setup_sctp(void)
             &SCTP_BASE_SYSCTL(sctp_pr_enable), 0, sysctl_sctp_check,
 	    SCTPCTL_PR_ENABLE_DESC);
 
+	sysctl_add_oid(&sysctl_oid_top, "nrsack_enable", CTLTYPE_INT|CTLFLAG_RW,
+            &SCTP_BASE_SYSCTL(sctp_nrsack_enable), 0, sysctl_sctp_check,
+	    SCTPCTL_NRSACK_ENABLE_DESC);
+
 	sysctl_add_oid(&sysctl_oid_top, "strict_sacks", CTLTYPE_INT|CTLFLAG_RW,
             &SCTP_BASE_SYSCTL(sctp_strict_sacks), 0, sysctl_sctp_check,
 	    SCTPCTL_STRICT_SACKS_DESC);
@@ -1557,11 +1565,6 @@ void sysctl_setup_sctp(void)
 	sysctl_add_oid(&sysctl_oid_top, "cmt_on_off", CTLTYPE_INT|CTLFLAG_RW,
             &SCTP_BASE_SYSCTL(sctp_cmt_on_off), 0, sysctl_sctp_check,
 	    SCTPCTL_CMT_ON_OFF_DESC);
-
-	/* EY */
-	sysctl_add_oid(&sysctl_oid_top, "nr_sack_on_off", CTLTYPE_INT|CTLFLAG_RW,
-            &SCTP_BASE_SYSCTL(sctp_nr_sack_on_off), 0, sysctl_sctp_check,
-	    SCTPCTL_NR_SACK_ON_OFF_DESC);
 
 	sysctl_add_oid(&sysctl_oid_top, "cmt_use_dac", CTLTYPE_INT|CTLFLAG_RW,
             &SCTP_BASE_SYSCTL(sctp_cmt_use_dac), 0, sysctl_sctp_check,
