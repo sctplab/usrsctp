@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 269448 2014-08-02 21:36:40Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 269475 2014-08-03 14:10:10Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5175,7 +5175,7 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked
 	if (!SCTP_BASE_SYSCTL(sctp_auth_disable)) {
 		pr_supported->chunk_types[num_ext++] = SCTP_AUTHENTICATION;
 	}
-	if (stcb->asoc.sctp_nr_sack_on_off == 1) {
+	if (stcb->asoc.nrsack_supported == 1) {
 		pr_supported->chunk_types[num_ext++] = SCTP_NR_SELECTIVE_ACK;
 	}
 	parameter_len = (uint16_t)sizeof(struct sctp_supported_chunk_types_param) + num_ext;
@@ -6345,7 +6345,8 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	if (!SCTP_BASE_SYSCTL(sctp_auth_disable)) {
 		pr_supported->chunk_types[num_ext++] = SCTP_AUTHENTICATION;
 	}
-	if (SCTP_BASE_SYSCTL(sctp_nr_sack_on_off)) {
+	if (((asoc != NULL) && (asoc->nrsack_supported == 1)) ||
+	    ((asoc == NULL) && (inp->nrsack_supported == 1))) {
 		pr_supported->chunk_types[num_ext++] = SCTP_NR_SELECTIVE_ACK;
 	}
 	parameter_len = (uint16_t)sizeof(struct sctp_supported_chunk_types_param) + num_ext;
@@ -10898,8 +10899,7 @@ sctp_send_sack(struct sctp_tcb *stcb, int so_locked
 	uint8_t type;
 	uint8_t tsn_map;
 
-	if ((stcb->asoc.sctp_nr_sack_on_off == 1) &&
-	    (stcb->asoc.peer_supports_nr_sack == 1)) {
+	if (stcb->asoc.nrsack_supported == 1) {
 		type = SCTP_NR_SELECTIVE_ACK;
 	} else {
 		type = SCTP_SELECTIVE_ACK;

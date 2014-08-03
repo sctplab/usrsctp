@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 269448 2014-08-02 21:36:40Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 269475 2014-08-03 14:10:10Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2928,6 +2928,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 			inp->sctp_cmt_on_off = (*inp_p)->sctp_cmt_on_off;
 			inp->ecn_supported = (*inp_p)->ecn_supported;
 			inp->prsctp_supported = (*inp_p)->prsctp_supported;
+			inp->nrsack_supported = (*inp_p)->nrsack_supported;
 			inp->partial_delivery_point = (*inp_p)->partial_delivery_point;
 			inp->sctp_context = (*inp_p)->sctp_context;
 			inp->local_strreset_support = (*inp_p)->local_strreset_support;
@@ -5052,8 +5053,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 					SCTPDBG(SCTP_DEBUG_INDATA1, "No stcb when processing NR-SACK chunk\n");
 					break;
 				}
-				if ((stcb->asoc.sctp_nr_sack_on_off == 0) ||
-				    (stcb->asoc.peer_supports_nr_sack == 0)) {
+				if (stcb->asoc.nrsack_supported == 0) {
 					goto unknown_chunk;
 				}
 				if (chk_length < sizeof(struct sctp_nr_sack_chunk)) {
