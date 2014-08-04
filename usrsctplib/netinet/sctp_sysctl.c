@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 269481 2014-08-03 18:12:55Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 269527 2014-08-04 20:07:35Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -62,6 +62,7 @@ sctp_init_sysctls()
 	SCTP_BASE_SYSCTL(sctp_multiple_asconfs) = SCTPCTL_MULTIPLEASCONFS_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_ecn_enable) = SCTPCTL_ECN_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_pr_enable) = SCTPCTL_PR_ENABLE_DEFAULT;
+	SCTP_BASE_SYSCTL(sctp_reconfig_enable) = SCTPCTL_RECONFIG_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_nrsack_enable) = SCTPCTL_NRSACK_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_pktdrop_enable) = SCTPCTL_PKTDROP_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_strict_sacks) = SCTPCTL_STRICT_SACKS_DEFAULT;
@@ -774,6 +775,7 @@ sysctl_sctp_check(SYSCTL_HANDLER_ARGS)
 #endif
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_ecn_enable), SCTPCTL_ECN_ENABLE_MIN, SCTPCTL_ECN_ENABLE_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_pr_enable), SCTPCTL_PR_ENABLE_MIN, SCTPCTL_PR_ENABLE_MAX);
+		RANGECHK(SCTP_BASE_SYSCTL(sctp_reconfig_enable), SCTPCTL_RECONFIG_ENABLE_MIN, SCTPCTL_RECONFIG_ENABLE_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_nrsack_enable), SCTPCTL_NRSACK_ENABLE_MIN, SCTPCTL_NRSACK_ENABLE_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_pktdrop_enable), SCTPCTL_PKTDROP_ENABLE_MIN, SCTPCTL_PKTDROP_ENABLE_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_strict_sacks), SCTPCTL_STRICT_SACKS_MIN, SCTPCTL_STRICT_SACKS_MAX);
@@ -1086,6 +1088,10 @@ SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, ecn_enable, CTLTYPE_UINT|CTLFLAG_RW,
 SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, pr_enable, CTLTYPE_UINT|CTLFLAG_RW,
                  &SCTP_BASE_SYSCTL(sctp_pr_enable), 0, sysctl_sctp_check, "IU",
                  SCTPCTL_PR_ENABLE_DESC);
+
+SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, reconfig_enable, CTLTYPE_UINT|CTLFLAG_RW,
+                 &SCTP_BASE_SYSCTL(sctp_reconfig_enable), 0, sysctl_sctp_check, "IU",
+                 SCTPCTL_RECONFIG_ENABLE_DESC);
 
 #if defined(__FreeBSD__) && __FreeBSD_version < 1100000
 SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, nr_sack_on_off, CTLTYPE_UINT | CTLFLAG_RW,
@@ -1439,6 +1445,10 @@ void sysctl_setup_sctp(void)
 	sysctl_add_oid(&sysctl_oid_top, "pr_enable", CTLTYPE_INT|CTLFLAG_RW,
             &SCTP_BASE_SYSCTL(sctp_pr_enable), 0, sysctl_sctp_check,
 	    SCTPCTL_PR_ENABLE_DESC);
+
+	sysctl_add_oid(&sysctl_oid_top, "reconfig_enable", CTLTYPE_INT|CTLFLAG_RW,
+            &SCTP_BASE_SYSCTL(sctp_reconfig_enable), 0, sysctl_sctp_check,
+	    SCTPCTL_RECONFIG_ENABLE_DESC);
 
 	sysctl_add_oid(&sysctl_oid_top, "nrsack_enable", CTLTYPE_INT|CTLFLAG_RW,
             &SCTP_BASE_SYSCTL(sctp_nrsack_enable), 0, sysctl_sctp_check,

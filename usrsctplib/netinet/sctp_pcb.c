@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 269481 2014-08-03 18:12:55Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 269527 2014-08-04 20:07:35Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2843,6 +2843,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	inp->sctp_cmt_on_off = SCTP_BASE_SYSCTL(sctp_cmt_on_off);
 	inp->ecn_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_ecn_enable);
 	inp->prsctp_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_pr_enable);
+	inp->reconfig_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_reconfig_enable);
 	inp->nrsack_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_nrsack_enable);
 	inp->pktdrop_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_pktdrop_enable);
 #if defined(__Userspace__)
@@ -7111,6 +7112,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 	int got_random = 0, got_hmacs = 0, got_chklist = 0;
 	uint8_t ecn_supported;
 	uint8_t prsctp_supported;
+	uint8_t reconfig_supported;
 	uint8_t nrsack_supported;
 	uint8_t pktdrop_supported;
 #ifdef INET
@@ -7142,9 +7144,9 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 	} else {
 		sa = src;
 	}
-	/* Turn off ECN until we get through all params */
 	ecn_supported = 0;
 	prsctp_supported = 0;
+	reconfig_supported = 0;
 	nrsack_supported = 0;
 	pktdrop_supported = 0;
 	TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
@@ -7482,7 +7484,6 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 				return (-25);
 			}
 			stcb->asoc.peer_supports_asconf = 0;
-			stcb->asoc.peer_supports_strreset = 0;
 			stcb->asoc.peer_supports_auth = 0;
 			pr_supported = (struct sctp_supported_chunk_types_param *)phdr;
 			num_ent = plen - sizeof(struct sctp_paramhdr);
@@ -7502,7 +7503,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 					nrsack_supported = 1;
 					break;
 				case SCTP_STREAM_RESET:
-					stcb->asoc.peer_supports_strreset = 1;
+					reconfig_supported = 1;
 					break;
 				case SCTP_AUTHENTICATION:
 					stcb->asoc.peer_supports_auth = 1;
@@ -7644,6 +7645,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 	}
 	stcb->asoc.ecn_supported &= ecn_supported;
 	stcb->asoc.prsctp_supported &= prsctp_supported;
+	stcb->asoc.reconfig_supported &= reconfig_supported;
 	stcb->asoc.nrsack_supported &= nrsack_supported;
 	stcb->asoc.pktdrop_supported &= pktdrop_supported;
 	/* validate authentication required parameters */

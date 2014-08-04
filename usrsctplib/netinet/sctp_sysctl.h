@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.h 269481 2014-08-03 18:12:55Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.h 269527 2014-08-04 20:07:35Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_SYSCTL_H_
@@ -48,6 +48,7 @@ struct sctp_sysctl {
 	uint32_t sctp_multiple_asconfs;
 	uint32_t sctp_ecn_enable;
 	uint32_t sctp_pr_enable;
+	uint32_t sctp_reconfig_enable;
 	uint32_t sctp_nrsack_enable;
 	uint32_t sctp_pktdrop_enable;
 	uint32_t sctp_fr_max_burst_default;
@@ -178,8 +179,14 @@ struct sctp_sysctl {
 #define SCTPCTL_PR_ENABLE_MAX		1
 #define SCTPCTL_PR_ENABLE_DEFAULT	1
 
+/* reconfig_enable: Enable SCTP RE-CONFIG */
+#define SCTPCTL_RECONFIG_ENABLE_DESC	"Enable SCTP RE-CONFIG"
+#define SCTPCTL_RECONFIG_ENABLE_MIN	0
+#define SCTPCTL_RECONFIG_ENABLE_MAX	1
+#define SCTPCTL_RECONFIG_ENABLE_DEFAULT	1
+
 /* nrsack_enable: Enable NR_SACK */
-#define SCTPCTL_NRSACK_ENABLE_DESC	"Enable NR_SACK"
+#define SCTPCTL_NRSACK_ENABLE_DESC	"Enable SCTP NR-SACK"
 #define SCTPCTL_NRSACK_ENABLE_MIN	0
 #define SCTPCTL_NRSACK_ENABLE_MAX	1
 #define SCTPCTL_NRSACK_ENABLE_DEFAULT	0

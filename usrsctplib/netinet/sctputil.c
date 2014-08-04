@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 269481 2014-08-03 18:12:55Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 269527 2014-08-04 20:07:35Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -974,6 +974,7 @@ sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	asoc->sctp_cmt_on_off = inp->sctp_cmt_on_off;
 	asoc->ecn_supported = inp->ecn_supported;
 	asoc->prsctp_supported = inp->prsctp_supported;
+	asoc->reconfig_supported = inp->reconfig_supported;
 	asoc->nrsack_supported = inp->nrsack_supported;
 	asoc->pktdrop_supported = inp->pktdrop_supported;
 	asoc->sctp_cmt_pf = (uint8_t)0;
@@ -2750,7 +2751,7 @@ sctp_notify_assoc_change(uint16_t state, struct sctp_tcb *stcb,
 					sac->sac_info[i++] = SCTP_ASSOC_SUPPORTS_ASCONF;
 				}
 				sac->sac_info[i++] = SCTP_ASSOC_SUPPORTS_MULTIBUF;
-				if (stcb->asoc.peer_supports_strreset) {
+				if (stcb->asoc.reconfig_supported) {
 					sac->sac_info[i++] = SCTP_ASSOC_SUPPORTS_RE_CONFIG;
 				}
 				sac->sac_length += i;
