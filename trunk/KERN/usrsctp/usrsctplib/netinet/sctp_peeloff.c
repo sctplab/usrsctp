@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_peeloff.c 269481 2014-08-03 18:12:55Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_peeloff.c 269527 2014-08-04 20:07:35Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -127,6 +127,7 @@ sctp_do_peeloff(struct socket *head, struct socket *so, sctp_assoc_t assoc_id)
 	n_inp->sctp_cmt_on_off = inp->sctp_cmt_on_off;
 	n_inp->ecn_supported = inp->ecn_supported;
 	n_inp->prsctp_supported = inp->prsctp_supported;
+	n_inp->reconfig_supported = inp->reconfig_supported;
 	n_inp->nrsack_supported = inp->nrsack_supported;
 	n_inp->pktdrop_supported = inp->pktdrop_supported;
 	n_inp->partial_delivery_point = inp->partial_delivery_point;
@@ -239,6 +240,7 @@ sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
 	n_inp->sctp_cmt_on_off = inp->sctp_cmt_on_off;
 	n_inp->ecn_supported = inp->ecn_supported;
 	n_inp->prsctp_supported = inp->prsctp_supported;
+	n_inp->reconfig_supported = inp->reconfig_supported;
 	n_inp->nrsack_supported = inp->nrsack_supported;
 	n_inp->pktdrop_supported = inp->pktdrop_supported;
 	n_inp->partial_delivery_point = inp->partial_delivery_point;
