@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 269527 2014-08-04 20:07:35Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 269753 2014-08-09 14:33:44Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6384,17 +6384,28 @@ sctp_input(i_pak, va_alist)
 extern int *sctp_cpuarry;
 #endif
 
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020  
+int
+sctp_input(struct mbuf **mp, int *offp, int proto SCTP_UNUSED)
+{
+	struct mbuf *m;
+	int off;
+
+	m = *mp;
+	off = *offp;
+#else
 void
 sctp_input(struct mbuf *m, int off)
 {
+#endif
 #if defined(__FreeBSD__) && defined(SCTP_MCORE_INPUT) && defined(SMP)
-	struct ip *ip;
-	struct sctphdr *sh;
-	int offset;
-	int cpu_to_use;
-	uint32_t flowid, tag;
-
 	if (mp_ncpus > 1) {
+		struct ip *ip;
+		struct sctphdr *sh;
+		int offset;
+		int cpu_to_use;
+		uint32_t flowid, tag;
+
 		if (m->m_flags & M_FLOWID) {
 			flowid = m->m_pkthdr.flowid;
 		} else {
@@ -6405,7 +6416,11 @@ sctp_input(struct mbuf *m, int off)
 			if (SCTP_BUF_LEN(m) < offset) {
 				if ((m = m_pullup(m, offset)) == NULL) {
 					SCTP_STAT_INCR(sctps_hdrops);
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020  
+					return (IPPROTO_DONE);
+#else
 					return;
+#endif
 				}
 			}
 			ip = mtod(m, struct ip *);
@@ -6417,10 +6432,17 @@ sctp_input(struct mbuf *m, int off)
 		}
 		cpu_to_use = sctp_cpuarry[flowid % mp_ncpus];
 		sctp_queue_to_mcore(m, off, cpu_to_use);
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020  
+		return (IPPROTO_DONE);
+#else
 		return;
+#endif
 	}
 #endif
 	sctp_input_with_port(m, off, 0);
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020  
+	return (IPPROTO_DONE);
+#endif
 }
 #endif
 #endif
