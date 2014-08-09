@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_var.h 268537 2014-07-11 21:15:40Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_var.h 269699 2014-08-08 01:57:15Z kevlo $");
 #endif
 
 #ifndef _NETINET_SCTP_VAR_H_
@@ -412,7 +412,11 @@ void sctp_ctlinput(int, struct sockaddr *, void *);
 int sctp_ctloutput(struct socket *, struct sockopt *);
 #ifdef INET
 void sctp_input_with_port(struct mbuf *, int, uint16_t);
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020  
+int sctp_input(struct mbuf **, int *, int);
+#else
 void sctp_input(struct mbuf *, int);
+#endif
 #endif
 void sctp_pathmtu_adjustment(struct sctp_tcb *, uint16_t);
 #endif
