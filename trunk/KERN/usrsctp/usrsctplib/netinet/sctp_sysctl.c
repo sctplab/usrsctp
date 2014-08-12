@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 269527 2014-08-04 20:07:35Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 269858 2014-08-12 11:30:16Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -62,6 +62,8 @@ sctp_init_sysctls()
 	SCTP_BASE_SYSCTL(sctp_multiple_asconfs) = SCTPCTL_MULTIPLEASCONFS_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_ecn_enable) = SCTPCTL_ECN_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_pr_enable) = SCTPCTL_PR_ENABLE_DEFAULT;
+	SCTP_BASE_SYSCTL(sctp_auth_disable) = SCTPCTL_AUTH_DISABLE_DEFAULT;
+	SCTP_BASE_SYSCTL(sctp_asconf_enable) = SCTPCTL_ASCONF_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_reconfig_enable) = SCTPCTL_RECONFIG_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_nrsack_enable) = SCTPCTL_NRSACK_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_pktdrop_enable) = SCTPCTL_PKTDROP_ENABLE_DEFAULT;
@@ -102,7 +104,6 @@ sctp_init_sysctls()
 	SCTP_BASE_SYSCTL(sctp_cmt_on_off) = SCTPCTL_CMT_ON_OFF_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_cmt_use_dac) = SCTPCTL_CMT_USE_DAC_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_use_cwnd_based_maxburst) = SCTPCTL_CWND_MAXBURST_DEFAULT;
-	SCTP_BASE_SYSCTL(sctp_auth_disable) = SCTPCTL_AUTH_DISABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_nat_friendly) = SCTPCTL_NAT_FRIENDLY_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_L2_abc_variable) = SCTPCTL_ABC_L_VAR_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_mbuf_threshold_count) = SCTPCTL_MAX_CHAINED_MBUFS_DEFAULT;
@@ -672,8 +673,8 @@ skip:
 	else if ((var) > (max)) { (var) = (max); }
 #else
 #define RANGECHK(var, min, max) \
-	if ((var) <= (min)) { (var) = (min); } \
-	else if ((var) >= (max)) { (var) = (max); }
+	if ((var) < (min)) { (var) = (min); } \
+	else if ((var) > (max)) { (var) = (max); }
 #endif
 
 #if defined(__APPLE__)
@@ -815,7 +816,6 @@ sysctl_sctp_check(SYSCTL_HANDLER_ARGS)
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_cmt_on_off), SCTPCTL_CMT_ON_OFF_MIN, SCTPCTL_CMT_ON_OFF_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_cmt_use_dac), SCTPCTL_CMT_USE_DAC_MIN, SCTPCTL_CMT_USE_DAC_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_use_cwnd_based_maxburst), SCTPCTL_CWND_MAXBURST_MIN, SCTPCTL_CWND_MAXBURST_MAX);
-		RANGECHK(SCTP_BASE_SYSCTL(sctp_auth_disable), SCTPCTL_AUTH_DISABLE_MIN, SCTPCTL_AUTH_DISABLE_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_nat_friendly), SCTPCTL_NAT_FRIENDLY_MIN, SCTPCTL_NAT_FRIENDLY_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_L2_abc_variable), SCTPCTL_ABC_L_VAR_MIN, SCTPCTL_ABC_L_VAR_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_mbuf_threshold_count), SCTPCTL_MAX_CHAINED_MBUFS_MIN, SCTPCTL_MAX_CHAINED_MBUFS_MAX);
@@ -863,6 +863,80 @@ sysctl_sctp_check(SYSCTL_HANDLER_ARGS)
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_output_unlocked), SCTPCTL_OUTPUT_UNLOCKED_MIN, SCTPCTL_OUTPUT_UNLOCKED_MAX);
 #endif
+	}
+	return (error);
+}
+
+#if defined(__APPLE__)
+static int
+sysctl_sctp_auth_check SYSCTL_HANDLER_ARGS
+{
+#pragma unused(arg1, arg2)
+#else
+static int
+sysctl_sctp_auth_check(SYSCTL_HANDLER_ARGS)
+{
+#endif
+	int error;
+
+#if defined(__FreeBSD__) && __FreeBSD_version >= 800056 && __FreeBSD_version < 1000100
+#ifdef VIMAGE
+	error = vnet_sysctl_handle_int(oidp, oidp->oid_arg1, oidp->oid_arg2, req);
+#else
+	error = sysctl_handle_int(oidp, oidp->oid_arg1, oidp->oid_arg2, req);
+#endif
+#else
+	error = sysctl_handle_int(oidp, oidp->oid_arg1, oidp->oid_arg2, req);
+#endif
+	if (error == 0) {
+		if (SCTP_BASE_SYSCTL(sctp_auth_disable) < SCTPCTL_AUTH_DISABLE_MIN) {
+			SCTP_BASE_SYSCTL(sctp_auth_disable) = SCTPCTL_AUTH_DISABLE_MIN;
+		}
+		if (SCTP_BASE_SYSCTL(sctp_auth_disable) > SCTPCTL_AUTH_DISABLE_MAX) {
+			SCTP_BASE_SYSCTL(sctp_auth_disable) = SCTPCTL_AUTH_DISABLE_MAX;
+		}
+		if ((SCTP_BASE_SYSCTL(sctp_auth_disable) == 1) &&
+		    (SCTP_BASE_SYSCTL(sctp_asconf_enable) == 1)) {
+		    	/* You can't disable AUTH with disabling ASCONF first */
+			SCTP_BASE_SYSCTL(sctp_auth_disable) = 0;
+		}
+	}
+	return (error);
+}
+
+#if defined(__APPLE__)
+static int
+sysctl_sctp_asconf_check SYSCTL_HANDLER_ARGS
+{
+#pragma unused(arg1, arg2)
+#else
+static int
+sysctl_sctp_asconf_check(SYSCTL_HANDLER_ARGS)
+{
+#endif
+	int error;
+
+#if defined(__FreeBSD__) && __FreeBSD_version >= 800056 && __FreeBSD_version < 1000100
+#ifdef VIMAGE
+	error = vnet_sysctl_handle_int(oidp, oidp->oid_arg1, oidp->oid_arg2, req);
+#else
+	error = sysctl_handle_int(oidp, oidp->oid_arg1, oidp->oid_arg2, req);
+#endif
+#else
+	error = sysctl_handle_int(oidp, oidp->oid_arg1, oidp->oid_arg2, req);
+#endif
+	if (error == 0) {
+		if (SCTP_BASE_SYSCTL(sctp_asconf_enable) < SCTPCTL_ASCONF_ENABLE_MIN) {
+			SCTP_BASE_SYSCTL(sctp_asconf_enable) = SCTPCTL_ASCONF_ENABLE_MIN;
+		}
+		if (SCTP_BASE_SYSCTL(sctp_asconf_enable) > SCTPCTL_ASCONF_ENABLE_MAX) {
+			SCTP_BASE_SYSCTL(sctp_asconf_enable) = SCTPCTL_ASCONF_ENABLE_MAX;
+		}
+		if ((SCTP_BASE_SYSCTL(sctp_asconf_enable) == 1) &&
+		    (SCTP_BASE_SYSCTL(sctp_auth_disable) == 1)) {
+		    	/* You can't enable ASCONF without enabling AUTH first */
+			SCTP_BASE_SYSCTL(sctp_asconf_enable) = 0;
+		}
 	}
 	return (error);
 }
@@ -1089,6 +1163,14 @@ SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, pr_enable, CTLTYPE_UINT|CTLFLAG_RW,
                  &SCTP_BASE_SYSCTL(sctp_pr_enable), 0, sysctl_sctp_check, "IU",
                  SCTPCTL_PR_ENABLE_DESC);
 
+SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, auth_disable, CTLTYPE_UINT|CTLFLAG_RW,
+                 &SCTP_BASE_SYSCTL(sctp_auth_disable), 0, sysctl_sctp_auth_check, "IU",
+                 SCTPCTL_AUTH_DISABLE_DESC);
+
+SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, asconf_enable, CTLTYPE_UINT|CTLFLAG_RW,
+                 &SCTP_BASE_SYSCTL(sctp_asconf_enable), 0, sysctl_sctp_asconf_check, "IU",
+                 SCTPCTL_ASCONF_ENABLE_DESC);
+
 SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, reconfig_enable, CTLTYPE_UINT|CTLFLAG_RW,
                  &SCTP_BASE_SYSCTL(sctp_reconfig_enable), 0, sysctl_sctp_check, "IU",
                  SCTPCTL_RECONFIG_ENABLE_DESC);
@@ -1242,10 +1324,6 @@ SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, cmt_use_dac, CTLTYPE_UINT|CTLFLAG_RW,
 SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, cwnd_maxburst, CTLTYPE_UINT|CTLFLAG_RW,
                  &SCTP_BASE_SYSCTL(sctp_use_cwnd_based_maxburst), 0, sysctl_sctp_check, "IU",
                  SCTPCTL_CWND_MAXBURST_DESC);
-
-SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, auth_disable, CTLTYPE_UINT|CTLFLAG_RW,
-                 &SCTP_BASE_SYSCTL(sctp_auth_disable), 0, sysctl_sctp_check, "IU",
-                 SCTPCTL_AUTH_DISABLE_DESC);
 
 SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, nat_friendly, CTLTYPE_UINT|CTLFLAG_RW,
                  &SCTP_BASE_SYSCTL(sctp_nat_friendly), 0, sysctl_sctp_check, "IU",
@@ -1446,6 +1524,14 @@ void sysctl_setup_sctp(void)
             &SCTP_BASE_SYSCTL(sctp_pr_enable), 0, sysctl_sctp_check,
 	    SCTPCTL_PR_ENABLE_DESC);
 
+	sysctl_add_oid(&sysctl_oid_top, "auth_disable", CTLTYPE_INT|CTLFLAG_RW,
+            &SCTP_BASE_SYSCTL(sctp_auth_disable), 0, sysctl_sctp_auth_check,
+	    SCTPCTL_AUTH_DISABLE_DESC);
+
+	sysctl_add_oid(&sysctl_oid_top, "asconf_enable", CTLTYPE_INT|CTLFLAG_RW,
+            &SCTP_BASE_SYSCTL(sctp_asconf_enable), 0, sysctl_sctp_asconf_check,
+	    SCTPCTL_ASCONF_ENABLE_DESC);
+
 	sysctl_add_oid(&sysctl_oid_top, "reconfig_enable", CTLTYPE_INT|CTLFLAG_RW,
             &SCTP_BASE_SYSCTL(sctp_reconfig_enable), 0, sysctl_sctp_check,
 	    SCTPCTL_RECONFIG_ENABLE_DESC);
@@ -1593,10 +1679,6 @@ void sysctl_setup_sctp(void)
 	sysctl_add_oid(&sysctl_oid_top, "cwnd_maxburst", CTLTYPE_INT|CTLFLAG_RW,
             &SCTP_BASE_SYSCTL(sctp_use_cwnd_based_maxburst), 0, sysctl_sctp_check,
 	    SCTPCTL_CWND_MAXBURST_DESC);
-
-	sysctl_add_oid(&sysctl_oid_top, "auth_disable", CTLTYPE_INT|CTLFLAG_RW,
-            &SCTP_BASE_SYSCTL(sctp_auth_disable), 0, sysctl_sctp_check,
-	    SCTPCTL_AUTH_DISABLE_DESC);
 
 	sysctl_add_oid(&sysctl_oid_top, "nat_friendly", CTLTYPE_INT|CTLFLAG_RW,
             &SCTP_BASE_SYSCTL(sctp_nat_friendly), 0, sysctl_sctp_check,
