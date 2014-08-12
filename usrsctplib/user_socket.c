@@ -710,6 +710,7 @@ userspace_sctp_sendmsg(struct socket *so,
 	struct uio auio;
 	struct iovec iov[1];
 
+	memset(sinfo, 0, sizeof(struct sctp_sndrcvinfo));
 	sinfo->sinfo_ppid = ppid;
 	sinfo->sinfo_flags = flags;
 	sinfo->sinfo_stream = stream_no;
@@ -3248,6 +3249,8 @@ USRSCTP_SYSCTL_SET_DEF(sctp_auto_asconf)
 USRSCTP_SYSCTL_SET_DEF(sctp_multiple_asconfs)
 USRSCTP_SYSCTL_SET_DEF(sctp_ecn_enable)
 USRSCTP_SYSCTL_SET_DEF(sctp_pr_enable)
+USRSCTP_SYSCTL_SET_DEF(sctp_auth_disable)
+USRSCTP_SYSCTL_SET_DEF(sctp_asconf_enable)
 USRSCTP_SYSCTL_SET_DEF(sctp_reconfig_enable)
 USRSCTP_SYSCTL_SET_DEF(sctp_nrsack_enable)
 USRSCTP_SYSCTL_SET_DEF(sctp_pktdrop_enable)
@@ -3283,7 +3286,6 @@ USRSCTP_SYSCTL_SET_DEF(sctp_nr_outgoing_streams_default)
 USRSCTP_SYSCTL_SET_DEF(sctp_cmt_on_off)
 USRSCTP_SYSCTL_SET_DEF(sctp_cmt_use_dac)
 USRSCTP_SYSCTL_SET_DEF(sctp_use_cwnd_based_maxburst)
-USRSCTP_SYSCTL_SET_DEF(sctp_auth_disable)
 USRSCTP_SYSCTL_SET_DEF(sctp_nat_friendly)
 USRSCTP_SYSCTL_SET_DEF(sctp_L2_abc_variable)
 USRSCTP_SYSCTL_SET_DEF(sctp_mbuf_threshold_count)
@@ -3329,6 +3331,8 @@ USRSCTP_SYSCTL_GET_DEF(sctp_auto_asconf)
 USRSCTP_SYSCTL_GET_DEF(sctp_multiple_asconfs)
 USRSCTP_SYSCTL_GET_DEF(sctp_ecn_enable)
 USRSCTP_SYSCTL_GET_DEF(sctp_pr_enable)
+USRSCTP_SYSCTL_GET_DEF(sctp_auth_disable)
+USRSCTP_SYSCTL_GET_DEF(sctp_asconf_enable)
 USRSCTP_SYSCTL_GET_DEF(sctp_reconfig_enable)
 USRSCTP_SYSCTL_GET_DEF(sctp_nrsack_enable)
 USRSCTP_SYSCTL_GET_DEF(sctp_pktdrop_enable)
@@ -3364,7 +3368,6 @@ USRSCTP_SYSCTL_GET_DEF(sctp_nr_outgoing_streams_default)
 USRSCTP_SYSCTL_GET_DEF(sctp_cmt_on_off)
 USRSCTP_SYSCTL_GET_DEF(sctp_cmt_use_dac)
 USRSCTP_SYSCTL_GET_DEF(sctp_use_cwnd_based_maxburst)
-USRSCTP_SYSCTL_GET_DEF(sctp_auth_disable)
 USRSCTP_SYSCTL_GET_DEF(sctp_nat_friendly)
 USRSCTP_SYSCTL_GET_DEF(sctp_L2_abc_variable)
 USRSCTP_SYSCTL_GET_DEF(sctp_mbuf_threshold_count)

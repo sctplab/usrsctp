@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 269527 2014-08-04 20:07:35Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 269858 2014-08-12 11:30:16Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5102,12 +5102,6 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked
 	}
 	chunk_len = (uint16_t)sizeof(struct sctp_init_chunk);
 	padding_len = 0;
-	/*
-	 * assume peer supports asconf in order to be able to queue
-	 * local address changes while an INIT is in flight and before
-	 * the assoc is established.
-	 */
-	stcb->asoc.peer_supports_asconf = 1;
 	/* Now lets put the chunk header in place */
 	init = mtod(m, struct sctp_init_chunk *);
 	/* now the chunk header */
@@ -5164,31 +5158,34 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked
 	/* And now tell the peer which extensions we support */
 	num_ext = 0;
 	pr_supported = (struct sctp_supported_chunk_types_param *)(mtod(m, caddr_t) + chunk_len);
-	pr_supported->ph.param_type = htons(SCTP_SUPPORTED_CHUNK_EXT);
-	pr_supported->chunk_types[num_ext++] = SCTP_ASCONF;
-	pr_supported->chunk_types[num_ext++] = SCTP_ASCONF_ACK;
 	if (stcb->asoc.prsctp_supported == 1) {
 		pr_supported->chunk_types[num_ext++] = SCTP_FORWARD_CUM_TSN;
 	}
-	if (stcb->asoc.pktdrop_supported == 1) {
-		pr_supported->chunk_types[num_ext++] = SCTP_PACKET_DROPPED;
+	if (stcb->asoc.auth_supported == 1) {
+		pr_supported->chunk_types[num_ext++] = SCTP_AUTHENTICATION;
+	}
+	if (stcb->asoc.asconf_supported == 1) {
+		pr_supported->chunk_types[num_ext++] = SCTP_ASCONF;
+		pr_supported->chunk_types[num_ext++] = SCTP_ASCONF_ACK;
 	}
 	if (stcb->asoc.reconfig_supported == 1) {
 		pr_supported->chunk_types[num_ext++] = SCTP_STREAM_RESET;
 	}
-	if (!SCTP_BASE_SYSCTL(sctp_auth_disable)) {
-		pr_supported->chunk_types[num_ext++] = SCTP_AUTHENTICATION;
-	}
 	if (stcb->asoc.nrsack_supported == 1) {
 		pr_supported->chunk_types[num_ext++] = SCTP_NR_SELECTIVE_ACK;
 	}
-	parameter_len = (uint16_t)sizeof(struct sctp_supported_chunk_types_param) + num_ext;
-	pr_supported->ph.param_length = htons(parameter_len);
-	padding_len = SCTP_SIZE32(parameter_len) - parameter_len;
-	chunk_len += parameter_len;
-
+	if (stcb->asoc.pktdrop_supported == 1) {
+		pr_supported->chunk_types[num_ext++] = SCTP_PACKET_DROPPED;
+	}
+	if (num_ext > 0) {
+		parameter_len = (uint16_t)sizeof(struct sctp_supported_chunk_types_param) + num_ext;
+		pr_supported->ph.param_type = htons(SCTP_SUPPORTED_CHUNK_EXT);
+		pr_supported->ph.param_length = htons(parameter_len);
+		padding_len = SCTP_SIZE32(parameter_len) - parameter_len;
+		chunk_len += parameter_len;
+	}
 	/* add authentication parameters */
-	if (!SCTP_BASE_SYSCTL(sctp_auth_disable)) {
+	if (stcb->asoc.auth_supported) {
 		/* attach RANDOM parameter, if available */
 		if (stcb->asoc.authinfo.random != NULL) {
 			struct sctp_auth_random *randp;
@@ -5206,8 +5203,7 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked
 			chunk_len += parameter_len;
 		}
 		/* add HMAC_ALGO parameter */
-		if ((stcb->asoc.local_hmacs != NULL) &&
-		    (stcb->asoc.local_hmacs->num_algo > 0)) {
+		if (stcb->asoc.local_hmacs != NULL) {
 			struct sctp_auth_hmac_algo *hmacs;
 
 			if (padding_len > 0) {
@@ -5225,7 +5221,7 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked
 			chunk_len += parameter_len;
 		}
 		/* add CHUNKS parameter */
-		if (sctp_auth_get_chklist_size(stcb->asoc.local_auth_chunks) > 0) {
+		if (stcb->asoc.local_auth_chunks != NULL) {
 			struct sctp_auth_chunk_list *chunks;
 
 			if (padding_len > 0) {
@@ -6337,35 +6333,42 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	/* And now tell the peer which extensions we support */
 	num_ext = 0;
 	pr_supported = (struct sctp_supported_chunk_types_param *)(mtod(m, caddr_t) + chunk_len);
-	pr_supported->ph.param_type = htons(SCTP_SUPPORTED_CHUNK_EXT);
-	pr_supported->chunk_types[num_ext++] = SCTP_ASCONF;
-	pr_supported->chunk_types[num_ext++] = SCTP_ASCONF_ACK;
 	if (((asoc != NULL) && (asoc->prsctp_supported == 1)) ||
 	    ((asoc == NULL) && (inp->prsctp_supported == 1))) {
 		pr_supported->chunk_types[num_ext++] = SCTP_FORWARD_CUM_TSN;
 	}
-	if (((asoc != NULL) && (asoc->pktdrop_supported == 1)) ||
-	    ((asoc == NULL) && (inp->pktdrop_supported == 1))) {
-		pr_supported->chunk_types[num_ext++] = SCTP_PACKET_DROPPED;
+	if (((asoc != NULL) && (asoc->auth_supported == 1)) ||
+	    ((asoc == NULL) && (inp->auth_supported == 1))) {
+		pr_supported->chunk_types[num_ext++] = SCTP_AUTHENTICATION;
+	}
+	if (((asoc != NULL) && (asoc->asconf_supported == 1)) ||
+	    ((asoc == NULL) && (inp->asconf_supported == 1))) {
+		pr_supported->chunk_types[num_ext++] = SCTP_ASCONF;
+		pr_supported->chunk_types[num_ext++] = SCTP_ASCONF_ACK;
 	}
 	if (((asoc != NULL) && (asoc->reconfig_supported == 1)) ||
 	    ((asoc == NULL) && (inp->reconfig_supported == 1))) {
 		pr_supported->chunk_types[num_ext++] = SCTP_STREAM_RESET;
 	}
-	if (!SCTP_BASE_SYSCTL(sctp_auth_disable)) {
-		pr_supported->chunk_types[num_ext++] = SCTP_AUTHENTICATION;
-	}
 	if (((asoc != NULL) && (asoc->nrsack_supported == 1)) ||
 	    ((asoc == NULL) && (inp->nrsack_supported == 1))) {
 		pr_supported->chunk_types[num_ext++] = SCTP_NR_SELECTIVE_ACK;
 	}
-	parameter_len = (uint16_t)sizeof(struct sctp_supported_chunk_types_param) + num_ext;
-	pr_supported->ph.param_length = htons(parameter_len);
-	padding_len = SCTP_SIZE32(parameter_len) - parameter_len;
-	chunk_len += parameter_len;
-
+	if (((asoc != NULL) && (asoc->pktdrop_supported == 1)) ||
+	    ((asoc == NULL) && (inp->pktdrop_supported == 1))) {
+		pr_supported->chunk_types[num_ext++] = SCTP_PACKET_DROPPED;
+	}
+	if (num_ext > 0) {
+		parameter_len = (uint16_t)sizeof(struct sctp_supported_chunk_types_param) + num_ext;
+		pr_supported->ph.param_type = htons(SCTP_SUPPORTED_CHUNK_EXT);
+		pr_supported->ph.param_length = htons(parameter_len);
+		padding_len = SCTP_SIZE32(parameter_len) - parameter_len;
+		chunk_len += parameter_len;
+	}
+	
 	/* add authentication parameters */
-	if (!SCTP_BASE_SYSCTL(sctp_auth_disable)) {
+	if (((asoc != NULL) && (asoc->auth_supported == 1)) ||
+	    ((asoc == NULL) && (inp->auth_supported == 1))) {
 		struct sctp_auth_random *randp;
 		struct sctp_auth_hmac_algo *hmacs;
 		struct sctp_auth_chunk_list *chunks;
@@ -7943,7 +7946,6 @@ re_look:
 		sctp_auth_key_acquire(stcb, chk->auth_keyid);
 		chk->holds_key_ref = 1;
 	}
-
 #if defined(__FreeBSD__) || defined(__Panda__)
 	chk->rec.data.TSN_seq = atomic_fetchadd_int(&asoc->sending_seq, 1);
 #else
@@ -8236,7 +8238,6 @@ sctp_med_chunk_output(struct sctp_inpcb *inp,
 #endif
 	*num_out = 0;
 	auth_keyid = stcb->asoc.authinfo.active_keyid;
-
 	if ((asoc->state & SCTP_STATE_SHUTDOWN_PENDING) ||
 	    (asoc->state & SCTP_STATE_SHUTDOWN_RECEIVED) ||
 	    (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_EXPLICIT_EOR))) {
@@ -14473,12 +14474,7 @@ sctp_add_auth_chunk(struct mbuf *m, struct mbuf **m_end,
 	    (stcb == NULL))
 		return (m);
 
-	/* sysctl disabled auth? */
-	if (SCTP_BASE_SYSCTL(sctp_auth_disable))
-		return (m);
-
-	/* peer doesn't do auth... */
-	if (!stcb->asoc.peer_supports_auth) {
+	if (stcb->asoc.auth_supported == 0) {
 		return (m);
 	}
 	/* does the requested chunk require auth? */

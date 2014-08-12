@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 269396 2014-08-01 20:49:27Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 269858 2014-08-12 11:30:16Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -135,11 +135,6 @@ sctp_auth_delete_chunk(uint8_t chunk, sctp_auth_chklist_t *list)
 	if (list == NULL)
 		return (-1);
 
-	/* is chunk restricted? */
-	if ((chunk == SCTP_ASCONF) ||
-	    (chunk == SCTP_ASCONF_ACK)) {
-		return (-1);
-	}
 	if (list->chunks[chunk] == 1) {
 		list->chunks[chunk] = 0;
 		list->num_chunks--;
@@ -157,16 +152,6 @@ sctp_auth_get_chklist_size(const sctp_auth_chklist_t *list)
 		return (0);
 	else
 		return (list->num_chunks);
-}
-
-/*
- * set the default list of chunks requiring AUTH
- */
-void
-sctp_auth_set_default_chunks(sctp_auth_chklist_t *list)
-{
-	(void)sctp_auth_add_chunk(SCTP_ASCONF, list);
-	(void)sctp_auth_add_chunk(SCTP_ASCONF_ACK, list);
 }
 
 /*
@@ -1554,7 +1539,7 @@ sctp_auth_get_cookie_params(struct sctp_tcb *stcb, struct mbuf *m,
 	    }
 	}
 	if (stcb->asoc.authinfo.random != NULL)
-	    sctp_free_key(stcb->asoc.authinfo.random);
+		sctp_free_key(stcb->asoc.authinfo.random);
 	stcb->asoc.authinfo.random = new_key;
 	stcb->asoc.authinfo.random_len = random_len;
 	sctp_clear_cachedkeys(stcb, stcb->asoc.authinfo.assoc_keyid);
