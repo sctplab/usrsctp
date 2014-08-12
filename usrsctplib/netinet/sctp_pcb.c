@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 269858 2014-08-12 11:30:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 269874 2014-08-12 13:13:11Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2843,11 +2843,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	inp->sctp_cmt_on_off = SCTP_BASE_SYSCTL(sctp_cmt_on_off);
 	inp->ecn_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_ecn_enable);
 	inp->prsctp_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_pr_enable);
-	if (SCTP_BASE_SYSCTL(sctp_auth_disable)) {
-		inp->auth_supported = 0;
-	} else {
-		inp->auth_supported = 1;
-	}
+	inp->auth_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_auth_enable);
 	inp->asconf_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_asconf_enable);
 	inp->reconfig_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_reconfig_enable);
 	inp->nrsack_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_nrsack_enable);
