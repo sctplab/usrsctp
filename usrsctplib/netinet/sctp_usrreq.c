@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 269858 2014-08-12 11:30:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 269945 2014-08-13 15:50:16Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4215,6 +4215,72 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		}
 		if (error == 0) {
 			*optsize = sizeof(struct sctp_assoc_value);
+		}
+		break;
+	}
+	case SCTP_PR_STREAM_STATUS:
+	{
+		struct sctp_prstatus *sprstat;
+		uint16_t sid;
+		uint16_t policy;
+
+		SCTP_CHECK_AND_CAST(sprstat, optval, struct sctp_prstatus, *optsize);
+		SCTP_FIND_STCB(inp, stcb, sprstat->sprstat_assoc_id);
+
+		sid = sprstat->sprstat_sid;
+		policy = sprstat->sprstat_policy;
+#if defined(SCTP_DETAILED_STR_STATS)
+		if ((stcb != NULL) &&
+		    (policy != SCTP_PR_SCTP_NONE) &&
+		    (sid < stcb->asoc.streamoutcnt) &&
+		    ((policy == SCTP_PR_SCTP_ALL) ||
+		     (PR_SCTP_VALID_POLICY(policy)))) {
+#else
+		if ((stcb != NULL) &&
+		    (policy != SCTP_PR_SCTP_NONE) &&
+		    (sid < stcb->asoc.streamoutcnt) &&
+		    (policy == SCTP_PR_SCTP_ALL)) {
+#endif
+			if (policy == SCTP_PR_SCTP_ALL) {
+				sprstat->sprstat_abandoned_unsent = stcb->asoc.strmout[sid].abandoned_unsent[0];
+				sprstat->sprstat_abandoned_sent = stcb->asoc.strmout[sid].abandoned_sent[0];
+			} else {
+				sprstat->sprstat_abandoned_unsent = stcb->asoc.strmout[sid].abandoned_unsent[policy];
+				sprstat->sprstat_abandoned_sent = stcb->asoc.strmout[sid].abandoned_sent[policy];
+			}
+			SCTP_TCB_UNLOCK(stcb);
+			*optsize = sizeof(struct sctp_prstatus);
+		} else {
+			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+			error = EINVAL;
+		}
+		break;
+	}
+	case SCTP_PR_ASSOC_STATUS:
+	{
+		struct sctp_prstatus *sprstat;
+		uint16_t policy;
+
+		SCTP_CHECK_AND_CAST(sprstat, optval, struct sctp_prstatus, *optsize);
+		SCTP_FIND_STCB(inp, stcb, sprstat->sprstat_assoc_id);
+
+		policy = sprstat->sprstat_policy;
+		if ((stcb != NULL) &&
+		    (policy != SCTP_PR_SCTP_NONE) &&
+		    ((policy == SCTP_PR_SCTP_ALL) ||
+		     (PR_SCTP_VALID_POLICY(policy)))) {
+			if (policy == SCTP_PR_SCTP_ALL) {
+				sprstat->sprstat_abandoned_unsent = stcb->asoc.abandoned_unsent[0];
+				sprstat->sprstat_abandoned_sent = stcb->asoc.abandoned_sent[0];
+			} else {
+				sprstat->sprstat_abandoned_unsent = stcb->asoc.abandoned_unsent[policy];
+				sprstat->sprstat_abandoned_sent = stcb->asoc.abandoned_sent[policy];
+			}
+			SCTP_TCB_UNLOCK(stcb);
+			*optsize = sizeof(struct sctp_prstatus);
+		} else {
+			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+			error = EINVAL;
 		}
 		break;
 	}

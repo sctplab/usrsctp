@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 269858 2014-08-12 11:30:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 269945 2014-08-13 15:50:16Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1523,6 +1523,9 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 	int retval;
 	int spec_flag = 0;
 	uint32_t how_indx;
+#if defined(SCTP_DETAILED_STR_STATS)
+	int j;
+#endif
 
 	net = *netp;
 	/* I know that the TCB is non-NULL from the caller */
@@ -1983,6 +1986,15 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		sctp_report_all_outbound(stcb, 0, 1, SCTP_SO_LOCKED);
 		for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
 			stcb->asoc.strmout[i].chunks_on_queues = 0;
+#if defined(SCTP_DETAILED_STR_STATS)
+			for (j = 0; j < SCTP_PR_SCTP_MAX + 1; j++) {
+				asoc->strmout[i].abandoned_sent[j] = 0;
+				asoc->strmout[i].abandoned_unsent[j] = 0;
+			}
+#else
+			asoc->strmout[i].abandoned_sent[0] = 0;
+			asoc->strmout[i].abandoned_unsent[0] = 0;
+#endif
 			stcb->asoc.strmout[i].stream_no = i;
 			stcb->asoc.strmout[i].next_sequence_send = 0;
 			stcb->asoc.strmout[i].last_msg_incomplete = 0;
