@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 269858 2014-08-12 11:30:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 269945 2014-08-13 15:50:16Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_STRUCTS_H_
@@ -636,6 +636,14 @@ struct sctp_stream_out {
 	struct sctp_streamhead outqueue;
 	union scheduling_parameters ss_params;
 	uint32_t chunks_on_queues;
+#if defined(SCTP_DETAILED_STR_STATS)
+	uint32_t abandoned_unsent[SCTP_PR_SCTP_MAX + 1];
+	uint32_t abandoned_sent[SCTP_PR_SCTP_MAX + 1];
+#else
+	/* Only the aggregation */
+	uint32_t abandoned_unsent[1];
+	uint32_t abandoned_sent[1];
+#endif
 	uint16_t stream_no;
 	uint16_t next_sequence_send;	/* next one I expect to send out */
 	uint8_t last_msg_incomplete;
@@ -1261,6 +1269,8 @@ struct sctp_association {
 	uint32_t timoshutdownack;
 	struct timeval start_time;
 	struct timeval discontinuity_time;
+	uint64_t abandoned_unsent[SCTP_PR_SCTP_MAX + 1];
+	uint64_t abandoned_sent[SCTP_PR_SCTP_MAX + 1];
 };
 
 #endif
