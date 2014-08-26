@@ -44,9 +44,14 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 269874 2014-08-12 13:13:11Z t
 #include <netinet/sctp_output.h>
 #ifdef __FreeBSD__
 #include <sys/smp.h>
+#include <sys/sysctl.h>
 #endif
 #if defined(__APPLE__)
 #include <netinet/sctp_bsd_addr.h>
+#endif
+
+#ifdef __FreeBSD__
+FEATURE(sctp, "Stream Control Transmission Protocol");
 #endif
 
 /*
