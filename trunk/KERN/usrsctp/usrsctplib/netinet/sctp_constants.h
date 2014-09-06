@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 263921 2014-03-29 20:21:36Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 271204 2014-09-06 19:12:14Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_CONSTANTS_H_
@@ -272,41 +272,8 @@ extern void getwintimeofday(struct timeval *tv);
 /* how many addresses per assoc remote and local */
 #define SCTP_SCALE_FOR_ADDR	2
 
-/* default AUTO_ASCONF mode enable(1)/disable(0) value (sysctl) */
-#if defined(__APPLE__)
-#if !defined(SCTP_APPLE_AUTO_ASCONF)
-#define SCTP_DEFAULT_AUTO_ASCONF        0
-#else
-#define SCTP_DEFAULT_AUTO_ASCONF	1
-#endif
-#else
-#define SCTP_DEFAULT_AUTO_ASCONF	1
-#endif
-
 /* default MULTIPLE_ASCONF mode enable(1)/disable(0) value (sysctl) */
 #define SCTP_DEFAULT_MULTIPLE_ASCONFS	0
-
-/* default MOBILITY_BASE mode enable(1)/disable(0) value (sysctl) */
-#if defined(__APPLE__)
-#if !defined(SCTP_APPLE_MOBILITY_BASE)
-#define SCTP_DEFAULT_MOBILITY_BASE      0
-#else
-#define SCTP_DEFAULT_MOBILITY_BASE	1
-#endif
-#else
-#define SCTP_DEFAULT_MOBILITY_BASE	0
-#endif
-
-/* default MOBILITY_FASTHANDOFF mode enable(1)/disable(0) value (sysctl) */
-#if defined(__APPLE__)
-#if !defined(SCTP_APPLE_MOBILITY_FASTHANDOFF)
-#define SCTP_DEFAULT_MOBILITY_FASTHANDOFF	0
-#else
-#define SCTP_DEFAULT_MOBILITY_FASTHANDOFF	1
-#endif
-#else
-#define SCTP_DEFAULT_MOBILITY_FASTHANDOFF	0
-#endif
 
 /*
  * Theshold for rwnd updates, we have to read (sb_hiwat >>
