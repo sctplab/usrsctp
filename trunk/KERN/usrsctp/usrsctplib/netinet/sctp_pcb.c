@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 269874 2014-08-12 13:13:11Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 271209 2014-09-06 20:03:24Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6971,6 +6971,9 @@ sctp_pcb_finish(void)
 	LIST_FOREACH_SAFE(wi, &SCTP_BASE_INFO(addr_wq), sctp_nxt_addr, nwi) {
 		LIST_REMOVE(wi, sctp_nxt_addr);
 		SCTP_DECR_LADDR_COUNT();
+		if (wi->action == SCTP_DEL_IP_ADDRESS) {
+			SCTP_FREE(wi->ifa, SCTP_M_IFA);
+		}
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_laddr), wi);
 	}
 	SCTP_WQ_ADDR_UNLOCK();
