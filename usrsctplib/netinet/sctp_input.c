@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 271228 2014-09-07 17:07:19Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 271230 2014-09-07 18:05:37Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3021,8 +3021,9 @@ sctp_handle_cookie_ack(struct sctp_cookie_ack_chunk *cp SCTP_UNUSED,
 
 	SCTPDBG(SCTP_DEBUG_INPUT2,
 		"sctp_handle_cookie_ack: handling COOKIE-ACK\n");
-	if (stcb == NULL)
+	if ((stcb == NULL) || (net == NULL)) {
 		return;
+	}
 
 	asoc = &stcb->asoc;
 

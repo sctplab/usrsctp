@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 271221 2014-09-07 09:06:26Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 271230 2014-09-07 18:05:37Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7143,7 +7143,6 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 	peer_supports_ecn = 0;
 	peer_supports_prsctp = 0;
 	peer_supports_auth = 0;
-	peer_supports_asconf = 0;
 	peer_supports_asconf = 0;
 	peer_supports_reconfig = 0;
 	peer_supports_nrsack = 0;
