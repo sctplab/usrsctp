@@ -2339,7 +2339,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 #if defined(__Userspace__)
 	case SCTP_CONN_ADDRESS:
 		/* source addr is conn */
-		memset(store.sconn, 0, sizeof(struct sockaddr_conn));
+		memset(&store.sconn, 0, sizeof(struct sockaddr_conn));
 		store.sconn.sconn_family = AF_CONN;
 #ifdef HAVE_SCONN_LEN
 		store.sconn.sconn_len = sizeof(struct sockaddr_conn);
