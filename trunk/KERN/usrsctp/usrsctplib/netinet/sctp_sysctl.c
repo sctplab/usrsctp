@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 271204 2014-09-06 19:12:14Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 271219 2014-09-07 07:49:49Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1081,8 +1081,8 @@ sctp_sysctl_handle_trace_log_clear(SYSCTL_HANDLER_ARGS)
 		}							\
 		return (error);						\
 	}								\
-	SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, mib_name,		\
-	                 CTLTYPE_UINT | CTLFLAG_RW, NULL, 0,		\
+	SYSCTL_PROC(_net_inet_sctp, OID_AUTO, mib_name,			\
+	                 CTLTYPE_UINT|CTLFLAG_RW, NULL, 0,		\
 	                 sctp_sysctl_handle_##mib_name, "UI", prefix##_DESC);
 #else
 #define SCTP_UINT_SYSCTL(mib_name, var_name, prefix)			\
@@ -1104,8 +1104,8 @@ sctp_sysctl_handle_trace_log_clear(SYSCTL_HANDLER_ARGS)
 		}							\
 		return (error);						\
 	}								\
-	SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, mib_name,		\
-	                 CTLTYPE_UINT | CTLFLAG_RW, NULL, 0,		\
+	SYSCTL_PROC(_net_inet_sctp, OID_AUTO, mib_name,			\
+	                 CTLFLAG_VNET|CTLTYPE_UINT|CTLFLAG_RW, NULL, 0,	\
 	                 sctp_sysctl_handle_##mib_name, "UI", prefix##_DESC);
 #endif
 #else
@@ -1128,8 +1128,8 @@ sctp_sysctl_handle_trace_log_clear(SYSCTL_HANDLER_ARGS)
 		}							\
 		return (error);						\
 	}								\
-	SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, mib_name,		\
-	                 CTLTYPE_UINT | CTLFLAG_RW, NULL, 0,		\
+	SYSCTL_PROC(_net_inet_sctp, OID_AUTO, mib_name,			\
+	                 CTLFLAG_VNET|CTLTYPE_UINT|CTLFLAG_RW, NULL, 0,	\
 	                 sctp_sysctl_handle_##mib_name, "UI", prefix##_DESC);
 #endif
 #else
@@ -1159,8 +1159,7 @@ sctp_sysctl_handle_trace_log_clear(SYSCTL_HANDLER_ARGS)
 	            CTLTYPE_INT | CTLFLAG_RW, NULL, 0,			\
 	            sctp_sysctl_handle_##mib_name, "I", prefix##_DESC);
 #define CTLTYPE_UINT CTLTYPE_INT
-#define SYSCTL_VNET_PROC(parent, nbr, name, access, ptr, arg, handler, fmt, descr) \
-        SYSCTL_PROC(parent, nbr, name, access, ptr, arg, handler, fmt, descr)
+#define CTLFLAG_VNET 0
 #endif
 
 /*
@@ -1172,10 +1171,10 @@ SCTP_UINT_SYSCTL(recvspace, sctp_recvspace, SCTPCTL_RECVSPACE)
 SCTP_UINT_SYSCTL(auto_asconf, sctp_auto_asconf, SCTPCTL_AUTOASCONF)
 SCTP_UINT_SYSCTL(ecn_enable, sctp_ecn_enable, SCTPCTL_ECN_ENABLE)
 SCTP_UINT_SYSCTL(pr_enable, sctp_pr_enable, SCTPCTL_PR_ENABLE)
-SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, auth_enable, CTLTYPE_UINT|CTLFLAG_RW,
-                 NULL, 0, sctp_sysctl_handle_auth, "IU", SCTPCTL_AUTH_ENABLE_DESC);
-SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, asconf_enable, CTLTYPE_UINT|CTLFLAG_RW,
-                 NULL, 0, sctp_sysctl_handle_asconf, "IU", SCTPCTL_ASCONF_ENABLE_DESC);
+SYSCTL_PROC(_net_inet_sctp, OID_AUTO, auth_enable, CTLFLAG_VNET|CTLTYPE_UINT|CTLFLAG_RW,
+            NULL, 0, sctp_sysctl_handle_auth, "IU", SCTPCTL_AUTH_ENABLE_DESC);
+SYSCTL_PROC(_net_inet_sctp, OID_AUTO, asconf_enable, CTLFLAG_VNET|CTLTYPE_UINT|CTLFLAG_RW,
+            NULL, 0, sctp_sysctl_handle_asconf, "IU", SCTPCTL_ASCONF_ENABLE_DESC);
 SCTP_UINT_SYSCTL(reconfig_enable, sctp_reconfig_enable, SCTPCTL_RECONFIG_ENABLE)
 SCTP_UINT_SYSCTL(nrsack_enable, sctp_nrsack_enable, SCTPCTL_NRSACK_ENABLE)
 SCTP_UINT_SYSCTL(pktdrop_enable, sctp_pktdrop_enable, SCTPCTL_PKTDROP_ENABLE)
@@ -1232,13 +1231,13 @@ SCTP_UINT_SYSCTL(default_frag_interleave, sctp_default_frag_interleave, SCTPCTL_
 SCTP_UINT_SYSCTL(mobility_base, sctp_mobility_base, SCTPCTL_MOBILITY_BASE)
 SCTP_UINT_SYSCTL(mobility_fasthandoff, sctp_mobility_fasthandoff, SCTPCTL_MOBILITY_FASTHANDOFF)
 #if defined(SCTP_LOCAL_TRACE_BUF)
-SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, log, CTLTYPE_STRUCT|CTLFLAG_RD,
-                 NULL, 0, sctp_sysctl_handle_trace_log, "S,sctplog", "SCTP logging (struct sctp_log)");
-SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, clear_trace, CTLTYPE_UINT | CTLFLAG_RW,
-                 NULL, 0, sctp_sysctl_handle_trace_log_clear, "IU", "Clear SCTP Logging buffer");
+SYSCTL_PROC(_net_inet_sctp, OID_AUTO, log, CTLFLAG_VNET|CTLTYPE_STRUCT|CTLFLAG_RD,
+            NULL, 0, sctp_sysctl_handle_trace_log, "S,sctplog", "SCTP logging (struct sctp_log)");
+SYSCTL_PROC(_net_inet_sctp, OID_AUTO, clear_trace, CTLFLAG_VNET|CTLTYPE_UINT | CTLFLAG_RW,
+            NULL, 0, sctp_sysctl_handle_trace_log_clear, "IU", "Clear SCTP Logging buffer");
 #endif
-SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, udp_tunneling_port, CTLTYPE_UINT|CTLFLAG_RW,
-                 NULL, 0, sctp_sysctl_handle_udp_tunneling, "IU", SCTPCTL_UDP_TUNNELING_PORT_DESC);
+SYSCTL_PROC(_net_inet_sctp, OID_AUTO, udp_tunneling_port, CTLFLAG_VNET|CTLTYPE_UINT|CTLFLAG_RW,
+            NULL, 0, sctp_sysctl_handle_udp_tunneling, "IU", SCTPCTL_UDP_TUNNELING_PORT_DESC);
 SCTP_UINT_SYSCTL(enable_sack_immediately, sctp_enable_sack_immediately, SCTPCTL_SACK_IMMEDIATELY_ENABLE)
 SCTP_UINT_SYSCTL(nat_friendly_init, sctp_inits_include_nat_friendly, SCTPCTL_NAT_FRIENDLY_INITS)
 SCTP_UINT_SYSCTL(vtag_time_wait, sctp_vtag_time_wait, SCTPCTL_TIME_WAIT)
@@ -1264,10 +1263,10 @@ SCTP_UINT_SYSCTL(vtag_watchdog_limit, sctp_vtag_watchdog_limit, SCTPCTL_VTAG_WAT
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 SCTP_UINT_SYSCTL(output_unlocked, sctp_output_unlocked, SCTPCTL_OUTPUT_UNLOCKED)
 #endif
-SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, stats, CTLTYPE_STRUCT|CTLFLAG_RW,
-                 NULL, 0, sctp_sysctl_handle_stats, "S,sctpstat", "SCTP statistics (struct sctp_stat)");
-SYSCTL_VNET_PROC(_net_inet_sctp, OID_AUTO, assoclist, CTLTYPE_OPAQUE|CTLFLAG_RD,
-                 NULL, 0, sctp_sysctl_handle_assoclist, "S,xassoc", "List of active SCTP associations");
+SYSCTL_PROC(_net_inet_sctp, OID_AUTO, stats, CTLFLAG_VNET|CTLTYPE_STRUCT|CTLFLAG_RW,
+            NULL, 0, sctp_sysctl_handle_stats, "S,sctpstat", "SCTP statistics (struct sctp_stat)");
+SYSCTL_PROC(_net_inet_sctp, OID_AUTO, assoclist, CTLFLAG_VNET|CTLTYPE_OPAQUE|CTLFLAG_RD,
+            NULL, 0, sctp_sysctl_handle_assoclist, "S,xassoc", "List of active SCTP associations");
 
 #elif defined(__Windows__)
 
