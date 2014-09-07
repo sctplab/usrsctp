@@ -175,7 +175,7 @@ handle_connection(void *arg)
 			notifications++;
 			gettimeofday(&note_time, NULL);
 			printf("notification arrived at %f\n", note_time.tv_sec+(double)note_time.tv_usec/1000000.0);
-			snp = (union sctp_notification*)&buf;
+			snp = (union sctp_notification *)buf;
 			if (snp->sn_header.sn_type==SCTP_PEER_ADDR_CHANGE)
 			{
 				spc = &snp->sn_paddr_change;
