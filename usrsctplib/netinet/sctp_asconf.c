@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 271221 2014-09-07 09:06:26Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 271228 2014-09-07 17:07:19Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2788,15 +2788,13 @@ sctp_process_initack_addresses(struct sctp_tcb *stcb, struct mbuf *m,
 	struct sctp_paramhdr tmp_param, *ph;
 	uint16_t plen, ptype;
 	struct sctp_ifa *sctp_ifa;
+	union sctp_sockstore store;
 #ifdef INET6
 	struct sctp_ipv6addr_param addr6_store;
-	struct sockaddr_in6 sin6;
 #endif
 #ifdef INET
 	struct sctp_ipv4addr_param addr4_store;
-	struct sockaddr_in sin;
 #endif
-	struct sockaddr *sa;
 	uint32_t vrf_id;
 
 	SCTPDBG(SCTP_DEBUG_ASCONF2, "processing init-ack addresses\n");
@@ -2809,25 +2807,6 @@ sctp_process_initack_addresses(struct sctp_tcb *stcb, struct mbuf *m,
 	if ((offset + sizeof(struct sctp_paramhdr)) > length) {
 		return;
 	}
-	/* init the addresses */
-#ifdef INET6
-	bzero(&sin6, sizeof(sin6));
-	sin6.sin6_family = AF_INET6;
-#ifdef HAVE_SIN6_LEN
-	sin6.sin6_len = sizeof(sin6);
-#endif
-	sin6.sin6_port = stcb->rport;
-#endif
-
-#ifdef INET
-	bzero(&sin, sizeof(sin));
-	sin.sin_family = AF_INET;
-#ifdef HAVE_SIN_LEN
-	sin.sin_len = sizeof(sin);
-#endif
-	sin.sin_port = stcb->rport;
-#endif
-
 	/* go through the addresses in the init-ack */
 	ph = (struct sctp_paramhdr *)
 	     sctp_m_getptr(m, offset, sizeof(struct sctp_paramhdr),
@@ -2850,9 +2829,13 @@ sctp_process_initack_addresses(struct sctp_tcb *stcb, struct mbuf *m,
 			    a6p == NULL) {
 				return;
 			}
-			memcpy(&sin6.sin6_addr, a6p->addr,
-			    sizeof(struct in6_addr));
-			sa = (struct sockaddr *)&sin6;
+			memset(&store, 0, sizeof(union sctp_sockstore));
+			store.sin6.sin6_family = AF_INET6;
+#ifdef HAVE_SIN6_LEN
+			store.sin6.sin6_len = sizeof(struct sockaddr_in6);
+#endif
+			store.sin6.sin6_port = stcb->rport;
+			memcpy(&store.sin6.sin6_addr, a6p->addr, sizeof(struct in6_addr));
 			break;
 		}
 #endif
@@ -2869,8 +2852,13 @@ sctp_process_initack_addresses(struct sctp_tcb *stcb, struct mbuf *m,
 			    a4p == NULL) {
 				return;
 			}
-			sin.sin_addr.s_addr = a4p->addr;
-			sa = (struct sockaddr *)&sin;
+			memset(&store, 0, sizeof(union sctp_sockstore));
+			store.sin.sin_family = AF_INET;
+#ifdef HAVE_SIN_LEN
+			store.sin.sin_len = sizeof(struct sockaddr_in);
+#endif
+			store.sin.sin_port = stcb->rport;
+			store.sin.sin_addr.s_addr = a4p->addr;
 			break;
 		}
 #endif
@@ -2884,7 +2872,7 @@ sctp_process_initack_addresses(struct sctp_tcb *stcb, struct mbuf *m,
 		} else {
 			vrf_id = SCTP_DEFAULT_VRFID;
 		}
-		sctp_ifa = sctp_find_ifa_by_addr(sa, vrf_id,
+		sctp_ifa = sctp_find_ifa_by_addr(&store.sa, vrf_id,
 						 SCTP_ADDR_NOT_LOCKED);
 		if (sctp_ifa == NULL) {
 			/* address doesn't exist anymore */
@@ -2895,7 +2883,7 @@ sctp_process_initack_addresses(struct sctp_tcb *stcb, struct mbuf *m,
 			    SCTP_PCB_FLAGS_DO_ASCONF)) &&
 			    stcb->asoc.asconf_supported) {
 				/* queue an ASCONF DEL_IP_ADDRESS */
-				status = sctp_asconf_queue_sa_delete(stcb, sa);
+				status = sctp_asconf_queue_sa_delete(stcb, &store.sa);
 				/*
 				 * if queued ok, and in correct state, send
 				 * out the ASCONF.
@@ -2929,7 +2917,7 @@ next_addr:
 		if ((offset + sizeof(struct sctp_paramhdr)) > length)
 			return;
 		ph = (struct sctp_paramhdr *)sctp_m_getptr(m, offset,
-		    sizeof(struct sctp_paramhdr), (uint8_t *) & tmp_param);
+		    sizeof(struct sctp_paramhdr), (uint8_t *)&tmp_param);
 	} /* while */
 }
 
