@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 269945 2014-08-13 15:50:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 271221 2014-09-07 09:06:26Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7585,7 +7585,7 @@ sctp_local_addr_count(struct sctp_tcb *stcb)
 					if (ipv4_addr_legal) {
 						struct sockaddr_in *sin;
 
-						sin = (struct sockaddr_in *)&sctp_ifa->address.sa;
+						sin = &sctp_ifa->address.sin;
 						if (sin->sin_addr.s_addr == 0) {
 							/* skip unspecified addrs */
 							continue;
@@ -7615,7 +7615,7 @@ sctp_local_addr_count(struct sctp_tcb *stcb)
 #if defined(SCTP_EMBEDDED_V6_SCOPE) && !defined(SCTP_KAME)
 						struct sockaddr_in6 lsa6;
 #endif
-						sin6 = (struct sockaddr_in6 *)&sctp_ifa->address.sa;
+						sin6 = &sctp_ifa->address.sin6;
 						if (IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
 							continue;
 						}
