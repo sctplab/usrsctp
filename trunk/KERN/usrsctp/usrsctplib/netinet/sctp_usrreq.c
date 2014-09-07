@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 269945 2014-08-13 15:50:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 271221 2014-09-07 09:06:26Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1676,7 +1676,7 @@ sctp_fill_up_addresses_vrf(struct sctp_inpcb *inp,
 					if (ipv4_addr_legal) {
 						struct sockaddr_in *sin;
 
-						sin = (struct sockaddr_in *)&sctp_ifa->address.sa;
+						sin = &sctp_ifa->address.sin;
 						if (sin->sin_addr.s_addr == 0) {
 							/*
 							 * we skip unspecifed
@@ -1725,7 +1725,7 @@ sctp_fill_up_addresses_vrf(struct sctp_inpcb *inp,
 #if defined(SCTP_EMBEDDED_V6_SCOPE) && !defined(SCTP_KAME)
 						struct sockaddr_in6 lsa6;
 #endif
-						sin6 = (struct sockaddr_in6 *)&sctp_ifa->address.sa;
+						sin6 = &sctp_ifa->address.sin6;
 						if (IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
 							/*
 							 * we skip unspecifed
@@ -8215,7 +8215,7 @@ sctp_ingetaddr(struct socket *so, struct mbuf *nam)
 			if (laddr->ifa->address.sa.sa_family == AF_INET) {
 				struct sockaddr_in *sin_a;
 
-				sin_a = (struct sockaddr_in *)&laddr->ifa->address.sa;
+				sin_a = &laddr->ifa->address.sin;
 				sin->sin_addr = sin_a->sin_addr;
 				fnd = 1;
 				break;

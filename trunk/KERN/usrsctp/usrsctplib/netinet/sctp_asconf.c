@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 269858 2014-08-12 11:30:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 271221 2014-09-07 09:06:26Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -153,7 +153,7 @@ sctp_process_asconf_add_ip(struct sockaddr *src, struct sctp_asconf_paramhdr *ap
 {
 	struct sctp_nets *net;
 	struct mbuf *m_reply = NULL;
-	struct sockaddr_storage sa_store;
+	union sctp_sockstore store;
 	struct sctp_paramhdr *ph;
 	uint16_t param_type, aparam_length;
 #if defined(INET) || defined(INET6)
@@ -177,7 +177,7 @@ sctp_process_asconf_add_ip(struct sockaddr *src, struct sctp_asconf_paramhdr *ap
 #if defined(INET) || defined(INET6)
 	param_length = ntohs(ph->param_length);
 #endif
-	sa = (struct sockaddr *)&sa_store;
+	sa = &store.sa;
 	switch (param_type) {
 #ifdef INET
 	case SCTP_IPV4_ADDRESS:
@@ -186,7 +186,7 @@ sctp_process_asconf_add_ip(struct sockaddr *src, struct sctp_asconf_paramhdr *ap
 			return (NULL);
 		}
 		v4addr = (struct sctp_ipv4addr_param *)ph;
-		sin = (struct sockaddr_in *)&sa_store;
+		sin = &store.sin;
 		bzero(sin, sizeof(*sin));
 		sin->sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
@@ -211,7 +211,7 @@ sctp_process_asconf_add_ip(struct sockaddr *src, struct sctp_asconf_paramhdr *ap
 			return (NULL);
 		}
 		v6addr = (struct sctp_ipv6addr_param *)ph;
-		sin6 = (struct sockaddr_in6 *)&sa_store;
+		sin6 = &store.sin6;
 		bzero(sin6, sizeof(*sin6));
 		sin6->sin6_family = AF_INET6;
 #ifdef HAVE_SIN6_LEN
@@ -307,7 +307,7 @@ sctp_process_asconf_delete_ip(struct sockaddr *src,
 			      struct sctp_tcb *stcb, int response_required)
 {
 	struct mbuf *m_reply = NULL;
-	struct sockaddr_storage sa_store;
+	union sctp_sockstore store;
 	struct sctp_paramhdr *ph;
 	uint16_t param_type, aparam_length;
 #if defined(INET) || defined(INET6)
@@ -331,7 +331,7 @@ sctp_process_asconf_delete_ip(struct sockaddr *src,
 #if defined(INET) || defined(INET6)
 	param_length = ntohs(ph->param_length);
 #endif
-	sa = (struct sockaddr *)&sa_store;
+	sa = &store.sa;
 	switch (param_type) {
 #ifdef INET
 	case SCTP_IPV4_ADDRESS:
@@ -340,7 +340,7 @@ sctp_process_asconf_delete_ip(struct sockaddr *src,
 			return (NULL);
 		}
 		v4addr = (struct sctp_ipv4addr_param *)ph;
-		sin = (struct sockaddr_in *)&sa_store;
+		sin = &store.sin;
 		bzero(sin, sizeof(*sin));
 		sin->sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
@@ -362,7 +362,7 @@ sctp_process_asconf_delete_ip(struct sockaddr *src,
 			return (NULL);
 		}
 		v6addr = (struct sctp_ipv6addr_param *)ph;
-		sin6 = (struct sockaddr_in6 *)&sa_store;
+		sin6 = &store.sin6;
 		bzero(sin6, sizeof(*sin6));
 		sin6->sin6_family = AF_INET6;
 #ifdef HAVE_SIN6_LEN
@@ -443,7 +443,7 @@ sctp_process_asconf_set_primary(struct sockaddr *src,
 				struct sctp_tcb *stcb, int response_required)
 {
 	struct mbuf *m_reply = NULL;
-	struct sockaddr_storage sa_store;
+	union sctp_sockstore store;
 	struct sctp_paramhdr *ph;
 	uint16_t param_type, aparam_length;
 #if defined(INET) || defined(INET6)
@@ -466,7 +466,7 @@ sctp_process_asconf_set_primary(struct sockaddr *src,
 #if defined(INET) || defined(INET6)
 	param_length = ntohs(ph->param_length);
 #endif
-	sa = (struct sockaddr *)&sa_store;
+	sa = &store.sa;
 	switch (param_type) {
 #ifdef INET
 	case SCTP_IPV4_ADDRESS:
@@ -475,7 +475,7 @@ sctp_process_asconf_set_primary(struct sockaddr *src,
 			return (NULL);
 		}
 		v4addr = (struct sctp_ipv4addr_param *)ph;
-		sin = (struct sockaddr_in *)&sa_store;
+		sin = &store.sin;
 		bzero(sin, sizeof(*sin));
 		sin->sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
@@ -495,7 +495,7 @@ sctp_process_asconf_set_primary(struct sockaddr *src,
 			return (NULL);
 		}
 		v6addr = (struct sctp_ipv6addr_param *)ph;
-		sin6 = (struct sockaddr_in6 *)&sa_store;
+		sin6 = &store.sin6;
 		bzero(sin6, sizeof(*sin6));
 		sin6->sin6_family = AF_INET6;
 #ifdef HAVE_SIN6_LEN
@@ -1276,7 +1276,7 @@ sctp_asconf_queue_mgmt(struct sctp_tcb *stcb, struct sctp_ifa *ifa,
 	{
 		struct sockaddr_in6 *sin6;
 
-		sin6 = (struct sockaddr_in6 *)&ifa->address.sa;
+		sin6 = &ifa->address.sin6;
 		aa->ap.addrp.ph.param_type = SCTP_IPV6_ADDRESS;
 		aa->ap.addrp.ph.param_length = (sizeof(struct sctp_ipv6addr_param));
 		aa->ap.aph.ph.param_length = sizeof(struct sctp_asconf_paramhdr) +
@@ -1291,7 +1291,7 @@ sctp_asconf_queue_mgmt(struct sctp_tcb *stcb, struct sctp_ifa *ifa,
 	{
 		struct sockaddr_in *sin;
 
-		sin = (struct sockaddr_in *)&ifa->address.sa;
+		sin = &ifa->address.sin;
 		aa->ap.addrp.ph.param_type = SCTP_IPV4_ADDRESS;
 		aa->ap.addrp.ph.param_length = (sizeof(struct sctp_ipv4addr_param));
 		aa->ap.aph.ph.param_length = sizeof(struct sctp_asconf_paramhdr) +
@@ -1940,7 +1940,7 @@ sctp_addr_mgmt_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	{
 		struct sockaddr_in6 *sin6;
 
-		sin6 = (struct sockaddr_in6 *)&ifa->address.sin6;
+		sin6 = &ifa->address.sin6;
 		if (IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
 			/* we skip unspecifed addresses */
 			return;
@@ -1973,7 +1973,7 @@ sctp_addr_mgmt_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		    SCTP_IPV6_V6ONLY(inp6))
 			return;
 
-		sin = (struct sockaddr_in *)&ifa->address.sa;
+		sin = &ifa->address.sin;
 		if (sin->sin_addr.s_addr == 0) {
 			/* we skip unspecifed addresses */
 			return;
@@ -2131,7 +2131,7 @@ sctp_asconf_iterator_stcb(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				else
 					continue;
 			}
-			sin6 = (struct sockaddr_in6 *)&ifa->address.sin6;
+			sin6 = &ifa->address.sin6;
 			if (IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
 				/* we skip unspecifed addresses */
 				continue;
@@ -2167,7 +2167,7 @@ sctp_asconf_iterator_stcb(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			    SCTP_IPV6_V6ONLY(inp6))
 				continue;
 
-			sin = (struct sockaddr_in *)&ifa->address.sa;
+			sin = &ifa->address.sin;
 			if (sin->sin_addr.s_addr == 0) {
 				/* we skip unspecifed addresses */
 				continue;
@@ -2486,7 +2486,7 @@ sctp_find_valid_localaddr(struct sctp_tcb *stcb, int addr_locked)
 				if (stcb->asoc.scope.ipv4_addr_legal) {
 					struct sockaddr_in *sin;
 
-					sin = (struct sockaddr_in *)&sctp_ifa->address.sa;
+					sin = &sctp_ifa->address.sin;
 					if (sin->sin_addr.s_addr == 0) {
 						/* skip unspecifed addresses */
 						continue;
@@ -2520,7 +2520,7 @@ sctp_find_valid_localaddr(struct sctp_tcb *stcb, int addr_locked)
 						continue;
 					}
 
-					sin6 = (struct sockaddr_in6 *)&sctp_ifa->address.sa;
+					sin6 = &sctp_ifa->address.sin6;
 					if (IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
 						/* we skip unspecifed addresses */
 						continue;
@@ -3141,7 +3141,7 @@ sctp_check_address_list_all(struct sctp_tcb *stcb, struct mbuf *m, int offset,
 			switch (sctp_ifa->address.sa.sa_family) {
 #ifdef INET
 			case AF_INET:
-				sin = (struct sockaddr_in *)&sctp_ifa->address.sin;
+				sin = &sctp_ifa->address.sin;
 #if defined(__FreeBSD__)
 				if (prison_check_ip4(stcb->sctp_ep->ip_inp.inp.inp_cred,
 				                     &sin->sin_addr) != 0) {
@@ -3157,7 +3157,7 @@ sctp_check_address_list_all(struct sctp_tcb *stcb, struct mbuf *m, int offset,
 #endif
 #ifdef INET6
 			case AF_INET6:
-				sin6 = (struct sockaddr_in6 *)&sctp_ifa->address.sin6;
+				sin6 = &sctp_ifa->address.sin6;
 #if defined(__FreeBSD__)
 				if (prison_check_ip6(stcb->sctp_ep->ip_inp.inp.inp_cred,
 				                     &sin6->sin6_addr) != 0) {

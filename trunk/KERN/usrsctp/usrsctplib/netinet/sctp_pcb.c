@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 271209 2014-09-06 20:03:24Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 271221 2014-09-07 09:06:26Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -713,7 +713,7 @@ sctp_add_addr_to_vrf(uint32_t vrf_id, void *ifn, uint32_t ifn_index,
 	{
 		struct sockaddr_in *sin;
 
-		sin = (struct sockaddr_in *)&sctp_ifap->address.sin;
+		sin = &sctp_ifap->address.sin;
 		if (SCTP_IFN_IS_IFT_LOOP(sctp_ifap->ifn_p) ||
 		    (IN4_ISLOOPBACK_ADDRESS(&sin->sin_addr))) {
 			sctp_ifap->src_is_loop = 1;
@@ -733,7 +733,7 @@ sctp_add_addr_to_vrf(uint32_t vrf_id, void *ifn, uint32_t ifn_index,
 		/* ok to use deprecated addresses? */
 		struct sockaddr_in6 *sin6;
 
-		sin6 = (struct sockaddr_in6 *)&sctp_ifap->address.sin6;
+		sin6 = &sctp_ifap->address.sin6;
 		if (SCTP_IFN_IS_IFT_LOOP(sctp_ifap->ifn_p) ||
 		    (IN6_IS_ADDR_LOOPBACK(&sin6->sin6_addr))) {
 			sctp_ifap->src_is_loop = 1;
@@ -1097,7 +1097,7 @@ sctp_does_stcb_own_this_addr(struct sctp_tcb *stcb, struct sockaddr *to)
 			{
 				struct sockaddr_in *sin, *rsin;
 
-				sin = (struct sockaddr_in *)&laddr->ifa->address.sin;
+				sin = &laddr->ifa->address.sin;
 				rsin = (struct sockaddr_in *)to;
 				if (sin->sin_addr.s_addr == rsin->sin_addr.s_addr) {
 					SCTP_IPI_ADDR_RUNLOCK();
@@ -1111,7 +1111,7 @@ sctp_does_stcb_own_this_addr(struct sctp_tcb *stcb, struct sockaddr *to)
 			{
 				struct sockaddr_in6 *sin6, *rsin6;
 
-				sin6 = (struct sockaddr_in6 *)&laddr->ifa->address.sin6;
+				sin6 = &laddr->ifa->address.sin6;
 				rsin6 = (struct sockaddr_in6 *)to;
 				if (SCTP6_ARE_ADDR_EQUAL(sin6, rsin6)) {
 					SCTP_IPI_ADDR_RUNLOCK();
@@ -1126,7 +1126,7 @@ sctp_does_stcb_own_this_addr(struct sctp_tcb *stcb, struct sockaddr *to)
 			{
 				struct sockaddr_conn *sconn, *rsconn;
 
-				sconn = (struct sockaddr_conn *)&laddr->ifa->address.sconn;
+				sconn = &laddr->ifa->address.sconn;
 				rsconn = (struct sockaddr_conn *)to;
 				if (sconn->sconn_addr == rsconn->sconn_addr) {
 					SCTP_IPI_ADDR_RUNLOCK();
@@ -2680,7 +2680,7 @@ sctp_findassociation_ep_asconf(struct mbuf *m, int offset,
                                struct sctp_inpcb **inp_p, struct sctp_nets **netp, uint32_t vrf_id)
 {
 	struct sctp_tcb *stcb;
-	struct sockaddr_storage remote_store;
+	union sctp_sockstore remote_store;
 	struct sctp_paramhdr parm_buf, *phdr;
 	int ptype;
 	int zero_address = 0;
@@ -2719,7 +2719,7 @@ sctp_findassociation_ep_asconf(struct mbuf *m, int offset,
 				__FUNCTION__);
 			return (NULL);
 		}
-		sin6 = (struct sockaddr_in6 *)&remote_store;
+		sin6 = &remote_store.sin6;
 		sin6->sin6_family = AF_INET6;
 #ifdef HAVE_SIN6_LEN
 		sin6->sin6_len = sizeof(*sin6);
@@ -2748,7 +2748,7 @@ sctp_findassociation_ep_asconf(struct mbuf *m, int offset,
 				__FUNCTION__);
 			return (NULL);
 		}
-		sin = (struct sockaddr_in *)&remote_store;
+		sin = &remote_store.sin;
 		sin->sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
 		sin->sin_len = sizeof(*sin);
@@ -2773,7 +2773,7 @@ sctp_findassociation_ep_asconf(struct mbuf *m, int offset,
 		}
 	} else {
 		stcb = sctp_findassociation_ep_addr(inp_p,
-		    (struct sockaddr *)&remote_store, netp,
+		    &remote_store.sa, netp,
 		    dst, NULL);
 	}
 	return (stcb);
@@ -3701,42 +3701,27 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		 * too (before adding).
 		 */
 		struct sctp_ifa *ifa;
-		struct sockaddr_storage store_sa;
+		union sctp_sockstore store;
 
-		memset(&store_sa, 0, sizeof(store_sa));
+		memset(&store, 0, sizeof(store));
 		switch (addr->sa_family) {
 #ifdef INET
 		case AF_INET:
-		{
-			struct sockaddr_in *sin;
-
-			sin = (struct sockaddr_in *)&store_sa;
-			memcpy(sin, addr, sizeof(struct sockaddr_in));
-			sin->sin_port = 0;
+			memcpy(&store.sin, addr, sizeof(struct sockaddr_in));
+			store.sin.sin_port = 0;
 			break;
-		}
 #endif
 #ifdef INET6
 		case AF_INET6:
-		{
-			struct sockaddr_in6 *sin6;
-
-			sin6 = (struct sockaddr_in6 *)&store_sa;
-			memcpy(sin6, addr, sizeof(struct sockaddr_in6));
-			sin6->sin6_port = 0;
+			memcpy(&store.sin6, addr, sizeof(struct sockaddr_in6));
+			store.sin6.sin6_port = 0;
 			break;
-		}
 #endif
 #if defined(__Userspace__)
 		case AF_CONN:
-		{
-			struct sockaddr_conn *sconn;
-
-			sconn = (struct sockaddr_conn *)&store_sa;
-			memcpy(sconn, addr, sizeof(struct sockaddr_conn));
-			sconn->sconn_port = 0;
+			memcpy(&store.sconn, addr, sizeof(struct sockaddr_conn));
+			store.sconn.sconn_port = 0;
 			break;
-		}
 #endif
 		default:
 			break;
@@ -3753,7 +3738,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 			 * O/S's will pass things in via the
 			 * sctp_ifap argument (Panda).
 			 */
-			ifa = sctp_find_ifa_by_addr((struct sockaddr *)&store_sa,
+			ifa = sctp_find_ifa_by_addr(&store.sa,
 						    vrf_id, SCTP_ADDR_NOT_LOCKED);
 		}
 		if (ifa == NULL) {
