@@ -91,7 +91,7 @@ getwintimeofday(struct timeval *tv)
 
 	ftime(&tb);
 	tv->tv_sec = (long)tb.time;
- 	tv->tv_usec = (long)(tb.millitm) * 1000L;
+	tv->tv_usec = (long)(tb.millitm) * 1000L;
 }
 
 int
@@ -138,7 +138,7 @@ Win_getifaddrs(struct ifaddrs** interfaces)
 			SCTPDBG(SCTP_DEBUG_USR, "Can't allocate memory\n");
 			return (-1);
 		}
-		ifa->ifa_name = strdup(pAdapt->AdapterName);
+		ifa->ifa_name = _strdup(pAdapt->AdapterName);
 		ifa->ifa_flags = pAdapt->Flags;
 		ifa->ifa_addr = (struct sockaddr *)addr;
 		memcpy(addr, &pAdapt->FirstUnicastAddress->Address.lpSockaddr, sizeof(struct sockaddr_in));
@@ -172,7 +172,7 @@ Win_getifaddrs(struct ifaddrs** interfaces)
 				SCTPDBG(SCTP_DEBUG_USR, "Can't allocate memory\n");
 				return (-1);
 			}
-			ifa->ifa_name = strdup(pAdapt->AdapterName);
+			ifa->ifa_name = _strdup(pAdapt->AdapterName);
 			ifa->ifa_flags = pAdapt->Flags;
 			ifa->ifa_addr = (struct sockaddr *)addr6;
 			memcpy(addr6, &pAdapt->FirstUnicastAddress->Address.lpSockaddr, sizeof(struct sockaddr_in6));
