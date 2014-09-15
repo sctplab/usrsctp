@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 269945 2014-08-13 15:50:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 271643 2014-09-15 19:38:34Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_STRUCTS_H_
@@ -468,8 +468,8 @@ TAILQ_HEAD(sctpchunk_listhead, sctp_tmit_chunk);
 #define CHUNK_FLAGS_FRAGMENT_OK	        0x0100
 
 struct chk_id {
-	uint16_t id;
-	uint16_t can_take_data;
+	uint8_t id;
+	uint8_t can_take_data;
 };
 
 
