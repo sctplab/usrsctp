@@ -355,7 +355,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 					continue;
 				}
 				ifa = (struct ifaddrs*)malloc(sizeof(struct ifaddrs));
-				ifa->ifa_name = strdup(pAdapt->AdapterName);
+				ifa->ifa_name = _strdup(pAdapt->AdapterName);
 				ifa->ifa_flags = pAdapt->Flags;
 				ifa->ifa_addr = (struct sockaddr *)malloc(sizeof(struct sockaddr_in));
 				memcpy(ifa->ifa_addr, pUnicast->Address.lpSockaddr, sizeof(struct sockaddr_in));
@@ -403,7 +403,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 		if (pAdapt->IfType == IF_TYPE_IEEE80211 || pAdapt->IfType == IF_TYPE_ETHERNET_CSMACD) {
 			for (pUnicast = pAdapt->FirstUnicastAddress; pUnicast; pUnicast = pUnicast->Next) {
 				ifa = (struct ifaddrs*)malloc(sizeof(struct ifaddrs));
-				ifa->ifa_name = strdup(pAdapt->AdapterName);
+				ifa->ifa_name = _strdup(pAdapt->AdapterName);
 				ifa->ifa_flags = pAdapt->Flags;
 				ifa->ifa_addr = (struct sockaddr *)malloc(sizeof(struct sockaddr_in6));
 				memcpy(ifa->ifa_addr, pUnicast->Address.lpSockaddr, sizeof(struct sockaddr_in6));
@@ -745,7 +745,7 @@ sctp_addr_change(struct ifaddr *ifa, int cmd)
 		                       ifa->ifa_ifp->if_index,
 		                       ifa->ifa_ifp->if_xname);
 #endif
-		                      
+
 		/* We don't bump refcount here so when it completes
 		 * the final delete will happen.
 		 */
