@@ -3157,7 +3157,7 @@ usrsctp_dumppacket(void *buf, size_t len, int outbound)
 	strncpy_s(dump_buf + pos, strlen(HEADER) + 1, HEADER, strlen(HEADER));
 #else
 	strcpy(dump_buf + pos, HEADER);
-#endif	
+#endif
 	pos += strlen(HEADER);
 	packet = (char *)buf;
 	for (i = 0; i < len; i++) {
