@@ -90,8 +90,8 @@ getwintimeofday(struct timeval *tv)
 	struct timeb tb;
 
 	ftime(&tb);
-	tv->tv_sec = tb.time;
- 	tv->tv_usec = tb.millitm * 1000;
+	tv->tv_sec = (long)tb.time;
+ 	tv->tv_usec = (long)(tb.millitm) * 1000L;
 }
 
 int
@@ -215,11 +215,11 @@ win_if_nametoindex(const char *ifname)
 }
 
 #if WINVER < 0x0600
-/* These functions are written based on the code at 
+/* These functions are written based on the code at
  * http://www.cs.wustl.edu/~schmidt/win32-cv-1.html
  * Therefore, for the rest of the file the following applies:
  *
- * 
+ *
  * Copyright and Licensing Information for ACE(TM), TAO(TM), CIAO(TM),
  * DAnCE(TM), and CoSMIC(TM)
  *
@@ -326,7 +326,7 @@ win_if_nametoindex(const char *ifname)
  * 22. http://www.dre.vanderbilt.edu/~schmidt/
  * 23. http://www.cs.wustl.edu/ACE.html
  */
- 
+
 void
 InitializeXPConditionVariable(userland_cond_t *cv)
 {
@@ -359,8 +359,7 @@ SleepXPConditionVariable(userland_cond_t *cv, userland_mutex_t *mtx)
 	}
 	EnterCriticalSection(&cv->waiters_count_lock);
 	cv->waiters_count--;
-	last_waiter = 
-		result == (C_SIGNAL + C_BROADCAST && (cv->waiters_count == 0));
+	last_waiter = result == (C_SIGNAL + C_BROADCAST && (cv->waiters_count == 0));
 	LeaveCriticalSection(&cv->waiters_count_lock);
 	if (last_waiter)
 		ResetEvent(cv->events_[C_BROADCAST]);
