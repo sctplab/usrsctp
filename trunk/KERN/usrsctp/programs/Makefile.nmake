@@ -28,7 +28,7 @@
 # SUCH DAMAGE.
 #
 
-CFLAGS=/W3 /I..\usrsctplib
+CFLAGS=/W3 /WX /I..\usrsctplib
 
 CVARSDLL=-DINET -DINET6
 
