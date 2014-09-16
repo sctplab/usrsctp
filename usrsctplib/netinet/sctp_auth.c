@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 269858 2014-08-12 11:30:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 271673 2014-09-16 14:20:33Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -633,7 +633,7 @@ sctp_copy_skeylist(const struct sctp_keyhead *src, struct sctp_keyhead *dest)
 
 
 sctp_hmaclist_t *
-sctp_alloc_hmaclist(uint8_t num_hmacs)
+sctp_alloc_hmaclist(uint16_t num_hmacs)
 {
 	sctp_hmaclist_t *new_list;
 	int alloc_size;
@@ -1464,8 +1464,8 @@ sctp_auth_get_cookie_params(struct sctp_tcb *stcb, struct mbuf *m,
 			p_random = (struct sctp_auth_random *)phdr;
 			random_len = plen - sizeof(*p_random);
 		} else if (ptype == SCTP_HMAC_LIST) {
-			int num_hmacs;
-			int i;
+			uint16_t num_hmacs;
+			uint16_t i;
 
 			if (plen > sizeof(hmacs_store))
 				break;

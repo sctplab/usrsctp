@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.h 269858 2014-08-12 11:30:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.h 271673 2014-09-16 14:20:33Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_AUTH_H_
@@ -149,7 +149,7 @@ extern void sctp_auth_key_release(struct sctp_tcb *stcb, uint16_t keyid,
 
 
 /* hmac list handling */
-extern sctp_hmaclist_t *sctp_alloc_hmaclist(uint8_t num_hmacs);
+extern sctp_hmaclist_t *sctp_alloc_hmaclist(uint16_t num_hmacs);
 extern void sctp_free_hmaclist(sctp_hmaclist_t *list);
 extern int sctp_auth_add_hmacid(sctp_hmaclist_t *list, uint16_t hmac_id);
 extern sctp_hmaclist_t *sctp_copy_hmaclist(sctp_hmaclist_t *list);
