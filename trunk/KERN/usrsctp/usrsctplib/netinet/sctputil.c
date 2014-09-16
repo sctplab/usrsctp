@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 271221 2014-09-07 09:06:26Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 271674 2014-09-16 14:39:24Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2524,8 +2524,8 @@ sctp_calculate_rto(struct sctp_tcb *stcb,
 	/* store the current RTT in us */
 	net->rtt = (uint64_t)1000000 * (uint64_t)now.tv_sec +
 	           (uint64_t)now.tv_usec;
-	/* computer rtt in ms */
-	rtt = net->rtt / 1000;
+	/* compute rtt in ms */
+	rtt = (int32_t)(net->rtt / 1000);
 	if ((asoc->cc_functions.sctp_rtt_calculated) && (rtt_from_sack == SCTP_RTT_FROM_DATA)) {
 		/* Tell the CC module that a new update has just occurred from a sack */
 		(*asoc->cc_functions.sctp_rtt_calculated)(stcb, net, &now);
