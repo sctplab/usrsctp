@@ -106,7 +106,7 @@ sctp_init(void)
 	/* Initialize and modify the sysctled variables */
 	sctp_init_sysctls();
 #if defined(__Userspace__)
-#if defined(__Userspace_os_Windows)
+#if defined(__Userspace_os_Windows) || defined(__Userspace_os_NaCl)
 	srand((unsigned int)time(NULL));
 #else
 	srandom(getpid()); /* so inp->sctp_ep.random_numbers are truly random... */
