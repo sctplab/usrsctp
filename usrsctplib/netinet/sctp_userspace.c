@@ -35,7 +35,7 @@
 #endif
 #include <netinet/sctp_os_userspace.h>
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__Userspace_os_NaCl)
 int
 sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)
 {
@@ -52,6 +52,14 @@ sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)
 	}
 	close(fd);
 	return ifr.ifr_mtu;
+}
+#endif
+
+#if defined(__Userspace_os_NaCl)
+int
+sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)
+{
+	return 1280;
 }
 #endif
 

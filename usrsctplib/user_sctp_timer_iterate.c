@@ -31,6 +31,9 @@
 #include <unistd.h>
 #include <pthread.h>
 #endif
+#if defined(__Userspace_os_NaCl)
+#include <sys/select.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
