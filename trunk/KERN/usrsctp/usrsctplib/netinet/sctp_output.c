@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 271670 2014-09-16 10:57:55Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 272571 2014-10-05 20:30:49Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7199,13 +7199,6 @@ sctp_sendall_completes(void *ptr, uint32_t val SCTP_UNUSED)
 	sctp_m_freem(ca->m);
 	SCTP_FREE(ca, SCTP_M_COPYAL);
 }
-
-
-#define	MC_ALIGN(m, len) do {						\
-	SCTP_BUF_RESV_UF(m, ((MCLBYTES - (len)) & ~(sizeof(long) - 1));	\
-} while (0)
-
-
 
 static struct mbuf *
 sctp_copy_out_all(struct uio *uio, int len)
