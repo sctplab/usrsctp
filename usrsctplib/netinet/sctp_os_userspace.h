@@ -270,11 +270,6 @@ typedef char* caddr_t;
 #define BYTE_ORDER LITTLE_ENDIAN
 #endif
 
-int Win_getifaddrs(struct ifaddrs**);
-#define getifaddrs(interfaces)  (int)Win_getifaddrs(interfaces)
-int win_if_nametoindex(const char *);
-#define if_nametoindex(x) win_if_nametoindex(x)
-
 #else /* !defined(Userspace_os_Windows) */
 #include <sys/cdefs.h> /* needed? added from old __FreeBSD__ */
 #include <sys/socket.h>
@@ -414,6 +409,13 @@ struct ifreq {
 #define ifr_wake_flags  ifr_ifru.ifru_wake_flags
 };
 
+#endif
+
+#if defined(__Userspace_os_Windows)
+int Win_getifaddrs(struct ifaddrs**);
+#define getifaddrs(interfaces)  (int)Win_getifaddrs(interfaces)
+int win_if_nametoindex(const char *);
+#define if_nametoindex(x) win_if_nametoindex(x)
 #endif
 
 #define mtx_lock(arg1)
