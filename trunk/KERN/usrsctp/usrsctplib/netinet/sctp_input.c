@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 271230 2014-09-07 18:05:37Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 272841 2014-10-09 20:08:12Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4202,8 +4202,10 @@ sctp_handle_stream_reset(struct sctp_tcb *stcb, struct mbuf *m, int offset,
 	if (chk == NULL) {
 		return (ret_code);
 	}
+	chk->copy_by_ref = 0;
 	chk->rec.chunk_id.id = SCTP_STREAM_RESET;
 	chk->rec.chunk_id.can_take_data = 0;
+	chk->flags = 0;
 	chk->asoc = &stcb->asoc;
 	chk->no_fr_allowed = 0;
 	chk->book_size = chk->send_size = sizeof(struct sctp_chunkhdr);
