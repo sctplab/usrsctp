@@ -42,7 +42,6 @@ libusrsctp_la_SOURCES  = user_atomic.h \
                          user_queue.h \
                          user_recv_thread.c user_recv_thread.h \
                          user_route.h \
-                         user_sctp_timer_iterate.c \
                          user_socket.c \
                          user_socketvar.h \
                          user_uma.h \
