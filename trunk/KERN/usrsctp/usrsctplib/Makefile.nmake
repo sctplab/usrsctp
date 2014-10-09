@@ -41,7 +41,6 @@ usrsctp_OBJECTS = \
 	user_environment.obj \
 	user_mbuf.obj \
 	user_recv_thread.obj \
-	user_sctp_timer_iterate.obj \
 	user_socket.obj \
 	sctp_asconf.obj \
 	sctp_auth.obj \
@@ -114,9 +113,6 @@ user_mbuf.obj  : user_mbuf.c $(usrsctp_HEADERS)
 
 user_recv_thread.obj: user_recv_thread.c $(usrsctp_HEADERS)
 	cl $(CVARSDLL) $(CFLAGS) -c user_recv_thread.c
-
-user_sctp_timer_iterate.obj : user_sctp_timer_iterate.c $(usrsctp_HEADERS)
-	cl $(CVARSDLL) $(CFLAGS) -c user_sctp_timer_iterate.c
 
 user_socket.obj : user_socket.c $(usrsctp_HEADERS)
 	cl $(CVARSDLL) $(CFLAGS) -c user_socket.c
