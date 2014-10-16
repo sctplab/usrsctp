@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_header.h 269376 2014-08-01 12:42:37Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_header.h 273168 2014-10-16 15:36:04Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_HEADER_H_
@@ -468,6 +468,11 @@ struct sctp_pktdrop_chunk {
 
 /**********STREAM RESET STUFF ******************/
 
+struct sctp_stream_reset_request {
+	struct sctp_paramhdr ph;
+	uint32_t request_seq;
+} SCTP_PACKED;
+
 struct sctp_stream_reset_out_request {
 	struct sctp_paramhdr ph;
 	uint32_t request_seq;	/* monotonically increasing seq no */
@@ -481,7 +486,6 @@ struct sctp_stream_reset_in_request {
 	uint32_t request_seq;
 	uint16_t list_of_streams[];	/* if not all list of streams */
 } SCTP_PACKED;
-
 
 struct sctp_stream_reset_tsn_request {
 	struct sctp_paramhdr ph;
