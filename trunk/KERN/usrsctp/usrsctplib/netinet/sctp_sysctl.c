@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 273773 2014-10-28 12:00:39Z hselasky $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 273925 2014-11-01 10:35:45Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -851,11 +851,11 @@ sctp_sysctl_handle_stats(SYSCTL_HANDLER_ARGS)
 	int error;
 #if defined(__FreeBSD__)
 #if defined(SMP) && defined(SCTP_USE_PERCPU_STAT)
-	struct sctpstat sb_temp;
 	struct sctpstat *sarry;
 	struct sctpstat sb;
 	int cpu;
 #endif
+	struct sctpstat sb_temp;
 #endif
 
 #if defined (__APPLE__)
@@ -867,15 +867,16 @@ sctp_sysctl_handle_stats(SYSCTL_HANDLER_ARGS)
 		return (EINVAL);
 	}
 #if defined(__FreeBSD__)
-#if defined(SMP) && defined(SCTP_USE_PERCPU_STAT)
-	memset(&sb, 0, sizeof(sb));
-	memset(&sb_temp, 0, sizeof(sb_temp));
+	memset(&sb_temp, 0, sizeof(struct sctpstat));
 
 	if (req->newptr != NULL) {
-		error = SYSCTL_IN(req, &sb_temp, sizeof(sb_temp));
-		if (error != 0)
+		error = SYSCTL_IN(req, &sb_temp, sizeof(struct sctpstat));
+		if (error != 0) {
 			return (error);
+		}
 	}
+#if defined(SMP) && defined(SCTP_USE_PERCPU_STAT)
+	memset(&sb, 0, sizeof(sb));
 	for (cpu = 0; cpu < mp_maxid; cpu++) {
 		sarry = &SCTP_BASE_STATS[cpu];
 		if (sarry->sctps_discontinuitytime.tv_sec > sb.sctps_discontinuitytime.tv_sec) {
@@ -1003,15 +1004,19 @@ sctp_sysctl_handle_stats(SYSCTL_HANDLER_ARGS)
 		sb.sctps_send_burst_avoid += sarry->sctps_send_burst_avoid;
 		sb.sctps_send_cwnd_avoid += sarry->sctps_send_cwnd_avoid;
 		sb.sctps_fwdtsn_map_over += sarry->sctps_fwdtsn_map_over;
-		if (req->newptr != NULL)
+		if (req->newptr != NULL) {
 			memcpy(sarry, &sb_temp, sizeof(struct sctpstat));
+		}
 	}
 	error = SYSCTL_OUT(req, &sb, sizeof(struct sctpstat));
 #else
-	error = SYSCTL_IN(req, &SCTP_BASE_STATS, sizeof(struct sctpstat));
-	if (error)
-		return (error);
 	error = SYSCTL_OUT(req, &SCTP_BASE_STATS, sizeof(struct sctpstat));
+	if (error != 0) {
+		return (error);
+	}
+	if (req->newptr != NULL) {
+		memcpy(&SCTP_BASE_STATS, &sb_temp, sizeof(struct sctpstat));
+	}
 #endif
 #else
 	error = SYSCTL_OUT(req, &SCTP_BASE_STATS, sizeof(struct sctpstat));
