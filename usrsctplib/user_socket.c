@@ -1936,7 +1936,7 @@ usrsctp_get_non_blocking(struct socket *so)
 		return (-1);
 	}
 	SOCK_LOCK(so);
-	if (so->so_state | SS_NBIO) {
+	if (so->so_state & SS_NBIO) {
 		result = 1;
 	} else {
 		result = 0;
