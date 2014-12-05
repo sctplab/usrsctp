@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 275427 2014-12-02 20:29:29Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 275483 2014-12-04 21:17:50Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4101,7 +4101,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
     uint16_t port,
     union sctp_sockstore *over_addr,
 #if defined(__FreeBSD__)
-    uint8_t use_mflowid, uint32_t mflowid,
+    uint8_t mflowtype, uint32_t mflowid,
 #endif
 #if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
     int so_locked SCTP_UNUSED
@@ -4203,19 +4203,12 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		m = newm;
 #if defined(__FreeBSD__)
 		if (net != NULL) {
-#ifdef INVARIANTS
-			if (net->flowidset == 0) {
-				panic("Flow ID not set");
-			}
-#endif
 			m->m_pkthdr.flowid = net->flowid;
-			m->m_flags |= M_FLOWID;
+			M_HASHTYPE_SET(m, net->flowtype);
 		} else {
-			if (use_mflowid != 0) {
-				m->m_pkthdr.flowid = mflowid;
-				m->m_flags |= M_FLOWID;
-			}
-		}
+			m->m_pkthdr.flowid = mflowid;
+			M_HASHTYPE_SET(m, mflowtype);
+ 		}
 #endif
 		packet_length = sctp_calculate_len(m);
 		ip = mtod(m, struct ip *);
@@ -4564,19 +4557,12 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		m = newm;
 #if defined(__FreeBSD__)
 		if (net != NULL) {
-#ifdef INVARIANTS
-			if (net->flowidset == 0) {
-				panic("Flow ID not set");
-			}
-#endif
 			m->m_pkthdr.flowid = net->flowid;
-			m->m_flags |= M_FLOWID;
+			M_HASHTYPE_SET(m, net->flowtype);
 		} else {
-			if (use_mflowid != 0) {
-				m->m_pkthdr.flowid = mflowid;
-				m->m_flags |= M_FLOWID;
-			}
-		}
+			m->m_pkthdr.flowid = mflowid;
+			M_HASHTYPE_SET(m, mflowtype);
+ 		}
 #endif
 		packet_length = sctp_calculate_len(m);
 
@@ -5843,7 +5829,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
                        struct sockaddr *src, struct sockaddr *dst,
                        struct sctphdr *sh, struct sctp_init_chunk *init_chk,
 #if defined(__FreeBSD__)
-		       uint8_t use_mflowid, uint32_t mflowid,
+		       uint8_t mflowtype, uint32_t mflowid,
 #endif
                        uint32_t vrf_id, uint16_t port, int hold_inp_lock)
 {
@@ -5899,7 +5885,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		                             "Address added");
 		sctp_send_abort(init_pkt, iphlen, src, dst, sh, 0, op_err,
 #if defined(__FreeBSD__)
-		                use_mflowid, mflowid,
+		                mflowtype, mflowid,
 #endif
 		                vrf_id, port);
 		return;
@@ -5920,7 +5906,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		sctp_send_abort(init_pkt, iphlen, src, dst, sh,
 				init_chk->init.initiate_tag, op_err,
 #if defined(__FreeBSD__)
-		                use_mflowid, mflowid,
+		                mflowtype, mflowid,
 #endif
 		                vrf_id, port);
 		return;
@@ -6539,7 +6525,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	                                 inp->sctp_lport, sh->src_port, init_chk->init.initiate_tag,
 	                                 port, over_addr,
 #if defined(__FreeBSD__)
-	                                 use_mflowid, mflowid,
+	                                 mflowtype, mflowid,
 #endif
 	                                 SCTP_SO_NOT_LOCKED);
 	SCTP_STAT_INCR_COUNTER64(sctps_outcontrolchunks);
@@ -11446,7 +11432,7 @@ static void
 sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
                    struct sctphdr *sh, uint32_t vtag,
                    uint8_t type, struct mbuf *cause,
-                   uint8_t use_mflowid, uint32_t mflowid,
+                   uint8_t mflowtype, uint32_t mflowid,
                    uint32_t vrf_id, uint16_t port)
 #else
 static void
@@ -11552,10 +11538,8 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 	SCTP_BUF_LEN(mout) = len;
 	SCTP_BUF_NEXT(mout) = cause;
 #if defined(__FreeBSD__)
-	if (use_mflowid != 0) {
-		mout->m_pkthdr.flowid = mflowid;
-		mout->m_flags |= M_FLOWID;
-	}
+	mout->m_pkthdr.flowid = mflowid;
+	M_HASHTYPE_SET(mout, mflowtype);
 #endif
 #ifdef INET
 	ip = NULL;
@@ -11843,13 +11827,13 @@ void
 sctp_send_shutdown_complete2(struct sockaddr *src, struct sockaddr *dst,
                              struct sctphdr *sh,
 #if defined(__FreeBSD__)
-                             uint8_t use_mflowid, uint32_t mflowid,
+                             uint8_t mflowtype, uint32_t mflowid,
 #endif
                              uint32_t vrf_id, uint16_t port)
 {
 	sctp_send_resp_msg(src, dst, sh, 0, SCTP_SHUTDOWN_COMPLETE, NULL,
 #if defined(__FreeBSD__)
-	                   use_mflowid, mflowid,
+	                   mflowtype, mflowid,
 #endif
 	                   vrf_id, port);
 }
@@ -12695,7 +12679,7 @@ void
 sctp_send_abort(struct mbuf *m, int iphlen, struct sockaddr *src, struct sockaddr *dst,
                 struct sctphdr *sh, uint32_t vtag, struct mbuf *cause,
 #if defined(__FreeBSD__)
-                uint8_t use_mflowid, uint32_t mflowid,
+                uint8_t mflowtype, uint32_t mflowid,
 #endif
                 uint32_t vrf_id, uint16_t port)
 {
@@ -12707,7 +12691,7 @@ sctp_send_abort(struct mbuf *m, int iphlen, struct sockaddr *src, struct sockadd
 	}
 	sctp_send_resp_msg(src, dst, sh, vtag, SCTP_ABORT_ASSOCIATION, cause,
 #if defined(__FreeBSD__)
-	                   use_mflowid, mflowid,
+	                   mflowtype, mflowid,
 #endif
 	                   vrf_id, port);
 	return;
@@ -12717,13 +12701,13 @@ void
 sctp_send_operr_to(struct sockaddr *src, struct sockaddr *dst,
                    struct sctphdr *sh, uint32_t vtag, struct mbuf *cause,
 #if defined(__FreeBSD__)
-                   uint8_t use_mflowid, uint32_t mflowid,
+                   uint8_t mflowtype, uint32_t mflowid,
 #endif
                    uint32_t vrf_id, uint16_t port)
 {
 	sctp_send_resp_msg(src, dst, sh, vtag, SCTP_OPERATION_ERROR, cause,
 #if defined(__FreeBSD__)
-	                   use_mflowid, mflowid,
+	                   mflowtype, mflowid,
 #endif
 	                   vrf_id, port);
 	return;

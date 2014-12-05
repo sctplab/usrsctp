@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 275427 2014-12-02 20:29:29Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 275483 2014-12-04 21:17:50Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2310,7 +2310,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
                   struct sctphdr *sh, struct sctp_inpcb *inp,
                   struct sctp_tcb *stcb, struct sctp_nets *net, uint32_t *high_tsn,
 #if defined(__FreeBSD__)
-                  uint8_t use_mflowid, uint32_t mflowid,
+                  uint8_t mflowtype, uint32_t mflowid,
 #endif
 		  uint32_t vrf_id, uint16_t port)
 {
@@ -2408,7 +2408,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 				sctp_abort_association(inp, stcb, m, iphlen,
 				                       src, dst, sh, op_err,
 #if defined(__FreeBSD__)
-				                       use_mflowid, mflowid,
+				                       mflowtype, mflowid,
 #endif
 				                       vrf_id, port);
 				return (2);
@@ -2425,7 +2425,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 				sctp_abort_association(inp, stcb, m, iphlen,
 				                       src, dst, sh, op_err,
 #if defined(__FreeBSD__)
-				                       use_mflowid, mflowid,
+				                       mflowtype, mflowid,
 #endif
 				                       vrf_id, port);
 				return (2);
@@ -2496,7 +2496,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 					                       src, dst,
 					                       sh, op_err,
 #if defined(__FreeBSD__)
-					                       use_mflowid, mflowid,
+					                       mflowtype, mflowid,
 #endif
 					                       vrf_id, port);
 					return (2);

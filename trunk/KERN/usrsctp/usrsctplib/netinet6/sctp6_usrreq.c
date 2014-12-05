@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 271221 2014-09-07 09:06:26Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 275483 2014-12-04 21:17:50Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -139,7 +139,7 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto)
 #endif
 #if defined(__FreeBSD__)
 	uint32_t mflowid;
-	uint8_t use_mflowid;
+	uint8_t mflowtype;
 #endif
 #if !(defined(__APPLE__) || defined (__FreeBSD__))
 	uint16_t port = 0;
@@ -214,14 +214,9 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto)
 	        m->m_pkthdr.csum_flags);
 #endif
 #if defined(__FreeBSD__)
-	if (m->m_flags & M_FLOWID) {
-		mflowid = m->m_pkthdr.flowid;
-		use_mflowid = 1;
-	} else {
-		mflowid = 0;
-		use_mflowid = 0;
-	}
-#endif
+	mflowid = m->m_pkthdr.flowid;
+	mflowtype = M_HASHTYPE_GET(m);
+ #endif
 	SCTP_STAT_INCR(sctps_recvpackets);
 	SCTP_STAT_INCR_COUNTER64(sctps_inpackets);
 	/* Get IP, SCTP, and first chunk header together in the first mbuf. */
@@ -262,12 +257,6 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto)
 	/* XXX: This code should also be used on Apple */
 #endif
 	if (in6_setscope(&dst.sin6_addr, m->m_pkthdr.rcvif, NULL) != 0) {
-		goto out;
-	}
-#endif
-#ifdef __FreeBSD__
-	if (faithprefix_p != NULL && (*faithprefix_p) (&dst.sin6_addr)) {
-		/* XXX send icmp6 host/port unreach? */
 		goto out;
 	}
 #endif
@@ -318,7 +307,7 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto)
 #endif
 	                             ecn_bits,
 #if defined(__FreeBSD__)
-	                             use_mflowid, mflowid,
+	                             mflowtype, mflowid,
 #endif
 	                             vrf_id, port);
  out:
