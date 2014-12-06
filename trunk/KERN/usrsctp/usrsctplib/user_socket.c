@@ -2562,6 +2562,7 @@ usrsctp_connectx(struct socket *so,
 				return (-1);
 			}
 #endif
+#ifdef INET
 			if (IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)at)->sin6_addr)) {
 				in6_sin6_2_sin((struct sockaddr_in *)cpto, (struct sockaddr_in6 *)at);
 				cpto = ((caddr_t)cpto + sizeof(struct sockaddr_in));
@@ -2571,6 +2572,11 @@ usrsctp_connectx(struct socket *so,
 				cpto = ((caddr_t)cpto + sizeof(struct sockaddr_in6));
 				len += sizeof(struct sockaddr_in6);
 			}
+#else
+			memcpy(cpto, at, sizeof(struct sockaddr_in6));
+			cpto = ((caddr_t)cpto + sizeof(struct sockaddr_in6));
+			len += sizeof(struct sockaddr_in6);
+#endif
 			at = (struct sockaddr *)((caddr_t)at + sizeof(struct sockaddr_in6));
 			break;
 #endif
