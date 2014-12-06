@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 275483 2014-12-04 21:17:50Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 275567 2014-12-06 20:00:08Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2881,7 +2881,16 @@ sctp_notify_peer_addr_change(struct sctp_tcb *stcb, uint32_t state,
 	switch (sa->sa_family) {
 #ifdef INET
 	case AF_INET:
+#ifdef INET6
+		if (sctp_is_feature_on(stcb->sctp_ep, SCTP_PCB_FLAGS_NEEDS_MAPPED_V4)) {
+			in6_sin_2_v4mapsin6((struct sockaddr_in *)sa,
+			                    (struct sockaddr_in6 *)&spc->spc_aaddr);
+		} else {
+			memcpy(&spc->spc_aaddr, sa, sizeof(struct sockaddr_in));
+		}
+#else
 		memcpy(&spc->spc_aaddr, sa, sizeof(struct sockaddr_in));
+#endif
 		break;
 #endif
 #ifdef INET6
@@ -5694,7 +5703,7 @@ sctp_sorecvmsg(struct socket *so,
 	 */
 	struct sctp_inpcb *inp = NULL;
 	int my_len = 0;
-	int cp_len = 0, error = 0;
+	int cp_len = 0, error = 0;	
 	struct sctp_queued_to_read *control = NULL, *ctl = NULL, *nxt = NULL;
 	struct mbuf *m = NULL;
 	struct sctp_tcb *stcb = NULL;
@@ -6202,76 +6211,50 @@ sctp_sorecvmsg(struct socket *so,
 		entry->flgs = control->sinfo_flags;
 	}
 #endif
-	if (fromlen && from) {
-#ifdef HAVE_SA_LEN
-		cp_len = min((size_t)fromlen, (size_t)control->whoFrom->ro._l_addr.sa.sa_len);
-#endif
+	if ((fromlen > 0) && (from != NULL)) {
+		union sctp_sockstore store;
+		size_t len;
+
 		switch (control->whoFrom->ro._l_addr.sa.sa_family) {
 #ifdef INET6
 			case AF_INET6:
-#ifndef HAVE_SA_LEN
-				cp_len = min((size_t)fromlen, sizeof(struct sockaddr_in6));
-#endif
-				((struct sockaddr_in6 *)from)->sin6_port = control->port_from;
+				len = sizeof(struct sockaddr_in6);
+				store.sin6 = control->whoFrom->ro._l_addr.sin6;
+				store.sin6.sin6_port = control->port_from;
 				break;
 #endif
 #ifdef INET
 			case AF_INET:
-#ifndef HAVE_SA_LEN
-				cp_len = min((size_t)fromlen, sizeof(struct sockaddr_in));
+#ifdef INET6
+				if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_NEEDS_MAPPED_V4)) {
+					len = sizeof(struct sockaddr_in6);
+					in6_sin_2_v4mapsin6(&control->whoFrom->ro._l_addr.sin,
+							    &store.sin6);
+					store.sin6.sin6_port = control->port_from;
+				} else {
+					len = sizeof(struct sockaddr_in);
+					store.sin = control->whoFrom->ro._l_addr.sin;
+					store.sin.sin_port = control->port_from;
+				}
+#else
+				len = sizeof(struct sockaddr_in);
+				store.sin = control->whoFrom->ro._l_addr.sin;
+				store.sin.sin_port = control->port_from;
 #endif
-				((struct sockaddr_in *)from)->sin_port = control->port_from;
 				break;
 #endif
 #if defined(__Userspace__)
 			case AF_CONN:
-#ifndef HAVE_SA_LEN
-				cp_len = min((size_t)fromlen, sizeof(struct sockaddr_conn));
-#endif
-				((struct sockaddr_conn *)from)->sconn_port = control->port_from;
+				len = sizeof(struct sockaddr_conn);
+				store.sconn = control->whoFrom->ro._l_addr.sconn;
+				store.sconn.sconn_port = control->port_from;
 				break;
 #endif
 			default:
-#ifndef HAVE_SA_LEN
-				cp_len = min((size_t)fromlen, sizeof(struct sockaddr));
-#endif
+				len = 0;
 				break;
 		}
-		memcpy(from, &control->whoFrom->ro._l_addr, cp_len);
-
-#if defined(INET) && defined(INET6)
-		if ((sctp_is_feature_on(inp,SCTP_PCB_FLAGS_NEEDS_MAPPED_V4)) &&
-		    (from->sa_family == AF_INET) &&
-		    ((size_t)fromlen >= sizeof(struct sockaddr_in6))) {
-			struct sockaddr_in *sin;
-			struct sockaddr_in6 sin6;
-
-			sin = (struct sockaddr_in *)from;
-			bzero(&sin6, sizeof(sin6));
-			sin6.sin6_family = AF_INET6;
-#ifdef HAVE_SIN6_LEN
-			sin6.sin6_len = sizeof(struct sockaddr_in6);
-#endif
-#if defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Darwin) || defined(__Userspace_os_Windows)
-			((uint32_t *)&sin6.sin6_addr)[2] = htonl(0xffff);
-			bcopy(&sin->sin_addr,
-			      &(((uint32_t *)&sin6.sin6_addr)[3]),
-			      sizeof(uint32_t));
-#elif defined(__Windows__)
-			((uint32_t *)&sin6.sin6_addr)[2] = htonl(0xffff);
-			bcopy(&sin->sin_addr,
-			      &((uint32_t *)&sin6.sin6_addr)[3],
-			      sizeof(uint32_t));
-#else
-			sin6.sin6_addr.s6_addr32[2] = htonl(0xffff);
-			bcopy(&sin->sin_addr,
-			      &sin6.sin6_addr.s6_addr32[3],
-			      sizeof(sin6.sin6_addr.s6_addr32[3]));
-#endif
-			sin6.sin6_port = sin->sin_port;
-			memcpy(from, &sin6, sizeof(struct sockaddr_in6));
-		}
-#endif
+		memcpy(from, &store, min((size_t)fromlen, len));
 #if defined(SCTP_EMBEDDED_V6_SCOPE)
 #ifdef INET6
 		{
@@ -7279,7 +7262,7 @@ sctp_bindx_add_address(struct socket *so, struct sctp_inpcb *inp,
 		       uint32_t vrf_id, int *error, void *p)
 {
 	struct sockaddr *addr_touse;
-#ifdef INET6
+#if defined(INET) && defined(INET6)
 	struct sockaddr_in sin;
 #endif
 #ifdef SCTP_MVRF
@@ -7309,7 +7292,10 @@ sctp_bindx_add_address(struct socket *so, struct sctp_inpcb *inp,
 	addr_touse = sa;
 #ifdef INET6
 	if (sa->sa_family == AF_INET6) {
+#ifdef INET
 		struct sockaddr_in6 *sin6;
+
+#endif
 #ifdef HAVE_SA_LEN
 		if (sa->sa_len != sizeof(struct sockaddr_in6)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
@@ -7323,6 +7309,7 @@ sctp_bindx_add_address(struct socket *so, struct sctp_inpcb *inp,
 			*error = EINVAL;
 			return;
 		}
+#ifdef INET
 		sin6 = (struct sockaddr_in6 *)addr_touse;
 		if (IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr)) {
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) &&
@@ -7335,6 +7322,7 @@ sctp_bindx_add_address(struct socket *so, struct sctp_inpcb *inp,
 			in6_sin6_2_sin(&sin, sin6);
 			addr_touse = (struct sockaddr *)&sin;
 		}
+#endif
 	}
 #endif
 #ifdef INET
@@ -7429,7 +7417,7 @@ sctp_bindx_delete_address(struct sctp_inpcb *inp,
 			  uint32_t vrf_id, int *error)
 {
 	struct sockaddr *addr_touse;
-#ifdef INET6
+#if defined(INET) && defined(INET6)
 	struct sockaddr_in sin;
 #endif
 #ifdef SCTP_MVRF
@@ -7459,7 +7447,10 @@ sctp_bindx_delete_address(struct sctp_inpcb *inp,
 	addr_touse = sa;
 #ifdef INET6
 	if (sa->sa_family == AF_INET6) {
+#ifdef INET
 		struct sockaddr_in6 *sin6;
+#endif
+
 #ifdef HAVE_SA_LEN
 		if (sa->sa_len != sizeof(struct sockaddr_in6)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
@@ -7473,6 +7464,7 @@ sctp_bindx_delete_address(struct sctp_inpcb *inp,
 			*error = EINVAL;
 			return;
 		}
+#ifdef INET
 		sin6 = (struct sockaddr_in6 *)addr_touse;
 		if (IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr)) {
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) &&
@@ -7485,6 +7477,7 @@ sctp_bindx_delete_address(struct sctp_inpcb *inp,
 			in6_sin6_2_sin(&sin, sin6);
 			addr_touse = (struct sockaddr *)&sin;
 		}
+#endif
 	}
 #endif
 #ifdef INET
