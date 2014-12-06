@@ -2345,6 +2345,12 @@ userspace_getsockopt(struct socket *so, int level, int option_name,
 }
 
 int
+usrsctp_set_ulpinfo(struct socket *so, void *ulp_info)
+{
+	return (register_ulp_info(so, ulp_info));
+}
+
+int
 usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 {
 	struct sctp_getaddresses *gaddrs;
