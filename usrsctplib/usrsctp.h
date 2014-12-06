@@ -974,6 +974,9 @@ usrsctp_register_address(void *);
 void
 usrsctp_deregister_address(void *);
 
+int
+usrsctp_set_ulpinfo(struct socket *, void *);
+
 #define SCTP_DUMP_OUTBOUND 1
 #define SCTP_DUMP_INBOUND  0
 
