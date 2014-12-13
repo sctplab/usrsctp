@@ -97,7 +97,7 @@ on Windows.
 The client needs two additional parameters, the server's address and its port.
 Its usage is
 \begin{verbatim}
-client remote_addr remote_port [local_encaps_port remote_encaps_port]
+client remote_addr remote_port [local_port local_encaps_port remote_encaps_port]
 \end{verbatim}
 The remote address is the server's address. If client and server are started on the same machine,
 the loopback address 127.0.0.1 can be used for Unix-like OSs and the local address on Windows.
@@ -105,11 +105,11 @@ The discard port is 9, thus 9 has to be taken as remote port. The encapsulation 
 match those of the server, i.e. the server's local\_encaps\_port is the client's
 remote\_encaps\_port and vice versa. Thus, the client can be started with
 \begin{verbatim}
-./client 127.0.0.1 9 22222 11111
+./client 127.0.0.1 9 0 22222 11111
 \end{verbatim}
 on a Unix-like OS and
 \begin{verbatim}
-client.exe 192.168.0.1 9 22222 11111
+client.exe 192.168.0.1 9 0 22222 11111
 \end{verbatim}
 on Windows provided your local IP address is 192.168.0.1.
 
