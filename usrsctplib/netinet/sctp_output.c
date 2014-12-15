@@ -13507,7 +13507,7 @@ sctp_lower_sosend(struct socket *so,
 	if (inp->recv_callback) {
 		non_blocking = 1;
 	}
-#else
+#endif
 	if (SCTP_SO_IS_NBIO(so)
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
 	     || (flags & MSG_NBIO)
@@ -13515,7 +13515,6 @@ sctp_lower_sosend(struct socket *so,
 	    ) {
 		non_blocking = 1;
 	}
-#endif
 	/* would we block? */
 	if (non_blocking) {
 		if (hold_tcblock == 0) {
