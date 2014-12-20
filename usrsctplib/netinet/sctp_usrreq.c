@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 275567 2014-12-06 20:00:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 275954 2014-12-20 13:47:38Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4337,12 +4337,6 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		    (sid < stcb->asoc.streamoutcnt) &&
 		    ((policy == SCTP_PR_SCTP_ALL) ||
 		     (PR_SCTP_VALID_POLICY(policy)))) {
-#else
-		if ((stcb != NULL) &&
-		    (policy != SCTP_PR_SCTP_NONE) &&
-		    (sid < stcb->asoc.streamoutcnt) &&
-		    (policy == SCTP_PR_SCTP_ALL)) {
-#endif
 			if (policy == SCTP_PR_SCTP_ALL) {
 				sprstat->sprstat_abandoned_unsent = stcb->asoc.strmout[sid].abandoned_unsent[0];
 				sprstat->sprstat_abandoned_sent = stcb->asoc.strmout[sid].abandoned_sent[0];
@@ -4350,6 +4344,13 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 				sprstat->sprstat_abandoned_unsent = stcb->asoc.strmout[sid].abandoned_unsent[policy];
 				sprstat->sprstat_abandoned_sent = stcb->asoc.strmout[sid].abandoned_sent[policy];
 			}
+#else
+		if ((stcb != NULL) &&
+		    (policy == SCTP_PR_SCTP_ALL) &&
+		    (sid < stcb->asoc.streamoutcnt)) {
+			sprstat->sprstat_abandoned_unsent = stcb->asoc.strmout[sid].abandoned_unsent[0];
+			sprstat->sprstat_abandoned_sent = stcb->asoc.strmout[sid].abandoned_sent[0];
+#endif
 			SCTP_TCB_UNLOCK(stcb);
 			*optsize = sizeof(struct sctp_prstatus);
 		} else {
