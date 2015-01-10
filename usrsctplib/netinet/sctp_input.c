@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 275574 2014-12-06 22:57:19Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 276911 2015-01-10 13:56:26Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6145,18 +6145,6 @@ trigger_send:
 #endif
 	return;
 }
-
-#if 0
-static void
-sctp_print_mbuf_chain(struct mbuf *m)
-{
-	for (; m; m = SCTP_BUF_NEXT(m)) {
-		SCTP_PRINTF("%p: m_len = %ld\n", (void *)m, SCTP_BUF_LEN(m));
-		if (SCTP_BUF_IS_EXTENDED(m))
-			SCTP_PRINTF("%p: extend_size = %d\n", (void *)m, SCTP_BUF_EXTEND_SIZE(m));
-	}
-}
-#endif
 
 #ifdef INET
 #if !defined(__Userspace__)
