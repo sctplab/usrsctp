@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 271228 2014-09-07 17:07:19Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 277033 2015-01-11 22:23:39Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1429,7 +1429,6 @@ sctp_asconf_queue_sa_delete(struct sctp_tcb *stcb, struct sockaddr *sa)
 {
 	struct sctp_ifa *ifa;
 	struct sctp_asconf_addr *aa, *aa_next;
-	uint32_t vrf_id;
 
 	if (stcb == NULL) {
 		return (-1);
@@ -1461,12 +1460,7 @@ sctp_asconf_queue_sa_delete(struct sctp_tcb *stcb, struct sockaddr *sa)
 	} /* for each aa */
 
 	/* find any existing ifa-- NOTE ifa CAN be allowed to be NULL */
-	if (stcb) {
-		vrf_id = stcb->asoc.vrf_id;
-	} else {
-		vrf_id = SCTP_DEFAULT_VRFID;
-	}
-	ifa = sctp_find_ifa_by_addr(sa, vrf_id, SCTP_ADDR_NOT_LOCKED);
+	ifa = sctp_find_ifa_by_addr(sa, stcb->asoc.vrf_id, SCTP_ADDR_NOT_LOCKED);
 
 	/* adding new request to the queue */
 	SCTP_MALLOC(aa, struct sctp_asconf_addr *, sizeof(*aa),
@@ -2795,7 +2789,6 @@ sctp_process_initack_addresses(struct sctp_tcb *stcb, struct mbuf *m,
 #ifdef INET
 	struct sctp_ipv4addr_param addr4_store;
 #endif
-	uint32_t vrf_id;
 
 	SCTPDBG(SCTP_DEBUG_ASCONF2, "processing init-ack addresses\n");
 	if (stcb == NULL) /* Un-needed check for SA */
@@ -2867,12 +2860,7 @@ sctp_process_initack_addresses(struct sctp_tcb *stcb, struct mbuf *m,
 		}
 
 		/* see if this address really (still) exists */
-		if (stcb) {
-			vrf_id = stcb->asoc.vrf_id;
-		} else {
-			vrf_id = SCTP_DEFAULT_VRFID;
-		}
-		sctp_ifa = sctp_find_ifa_by_addr(&store.sa, vrf_id,
+		sctp_ifa = sctp_find_ifa_by_addr(&store.sa, stcb->asoc.vrf_id,
 						 SCTP_ADDR_NOT_LOCKED);
 		if (sctp_ifa == NULL) {
 			/* address doesn't exist anymore */
