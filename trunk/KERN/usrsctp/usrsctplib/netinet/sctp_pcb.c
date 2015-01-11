@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 277030 2015-01-11 21:44:56Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 277031 2015-01-11 21:55:30Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1689,10 +1689,7 @@ sctp_findassociation_ep_addr(struct sctp_inpcb **inp_p, struct sockaddr *remote,
 			goto null_return;
 		}
 		head = &inp->sctp_tcbhash[SCTP_PCBHASH_ALLADDR(rport,
-		    inp->sctp_hashmark)];
-		if (head == NULL) {
-			goto null_return;
-		}
+		                                               inp->sctp_hashmark)];
 		LIST_FOREACH(stcb, head, sctp_tcbhash) {
 			if (stcb->rport != rport) {
 				/* remote port does not match */
