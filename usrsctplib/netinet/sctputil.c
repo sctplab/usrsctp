@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 276914 2015-01-10 20:49:57Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 277049 2015-01-12 07:39:52Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5532,7 +5532,6 @@ sctp_find_ifa_by_addr(struct sockaddr *addr, uint32_t vrf_id, int holds_lock)
 
 	vrf = sctp_find_vrf(vrf_id);
 	if (vrf == NULL) {
-	stage_right:
 		if (holds_lock == 0)
 			SCTP_IPI_ADDR_RUNLOCK();
 		return (NULL);
@@ -5553,15 +5552,6 @@ sctp_find_ifa_by_addr(struct sockaddr *addr, uint32_t vrf_id, int holds_lock)
 		return (NULL);
 	}
 	LIST_FOREACH(sctp_ifap, hash_head, next_bucket) {
-		if (sctp_ifap == NULL) {
-#ifdef INVARIANTS
-			panic("Huh LIST_FOREACH corrupt");
-		        goto stage_right;
-#else
-			SCTP_PRINTF("LIST corrupt of sctp_ifap's?\n");
-			goto stage_right;
-#endif
-		}
 		if (addr->sa_family != sctp_ifap->address.sa.sa_family)
 			continue;
 #ifdef INET
