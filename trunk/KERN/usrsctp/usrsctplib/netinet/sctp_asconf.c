@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 277046 2015-01-12 07:29:35Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 277347 2015-01-18 20:53:20Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3367,6 +3367,11 @@ sctp_asconf_send_nat_state_update(struct sctp_tcb *stcb,
 		TAILQ_INSERT_TAIL(&stcb->asoc.asconf_queue, aa, next);
 		break;
 #endif
+	default:
+		SCTPDBG(SCTP_DEBUG_ASCONF1,
+		        "sctp_asconf_send_nat_state_update: unknown address family\n");
+		SCTP_FREE(aa, SCTP_M_ASC_ADDR);
+		return;
 	}
 	SCTP_MALLOC(aa, struct sctp_asconf_addr *, sizeof(*aa),
 	            SCTP_M_ASC_ADDR);
@@ -3400,6 +3405,11 @@ sctp_asconf_send_nat_state_update(struct sctp_tcb *stcb,
 		TAILQ_INSERT_TAIL(&stcb->asoc.asconf_queue, aa, next);
 		break;
 #endif
+	default:
+		SCTPDBG(SCTP_DEBUG_ASCONF1,
+		        "sctp_asconf_send_nat_state_update: unknown address family\n");
+		SCTP_FREE(aa, SCTP_M_ASC_ADDR);
+		return;
 	}
 	/* Now we must hunt the addresses and add all global addresses */
 	if (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_BOUNDALL) {
