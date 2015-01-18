@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 277077 2015-01-12 18:06:22Z glebius $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 277350 2015-01-18 22:00:39Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7831,6 +7831,7 @@ re_look:
 	if (M_LEADINGSPACE(chk->data) < (int)sizeof(struct sctp_data_chunk)) {
 		/* Not enough room for a chunk header, get some */
 		struct mbuf *m;
+
 		m = sctp_get_mbuf_for_msg(1, 0, M_NOWAIT, 0, MT_DATA);
 		if (m == NULL) {
 			/*
@@ -7842,7 +7843,7 @@ re_look:
 				SCTP_TCB_SEND_LOCK(stcb);
 				send_lock_up = 1;
 			}
-			if (chk->data == NULL) {
+			if (sp->data == NULL) {
 				/* unsteal the data */
 				sp->data = chk->data;
 				sp->tail_mbuf = chk->last_mbuf;
