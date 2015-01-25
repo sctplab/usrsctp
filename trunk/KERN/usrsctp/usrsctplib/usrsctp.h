@@ -827,6 +827,8 @@ struct sctp_timeouts {
 
 /******************** System calls *************/
 
+struct socket;
+
 void
 usrsctp_init(uint16_t,
              int (*)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df),
