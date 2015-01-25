@@ -777,28 +777,6 @@ struct sctp_cc_option {
 	struct sctp_assoc_value aid_value;
 };
 
-struct sctp_cwnd_args {
-	struct sctp_nets *net;   /* network to */ /* FIXME: LP64 issue */
-	uint32_t cwnd_new_value; /* cwnd in k */
-	uint32_t pseudo_cumack;
-	uint16_t inflight;       /* flightsize in k */
-	uint16_t cwnd_augment;   /* increment to it */
-	uint8_t meets_pseudo_cumack;
-	uint8_t need_new_pseudo_cumack;
-	uint8_t cnt_in_send;
-	uint8_t cnt_in_str;
-};
-
-struct sctp_blk_args {
-	uint32_t onsb;            /* in 1k bytes */
-	uint32_t sndlen;          /* len of send being attempted */
-	uint32_t peer_rwnd;       /* rwnd of peer */
-	uint16_t send_sent_qcnt;  /* chnk cnt */
-	uint16_t stream_qcnt;     /* chnk cnt */
-	uint16_t chunks_on_oque;  /* chunks out */
-	uint16_t flight_size;     /* flight size in k */
-};
-
 struct sctp_timeouts {
 	sctp_assoc_t stimo_assoc_id;
 	uint32_t stimo_init;
