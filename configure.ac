@@ -104,6 +104,7 @@ AC_CHECK_FUNCS(inet_addr, , AC_CHECK_LIB(nsl, inet_addr))
 AC_CHECK_HEADER(sys/types.h)
 AC_CHECK_HEADER(linux/if_addr.h, [], [], [#include <sys/socket.h>])
 AC_CHECK_HEADER(linux/rtnetlink.h, [], [], [#include <sys/socket.h>])
+AC_CHECK_HEADER(netinet/ip_icmp.h, [], [], [#include <netinet/ip.h>])
 
 AC_CHECK_MEMBER(struct sockaddr.sa_len,
                 AC_DEFINE(HAVE_SA_LEN, 1, [Define this if your stack has sa_len in sockaddr struct.]),,
