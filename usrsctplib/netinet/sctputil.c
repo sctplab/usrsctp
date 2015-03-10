@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 277049 2015-01-12 07:39:52Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 279859 2015-03-10 19:49:25Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1000,6 +1000,7 @@ sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	asoc->sctp_frag_point = inp->sctp_frag_point;
 	asoc->sctp_features = inp->sctp_features;
 	asoc->default_dscp = inp->sctp_ep.default_dscp;
+	asoc->max_cwnd = inp->max_cwnd;
 #ifdef INET6
 	if (inp->sctp_ep.default_flowlabel) {
 		asoc->default_flowlabel = inp->sctp_ep.default_flowlabel;

@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 277031 2015-01-11 21:55:30Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 279859 2015-03-10 19:49:25Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2832,6 +2832,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	inp->sctp_associd_counter = 1;
 	inp->partial_delivery_point = SCTP_SB_LIMIT_RCV(so) >> SCTP_PARTIAL_DELIVERY_SHIFT;
 	inp->sctp_frag_point = SCTP_DEFAULT_MAXSEGMENT;
+	inp->max_cwnd = 0;
 	inp->sctp_cmt_on_off = SCTP_BASE_SYSCTL(sctp_cmt_on_off);
 	inp->ecn_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_ecn_enable);
 	inp->prsctp_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_pr_enable);
