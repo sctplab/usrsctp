@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 279863 2015-03-10 21:05:17Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 279886 2015-03-11 14:25:23Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7064,14 +7064,16 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		}
 		if (stcb != NULL) {
 			if (net != NULL) {
+				net->failure_threshold = thlds->spt_pathmaxrxt;
+				net->pf_threshold = thlds->spt_pathpfthld;
 				if (net->dest_state & SCTP_ADDR_PF) {
-					if ((net->failure_threshold > thlds->spt_pathmaxrxt) ||
-					    (net->failure_threshold <= thlds->spt_pathpfthld)) {
+					if ((net->error_count > net->failure_threshold) ||
+					    (net->error_count <= net->pf_threshold)) {
 						net->dest_state &= ~SCTP_ADDR_PF;
 					}
 				} else {
-					if ((net->failure_threshold > thlds->spt_pathpfthld) &&
-					    (net->failure_threshold <= thlds->spt_pathmaxrxt)) {
+					if ((net->error_count > net->pf_threshold) &&
+					    (net->error_count <= net->failure_threshold)) {
 						net->dest_state |= SCTP_ADDR_PF;
 						sctp_send_hb(stcb, net, SCTP_SO_LOCKED);
 						sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net, SCTP_FROM_SCTP_TIMER + SCTP_LOC_3);
@@ -7079,28 +7081,28 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					}
 				}
 				if (net->dest_state & SCTP_ADDR_REACHABLE) {
-					if (net->failure_threshold > thlds->spt_pathmaxrxt) {
+					if (net->error_count > net->failure_threshold) {
 						net->dest_state &= ~SCTP_ADDR_REACHABLE;
 						sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_DOWN, stcb, 0, net, SCTP_SO_LOCKED);
 					}
 				} else {
-					if (net->failure_threshold <= thlds->spt_pathmaxrxt) {
+					if (net->error_count <= net->failure_threshold) {
 						net->dest_state |= SCTP_ADDR_REACHABLE;
 						sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_UP, stcb, 0, net, SCTP_SO_LOCKED);
 					}
 				}
-				net->failure_threshold = thlds->spt_pathmaxrxt;
-				net->pf_threshold = thlds->spt_pathpfthld;
 			} else {
 				TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+					net->failure_threshold = thlds->spt_pathmaxrxt;
+					net->pf_threshold = thlds->spt_pathpfthld;
 					if (net->dest_state & SCTP_ADDR_PF) {
-						if ((net->failure_threshold > thlds->spt_pathmaxrxt) ||
-						    (net->failure_threshold <= thlds->spt_pathpfthld)) {
+						if ((net->error_count > net->failure_threshold) ||
+						    (net->error_count <= net->pf_threshold)) {
 							net->dest_state &= ~SCTP_ADDR_PF;
 						}
 					} else {
-						if ((net->failure_threshold > thlds->spt_pathpfthld) &&
-						    (net->failure_threshold <= thlds->spt_pathmaxrxt)) {
+						if ((net->error_count > net->pf_threshold) &&
+						    (net->error_count <= net->failure_threshold)) {
 							net->dest_state |= SCTP_ADDR_PF;
 							sctp_send_hb(stcb, net, SCTP_SO_LOCKED);
 							sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net, SCTP_FROM_SCTP_TIMER + SCTP_LOC_3);
@@ -7108,18 +7110,16 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 						}
 					}
 					if (net->dest_state & SCTP_ADDR_REACHABLE) {
-						if (net->failure_threshold > thlds->spt_pathmaxrxt) {
+						if (net->error_count > net->failure_threshold) {
 							net->dest_state &= ~SCTP_ADDR_REACHABLE;
 							sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_DOWN, stcb, 0, net, SCTP_SO_LOCKED);
 						}
 					} else {
-						if (net->failure_threshold <= thlds->spt_pathmaxrxt) {
+						if (net->error_count <= net->failure_threshold) {
 							net->dest_state |= SCTP_ADDR_REACHABLE;
 							sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_UP, stcb, 0, net, SCTP_SO_LOCKED);
 						}
 					}
-					net->failure_threshold = thlds->spt_pathmaxrxt;
-					net->pf_threshold = thlds->spt_pathpfthld;
 				}
 				stcb->asoc.def_net_failure = thlds->spt_pathmaxrxt;
 				stcb->asoc.def_net_pf_threshold = thlds->spt_pathpfthld;
