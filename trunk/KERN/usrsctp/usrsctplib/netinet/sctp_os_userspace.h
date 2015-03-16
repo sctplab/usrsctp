@@ -437,10 +437,10 @@ struct sx {int dummy;};
 /* #include <sys/param.h>  in FreeBSD defines MSIZE */
 /* #include <sys/ktr.h> */
 /* #include <sys/systm.h> */
-#if defined(__Userspace_os_Windows)
-#include <user_queue.h>
-#else
+#if defined(HAVE_SYS_QUEUE_H)
 #include <sys/queue.h>
+#else
+#include <user_queue.h>
 #endif
 #include <user_malloc.h>
 /* #include <sys/kernel.h> */
