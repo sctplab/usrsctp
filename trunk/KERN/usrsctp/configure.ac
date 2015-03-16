@@ -101,7 +101,7 @@ AC_CHECK_TYPE(ssize_t)
 AC_CHECK_FUNCS(socket, , AC_CHECK_LIB(socket, socket))
 AC_CHECK_FUNCS(inet_addr, , AC_CHECK_LIB(nsl, inet_addr))
 
-AC_CHECK_HEADER(sys/types.h)
+AC_CHECK_HEADERS(sys/queue.h)
 AC_CHECK_HEADERS(linux/if_addr.h, [], [], [#include <sys/socket.h>])
 AC_CHECK_HEADERS(linux/rtnetlink.h, [], [], [#include <sys/socket.h>])
 AC_CHECK_HEADERS(netinet/ip_icmp.h, [], [], [#include <netinet/ip.h>])
