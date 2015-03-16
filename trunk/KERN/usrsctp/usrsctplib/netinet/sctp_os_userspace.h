@@ -273,7 +273,6 @@ typedef char* caddr_t;
 #endif
 
 #else /* !defined(Userspace_os_Windows) */
-#include <sys/cdefs.h> /* needed? added from old __FreeBSD__ */
 #include <sys/socket.h>
 #if defined(__Userspace_os_DragonFly) || defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Linux) || defined(__Userspace_os_NetBSD) || defined(__Userspace_os_OpenBSD) || defined(__Userspace_os_NaCl)
 #include <pthread.h>
