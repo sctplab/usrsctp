@@ -221,6 +221,9 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 
 	sndinfo.snd_sid = 0;
 	sndinfo.snd_flags = 0;
+	if (unordered != 0) {
+		sndinfo.snd_flags |= SCTP_UNORDERED;
+	}
 	sndinfo.snd_ppid = 0;
 	sndinfo.snd_context = 0;
 	sndinfo.snd_assoc_id = 0;
@@ -235,9 +238,10 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 		if (very_verbose)
 			printf("Sending message number %lu.\n", messages + 1);
 
-		if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
-				              (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
-				              unordered?SCTP_UNORDERED:0) < 0) {
+		if (usrsctp_sendv(psock, buffer, length,
+		                  (struct sockaddr *) &remote_addr, 1,
+		                  (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
+		                  0) < 0) {
 			if (errno != EWOULDBLOCK && errno != EAGAIN) {
 				perror("usrsctp_sendmsg (cb) returned < 0");
 				exit(1);
@@ -252,9 +256,10 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 		if (very_verbose)
 			printf("Sending final message number %lu.\n", messages + 1);
 
+		sndinfo.snd_flags |= SCTP_EOF;
 		if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
-				              (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
-				              unordered?(SCTP_UNORDERED|SCTP_EOF):SCTP_EOF) < 0) {
+		                  (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
+		                  0) < 0) {
 			if (errno != EWOULDBLOCK && errno != EAGAIN) {
 				perror("usrsctp_sendmsg (cb) returned < 0");
 				exit(1);
