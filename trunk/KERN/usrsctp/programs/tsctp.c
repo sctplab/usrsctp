@@ -650,15 +650,20 @@ int main(int argc, char **argv)
 
 		sndinfo.snd_sid = 0;
 		sndinfo.snd_flags = 0;
+		if (unordered != 0) {
+			sndinfo.snd_flags |= SCTP_UNORDERED;
+		}
 		sndinfo.snd_ppid = 0;
 		sndinfo.snd_context = 0;
 		sndinfo.snd_assoc_id = 0;
 
-	/*prinfo.pr_policy = SCTP_PR_SCTP_RTX;
+		/*
+		prinfo.pr_policy = SCTP_PR_SCTP_RTX;
 		prinfo.pr_value = 2;
 		spa.sendv_sndinfo = sndinfo;
 		spa.sendv_prinfo = prinfo;
-		spa.sendv_flags = SCTP_SEND_SNDINFO_VALID | SCTP_SEND_PRINFO_VALID;*/
+		spa.sendv_flags = SCTP_SEND_SNDINFO_VALID | SCTP_SEND_PRINFO_VALID;
+		*/
 
 		if (use_cb) {
 			if (very_verbose)
@@ -666,7 +671,7 @@ int main(int argc, char **argv)
 
 				if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
 				                  (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
-				                  unordered?SCTP_UNORDERED:0) < 0) {
+				                  0) < 0) {
 				perror("usrctp_sendv returned < 0");
 				exit(1);
 			}
@@ -685,7 +690,7 @@ int main(int argc, char **argv)
 
 				if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
 				                  (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
-				                  unordered?SCTP_UNORDERED:0) < 0) {
+				                  0) < 0) {
 					perror("usrsctp_sendv returned < 0");
 					exit(1);
 				}
@@ -694,9 +699,10 @@ int main(int argc, char **argv)
 			if (very_verbose)
 				printf("Sending message number %lu.\n", messages + 1);
 
+			sndinfo.snd_flags |= SCTP_EOF;
 			if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
 			                  (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
-			                  unordered?SCTP_UNORDERED:0) < 0) {
+			                  0) < 0) {
 				perror("final usrsctp_sendv returned\n");
 				exit(1);
 			}
