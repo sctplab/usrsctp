@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 279886 2015-03-11 14:25:23Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 280404 2015-03-23 23:34:21Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -295,21 +295,19 @@ sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint16_t nxtsz)
 			if (chk->sent < SCTP_DATAGRAM_RESEND) {
 				sctp_flight_size_decrease(chk);
 				sctp_total_flight_decrease(stcb, chk);
-			}
-			if (chk->sent != SCTP_DATAGRAM_RESEND) {
+				chk->sent = SCTP_DATAGRAM_RESEND;
 				sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
+				chk->rec.data.doing_fast_retransmit = 0;
+				if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_FLIGHT_LOGGING_ENABLE) {
+					sctp_misc_ints(SCTP_FLIGHT_LOG_DOWN_PMTU,
+						       chk->whoTo->flight_size,
+						       chk->book_size,
+						       (uintptr_t)chk->whoTo,
+						       chk->rec.data.TSN_seq);
+				}
+				/* Clear any time so NO RTT is being done */
+				chk->do_rtt = 0;
 			}
-			chk->sent = SCTP_DATAGRAM_RESEND;
-			chk->rec.data.doing_fast_retransmit = 0;
-			if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_FLIGHT_LOGGING_ENABLE) {
-				sctp_misc_ints(SCTP_FLIGHT_LOG_DOWN_PMTU,
-					       chk->whoTo->flight_size,
-					       chk->book_size,
-					       (uintptr_t)chk->whoTo,
-					       chk->rec.data.TSN_seq);
-			}
-			/* Clear any time so NO RTT is being done */
-			chk->do_rtt = 0;
 		}
 	}
 }
