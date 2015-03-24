@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 279867 2015-03-10 22:38:10Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 280439 2015-03-24 14:51:46Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5342,17 +5342,13 @@ sctp_release_pr_sctp_chunk(struct sctp_tcb *stcb, struct sctp_tmit_chunk *tp1,
 				chk->rec.data.payloadtype = sp->ppid;
 				chk->rec.data.context = sp->context;
 				chk->flags = sp->act_flags;
-				if (sp->net)
-					chk->whoTo = sp->net;
-				else
-					chk->whoTo = stcb->asoc.primary_destination;
-				atomic_add_int(&chk->whoTo->ref_count, 1);
+				chk->whoTo = NULL;
 #if defined(__FreeBSD__) || defined(__Panda__)
 				chk->rec.data.TSN_seq = atomic_fetchadd_int(&stcb->asoc.sending_seq, 1);
 #else
 				chk->rec.data.TSN_seq = stcb->asoc.sending_seq++;
 #endif
-				stcb->asoc.pr_sctp_cnt++;
+				strq->chunks_on_queues++;
 				TAILQ_INSERT_TAIL(&stcb->asoc.sent_queue, chk, sctp_next);
 				stcb->asoc.sent_queue_cnt++;
 				stcb->asoc.pr_sctp_cnt++;
