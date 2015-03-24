@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 279859 2015-03-10 19:49:25Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 280459 2015-03-24 21:12:45Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2204,7 +2204,7 @@ sctp_swap_inpcb_for_listen(struct sctp_inpcb *inp)
 {
 	/* For 1-2-1 with port reuse */
 	struct sctppcbhead *head;
-	struct sctp_inpcb *tinp;
+	struct sctp_inpcb *tinp, *ninp;
 
 	if (sctp_is_feature_off(inp, SCTP_PCB_FLAGS_PORTREUSE)) {
 		/* only works with port reuse on */
@@ -2214,10 +2214,11 @@ sctp_swap_inpcb_for_listen(struct sctp_inpcb *inp)
 		return (0);
 	}
 	SCTP_INP_RUNLOCK(inp);
+	SCTP_INP_INFO_WLOCK();
 	head = &SCTP_BASE_INFO(sctp_ephash)[SCTP_PCBHASH_ALLADDR(inp->sctp_lport,
 	                                    SCTP_BASE_INFO(hashmark))];
 	/* Kick out all non-listeners to the TCP hash */
-	LIST_FOREACH(tinp, head, sctp_hash) {
+	LIST_FOREACH_SAFE(tinp, head, sctp_hash, ninp) {
 		if (tinp->sctp_lport != inp->sctp_lport) {
 			continue;
 		}
@@ -2245,6 +2246,7 @@ sctp_swap_inpcb_for_listen(struct sctp_inpcb *inp)
 	LIST_INSERT_HEAD(head, inp, sctp_hash);
 	SCTP_INP_WUNLOCK(inp);
 	SCTP_INP_RLOCK(inp);
+	SCTP_INP_INFO_WUNLOCK();
 	return (0);
 }
 

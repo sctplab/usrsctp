@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 280404 2015-03-23 23:34:21Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 280459 2015-03-24 21:12:45Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -8109,8 +8109,8 @@ sctp_listen(struct socket *so, struct proc *p)
 	SOCK_LOCK(so);
 #if (defined(__FreeBSD__) && __FreeBSD_version > 500000) || defined(__Userspace__)
 	error = solisten_proto_check(so);
+	SOCK_UNLOCK(so);
 	if (error) {
-		SOCK_UNLOCK(so);
 		SCTP_INP_RUNLOCK(inp);
 		return (error);
 	}
@@ -8124,29 +8124,28 @@ sctp_listen(struct socket *so, struct proc *p)
 		 * - We must then move the guy that was listener to the TCP Pool.
 		 */
 		if (sctp_swap_inpcb_for_listen(inp)) {
-			goto in_use;
+			SCTP_INP_RUNLOCK(inp);
+			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EADDRINUSE);
+			return (EADDRINUSE);
 		}
 	}
 
 	if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) &&
 	    (inp->sctp_flags & SCTP_PCB_FLAGS_CONNECTED)) {
 		/* We are already connected AND the TCP model */
-	in_use:
 		SCTP_INP_RUNLOCK(inp);
-		SOCK_UNLOCK(so);
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EADDRINUSE);
 		return (EADDRINUSE);
 	}
 	SCTP_INP_RUNLOCK(inp);
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND) {
 		/* We must do a bind. */
-		SOCK_UNLOCK(so);
 		if ((error = sctp_inpcb_bind(so, NULL, NULL, p))) {
 			/* bind error, probably perm */
 			return (error);
 		}
-		SOCK_LOCK(so);
 	}
+	SOCK_LOCK(so);
 #if (defined(__FreeBSD__) && __FreeBSD_version > 500000) || defined(__Windows__) || defined(__Userspace__)
 #if __FreeBSD_version >= 700000 || defined(__Windows__) || defined(__Userspace__)
 	/* It appears for 7.0 and on, we must always call this. */
