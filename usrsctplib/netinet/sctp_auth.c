@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 271673 2014-09-16 14:20:33Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 280642 2015-03-25 22:45:54Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -578,13 +578,12 @@ sctp_auth_key_release(struct sctp_tcb *stcb, uint16_t key_id, int so_locked
 
 	/* decrement the ref count */
 	if (skey) {
-		sctp_free_sharedkey(skey);
 		SCTPDBG(SCTP_DEBUG_AUTH2,
 			"%s: stcb %p key %u refcount release to %d\n",
 			__FUNCTION__, (void *)stcb, key_id, skey->refcount);
 
 		/* see if a notification should be generated */
-		if ((skey->refcount <= 1) && (skey->deactivated)) {
+		if ((skey->refcount <= 2) && (skey->deactivated)) {
 			/* notify ULP that key is no longer used */
 			sctp_ulp_notify(SCTP_NOTIFY_AUTH_FREE_KEY, stcb,
 					key_id, 0, so_locked);
@@ -592,6 +591,7 @@ sctp_auth_key_release(struct sctp_tcb *stcb, uint16_t key_id, int so_locked
 				"%s: stcb %p key %u no longer used, %d\n",
 				__FUNCTION__, (void *)stcb, key_id, skey->refcount);
 		}
+		sctp_free_sharedkey(skey);
 	}
 }
 
