@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 280459 2015-03-24 21:12:45Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 280634 2015-03-25 21:41:20Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -8096,7 +8096,7 @@ sctp_listen(struct socket *so, struct proc *p)
 				SCTP_INP_DECR_REF(tinp);
 				return (EADDRINUSE);
 			} else if (tinp) {
-				SCTP_INP_DECR_REF(inp);
+				SCTP_INP_DECR_REF(tinp);
 			}
 		}
 	}
