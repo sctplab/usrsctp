@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 279859 2015-03-10 19:49:25Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 280714 2015-03-26 22:05:31Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_STRUCTS_H_
@@ -1224,7 +1224,6 @@ struct sctp_association {
 
 	struct sctp_scoping scope;
 	/* flags to handle send alternate net tracking */
-	uint8_t used_alt_onsack;
 	uint8_t used_alt_asconfack;
 	uint8_t fast_retran_loss_recovery;
 	uint8_t sat_t3_loss_recovery;
