@@ -93,6 +93,8 @@ char Usage[] =
 "        -l             size of send/receive buffer\n"
 "        -n             number of messages sent (0 means infinite)/received\n"
 "        -D             turns Nagle off\n"
+"        -R             socket recv buffer\n"
+"        -S             socket send buffer\n"
 "        -T             time to send messages\n"
 "        -u             use unordered user messages\n"
 "        -U             remote UDP encapsulation port\n"
@@ -325,6 +327,8 @@ int main(int argc, char **argv)
 	struct timeval start_time, now, diff_time;
 	int client;
 	uint16_t local_port, remote_port, port, local_udp_port, remote_udp_port;
+	int rcvbufsize=0, sndbufsize=0, myrcvbufsize, mysndbufsize;
+	socklen_t intlen;
 	double seconds;
 	double throughput;
 	int nodelay = 0;
@@ -359,7 +363,7 @@ int main(int argc, char **argv)
 	memset((void *) &local_addr, 0, sizeof(struct sockaddr_in));
 
 #ifndef _WIN32
-	while ((c = getopt(argc, argv, "a:cp:l:E:f:n:T:uU:vVD")) != -1)
+	while ((c = getopt(argc, argv, "a:cp:l:E:f:n:R:S:T:uU:vVD")) != -1)
 		switch(c) {
 			case 'a':
 				ind.ssb_adaptation_ind = atoi(optarg);
@@ -381,6 +385,12 @@ int main(int argc, char **argv)
 				break;
 			case 'f':
 				fragpoint = atoi(optarg);
+				break;
+			case 'R':
+				rcvbufsize = atoi(optarg);
+				break;
+			case 'S':
+				sndbufsize = atoi(optarg);
 				break;
 			case 'T':
 				runtime = atoi(optarg);
@@ -468,6 +478,12 @@ int main(int argc, char **argv)
 					}
 					opt = argv[optind];
 					local_udp_port = atoi(opt);
+					break;
+				case 'R':
+					rcvbufsize = atoi(optarg);
+					break;
+				case 'S':
+					sndbufsize = atoi(optarg);
 					break;
 				case 'T':
 					if (++optind >= argc) {
@@ -558,6 +574,20 @@ int main(int argc, char **argv)
 	}
 
 	if (!client) {
+		if (rcvbufsize) {
+			if (usrsctp_setsockopt(psock, SOL_SOCKET, SO_RCVBUF, &rcvbufsize, sizeof(int)) < 0) {
+				perror("setsockopt: rcvbuf");
+			}
+		}
+		if (verbose) {
+			intlen = sizeof(int);
+			if (usrsctp_getsockopt(psock, SOL_SOCKET, SO_RCVBUF, &myrcvbufsize, (socklen_t *)&intlen) < 0) {
+				perror("getsockopt: rcvbuf");
+			} else {
+				fprintf(stdout,"Receive buffer size: %d.\n", myrcvbufsize);
+			}
+		}
+
 		if (usrsctp_listen(psock, 1) < 0) {
 			printf("usrsctp_listen failed.\n");
 			exit(1);
@@ -619,6 +649,20 @@ int main(int argc, char **argv)
 			av.assoc_value = fragpoint;
 			if (usrsctp_setsockopt(psock, IPPROTO_SCTP, SCTP_MAXSEG, &av, sizeof(struct sctp_assoc_value)) < 0)
 				perror("setsockopt: SCTP_MAXSEG");
+		}
+
+		if (sndbufsize) {
+			if (usrsctp_setsockopt(psock, SOL_SOCKET, SO_SNDBUF, &sndbufsize, sizeof(int)) < 0) {
+				perror("setsockopt: sndbuf");
+			}
+		}
+		if (verbose) {
+			intlen = sizeof(int);
+			if (usrsctp_getsockopt(psock, SOL_SOCKET, SO_SNDBUF, &mysndbufsize, (socklen_t *)&intlen) < 0) {
+				perror("setsockopt: sndbuf");
+			} else {
+				fprintf(stdout,"Send buffer size: %d.\n", mysndbufsize);
+			}
 		}
 
 		if (usrsctp_connect(psock, (struct sockaddr *) &remote_addr, sizeof(struct sockaddr_in)) == -1 ) {
