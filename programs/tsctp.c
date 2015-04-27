@@ -200,7 +200,7 @@ handle_connection(void *arg)
 		infotype = 0;
 		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
 		n = usrsctp_recvv(conn_sock, (void *) buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn,
-	                      &infolen, &infotype, &flags);
+		                  &infolen, &infotype, &flags);
 	}
 	if (n < 0)
 		perror("sctp_recvv");
@@ -278,7 +278,7 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 }
 
 static int
-receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
+server_receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
            size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
 {
 	struct timeval now, diff_time;
@@ -303,7 +303,15 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 	sum += datalen;
 	messages++;
 
-  free(data);
+	free(data);
+	return (1);
+}
+
+static int
+client_receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
+           size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
+{
+	free(data);
 	return (1);
 }
 
@@ -540,7 +548,7 @@ int main(int argc, char **argv)
 
 	if (client) {
 		if (use_cb) {
-			if (!(psock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, send_cb, length, NULL)) ){
+			if (!(psock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, client_receive_cb, send_cb, length, NULL)) ){
 				printf("user_socket() returned NULL\n");
 				exit(1);
 			}
@@ -552,7 +560,7 @@ int main(int argc, char **argv)
 		}
 	} else {
 		if (use_cb) {
-			if (!(psock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) ){
+			if (!(psock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, server_receive_cb, NULL, 0, NULL)) ){
 				printf("user_socket() returned NULL\n");
 				exit(1);
 			}
