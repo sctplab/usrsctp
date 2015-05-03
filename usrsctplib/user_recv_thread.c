@@ -406,10 +406,12 @@ recv_function_raw(void *arg)
 		
 		/* SCTP does not allow broadcasts or multicasts */
 		if (IN_MULTICAST(ntohl(dst.sin_addr.s_addr))) {
-			return (NULL);
+			m_freem(recvmbuf[0]);
+			continue;
 		}
 		if (SCTP_IS_IT_BROADCAST(dst.sin_addr, recvmbuf[0])) {
-			return (NULL);
+			m_freem(recvmbuf[0]);
+			continue;
 		}
 
 		port = 0;
@@ -584,6 +586,12 @@ recv_function_raw6(void *arg)
 				memcpy((void *)&dst.sin6_addr, (const void *) &(info->ipi6_addr), sizeof(struct in6_addr));
 				break;
 			}
+		}
+
+		/* SCTP does not allow broadcasts or multicasts */
+		if (IN6_IS_ADDR_MULTICAST(&dst.sin6_addr)) {
+			m_freem(recvmbuf6[0]);
+			continue;
 		}
 
 		sh = mtod(recvmbuf6[0], struct sctphdr *);
@@ -796,10 +804,12 @@ recv_function_udp(void *arg)
 
 		/* SCTP does not allow broadcasts or multicasts */
 		if (IN_MULTICAST(ntohl(dst.sin_addr.s_addr))) {
-			return (NULL);
+			m_freem(udprecvmbuf[0]);
+			continue;
 		}
 		if (SCTP_IS_IT_BROADCAST(dst.sin_addr, udprecvmbuf[0])) {
-			return (NULL);
+			m_freem(udprecvmbuf[0]);
+			continue;
 		}
 
 		/*offset = sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr);*/
@@ -990,7 +1000,8 @@ recv_function_udp6(void *arg)
 
 		/* SCTP does not allow broadcasts or multicasts */
 		if (IN6_IS_ADDR_MULTICAST(&dst.sin6_addr)) {
-			return (NULL);
+			m_freem(udprecvmbuf6[0]);
+			continue;
 		}
 		
 		sh = mtod(udprecvmbuf6[0], struct sctphdr *);
