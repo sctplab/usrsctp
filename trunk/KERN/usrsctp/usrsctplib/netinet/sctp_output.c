@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 283664 2015-05-28 18:52:32Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 283665 2015-05-28 19:28:08Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5994,7 +5994,8 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			stc.laddr_type = SCTP_IPV4_ADDRESS;
 			/* scope_id is only for v6 */
 			stc.scope_id = 0;
-			if (IN4_ISPRIVATE_ADDRESS(&src4->sin_addr)) {
+			if ((IN4_ISPRIVATE_ADDRESS(&src4->sin_addr)) ||
+			    (IN4_ISPRIVATE_ADDRESS(&dst4->sin_addr))){
 				stc.ipv4_scope = 1;
 			}
 			/* Must use the address in this case */
@@ -6022,14 +6023,15 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				stc.local_scope = 0;
 				stc.site_scope = 1;
 				stc.ipv4_scope = 1;
-			} else if (IN6_IS_ADDR_LINKLOCAL(&src6->sin6_addr)) {
+			} else if (IN6_IS_ADDR_LINKLOCAL(&src6->sin6_addr) ||
+			           IN6_IS_ADDR_LINKLOCAL(&dst6->sin6_addr)) {
 				/*
-				 * If the new destination is a LINK_LOCAL we
-				 * must have common both site and local
-				 * scope. Don't set local scope though since
-				 * we must depend on the source to be added
-				 * implicitly. We cannot assure just because
-				 * we share one link that all links are
+				 * If the new destination or source is a
+				 * LINK_LOCAL we must have common both site and
+				 * local scope. Don't set local scope though
+				 * since we must depend on the source to be
+				 * added implicitly. We cannot assure just
+				 * because we share one link that all links are
 				 * common.
 				 */
 #if defined(__APPLE__)
@@ -6047,10 +6049,12 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				 */
 				cnt_inits_to = 1;
 				/* pull out the scope_id from incoming pkt */
-			} else if (IN6_IS_ADDR_SITELOCAL(&src6->sin6_addr)) {
+			} else if (IN6_IS_ADDR_SITELOCAL(&src6->sin6_addr) ||
+			           IN6_IS_ADDR_SITELOCAL(&dst6->sin6_addr)) {
 				/*
-				 * If the new destination is SITE_LOCAL then
-				 * we must have site scope in common.
+				 * If the new destination or source is
+				 * SITE_LOCAL then we must have site scope in
+				 * common.
 				 */
 				stc.site_scope = 1;
 			}
