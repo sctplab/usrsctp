@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 280634 2015-03-25 21:41:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 283650 2015-05-28 16:00:23Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -373,7 +373,7 @@ sctp_notify_mbuf(struct sctp_inpcb *inp,
 	if (SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
 		tmr_stopped = 1;
 		sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net,
-				SCTP_FROM_SCTP_USRREQ+SCTP_LOC_1);
+				SCTP_FROM_SCTP_USRREQ + SCTP_LOC_1);
 	}
 	/* Adjust destination size limit */
 	if (net->mtu > nxtsz) {
@@ -475,7 +475,8 @@ sctp_notify(struct sctp_inpcb *inp,
 		SCTP_TCB_LOCK(stcb);
 		atomic_subtract_int(&stcb->asoc.refcnt, 1);
 #endif
-		(void)sctp_free_assoc(inp, stcb, SCTP_NORMAL_PROC, SCTP_FROM_SCTP_USRREQ+SCTP_LOC_2);
+		(void)sctp_free_assoc(inp, stcb, SCTP_NORMAL_PROC,
+		                      SCTP_FROM_SCTP_USRREQ + SCTP_LOC_2);
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 		SCTP_SOCKET_UNLOCK(so, 1);
 		/* SCTP_TCB_UNLOCK(stcb); MT: I think this is not needed.*/
@@ -1220,7 +1221,8 @@ sctp_disconnect(struct socket *so)
 				    (SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) {
 					SCTP_STAT_DECR_GAUGE32(sctps_currestab);
 				}
-				(void)sctp_free_assoc(inp, stcb, SCTP_NORMAL_PROC, SCTP_FROM_SCTP_USRREQ+SCTP_LOC_3);
+				(void)sctp_free_assoc(inp, stcb, SCTP_NORMAL_PROC,
+				                      SCTP_FROM_SCTP_USRREQ + SCTP_LOC_3);
 				/* No unlock tcb assoc is gone */
 				return (0);
 			}
@@ -1294,7 +1296,7 @@ sctp_disconnect(struct socket *so)
 					struct mbuf *op_err;
 				abort_anyway:
 					op_err = sctp_generate_cause(SCTP_CAUSE_USER_INITIATED_ABT, "");
-					stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_USRREQ+SCTP_LOC_4;
+					stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_USRREQ + SCTP_LOC_4;
 					sctp_send_abort_tcb(stcb, op_err, SCTP_SO_LOCKED);
 					SCTP_STAT_INCR_COUNTER32(sctps_aborted);
 					if ((SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_OPEN) ||
@@ -1302,7 +1304,8 @@ sctp_disconnect(struct socket *so)
 						SCTP_STAT_DECR_GAUGE32(sctps_currestab);
 					}
 					SCTP_INP_RUNLOCK(inp);
-					(void)sctp_free_assoc(inp, stcb, SCTP_NORMAL_PROC, SCTP_FROM_SCTP_USRREQ+SCTP_LOC_5);
+					(void)sctp_free_assoc(inp, stcb, SCTP_NORMAL_PROC,
+					                      SCTP_FROM_SCTP_USRREQ + SCTP_LOC_5);
 					return (0);
 				} else {
 					sctp_chunk_output(inp, stcb, SCTP_OUTPUT_FROM_CLOSING, SCTP_SO_LOCKED);
@@ -1492,7 +1495,7 @@ sctp_shutdown(struct socket *so)
 				struct mbuf *op_err;
 			abort_anyway:
 				op_err = sctp_generate_cause(SCTP_CAUSE_USER_INITIATED_ABT, "");
-				stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_USRREQ+SCTP_LOC_6;
+				stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_USRREQ + SCTP_LOC_6;
 				sctp_abort_an_association(stcb->sctp_ep, stcb,
 							  op_err, SCTP_SO_LOCKED);
 				goto skip_unlock;
@@ -2157,7 +2160,8 @@ sctp_do_connect_x(struct socket *so, struct sctp_inpcb *inp, void *optval,
 	sctp_connectx_helper_add(stcb, sa, (totaddr-1), &error);
 	/* Fill in the return id */
 	if (error) {
-		(void)sctp_free_assoc(inp, stcb, SCTP_PCBFREE_FORCE, SCTP_FROM_SCTP_USRREQ+SCTP_LOC_6);
+		(void)sctp_free_assoc(inp, stcb, SCTP_PCBFREE_FORCE,
+		                      SCTP_FROM_SCTP_USRREQ + SCTP_LOC_7);
 		goto out_now;
 	}
 	a_id = (sctp_assoc_t *)optval;
@@ -5586,7 +5590,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			(void)SCTP_GETTIME_TIMEVAL(&stcb->asoc.time_entered);
 			sctp_timer_stop(SCTP_TIMER_TYPE_INIT, inp, stcb,
 					stcb->asoc.primary_destination,
-					SCTP_FROM_SCTP_USRREQ+SCTP_LOC_9);
+					SCTP_FROM_SCTP_USRREQ + SCTP_LOC_8);
 			sctp_send_initiate(inp, stcb, SCTP_SO_LOCKED);
 		} else {
 			/*
@@ -6017,7 +6021,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					if (!(net->dest_state & SCTP_ADDR_UNCONFIRMED) &&
 					    !(net->dest_state & SCTP_ADDR_NOHB)) {
 						sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, inp, stcb, net,
-								SCTP_FROM_SCTP_USRREQ+SCTP_LOC_10);
+								SCTP_FROM_SCTP_USRREQ + SCTP_LOC_9);
 					}
 					net->dest_state |= SCTP_ADDR_NOHB;
 				}
@@ -6028,7 +6032,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 						net->heart_beat_delay = 0;
 					}
 					sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, inp, stcb, net,
-					                SCTP_FROM_SCTP_USRREQ+SCTP_LOC_10);
+					                SCTP_FROM_SCTP_USRREQ + SCTP_LOC_10);
 					sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, inp, stcb, net);
 					net->dest_state &= ~SCTP_ADDR_NOHB;
 				}
@@ -6041,7 +6045,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((paddrp->spp_flags & SPP_PMTUD_DISABLE) && (paddrp->spp_pathmtu >= SCTP_SMALLEST_PMTU)) {
 					if (SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
 						sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net,
-								SCTP_FROM_SCTP_USRREQ+SCTP_LOC_10);
+								SCTP_FROM_SCTP_USRREQ + SCTP_LOC_11);
 					}
 					net->dest_state |= SCTP_ADDR_NO_PMTUD;
 					net->mtu = paddrp->spp_pathmtu + ovh;
@@ -6065,7 +6069,9 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 						    (net->error_count > net->pf_threshold)) {
 							net->dest_state |= SCTP_ADDR_PF;
 							sctp_send_hb(stcb, net, SCTP_SO_LOCKED);
-							sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net, SCTP_FROM_SCTP_TIMER + SCTP_LOC_3);
+							sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT,
+							                stcb->sctp_ep, stcb, net,
+							                SCTP_FROM_SCTP_USRREQ + SCTP_LOC_12);
 							sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net);
 						}
 					}
@@ -6108,7 +6114,9 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 							    (net->error_count > net->pf_threshold)) {
 								net->dest_state |= SCTP_ADDR_PF;
 								sctp_send_hb(stcb, net, SCTP_SO_LOCKED);
-								sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net, SCTP_FROM_SCTP_TIMER + SCTP_LOC_3);
+								sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT,
+								                stcb->sctp_ep, stcb, net,
+								                SCTP_FROM_SCTP_USRREQ + SCTP_LOC_13);
 								sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net);
 							}
 						}
@@ -6144,7 +6152,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 							net->dest_state &= ~SCTP_ADDR_NOHB;
 						}
 						sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, inp, stcb, net,
-								SCTP_FROM_SCTP_USRREQ+SCTP_LOC_10);
+								SCTP_FROM_SCTP_USRREQ + SCTP_LOC_14);
 						sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, inp, stcb, net);
 					}
 					sctp_stcb_feature_off(inp, stcb, SCTP_PCB_FLAGS_DONOT_HEARTBEAT);
@@ -6154,7 +6162,9 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 						if (!(net->dest_state & SCTP_ADDR_NOHB)) {
 							net->dest_state |= SCTP_ADDR_NOHB;
 							if (!(net->dest_state & SCTP_ADDR_UNCONFIRMED)) {
-								sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, inp, stcb, net, SCTP_FROM_SCTP_USRREQ+SCTP_LOC_10);
+								sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT,
+								                inp, stcb, net,
+								                SCTP_FROM_SCTP_USRREQ + SCTP_LOC_15);
 							}
 						}
 					}
@@ -6164,7 +6174,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 						if (SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
 							sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net,
-									SCTP_FROM_SCTP_USRREQ+SCTP_LOC_10);
+									SCTP_FROM_SCTP_USRREQ + SCTP_LOC_16);
 						}
 						net->dest_state |= SCTP_ADDR_NO_PMTUD;
 						net->mtu = paddrp->spp_pathmtu + ovh;
@@ -7074,7 +7084,9 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					    (net->error_count <= net->failure_threshold)) {
 						net->dest_state |= SCTP_ADDR_PF;
 						sctp_send_hb(stcb, net, SCTP_SO_LOCKED);
-						sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net, SCTP_FROM_SCTP_TIMER + SCTP_LOC_3);
+						sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT,
+						                stcb->sctp_ep, stcb, net,
+						                SCTP_FROM_SCTP_USRREQ + SCTP_LOC_17);
 						sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net);
 					}
 				}
@@ -7103,7 +7115,9 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 						    (net->error_count <= net->failure_threshold)) {
 							net->dest_state |= SCTP_ADDR_PF;
 							sctp_send_hb(stcb, net, SCTP_SO_LOCKED);
-							sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net, SCTP_FROM_SCTP_TIMER + SCTP_LOC_3);
+							sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT,
+							                stcb->sctp_ep, stcb, net,
+							                SCTP_FROM_SCTP_USRREQ + SCTP_LOC_18);
 							sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net);
 						}
 					}
@@ -8376,7 +8390,8 @@ sctp_accept(struct socket *so, struct mbuf *nam)
 	}
 	if (stcb->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED) {
 		SCTP_TCB_LOCK(stcb);
-		sctp_free_assoc(inp, stcb, SCTP_NORMAL_PROC, SCTP_FROM_SCTP_USRREQ+SCTP_LOC_7);
+		sctp_free_assoc(inp, stcb, SCTP_NORMAL_PROC,
+		                SCTP_FROM_SCTP_USRREQ + SCTP_LOC_19);
 	}
 	return (0);
 }

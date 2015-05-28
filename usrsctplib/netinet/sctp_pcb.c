@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 280459 2015-03-24 21:12:45Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 283650 2015-05-28 16:00:23Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3926,7 +3926,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	}
 	/* First time through we have the socket lock, after that no more. */
 	sctp_timer_stop(SCTP_TIMER_TYPE_NEWCOOKIE, inp, NULL, NULL,
-			SCTP_FROM_SCTP_PCB+SCTP_LOC_1);
+			SCTP_FROM_SCTP_PCB + SCTP_LOC_1);
 
 	if (inp->control) {
 		sctp_m_freem(inp->control);
@@ -3970,7 +3970,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 				 */
 				/* Just abandon things in the front states */
 				if (sctp_free_assoc(inp, asoc, SCTP_PCBFREE_NOFORCE,
-						   SCTP_FROM_SCTP_PCB+SCTP_LOC_2) == 0) {
+						   SCTP_FROM_SCTP_PCB + SCTP_LOC_2) == 0) {
 					cnt_in_sd++;
 				}
 				continue;
@@ -3986,7 +3986,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 				struct mbuf *op_err;
 
 				op_err = sctp_generate_cause(SCTP_CAUSE_USER_INITIATED_ABT, "");
-				asoc->sctp_ep->last_abort_code = SCTP_FROM_SCTP_PCB+SCTP_LOC_3;
+				asoc->sctp_ep->last_abort_code = SCTP_FROM_SCTP_PCB + SCTP_LOC_3;
 				sctp_send_abort_tcb(asoc, op_err, SCTP_SO_LOCKED);
 				SCTP_STAT_INCR_COUNTER32(sctps_aborted);
 				if ((SCTP_GET_STATE(&asoc->asoc) == SCTP_STATE_OPEN) ||
@@ -3994,7 +3994,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 					SCTP_STAT_DECR_GAUGE32(sctps_currestab);
 				}
 				if (sctp_free_assoc(inp, asoc,
-						    SCTP_PCBFREE_NOFORCE, SCTP_FROM_SCTP_PCB+SCTP_LOC_4) == 0) {
+						    SCTP_PCBFREE_NOFORCE, SCTP_FROM_SCTP_PCB + SCTP_LOC_4) == 0) {
 					cnt_in_sd++;
 				}
 				continue;
@@ -4056,7 +4056,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 					struct mbuf *op_err;
 				abort_anyway:
 					op_err = sctp_generate_cause(SCTP_CAUSE_USER_INITIATED_ABT, "");
-					asoc->sctp_ep->last_abort_code = SCTP_FROM_SCTP_PCB+SCTP_LOC_5;
+					asoc->sctp_ep->last_abort_code = SCTP_FROM_SCTP_PCB + SCTP_LOC_5;
 					sctp_send_abort_tcb(asoc, op_err, SCTP_SO_LOCKED);
 					SCTP_STAT_INCR_COUNTER32(sctps_aborted);
 					if ((SCTP_GET_STATE(&asoc->asoc) == SCTP_STATE_OPEN) ||
@@ -4065,7 +4065,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 					}
 					if (sctp_free_assoc(inp, asoc,
 							    SCTP_PCBFREE_NOFORCE,
-							    SCTP_FROM_SCTP_PCB+SCTP_LOC_6) == 0) {
+							    SCTP_FROM_SCTP_PCB + SCTP_LOC_6) == 0) {
 						cnt_in_sd++;
 					}
 					continue;
@@ -4123,7 +4123,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 			struct mbuf *op_err;
 
 			op_err = sctp_generate_cause(SCTP_CAUSE_USER_INITIATED_ABT, "");
-			asoc->sctp_ep->last_abort_code = SCTP_FROM_SCTP_PCB+SCTP_LOC_7;
+			asoc->sctp_ep->last_abort_code = SCTP_FROM_SCTP_PCB + SCTP_LOC_7;
 			sctp_send_abort_tcb(asoc, op_err, SCTP_SO_LOCKED);
 			SCTP_STAT_INCR_COUNTER32(sctps_aborted);
 		} else if (asoc->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED) {
@@ -4135,7 +4135,8 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 		    (SCTP_GET_STATE(&asoc->asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) {
 			SCTP_STAT_DECR_GAUGE32(sctps_currestab);
 		}
-		if (sctp_free_assoc(inp, asoc, SCTP_PCBFREE_FORCE, SCTP_FROM_SCTP_PCB+SCTP_LOC_8) == 0) {
+		if (sctp_free_assoc(inp, asoc, SCTP_PCBFREE_FORCE,
+		                    SCTP_FROM_SCTP_PCB + SCTP_LOC_8) == 0) {
 			cnt++;
 		}
 	}
