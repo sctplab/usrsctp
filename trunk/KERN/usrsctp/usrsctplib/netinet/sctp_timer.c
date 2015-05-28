@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 279841 2015-03-10 09:16:31Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 283650 2015-05-28 16:00:23Z tuexen $");
 #endif
 
 #define _IP_VHL
@@ -120,7 +120,9 @@ sctp_threshold_management(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				net->dest_state |= SCTP_ADDR_PF;
 				net->last_active = sctp_get_tick_count();
 				sctp_send_hb(stcb, net, SCTP_SO_NOT_LOCKED);
-				sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net, SCTP_FROM_SCTP_TIMER + SCTP_LOC_3);
+				sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT,
+				                stcb->sctp_ep, stcb, net,
+				                SCTP_FROM_SCTP_TIMER + SCTP_LOC_1);
 				sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net);
 			}
 		}
@@ -163,7 +165,7 @@ sctp_threshold_management(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 
 		op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION,
 		                             "Association error counter exceeded");
-		inp->last_abort_code = SCTP_FROM_SCTP_TIMER+SCTP_LOC_1;
+		inp->last_abort_code = SCTP_FROM_SCTP_TIMER + SCTP_LOC_2;
 		sctp_abort_an_association(inp, stcb, op_err, SCTP_SO_NOT_LOCKED);
 		return (1);
 	}
@@ -1052,7 +1054,7 @@ sctp_cookie_timer(struct sctp_inpcb *inp,
 
 			op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION,
 			                             "Cookie timer expired, but no cookie");
-			inp->last_abort_code = SCTP_FROM_SCTP_TIMER+SCTP_LOC_4;
+			inp->last_abort_code = SCTP_FROM_SCTP_TIMER + SCTP_LOC_3;
 			sctp_abort_an_association(inp, stcb, op_err, SCTP_SO_NOT_LOCKED);
 		} else {
 #ifdef INVARIANTS
