@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 280439 2015-03-24 14:51:46Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 283648 2015-05-28 14:24:21Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1539,7 +1539,7 @@ sctp_timeout_handler(void *t)
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 	struct socket *so;
 #endif
-	int did_output, type;
+	int did_output;
 
 	tmr = (struct sctp_timer *)t;
 	inp = (struct sctp_inpcb *)tmr->ep;
@@ -1586,7 +1586,6 @@ sctp_timeout_handler(void *t)
 	}
 	/* if this is an iterator timeout, get the struct and clear inp */
 	tmr->stopped_from = 0xa003;
-	type = tmr->type;
 	if (inp) {
 		SCTP_INP_INCR_REF(inp);
 		if ((inp->sctp_socket == NULL) &&
@@ -1987,7 +1986,7 @@ out_decr:
 
 out_no_decr:
 	SCTPDBG(SCTP_DEBUG_TIMER1, "Timer now complete (type %d)\n",
-			  type);
+	        tmr->type);
 #if defined(__FreeBSD__) && __FreeBSD_version >= 801000
 	CURVNET_RESTORE();
 #endif

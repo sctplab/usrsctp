@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 282042 2015-04-26 21:47:15Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 283648 2015-05-28 14:24:21Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3470,12 +3470,16 @@ sctp_fs_audit(struct sctp_association *asoc)
 {
 	struct sctp_tmit_chunk *chk;
 	int inflight = 0, resend = 0, inbetween = 0, acked = 0, above = 0;
-	int entry_flight, entry_cnt, ret;
+	int ret;
+#ifndef INVARIANTS
+	int entry_flight, entry_cnt;
+#endif
 
+	ret = 0;
+#ifndef INVARIANTS
 	entry_flight = asoc->total_flight;
 	entry_cnt = asoc->total_flight_count;
-	ret = 0;
-
+#endif
 	if (asoc->pr_sctp_cnt >= asoc->sent_queue_cnt)
 		return (0);
 
