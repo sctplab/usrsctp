@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 283662 2015-05-28 18:34:02Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 283664 2015-05-28 18:52:32Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5973,11 +5973,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		stc.ipv4_addr_legal = 1;
 #endif
 	}
-#ifdef SCTP_DONT_DO_PRIVADDR_SCOPE
-	stc.ipv4_scope = 1;
-#else
 	stc.ipv4_scope = 0;
-#endif
 	if (net == NULL) {
 		to = src;
 		switch (dst->sa_family) {
@@ -5998,13 +5994,9 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			stc.laddr_type = SCTP_IPV4_ADDRESS;
 			/* scope_id is only for v6 */
 			stc.scope_id = 0;
-#ifndef SCTP_DONT_DO_PRIVADDR_SCOPE
 			if (IN4_ISPRIVATE_ADDRESS(&src4->sin_addr)) {
 				stc.ipv4_scope = 1;
 			}
-#else
-			stc.ipv4_scope = 1;
-#endif				/* SCTP_DONT_DO_PRIVADDR_SCOPE */
 			/* Must use the address in this case */
 			if (sctp_is_address_on_local_host(src, vrf_id)) {
 				stc.loopback_scope = 1;
