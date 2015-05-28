@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 280714 2015-03-26 22:05:31Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 280971 2015-04-01 22:26:39Z glebius $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -11471,6 +11471,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		ip->ip_v = IPVERSION;
 		ip->ip_hl = (sizeof(struct ip) >> 2);
 		ip->ip_tos = 0;
+		ip->ip_off = 0;
 #if defined(__FreeBSD__)
 		ip_fillid(ip);
 #elif defined(__APPLE__)
@@ -11484,7 +11485,6 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #else
 		ip->ip_id = ip_id++;
 #endif
-		ip->ip_off = 0;
 		ip->ip_ttl = MODULE_GLOBAL(ip_defttl);
 		if (port) {
 			ip->ip_p = IPPROTO_UDP;
