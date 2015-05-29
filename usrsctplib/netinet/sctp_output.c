@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 283665 2015-05-28 19:28:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 283691 2015-05-29 08:31:15Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3242,8 +3242,6 @@ again_with_private_addresses_allowed:
 				sifa = NULL;
 				continue;
 			}
-		} else {
-			SCTP_PRINTF("Stcb is null - no print\n");
 		}
 		atomic_add_int(&sifa->refcount, 1);
 		goto out;
