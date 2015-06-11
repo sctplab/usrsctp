@@ -3130,7 +3130,7 @@ usrsctp_deregister_address(void *addr)
 #define TRAILER "# SCTP_PACKET\n"
 
 char *
-usrsctp_dumppacket(void *buf, size_t len, int outbound)
+usrsctp_dumppacket(const void *buf, size_t len, int outbound)
 {
 	size_t i, pos;
 	char *dump_buf, *packet;

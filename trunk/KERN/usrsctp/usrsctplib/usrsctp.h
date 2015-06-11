@@ -961,7 +961,7 @@ usrsctp_set_ulpinfo(struct socket *, void *);
 #define SCTP_DUMP_INBOUND  0
 
 char *
-usrsctp_dumppacket(void *, size_t, int);
+usrsctp_dumppacket(const void *, size_t, int);
 
 void
 usrsctp_freedumpbuffer(char *);
