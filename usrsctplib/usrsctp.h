@@ -532,6 +532,9 @@ struct sctp_event_subscribe {
 #define SCTP_LOCAL_AUTH_CHUNKS          0x00000103
 #define SCTP_GET_ASSOC_NUMBER           0x00000104
 #define SCTP_GET_ASSOC_ID_LIST          0x00000105
+#define SCTP_TIMEOUTS                   0x00000106
+#define SCTP_PR_STREAM_STATUS           0x00000107
+#define SCTP_PR_ASSOC_STATUS            0x00000108
 
 /*
  * write-only options
@@ -788,6 +791,13 @@ struct sctp_timeouts {
 	uint32_t stimo_shutdownack;
 };
 
+struct sctp_prstatus {
+	sctp_assoc_t sprstat_assoc_id;
+	uint16_t sprstat_sid;
+	uint16_t sprstat_policy;
+	uint64_t sprstat_abandoned_unsent;
+	uint64_t sprstat_abandoned_sent;
+};
 
 /* Standard TCP Congestion Control */
 #define SCTP_CC_RFC2581         0x00000000
