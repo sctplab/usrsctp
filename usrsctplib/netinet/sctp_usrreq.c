@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 283666 2015-05-28 20:33:28Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 284332 2015-06-12 18:59:29Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3115,9 +3115,9 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 				}
 				/* get flags for PMTU */
 				if (net->dest_state & SCTP_ADDR_NO_PMTUD) {
-					paddrp->spp_flags |= SPP_PMTUD_ENABLE;
-				} else {
 					paddrp->spp_flags |= SPP_PMTUD_DISABLE;
+				} else {
+					paddrp->spp_flags |= SPP_PMTUD_ENABLE;
 				}
 				if (net->dscp & 0x01) {
 					paddrp->spp_dscp = net->dscp & 0xfc;
