@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 283691 2015-05-29 08:31:15Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 284326 2015-06-12 16:01:41Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -8428,6 +8428,7 @@ again_one_more_time:
 		} else {
 			r_mtu = mtu;
 		}
+		error = 0;
 		/************************/
 		/* ASCONF transmission */
 		/************************/
@@ -8590,7 +8591,7 @@ again_one_more_time:
 							sctp_move_chunks_from_net(stcb, net);
 						}
 						*reason_code = 7;
-						continue;
+						break;
 					} else
 						asoc->ifp_had_enobuf = 0;
 					if (*now_filled == 0) {
@@ -8637,6 +8638,10 @@ again_one_more_time:
 					no_fragmentflg = 1;
 				}
 			}
+		}
+		if (error != 0) {
+			/* try next net */
+			continue;
 		}
 		/************************/
 		/* Control transmission */
@@ -8863,7 +8868,7 @@ again_one_more_time:
 							sctp_move_chunks_from_net(stcb, net);
 						}
 						*reason_code = 7;
-						continue;
+						break;
 					} else
 						asoc->ifp_had_enobuf = 0;
 					/* Only HB or ASCONF advances time */
@@ -8913,6 +8918,10 @@ again_one_more_time:
 					no_fragmentflg = 1;
 				}
 			}
+		}
+		if (error != 0) {
+			/* try next net */
+			continue;
 		}
 		/* JRI: if dest is in PF state, do not send data to it */
 		if ((asoc->sctp_cmt_on_off > 0) &&
