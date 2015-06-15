@@ -274,11 +274,9 @@ sofree(struct socket *so)
 
 
 /* Taken from  /src/sys/kern/uipc_socket.c */
-int
-soabort(so)
-	struct socket *so;
+void
+soabort(struct socket *so)
 {
-	int error;
 #if defined(INET6)
 	struct sctp_inpcb *inp;
 #endif
@@ -286,24 +284,17 @@ soabort(so)
 #if defined(INET6)
 	inp = (struct sctp_inpcb *)so->so_pcb;
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) {
-		error = sctp6_abort(so);
+		sctp6_abort(so);
 	} else {
 #if defined(INET)
-		error = sctp_abort(so);
-#else
-		error = EAFNOSUPPORT;
+		sctp_abort(so);
 #endif
 	}
 #elif defined(INET)
-	error = sctp_abort(so);
-#else
-	error = EAFNOSUPPORT;
+	sctp_abort(so);
 #endif
-	if (error) {
-		sofree(so);
-		return error;
-	}
-	return (0);
+	SOCK_LOCK(so);
+	sofree(so);
 }
 
 
