@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 284332 2015-06-12 18:59:29Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 284515 2015-06-17 15:20:14Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7591,7 +7591,24 @@ sctp_ctloutput(struct socket *so, struct sockopt *sopt)
 	size_t optsize = 0;
 	void *p;
 	int error = 0;
+#if defined(__FreeBSD__)
+	struct sctp_inpcb *inp;
+#endif
 
+#if defined(__FreeBSD__)
+	if ((sopt->sopt_level == SOL_SOCKET) &&
+	    (sopt->sopt_name == SO_SETFIB)) {
+		inp = (struct sctp_inpcb *)so->so_pcb;
+		if (inp == NULL) {
+			SCTP_LTRACE_ERR_RET(so->so_pcb, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOBUFS);
+			return (EINVAL);
+		}
+		SCTP_INP_WLOCK(inp);
+		inp->fibnum = so->so_fibnum;
+		SCTP_INP_WUNLOCK(inp);
+		return (0);
+	}
+#endif
 	if (sopt->sopt_level != IPPROTO_SCTP) {
 		/* wrong proto level... send back up to IP */
 #ifdef INET6

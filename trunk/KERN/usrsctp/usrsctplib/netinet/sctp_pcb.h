@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 279859 2015-03-10 19:49:25Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 284515 2015-06-17 15:20:14Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_PCB_H_
@@ -564,6 +564,7 @@ struct sctp_inpcb {
 	uint32_t i_am_here_line;
 #endif
 	uint32_t def_vrf_id;
+	uint16_t fibnum;
 #ifdef SCTP_MVRF
 	uint32_t *m_vrf_ids;
 	uint32_t num_vrfs;

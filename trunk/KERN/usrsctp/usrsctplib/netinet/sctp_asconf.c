@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 284393 2015-06-14 22:14:00Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 284515 2015-06-17 15:20:14Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1116,7 +1116,8 @@ sctp_path_check_and_react(struct sctp_tcb *stcb, struct sctp_ifa *newifa)
 		   nexthop, the path will not be changed.
 		 */
 		SCTP_RTALLOC((sctp_route_t *)&net->ro,
-			     stcb->sctp_ep->def_vrf_id);
+			     stcb->sctp_ep->def_vrf_id,
+			     stcb->sctp_ep->fibnum);
 		if (net->ro.ro_rt == NULL)
 			continue;
 

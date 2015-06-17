@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 283654 2015-05-28 16:39:22Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 284515 2015-06-17 15:20:14Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4075,7 +4075,7 @@ sctp_abort_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	}
 	sctp_send_abort(m, iphlen, src, dst, sh, vtag, op_err,
 #if defined(__FreeBSD__)
-	                mflowtype, mflowid,
+	                mflowtype, mflowid, inp->fibnum,
 #endif
 	                vrf_id, port);
 	if (stcb != NULL) {
@@ -4246,7 +4246,7 @@ sctp_handle_ootb(struct mbuf *m, int iphlen, int offset,
                  struct sctphdr *sh, struct sctp_inpcb *inp,
                  struct mbuf *cause,
 #if defined(__FreeBSD__)
-                 uint8_t mflowtype, uint32_t mflowid,
+                 uint8_t mflowtype, uint32_t mflowid, uint16_t fibnum,
 #endif
                  uint32_t vrf_id, uint16_t port)
 {
@@ -4296,7 +4296,7 @@ sctp_handle_ootb(struct mbuf *m, int iphlen, int offset,
 		case SCTP_SHUTDOWN_ACK:
 			sctp_send_shutdown_complete2(src, dst, sh,
 #if defined(__FreeBSD__)
-			                             mflowtype, mflowid,
+			                             mflowtype, mflowid, fibnum,
 #endif
 			                             vrf_id, port);
 			return;
@@ -4312,7 +4312,7 @@ sctp_handle_ootb(struct mbuf *m, int iphlen, int offset,
 	     (contains_init_chunk == 0))) {
 		sctp_send_abort(m, iphlen, src, dst, sh, 0, cause,
 #if defined(__FreeBSD__)
-		                mflowtype, mflowid,
+		                mflowtype, mflowid, fibnum,
 #endif
 		                vrf_id, port);
 	}
