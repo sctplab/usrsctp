@@ -888,7 +888,7 @@ static inline void sctp_userspace_rtalloc(sctp_route_t *ro)
 	 *  SCTP_GET_IF_INDEX_FROM_ROUTE macro.
 	 */
 }
-#define SCTP_RTALLOC(ro, vrf_id) sctp_userspace_rtalloc((sctp_route_t *)ro)
+#define SCTP_RTALLOC(ro, vrf_id, fibnum) sctp_userspace_rtalloc((sctp_route_t *)ro)
 
 /* dummy rtfree needed once user_route.h is included */
 static inline void sctp_userspace_rtfree(sctp_rtentry_t *rt)

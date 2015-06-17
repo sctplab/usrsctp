@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 283664 2015-05-28 18:52:32Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 284515 2015-06-17 15:20:14Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2846,6 +2846,11 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	inp->reconfig_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_reconfig_enable);
 	inp->nrsack_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_nrsack_enable);
 	inp->pktdrop_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_pktdrop_enable);
+#if defined(__FreeBSD__)
+	inp->fibnum = so->so_fibnum;
+#else
+	inp->fibnum = 0;
+#endif
 #if defined(__Userspace__)
 	inp->ulp_info = NULL;
 	inp->recv_callback = NULL;
@@ -4655,7 +4660,9 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 	}
 #endif /* SCTP_EMBEDDED_V6_SCOPE */
 #endif
-	SCTP_RTALLOC((sctp_route_t *)&net->ro, stcb->asoc.vrf_id);
+	SCTP_RTALLOC((sctp_route_t *)&net->ro,
+	             stcb->asoc.vrf_id,
+	             stcb->sctp_ep->fibnum);
 
 #if defined(__Userspace__)
 	net->src_addr_selected = 0;

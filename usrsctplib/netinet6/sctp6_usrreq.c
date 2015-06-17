@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 283650 2015-05-28 16:00:23Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 284515 2015-06-17 15:20:14Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -163,6 +163,7 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto)
 #if defined(__FreeBSD__)
 	uint32_t mflowid;
 	uint8_t mflowtype;
+	uint16_t fibnum;
 #endif
 #if !(defined(__APPLE__) || defined (__FreeBSD__))
 	uint16_t port = 0;
@@ -233,7 +234,8 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto)
 #if defined(__FreeBSD__)
 	mflowid = m->m_pkthdr.flowid;
 	mflowtype = M_HASHTYPE_GET(m);
- #endif
+	fibnum = M_GETFIB(m);
+#endif
 	SCTP_STAT_INCR(sctps_recvpackets);
 	SCTP_STAT_INCR_COUNTER64(sctps_inpackets);
 	/* Get IP, SCTP, and first chunk header together in the first mbuf. */
@@ -324,7 +326,7 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto)
 #endif
 	                             ecn_bits,
 #if defined(__FreeBSD__)
-	                             mflowtype, mflowid,
+	                             mflowtype, mflowid, fibnum,
 #endif
 	                             vrf_id, port);
  out:

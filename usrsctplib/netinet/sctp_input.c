@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 283650 2015-05-28 16:00:23Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 284515 2015-06-17 15:20:14Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -207,7 +207,7 @@ sctp_handle_init(struct mbuf *m, int iphlen, int offset,
 			                             "No listener");
 			sctp_send_abort(m, iphlen, src, dst, sh, 0, op_err,
 #if defined(__FreeBSD__)
-			                mflowtype, mflowid,
+			                mflowtype, mflowid, inp->fibnum,
 #endif
 			                vrf_id, port);
 		}
@@ -1536,7 +1536,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		op_err = sctp_generate_cause(SCTP_CAUSE_COOKIE_IN_SHUTDOWN, "");
 		sctp_send_operr_to(src, dst, sh, cookie->peers_vtag, op_err,
 #if defined(__FreeBSD__)
-		                   mflowtype, mflowid,
+		                   mflowtype, mflowid, inp->fibnum,
 #endif
 		                   vrf_id, net->port);
 		if (how_indx < sizeof(asoc->cookie_how))
@@ -1746,7 +1746,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		op_err = sctp_generate_cause(SCTP_CAUSE_NAT_COLLIDING_STATE, "");
 		sctp_send_abort(m, iphlen,  src, dst, sh, 0, op_err,
 #if defined(__FreeBSD__)
-		                mflowtype, mflowid,
+		                mflowtype, mflowid, inp->fibnum,
 #endif
 		                vrf_id, port);
 		return (NULL);
@@ -2659,7 +2659,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 		scm->time_usec = htonl(tim);
 		sctp_send_operr_to(src, dst, sh, cookie->peers_vtag, op_err,
 #if defined(__FreeBSD__)
-		                   mflowtype, mflowid,
+		                   mflowtype, mflowid, l_inp->fibnum,
 #endif
 		                   vrf_id, port);
 		return (NULL);
@@ -2928,6 +2928,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 			inp->partial_delivery_point = (*inp_p)->partial_delivery_point;
 			inp->sctp_context = (*inp_p)->sctp_context;
 			inp->local_strreset_support = (*inp_p)->local_strreset_support;
+			inp->fibnum = (*inp_p)->fibnum;
 			inp->inp_starting_point_for_iterator = NULL;
 #if defined(__Userspace__)
 			inp->ulp_info = (*inp_p)->ulp_info;
@@ -4542,7 +4543,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
     struct sctphdr *sh, struct sctp_chunkhdr *ch, struct sctp_inpcb *inp,
     struct sctp_tcb *stcb, struct sctp_nets **netp, int *fwd_tsn_seen,
 #if defined(__FreeBSD__)
-    uint8_t mflowtype, uint32_t mflowid,
+    uint8_t mflowtype, uint32_t mflowid, uint16_t fibnum,
 #endif
     uint32_t vrf_id, uint16_t port)
 {
@@ -4705,7 +4706,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 			/* no association, so it's out of the blue... */
 			sctp_handle_ootb(m, iphlen, *offset, src, dst, sh, inp, op_err,
 #if defined(__FreeBSD__)
-			                 mflowtype, mflowid,
+			                 mflowtype, mflowid, inp->fibnum,
 #endif
 					 vrf_id, port);
 			*offset = length;
@@ -4751,7 +4752,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 				sctp_handle_ootb(m, iphlen, *offset, src, dst,
 				                 sh, inp, op_err,
 #if defined(__FreeBSD__)
-				                 mflowtype, mflowid,
+				                 mflowtype, mflowid, fibnum,
 #endif
 				                 vrf_id, port);
 				return (NULL);
@@ -5774,7 +5775,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 #endif
                              uint8_t ecn_bits,
 #if defined(__FreeBSD__)
-                             uint8_t mflowtype, uint32_t mflowid,
+                             uint8_t mflowtype, uint32_t mflowid, uint16_t fibnum,
 #endif
                              uint32_t vrf_id, uint16_t port)
 {
@@ -5861,7 +5862,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 		if (ch->chunk_type == SCTP_SHUTDOWN_ACK) {
 			sctp_send_shutdown_complete2(src, dst, sh,
 #if defined(__FreeBSD__)
-			                             mflowtype, mflowid,
+			                             mflowtype, mflowid, fibnum,
 #endif
 			                             vrf_id, port);
 			goto out;
@@ -5878,7 +5879,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 				sctp_send_abort(m, iphlen, src, dst,
 				                sh, 0, op_err,
 #if defined(__FreeBSD__)
-				                mflowtype, mflowid,
+				                mflowtype, mflowid, fibnum,
 #endif
 				                vrf_id, port);
 			}
@@ -5939,7 +5940,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 			                             msg);
 			sctp_handle_ootb(m, iphlen, offset, src, dst, sh, inp, op_err,
 #if defined(__FreeBSD__)
-			                 mflowtype, mflowid,
+			                 mflowtype, mflowid, inp->fibnum,
 #endif
 			                 vrf_id, port);
 			goto out;
@@ -5953,7 +5954,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 		                            src, dst, sh, ch,
 		                            inp, stcb, &net, &fwd_tsn_seen,
 #if defined(__FreeBSD__)
-		                            mflowtype, mflowid,
+		                            mflowtype, mflowid, fibnum,
 #endif
 		                            vrf_id, port);
 		if (stcb) {
@@ -5995,7 +5996,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 			                             msg);
 			sctp_handle_ootb(m, iphlen, offset, src, dst, sh, inp, op_err,
 #if defined(__FreeBSD__)
-			                 mflowtype, mflowid,
+			                 mflowtype, mflowid, fibnum,
 #endif
 					 vrf_id, port);
 			goto out;
@@ -6070,7 +6071,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 			                             msg);
 			sctp_handle_ootb(m, iphlen, offset, src, dst, sh, inp, op_err,
 #if defined(__FreeBSD__)
-			                 mflowtype, mflowid,
+			                 mflowtype, mflowid, inp->fibnum,
 #endif
 					 vrf_id, port);
 			goto out;
@@ -6212,6 +6213,7 @@ sctp_input(i_pak, va_alist)
 #if defined(__FreeBSD__)
 	uint32_t mflowid;
 	uint8_t mflowtype;
+	uint16_t fibnum;
 #endif
 #if !(defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__))
 	uint16_t port = 0;
@@ -6282,6 +6284,7 @@ sctp_input(i_pak, va_alist)
 #if defined(__FreeBSD__)
 	mflowid = m->m_pkthdr.flowid;
 	mflowtype = M_HASHTYPE_GET(m);
+	fibnum = M_GETFIB(m);
 #endif
 	SCTP_STAT_INCR(sctps_recvpackets);
 	SCTP_STAT_INCR_COUNTER64(sctps_inpackets);
@@ -6378,7 +6381,7 @@ sctp_input(i_pak, va_alist)
 #endif
 	                             ecn_bits,
 #if defined(__FreeBSD__)
-	                             mflowtype, mflowid,
+	                             mflowtype, mflowid, fibnum,
 #endif
 	                             vrf_id, port);
  out:

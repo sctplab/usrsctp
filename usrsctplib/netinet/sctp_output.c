@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 284331 2015-06-12 17:20:09Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 284515 2015-06-17 15:20:14Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3470,7 +3470,7 @@ sctp_source_address_selection(struct sctp_inpcb *inp,
 		/*
 		 * Need a route to cache.
 		 */
-		SCTP_RTALLOC(ro, vrf_id);
+		SCTP_RTALLOC(ro, vrf_id, inp->fibnum);
 	}
 	if (ro->ro_rt == NULL) {
 		return (NULL);
@@ -4325,7 +4325,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 				sctp_free_ifa(_lsrc);
 			} else {
 				ip->ip_src = over_addr->sin.sin_addr;
-				SCTP_RTALLOC(ro, vrf_id);
+				SCTP_RTALLOC(ro, vrf_id, inp->fibnum);
 			}
 		}
 		if (port) {
@@ -4728,7 +4728,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 				sctp_free_ifa(_lsrc);
 			} else {
 				lsa6->sin6_addr = over_addr->sin6.sin6_addr;
-				SCTP_RTALLOC(ro, vrf_id);
+				SCTP_RTALLOC(ro, vrf_id, inp->fibnum);
 			}
 #ifdef SCTP_EMBEDDED_V6_SCOPE
 #ifdef SCTP_KAME
@@ -5877,7 +5877,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		                             "Address added");
 		sctp_send_abort(init_pkt, iphlen, src, dst, sh, 0, op_err,
 #if defined(__FreeBSD__)
-		                mflowtype, mflowid,
+		                mflowtype, mflowid, inp->fibnum,
 #endif
 		                vrf_id, port);
 		return;
@@ -5898,7 +5898,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		sctp_send_abort(init_pkt, iphlen, src, dst, sh,
 				init_chk->init.initiate_tag, op_err,
 #if defined(__FreeBSD__)
-		                mflowtype, mflowid,
+		                mflowtype, mflowid, inp->fibnum,
 #endif
 		                vrf_id, port);
 		return;
@@ -11328,7 +11328,7 @@ static void
 sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
                    struct sctphdr *sh, uint32_t vtag,
                    uint8_t type, struct mbuf *cause,
-                   uint8_t mflowtype, uint32_t mflowid,
+                   uint8_t mflowtype, uint32_t mflowid, uint16_t fibnum,
                    uint32_t vrf_id, uint16_t port)
 #else
 static void
@@ -11434,6 +11434,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 	SCTP_BUF_LEN(mout) = len;
 	SCTP_BUF_NEXT(mout) = cause;
 #if defined(__FreeBSD__)
+	M_SETFIB(mout, fibnum);
 	mout->m_pkthdr.flowid = mflowid;
 	M_HASHTYPE_SET(mout, mflowtype);
 #endif
@@ -11725,13 +11726,13 @@ void
 sctp_send_shutdown_complete2(struct sockaddr *src, struct sockaddr *dst,
                              struct sctphdr *sh,
 #if defined(__FreeBSD__)
-                             uint8_t mflowtype, uint32_t mflowid,
+                             uint8_t mflowtype, uint32_t mflowid, uint16_t fibnum,
 #endif
                              uint32_t vrf_id, uint16_t port)
 {
 	sctp_send_resp_msg(src, dst, sh, 0, SCTP_SHUTDOWN_COMPLETE, NULL,
 #if defined(__FreeBSD__)
-	                   mflowtype, mflowid,
+	                   mflowtype, mflowid, fibnum,
 #endif
 	                   vrf_id, port);
 }
@@ -12577,7 +12578,7 @@ void
 sctp_send_abort(struct mbuf *m, int iphlen, struct sockaddr *src, struct sockaddr *dst,
                 struct sctphdr *sh, uint32_t vtag, struct mbuf *cause,
 #if defined(__FreeBSD__)
-                uint8_t mflowtype, uint32_t mflowid,
+                uint8_t mflowtype, uint32_t mflowid, uint16_t fibnum,
 #endif
                 uint32_t vrf_id, uint16_t port)
 {
@@ -12589,7 +12590,7 @@ sctp_send_abort(struct mbuf *m, int iphlen, struct sockaddr *src, struct sockadd
 	}
 	sctp_send_resp_msg(src, dst, sh, vtag, SCTP_ABORT_ASSOCIATION, cause,
 #if defined(__FreeBSD__)
-	                   mflowtype, mflowid,
+	                   mflowtype, mflowid, fibnum,
 #endif
 	                   vrf_id, port);
 	return;
@@ -12599,13 +12600,13 @@ void
 sctp_send_operr_to(struct sockaddr *src, struct sockaddr *dst,
                    struct sctphdr *sh, uint32_t vtag, struct mbuf *cause,
 #if defined(__FreeBSD__)
-                   uint8_t mflowtype, uint32_t mflowid,
+                   uint8_t mflowtype, uint32_t mflowid, uint16_t fibnum,
 #endif
                    uint32_t vrf_id, uint16_t port)
 {
 	sctp_send_resp_msg(src, dst, sh, vtag, SCTP_OPERATION_ERROR, cause,
 #if defined(__FreeBSD__)
-	                   mflowtype, mflowid,
+	                   mflowtype, mflowid, fibnum,
 #endif
 	                   vrf_id, port);
 	return;
