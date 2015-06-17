@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 284515 2015-06-17 15:20:14Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 284526 2015-06-17 19:26:23Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2783,8 +2783,9 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 		return (NULL);
 	}
 #if defined(__FreeBSD__)
-	if ((*netp != NULL) && (mflowtype != M_HASHTYPE_NONE)) {
+	if (*netp != NULL) {
 		(*netp)->flowtype = mflowtype;
+		(*netp)->flowid = mflowid;
 	}
 #endif
 	/*
@@ -5816,8 +5817,9 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 			}
 #endif
 #if defined(__FreeBSD__)
-			if ((net != NULL) && (mflowtype != M_HASHTYPE_NONE)) {
+			if (net != NULL) {
 				net->flowtype = mflowtype;
+				net->flowid = mflowid;
 			}
 #endif
 			if ((inp != NULL) && (stcb != NULL)) {
@@ -5848,8 +5850,9 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 	}
 #endif
 #if defined(__FreeBSD__)
-	if ((net != NULL) && (mflowtype != M_HASHTYPE_NONE)) {
+	if (net != NULL) {
 		net->flowtype = mflowtype;
+		net->flowid = mflowid;
 	}
 #endif
 	if (inp == NULL) {
@@ -6395,7 +6398,7 @@ sctp_input(i_pak, va_alist)
 extern int *sctp_cpuarry;
 #endif
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020  
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020
 int
 sctp_input(struct mbuf **mp, int *offp, int proto SCTP_UNUSED)
 {
@@ -6427,7 +6430,7 @@ sctp_input(struct mbuf *m, int off)
 			if (SCTP_BUF_LEN(m) < offset) {
 				if ((m = m_pullup(m, offset)) == NULL) {
 					SCTP_STAT_INCR(sctps_hdrops);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020  
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020
 					return (IPPROTO_DONE);
 #else
 					return;
@@ -6443,7 +6446,7 @@ sctp_input(struct mbuf *m, int off)
 		}
 		cpu_to_use = sctp_cpuarry[flowid % mp_ncpus];
 		sctp_queue_to_mcore(m, off, cpu_to_use);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020  
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020
 		return (IPPROTO_DONE);
 #else
 		return;
@@ -6451,7 +6454,7 @@ sctp_input(struct mbuf *m, int off)
 	}
 #endif
 	sctp_input_with_port(m, off, 0);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020  
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020
 	return (IPPROTO_DONE);
 #endif
 }
