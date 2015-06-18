@@ -91,6 +91,7 @@ char Usage[] =
 "        -E             local UDP encapsulation port (default 9899)\n"
 "        -f             fragmentation point\n"
 "        -l             size of send/receive buffer\n"
+"        -L             bind to local IP (default INADDR_ANY)\n"
 "        -n             number of messages sent (0 means infinite)/received\n"
 "        -D             turns Nagle off\n"
 "        -R             socket recv buffer\n"
@@ -343,6 +344,7 @@ int main(int argc, char **argv)
 	struct sctp_assoc_value av;
 	struct sctp_udpencaps encaps;
 	struct sctp_sndinfo sndinfo;
+	in_addr_t srcAddr;
 #ifdef _WIN32
 	HANDLE tid;
 #else
@@ -366,12 +368,13 @@ int main(int argc, char **argv)
 	local_udp_port = 9899;
 	verbose = 0;
 	very_verbose = 0;
+	srcAddr = htonl(INADDR_ANY);
 
 	memset((void *) &remote_addr, 0, sizeof(struct sockaddr_in));
 	memset((void *) &local_addr, 0, sizeof(struct sockaddr_in));
 
 #ifndef _WIN32
-	while ((c = getopt(argc, argv, "a:cp:l:E:f:n:R:S:T:uU:vVD")) != -1)
+	while ((c = getopt(argc, argv, "a:cp:l:E:f:L:n:R:S:T:uU:vVD")) != -1)
 		switch(c) {
 			case 'a':
 				ind.ssb_adaptation_ind = atoi(optarg);
@@ -393,6 +396,9 @@ int main(int argc, char **argv)
 				break;
 			case 'f':
 				fragpoint = atoi(optarg);
+				break;
+			case 'L':
+				srcAddr = inet_addr(optarg);
 				break;
 			case 'R':
 				rcvbufsize = atoi(optarg);
@@ -471,6 +477,14 @@ int main(int argc, char **argv)
 					opt = argv[optind];
 					fragpoint = atoi(opt);
 					break;
+				case 'L':
+					if (++optind >= argc) {
+						printf("%s", Usage);
+						exit(1);
+					}
+					opt = argv[optind];
+					srcAddr = inet_addr(optarg);
+					break;
 				case 'U':
 					if (++optind >= argc) {
 						printf("%s", Usage);
@@ -538,7 +552,7 @@ int main(int argc, char **argv)
 	local_addr.sin_len = sizeof(struct sockaddr_in);
 #endif
 	local_addr.sin_port = htons(local_port);
-	local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	local_addr.sin_addr.s_addr = srcAddr;
 
 	usrsctp_init(local_udp_port, NULL, debug_printf);
 #ifdef SCTP_DEBUG
