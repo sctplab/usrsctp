@@ -344,10 +344,11 @@ int main(int argc, char **argv)
 	struct sctp_assoc_value av;
 	struct sctp_udpencaps encaps;
 	struct sctp_sndinfo sndinfo;
-	in_addr_t srcAddr;
 #ifdef _WIN32
+	unsigned long srcAddr;
 	HANDLE tid;
 #else
+	in_addr_t srcAddr;
 	pthread_t tid;
 #endif
 	int fragpoint = 0;
@@ -483,7 +484,7 @@ int main(int argc, char **argv)
 						exit(1);
 					}
 					opt = argv[optind];
-					srcAddr = inet_addr(optarg);
+					srcAddr = inet_addr(opt);
 					break;
 				case 'U':
 					if (++optind >= argc) {
@@ -502,10 +503,20 @@ int main(int argc, char **argv)
 					local_udp_port = atoi(opt);
 					break;
 				case 'R':
-					rcvbufsize = atoi(optarg);
+					if (++optind >= argc) {
+						printf("%s", Usage);
+						exit(1);
+					}
+					opt = argv[optind];
+					rcvbufsize = atoi(opt);
 					break;
 				case 'S':
-					sndbufsize = atoi(optarg);
+					if (++optind >= argc) {
+						printf("%s", Usage);
+						exit(1);
+					}
+					opt = argv[optind];
+					sndbufsize = atoi(opt);
 					break;
 				case 'T':
 					if (++optind >= argc) {
