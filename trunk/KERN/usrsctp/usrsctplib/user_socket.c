@@ -42,6 +42,9 @@
 #ifdef INET6
 #include <netinet6/sctp6_var.h>
 #endif
+#if defined(__Userspace_os_FreeBSD)
+#include <sys/param.h>
+#endif
 #if defined(__Userspace_os_Linux)
 #define __FAVOR_BSD    /* (on Ubuntu at least) enables UDP header field names like BSD in RFC 768 */
 #endif
@@ -2824,7 +2827,7 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 			SCTP_PRINTF("Why did the SCTP implementation did not choose a source address?\n");
 		}
 		/* TODO need to worry about ro->ro_dst as in ip_output? */
-#if defined(__Userspace_os_Linux) || defined (__Userspace_os_Windows)
+#if defined(__Userspace_os_Linux) || defined (__Userspace_os_Windows) || (defined(__Userspace_os_FreeBSD) && (__FreeBSD_version >= 1100030))
 		/* need to put certain fields into network order for Linux */
 		ip->ip_len = htons(ip->ip_len);
 		ip->ip_off = 0;
