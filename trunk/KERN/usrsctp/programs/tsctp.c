@@ -238,8 +238,9 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 	spa.sendv_flags = SCTP_SEND_SNDINFO_VALID | SCTP_SEND_PRINFO_VALID;*/
 
 	while (!done && ((number_of_messages == 0) || (messages < (number_of_messages - 1)))) {
-		if (very_verbose)
+		if (very_verbose) {
 			printf("Sending message number %lu.\n", messages + 1);
+		}
 
 		if (usrsctp_sendv(psock, buffer, length,
 		                  (struct sockaddr *) &remote_addr, 1,
@@ -249,6 +250,9 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 				perror("usrsctp_sendmsg (cb) returned < 0");
 				exit(1);
 			} else {
+				if (very_verbose){
+					printf("EWOULDBLOCK or EAGAIN for message number %lu - will retry\n", messages + 1);
+				}
 				/* send until EWOULDBLOCK then exit callback. */
 				return (1);
 			}
@@ -267,6 +271,9 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 				perror("usrsctp_sendmsg (cb) returned < 0");
 				exit(1);
 			} else {
+				if (very_verbose){
+					printf("EWOULDBLOCK or EAGAIN for final message number %lu - will retry\n", messages + 1);
+				}
 				/* send until EWOULDBLOCK then exit callback. */
 				return (1);
 			}
@@ -650,8 +657,9 @@ int main(int argc, char **argv)
 				pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock);
 #endif
 			}
-			if (verbose)
+			if (verbose) {
 				printf("Connection accepted from %s:%d\n", inet_ntoa(remote_addr.sin_addr), ntohs(remote_addr.sin_port));
+			}
 		}
 		usrsctp_close(psock);
 	} else {
@@ -680,8 +688,9 @@ int main(int argc, char **argv)
 		if (fragpoint) {
 			av.assoc_id = 0;
 			av.assoc_value = fragpoint;
-			if (usrsctp_setsockopt(psock, IPPROTO_SCTP, SCTP_MAXSEG, &av, sizeof(struct sctp_assoc_value)) < 0)
+			if (usrsctp_setsockopt(psock, IPPROTO_SCTP, SCTP_MAXSEG, &av, sizeof(struct sctp_assoc_value)) < 0) {
 				perror("setsockopt: SCTP_MAXSEG");
+			}
 		}
 
 		if (sndbufsize) {
@@ -706,8 +715,16 @@ int main(int argc, char **argv)
 		buffer = malloc(length);
 		memset(buffer, 'b', length);
 		gettimeofday(&start_time, NULL);
+
 		if (verbose) {
-			printf("Start sending %ld messages...\n", (long)number_of_messages);
+			printf("Start sending ");
+			if (number_of_messages > 0) {
+				printf("%ld messages ", (long)number_of_messages);
+			}
+			if (runtime > 0) {
+				printf("for %u seconds ...", runtime);
+			}
+			printf("\n");
 			fflush(stdout);
 		}
 
@@ -743,12 +760,13 @@ int main(int argc, char **argv)
 		*/
 
 		if (use_cb) {
-			if (very_verbose)
+			if (very_verbose) {
 				printf("Sending message number %lu.\n", messages);
+			}
 
-				if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
-				                  (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
-				                  0) < 0) {
+			if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
+				          (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
+				          0) < 0) {
 				perror("usrctp_sendv returned < 0");
 				exit(1);
 			}
@@ -762,8 +780,9 @@ int main(int argc, char **argv)
 			}
 		} else {
 			while (!done && ((number_of_messages == 0) || (messages < (number_of_messages - 1)))) {
-				if (very_verbose)
+				if (very_verbose) {
 					printf("Sending message number %lu.\n", messages + 1);
+				}
 
 				if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
 				                  (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
@@ -773,8 +792,9 @@ int main(int argc, char **argv)
 				}
 				messages++;
 			}
-			if (very_verbose)
+			if (very_verbose) {
 				printf("Sending message number %lu.\n", messages + 1);
+			}
 
 			sndinfo.snd_flags |= SCTP_EOF;
 			if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
@@ -786,8 +806,10 @@ int main(int argc, char **argv)
 			messages++;
 		}
 		free (buffer);
-		if (verbose)
+
+		if (verbose) {
 			printf("done.\n");
+		}
 
 		usrsctp_close(psock);
 		gettimeofday(&now, NULL);
