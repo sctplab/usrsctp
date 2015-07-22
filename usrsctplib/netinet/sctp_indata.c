@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 283650 2015-05-28 16:00:23Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 285792 2015-07-22 11:30:37Z rrs $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1897,6 +1897,7 @@ finish_express_del:
 
 		sctp_reset_in_stream(stcb, liste->number_entries, liste->list_of_streams);
 		TAILQ_REMOVE(&asoc->resetHead, liste, next_resp);
+		sctp_send_deferred_reset_response(stcb, liste, SCTP_STREAM_RESET_RESULT_PERFORMED);
 		SCTP_FREE(liste, SCTP_M_STRESET);
 		/*sa_ignore FREED_MEMORY*/
 		liste = TAILQ_FIRST(&asoc->resetHead);
