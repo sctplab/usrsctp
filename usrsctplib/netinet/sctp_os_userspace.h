@@ -530,7 +530,6 @@ struct sx {int dummy;};
 #endif
 #if !defined(__Userspace_os_Windows)
 #include <netinet/ip6.h>
-#include <netinet/icmp6.h>
 #endif
 #if defined(__Userspace_os_Darwin) || defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Linux) || defined(__Userspace_os_NetBSD) || defined(__Userspace_os_OpenBSD) || defined(__Userspace_os_Windows)
 #include "user_ip6_var.h"
