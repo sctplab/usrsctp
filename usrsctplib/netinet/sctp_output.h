@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.h 285792 2015-07-22 11:30:37Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.h 285837 2015-07-24 14:09:03Z rrs $");
 #endif
 
 #ifndef _NETINET_SCTP_OUTPUT_H_
@@ -208,7 +208,7 @@ void
 sctp_add_stream_reset_result_tsn(struct sctp_tmit_chunk *,
                                  uint32_t, uint32_t, uint32_t, uint32_t);
 int
-sctp_send_stream_reset_out_if_possible(struct sctp_tcb *);
+sctp_send_stream_reset_out_if_possible(struct sctp_tcb *, int);
 
 int
 sctp_send_str_reset_req(struct sctp_tcb *, uint16_t , uint16_t *,

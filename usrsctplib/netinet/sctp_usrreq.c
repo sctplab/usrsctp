@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 285792 2015-07-22 11:30:37Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 285837 2015-07-24 14:09:03Z rrs $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5496,8 +5496,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 							strrst->srs_stream_list,
 							send_in, 0, 0, 0, 0, 0);
 		} else
-			error = sctp_send_stream_reset_out_if_possible(stcb);
-
+			error = sctp_send_stream_reset_out_if_possible(stcb, SCTP_SO_LOCKED);
 		if (!error)
 			sctp_chunk_output(inp, stcb, SCTP_OUTPUT_FROM_STRRST_REQ, SCTP_SO_LOCKED);
 

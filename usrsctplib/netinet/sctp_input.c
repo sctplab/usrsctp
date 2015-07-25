@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 285792 2015-07-22 11:30:37Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 285838 2015-07-24 14:13:43Z rrs $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3891,7 +3891,7 @@ sctp_handle_stream_reset_response(struct sctp_tcb *stcb,
 		}
 	}
 	if (asoc->stream_reset_outstanding == 0) {
-		sctp_send_stream_reset_out_if_possible(stcb);
+		sctp_send_stream_reset_out_if_possible(stcb, SCTP_SO_NOT_LOCKED);
 	}
 	return (0);
 }
@@ -3959,7 +3959,7 @@ sctp_handle_str_reset_request_in(struct sctp_tcb *stcb,
 	} else {
 		sctp_add_stream_reset_result(chk, seq, SCTP_STREAM_RESET_RESULT_ERR_BAD_SEQNO);
 	}
-	sctp_send_stream_reset_out_if_possible(stcb);
+	sctp_send_stream_reset_out_if_possible(stcb, SCTP_SO_NOT_LOCKED);
 }
 
 static int
