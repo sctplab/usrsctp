@@ -382,7 +382,10 @@ main(int argc, char *argv[])
 	sin.sin_len = sizeof(struct sockaddr_in);
 #endif
 	sin.sin_port = htons(atoi(argv[2]));
-	sin.sin_addr.s_addr = inet_addr(argv[1]);
+	if(!inet_pton(AF_INET, argv[1], &sin.sin_addr.s_addr)){
+		printf("error: invalid address\n");
+		exit(1);
+	}
 #ifdef _WIN32
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
 		printf("bind() failed with error: %ld\n", WSAGetLastError());
@@ -398,7 +401,10 @@ main(int argc, char *argv[])
 	sin.sin_len = sizeof(struct sockaddr_in);
 #endif
 	sin.sin_port = htons(atoi(argv[4]));
-	sin.sin_addr.s_addr = inet_addr(argv[3]);
+	if(!inet_pton(AF_INET, argv[3], &sin.sin_addr.s_addr)){
+		printf("error: invalid address\n");
+		exit(1);
+	}
 #ifdef _WIN32
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
 		printf("connect() failed with error: %ld\n", WSAGetLastError());
