@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 285925 2015-07-27 22:35:54Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 286206 2015-08-02 16:07:30Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6149,12 +6149,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 		}
 		/* plow through the data chunks while length > offset */
 		retval = sctp_process_data(mm, iphlen, &offset, length,
-		                           src, dst, sh,
-		                           inp, stcb, net, &high_tsn,
-#if defined(__FreeBSD__)
-		                           mflowtype, mflowid,
-#endif
-		                           vrf_id, port);
+		                           inp, stcb, net, &high_tsn);
 		if (retval == 2) {
 			/*
 			 * The association aborted, NO UNLOCK needed since
