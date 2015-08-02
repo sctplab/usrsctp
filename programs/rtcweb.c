@@ -985,7 +985,7 @@ handle_stream_reset_event(struct peer_connection *pc, struct sctp_stream_reset_e
 		}
 		printf("%d", strrst->strreset_stream_list[i]);
 	}
-	printf(".\n");	
+	printf(".\n");
 	if (!(strrst->strreset_flags & SCTP_STREAM_RESET_DENIED) &&
 	    !(strrst->strreset_flags & SCTP_STREAM_RESET_FAILED)) {
 		for (i = 0; i < n; i++) {
@@ -1319,6 +1319,7 @@ main(int argc, char *argv[])
 	                          SCTP_SEND_FAILED_EVENT,
 	                          SCTP_STREAM_RESET_EVENT,
 	                          SCTP_STREAM_CHANGE_EVENT};
+	char addrbuf[INET_ADDRSTRLEN];
 
 	if (argc > 1) {
 		usrsctp_init(atoi(argv[1]), NULL, debug_printf);
@@ -1370,7 +1371,7 @@ main(int argc, char *argv[])
 	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_INITMSG, &initmsg, sizeof(struct sctp_initmsg)) < 0) {
 		perror("setsockopt SCTP_INITMSG");
 	}
-	
+
 	if (argc == 5) {
 		/* operating as client */
 		memset(&addr, 0, sizeof(struct sockaddr_in));
@@ -1378,13 +1379,16 @@ main(int argc, char *argv[])
 #ifdef HAVE_SIN_LEN
 		addr.sin_len = sizeof(struct sockaddr_in);
 #endif
-		addr.sin_addr.s_addr = inet_addr(argv[3]);
+		if(!inet_pton(AF_INET, argv[3], &addr.sin_addr.s_addr)){
+			printf("error: invalid address\n");
+			exit(1);
+		}
 		addr.sin_port = htons(atoi(argv[4]));
 		if (usrsctp_connect(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) < 0) {
 			perror("connect");
 		}
-		printf("Connected to %s:%d.\n",
-		       inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+
+		printf("Connected to %s:%d.\n", inet_ntop(AF_INET, &(addr.sin_addr), addrbuf, INET_ADDRSTRLEN), ntohs(addr.sin_port));
 	} else if (argc == 4) {
 		struct socket *conn_sock;
 
@@ -1409,8 +1413,7 @@ main(int argc, char *argv[])
 		}
 		usrsctp_close(sock);
 		sock = conn_sock;
-		printf("Connected to %s:%d.\n",
-		       inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+		printf("Connected to %s:%d.\n", inet_ntop(AF_INET, &(addr.sin_addr), addrbuf, INET_ADDRSTRLEN), ntohs(addr.sin_port));
 	} else {
 		printf("Usage: %s local_udp_port remote_udp_port local_port when operating as server\n"
 		       "       %s local_udp_port remote_udp_port remote_addr remote_port when operating as client\n",

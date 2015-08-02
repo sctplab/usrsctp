@@ -406,7 +406,7 @@ int main(int argc, char **argv)
 				fragpoint = atoi(optarg);
 				break;
 			case 'L':
-				srcAddr = inet_addr(optarg);
+				inet_pton(AF_INET, optarg, &srcAddr);
 				break;
 			case 'R':
 				rcvbufsize = atoi(optarg);
@@ -491,7 +491,7 @@ int main(int argc, char **argv)
 						exit(1);
 					}
 					opt = argv[optind];
-					srcAddr = inet_addr(opt);
+					inet_pton(AF_INET, opt, &srcAddr);
 					break;
 				case 'U':
 					if (++optind >= argc) {
@@ -658,7 +658,10 @@ int main(int argc, char **argv)
 #endif
 			}
 			if (verbose) {
-				printf("Connection accepted from %s:%d\n", inet_ntoa(remote_addr.sin_addr), ntohs(remote_addr.sin_port));
+				// const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
+				//inet_ntoa(remote_addr.sin_addr)
+				char addrbuf[INET_ADDRSTRLEN];
+				printf("Connection accepted from %s:%d\n", inet_ntop(AF_INET, &(remote_addr.sin_addr), addrbuf, INET_ADDRSTRLEN), ntohs(remote_addr.sin_port));
 			}
 		}
 		usrsctp_close(psock);
@@ -674,7 +677,10 @@ int main(int argc, char **argv)
 #ifdef HAVE_SIN_LEN
 		remote_addr.sin_len = sizeof(struct sockaddr_in);
 #endif
-		remote_addr.sin_addr.s_addr = inet_addr(argv[optind]);
+		if(!inet_pton(AF_INET, argv[optind], &remote_addr.sin_addr.s_addr)){
+			printf("error: invalid destination address\n");
+			exit(1);
+		}
 		remote_addr.sin_port = htons(remote_port);
 
 		/* TODO fragpoint stuff */
