@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 285925 2015-07-27 22:35:54Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 286781 2015-08-14 14:26:13Z tuexen $");
 #endif
 
 #define _IP_VHL
@@ -1513,6 +1513,8 @@ sctp_pathmtu_timer(struct sctp_inpcb *inp,
 #endif
 			if (mtu > next_mtu) {
 				net->mtu = next_mtu;
+			} else {
+				net->mtu = mtu;
 			}
 		}
 	}
