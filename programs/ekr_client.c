@@ -170,6 +170,11 @@ main(int argc, char *argv[])
 	struct sctp_sndinfo sndinfo;
 	char buffer[BUFFER_SIZE];
 
+	if(argc < 4) {
+		printf("error: this program requires 4 arguments!\n");
+		exit(EXIT_FAILURE);
+	}
+
 	usrsctp_init(0, conn_output, debug_printf);
 	/* set up a connected UDP socket */
 #ifdef _WIN32
