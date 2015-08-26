@@ -34,6 +34,54 @@ message(">> WARNINING: CMAKE SUPPORT IS EXPERIMENTAL <<")
 
 include_directories(../usrsctplib)
 
+include(CheckFunctionExists)
+include(CheckStructHasMember)
+include(CheckIncludeFile)
+include(CMakePushCheckState)
+include(CheckTypeSize)
+
+check_type_size("size_t" HAVE_SIZE_T )
+check_type_size("ssize_t" HAVE_SSIZE_T)
+
+check_include_file(sys/socket.h HAVE_SYS_SOCKET_H)
+check_include_file(sys/types.h HAVE_SYS_TYPES_H)
+check_include_file(sys/queue.h HAVE_SYS_QUEUE_H)
+check_include_file(linux/if_addr.h HAVE_LINUX_IF_ADDR_H)
+check_include_file(linux/rtnetlink.h HAVE_LINUX_RTNETLINK_H)
+check_include_file(netinet/ip_icmp.h HAVE_NETINET_IP_ICMP_H)
+check_include_file(usrsctp.h HAVE_USRSCTP_H)
+
+check_function_exists("socket" HAVE_SOCKET)
+check_function_exists("inet_addr" HAVE_INET_ADDR)
+
+add_definitions(-D__Userspace__ "-D__Userspace_os_${CMAKE_SYSTEM_NAME}")
+
+check_struct_has_member("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" HAVE_SA_LEN)
+if(HAVE_SA_LEN)
+	add_definitions(-DHAVE_SA_LEN)
+endif()
+
+check_struct_has_member("struct sockaddr_in" "sin_len" "sys/types.h;netinet/in.h" HAVE_SIN_LEN)
+if(HAVE_SIN_LEN)
+	add_definitions(-DHAVE_SIN_LEN)
+endif()
+
+check_struct_has_member("struct sockaddr_in6" "sin6_len" "sys/types.h;netinet/in.h" HAVE_SIN6_LEN)
+if(HAVE_SIN6_LEN)
+	add_definitions(-DHAVE_SIN6_LEN)
+endif()
+
+cmake_push_check_state()
+set(CMAKE_REQUIRED_INCLUDES "${CMAKE_SOURCE_DIR}/src/network")
+check_struct_has_member("struct sockaddr_conn" "sconn_len" "../usrsctplib/usrsctp.h" HAVE_SCONN_LEN)
+if(HAVE_SCONN_LEN)
+	message("HAVE_SCONN_LEN")
+	add_definitions(-DHAVE_SCONN_LEN)
+endif()
+cmake_pop_check_state()
+
+
+
 FIND_PACKAGE (Threads)
 
 SET (check_PROGRAMS
@@ -62,7 +110,7 @@ FOREACH (source_file ${check_PROGRAMS})
 	)
 	ADD_TEST (${source_file_we} ${source_file_we})
 	IF ("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xGNU")
-		SET_PROPERTY (TARGET ${source_file_we} APPEND_STRING PROPERTY COMPILE_FLAGS "-Wall -g -O3")
+		SET_PROPERTY (TARGET ${source_file_we} APPEND_STRING PROPERTY COMPILE_FLAGS "-Wall -g -O0")
 	ENDIF ()
 	IF ("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xMSVC")
 		IF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")

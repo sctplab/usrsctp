@@ -48,8 +48,10 @@ SET (exec_prefix "\${prefix}")
 SET (libdir "\${exec_prefix}/lib")
 SET (includedir "\${prefix}/include/usrsctp")
 
-check_type_size("size_t" HAVE_SIZE_T )
+check_type_size("size_t" HAVE_SIZE_T)
 check_type_size("ssize_t" HAVE_SSIZE_T)
+
+include_directories(./ ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/netinet ${PROJECT_SOURCE_DIR}/netinet6)
 
 check_include_file(sys/socket.h HAVE_SYS_SOCKET_H)
 check_include_file(sys/types.h HAVE_SYS_TYPES_H)
@@ -57,31 +59,41 @@ check_include_file(sys/queue.h HAVE_SYS_QUEUE_H)
 check_include_file(linux/if_addr.h HAVE_LINUX_IF_ADDR_H)
 check_include_file(linux/rtnetlink.h HAVE_LINUX_RTNETLINK_H)
 check_include_file(netinet/ip_icmp.h HAVE_NETINET_IP_ICMP_H)
+check_include_file(usrsctp.h HAVE_USRSCTP_H)
+
 
 check_function_exists("socket" HAVE_SOCKET)
 check_function_exists("inet_addr" HAVE_INET_ADDR)
+
+
 
 add_definitions(-D__Userspace__ "-D__Userspace_os_${CMAKE_SYSTEM_NAME}")
 
 check_struct_has_member("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" HAVE_SA_LEN)
 if(HAVE_SA_LEN)
+	message("HAVE_SA_LEN")
 	add_definitions(-DHAVE_SA_LEN)
 endif()
 
 check_struct_has_member("struct sockaddr_in" "sin_len" "sys/types.h;netinet/in.h" HAVE_SIN_LEN)
 if(HAVE_SIN_LEN)
+	message("HAVE_SIN_LEN")
 	add_definitions(-DHAVE_SIN_LEN)
 endif()
 
 check_struct_has_member("struct sockaddr_in6" "sin6_len" "sys/types.h;netinet/in.h" HAVE_SIN6_LEN)
 if(HAVE_SIN6_LEN)
+	message("HAVE_SIN6_LEN")
 	add_definitions(-DHAVE_SIN6_LEN)
 endif()
 
 cmake_push_check_state()
+
 set(CMAKE_REQUIRED_INCLUDES "${CMAKE_SOURCE_DIR}/src/network")
-check_struct_has_member("struct sockaddr_conn" "sconn_len" "usrsctplib/usrsctp.h" HAVE_SCONN_LEN)
+
+check_struct_has_member("struct sockaddr_conn" "sconn_len" "usrsctp.h" HAVE_SCONN_LEN)
 if(HAVE_SCONN_LEN)
+	message("HAVE_SCONN_LEN")
 	add_definitions(-DHAVE_SCONN_LEN)
 endif()
 cmake_pop_check_state()
@@ -171,7 +183,7 @@ CONFIGURE_FILE (
     @ONLY
 )
 
-include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/netinet ${PROJECT_SOURCE_DIR}/netinet6 )
+include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/netinet ${PROJECT_SOURCE_DIR}/netinet6)
 
 LIST (APPEND usrsctp_root_HEADERS
 user_atomic.h       user_inpcb.h    user_ip_icmp.h  user_mbuf.h   user_recv_thread.h  user_socketvar.h  usrsctp.h
@@ -216,8 +228,8 @@ SET_TARGET_PROPERTIES (usrsctp PROPERTIES IMPORT_SUFFIX "_import.lib")
 SET_TARGET_PROPERTIES (usrsctp PROPERTIES SOVERSION 1 VERSION 1.0.0)
 
 IF ("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xGNU")
-    SET_PROPERTY (TARGET usrsctp APPEND_STRING PROPERTY COMPILE_FLAGS "-Wall -g -O3 -DPIC")
-    SET_PROPERTY (TARGET usrsctp-static APPEND_STRING PROPERTY COMPILE_FLAGS "-Wall -g -O3" )
+    SET_PROPERTY (TARGET usrsctp APPEND_STRING PROPERTY COMPILE_FLAGS "-Wall -g -O0 -DPIC")
+    SET_PROPERTY (TARGET usrsctp-static APPEND_STRING PROPERTY COMPILE_FLAGS "-Wall -g -O0" )
 ENDIF ()
 IF ("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xMSVC")
     IF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
