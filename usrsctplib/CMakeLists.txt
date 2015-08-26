@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2015-2015 Oleg Alexeenkov
+# Copyright (C) 2015-2015 Felix Weinrank
 #
 # All rights reserved.
 #
@@ -29,6 +30,7 @@
 #
 
 cmake_minimum_required(VERSION 2.6)
+message(">> WARNINING: CMAKE SUPPORT IS EXPERIMENTAL <<")
 
 project(usrsctplib)
 
@@ -200,8 +202,14 @@ netinet/sctp_auth.c      netinet/sctp_crc32.c         netinet/sctp_pcb.c      ne
 netinet/sctp_bsd_addr.c  netinet/sctp_indata.c        netinet/sctp_peeloff.c  netinet/sctp_timer.c         user_environment.c
 )
 
-add_library(usrsctp-static STATIC ${usrsctp_SOURCES} ${usrsctp_HEADERS})
 add_library(usrsctp SHARED ${usrsctp_SOURCES} ${usrsctp_HEADERS})
+add_library(usrsctp-static STATIC ${usrsctp_SOURCES} ${usrsctp_HEADERS})
+
+if(WIN32)
+	message("link librarie: ws2_32")
+	target_link_libraries(usrsctp ws2_32)
+	target_link_libraries(usrsctp-static ws2_32)
+endif()
 
 SET_TARGET_PROPERTIES (usrsctp-static PROPERTIES OUTPUT_NAME "usrsctp")
 SET_TARGET_PROPERTIES (usrsctp PROPERTIES IMPORT_SUFFIX "_import.lib")
