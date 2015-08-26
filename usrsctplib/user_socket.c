@@ -503,7 +503,7 @@ sonewconn(struct socket *head, int connstatus)
 		/*
 		 * Keep removing sockets from the head until there's room for
 		 * us to insert on the tail.  In pre-locking revisions, this
-		 * was a simple if(), but as we could be racing with other
+		 * was a simple if (), but as we could be racing with other
 		 * threads and soabort() requires dropping locks, we must
 		 * loop waiting for the condition to be true.
 		 */
@@ -906,7 +906,7 @@ sendmsg_return:
     /* TODO: Needs a condition for non-blocking when error is EWOULDBLOCK */
     if (0 == error)
         retvalsendmsg = len;
-    else if(error == EWOULDBLOCK) {
+    else if (error == EWOULDBLOCK) {
         errno = EWOULDBLOCK;
         retvalsendmsg = (-1);
     } else {

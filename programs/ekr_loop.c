@@ -352,12 +352,12 @@ main(void)
 	tid_c = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_packets, (void *)&fd_c, 0, NULL);
 	tid_s = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_packets, (void *)&fd_s, 0, NULL);
 #else
-	if(pthread_create(&tid_c, NULL, &handle_packets, (void *)&fd_c)) {
+	if (pthread_create(&tid_c, NULL, &handle_packets, (void *)&fd_c)) {
 		perror("pthread_create tid_c");
 		exit(EXIT_FAILURE);
 	}
 
-	if(pthread_create(&tid_s, NULL, &handle_packets, (void *)&fd_s)) {
+	if (pthread_create(&tid_s, NULL, &handle_packets, (void *)&fd_s)) {
 		perror("pthread_create tid_s");
 		exit(EXIT_FAILURE);
 	};

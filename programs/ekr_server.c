@@ -166,7 +166,7 @@ main(int argc, char *argv[])
 	pthread_t tid;
 #endif
 
-	if(argc < 4) {
+	if (argc < 4) {
 		printf("error: this program requires 4 arguments!\n");
 		exit(EXIT_FAILURE);
 	}
@@ -188,7 +188,7 @@ main(int argc, char *argv[])
 	sin.sin_len = sizeof(struct sockaddr_in);
 #endif
 	sin.sin_port = htons(atoi(argv[2]));
-	if(!inet_pton(AF_INET, argv[1], &sin.sin_addr.s_addr)){
+	if (!inet_pton(AF_INET, argv[1], &sin.sin_addr.s_addr)){
 		printf("error: invalid address\n");
 		exit(1);
 	}
@@ -207,7 +207,7 @@ main(int argc, char *argv[])
 	sin.sin_len = sizeof(struct sockaddr_in);
 #endif
 	sin.sin_port = htons(atoi(argv[4]));
-	if(!inet_pton(AF_INET, argv[3], &sin.sin_addr.s_addr)){
+	if (!inet_pton(AF_INET, argv[3], &sin.sin_addr.s_addr)){
 		printf("error: invalid address\n");
 		exit(1);
 	}
