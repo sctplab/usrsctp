@@ -677,7 +677,7 @@ int main(int argc, char **argv)
 #ifdef HAVE_SIN_LEN
 		remote_addr.sin_len = sizeof(struct sockaddr_in);
 #endif
-		if(!inet_pton(AF_INET, argv[optind], &remote_addr.sin_addr.s_addr)){
+		if (!inet_pton(AF_INET, argv[optind], &remote_addr.sin_addr.s_addr)){
 			printf("error: invalid destination address\n");
 			exit(1);
 		}

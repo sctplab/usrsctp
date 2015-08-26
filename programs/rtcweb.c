@@ -1379,7 +1379,7 @@ main(int argc, char *argv[])
 #ifdef HAVE_SIN_LEN
 		addr.sin_len = sizeof(struct sockaddr_in);
 #endif
-		if(!inet_pton(AF_INET, argv[3], &addr.sin_addr.s_addr)){
+		if (!inet_pton(AF_INET, argv[3], &addr.sin_addr.s_addr)){
 			printf("error: invalid address\n");
 			exit(1);
 		}

@@ -237,7 +237,7 @@ recv_function_route(void *arg)
 			if (nh->nlmsg_type == RTM_NEWADDR || nh->nlmsg_type == RTM_DELADDR) {
 				rtmsg = (struct ifaddrmsg *)NLMSG_DATA(nh);
 				rtatp = (struct rtattr *)IFA_RTA(rtmsg);
-				if(rtatp->rta_type == IFA_ADDRESS) {
+				if (rtatp->rta_type == IFA_ADDRESS) {
 					inp = (struct in_addr *)RTA_DATA(rtatp);
 					switch (rtmsg->ifa_family) {
 #ifdef INET
