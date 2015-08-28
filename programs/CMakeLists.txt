@@ -28,11 +28,15 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-
-cmake_minimum_required(VERSION 2.6)
 message(">> WARNINING: CMAKE SUPPORT IS EXPERIMENTAL <<")
 
+cmake_minimum_required(VERSION 2.6)
 include_directories(../usrsctplib)
+
+
+#################################################
+# INCLUDE MODULES
+#################################################
 
 include(CheckFunctionExists)
 include(CheckStructHasMember)
@@ -40,8 +44,22 @@ include(CheckIncludeFile)
 include(CMakePushCheckState)
 include(CheckTypeSize)
 
-check_type_size("size_t" HAVE_SIZE_T )
+
+#################################################
+# CHECK FOR TYPES AND FUNCTIONS
+#################################################
+
+# xxx warum machen wir die checks?
+check_type_size("size_t" HAVE_SIZE_T)
 check_type_size("ssize_t" HAVE_SSIZE_T)
+
+check_function_exists("socket" HAVE_SOCKET)
+check_function_exists("inet_addr" HAVE_INET_ADDR)
+
+
+#################################################
+# CHECK INCLUDES
+#################################################
 
 check_include_file(sys/socket.h HAVE_SYS_SOCKET_H)
 check_include_file(sys/types.h HAVE_SYS_TYPES_H)
@@ -51,10 +69,10 @@ check_include_file(linux/rtnetlink.h HAVE_LINUX_RTNETLINK_H)
 check_include_file(netinet/ip_icmp.h HAVE_NETINET_IP_ICMP_H)
 check_include_file(usrsctp.h HAVE_USRSCTP_H)
 
-check_function_exists("socket" HAVE_SOCKET)
-check_function_exists("inet_addr" HAVE_INET_ADDR)
 
-add_definitions(-D__Userspace__ "-D__Userspace_os_${CMAKE_SYSTEM_NAME}")
+#################################################
+# CHECK STRUCT MEMBERS
+#################################################
 
 check_struct_has_member("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" HAVE_SA_LEN)
 if(HAVE_SA_LEN)
@@ -71,31 +89,75 @@ if(HAVE_SIN6_LEN)
 	add_definitions(-DHAVE_SIN6_LEN)
 endif()
 
-cmake_push_check_state()
-set(CMAKE_REQUIRED_INCLUDES "${CMAKE_SOURCE_DIR}/src/network")
-check_struct_has_member("struct sockaddr_conn" "sconn_len" "../usrsctplib/usrsctp.h" HAVE_SCONN_LEN)
-if(HAVE_SCONN_LEN)
-	message("HAVE_SCONN_LEN")
+
+#################################################
+# CHECK OPTIONS
+#################################################
+
+option(SCTP_DEBUG "Provide debug information" 0)
+if (SCTP_DEBUG)
+	add_definitions(-DSCTP_DEBUG)
+endif()
+
+option(INET "Support IPv4 " 1)
+if (INET)
+	add_definitions(-DINET)
+endif()
+
+option(INET6 "Support IPv6 " 1)
+if (INET6)
+	add_definitions(-DINET6)
+endif()
+
+option(LINK_STATIC "Link static" 1)
+if (LINK_STATIC)
+	set(LINK_STATIC "usrsctp-static")
+else()
+	set(LINK_STATIC "usrsctp")
+endif()
+
+
+#################################################
+# OS DEPENDENT
+#################################################
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 	add_definitions(-DHAVE_SCONN_LEN)
 endif()
-cmake_pop_check_state()
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	add_definitions(-DHAVE_SCONN_LEN)
+	add_definitions(-D__APPLE_USE_RFC_2292)
+endif()
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
+	add_definitions(-DHAVE_SCONN_LEN)
+endif()
 
 
+#################################################
+# MISC
+#################################################
 
-FIND_PACKAGE (Threads)
+FIND_PACKAGE(Threads)
+
+
+#################################################
+# PROGRAMS
+#################################################
 
 SET (check_PROGRAMS
-client.c
-datachan_serv.c
-daytime_server.c
-discard_server.c
-echo_server.c
-ekr_client.c
-ekr_loop.c
-ekr_peer.c
-ekr_server.c
-rtcweb.c
-tsctp.c
+	client.c
+	datachan_serv.c
+	daytime_server.c
+	discard_server.c
+	echo_server.c
+	ekr_client.c
+	ekr_loop.c
+	ekr_peer.c
+	ekr_server.c
+	rtcweb.c
+	tsctp.c
 )
 
 FOREACH (source_file ${check_PROGRAMS})
@@ -104,14 +166,18 @@ FOREACH (source_file ${check_PROGRAMS})
 		${source_file_we}
 		${source_file}
 	)
+
 	TARGET_LINK_LIBRARIES (${source_file_we}
-		usrsctp-static
+		${LINK_STATIC}
 		${CMAKE_THREAD_LIBS_INIT}
 	)
+
 	ADD_TEST (${source_file_we} ${source_file_we})
+
 	IF ("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xGNU")
 		SET_PROPERTY (TARGET ${source_file_we} APPEND_STRING PROPERTY COMPILE_FLAGS "-Wall -g -O0")
 	ENDIF ()
+
 	IF ("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xMSVC")
 		IF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
 			STRING(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")

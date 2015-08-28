@@ -34,11 +34,14 @@ message(">> WARNINING: CMAKE SUPPORT IS EXPERIMENTAL <<")
 
 project(usrsctplib)
 
+#################################################
+# INCLUDE MODULES
+#################################################
+
 include(CheckFunctionExists)
 include(CheckStructHasMember)
 include(CheckIncludeFile)
 include(CMakePushCheckState)
-
 include(CheckTypeSize)
 
 SET (VERSION "1.0.0")
@@ -48,10 +51,15 @@ SET (exec_prefix "\${prefix}")
 SET (libdir "\${exec_prefix}/lib")
 SET (includedir "\${prefix}/include/usrsctp")
 
+
+#include_directories(netinet netinet6)
+
+#################################################
+# CHECK FOR TYPES AND FUNCTIONS
+#################################################
+
 check_type_size("size_t" HAVE_SIZE_T)
 check_type_size("ssize_t" HAVE_SSIZE_T)
-
-include_directories(./ ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/netinet ${PROJECT_SOURCE_DIR}/netinet6)
 
 check_include_file(sys/socket.h HAVE_SYS_SOCKET_H)
 check_include_file(sys/types.h HAVE_SYS_TYPES_H)
@@ -59,15 +67,16 @@ check_include_file(sys/queue.h HAVE_SYS_QUEUE_H)
 check_include_file(linux/if_addr.h HAVE_LINUX_IF_ADDR_H)
 check_include_file(linux/rtnetlink.h HAVE_LINUX_RTNETLINK_H)
 check_include_file(netinet/ip_icmp.h HAVE_NETINET_IP_ICMP_H)
-check_include_file(usrsctp.h HAVE_USRSCTP_H)
-
 
 check_function_exists("socket" HAVE_SOCKET)
 check_function_exists("inet_addr" HAVE_INET_ADDR)
 
 
-
 add_definitions(-D__Userspace__ "-D__Userspace_os_${CMAKE_SYSTEM_NAME}")
+
+#################################################
+# CHECK STRUCT MEMBERS
+#################################################
 
 check_struct_has_member("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" HAVE_SA_LEN)
 if(HAVE_SA_LEN)
@@ -87,24 +96,20 @@ if(HAVE_SIN6_LEN)
 	add_definitions(-DHAVE_SIN6_LEN)
 endif()
 
-cmake_push_check_state()
 
-set(CMAKE_REQUIRED_INCLUDES "${CMAKE_SOURCE_DIR}/src/network")
-
-check_struct_has_member("struct sockaddr_conn" "sconn_len" "usrsctp.h" HAVE_SCONN_LEN)
-if(HAVE_SCONN_LEN)
-	message("HAVE_SCONN_LEN")
-	add_definitions(-DHAVE_SCONN_LEN)
-endif()
-cmake_pop_check_state()
-
+#################################################
+# OS DEPENDENT
+#################################################
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 	add_definitions(-U__FreeBSD__)
+	add_definitions(-DHAVE_SCONN_LEN)
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	add_definitions(-U__APPLE__ -D__APPLE_USE_RFC_2292)
+	add_definitions(-DHAVE_SCONN_LEN)
+	add_definitions(-U__APPLE__)
+	add_definitions(-D__APPLE_USE_RFC_2292)
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "DragonFly")
@@ -116,9 +121,14 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
+	add_definitions(-DHAVE_SCONN_LEN)
 	add_definitions(-U__OpenBSD__)
 endif()
 
+
+#################################################
+# CHECK OPTIONS
+#################################################
 
 option(SCTP_DEBUG "Provide debug information" 0)
 if (SCTP_DEBUG)
@@ -145,7 +155,7 @@ if (SCTP_PROCESS_LEVEL_LOCKS)
 	add_definitions(-DSCTP_PROCESS_LEVEL_LOCKS)
 endif()
 
-option(SCTP_WITH_NO_CSUM " " 1)
+option(SCTP_WITH_NO_CSUM "Disable SCTP checksum" 0)
 if (SCTP_WITH_NO_CSUM)
 	add_definitions(-DSCTP_WITH_NO_CSUM)
 endif()
@@ -174,8 +184,6 @@ option(SCTP_KAME " " 0)
 if (SCTP_KAME)
 	add_definitions(-DSCTP_KAME)
 endif()
-
-add_definitions(-D_GNU_SOURCE)
 
 CONFIGURE_FILE (
     usrsctp.pc.in
@@ -218,7 +226,7 @@ add_library(usrsctp SHARED ${usrsctp_SOURCES} ${usrsctp_HEADERS})
 add_library(usrsctp-static STATIC ${usrsctp_SOURCES} ${usrsctp_HEADERS})
 
 if(WIN32)
-	message("link librarie: ws2_32")
+	message("link library: ws2_32")
 	target_link_libraries(usrsctp ws2_32)
 	target_link_libraries(usrsctp-static ws2_32)
 endif()
