@@ -72,7 +72,9 @@ check_function_exists("socket" HAVE_SOCKET)
 check_function_exists("inet_addr" HAVE_INET_ADDR)
 
 
-add_definitions(-D__Userspace__ "-D__Userspace_os_${CMAKE_SYSTEM_NAME}")
+add_definitions(-D__Userspace__)
+add_definitions(-D__Userspace_os_${CMAKE_SYSTEM_NAME})
+add_definitions(-D_GNU_SOURCE)
 
 #################################################
 # CHECK STRUCT MEMBERS
