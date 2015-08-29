@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 287282 2015-08-29 09:14:32Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 287294 2015-08-29 17:26:29Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_CONSTANTS_H_
@@ -627,10 +627,6 @@ extern void getwintimeofday(struct timeval *tv);
 
 /* 30 seconds + RTO (in ms) */
 #define SCTP_HB_DEFAULT_MSEC	30000
-
-/* Max time I will wait for Shutdown to complete */
-#define SCTP_DEF_MAX_SHUTDOWN_SEC 180
-
 
 /*
  * This is how long a secret lives, NOT how long a cookie lives how many
