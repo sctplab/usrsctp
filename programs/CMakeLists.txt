@@ -175,7 +175,7 @@ FOREACH (source_file ${check_PROGRAMS})
 	ADD_TEST (${source_file_we} ${source_file_we})
 
 	IF ("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xGNU")
-		SET_PROPERTY (TARGET ${source_file_we} APPEND_STRING PROPERTY COMPILE_FLAGS "-Wall -g -O0")
+		SET_PROPERTY (TARGET ${source_file_we} APPEND_STRING PROPERTY COMPILE_FLAGS "-g -O0 -pedantic -Wall -Werror")
 	ENDIF ()
 
 	IF ("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xMSVC")
