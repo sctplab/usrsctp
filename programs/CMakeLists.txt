@@ -174,6 +174,8 @@ FOREACH (source_file ${check_PROGRAMS})
 
 	ADD_TEST (${source_file_we} ${source_file_we})
 
+	SET_PROPERTY(TARGET ${source_file_we}  PROPERTY C_STANDARD 99)
+
 	IF ("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xGNU")
 		SET_PROPERTY (TARGET ${source_file_we} APPEND_STRING PROPERTY COMPILE_FLAGS "-g -pedantic -Wall -Werror")
 	ENDIF ()
