@@ -459,8 +459,7 @@ recv_function_raw6(void *arg)
 	struct iovec recv_iovec[MAXLEN_MBUF_CHAIN];
 	struct msghdr msg;
 	struct cmsghdr *cmsgptr;
-	int cmsgspace = CMSG_SPACE(sizeof (struct in6_pktinfo));
-	char cmsgbuf[cmsgspace];
+	char cmsgbuf[CMSG_SPACE(sizeof (struct in6_pktinfo))];
 #else
 	WSABUF recv_iovec[MAXLEN_MBUF_CHAIN];
 	int nResult, m_ErrorCode;
@@ -661,14 +660,11 @@ recv_function_udp(void *arg)
 	uint16_t port;
 	struct sctp_chunkhdr *ch;
 	struct sockaddr_in src, dst;
-
-
 #if defined(IP_PKTINFO)
-	int cmsgspace = CMSG_SPACE(sizeof (struct in_pktinfo));
+	char cmsgbuf[CMSG_SPACE(sizeof(struct in_pktinfo))];
 #else
-	int cmsgspace = CMSG_SPACE(sizeof (struct in_addr));
+	char cmsgbuf[CMSG_SPACE(sizeof(struct in_addr))];
 #endif
-	char cmsgbuf[cmsgspace];
 #if !defined(SCTP_WITH_NO_CSUM)
 	int compute_crc = 1;
 #endif
@@ -874,8 +870,7 @@ recv_function_udp6(void *arg)
 	struct sctphdr *sh;
 	uint16_t port;
 	struct sctp_chunkhdr *ch;
-	int cmsgspace = CMSG_SPACE(sizeof(struct in_addr));
-	char cmsgbuf[cmsgspace];
+	char cmsgbuf[CMSG_SPACE(sizeof (struct in6_pktinfo))];
 #if !defined(SCTP_WITH_NO_CSUM)
 	int compute_crc = 1;
 #endif
