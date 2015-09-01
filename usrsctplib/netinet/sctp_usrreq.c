@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 285837 2015-07-24 14:09:03Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 287282 2015-08-29 09:14:32Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3314,12 +3314,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			error = EINVAL;
 			break;
 		}
-		/*
-		 * I think passing the state is fine since
-		 * sctp_constants.h will be available to the user
-		 * land.
-		 */
-		sstat->sstat_state = stcb->asoc.state;
+		sstat->sstat_state = sctp_map_assoc_state(stcb->asoc.state);
 		sstat->sstat_assoc_id = sctp_get_associd(stcb);
 		sstat->sstat_rwnd = stcb->asoc.peers_rwnd;
 		sstat->sstat_unackdata = stcb->asoc.sent_queue_cnt;

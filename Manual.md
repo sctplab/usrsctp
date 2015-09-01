@@ -734,11 +734,6 @@ See https://github.com/sctplab/usrsctp/tree/master/programs
 
 ## References
 
-#### socketAPI
-R. Stewart, M. Tüxen, K. Poon, and V. Yasevich:</br>
-`Sockets API Extensions for the Stream Control Transmission Protocol (SCTP)`.</br>
-[RFC 6458](http://tools.ietf.org/html/rfc6458), Dezember 2011.
-
 #### SCTP
 R. Stewart:</br>
 `Stream Control Transmission Protocol`.</br>
@@ -749,22 +744,27 @@ M. Tüxen, R. Stewart, P. Lei, and E. Rescorla:</br>
 `Authenticated Chunks for the Stream Control Transmission Protocol (SCTP)`.</br>
 [RFC 4895](http://tools.ietf.org/html/rfc4895), August 2007.
 
-#### streamReset
-R. Stewart, M. Tüxen, and P. Lei:</br>
-`Stream Control Transmission Protocol (SCTP) Stream Reconfiguration`.</br>
-[RFC 6525](http://tools.ietf.org/html/rfc6525), February 2012.
-
 #### addip
 R. Stewart, Q. Xie, M. Tüxen, S. Maruyama, and M. Kozuka:</br>
 `Stream Control Transmission Protocol (SCTP) Dynamic Address Reconfiguration`.</br>
 [RFC 5061](http://tools.ietf.org/html/rfc5061), September 2007.
 
-#### sack-imm
-M. Tüxen, I. Rüngeler, and R. Stewart:</br>
-`SACK-IMMEDIATELY Extension for the Stream Control Transmission Protocol`</br>
-[draft-tuexen-tsvwg-sctp-sack-immediately-09](https://tools.ietf.org/html/draft-tuexen-tsvwg-sctp-sack-immediately-09) (work in progress), April 2012.
+#### socketAPI
+R. Stewart, M. Tüxen, K. Poon, and V. Yasevich:</br>
+`Sockets API Extensions for the Stream Control Transmission Protocol (SCTP)`.</br>
+[RFC 6458](http://tools.ietf.org/html/rfc6458), Dezember 2011.
+
+#### streamReset
+R. Stewart, M. Tüxen, and P. Lei:</br>
+`Stream Control Transmission Protocol (SCTP) Stream Reconfiguration`.</br>
+[RFC 6525](http://tools.ietf.org/html/rfc6525), February 2012.
 
 #### udpencaps
 M. Tüxen and R. Stewart</br>
-`UDP Encapsulation of SCTP Packets`</br>
-[draft-ietf-tsvwg-sctp-udp-encaps-03](https://tools.ietf.org/html/draft-ietf-tsvwg-sctp-udp-encaps-03) (work in progress), March 2012.
+`UDP Encapsulation of Stream Control Transmission Protocol (SCTP) Packets for End-Host to End-Host Communication`</br>
+[RFC 6951](https://tools.ietf.org/html/rfc6951), May 2013.
+
+#### sack-imm
+M. Tüxen, I. Rüngeler, and R. Stewart:</br>
+`SACK-IMMEDIATELY Extension for the Stream Control Transmission Protocol`</br>
+[RFC 7053](https://tools.ietf.org/html/rfc7053), November 2013.

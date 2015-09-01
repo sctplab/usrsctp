@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 285925 2015-07-27 22:35:54Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 287294 2015-08-29 17:26:29Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -958,6 +958,49 @@ sctp_select_a_tag(struct sctp_inpcb *inp, uint16_t lport, uint16_t rport, int ch
 		}
 	}
 	return (x);
+}
+
+int32_t
+sctp_map_assoc_state(int kernel_state)
+{
+	int32_t user_state;
+
+	if (kernel_state & SCTP_STATE_WAS_ABORTED) {
+		user_state = SCTP_CLOSED;
+	} else if (kernel_state & SCTP_STATE_SHUTDOWN_PENDING) {
+		user_state = SCTP_SHUTDOWN_PENDING;
+	} else {
+		switch (kernel_state & SCTP_STATE_MASK) {
+		case SCTP_STATE_EMPTY:
+			user_state = SCTP_CLOSED;
+			break;
+		case SCTP_STATE_INUSE:
+			user_state = SCTP_CLOSED;
+			break;
+		case SCTP_STATE_COOKIE_WAIT:
+			user_state = SCTP_COOKIE_WAIT;
+			break;
+		case SCTP_STATE_COOKIE_ECHOED:
+			user_state = SCTP_COOKIE_ECHOED;
+			break;
+		case SCTP_STATE_OPEN:
+			user_state = SCTP_ESTABLISHED;
+			break;
+		case SCTP_STATE_SHUTDOWN_SENT:
+			user_state = SCTP_SHUTDOWN_SENT;
+			break;
+		case SCTP_STATE_SHUTDOWN_RECEIVED:
+			user_state = SCTP_SHUTDOWN_RECEIVED;
+			break;
+		case SCTP_STATE_SHUTDOWN_ACK_SENT:
+			user_state = SCTP_SHUTDOWN_ACK_SENT;
+			break;
+		default:
+			user_state = SCTP_CLOSED;
+			break;
+		}
+	}
+	return (user_state);
 }
 
 int
@@ -2196,7 +2239,11 @@ sctp_timer_start(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		if (stcb == NULL) {
 			return;
 		}
-		to_ticks = inp->sctp_ep.sctp_timeoutticks[SCTP_TIMER_MAXSHUTDOWN];
+		if (inp->sctp_ep.sctp_timeoutticks[SCTP_TIMER_MAXSHUTDOWN] == 0) {
+			to_ticks = 5 * MSEC_TO_TICKS(stcb->asoc.maxrto);
+		} else {
+			to_ticks = inp->sctp_ep.sctp_timeoutticks[SCTP_TIMER_MAXSHUTDOWN];
+		}
 		tmr = &stcb->asoc.shut_guard_timer;
 		break;
 	case SCTP_TIMER_TYPE_STRRESET:
