@@ -10,6 +10,13 @@ In this manual the socket API for the SCTP User-land implementation will be desc
 The user-land stack has been tested on FreeBSD 10.0, Ubuntu 11.10, Windows 7, Mac OS X 10.6, and Mac OS X 10.7. The current version of the user-land stack is provided on [github](https://github.com/sctplab/usrsctp). Download the tarball and untar it in a folder of your choice. The tarball contains all the sources to build the libusrsctp, which has to be linked to the object file of an example program. In addition there are two applications in the folder `programs` that can be built and run.
  
 ### Building the Library and the Applications
+#### CMake
+Create a directory outside the `usrsctp`, enter it and let CMake generate files by typing
+    
+    $ cmake <path-to-usrsctp-sources>
+    
+in the created directory to start generating project files.
+By using the `-g`flag you can specify the target buildsystem e.g. `cmake -G Xcode ../usrsctp` will generate project files for an Xcode project.
 #### Unix-like Operating Systems
 In the folder `usrsctp` type
 
