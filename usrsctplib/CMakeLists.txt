@@ -187,11 +187,11 @@ if (SCTP_KAME)
 	add_definitions(-DSCTP_KAME)
 endif()
 
-CONFIGURE_FILE (
-    usrsctp.pc.in
-    usrsctp.pc
-    @ONLY
-)
+#CONFIGURE_FILE (
+#    usrsctp.pc.in
+#    usrsctp.pc
+#    @ONLY
+#)
 
 include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/netinet ${PROJECT_SOURCE_DIR}/netinet6)
 
@@ -239,7 +239,7 @@ SET_TARGET_PROPERTIES (usrsctp PROPERTIES SOVERSION 1 VERSION 1.0.0)
 
 IF ("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xGNU")
     SET_PROPERTY (TARGET usrsctp APPEND_STRING PROPERTY COMPILE_FLAGS "-g -pedantic -Wall -Werror -std=c99") #
-    SET_PROPERTY (TARGET usrsctp-static APPEND_STRING PROPERTY COMPILE_FLAGS "-g -pedantic -Wall -Werror -std=c99") # 
+    SET_PROPERTY (TARGET usrsctp-static APPEND_STRING PROPERTY COMPILE_FLAGS "-g -pedantic -Wall -Werror -std=c99") #
 ENDIF ()
 IF ("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xMSVC")
     IF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
