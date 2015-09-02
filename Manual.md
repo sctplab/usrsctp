@@ -11,12 +11,11 @@ The user-land stack has been tested on FreeBSD 10.0, Ubuntu 11.10, Windows 7, Ma
  
 ### Building the Library and the Applications
 #### CMake
-Create a directory outside the `usrsctp`, enter it and let CMake generate files by typing
-    
+Create a directory outside the `usrsctp` directory, enter it and generate files by typing
+
     $ cmake <path-to-usrsctp-sources>
-    
-in the created directory to start generating project files.
-By using the `-g`flag you can specify the target buildsystem e.g. `cmake -G Xcode ../usrsctp` will generate project files for an Xcode project.
+
+By using the `-g`flag you can specify the target buildsystem e.g. `cmake -G Xcode ../usrsctp` will generate project files for Xcode.
 #### Unix-like Operating Systems
 In the folder `usrsctp` type
 
