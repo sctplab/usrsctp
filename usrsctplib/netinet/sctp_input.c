@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 286206 2015-08-02 16:07:30Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 287444 2015-09-03 22:15:56Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -910,6 +910,7 @@ sctp_handle_shutdown(struct sctp_shutdown_chunk *cp,
 {
 	struct sctp_association *asoc;
 	int some_on_streamwheel;
+	int old_state;
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 	struct socket *so;
 #endif
@@ -926,11 +927,11 @@ sctp_handle_shutdown(struct sctp_shutdown_chunk *cp,
 	if (ntohs(cp->ch.chunk_length) != sizeof(struct sctp_shutdown_chunk)) {
 		/* Shutdown NOT the expected size */
 		return;
-	} else {
-		sctp_update_acked(stcb, cp, abort_flag);
-		if (*abort_flag) {
-			return;
-		}
+	}
+	old_state = SCTP_GET_STATE(asoc);
+	sctp_update_acked(stcb, cp, abort_flag);
+	if (*abort_flag) {
+		return;
 	}
 	if (asoc->control_pdapi) {
 		/* With a normal shutdown
@@ -997,12 +998,16 @@ sctp_handle_shutdown(struct sctp_shutdown_chunk *cp,
 		    (SCTP_GET_STATE(asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) {
 			SCTP_STAT_DECR_GAUGE32(sctps_currestab);
 		}
-		SCTP_SET_STATE(asoc, SCTP_STATE_SHUTDOWN_ACK_SENT);
 		SCTP_CLEAR_SUBSTATE(asoc, SCTP_STATE_SHUTDOWN_PENDING);
-		sctp_stop_timers_for_shutdown(stcb);
-		sctp_send_shutdown_ack(stcb, net);
-		sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNACK, stcb->sctp_ep,
-				 stcb, net);
+		if (SCTP_GET_STATE(asoc) != SCTP_STATE_SHUTDOWN_ACK_SENT) {
+			SCTP_SET_STATE(asoc, SCTP_STATE_SHUTDOWN_ACK_SENT);
+			sctp_stop_timers_for_shutdown(stcb);
+			sctp_send_shutdown_ack(stcb, net);
+			sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNACK,
+			                 stcb->sctp_ep, stcb, net);
+		} else if (old_state == SCTP_STATE_SHUTDOWN_ACK_SENT) {
+			sctp_send_shutdown_ack(stcb, net);
+		}
 	}
 }
 
