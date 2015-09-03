@@ -29,6 +29,13 @@ On Windows you need a compiler like Microsoft Visual Studio. You can build the l
 
 in the directory `usrsctp`.
 
+#### CMake (experimental)
+Create a directory outside the `usrsctp` directory, enter it and generate files by typing
+
+    $ cmake <path-to-usrsctp-sources>
+
+By using the `-g`flag you can specify the target buildsystem e.g. `cmake -G Xcode ../usrsctp` will generate project files for Xcode.
+
 ### Running the Test Programs
 
 Several test programs are included, including a discard server and a client. You can run both to send data from the client to the server. The client reads data from stdin and sends them to the server, which prints the message in the terminal and discards it. The sources of the server are also provided  [here](https://github.com/sctplab/usrsctp/blob/master/programs/discard_server.c) and those of the client [here](https://github.com/sctplab/usrsctp/blob/master/programs/client.c).
@@ -734,11 +741,6 @@ See https://github.com/sctplab/usrsctp/tree/master/programs
 
 ## References
 
-#### socketAPI
-R. Stewart, M. Tüxen, K. Poon, and V. Yasevich:</br>
-`Sockets API Extensions for the Stream Control Transmission Protocol (SCTP)`.</br>
-[RFC 6458](http://tools.ietf.org/html/rfc6458), Dezember 2011.
-
 #### SCTP
 R. Stewart:</br>
 `Stream Control Transmission Protocol`.</br>
@@ -749,22 +751,27 @@ M. Tüxen, R. Stewart, P. Lei, and E. Rescorla:</br>
 `Authenticated Chunks for the Stream Control Transmission Protocol (SCTP)`.</br>
 [RFC 4895](http://tools.ietf.org/html/rfc4895), August 2007.
 
-#### streamReset
-R. Stewart, M. Tüxen, and P. Lei:</br>
-`Stream Control Transmission Protocol (SCTP) Stream Reconfiguration`.</br>
-[RFC 6525](http://tools.ietf.org/html/rfc6525), February 2012.
-
 #### addip
 R. Stewart, Q. Xie, M. Tüxen, S. Maruyama, and M. Kozuka:</br>
 `Stream Control Transmission Protocol (SCTP) Dynamic Address Reconfiguration`.</br>
 [RFC 5061](http://tools.ietf.org/html/rfc5061), September 2007.
 
-#### sack-imm
-M. Tüxen, I. Rüngeler, and R. Stewart:</br>
-`SACK-IMMEDIATELY Extension for the Stream Control Transmission Protocol`</br>
-[draft-tuexen-tsvwg-sctp-sack-immediately-09](https://tools.ietf.org/html/draft-tuexen-tsvwg-sctp-sack-immediately-09) (work in progress), April 2012.
+#### socketAPI
+R. Stewart, M. Tüxen, K. Poon, and V. Yasevich:</br>
+`Sockets API Extensions for the Stream Control Transmission Protocol (SCTP)`.</br>
+[RFC 6458](http://tools.ietf.org/html/rfc6458), Dezember 2011.
+
+#### streamReset
+R. Stewart, M. Tüxen, and P. Lei:</br>
+`Stream Control Transmission Protocol (SCTP) Stream Reconfiguration`.</br>
+[RFC 6525](http://tools.ietf.org/html/rfc6525), February 2012.
 
 #### udpencaps
 M. Tüxen and R. Stewart</br>
-`UDP Encapsulation of SCTP Packets`</br>
-[draft-ietf-tsvwg-sctp-udp-encaps-03](https://tools.ietf.org/html/draft-ietf-tsvwg-sctp-udp-encaps-03) (work in progress), March 2012.
+`UDP Encapsulation of Stream Control Transmission Protocol (SCTP) Packets for End-Host to End-Host Communication`</br>
+[RFC 6951](https://tools.ietf.org/html/rfc6951), May 2013.
+
+#### sack-imm
+M. Tüxen, I. Rüngeler, and R. Stewart:</br>
+`SACK-IMMEDIATELY Extension for the Stream Control Transmission Protocol`</br>
+[RFC 7053](https://tools.ietf.org/html/rfc7053), November 2013.
