@@ -132,7 +132,7 @@ endif()
 # CHECK OPTIONS
 #################################################
 
-option(SCTP_DEBUG "Provide debug information" 0)
+option(SCTP_DEBUG "Provide debug information" 1)
 if (SCTP_DEBUG)
 	add_definitions(-DSCTP_DEBUG)
 endif()
