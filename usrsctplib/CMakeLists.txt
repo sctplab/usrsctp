@@ -103,6 +103,10 @@ endif()
 # OS DEPENDENT
 #################################################
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	add_definitions(-D_GNU_SOURCE)
+endif()
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 	add_definitions(-U__FreeBSD__)
 	add_definitions(-DHAVE_SCONN_LEN)
