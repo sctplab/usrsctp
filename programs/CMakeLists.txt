@@ -121,6 +121,10 @@ endif()
 # OS DEPENDENT
 #################################################
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	add_definitions(-D_GNU_SOURCE)
+endif()
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 	add_definitions(-DHAVE_SCONN_LEN)
 endif()
@@ -174,15 +178,15 @@ FOREACH (source_file ${check_PROGRAMS})
 
 	ADD_TEST (${source_file_we} ${source_file_we})
 
-	IF ("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xGNU")
+	IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xGNU")
 		SET_PROPERTY (TARGET ${source_file_we} APPEND_STRING PROPERTY COMPILE_FLAGS "-g -pedantic -Wall -Werror -std=c99")
 	ENDIF ()
 
-	IF ("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xMSVC")
-		IF (CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
-			STRING(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC")
+		IF (CMAKE_C_FLAGS MATCHES "/W[0-4]")
+			STRING(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 		ELSE ()
-			SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+			SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
 		ENDIF ()
 	ENDIF ()
 ENDFOREACH ()
