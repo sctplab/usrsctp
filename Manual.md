@@ -29,6 +29,13 @@ On Windows you need a compiler like Microsoft Visual Studio. You can build the l
 
 in the directory `usrsctp`.
 
+#### CMake (experimental)
+Create a directory outside the `usrsctp` directory, enter it and generate files by typing
+
+    $ cmake <path-to-usrsctp-sources>
+
+By using the `-g`flag you can specify the target buildsystem e.g. `cmake -G Xcode ../usrsctp` will generate project files for Xcode.
+
 ### Running the Test Programs
 
 Several test programs are included, including a discard server and a client. You can run both to send data from the client to the server. The client reads data from stdin and sends them to the server, which prints the message in the terminal and discards it. The sources of the server are also provided  [here](https://github.com/sctplab/usrsctp/blob/master/programs/discard_server.c) and those of the client [here](https://github.com/sctplab/usrsctp/blob/master/programs/client.c).

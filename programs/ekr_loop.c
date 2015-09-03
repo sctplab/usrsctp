@@ -273,7 +273,7 @@ main(void)
 	int cur_buf_size, snd_buf_size, rcv_buf_size;
 	socklen_t opt_len;
 	struct sctp_sndinfo sndinfo;
-	char line[LINE_LENGTH];
+	char *line;
 
 	usrsctp_init(0, conn_output, debug_printf);
 	/* set up a connected UDP socket */
@@ -460,6 +460,9 @@ main(void)
 		exit(EXIT_FAILURE);
 	}
 	usrsctp_close(s_l);
+	if ((line = malloc(LINE_LENGTH)) == NULL) {
+		exit(EXIT_FAILURE);
+	}
 	memset(line, 'A', LINE_LENGTH);
 	sndinfo.snd_sid = 1;
 	sndinfo.snd_flags = 0;
@@ -472,6 +475,7 @@ main(void)
 		perror("usrsctp_sendv");
 		exit(EXIT_FAILURE);
 	}
+	free(line);
 	usrsctp_shutdown(s_c, SHUT_WR);
 
 	while (usrsctp_finish() != 0) {
