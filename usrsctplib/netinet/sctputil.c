@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 287294 2015-08-29 17:26:29Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 287456 2015-09-04 09:22:16Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2782,6 +2782,9 @@ sctp_notify_assoc_change(uint16_t state, struct sctp_tcb *stcb,
 	struct socket *so;
 #endif
 
+	if (stcb == NULL) {
+		return;
+	}
 	if (sctp_stcb_is_feature_on(stcb->sctp_ep, stcb, SCTP_PCB_FLAGS_RECVASSOCEVNT)) {
 		notif_len = sizeof(struct sctp_assoc_change);
 		if (abort != NULL) {
@@ -4811,10 +4814,11 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 		control->end_added = 1;
 	}
 #if defined(__Userspace__)
-	if (inp->recv_callback) {
+	if (inp->recv_callback != NULL) {
 		if (inp_read_lock_held == 0)
 			SCTP_INP_READ_UNLOCK(inp);
-		if (control->end_added == 1) {
+		if ((control->end_added == 1) &&
+		    (stcb != NULL) && (stcb->sctp_socket != NULL)) {
 			struct socket *so;
 			struct mbuf *m;
 			char *buffer;
@@ -5033,7 +5037,7 @@ sctp_append_to_readq(struct sctp_inpcb *inp,
 	 */
 	control->sinfo_tsn = control->sinfo_cumtsn = ctls_cumack;
 #if defined(__Userspace__)
-	if (inp->recv_callback) {
+	if ((inp != NULL) && (inp->recv_callback != NULL)) {
 		uint32_t pd_point, length;
 
 		length = control->length;
@@ -5043,7 +5047,8 @@ sctp_append_to_readq(struct sctp_inpcb *inp,
 		} else {
 			pd_point = inp->partial_delivery_point;
 		}
-		if ((control->end_added == 1) || (length >= pd_point)) {
+		if (((control->end_added == 1) || (length >= pd_point)) &&
+		    ((stcb != NULL) && (stcb->sctp_socket))) {
 			struct socket *so;
 			char *buffer;
 			struct sctp_rcvinfo rcv;
