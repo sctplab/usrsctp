@@ -35,6 +35,17 @@
 #endif
 #include <netinet/sctp_os_userspace.h>
 
+void
+sctp_userspace_set_threadname(const char *name)
+{
+#if defined (__Userspace_os_Darwin)
+	pthread_setname_np(name);
+#endif
+#if defined (__Userspace_os_Linux)
+	pthread_setname_np(pthread_self(), name);
+#endif
+}
+
 #if !defined(_WIN32) && !defined(__Userspace_os_NaCl)
 int
 sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)

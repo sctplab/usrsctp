@@ -1049,6 +1049,9 @@ struct sockaddr_conn {
 	void *sconn_addr;
 };
 
+void
+sctp_userspace_set_threadname(const char *name);
+
 /*
  * SCTP protocol specific mbuf flags.
  */

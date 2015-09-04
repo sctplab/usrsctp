@@ -154,6 +154,7 @@ recv_function_route(void *arg)
 	char rt_buffer[1024];
 	struct sockaddr *sa, *rti_info[RTAX_MAX];
 
+	sctp_userspace_set_threadname("SCTP address watcher thread");
 	while (1) {
 		bzero(rt_buffer, sizeof(rt_buffer));
 		ret = recv(SCTP_BASE_VAR(userspace_route), rt_buffer, sizeof(rt_buffer), 0);
@@ -295,6 +296,7 @@ recv_function_raw(void *arg)
 	int fromlen;
 #endif
 
+	sctp_userspace_set_threadname("SCTP/IPv4 receiver thread");
 	/*Initially the entire set of mbufs is to be allocated.
 	  to_fill indicates this amount. */
 	int to_fill = MAXLEN_MBUF_CHAIN;
@@ -477,6 +479,7 @@ recv_function_raw6(void *arg)
 	int offset;
 	struct sctp_chunkhdr *ch;
 
+	sctp_userspace_set_threadname("SCTP/IPv6 receiver thread");
 	/*Initially the entire set of mbufs is to be allocated.
 	  to_fill indicates this amount. */
 	int to_fill = MAXLEN_MBUF_CHAIN;
@@ -682,6 +685,7 @@ recv_function_udp(void *arg)
 	WSACMSGHDR *cmsgptr;
 #endif
 
+	sctp_userspace_set_threadname("SCTP/UDP/IPv4 receiver thread");
 	udprecvmbuf = malloc(sizeof(struct mbuf *) * MAXLEN_MBUF_CHAIN);
 
 	while (1) {
@@ -888,6 +892,7 @@ recv_function_udp6(void *arg)
 	WSACMSGHDR *cmsgptr;
 #endif
 
+	sctp_userspace_set_threadname("SCTP/UDP/IPv6 receiver thread");
 	udprecvmbuf6 = malloc(sizeof(struct mbuf *) * MAXLEN_MBUF_CHAIN);
 	while (1) {
 		for (i = 0; i < to_fill; i++) {
