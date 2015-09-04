@@ -1097,6 +1097,7 @@ recv_thread_init(void)
 #if !defined(__Userspace_os_Windows)
 	struct timeval timeout;
 
+	memset(&timeout, 0, sizeof(struct timeval));
 	timeout.tv_sec  = (SOCKET_TIMEOUT / 1000);
 	timeout.tv_usec = (SOCKET_TIMEOUT % 1000) * 1000;
 #else
