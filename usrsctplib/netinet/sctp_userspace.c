@@ -53,6 +53,7 @@ sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)
 	struct ifreq ifr;
 	int fd;
 
+	memset(&ifr, 0, sizeof(struct ifreq));
 	if_indextoname(if_index, ifr.ifr_name);
 	/* TODO can I use the raw socket here and not have to open a new one with each query? */
 	if ((fd = socket(af, SOCK_DGRAM, 0)) < 0)
