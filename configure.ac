@@ -31,7 +31,7 @@ dnl
 AC_INIT([libusrsctp], [0.9.2.1])
 AM_INIT_AUTOMAKE
 
-AC_PROG_CC_C99
+AC_PROG_CC
 AC_PROG_LIBTOOL
 AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([m4])
@@ -39,30 +39,30 @@ AC_CONFIG_MACRO_DIR([m4])
 LIBCFLAGS="-DSCTP_PROCESS_LEVEL_LOCKS -DSCTP_SIMPLE_ALLOCATOR -D__Userspace__"
 case $host_os in
 darwin*)
-  CFLAGS="$CFLAGS -pedantic -Wall -std=c99 -Werror -D__APPLE_USE_RFC_2292"
+  CFLAGS="$CFLAGS -std=c99 -pedantic -Wall -Werror -D__APPLE_USE_RFC_2292"
   LIBCFLAGS="$LIBCFLAGS -U__APPLE__ -D__Userspace_os_Darwin"
   ;;
 dragonfly*)
-  CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread"
+  CFLAGS="$CFLAGS -std=c99 -pedantic -Wall -Werror -pthread"
   LIBCFLAGS="$LIBCFLAGS -U__DragonFly__ -D__Userspace_os_DragonFly"
   ;;
 freebsd*)
-  CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread"
+  CFLAGS="$CFLAGS -std=c99 -pedantic -Wall -Werror -pthread"
   if $CC --version | grep -q clang; then
     LDFLAGS="$LDFLAGS -Qunused-arguments"
   fi
   LIBCFLAGS="$LIBCFLAGS -U__FreeBSD__ -D__Userspace_os_FreeBSD"
   ;;
 linux*)
-  CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread -D_GNU_SOURCE"
+  CFLAGS="$CFLAGS -std=c99 -pedantic -Wall -Werror -pthread -D_GNU_SOURCE"
   LIBCFLAGS="$LIBCFLAGS  -D__Userspace_os_Linux"
   ;;
 netbsd*)
-  CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread"
+  CFLAGS="$CFLAGS -std=c99 -pedantic -Wall -Werror -pthread"
   LIBCFLAGS="$LIBCFLAGS -U__NetBSD__ -D__Userspace_os_NetBSD"
   ;;
 openbsd*)
-  CFLAGS="$CFLAGS -pedantic -Wall -Werror -pthread"
+  CFLAGS="$CFLAGS -std=c99 -pedantic -Wall -Werror -pthread"
   LIBCFLAGS="$LIBCFLAGS -U__OpenBSD__ -D__Userspace_os_OpenBSD"
   ;;
 solaris*)
