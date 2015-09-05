@@ -125,7 +125,7 @@ static void
 sctp_iterator_thread(void *v SCTP_UNUSED)
 {
 #if defined(__Userspace__)
-	sctp_userspace_set_threadname("SCTP iterator thread");
+	sctp_userspace_set_threadname("SCTP iterator");
 #endif
 	SCTP_IPI_ITERATOR_WQ_LOCK();
 	/* In FreeBSD this thread never terminates. */

@@ -178,7 +178,7 @@ sctp_timeout(void *arg SCTP_UNUSED)
 void *
 user_sctp_timer_iterate(void *arg)
 {
-	sctp_userspace_set_threadname("SCTP timer thread");
+	sctp_userspace_set_threadname("SCTP timer");
 	for (;;) {
 #if defined (__Userspace_os_Windows)
 		Sleep(TIMEOUT_INTERVAL);
