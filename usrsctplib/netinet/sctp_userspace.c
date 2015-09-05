@@ -34,15 +34,21 @@
 #pragma comment(lib, "IPHLPAPI.lib")
 #endif
 #include <netinet/sctp_os_userspace.h>
+#if defined(__Userspace_os_FreeBSD)
+#include <pthread_np.h>
+#endif
 
 void
 sctp_userspace_set_threadname(const char *name)
 {
-#if defined (__Userspace_os_Darwin)
+#if defined(__Userspace_os_Darwin)
 	pthread_setname_np(name);
 #endif
-#if defined (__Userspace_os_Linux)
+#if defined(__Userspace_os_Linux)
 	pthread_setname_np(pthread_self(), name);
+#endif
+#if defined(__Userspace_os_FreeBSD)
+	pthread_set_name_np(pthread_self(), name);
 #endif
 }
 
