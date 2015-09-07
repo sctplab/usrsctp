@@ -34,7 +34,7 @@ Create a directory outside the `usrsctp` directory, enter it and generate files 
 
     $ cmake <path-to-usrsctp-sources>
 
-By using the `-g`flag you can specify the target buildsystem e.g. `cmake -G Xcode ../usrsctp` will generate project files for Xcode.
+By using the `-G`flag you can specify the target buildsystem e.g. `cmake -G Xcode ../usrsctp` will generate project files for Xcode.
 
 ### Running the Test Programs
 
