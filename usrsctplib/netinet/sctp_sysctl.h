@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.h 287294 2015-08-29 17:26:29Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.h 287529 2015-09-07 02:00:05Z allanjude $");
 #endif
 
 #ifndef _NETINET_SCTP_SYSCTL_H_
@@ -566,7 +566,7 @@ struct sctp_sysctl {
 #define SCTPCTL_RTTVAR_DCCCECN_MAX	1
 #define SCTPCTL_RTTVAR_DCCCECN_DEFAULT	1 /* 0 means disable feature */
 
-#define SCTPCTL_BLACKHOLE_DESC		"Enable SCTP blackholing"
+#define SCTPCTL_BLACKHOLE_DESC		"Enable SCTP blackholing. See blackhole(4) man page for more details."
 #define SCTPCTL_BLACKHOLE_MIN		0
 #define SCTPCTL_BLACKHOLE_MAX		2
 #define SCTPCTL_BLACKHOLE_DEFAULT	SCTPCTL_BLACKHOLE_MIN
