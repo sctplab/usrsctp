@@ -479,7 +479,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 		ifa_flags = 0;
 #if defined (__Userspace_os_FreeBSD)
 		printf("ifa = %p, ifa->ifa_name = %p, strlen(ifa->ifa_name) = %d, ifa_ifa_name = |%s|\n",
-		       (void *)ifa, (void *)ifa->ifa_name, (int)strlen(ifa->ifa->name), ifa->ifa_name);
+		       (void *)ifa, (void *)ifa->ifa_name, (int)strlen(ifa->ifa_name), ifa->ifa_name);
 #endif
 		sctp_ifa = sctp_add_addr_to_vrf(vrfid,
 		                                ifa,
