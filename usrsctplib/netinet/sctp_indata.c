@@ -32,9 +32,8 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 286206 2015-08-02 16:07:30Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 287669 2015-09-11 13:54:33Z tuexen $");
 #endif
-
 
 #include <netinet/sctp_os.h>
 #include <netinet/sctp_var.h>
@@ -2528,11 +2527,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 						SCTP_BUF_LEN(merr) = sizeof(*phd);
 						SCTP_BUF_NEXT(merr) = SCTP_M_COPYM(m, *offset, chk_length, M_NOWAIT);
 						if (SCTP_BUF_NEXT(merr)) {
-							if (sctp_pad_lastmbuf(SCTP_BUF_NEXT(merr), SCTP_SIZE32(chk_length) - chk_length, NULL) == NULL) {
-								sctp_m_freem(merr);
-							} else {
-								sctp_queue_op_err(stcb, merr);
-							}
+							sctp_queue_op_err(stcb, merr);
 						} else {
 							sctp_m_freem(merr);
 						}
