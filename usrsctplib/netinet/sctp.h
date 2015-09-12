@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 279859 2015-03-10 19:49:25Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 287717 2015-09-12 17:08:51Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_H_
@@ -402,39 +402,43 @@ struct sctp_error_cause {
 } SCTP_PACKED;
 
 struct sctp_error_invalid_stream {
-	struct sctp_error_cause cause;	/* code=SCTP_ERROR_INVALID_STREAM */
+	struct sctp_error_cause cause;	/* code=SCTP_CAUSE_INVALID_STREAM */
 	uint16_t stream_id;	/* stream id of the DATA in error */
 	uint16_t reserved;
 } SCTP_PACKED;
 
 struct sctp_error_missing_param {
-	struct sctp_error_cause cause;	/* code=SCTP_ERROR_MISSING_PARAM */
+	struct sctp_error_cause cause;	/* code=SCTP_CAUSE_MISSING_PARAM */
 	uint32_t num_missing_params;	/* number of missing parameters */
-	/* uint16_t param_type's follow */
+	uint16_t type[];
 } SCTP_PACKED;
 
 struct sctp_error_stale_cookie {
-	struct sctp_error_cause cause;	/* code=SCTP_ERROR_STALE_COOKIE */
+	struct sctp_error_cause cause;	/* code=SCTP_CAUSE_STALE_COOKIE */
 	uint32_t stale_time;	/* time in usec of staleness */
 } SCTP_PACKED;
 
 struct sctp_error_out_of_resource {
-	struct sctp_error_cause cause;	/* code=SCTP_ERROR_OUT_OF_RESOURCES */
+	struct sctp_error_cause cause;	/* code=SCTP_CAUSE_OUT_OF_RESOURCES */
 } SCTP_PACKED;
 
 struct sctp_error_unresolv_addr {
-	struct sctp_error_cause cause;	/* code=SCTP_ERROR_UNRESOLVABLE_ADDR */
-
+	struct sctp_error_cause cause;	/* code=SCTP_CAUSE_UNRESOLVABLE_ADDR */
 } SCTP_PACKED;
 
 struct sctp_error_unrecognized_chunk {
-	struct sctp_error_cause cause;	/* code=SCTP_ERROR_UNRECOG_CHUNK */
+	struct sctp_error_cause cause;	/* code=SCTP_CAUSE_UNRECOG_CHUNK */
 	struct sctp_chunkhdr ch;/* header from chunk in error */
 } SCTP_PACKED;
 
 struct sctp_error_no_user_data {
 	struct sctp_error_cause cause;	/* code=SCTP_CAUSE_NO_USER_DATA */
 	uint32_t tsn;			/* TSN of the empty data chunk */
+} SCTP_PACKED;
+
+struct sctp_error_auth_invalid_hmac {
+	struct sctp_error_cause cause;	/* code=SCTP_CAUSE_UNSUPPORTED_HMACID */
+	uint16_t hmac_id;
 } SCTP_PACKED;
 
 /*
