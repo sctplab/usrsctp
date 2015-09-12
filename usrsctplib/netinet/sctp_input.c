@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 287717 2015-09-12 17:08:51Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 287719 2015-09-12 18:00:06Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -558,9 +558,9 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 		 * abandon the peer, its broke.
 		 */
 		if (retval == -3) {
-			size_t len;
+			uint16_t len;
 
-			len = sizeof(struct sctp_error_missing_param) + sizeof(uint16_t);
+			len = (uint16_t)(sizeof(struct sctp_error_missing_param) + sizeof(uint16_t));
 			/* We abort with an error of missing mandatory param */
 			op_err = sctp_get_mbuf_for_msg(len, 0, M_NOWAIT, 1, MT_DATA);
 			if (op_err != NULL) {
@@ -570,7 +570,7 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 				cause = mtod(op_err, struct sctp_error_missing_param *);
 				/* Subtract the reserved param */
 				cause->cause.code = htons(SCTP_CAUSE_MISSING_PARAM);
-				cause->cause.length = htons((uint16_t)len);
+				cause->cause.length = htons(len);
 				cause->num_missing_params = htonl(1);
 				cause->type[0] = htons(SCTP_STATE_COOKIE);
 			}
