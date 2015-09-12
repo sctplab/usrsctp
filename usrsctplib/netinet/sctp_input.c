@@ -570,7 +570,7 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 				cause = mtod(op_err, struct sctp_error_missing_param *);
 				/* Subtract the reserved param */
 				cause->cause.code = htons(SCTP_CAUSE_MISSING_PARAM);
-				cause->cause.length = htons(len);
+				cause->cause.length = htons((uint16_t)len);
 				cause->num_missing_params = htonl(1);
 				cause->type[0] = htons(SCTP_STATE_COOKIE);
 			}
