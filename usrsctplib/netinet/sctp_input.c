@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 287719 2015-09-12 18:00:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 287725 2015-09-12 21:23:24Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5736,7 +5736,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 					if (SCTP_BUF_NEXT(op_err) != NULL) {
 #ifdef SCTP_MBUF_LOGGING
 						if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_MBUF_LOGGING_ENABLE) {
-							sctp_log_mbc(SCTP_BUF_NEXT(mm), SCTP_MBUF_ICOPY);
+							sctp_log_mbc(SCTP_BUF_NEXT(op_err), SCTP_MBUF_ICOPY);
 						}
 #endif
 						sctp_queue_op_err(stcb, op_err);
