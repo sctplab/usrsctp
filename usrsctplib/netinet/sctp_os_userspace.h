@@ -949,7 +949,7 @@ int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af);
 #define SCTP_RELEASE_HEADER(m)
 #define SCTP_RELEASE_PKT(m)	sctp_m_freem(m)
 /* UDP __Userspace__ - dummy definition */
-#define SCTP_ENABLE_UDP_CSUM(m) m=m
+#define SCTP_ENABLE_UDP_CSUM(m)
 /* BSD definition */
 /* #define SCTP_ENABLE_UDP_CSUM(m) do { \ */
 /*                                         m->m_pkthdr.csum_flags = CSUM_UDP; \ */
