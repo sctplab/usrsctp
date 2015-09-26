@@ -39,36 +39,57 @@ AC_CONFIG_MACRO_DIR([m4])
 LIBCFLAGS="-DSCTP_PROCESS_LEVEL_LOCKS -DSCTP_SIMPLE_ALLOCATOR -D__Userspace__"
 case $host_os in
 darwin*)
-  CFLAGS="$CFLAGS -std=c99 -pedantic -Wall -Werror -D__APPLE_USE_RFC_2292"
+  CFLAGS="$CFLAGS -std=c99 -D__APPLE_USE_RFC_2292"
   LIBCFLAGS="$LIBCFLAGS -U__APPLE__ -D__Userspace_os_Darwin"
   ;;
 dragonfly*)
-  CFLAGS="$CFLAGS -std=c99 -pedantic -Wall -Werror -pthread"
+  CFLAGS="$CFLAGS -std=c99 -pthread"
   LIBCFLAGS="$LIBCFLAGS -U__DragonFly__ -D__Userspace_os_DragonFly"
   ;;
 freebsd*)
-  CFLAGS="$CFLAGS -std=c99 -pedantic -Wall -Werror -pthread"
+  CFLAGS="$CFLAGS -std=c99 -pthread"
   if $CC --version | grep -q clang; then
     LDFLAGS="$LDFLAGS -Qunused-arguments"
   fi
   LIBCFLAGS="$LIBCFLAGS -U__FreeBSD__ -D__Userspace_os_FreeBSD"
   ;;
 linux*)
-  CFLAGS="$CFLAGS -std=c99 -pedantic -Wall -Werror -pthread -D_GNU_SOURCE"
-  LIBCFLAGS="$LIBCFLAGS  -D__Userspace_os_Linux"
+  CFLAGS="$CFLAGS -std=c99 -pthread -D_GNU_SOURCE"
+  LIBCFLAGS="$LIBCFLAGS -D__Userspace_os_Linux"
   ;;
 netbsd*)
-  CFLAGS="$CFLAGS -std=c99 -pedantic -Wall -Werror -pthread"
+  CFLAGS="$CFLAGS -std=c99 -pthread"
   LIBCFLAGS="$LIBCFLAGS -U__NetBSD__ -D__Userspace_os_NetBSD"
   ;;
 openbsd*)
-  CFLAGS="$CFLAGS -std=c99 -pedantic -Wall -Werror -pthread"
+  CFLAGS="$CFLAGS -std=c99 -pthread"
   LIBCFLAGS="$LIBCFLAGS -U__OpenBSD__ -D__Userspace_os_OpenBSD"
   ;;
 solaris*)
   CFLAGS="$CFLAGS -D_XPG4_2"
   ;;
 esac
+
+if test "x$GCC" = "xyes" -o "x$CC" = "xclang" ; then
+        ac_supports_gcc_flags=yes
+fi
+
+if test "x$ac_supports_gcc_flags" = "xyes" ; then
+        CFLAGS="$CFLAGS -pedantic -Wall"
+fi
+
+AC_MSG_CHECKING(whether we should treat compiler warnings as errors)
+AC_ARG_ENABLE(warnings-as-errors,
+  AC_HELP_STRING( [--enable-warnings-as-errors],
+                  [treat warnings as errors (only for GCC or clang) @<:@default=yes@:>@]),
+    enable_warnings_as_errors=$enableval,enable_warnings_as_errors=yes)
+if test "x$ac_supports_gcc_flags" = "xyes" -a x$enable_warnings_as_errors = xyes; then
+        AC_MSG_RESULT(yes)
+        CFLAGS="$CFLAGS -Werror"
+else
+        AC_MSG_RESULT(no)
+fi
+
 LIBCFLAGS="$CFLAGS $LIBCFLAGS"
 
 AC_ARG_ENABLE(debug,
