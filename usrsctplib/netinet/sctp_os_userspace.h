@@ -1129,7 +1129,7 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header, int how, int a
 #endif
 #define I_AM_HERE \
                 do { \
-			SCTP_PRINTF("%s:%d at %s\n", __FILE__, __LINE__ , __FUNCTION__); \
+			SCTP_PRINTF("%s:%d at %s\n", __FILE__, __LINE__ , __func__); \
 		} while (0)
 
 #ifndef timevalsub
