@@ -4404,12 +4404,14 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			sctphdr->checksum = sctp_calculate_cksum(m, sizeof(struct ip) + sizeof(struct udphdr));
 			SCTP_STAT_INCR(sctps_sendswcrc);
 #endif
+#if !defined(__Windows__) && !defined(__Userspace__)
 #if defined(__FreeBSD__) && ((__FreeBSD_version > 803000 && __FreeBSD_version < 900000) || __FreeBSD_version > 900000)
 			if (V_udp_cksum) {
 				SCTP_ENABLE_UDP_CSUM(o_pak);
 			}
 #else
 			SCTP_ENABLE_UDP_CSUM(o_pak);
+#endif
 #endif
 		} else {
 #if defined(SCTP_WITH_NO_CSUM)
@@ -11645,12 +11647,14 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 			shout->checksum = sctp_calculate_cksum(mout, sizeof(struct ip) + sizeof(struct udphdr));
 			SCTP_STAT_INCR(sctps_sendswcrc);
 #endif
+#if !defined(__Windows__) && !defined(__Userspace__)
 #if defined(__FreeBSD__) && ((__FreeBSD_version > 803000 && __FreeBSD_version < 900000) || __FreeBSD_version > 900000)
 			if (V_udp_cksum) {
 				SCTP_ENABLE_UDP_CSUM(o_pak);
 			}
 #else
 			SCTP_ENABLE_UDP_CSUM(o_pak);
+#endif
 #endif
 		} else {
 #if defined(SCTP_WITH_NO_CSUM)
