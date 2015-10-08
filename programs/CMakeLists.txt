@@ -116,6 +116,12 @@ else()
 	set(LINK_STATIC "usrsctp")
 endif()
 
+option(WERROR "Warning as error" ON)
+if (WERROR)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+endif()
+
 
 #################################################
 # OS DEPENDENT
@@ -179,7 +185,8 @@ FOREACH (source_file ${check_PROGRAMS})
 	ADD_TEST (${source_file_we} ${source_file_we})
 
 	IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xGNU")
-		SET_PROPERTY (TARGET ${source_file_we} APPEND_STRING PROPERTY COMPILE_FLAGS "-g -pedantic -Wall -Werror -std=c99")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -pedantic -Wall -std=c99")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pedantic -Wall -std=c99")
 	ENDIF ()
 
 	IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC")

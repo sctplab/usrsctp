@@ -191,6 +191,13 @@ if (SCTP_KAME)
 	add_definitions(-DSCTP_KAME)
 endif()
 
+option(WERROR "Warning as error" ON)
+if (WERROR)
+	#add_compile_options("-Werror")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+endif()
+
 #CONFIGURE_FILE (
 #    usrsctp.pc.in
 #    usrsctp.pc
@@ -242,8 +249,11 @@ SET_TARGET_PROPERTIES (usrsctp PROPERTIES IMPORT_SUFFIX "_import.lib")
 SET_TARGET_PROPERTIES (usrsctp PROPERTIES SOVERSION 1 VERSION 1.0.0)
 
 IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xGNU")
-    SET_PROPERTY (TARGET usrsctp APPEND_STRING PROPERTY COMPILE_FLAGS "-g -pedantic -Wall -Werror -std=c99") #
-    SET_PROPERTY (TARGET usrsctp-static APPEND_STRING PROPERTY COMPILE_FLAGS "-g -pedantic -Wall -Werror -std=c99") #
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -pedantic -Wall -std=c99")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pedantic -Wall -std=c99")
+	MESSAGE(STATUS "COMPILE FLAGS: ${CMAKE_C_FLAGS}")
+	#SET_PROPERTY (TARGET usrsctp APPEND_STRING PROPERTY COMPILE_FLAGS "-g -pedantic -Wall -Werror -std=c99")
+    #SET_PROPERTY (TARGET usrsctp-static APPEND_STRING PROPERTY COMPILE_FLAGS "-g -pedantic -Wall -Werror -std=c99")
 ENDIF ()
 IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC")
     IF (CMAKE_C_FLAGS MATCHES "/W[0-4]")
