@@ -117,11 +117,6 @@ else()
 endif()
 
 option(WERROR "Warning as error" ON)
-if (WERROR)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-endif()
-
 
 #################################################
 # OS DEPENDENT
@@ -187,6 +182,10 @@ FOREACH (source_file ${check_PROGRAMS})
 	IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xGNU")
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -pedantic -Wall -std=c99")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pedantic -Wall -std=c99")
+		if (WERROR)
+			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+		endif()
 	ENDIF ()
 
 	IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC")
@@ -195,5 +194,11 @@ FOREACH (source_file ${check_PROGRAMS})
 		ELSE ()
 			SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
 		ENDIF ()
+
+		if (WERROR)
+			#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
+		endif()
+
+
 	ENDIF ()
 ENDFOREACH ()
