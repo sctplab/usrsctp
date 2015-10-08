@@ -195,9 +195,9 @@ FOREACH (source_file ${check_PROGRAMS})
 			SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
 		ENDIF ()
 
-		if (WERROR)
-			#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
-		endif()
+		IF (WERROR)
+			SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
+		ENDIF()
 
 
 	ENDIF ()
