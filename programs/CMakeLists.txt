@@ -116,6 +116,7 @@ else()
 	set(LINK_STATIC "usrsctp")
 endif()
 
+option(WERROR "Warning as error" ON)
 
 #################################################
 # OS DEPENDENT
@@ -179,14 +180,25 @@ FOREACH (source_file ${check_PROGRAMS})
 	ADD_TEST (${source_file_we} ${source_file_we})
 
 	IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xGNU")
-		SET_PROPERTY (TARGET ${source_file_we} APPEND_STRING PROPERTY COMPILE_FLAGS "-g -pedantic -Wall -Werror -std=c99")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -pedantic -Wall -std=c99")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pedantic -Wall -std=c99")
+		if (WERROR)
+			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+		endif()
 	ENDIF ()
 
 	IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC")
 		IF (CMAKE_C_FLAGS MATCHES "/W[0-4]")
-			STRING(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+			STRING(REGEX REPLACE "/W[0-4]" "/W3" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 		ELSE ()
-			SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
+			SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
 		ENDIF ()
+
+		IF (WERROR)
+			SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
+		ENDIF()
+
+
 	ENDIF ()
 ENDFOREACH ()
