@@ -809,8 +809,6 @@ sctp_hashfreedestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask);
 /*__Userspace__ defining KTR_SUBSYS 1 as done in sctp_os_macosx.h */
 #define KTR_SUBSYS 1
 
-#define sctp_get_tick_count() (ticks)
-
 /* The packed define for 64 bit platforms */
 #if !defined(__Userspace_os_Windows)
 #define SCTP_PACKED __attribute__((packed))

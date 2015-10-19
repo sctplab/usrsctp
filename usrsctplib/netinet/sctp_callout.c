@@ -56,10 +56,17 @@
  * Callout/Timer routines for OS that doesn't have them
  */
 #if defined(__APPLE__) || defined(__Userspace__)
-int ticks = 0;
+static int ticks = 0;
 #else
 extern int ticks;
 #endif
+
+int sctp_get_tick_count() {
+    SCTP_TIMERQ_LOCK();
+    int ret = ticks;
+    SCTP_TIMERQ_UNLOCK();
+    return ret;
+}
 
 /*
  * SCTP_TIMERQ_LOCK protects:
