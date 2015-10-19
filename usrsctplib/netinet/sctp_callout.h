@@ -65,7 +65,7 @@ __FBSDID("$FreeBSD$");
 
 #endif
 
-int sctp_get_tick_count();
+int sctp_get_tick_count(void);
 
 TAILQ_HEAD(calloutlist, sctp_callout);
 

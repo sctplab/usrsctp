@@ -61,11 +61,13 @@ static int ticks = 0;
 extern int ticks;
 #endif
 
-int sctp_get_tick_count() {
-    SCTP_TIMERQ_LOCK();
-    int ret = ticks;
-    SCTP_TIMERQ_UNLOCK();
-    return ret;
+int sctp_get_tick_count(void) {
+	int ret;
+
+	SCTP_TIMERQ_LOCK();
+	ret = ticks;
+	SCTP_TIMERQ_UNLOCK();
+	return ret;
 }
 
 /*
