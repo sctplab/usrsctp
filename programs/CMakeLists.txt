@@ -109,7 +109,7 @@ if (INET6)
 	add_definitions(-DINET6)
 endif()
 
-option(LINK_STATIC "Link static" 1)
+option(LINK_STATIC "Link static" 0)
 if (LINK_STATIC)
 	set(LINK_STATIC "usrsctp-static")
 else()
