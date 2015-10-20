@@ -63,8 +63,9 @@ __FBSDID("$FreeBSD$");
 #define SCTP_TIMERQ_LOCK_DESTROY()  (void)pthread_mutex_destroy(&SCTP_BASE_VAR(timer_mtx))
 #endif
 
-extern int ticks;
 #endif
+
+int sctp_get_tick_count(void);
 
 TAILQ_HEAD(calloutlist, sctp_callout);
 
