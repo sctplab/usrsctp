@@ -193,11 +193,11 @@ endif()
 
 option(WERROR "Warning as error" ON)
 
-#CONFIGURE_FILE (
-#    usrsctp.pc.in
-#    usrsctp.pc
-#    @ONLY
-#)
+CONFIGURE_FILE (
+    usrsctp.pc.in
+    usrsctp.pc
+    @ONLY
+)
 
 include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/netinet ${PROJECT_SOURCE_DIR}/netinet6)
 
