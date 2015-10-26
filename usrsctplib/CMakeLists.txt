@@ -275,7 +275,9 @@ ENDIF ()
 
 INSTALL (TARGETS usrsctp usrsctp-static DESTINATION ${CMAKE_INSTALL_LIBDIR})
 #INSTALL (DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
-INSTALL (FILES ${usrsctp_root_HEADERS} DESTINATION include/usrsctp)
-INSTALL (FILES ${usrsctp_netinet_HEADERS} DESTINATION include/usrsctp/netinet)
-INSTALL (FILES ${usrsctp_netinet6_HEADERS} DESTINATION include/usrsctp/netinet6)
+#INSTALL (FILES ${usrsctp_root_HEADERS} DESTINATION include/usrsctp)
+#INSTALL (FILES ${usrsctp_netinet_HEADERS} DESTINATION include/usrsctp/netinet)
+#INSTALL (FILES ${usrsctp_netinet6_HEADERS} DESTINATION include/usrsctp/netinet6)
+
+INSTALL (FILES usrsctp.h DESTINATION include)
 INSTALL (FILES ${CMAKE_CURRENT_BINARY_DIR}/usrsctp.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
