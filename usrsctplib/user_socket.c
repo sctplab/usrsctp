@@ -296,6 +296,7 @@ soabort(struct socket *so)
 #elif defined(INET)
 	sctp_abort(so);
 #endif
+	ACCEPT_LOCK();
 	SOCK_LOCK(so);
 	sofree(so);
 }
