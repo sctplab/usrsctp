@@ -193,11 +193,11 @@ endif()
 
 option(WERROR "Warning as error" ON)
 
-#CONFIGURE_FILE (
-#    usrsctp.pc.in
-#    usrsctp.pc
-#    @ONLY
-#)
+CONFIGURE_FILE (
+    usrsctp.pc.in
+    usrsctp.pc
+    @ONLY
+)
 
 include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/netinet ${PROJECT_SOURCE_DIR}/netinet6)
 
@@ -275,7 +275,9 @@ ENDIF ()
 
 INSTALL (TARGETS usrsctp usrsctp-static DESTINATION ${CMAKE_INSTALL_LIBDIR})
 #INSTALL (DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
-INSTALL (FILES ${usrsctp_root_HEADERS} DESTINATION include/usrsctp)
-INSTALL (FILES ${usrsctp_netinet_HEADERS} DESTINATION include/usrsctp/netinet)
-INSTALL (FILES ${usrsctp_netinet6_HEADERS} DESTINATION include/usrsctp/netinet6)
+#INSTALL (FILES ${usrsctp_root_HEADERS} DESTINATION include/usrsctp)
+#INSTALL (FILES ${usrsctp_netinet_HEADERS} DESTINATION include/usrsctp/netinet)
+#INSTALL (FILES ${usrsctp_netinet6_HEADERS} DESTINATION include/usrsctp/netinet6)
+
+INSTALL (FILES usrsctp.h DESTINATION include)
 INSTALL (FILES ${CMAKE_CURRENT_BINARY_DIR}/usrsctp.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
