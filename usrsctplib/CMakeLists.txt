@@ -136,6 +136,11 @@ endif()
 # CHECK OPTIONS
 #################################################
 
+option(INVARIANTS "Add runtime checks" 0)
+if (INVARIANTS)
+	add_definitions(-DINVARIANTS)
+endif()
+
 option(SCTP_DEBUG "Provide debug information" 1)
 if (SCTP_DEBUG)
 	add_definitions(-DSCTP_DEBUG)
