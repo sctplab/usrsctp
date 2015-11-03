@@ -6415,7 +6415,7 @@ sctp_sorecvmsg(struct socket *so,
 					/* been through it all, must hold sb lock ok to null tail */
 					if (control->data == NULL) {
 #ifdef INVARIANTS
-#if !defined(__APPLE__)
+#if defined(__FreeBSD__)
 						if ((control->end_added == 0) ||
 						    (TAILQ_NEXT(control, next) == NULL)) {
 							/* If the end is not added, OR the

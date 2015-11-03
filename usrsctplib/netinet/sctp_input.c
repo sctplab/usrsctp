@@ -5786,7 +5786,7 @@ __attribute__((noinline))
 void
 sctp_validate_no_locks(struct sctp_inpcb *inp)
 {
-#ifndef __APPLE__
+#ifdef __FreeBSD__
 	struct sctp_tcb *lstcb;
 
 	LIST_FOREACH(lstcb, &inp->sctp_asoc_list, sctp_tcblist) {

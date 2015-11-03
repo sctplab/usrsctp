@@ -14551,7 +14551,7 @@ out_unlocked:
 		atomic_add_int(&stcb->asoc.refcnt, -1);
 	}
 #ifdef INVARIANTS
-#if !defined(__APPLE__)
+#if defined(__FreeBSD__)
 	if (stcb) {
 		if (mtx_owned(&stcb->tcb_mtx)) {
 			panic("Leaving with tcb mtx owned?");
