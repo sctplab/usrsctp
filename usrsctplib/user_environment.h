@@ -86,9 +86,9 @@ extern u_short ip_id;
 #define IPV6_VERSION            0x60
 #endif
 #if defined(INVARIANTS)
-#define panic(args...)            \
+#define panic(...)            \
 	do {                      \
-		SCTP_PRINTF(args);\
+		SCTP_PRINTF(__VA_ARGS__);\
 		exit(1);          \
 } while (0)
 #endif
