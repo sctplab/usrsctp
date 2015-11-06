@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 287717 2015-09-12 17:08:51Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 290442 2015-11-06 13:08:16Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -230,7 +230,7 @@ sctp_build_ctl_nchunk(struct sctp_inpcb *inp, struct sctp_sndrcvinfo *sinfo)
 	}
 	seinfo = (struct sctp_extrcvinfo *)sinfo;
 	if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVNXTINFO) &&
-	    (seinfo->sreinfo_next_flags & SCTP_NEXT_MSG_AVAIL)) {
+	    (seinfo->serinfo_next_flags & SCTP_NEXT_MSG_AVAIL)) {
 		provide_nxt = 1;
 		len += CMSG_SPACE(sizeof(struct sctp_rcvinfo));
 	} else {
@@ -291,20 +291,20 @@ sctp_build_ctl_nchunk(struct sctp_inpcb *inp, struct sctp_sndrcvinfo *sinfo)
 		cmh->cmsg_len = CMSG_LEN(sizeof(struct sctp_nxtinfo));
 		cmh->cmsg_type = SCTP_NXTINFO;
 		nxtinfo = (struct sctp_nxtinfo *)CMSG_DATA(cmh);
-		nxtinfo->nxt_sid = seinfo->sreinfo_next_stream;
+		nxtinfo->nxt_sid = seinfo->serinfo_next_stream;
 		nxtinfo->nxt_flags = 0;
-		if (seinfo->sreinfo_next_flags & SCTP_NEXT_MSG_IS_UNORDERED) {
+		if (seinfo->serinfo_next_flags & SCTP_NEXT_MSG_IS_UNORDERED) {
 			nxtinfo->nxt_flags |= SCTP_UNORDERED;
 		}
-		if (seinfo->sreinfo_next_flags & SCTP_NEXT_MSG_IS_NOTIFICATION) {
+		if (seinfo->serinfo_next_flags & SCTP_NEXT_MSG_IS_NOTIFICATION) {
 			nxtinfo->nxt_flags |= SCTP_NOTIFICATION;
 		}
-		if (seinfo->sreinfo_next_flags & SCTP_NEXT_MSG_ISCOMPLETE) {
+		if (seinfo->serinfo_next_flags & SCTP_NEXT_MSG_ISCOMPLETE) {
 			nxtinfo->nxt_flags |= SCTP_COMPLETE;
 		}
-		nxtinfo->nxt_ppid = seinfo->sreinfo_next_ppid;
-		nxtinfo->nxt_length = seinfo->sreinfo_next_length;
-		nxtinfo->nxt_assoc_id = seinfo->sreinfo_next_aid;
+		nxtinfo->nxt_ppid = seinfo->serinfo_next_ppid;
+		nxtinfo->nxt_length = seinfo->serinfo_next_length;
+		nxtinfo->nxt_assoc_id = seinfo->serinfo_next_aid;
 #if defined(__Userspace_os_Windows)
 		cmh = (WSACMSGHDR *)((caddr_t)cmh + CMSG_SPACE(sizeof(struct sctp_nxtinfo)));
 #else
