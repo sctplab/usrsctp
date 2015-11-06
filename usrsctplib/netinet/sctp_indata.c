@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 290442 2015-11-06 13:08:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 290468 2015-11-06 22:08:05Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -232,7 +232,7 @@ sctp_build_ctl_nchunk(struct sctp_inpcb *inp, struct sctp_sndrcvinfo *sinfo)
 	if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVNXTINFO) &&
 	    (seinfo->serinfo_next_flags & SCTP_NEXT_MSG_AVAIL)) {
 		provide_nxt = 1;
-		len += CMSG_SPACE(sizeof(struct sctp_rcvinfo));
+		len += CMSG_SPACE(sizeof(struct sctp_nxtinfo));
 	} else {
 		provide_nxt = 0;
 	}
