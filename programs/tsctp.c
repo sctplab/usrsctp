@@ -247,7 +247,7 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 		                  (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
 		                  0) < 0) {
 			if (errno != EWOULDBLOCK && errno != EAGAIN) {
-				perror("usrsctp_sendmsg (cb) returned < 0");
+				perror("usrsctp_sendv (cb)");
 				exit(1);
 			} else {
 				if (very_verbose){
@@ -268,7 +268,7 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 		                  (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
 		                  0) < 0) {
 			if (errno != EWOULDBLOCK && errno != EAGAIN) {
-				perror("usrsctp_sendmsg (cb) returned < 0");
+				perror("usrsctp_sendv (cb)");
 				exit(1);
 			} else {
 				if (very_verbose){
@@ -580,32 +580,32 @@ int main(int argc, char **argv)
 
 	if (client) {
 		if (use_cb) {
-			if (!(psock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, client_receive_cb, send_cb, length, NULL)) ){
-				printf("user_socket() returned NULL\n");
+			if (!(psock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, client_receive_cb, send_cb, length, NULL))) {
+				perror("user_socket");
 				exit(1);
 			}
 		} else {
-			if (!(psock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) ){
-				printf("user_socket() returned NULL\n");
+			if (!(psock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL))) {
+				perror("user_socket");
 				exit(1);
 			}
 		}
 	} else {
 		if (use_cb) {
-			if (!(psock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, server_receive_cb, NULL, 0, NULL)) ){
-				printf("user_socket() returned NULL\n");
+			if (!(psock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, server_receive_cb, NULL, 0, NULL))) {
+				perror("user_socket");
 				exit(1);
 			}
 		} else {
-			if (!(psock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) ){
-				printf("user_socket() returned NULL\n");
+			if (!(psock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL))) {
+				perror("user_socket");
 				exit(1);
 			}
 		}
 	}
 
 	if (usrsctp_bind(psock, (struct sockaddr *)&local_addr, sizeof(struct sockaddr_in)) == -1) {
-		printf("usrsctp_bind failed.\n");
+		perror("usrsctp_bind");
 		exit(1);
 	}
 
@@ -629,7 +629,7 @@ int main(int argc, char **argv)
 		}
 
 		if (usrsctp_listen(psock, 1) < 0) {
-			printf("usrsctp_listen failed.\n");
+			perror("usrsctp_listen");
 			exit(1);
 		}
 
@@ -640,7 +640,7 @@ int main(int argc, char **argv)
 				struct socket *conn_sock;
 
 				if ((conn_sock = usrsctp_accept(psock, (struct sockaddr *) &remote_addr, &addr_len))== NULL) {
-					printf("usrsctp_accept failed.  exiting...\n");
+					perror("usrsctp_accept");
 					continue;
 				}
 			} else {
@@ -648,7 +648,7 @@ int main(int argc, char **argv)
 
 				conn_sock = (struct socket **)malloc(sizeof(struct socket *));
 				if ((*conn_sock = usrsctp_accept(psock, (struct sockaddr *) &remote_addr, &addr_len))== NULL) {
-					printf("usrsctp_accept failed.  exiting...\n");
+					perror("usrsctp_accept");
 					continue;
 				}
 #ifdef _WIN32
@@ -707,14 +707,14 @@ int main(int argc, char **argv)
 		if (verbose) {
 			intlen = sizeof(int);
 			if (usrsctp_getsockopt(psock, SOL_SOCKET, SO_SNDBUF, &mysndbufsize, (socklen_t *)&intlen) < 0) {
-				perror("setsockopt: sndbuf");
+				perror("setsockopt: SO_SNDBUF");
 			} else {
 				fprintf(stdout,"Send buffer size: %d.\n", mysndbufsize);
 			}
 		}
 
 		if (usrsctp_connect(psock, (struct sockaddr *) &remote_addr, sizeof(struct sockaddr_in)) == -1 ) {
-			printf("usrsctpconnect failed.  exiting...\n");
+			perror("usrsctp_connect");
 			exit(1);
 		}
 
@@ -767,13 +767,13 @@ int main(int argc, char **argv)
 
 		if (use_cb) {
 			if (very_verbose) {
-				printf("Sending message number %lu.\n", messages);
+				printf("Initial Sending message number %lu.\n", messages);
 			}
 
 			if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
 				          (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
 				          0) < 0) {
-				perror("usrctp_sendv returned < 0");
+				perror("usrctp_sendv");
 				exit(1);
 			}
 			messages++;
@@ -793,7 +793,7 @@ int main(int argc, char **argv)
 				if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
 				                  (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
 				                  0) < 0) {
-					perror("usrsctp_sendv returned < 0");
+					perror("usrsctp_sendv");
 					exit(1);
 				}
 				messages++;
@@ -806,7 +806,7 @@ int main(int argc, char **argv)
 			if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
 			                  (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
 			                  0) < 0) {
-				perror("final usrsctp_sendv returned\n");
+				perror("usrsctp_sendv");
 				exit(1);
 			}
 			messages++;
