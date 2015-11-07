@@ -65,6 +65,7 @@ uint32_t optval = 1;
 struct socket *psock = NULL;
 
 static struct timeval start_time;
+unsigned int runtime = 0;
 static unsigned long messages = 0;
 static unsigned int first_length = 0;
 static unsigned long long sum = 0;
@@ -219,8 +220,18 @@ handle_connection(void *arg)
 static int
 send_cb(struct socket *sock, uint32_t sb_free) {
 	struct sctp_sndinfo sndinfo;
-	/*struct sctp_prinfo prinfo;
-	struct sctp_sendv_spa spa;*/
+
+	if ((messages == 0) & verbose) {
+		printf("Start sending ");
+		if (number_of_messages > 0) {
+			printf("%ld messages ", (long)number_of_messages);
+		}
+		if (runtime > 0) {
+			printf("for %u seconds ...", runtime);
+		}
+		printf("\n");
+		fflush(stdout);
+	}
 
 	sndinfo.snd_sid = 0;
 	sndinfo.snd_flags = 0;
@@ -230,12 +241,6 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 	sndinfo.snd_ppid = 0;
 	sndinfo.snd_context = 0;
 	sndinfo.snd_assoc_id = 0;
-
-	/*prinfo.pr_policy = SCTP_PR_SCTP_RTX;
-	prinfo.pr_value = 2;
-	spa.sendv_sndinfo = sndinfo;
-	spa.sendv_prinfo = prinfo;
-	spa.sendv_flags = SCTP_SEND_SNDINFO_VALID | SCTP_SEND_PRINFO_VALID;*/
 
 	while (!done && ((number_of_messages == 0) || (messages < (number_of_messages - 1)))) {
 		if (very_verbose) {
@@ -359,15 +364,12 @@ int main(int argc, char **argv)
 	pthread_t tid;
 #endif
 	int fragpoint = 0;
-	unsigned int runtime = 0;
 	struct sctp_setadaptation ind = {0};
 #ifdef _WIN32
 	char *opt;
 	int optind;
 #endif
 	unordered = 0;
-	/*struct sctp_prinfo prinfo;
-	struct sctp_sendv_spa spa;*/
 
 	length = DEFAULT_LENGTH;
 	number_of_messages = DEFAULT_NUMBER_OF_MESSAGES;
@@ -574,9 +576,10 @@ int main(int argc, char **argv)
 
 	usrsctp_init(local_udp_port, NULL, debug_printf);
 #ifdef SCTP_DEBUG
-	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
+	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 #endif
 	usrsctp_sysctl_set_sctp_blackhole(2);
+	usrsctp_sysctl_set_sctp_enable_sack_immediately(1);
 
 	if (client) {
 		if (use_cb) {
@@ -713,26 +716,15 @@ int main(int argc, char **argv)
 			}
 		}
 
+		buffer = malloc(length);
+		memset(buffer, 'b', length);
+
 		if (usrsctp_connect(psock, (struct sockaddr *) &remote_addr, sizeof(struct sockaddr_in)) == -1 ) {
 			perror("usrsctp_connect");
 			exit(1);
 		}
 
-		buffer = malloc(length);
-		memset(buffer, 'b', length);
 		gettimeofday(&start_time, NULL);
-
-		if (verbose) {
-			printf("Start sending ");
-			if (number_of_messages > 0) {
-				printf("%ld messages ", (long)number_of_messages);
-			}
-			if (runtime > 0) {
-				printf("for %u seconds ...", runtime);
-			}
-			printf("\n");
-			fflush(stdout);
-		}
 
 		done = 0;
 
@@ -746,37 +738,7 @@ int main(int argc, char **argv)
 #endif
 		}
 
-		messages = 0;
-
-		sndinfo.snd_sid = 0;
-		sndinfo.snd_flags = 0;
-		if (unordered != 0) {
-			sndinfo.snd_flags |= SCTP_UNORDERED;
-		}
-		sndinfo.snd_ppid = 0;
-		sndinfo.snd_context = 0;
-		sndinfo.snd_assoc_id = 0;
-
-		/*
-		prinfo.pr_policy = SCTP_PR_SCTP_RTX;
-		prinfo.pr_value = 2;
-		spa.sendv_sndinfo = sndinfo;
-		spa.sendv_prinfo = prinfo;
-		spa.sendv_flags = SCTP_SEND_SNDINFO_VALID | SCTP_SEND_PRINFO_VALID;
-		*/
-
 		if (use_cb) {
-			if (very_verbose) {
-				printf("Initial Sending message number %lu.\n", messages);
-			}
-
-			if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
-				          (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
-				          0) < 0) {
-				perror("usrctp_sendv");
-				exit(1);
-			}
-			messages++;
 			while (!done && (messages < (number_of_messages - 1))) {
 #ifdef _WIN32
 				Sleep(1000);
@@ -785,6 +747,25 @@ int main(int argc, char **argv)
 #endif
 			}
 		} else {
+			sndinfo.snd_sid = 0;
+			sndinfo.snd_flags = 0;
+			if (unordered != 0) {
+				sndinfo.snd_flags |= SCTP_UNORDERED;
+			}
+			sndinfo.snd_ppid = 0;
+			sndinfo.snd_context = 0;
+			sndinfo.snd_assoc_id = 0;
+			if (verbose) {
+				printf("Start sending ");
+				if (number_of_messages > 0) {
+					printf("%ld messages ", (long)number_of_messages);
+				}
+				if (runtime > 0) {
+					printf("for %u seconds ...", runtime);
+				}
+				printf("\n");
+				fflush(stdout);
+			}
 			while (!done && ((number_of_messages == 0) || (messages < (number_of_messages - 1)))) {
 				if (very_verbose) {
 					printf("Sending message number %lu.\n", messages + 1);
@@ -814,7 +795,7 @@ int main(int argc, char **argv)
 		free (buffer);
 
 		if (verbose) {
-			printf("done.\n");
+			printf("Closing socket.\n");
 		}
 
 		usrsctp_close(psock);

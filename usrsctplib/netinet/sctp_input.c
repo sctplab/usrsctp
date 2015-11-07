@@ -549,7 +549,31 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 	/* calculate the RTO */
 	net->RTO = sctp_calculate_rto(stcb, asoc, net, &asoc->time_entered, sctp_align_safe_nocopy,
 				      SCTP_RTT_FROM_NON_DATA);
+#if defined(__Userspace__)
+	if (stcb->sctp_ep->recv_callback) {
+		if (stcb->sctp_socket) {
+			uint32_t inqueue_bytes, sb_free_now;
+			struct sctp_inpcb *inp;
 
+			inp = stcb->sctp_ep;
+			inqueue_bytes = stcb->asoc.total_output_queue_size - (stcb->asoc.chunks_on_out_queue * sizeof(struct sctp_data_chunk));
+			sb_free_now = SCTP_SB_LIMIT_SND(stcb->sctp_socket) - (inqueue_bytes + stcb->asoc.sb_send_resv);
+
+			/* check if the amount free in the send socket buffer crossed the threshold */
+			if (inp->send_callback &&
+			    (((inp->send_sb_threshold > 0) &&
+			      (sb_free_now >= inp->send_sb_threshold) &&
+			      (stcb->asoc.chunks_on_out_queue <= SCTP_BASE_SYSCTL(sctp_max_chunks_on_queue))) ||
+			     (inp->send_sb_threshold == 0))) {
+				atomic_add_int(&stcb->asoc.refcnt, 1);
+				SCTP_TCB_UNLOCK(stcb);
+				inp->send_callback(stcb->sctp_socket, sb_free_now);
+				SCTP_TCB_LOCK(stcb);
+				atomic_subtract_int(&stcb->asoc.refcnt, 1);
+			}
+		}
+	}
+#endif
 	retval = sctp_send_cookie_echo(m, offset, stcb, net);
 	if (retval < 0) {
 		/*
