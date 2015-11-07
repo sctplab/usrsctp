@@ -715,13 +715,17 @@ userspace_sctp_sendmsg(struct socket *so,
 
 
 	/* Perform error checks on destination (to) */
-	if (tolen > SOCK_MAXADDRLEN){
+	if (tolen > SOCK_MAXADDRLEN) {
 		errno = ENAMETOOLONG;
 		return (-1);
 	}
 	if ((tolen > 0) &&
 	    ((to == NULL) || (tolen < (socklen_t)sizeof(struct sockaddr)))) {
 		errno = EINVAL;
+		return (-1);
+	}
+	if (data == NULL) {
+		errno = EFAULT;
 		return (-1);
 	}
 	/* Adding the following as part of defensive programming, in case the application
@@ -768,6 +772,10 @@ usrsctp_sendv(struct socket *so,
 
 	if (so == NULL) {
 		errno = EBADF;
+		return (-1);
+	}
+	if (data == NULL) {
+		errno = EFAULT;
 		return (-1);
 	}
 	memset(&sinfo, 0, sizeof(struct sctp_sndrcvinfo));
