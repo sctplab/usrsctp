@@ -169,12 +169,21 @@ main(int argc, char *argv[])
 #endif
 	struct sctp_sndinfo sndinfo;
 	char buffer[BUFFER_SIZE];
+#ifdef _WIN32
+	WSADATA wsaData;
+#endif
 
 	if (argc < 4) {
 		printf("error: this program requires 4 arguments!\n");
 		exit(EXIT_FAILURE);
 	}
 
+#ifdef _WIN32
+	if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
+		printf("WSAStartup failed\n");
+		exit (EXIT_FAILURE);
+	}
+#endif
 	usrsctp_init(0, conn_output, debug_printf);
 	/* set up a connected UDP socket */
 #ifdef _WIN32
@@ -284,6 +293,7 @@ main(int argc, char *argv[])
 	if (closesocket(fd) == SOCKET_ERROR) {
 		printf("closesocket() failed with error: %ld\n", WSAGetLastError());
 	}
+	WSACleanup();
 #else
 	pthread_cancel(tid);
 	pthread_join(tid, NULL);
