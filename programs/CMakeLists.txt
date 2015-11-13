@@ -109,8 +109,9 @@ if (INET6)
 	add_definitions(-DINET6)
 endif()
 
-option(LINK_STATIC "Link static" 1)
-if (LINK_STATIC)
+option(LINK_STATIC "Link static" 0)
+# xxx enable W32 support for shared lib ...
+if (LINK_STATIC OR WIN32)
 	set(LINK_STATIC "usrsctp-static")
 else()
 	set(LINK_STATIC "usrsctp")

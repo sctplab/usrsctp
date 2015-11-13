@@ -274,7 +274,16 @@ main(void)
 	socklen_t opt_len;
 	struct sctp_sndinfo sndinfo;
 	char *line;
+#ifdef _WIN32
+	WSADATA wsaData;
+#endif
 
+#ifdef _WIN32
+	if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
+		printf("WSAStartup failed\n");
+		exit (EXIT_FAILURE);
+	}
+#endif
 	usrsctp_init(0, conn_output, debug_printf);
 	/* set up a connected UDP socket */
 #ifdef _WIN32
@@ -498,6 +507,7 @@ main(void)
 		printf("closesocket() failed with error: %ld\n", WSAGetLastError());
 		exit(EXIT_FAILURE);
 	}
+	WSACleanup();
 #else
 	pthread_cancel(tid_c);
 	pthread_join(tid_c, NULL);

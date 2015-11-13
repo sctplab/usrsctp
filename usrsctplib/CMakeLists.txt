@@ -136,6 +136,11 @@ endif()
 # CHECK OPTIONS
 #################################################
 
+option(INVARIANTS "Add runtime checks" 0)
+if (INVARIANTS)
+	add_definitions(-DINVARIANTS)
+endif()
+
 option(SCTP_DEBUG "Provide debug information" 1)
 if (SCTP_DEBUG)
 	add_definitions(-DSCTP_DEBUG)
@@ -192,12 +197,6 @@ if (SCTP_KAME)
 endif()
 
 option(WERROR "Warning as error" ON)
-
-#CONFIGURE_FILE (
-#    usrsctp.pc.in
-#    usrsctp.pc
-#    @ONLY
-#)
 
 include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/netinet ${PROJECT_SOURCE_DIR}/netinet6)
 
@@ -273,9 +272,10 @@ IF (NOT DEFINED CMAKE_INSTALL_LIBDIR)
     SET(CMAKE_INSTALL_LIBDIR lib)
 ENDIF ()
 
+
+#################################################
+# INSTALL LIBRARY AND HEADER
+#################################################
+
 INSTALL (TARGETS usrsctp usrsctp-static DESTINATION ${CMAKE_INSTALL_LIBDIR})
-#INSTALL (DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
-INSTALL (FILES ${usrsctp_root_HEADERS} DESTINATION include/usrsctp)
-INSTALL (FILES ${usrsctp_netinet_HEADERS} DESTINATION include/usrsctp/netinet)
-INSTALL (FILES ${usrsctp_netinet6_HEADERS} DESTINATION include/usrsctp/netinet6)
-INSTALL (FILES ${CMAKE_CURRENT_BINARY_DIR}/usrsctp.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+INSTALL (FILES usrsctp.h DESTINATION include)

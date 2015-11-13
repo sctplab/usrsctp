@@ -92,12 +92,21 @@ fi
 
 LIBCFLAGS="$CFLAGS $LIBCFLAGS"
 
+AC_ARG_ENABLE(invariants,
+  AC_HELP_STRING( [--enable-invariants],
+                  [add additional runtime checks @<:@default=no@:>@]),
+    enable_invariants=$enableval,enable_invariants=no)
+if test x$enable_invariants = xyes; then
+        AC_DEFINE(INVARIANTS, 1, [Add additional runtime checks])
+fi
+
 AC_ARG_ENABLE(debug,
   AC_HELP_STRING( [--enable-debug],
                   [provide debug information @<:@default=yes@:>@]),
     enable_debug=$enableval,enable_debug=yes)
 if test x$enable_debug = xyes; then
         AC_DEFINE(SCTP_DEBUG, 1, [Provide debug information])
+        CFLAGS="$CFLAGS -g -O0"
 fi
 
 AC_ARG_ENABLE(inet,

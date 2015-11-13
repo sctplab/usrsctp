@@ -86,23 +86,6 @@ sctp_init(void)
 	u_long sb_max_adj;
 
 #endif
-#if defined(__Userspace__)
-#if defined(__Userspace_os_Windows)
-#if defined(INET) || defined(INET6)
-	WSADATA wsaData;
-
-	if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
-		SCTP_PRINTF("WSAStartup failed\n");
-		exit (-1);
-	}
-#endif
-	InitializeConditionVariable(&accept_cond);
-	InitializeCriticalSection(&accept_mtx);
-#else
-	pthread_cond_init(&accept_cond, NULL);
-	pthread_mutex_init(&accept_mtx, NULL);
-#endif
-#endif
 	/* Initialize and modify the sysctled variables */
 	sctp_init_sysctls();
 #if defined(__Userspace__)
@@ -248,20 +231,8 @@ sctp_finish(void)
 #endif
 #endif
 	sctp_pcb_finish();
-#if defined(__Userspace__)
-#if defined(__Userspace_os_Windows)
-	DeleteConditionVariable(&accept_cond);
-	DeleteCriticalSection(&accept_mtx);
-#else
-	pthread_cond_destroy(&accept_cond);
-	pthread_mutex_destroy(&accept_mtx);
-#endif
-#endif
 #if defined(__Windows__)
 	sctp_finish_sysctls();
-#if defined(INET) || defined(INET6)
-	WSACleanup();
-#endif
 #endif
 }
 

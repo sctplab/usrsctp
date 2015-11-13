@@ -248,14 +248,21 @@ extern userland_cond_t accept_cond;
 #define	ACCEPT_UNLOCK_ASSERT()
 #else
 extern userland_mutex_t accept_mtx;
+
 extern userland_cond_t accept_cond;
-#define	ACCEPT_LOCK_ASSERT()		KASSERT(pthread_mutex_trylock(&accept_mtx) == EBUSY, ("%s: accept_mtx not locked", __func__))
-#define	ACCEPT_LOCK()			(void)pthread_mutex_lock(&accept_mtx)
-#define	ACCEPT_UNLOCK()			(void)pthread_mutex_unlock(&accept_mtx)
-#define	ACCEPT_UNLOCK_ASSERT()	 do{                                                            \
-	KASSERT(pthread_mutex_trylock(&accept_mtx) == 0, ("%s: accept_mtx  locked", __func__)); \
-	(void)pthread_mutex_unlock(&accept_mtx);                                                \
-} while (0)
+#ifdef INVARIANTS
+#define	ACCEPT_LOCK()	KASSERT(pthread_mutex_lock(&accept_mtx) == 0, ("%s: accept_mtx already locked", __func__))
+#define	ACCEPT_UNLOCK()	KASSERT(pthread_mutex_unlock(&accept_mtx) == 0, ("%s: accept_mtx not locked", __func__))
+#else
+#define	ACCEPT_LOCK()   (void)pthread_mutex_lock(&accept_mtx)
+#define	ACCEPT_UNLOCK() (void)pthread_mutex_unlock(&accept_mtx)
+#endif
+#define	ACCEPT_LOCK_ASSERT() \
+          KASSERT(pthread_mutex_trylock(&accept_mtx) == EBUSY, ("%s: accept_mtx not locked", __func__))
+#define	ACCEPT_UNLOCK_ASSERT() do {                                                               \
+	  KASSERT(pthread_mutex_trylock(&accept_mtx) == 0, ("%s: accept_mtx  locked", __func__)); \
+	  (void)pthread_mutex_unlock(&accept_mtx);                                                \
+        } while (0)
 #endif
 
 /*
@@ -273,8 +280,19 @@ extern userland_cond_t accept_cond;
 #define SOCK_COND_DESTROY(_so) DeleteConditionVariable((&(_so)->timeo_cond))
 #define SOCK_COND(_so) (&(_so)->timeo_cond)
 #else
+#ifdef INVARIANTS
+#define SOCKBUF_LOCK_INIT(_sb, _name) do {                                 \
+	pthread_mutexattr_t mutex_attr;                                    \
+                                                                           \
+	pthread_mutexattr_init(&mutex_attr);                               \
+	pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK);  \
+	pthread_mutex_init(&accept_mtx, &mutex_attr);                      \
+	pthread_mutexattr_destroy(&mutex_attr);                            \
+} while (0)
+#else
 #define SOCKBUF_LOCK_INIT(_sb, _name) \
 	pthread_mutex_init(SOCKBUF_MTX(_sb), NULL)
+#endif
 #define SOCKBUF_LOCK_DESTROY(_sb) pthread_mutex_destroy(SOCKBUF_MTX(_sb))
 #define SOCKBUF_COND_INIT(_sb) pthread_cond_init((&(_sb)->sb_cond), NULL)
 #define SOCKBUF_COND_DESTROY(_sb) pthread_cond_destroy((&(_sb)->sb_cond))

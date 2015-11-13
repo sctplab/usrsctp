@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 289570 2015-10-19 11:17:54Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 290023 2015-10-26 21:19:49Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -549,7 +549,31 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 	/* calculate the RTO */
 	net->RTO = sctp_calculate_rto(stcb, asoc, net, &asoc->time_entered, sctp_align_safe_nocopy,
 				      SCTP_RTT_FROM_NON_DATA);
+#if defined(__Userspace__)
+	if (stcb->sctp_ep->recv_callback) {
+		if (stcb->sctp_socket) {
+			uint32_t inqueue_bytes, sb_free_now;
+			struct sctp_inpcb *inp;
 
+			inp = stcb->sctp_ep;
+			inqueue_bytes = stcb->asoc.total_output_queue_size - (stcb->asoc.chunks_on_out_queue * sizeof(struct sctp_data_chunk));
+			sb_free_now = SCTP_SB_LIMIT_SND(stcb->sctp_socket) - (inqueue_bytes + stcb->asoc.sb_send_resv);
+
+			/* check if the amount free in the send socket buffer crossed the threshold */
+			if (inp->send_callback &&
+			    (((inp->send_sb_threshold > 0) &&
+			      (sb_free_now >= inp->send_sb_threshold) &&
+			      (stcb->asoc.chunks_on_out_queue <= SCTP_BASE_SYSCTL(sctp_max_chunks_on_queue))) ||
+			     (inp->send_sb_threshold == 0))) {
+				atomic_add_int(&stcb->asoc.refcnt, 1);
+				SCTP_TCB_UNLOCK(stcb);
+				inp->send_callback(stcb->sctp_socket, sb_free_now);
+				SCTP_TCB_LOCK(stcb);
+				atomic_subtract_int(&stcb->asoc.refcnt, 1);
+			}
+		}
+	}
+#endif
 	retval = sctp_send_cookie_echo(m, offset, stcb, net);
 	if (retval < 0) {
 		/*
@@ -2517,8 +2541,8 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 	cookie_offset = offset + sizeof(struct sctp_chunkhdr);
 	cookie_len = ntohs(cp->ch.chunk_length);
 
-	if ((cookie->peerport != sh->src_port) &&
-	    (cookie->myport != sh->dest_port) &&
+	if ((cookie->peerport != sh->src_port) ||
+	    (cookie->myport != sh->dest_port) ||
 	    (cookie->my_vtag != sh->v_tag)) {
 		/*
 		 * invalid ports or bad tag.  Note that we always leave the
@@ -5786,7 +5810,7 @@ __attribute__((noinline))
 void
 sctp_validate_no_locks(struct sctp_inpcb *inp)
 {
-#ifndef __APPLE__
+#ifdef __FreeBSD__
 	struct sctp_tcb *lstcb;
 
 	LIST_FOREACH(lstcb, &inp->sctp_asoc_list, sctp_tcblist) {
