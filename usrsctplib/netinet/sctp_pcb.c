@@ -6871,7 +6871,7 @@ sctp_pcb_finish(void)
 	struct sctp_laddr *wi, *nwi;
 	int i;
 	struct sctp_iterator *it, *nit;
-	
+
 #if !defined(__FreeBSD__)
 	/* Notify the iterator to exit. */
 	SCTP_IPI_ITERATOR_WQ_LOCK();
