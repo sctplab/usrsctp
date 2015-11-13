@@ -56,4 +56,3 @@ int main(int argc, char* argv[]) {
     printf("Connections closed\n");
     sleep(2);
 }
-
