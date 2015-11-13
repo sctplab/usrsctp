@@ -280,8 +280,19 @@ extern userland_cond_t accept_cond;
 #define SOCK_COND_DESTROY(_so) DeleteConditionVariable((&(_so)->timeo_cond))
 #define SOCK_COND(_so) (&(_so)->timeo_cond)
 #else
+#ifdef INVARIANTS
+#define SOCKBUF_LOCK_INIT(_sb, _name) do {                                 \
+	pthread_mutexattr_t mutex_attr;                                    \
+                                                                           \
+	pthread_mutexattr_init(&mutex_attr);                               \
+	pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK);  \
+	pthread_mutex_init(&accept_mtx, &mutex_attr);                      \
+	pthread_mutexattr_destroy(&mutex_attr);                            \
+} while (0)
+#else
 #define SOCKBUF_LOCK_INIT(_sb, _name) \
 	pthread_mutex_init(SOCKBUF_MTX(_sb), NULL)
+#endif
 #define SOCKBUF_LOCK_DESTROY(_sb) pthread_mutex_destroy(SOCKBUF_MTX(_sb))
 #define SOCKBUF_COND_INIT(_sb) pthread_cond_init((&(_sb)->sb_cond), NULL)
 #define SOCKBUF_COND_DESTROY(_sb) pthread_cond_destroy((&(_sb)->sb_cond))
