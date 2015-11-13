@@ -70,7 +70,8 @@ MALLOC_DEFINE(M_SONAME, "sctp_soname", "sctp soname");
 /* Prototypes */
 extern int sctp_sosend(struct socket *so, struct sockaddr *addr, struct uio *uio,
                        struct mbuf *top, struct mbuf *control, int flags,
-                     /* proc is a dummy in __Userspace__ and will not be passed to sctp_lower_sosend */                       struct proc *p);
+                       /* proc is a dummy in __Userspace__ and will not be passed to sctp_lower_sosend */
+                       struct proc *p);
 
 extern int sctp_attach(struct socket *so, int proto, uint32_t vrf_id);
 extern int sctpconn_attach(struct socket *so, int proto, uint32_t vrf_id);
@@ -80,6 +81,28 @@ usrsctp_init(uint16_t port,
              int (*conn_output)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df),
              void (*debug_printf)(const char *format, ...))
 {
+#if defined(__Userspace_os_Windows)
+#if defined(INET) || defined(INET6)
+	WSADATA wsaData;
+
+	if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
+		SCTP_PRINTF("WSAStartup failed\n");
+		exit (-1);
+	}
+#endif
+	InitializeConditionVariable(&accept_cond);
+	InitializeCriticalSection(&accept_mtx);
+#else
+	pthread_mutexattr_t mutex_attr;
+
+	pthread_mutexattr_init(&mutex_attr);
+#ifdef INVARIANTS
+	pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK);
+#endif
+	pthread_mutex_init(&accept_mtx, &mutex_attr);
+	pthread_mutexattr_destroy(&mutex_attr);
+	pthread_cond_init(&accept_cond, NULL);
+#endif
 	sctp_init(port, conn_output, debug_printf);
 }
 
@@ -2156,6 +2179,16 @@ usrsctp_finish(void)
 		return (-1);
 	}
 	sctp_finish();
+#if defined(__Userspace_os_Windows)
+	DeleteConditionVariable(&accept_cond);
+	DeleteCriticalSection(&accept_mtx);
+#if defined(INET) || defined(INET6)
+	WSACleanup();
+#endif
+#else
+	pthread_cond_destroy(&accept_cond);
+	pthread_mutex_destroy(&accept_mtx);
+#endif
 	return (0);
 }
 
