@@ -6655,6 +6655,14 @@ sctp_pcb_init()
 	}
 	SCTP_BASE_VAR(sctp_pcb_initialized) = 1;
 
+#if defined(SCTP_PROCESS_LEVEL_LOCKS)
+#if !defined(__Userspace_os_Windows)
+	pthread_mutexattr_init(&SCTP_BASE_VAR(mtx_attr));
+#ifdef INVARIANTS
+	pthread_mutexattr_settype(&SCTP_BASE_VAR(mtx_attr), PTHREAD_MUTEX_ERRORCHECK);
+#endif
+#endif
+#endif
 #if defined(SCTP_LOCAL_TRACE_BUF)
 #if defined(__Windows__)
 	if (SCTP_BASE_SYSCTL(sctp_log) != NULL) {
@@ -6816,10 +6824,6 @@ sctp_pcb_init()
 #if defined(__Userspace_os_Windows)
 	InitializeConditionVariable(&sctp_it_ctl.iterator_wakeup);
 #else
-	pthread_mutexattr_init(&SCTP_BASE_VAR(mtx_attr));
-#ifdef INVARIANTS
-	pthread_mutexattr_settype(&SCTP_BASE_VAR(mtx_attr), PTHREAD_MUTEX_ERRORCHECK);
-#endif
 	(void)pthread_cond_init(&sctp_it_ctl.iterator_wakeup, NULL);
 #endif
 #endif
