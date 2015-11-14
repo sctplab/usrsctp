@@ -19,7 +19,7 @@ debug_printf(const char *format, ...)
 static int receive_cb(struct socket* socket, union sctp_sockstore address, void *data, size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info) {
     if (data == NULL) {
         usrsctp_close(socket);
-        printf("Closed %p from callback\n", socket);
+        printf("Closed %p from callback\n", (void *)socket);
         return 1;
     }
     printf("Received %zu bytes in the receive_cb.\n", datalen);
@@ -64,9 +64,9 @@ int main(int argc, char* argv[]) {
     printf("Message of size %zu sent.\n", sizeof(n));
     sleep(1);
     usrsctp_close(server);
-    printf("Closed server socket %p.\n", server);
+    printf("Closed server socket %p.\n", (void *)server);
     usrsctp_close(client);
-    printf("Closed client socket %p.\n", client);
+    printf("Closed client socket %p.\n", (void *)client);
     sleep(2);
     assert(usrsctp_finish() == 0);
     return(0);
