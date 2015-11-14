@@ -283,10 +283,10 @@ extern userland_cond_t accept_cond;
 #ifdef INVARIANTS
 #define SOCKBUF_LOCK_INIT(_sb, _name) do {                                 \
 	pthread_mutexattr_t mutex_attr;                                    \
-                                                                           \
+	                                                                   \
 	pthread_mutexattr_init(&mutex_attr);                               \
 	pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK);  \
-	pthread_mutex_init(&accept_mtx, &mutex_attr);                      \
+	pthread_mutex_init(SOCKBUF_MTX(_sb), &mutex_attr);                 \
 	pthread_mutexattr_destroy(&mutex_attr);                            \
 } while (0)
 #else
