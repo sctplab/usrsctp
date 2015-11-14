@@ -1,9 +1,20 @@
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <usrsctp.h>
 #include <assert.h>
 #include <arpa/inet.h>
+
+void
+debug_printf(const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	vprintf(format, ap);
+	va_end(ap);
+}
 
 static int receive_cb(struct socket* socket, union sctp_sockstore address, void *data, size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info) {
     if(data == NULL) {
@@ -43,7 +54,7 @@ static struct socket* socketConnect(const char* remoteAddress, int remotePort) {
 }
 
 int main(int argc, char* argv[]) {
-    usrsctp_init(8080, NULL, NULL);
+    usrsctp_init(8080, NULL, debug_printf);
 
     struct socket* server = socketListen(9);
     struct socket* client = socketConnect("127.0.0.1", 9);
