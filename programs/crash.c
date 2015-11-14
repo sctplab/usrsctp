@@ -17,14 +17,14 @@ debug_printf(const char *format, ...)
 }
 
 static int receive_cb(struct socket* socket, union sctp_sockstore address, void *data, size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info) {
-    if(data == NULL) {
+    if (data == NULL) {
         usrsctp_close(socket);
-        printf("Closed from callback\n");
+        printf("Closed %p from callback\n", socket);
         return 1;
     }
-    printf("In receive_cb\n");
+    printf("Received %zu bytes in the receive_cb.\n", datalen);
     sleep(2);
-    printf("Still in receive_cb\n");
+    printf("Exiting receive_cb now.\n");
     free(data);
     return 1;
 }
@@ -61,9 +61,13 @@ int main(int argc, char* argv[]) {
 
     int n = 0xaabbccdd;
     usrsctp_sendv(client, &n, sizeof(n), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
+    printf("Message of size %zu sent.\n", sizeof(n));
     sleep(1);
     usrsctp_close(server);
+    printf("Closed server socket %p.\n", server);
     usrsctp_close(client);
-    printf("Connections closed\n");
+    printf("Closed client socket %p.\n", client);
     sleep(2);
+    assert(usrsctp_finish() == 0);
+    return(0);
 }
