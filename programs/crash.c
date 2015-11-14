@@ -55,7 +55,9 @@ static struct socket* socketConnect(const char* remoteAddress, int remotePort) {
 
 int main(int argc, char* argv[]) {
     usrsctp_init(8080, NULL, debug_printf);
-
+#ifdef SCTP_DEBUG
+	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
+#endif
     struct socket* server = socketListen(9);
     struct socket* client = socketConnect("127.0.0.1", 9);
 
