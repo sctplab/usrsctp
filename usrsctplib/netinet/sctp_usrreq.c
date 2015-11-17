@@ -5436,7 +5436,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			SCTP_TCB_UNLOCK(stcb);
 			break;
 		}
-		if (send_out) {
+		if ((send_out != 0) || (send_in != 0)) {
 			int cnt;
 			uint16_t strm;
 			if (strrst->srs_number_streams) {
