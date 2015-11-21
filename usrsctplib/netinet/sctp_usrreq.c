@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 291138 2015-11-21 16:32:14Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 291141 2015-11-21 18:21:16Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -715,9 +715,6 @@ sctp_attach(struct socket *so, int proto SCTP_UNUSED, struct proc *p SCTP_UNUSED
 #if !defined(__Panda__) && !defined(__Userspace__)
 	uint32_t vrf_id = SCTP_DEFAULT_VRFID;
 #endif
-#ifdef IPSEC
-	uint32_t flags;
-#endif
 
 	inp = (struct sctp_inpcb *)so->so_pcb;
 	if (inp != 0) {
@@ -740,36 +737,6 @@ sctp_attach(struct socket *so, int proto SCTP_UNUSED, struct proc *p SCTP_UNUSED
 	ip_inp = &inp->ip_inp.inp;
 	ip_inp->inp_vflag |= INP_IPV4;
 	ip_inp->inp_ip_ttl = MODULE_GLOBAL(ip_defttl);
-#ifdef IPSEC
-#if !(defined(__APPLE__))
-	error = ipsec_init_policy(so, &ip_inp->inp_sp);
-#ifdef SCTP_LOG_CLOSING
-	sctp_log_closing(inp, NULL, 17);
-#endif
-	if (error != 0) {
-	try_again:
-		flags = inp->sctp_flags;
-		if (((flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
-		    (atomic_cmpset_int(&inp->sctp_flags, flags, (flags | SCTP_PCB_FLAGS_SOCKET_GONE | SCTP_PCB_FLAGS_CLOSE_IP)))) {
-#ifdef SCTP_LOG_CLOSING
-			sctp_log_closing(inp, NULL, 15);
-#endif
-			SCTP_INP_WUNLOCK(inp);
-			sctp_inpcb_free(inp, SCTP_FREE_SHOULD_USE_ABORT,
-					SCTP_CALLED_AFTER_CMPSET_OFCLOSE);
-		} else {
-			flags = inp->sctp_flags;
-			if ((flags &  SCTP_PCB_FLAGS_SOCKET_GONE) == 0) {
-				goto try_again;
-			} else {
-				SCTP_INP_WUNLOCK(inp);
-			}
-		}
-		so->so_pcb = NULL;
-		return (error);
-	}
-#endif
-#endif
 	SCTP_INP_WUNLOCK(inp);
 	return (0);
 }

@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 291140 2015-11-21 16:46:59Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 291141 2015-11-21 18:21:16Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2869,16 +2869,8 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	}
 #ifdef IPSEC
 #if !(defined(__APPLE__))
-	{
-		struct inpcbpolicy *pcb_sp = NULL;
-
-		error = ipsec_init_policy(so, &pcb_sp);
-		/* Arrange to share the policy */
-		inp->ip_inp.inp.inp_sp = pcb_sp;
-		((struct in6pcb *)(&inp->ip_inp.inp))->in6p_sp = pcb_sp;
-	}
+	error = ipsec_init_policy(so, &inp->ip_inp.inp.inp_sp);
 #else
-	/* not sure what to do for openbsd here */
 	error = 0;
 #endif
 	if (error != 0) {
@@ -2932,6 +2924,9 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 		so->so_pcb = NULL;
 #if defined(__FreeBSD__)
 		crfree(inp->ip_inp.inp.inp_cred);
+#ifdef IPSEC
+		ipsec_delete_pcbpolicy(&inp->ip_inp.inp);
+#endif
 #endif
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_ep), inp);
 		return (EOPNOTSUPP);
@@ -2954,6 +2949,9 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 		so->so_pcb = NULL;
 #if defined(__FreeBSD__)
 		crfree(inp->ip_inp.inp.inp_cred);
+#ifdef IPSEC
+		ipsec_delete_pcbpolicy(&inp->ip_inp.inp);
+#endif
 #endif
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_ep), inp);
 		return (ENOBUFS);
@@ -2968,6 +2966,9 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 		SCTP_HASH_FREE(inp->sctp_tcbhash, inp->sctp_hashmark);
 #if defined(__FreeBSD__)
 		crfree(inp->ip_inp.inp.inp_cred);
+#ifdef IPSEC
+		ipsec_delete_pcbpolicy(&inp->ip_inp.inp);
+#endif
 #endif
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_ep), inp);
 		return (ENOBUFS);
@@ -2989,6 +2990,9 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 		so->so_pcb = NULL;
 #if defined(__FreeBSD__)
 		crfree(inp->ip_inp.inp.inp_cred);
+#ifdef IPSEC
+		ipsec_delete_pcbpolicy(&inp->ip_inp.inp);
+#endif
 #endif
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_ep), inp);
 		SCTP_UNLOCK_EXC(SCTP_BASE_INFO(sctbinfo).ipi_lock);
@@ -4252,13 +4256,9 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	 * macro here since le_next will get freed as part of the
 	 * sctp_free_assoc() call.
 	 */
-	if (so) {
 #ifdef IPSEC
-		ipsec_delete_pcbpolicy(ip_pcb);
-#endif				/* IPSEC */
-
-		/* Unlocks not needed since the socket is gone now */
-	}
+	ipsec_delete_pcbpolicy(ip_pcb);
+#endif
 #ifndef __Panda__
 	if (ip_pcb->inp_options) {
 		(void)sctp_m_free(ip_pcb->inp_options);
