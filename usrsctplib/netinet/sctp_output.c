@@ -12221,7 +12221,7 @@ sctp_add_stream_reset_out(struct sctp_tcb *stcb, struct sctp_tmit_chunk *chk,
 		}
 	}
 	if (number_entries == 0) {
-		return(0);
+		return (0);
 	}
 	if (number_entries == stcb->asoc.streamoutcnt) {
 		number_entries = 0;
@@ -12267,7 +12267,7 @@ sctp_add_stream_reset_out(struct sctp_tcb *stcb, struct sctp_tmit_chunk *chk,
 	chk->book_size_scale = 0;
 	chk->send_size = SCTP_SIZE32(chk->book_size);
 	SCTP_BUF_LEN(chk->data) = chk->send_size;
-	return(1);
+	return (1);
 }
 
 static void
@@ -12537,7 +12537,7 @@ sctp_send_stream_reset_out_if_possible(struct sctp_tcb *stcb, int so_locked)
 
 	asoc = &stcb->asoc;
 	if (asoc->stream_reset_outstanding) {
-		return(EALREADY);
+		return (EALREADY);
 	}
 	sctp_alloc_a_chunk(stcb, chk);
 	if (chk == NULL) {
@@ -12582,7 +12582,7 @@ sctp_send_stream_reset_out_if_possible(struct sctp_tcb *stcb, int so_locked)
 		m_freem(chk->data);
 		chk->data = NULL;
 		sctp_free_a_chunk(stcb, chk, so_locked);
-		return(ENOENT);
+		return (ENOENT);
 	}
 	asoc->str_reset = chk;
 	/* insert the chunk for sending */
@@ -12595,7 +12595,7 @@ sctp_send_stream_reset_out_if_possible(struct sctp_tcb *stcb, int so_locked)
 		sctp_send_sack(stcb, so_locked);
 	}
 	sctp_timer_start(SCTP_TIMER_TYPE_STRRESET, stcb->sctp_ep, stcb, chk->whoTo);
-	return(0);
+	return (0);
 }
 
 int
