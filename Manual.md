@@ -13,6 +13,7 @@ The user-land stack has been tested on FreeBSD 10.0, Ubuntu 11.10, Windows 7, Ma
 #### Unix-like Operating Systems
 In the folder `usrsctp` type
 
+    $ ./bootstrap
     $ ./configure
     $ make
 
