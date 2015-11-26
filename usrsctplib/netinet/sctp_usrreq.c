@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 291141 2015-11-21 18:21:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 291376 2015-11-26 23:12:41Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5415,7 +5415,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				}
 			} else {
 				/* Its all */
-				for (i = 0, cnt = 0; i <stcb->asoc.streamoutcnt; i++) {
+				for (i = 0, cnt = 0; i < stcb->asoc.streamoutcnt; i++) {
 					if (stcb->asoc.strmout[i].state == SCTP_STREAM_OPEN) {
 						stcb->asoc.strmout[i].state = SCTP_STREAM_RESET_PENDING;
 						cnt++;
@@ -5427,11 +5427,19 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			error = sctp_send_str_reset_req(stcb, strrst->srs_number_streams,
 							strrst->srs_stream_list,
 							send_in, 0, 0, 0, 0, 0);
-		} else
+		} else {
 			error = sctp_send_stream_reset_out_if_possible(stcb, SCTP_SO_LOCKED);
-		if (!error)
+		}
+		if (error == 0) {
 			sctp_chunk_output(inp, stcb, SCTP_OUTPUT_FROM_STRRST_REQ, SCTP_SO_LOCKED);
-
+		} else {
+			 /*
+			  * For outgoing streams don't report any problems in
+			  * sending the request to the application.
+			  * XXX: Double check resetting incoming streams.
+			  */
+			error = 0;
+		}
 		SCTP_TCB_UNLOCK(stcb);
 		break;
 	}
