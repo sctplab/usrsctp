@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 291410 2015-11-27 22:11:46Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 291659 2015-12-02 22:44:42Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -12216,7 +12216,7 @@ sctp_add_stream_reset_out(struct sctp_tcb *stcb, struct sctp_tmit_chunk *chk,
 	/* get to new offset for the param. */
 	req_out = (struct sctp_stream_reset_out_request *)((caddr_t)ch + len);
 	/* now how long will this param be? */
-	for (i = 0; i <stcb->asoc.streamoutcnt; i++) {
+	for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
 		if ((stcb->asoc.strmout[i].state == SCTP_STREAM_RESET_PENDING) &&
 		    (stcb->asoc.strmout[i].chunks_on_queues == 0) &&
 		    TAILQ_EMPTY(&stcb->asoc.strmout[i].outqueue)) {
@@ -12240,7 +12240,7 @@ sctp_add_stream_reset_out(struct sctp_tcb *stcb, struct sctp_tmit_chunk *chk,
 	req_out->send_reset_at_tsn = htonl(last_sent);
 	at = 0;
 	if (number_entries) {
-		for (i = 0; i <stcb->asoc.streamoutcnt; i++) {
+		for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
 			if ((stcb->asoc.strmout[i].state == SCTP_STREAM_RESET_PENDING) &&
 			    (stcb->asoc.strmout[i].chunks_on_queues == 0) &&
 			    TAILQ_EMPTY(&stcb->asoc.strmout[i].outqueue)) {
@@ -12253,7 +12253,7 @@ sctp_add_stream_reset_out(struct sctp_tcb *stcb, struct sctp_tmit_chunk *chk,
 			}
 		}
 	} else {
-		for (i = 0; i <stcb->asoc.streamoutcnt; i++) {
+		for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
 			stcb->asoc.strmout[i].state = SCTP_STREAM_RESET_IN_FLIGHT;
 		}
 	}
@@ -12705,7 +12705,7 @@ sctp_send_str_reset_req(struct sctp_tcb *stcb,
 		oldstream = stcb->asoc.strmout;
 		/* get some more */
 		SCTP_MALLOC(stcb->asoc.strmout, struct sctp_stream_out *,
-			    ((stcb->asoc.streamoutcnt+adding_o) * sizeof(struct sctp_stream_out)),
+			    (stcb->asoc.streamoutcnt + adding_o) * sizeof(struct sctp_stream_out),
 			    SCTP_M_STRMO);
 		if (stcb->asoc.strmout == NULL) {
 			uint8_t x;

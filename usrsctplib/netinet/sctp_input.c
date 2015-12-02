@@ -3969,7 +3969,7 @@ sctp_handle_str_reset_request_in(struct sctp_tcb *stcb,
 				}
 			} else {
 				/* Its all */
-				for (i = 0; i <stcb->asoc.streamoutcnt; i++) {
+				for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
 					if (stcb->asoc.strmout[i].state == SCTP_STREAM_OPEN)
 						stcb->asoc.strmout[i].state = SCTP_STREAM_RESET_PENDING;
 				}
