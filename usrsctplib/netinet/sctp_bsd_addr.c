@@ -199,9 +199,9 @@ sctp_startup_iterator(void)
 #elif defined(__APPLE__)
 	kernel_thread_start((thread_continue_t)sctp_iterator_thread, NULL, &sctp_it_ctl.thread_proc);
 #elif defined(__Userspace__)
-	if (sctp_thread_create(&sctp_it_ctl.thread_proc, &sctp_iterator_thread)) {
+	if (sctp_userspace_thread_create(&sctp_it_ctl.thread_proc, &sctp_iterator_thread)) {
 		SCTP_PRINTF("ERROR: Creating sctp_iterator_thread failed.\n");
-        }
+	}
 #endif
 }
 

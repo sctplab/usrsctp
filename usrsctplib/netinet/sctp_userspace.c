@@ -49,17 +49,17 @@ sctp_create_thread_adapter(void *arg) {
 }
 
 int
-sctp_thread_create(userland_thread_t *thread, start_routine_t start_routine)
+sctp_userspace_thread_create(userland_thread_t *thread, start_routine_t start_routine)
 {
 	*thread = CreateThread(NULL, 0, sctp_create_thread_adapter,
-			       (void*)start_routine, 0, NULL);
+			       (void *)start_routine, 0, NULL);
 	if (*thread == NULL)
 		return GetLastError();
 	return 0;
 }
 #else
 int
-sctp_thread_create(userland_thread_t *thread, start_routine_t start_routine)
+sctp_userspace_thread_create(userland_thread_t *thread, start_routine_t start_routine)
 {
 	return pthread_create(thread, NULL, start_routine, NULL);
 }
