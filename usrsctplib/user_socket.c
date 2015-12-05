@@ -1877,7 +1877,7 @@ accept1(struct socket *so, struct sockaddr *aname, socklen_t *anamelen, struct s
 struct socket *
 usrsctp_accept(struct socket *so, struct sockaddr *aname, socklen_t *anamelen)
 {
-	struct socket *accept_return_sock;
+	struct socket *accept_return_sock = NULL;
 
 	errno = accept1(so, aname, anamelen, &accept_return_sock);
 	if (errno) {
