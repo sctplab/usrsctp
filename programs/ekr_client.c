@@ -53,7 +53,11 @@
 #define BUFFER_SIZE 80
 #define DISCARD_PPID 39
 
+#ifdef _WIN32
+DWORD WINAPI
+#else
 static void *
+#endif
 handle_packets(void *arg)
 {
 #ifdef _WIN32
@@ -80,7 +84,11 @@ handle_packets(void *arg)
 			usrsctp_conninput(fdp, buf, (size_t)length, 0);
 		}
 	}
+#ifdef _WIN32
+	return 0;
+#else
 	return (NULL);
+#endif
 }
 
 static int
@@ -239,7 +247,7 @@ main(int argc, char *argv[])
 	usrsctp_sysctl_set_sctp_ecn_enable(0);
 	usrsctp_register_address((void *)&fd);
 #ifdef _WIN32
-	tid = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_packets, (void *)&fd, 0, NULL);
+	tid = CreateThread(NULL, 0, &handle_packets, (void *)&fd, 0, NULL);
 #else
 	pthread_create(&tid, NULL, &handle_packets, (void *)&fd);
 #endif
