@@ -38,6 +38,33 @@
 #include <pthread_np.h>
 #endif
 
+#if defined(__Userspace_os_Windows)
+/* Adapter to translate Unix thread start routines to Windows thread start
+ * routines.
+ */
+static DWORD WINAPI
+sctp_create_thread_adapter(void *arg) {
+	start_routine_t start_routine = (start_routine_t)arg;
+	return start_routine(NULL) == NULL;
+}
+
+int
+sctp_thread_create(userland_thread_t *thread, start_routine_t start_routine)
+{
+	*thread = CreateThread(NULL, 0, sctp_create_thread_adapter,
+			       (void*)start_routine, 0, NULL);
+	if (*thread == NULL)
+		return GetLastError();
+	return 0;
+}
+#else
+int
+sctp_thread_create(userland_thread_t *thread, start_routine_t start_routine)
+{
+	return pthread_create(thread, NULL, start_routine, NULL);
+}
+#endif
+
 void
 sctp_userspace_set_threadname(const char *name)
 {
