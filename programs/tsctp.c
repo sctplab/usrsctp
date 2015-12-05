@@ -129,7 +129,11 @@ gettimeofday(struct timeval *tv, void *ignore)
 }
 #endif
 
-static void*
+#ifdef _WIN32
+static DWORD WINAPI
+#else
+static void *
+#endif
 handle_connection(void *arg)
 {
 	ssize_t n;
@@ -214,7 +218,11 @@ handle_connection(void *arg)
 	fflush(stdout);
 	usrsctp_close(conn_sock);
 	free(buf);
-	return NULL;
+#ifdef _WIN32
+	return 0;
+#else
+	return (NULL);
+#endif
 }
 
 static int
@@ -655,7 +663,7 @@ int main(int argc, char **argv)
 					continue;
 				}
 #ifdef _WIN32
-				tid = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_connection, (void *)conn_sock, 0, NULL);
+				tid = CreateThread(NULL, 0, &handle_connection, (void *)conn_sock, 0, NULL);
 #else
 				pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock);
 #endif

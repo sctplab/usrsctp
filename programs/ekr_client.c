@@ -54,7 +54,7 @@
 #define DISCARD_PPID 39
 
 #ifdef _WIN32
-DWORD WINAPI
+static DWORD WINAPI
 #else
 static void *
 #endif

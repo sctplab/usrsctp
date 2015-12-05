@@ -53,7 +53,11 @@
 #define LINE_LENGTH (1<<20)
 #define DISCARD_PPID 39
 
+#ifdef _WIN32
+static DWORD WINAPI
+#else
 static void *
+#endif
 handle_packets(void *arg)
 {
 #ifdef _WIN32
@@ -80,7 +84,11 @@ handle_packets(void *arg)
 			usrsctp_conninput(fdp, buf, (size_t)length, 0);
 		}
 	}
+#ifdef _WIN32
+	return 0;
+#else
 	return (NULL);
+#endif
 }
 
 static int
@@ -358,8 +366,8 @@ main(void)
 	}
 #endif
 #ifdef _WIN32
-	tid_c = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_packets, (void *)&fd_c, 0, NULL);
-	tid_s = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&handle_packets, (void *)&fd_s, 0, NULL);
+	tid_c = CreateThread(NULL, 0, &handle_packets, (void *)&fd_c, 0, NULL);
+	tid_s = CreateThread(NULL, 0, &handle_packets, (void *)&fd_s, 0, NULL);
 #else
 	if (pthread_create(&tid_c, NULL, &handle_packets, (void *)&fd_c)) {
 		perror("pthread_create tid_c");
