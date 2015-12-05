@@ -1425,7 +1425,11 @@ recv_thread_init(void)
 
 		if ((rc = sctp_userspace_thread_create(&SCTP_BASE_VAR(recvthreadraw), &recv_function_raw))) {
 			SCTPDBG(SCTP_DEBUG_USR, "Can't start SCTP/IPv4 recv thread (%d).\n", rc);
+#if defined(__Userspace_os_Windows)
+			closesocket(SCTP_BASE_VAR(userspace_rawsctp));
+#else
 			close(SCTP_BASE_VAR(userspace_rawsctp));
+#endif
 			SCTP_BASE_VAR(userspace_rawsctp) = -1;
 		}
 	}
@@ -1434,7 +1438,11 @@ recv_thread_init(void)
 
 		if ((rc = sctp_userspace_thread_create(&SCTP_BASE_VAR(recvthreadudp), &recv_function_udp))) {
 			SCTPDBG(SCTP_DEBUG_USR, "Can't start SCTP/UDP/IPv4 recv thread (%d).\n", rc);
+#if defined(__Userspace_os_Windows)
+			closesocket(SCTP_BASE_VAR(userspace_udpsctp));
+#else
 			close(SCTP_BASE_VAR(userspace_udpsctp));
+#endif
 			SCTP_BASE_VAR(userspace_udpsctp) = -1;
 		}
 	}
@@ -1445,7 +1453,11 @@ recv_thread_init(void)
 
 		if ((rc = sctp_userspace_thread_create(&SCTP_BASE_VAR(recvthreadraw6), &recv_function_raw6))) {
 			SCTPDBG(SCTP_DEBUG_USR, "Can't start SCTP/IPv6 recv thread (%d).\n", rc);
+#if defined(__Userspace_os_Windows)
+			closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
+#else
 			close(SCTP_BASE_VAR(userspace_rawsctp6));
+#endif
 			SCTP_BASE_VAR(userspace_rawsctp6) = -1;
 		}
 	}
@@ -1454,7 +1466,11 @@ recv_thread_init(void)
 
 		if ((rc = sctp_userspace_thread_create(&SCTP_BASE_VAR(recvthreadudp6), &recv_function_udp6))) {
 			SCTPDBG(SCTP_DEBUG_USR, "Can't start SCTP/UDP/IPv6 recv thread (%d).\n", rc);
+#if defined(__Userspace_os_Windows)
+			closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
+#else
 			close(SCTP_BASE_VAR(userspace_udpsctp6));
+#endif
 			SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 		}
 	}
