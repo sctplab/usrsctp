@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 291364 2015-11-26 09:25:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 291904 2015-12-06 16:17:57Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1005,7 +1005,7 @@ sctp_map_assoc_state(int kernel_state)
 
 int
 sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
-               uint32_t override_tag, uint32_t vrf_id)
+               uint32_t override_tag, uint32_t vrf_id, uint16_t o_strms)
 {
 	struct sctp_association *asoc;
 	/*
@@ -1177,7 +1177,7 @@ sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	 * that we request by default.
 	 */
 	asoc->strm_realoutsize = asoc->streamoutcnt = asoc->pre_open_streams =
-	    inp->sctp_ep.pre_open_stream_count;
+	    o_strms;
 	SCTP_MALLOC(asoc->strmout, struct sctp_stream_out *,
 		    asoc->streamoutcnt * sizeof(struct sctp_stream_out),
 		    SCTP_M_STRMO);
