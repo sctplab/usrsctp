@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 291904 2015-12-06 16:17:57Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 292060 2015-12-10 11:49:32Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_PCB_H_
@@ -872,11 +872,6 @@ sctp_initiate_iterator(inp_func inpf,
 void
 sctp_queue_to_mcore(struct mbuf *m, int off, int cpu_to_use);
 
-#endif
-
-#ifdef INVARIANTS
-void
-sctp_validate_no_locks(struct sctp_inpcb *inp);
 #endif
 
 #endif				/* _KERNEL */

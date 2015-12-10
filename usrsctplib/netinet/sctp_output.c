@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 291904 2015-12-06 16:17:57Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 292060 2015-12-10 11:49:32Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -14594,13 +14594,6 @@ out_unlocked:
 		if (i_pak) {
 			(void)SCTP_RELEASE_HEADER(i_pak);
 		}
-	}
-#endif
-#ifdef INVARIANTS
-	if (inp) {
-		sctp_validate_no_locks(inp);
-	} else {
-		SCTP_PRINTF("Warning - inp is NULL so cant validate locks\n");
 	}
 #endif
 	if (top) {
