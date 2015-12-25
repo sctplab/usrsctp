@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 292060 2015-12-10 11:49:32Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 292734 2015-12-25 18:11:40Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7652,7 +7652,7 @@ one_more_time:
 			}
 			/* Whack down the size */
 			atomic_subtract_int(&stcb->asoc.total_output_queue_size, sp->length);
-			if ((stcb->sctp_socket != NULL) &&	     \
+			if ((stcb->sctp_socket != NULL) &&
 			    ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 			     (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL))) {
 				atomic_subtract_int(&stcb->sctp_socket->so_snd.sb_cc, sp->length);
@@ -7671,9 +7671,6 @@ one_more_time:
 		}
 	}
 	some_taken = sp->some_taken;
-	if (stcb->asoc.state & SCTP_STATE_CLOSED_SOCKET) {
-		sp->msg_is_complete = 1;
-	}
 re_look:
 	length = sp->length;
 	if (sp->msg_is_complete) {
