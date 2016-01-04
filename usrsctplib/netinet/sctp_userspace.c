@@ -38,6 +38,10 @@
 #include <pthread_np.h>
 #endif
 
+#if defined(__Userspace_os_Linux)
+#include <sys/prctl.h>
+#endif
+
 #if defined(__Userspace_os_Windows)
 /* Adapter to translate Unix thread start routines to Windows thread start
  * routines.
@@ -72,7 +76,7 @@ sctp_userspace_set_threadname(const char *name)
 	pthread_setname_np(name);
 #endif
 #if defined(__Userspace_os_Linux)
-	pthread_setname_np(pthread_self(), name);
+	prctl(PR_SET_NAME, name);
 #endif
 #if defined(__Userspace_os_FreeBSD)
 	pthread_set_name_np(pthread_self(), name);
