@@ -151,7 +151,7 @@ sctp_init(void)
 	SCTP_BASE_VAR(debug_printf) = debug_printf;
 #endif
 	sctp_pcb_init();
-#if defined(__Userspace__)
+#if defined(__Userspace__) && defined(THREAD_SUPPORT)
 	sctp_start_timer();
 #endif
 #if defined(SCTP_PACKET_LOGGING)
