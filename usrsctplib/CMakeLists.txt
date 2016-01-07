@@ -156,6 +156,11 @@ if (INET6)
 	add_definitions(-DINET6)
 endif()
 
+option(THREAD_SUPPORT "Support threads " 1)
+if (THREAD_SUPPORT)
+	add_definitions(-DTHREAD_SUPPORT)
+endif()
+
 option(SCTP_SIMPLE_ALLOCATOR " " 1)
 if (SCTP_SIMPLE_ALLOCATOR)
 	add_definitions(-DSCTP_SIMPLE_ALLOCATOR)

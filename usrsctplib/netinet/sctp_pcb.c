@@ -6855,7 +6855,7 @@ sctp_pcb_init()
 #if defined(__Userspace__)
 	mbuf_init(NULL);
 	atomic_init();
-#if defined(INET) || defined(INET6)
+#if defined(THREAD_SUPPORT) && (defined(INET) || defined(INET6))
 	recv_thread_init();
 #endif
 #endif

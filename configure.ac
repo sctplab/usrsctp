@@ -125,6 +125,14 @@ if test x$enable_inet6 = xyes; then
         AC_DEFINE(INET6, 1, [Support IPv6])
 fi
 
+AC_ARG_ENABLE(threads,
+  AC_HELP_STRING( [--enable-threads],
+                  [Support threads @<:@default=yes@:>@]),
+    enable_threads=$enableval,enable_threads=yes)
+if test x$enable_threads = xyes; then
+        AC_DEFINE(THREAD_SUPPORT, 1, [Support threads])
+fi
+
 AC_CHECK_TYPE(size_t)
 AC_CHECK_TYPE(ssize_t)
 
