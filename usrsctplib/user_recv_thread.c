@@ -275,10 +275,10 @@ recv_function_route(void *arg)
 #ifdef INET
 #if !defined(__Userspace_os_Windows)
 int
-usrsctp_recv_raw4(struct iovec *rcv_iovec, int len, struct mbuf **rcvmbuf)
+recv_raw4(struct iovec *rcv_iovec, int len, struct mbuf **recvmbuf)
 #else
 int
-usrsctp_recv_raw4(WSABUF *rcv_iovec, int len, struct mbuf **rcvmbuf)
+recv_raw4(WSABUF *rcv_iovec, int len, struct mbuf **recvmbuf)
 #endif
 {
 #if !defined(__Userspace_os_Windows)
@@ -337,58 +337,57 @@ usrsctp_recv_raw4(WSABUF *rcv_iovec, int len, struct mbuf **rcvmbuf)
 	}
 #endif
 
-	SCTP_HEADER_LEN(rcvmbuf[0]) = n; /* length of total packet */
+	SCTP_HEADER_LEN(recvmbuf[0]) = n; /* length of total packet */
 	SCTP_STAT_INCR(sctps_recvpackets);
 	SCTP_STAT_INCR_COUNTER64(sctps_inpackets);
 
 	if (n <= iovlen) {
-		SCTP_BUF_LEN(rcvmbuf[0]) = n;
+		SCTP_BUF_LEN(recvmbuf[0]) = n;
 		filled++;
 	} else {
 		i = 0;
-		SCTP_BUF_LEN(rcvmbuf[0]) = iovlen;
+		SCTP_BUF_LEN(recvmbuf[0]) = iovlen;
 
 		ncounter -= iovlen;
 		filled++;
 		do {
-			rcvmbuf[i]->m_next = rcvmbuf[i+1];
-			SCTP_BUF_LEN(rcvmbuf[i]->m_next) = min(ncounter, iovlen);
+			recvmbuf[i]->m_next = recvmbuf[i+1];
+			SCTP_BUF_LEN(recvmbuf[i]->m_next) = min(ncounter, iovlen);
 			i++;
 			ncounter -= iovlen;
 			filled++;
 		} while (ncounter > 0);
 	}
 	
-	iphdr = mtod(rcvmbuf[0], struct ip *);
+	iphdr = mtod(recvmbuf[0], struct ip *);
 	sh = (struct sctphdr *)((caddr_t)iphdr + sizeof(struct ip));
 	ch = (struct sctp_chunkhdr *)((caddr_t)sh + sizeof(struct sctphdr));
 	offset = sizeof(struct ip) + sizeof(struct sctphdr);
-	
+
 	if (iphdr->ip_tos != 0) {
 		ecn = iphdr->ip_tos & 0x02;
 	}
-	
+
 	dst.sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
 	dst.sin_len = sizeof(struct sockaddr_in);
 #endif
 	dst.sin_addr = iphdr->ip_dst;
 	dst.sin_port = sh->dest_port;
-
 	src.sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
 	src.sin_len = sizeof(struct sockaddr_in);
 #endif
 	src.sin_addr = iphdr->ip_src;
 	src.sin_port = sh->src_port;
-	
+
 	/* SCTP does not allow broadcasts or multicasts */
 	if (IN_MULTICAST(ntohl(dst.sin_addr.s_addr))) {
-		m_freem(rcvmbuf[0]);
+		m_freem(recvmbuf[0]);
 		return 0;
 	}
 	if (SCTP_IS_IT_BROADCAST(dst.sin_addr, rcvmbuf[0])) {
-		m_freem(rcvmbuf[0]);
+		m_freem(recvmbuf[0]);
 		return 0;
 	}
 
@@ -406,7 +405,7 @@ usrsctp_recv_raw4(WSABUF *rcv_iovec, int len, struct mbuf **rcvmbuf)
 #endif
 	SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
 	SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_common_input_processing with off=%d\n", offset);
-	sctp_common_input_processing(&rcvmbuf[0], sizeof(struct ip), offset, n, 
+	sctp_common_input_processing(&recvmbuf[0], sizeof(struct ip), offset, n, 
 								 (struct sockaddr *)&src,
 								 (struct sockaddr *)&dst,
 								 sh, ch,
@@ -415,12 +414,53 @@ usrsctp_recv_raw4(WSABUF *rcv_iovec, int len, struct mbuf **rcvmbuf)
 #endif
 								 ecn,
 								 SCTP_DEFAULT_VRFID, port);
-	if (rcvmbuf[0]) {
-		m_freem(rcvmbuf[0]);
+	if (recvmbuf[0]) {
+		m_freem(recvmbuf[0]);
 	}
 	return filled;
 }
 #endif
+
+#ifdef INET
+#if !defined(__Userspace_os_Windows)
+int
+usrsctp_recv_function_sctp4(int to_fill, struct mbuf **recvmbuf, struct iovec *recv_iovec)
+#else
+int
+usrsctp_recv_function_sctp4(int to_fill, struct mbuf **recvmbuf, WSABUF *rcv_iovec)
+#endif
+{
+	struct sockaddr_in src, dst;
+	/* iovlen is the size of each mbuf in the chain */
+	int i;
+	int iovlen = MCLBYTES;
+	int want_ext = (iovlen > MLEN)? 1 : 0;
+	int want_header = 0;
+
+	bzero((void *)&src, sizeof(struct sockaddr_in));
+	bzero((void *)&dst, sizeof(struct sockaddr_in));
+
+	for (i = 0; i < to_fill; i++) {
+			/* Not getting the packet header. Tests with chain of one run
+			   as usual without having the packet header.
+			   Have tried both sending and receiving
+			 */
+		recvmbuf[i] = sctp_get_mbuf_for_msg(iovlen, want_header, M_NOWAIT, want_ext, MT_DATA);
+#if !defined(__Userspace_os_Windows)
+		recv_iovec[i].iov_base = (caddr_t)recvmbuf[i]->m_data;
+		recv_iovec[i].iov_len = iovlen;
+#else
+		recv_iovec[i].buf = (caddr_t)recvmbuf[i]->m_data;
+		recv_iovec[i].len = iovlen;
+#endif
+	}
+
+	to_fill = recv_raw4(recv_iovec, MAXLEN_MBUF_CHAIN, recvmbuf);
+
+	return to_fill;
+}
+#endif
+
 
 #ifdef INET
 static void *
@@ -465,7 +505,7 @@ recv_function_raw(void *arg)
 #endif
 		}
 
-		to_fill = usrsctp_recv_raw4(recv_iovec, MAXLEN_MBUF_CHAIN, recvmbuf);
+		to_fill = recv_raw4(recv_iovec, MAXLEN_MBUF_CHAIN, recvmbuf);
 		if (to_fill < 0) {
 			break;
 		}
@@ -482,10 +522,10 @@ recv_function_raw(void *arg)
 #if defined(INET6)
 #if !defined(__Userspace_os_Windows)
 int
-usrsctp_recv_raw6(struct iovec *recv_iovec, int len, struct mbuf **recvmbuf6)
+recv_raw6(struct iovec *recv_iovec, int len, struct mbuf **recvmbuf6)
 #else
 int
-usrsctp_recv_raw6(WSABUF *recv_iovec, int len, struct mbuf **recvmbuf6)
+recv_raw6(WSABUF *recv_iovec, int len, struct mbuf **recvmbuf6)
 #endif
 {
 #if !defined(__Userspace_os_Windows)
@@ -641,6 +681,40 @@ usrsctp_recv_raw6(WSABUF *recv_iovec, int len, struct mbuf **recvmbuf6)
 #endif
 
 #if defined(INET6)
+#if !defined(__Userspace_os_Windows)
+int
+usrsctp_recv_function_sctp6(int to_fill, struct mbuf **recvmbuf, struct iovec *recv_iovec)
+#else
+int
+usrsctp_recv_function_sctp6(int to_fill, struct mbuf **recvmbuf, WSABUF *rcv_iovec)
+#endif
+{
+	/* iovlen is the size of each mbuf in the chain */
+	int i;
+	int iovlen = MCLBYTES;
+	int want_ext = (iovlen > MLEN)? 1 : 0;
+	int want_header = 0;
+
+	for (i = 0; i < to_fill; i++) {
+			/* Not getting the packet header. Tests with chain of one run
+			   as usual without having the packet header.
+			   Have tried both sending and receiving
+			 */
+		recvmbuf[i] = sctp_get_mbuf_for_msg(iovlen, want_header, M_NOWAIT, want_ext, MT_DATA);
+#if !defined(__Userspace_os_Windows)
+		recv_iovec[i].iov_base = (caddr_t)recvmbuf[i]->m_data;
+		recv_iovec[i].iov_len = iovlen;
+#else
+		recv_iovec[i].buf = (caddr_t)recvmbuf[i]->m_data;
+		recv_iovec[i].len = iovlen;
+#endif
+	}
+	to_fill = recv_raw6(recv_iovec, MAXLEN_MBUF_CHAIN, recvmbuf);
+	return to_fill;
+}
+#endif
+
+#if defined(INET6)
 static void *
 recv_function_raw6(void *arg)
 {
@@ -678,7 +752,7 @@ recv_function_raw6(void *arg)
 			recv_iovec[i].len = iovlen;
 #endif
 		}
-		to_fill = usrsctp_recv_raw6(recv_iovec, MAXLEN_MBUF_CHAIN, recvmbuf6);
+		to_fill = recv_raw6(recv_iovec, MAXLEN_MBUF_CHAIN, recvmbuf6);
 		if (to_fill < 0) {
 			break;
 		}
@@ -695,10 +769,10 @@ recv_function_raw6(void *arg)
 #ifdef INET
 #if !defined(__Userspace_os_Windows)
 int
-usrsctp_recv_udp4(struct iovec *rcv_iovec, int len, struct mbuf **udprcvmbuf)
+recv_udp4(struct iovec *rcv_iovec, int len, struct mbuf **udprcvmbuf)
 #else
 int
-usrsctp_recv_udp4(WSABUF *rcv_iovec, int len, struct mbuf **udprcvmbuf)
+recv_udp4(WSABUF *rcv_iovec, int len, struct mbuf **udprcvmbuf)
 #endif
 {
 	/*Initially the entire set of mbufs is to be allocated.
@@ -874,6 +948,46 @@ usrsctp_recv_udp4(WSABUF *rcv_iovec, int len, struct mbuf **udprcvmbuf)
 		return filled;
 }
 
+#ifdef INET
+#if !defined(__Userspace_os_Windows)
+int
+usrsctp_recv_function_udpsctp4(int to_fill, struct mbuf **recvmbuf, struct iovec *recv_iovec)
+#else
+int
+usrsctp_recv_function_udpsctp4(int to_fill, struct mbuf **recvmbuf, WSABUF *rcv_iovec)
+#endif
+{
+	struct sockaddr_in src, dst;
+	/* iovlen is the size of each mbuf in the chain */
+	int i;
+	int iovlen = MCLBYTES;
+	int want_ext = (iovlen > MLEN)? 1 : 0;
+	int want_header = 0;
+
+	bzero((void *)&src, sizeof(struct sockaddr_in));
+	bzero((void *)&dst, sizeof(struct sockaddr_in));
+
+	for (i = 0; i < to_fill; i++) {
+			/* Not getting the packet header. Tests with chain of one run
+			   as usual without having the packet header.
+			   Have tried both sending and receiving
+			 */
+		recvmbuf[i] = sctp_get_mbuf_for_msg(iovlen, want_header, M_NOWAIT, want_ext, MT_DATA);
+#if !defined(__Userspace_os_Windows)
+		recv_iovec[i].iov_base = (caddr_t)recvmbuf[i]->m_data;
+		recv_iovec[i].iov_len = iovlen;
+#else
+		recv_iovec[i].buf = (caddr_t)recvmbuf[i]->m_data;
+		recv_iovec[i].len = iovlen;
+#endif
+	}
+
+	to_fill = recv_udp4(recv_iovec, MAXLEN_MBUF_CHAIN, recvmbuf);
+
+	return to_fill;
+}
+#endif
+
 static void *
 recv_function_udp(void *arg)
 {
@@ -912,7 +1026,7 @@ recv_function_udp(void *arg)
 #endif
 		}
 
-		to_fill = usrsctp_recv_udp4(iov, MAXLEN_MBUF_CHAIN, udprecvmbuf);
+		to_fill = recv_udp4(iov, MAXLEN_MBUF_CHAIN, udprecvmbuf);
 		if (to_fill < 0) {
 			break;
 		}
@@ -930,10 +1044,10 @@ recv_function_udp(void *arg)
 #if defined(INET6)
 #if !defined(__Userspace_os_Windows)
 int
-usrsctp_recv_udp6(struct iovec *iov, int len, struct mbuf **udprecvmbuf6)
+recv_udp6(struct iovec *iov, int len, struct mbuf **udprecvmbuf6)
 #else
 int
-usrsctp_recv_udp6(WSABUF *iov, int len, struct mbuf **udprecvmbuf6)
+recv_udp6(WSABUF *iov, int len, struct mbuf **udprecvmbuf6)
 #endif
 {
 	/*Initially the entire set of mbufs is to be allocated.
@@ -1094,6 +1208,40 @@ usrsctp_recv_udp6(WSABUF *iov, int len, struct mbuf **udprecvmbuf6)
 }
 #endif
 
+#ifdef INET6
+#if !defined(__Userspace_os_Windows)
+int
+usrsctp_recv_function_udpsctp6(int to_fill, struct mbuf **recvmbuf, struct iovec *recv_iovec)
+#else
+int
+usrsctp_recv_function_udpsctp6(int to_fill, struct mbuf **recvmbuf, WSABUF *rcv_iovec)
+#endif
+{
+	/* iovlen is the size of each mbuf in the chain */
+	int i;
+	int iovlen = MCLBYTES;
+	int want_ext = (iovlen > MLEN)? 1 : 0;
+	int want_header = 0;
+
+	for (i = 0; i < to_fill; i++) {
+			/* Not getting the packet header. Tests with chain of one run
+			   as usual without having the packet header.
+			   Have tried both sending and receiving
+			 */
+		recvmbuf[i] = sctp_get_mbuf_for_msg(iovlen, want_header, M_NOWAIT, want_ext, MT_DATA);
+#if !defined(__Userspace_os_Windows)
+		recv_iovec[i].iov_base = (caddr_t)recvmbuf[i]->m_data;
+		recv_iovec[i].iov_len = iovlen;
+#else
+		recv_iovec[i].buf = (caddr_t)recvmbuf[i]->m_data;
+		recv_iovec[i].len = iovlen;
+#endif
+	}
+	to_fill = recv_udp6(recv_iovec, MAXLEN_MBUF_CHAIN, recvmbuf);
+	return to_fill;
+}
+#endif
+
 #if defined(INET6)
 static void *
 recv_function_udp6(void *arg)
@@ -1131,7 +1279,7 @@ recv_function_udp6(void *arg)
 			iov[i].len = iovlen;
 #endif
 		}
-		to_fill = usrsctp_recv_udp6(iov, MAXLEN_MBUF_CHAIN, udprecvmbuf6);
+		to_fill = recv_udp6(iov, MAXLEN_MBUF_CHAIN, udprecvmbuf6);
 		if (to_fill < 0) {
 			break;
 		}
@@ -1177,7 +1325,7 @@ setSendBufferSize(int sfd, int new_size)
 
 #define SOCKET_TIMEOUT 100 /* in ms */
 #if defined(INET)
-int usrsctp_open_sctp4_socket(void)
+int open_sctp4_socket(void)
 {
 	int sctp4_fd = -1;
 	struct sockaddr_in addr_ipv4;
@@ -1247,7 +1395,18 @@ int usrsctp_open_sctp4_socket(void)
 #endif
 
 #if defined(INET)
-int usrsctp_open_udpsctp4_socket(void)
+int usrsctp_open_sctp4_socket(void)
+{
+    int sctp4_fd = -1;
+    sctp4_fd = open_sctp4_socket();
+	SCTP_BASE_VAR(userspace_rawsctp) = sctp4_fd;
+	return sctp4_fd;
+}
+#endif
+
+
+#if defined(INET)
+int open_udpsctp4_socket(void)
 {
 	int udpsctp4_fd = -1;
 	struct sockaddr_in addr_ipv4;
@@ -1326,9 +1485,19 @@ int usrsctp_open_udpsctp4_socket(void)
 }
 #endif
 
+#if defined(INET)
+int usrsctp_open_udpsctp4_socket(void)
+{
+    int udpsctp4_fd = -1;
+    udpsctp4_fd = open_udpsctp4_socket();
+	SCTP_BASE_VAR(userspace_udpsctp) = udpsctp4_fd;
+	return udpsctp4_fd;
+}
+#endif
+
 #if defined(INET6)
 int
-usrsctp_open_sctp6_socket(void)
+open_sctp6_socket(void)
 {
 	int sctp6_fd = -1;
 	struct sockaddr_in6 addr_ipv6;
@@ -1419,8 +1588,18 @@ usrsctp_open_sctp6_socket(void)
 #endif
 
 #if defined(INET6)
+int usrsctp_open_sctp6_socket(void)
+{
+    int sctp6_fd = -1;
+    sctp6_fd = open_sctp6_socket();
+	SCTP_BASE_VAR(userspace_rawsctp6) = sctp6_fd;
+	return sctp6_fd;
+}
+#endif
+
+#if defined(INET6)
 int
-usrsctp_open_udpsctp6_socket(void)
+open_udpsctp6_socket(void)
 {
 	int udpsctp6_fd = -1; 
 	struct sockaddr_in6 addr_ipv6;
@@ -1508,6 +1687,16 @@ usrsctp_open_udpsctp6_socket(void)
 }
 #endif
 
+#if defined(INET6)
+int usrsctp_open_udpsctp6_socket(void)
+{
+    int udpsctp6_fd = -1;
+    udpsctp6_fd = open_udpsctp6_socket();
+	SCTP_BASE_VAR(userspace_udpsctp6) = udpsctp6_fd;
+	return udpsctp6_fd;
+}
+#endif
+
 void
 recv_thread_init(void)
 {
@@ -1561,19 +1750,19 @@ recv_thread_init(void)
 #endif
 #if defined(INET)
 	if (SCTP_BASE_VAR(userspace_rawsctp) == -1) {
-		SCTP_BASE_VAR(userspace_rawsctp) = usrsctp_open_sctp4_socket();
+		SCTP_BASE_VAR(userspace_rawsctp) = open_sctp4_socket();
 	}
 
 	if (SCTP_BASE_VAR(userspace_udpsctp) == -1) {
-		SCTP_BASE_VAR(userspace_udpsctp) = usrsctp_open_udpsctp4_socket();
+		SCTP_BASE_VAR(userspace_udpsctp) = open_udpsctp4_socket();
 	}
 #endif
 #if defined(INET6)
 	if (SCTP_BASE_VAR(userspace_rawsctp6) == -1) {
-		SCTP_BASE_VAR(userspace_rawsctp6) = usrsctp_open_sctp6_socket();
+		SCTP_BASE_VAR(userspace_rawsctp6) = open_sctp6_socket();
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp6) == -1) {
-		SCTP_BASE_VAR(userspace_udpsctp6) = usrsctp_open_udpsctp6_socket();
+		SCTP_BASE_VAR(userspace_udpsctp6) = open_udpsctp6_socket();
 	}
 #endif
 

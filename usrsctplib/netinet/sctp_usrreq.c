@@ -138,6 +138,7 @@ sctp_init(void)
 	SCTP_BASE_VAR(userspace_route) = -1;
 #endif
 #endif
+#ifdef THREAD_SUPPORT
 #ifdef INET
 	SCTP_BASE_VAR(userspace_rawsctp) = -1;
 	SCTP_BASE_VAR(userspace_udpsctp) = -1;
@@ -145,6 +146,7 @@ sctp_init(void)
 #ifdef INET6
 	SCTP_BASE_VAR(userspace_rawsctp6) = -1;
 	SCTP_BASE_VAR(userspace_udpsctp6) = -1;
+#endif
 #endif
 	SCTP_BASE_VAR(timer_thread_should_exit) = 0;
 	SCTP_BASE_VAR(conn_output) = conn_output;

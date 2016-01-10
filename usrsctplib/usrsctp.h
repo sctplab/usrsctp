@@ -48,6 +48,8 @@ extern "C" {
 #include <netinet/in.h>
 #endif
 
+#include <sys/mbuf.h>
+
 #ifndef MSG_NOTIFICATION
 /* This definition MUST be in sync with usrsctplib/user_socketvar.h */
 #define MSG_NOTIFICATION 0x2000
@@ -969,6 +971,31 @@ usrsctp_set_ulpinfo(struct socket *, void *);
 
 void
 usrsctp_fire_timer(int);
+
+int
+usrsctp_open_sctp4_socket(void);
+
+int
+usrsctp_open_udpsctp4_socket(void);
+
+int
+usrsctp_open_sctp6_socket(void);
+
+int
+usrsctp_open_udpsctp6_socket(void);
+
+int
+usrsctp_recv_function_sctp4(int, struct mbuf **, struct iovec *);
+
+int
+usrsctp_recv_function_udpsctp4(int, struct mbuf **, struct iovec *);
+
+int
+usrsctp_recv_function_sctp6(int, struct mbuf **, struct iovec *);
+
+int
+usrsctp_recv_function_udpsctp6(int, struct mbuf **, struct iovec *);
+
 
 #define SCTP_DUMP_OUTBOUND 1
 #define SCTP_DUMP_INBOUND  0
