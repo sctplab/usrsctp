@@ -423,11 +423,11 @@ recv_raw4(WSABUF *rcv_iovec, int len, struct mbuf **recvmbuf)
 
 #ifdef INET
 #if !defined(__Userspace_os_Windows)
-int
-usrsctp_recv_function_sctp4(int to_fill, struct mbuf **recvmbuf, struct iovec *recv_iovec)
+void
+usrsctp_recv_function_sctp4(void)
 #else
-int
-usrsctp_recv_function_sctp4(int to_fill, struct mbuf **recvmbuf, WSABUF *rcv_iovec)
+void
+usrsctp_recv_function_sctp4(void)
 #endif
 {
 	struct sockaddr_in src, dst;
@@ -440,24 +440,22 @@ usrsctp_recv_function_sctp4(int to_fill, struct mbuf **recvmbuf, WSABUF *rcv_iov
 	bzero((void *)&src, sizeof(struct sockaddr_in));
 	bzero((void *)&dst, sizeof(struct sockaddr_in));
 
-	for (i = 0; i < to_fill; i++) {
+	for (i = 0; i < SCTP_BASE_VAR(to_fill4); i++) {
 			/* Not getting the packet header. Tests with chain of one run
 			   as usual without having the packet header.
 			   Have tried both sending and receiving
 			 */
-		recvmbuf[i] = sctp_get_mbuf_for_msg(iovlen, want_header, M_NOWAIT, want_ext, MT_DATA);
+		SCTP_BASE_VAR(recvmbuf4[i]) = sctp_get_mbuf_for_msg(iovlen, want_header, M_NOWAIT, want_ext, MT_DATA);
 #if !defined(__Userspace_os_Windows)
-		recv_iovec[i].iov_base = (caddr_t)recvmbuf[i]->m_data;
-		recv_iovec[i].iov_len = iovlen;
+		SCTP_BASE_VAR(recv_iovec4[i].iov_base) = (caddr_t)SCTP_BASE_VAR(recvmbuf4[i]->m_data);
+		SCTP_BASE_VAR(recv_iovec4[i].iov_len) = iovlen;
 #else
-		recv_iovec[i].buf = (caddr_t)recvmbuf[i]->m_data;
-		recv_iovec[i].len = iovlen;
+		SCTP_BASE_VAR(recv_iovec[i].buf) = (caddr_t)SCTP_BASE_VAR(recvmbuf[i]->m_data);
+		SCTP_BASE_VAR(recv_iovec[i].len) = iovlen;
 #endif
 	}
 
-	to_fill = recv_raw4(recv_iovec, MAXLEN_MBUF_CHAIN, recvmbuf);
-
-	return to_fill;
+	SCTP_BASE_VAR(to_fill4) = recv_raw4(SCTP_BASE_VAR(recv_iovec4), MAXLEN_MBUF_CHAIN, SCTP_BASE_VAR(recvmbuf4));
 }
 #endif
 
@@ -682,11 +680,11 @@ recv_raw6(WSABUF *recv_iovec, int len, struct mbuf **recvmbuf6)
 
 #if defined(INET6)
 #if !defined(__Userspace_os_Windows)
-int
-usrsctp_recv_function_sctp6(int to_fill, struct mbuf **recvmbuf, struct iovec *recv_iovec)
+void
+usrsctp_recv_function_sctp6(void)
 #else
-int
-usrsctp_recv_function_sctp6(int to_fill, struct mbuf **recvmbuf, WSABUF *rcv_iovec)
+void
+usrsctp_recv_function_sctp6(void)
 #endif
 {
 	/* iovlen is the size of each mbuf in the chain */
@@ -695,22 +693,21 @@ usrsctp_recv_function_sctp6(int to_fill, struct mbuf **recvmbuf, WSABUF *rcv_iov
 	int want_ext = (iovlen > MLEN)? 1 : 0;
 	int want_header = 0;
 
-	for (i = 0; i < to_fill; i++) {
+	for (i = 0; i < SCTP_BASE_VAR(to_fill6); i++) {
 			/* Not getting the packet header. Tests with chain of one run
 			   as usual without having the packet header.
 			   Have tried both sending and receiving
 			 */
-		recvmbuf[i] = sctp_get_mbuf_for_msg(iovlen, want_header, M_NOWAIT, want_ext, MT_DATA);
+		SCTP_BASE_VAR(recvmbuf6[i]) = sctp_get_mbuf_for_msg(iovlen, want_header, M_NOWAIT, want_ext, MT_DATA);
 #if !defined(__Userspace_os_Windows)
-		recv_iovec[i].iov_base = (caddr_t)recvmbuf[i]->m_data;
-		recv_iovec[i].iov_len = iovlen;
+		SCTP_BASE_VAR(recv_iovec6[i].iov_base) = (caddr_t)SCTP_BASE_VAR(recvmbuf6[i]->m_data);
+		SCTP_BASE_VAR(recv_iovec6[i].iov_len) = iovlen;
 #else
-		recv_iovec[i].buf = (caddr_t)recvmbuf[i]->m_data;
-		recv_iovec[i].len = iovlen;
+		SCTP_BASE_VAR(recv_iovec6[i].buf) = (caddr_t)SCTP_BASE_VAR(recvmbuf6[i]->m_data);
+		SCTP_BASE_VAR(recv_iovec6[i].len) = iovlen;
 #endif
 	}
-	to_fill = recv_raw6(recv_iovec, MAXLEN_MBUF_CHAIN, recvmbuf);
-	return to_fill;
+	SCTP_BASE_VAR(to_fill6) = recv_raw6(SCTP_BASE_VAR(recv_iovec6), MAXLEN_MBUF_CHAIN, SCTP_BASE_VAR(recvmbuf6));
 }
 #endif
 
@@ -950,11 +947,11 @@ recv_udp4(WSABUF *rcv_iovec, int len, struct mbuf **udprcvmbuf)
 
 #ifdef INET
 #if !defined(__Userspace_os_Windows)
-int
-usrsctp_recv_function_udpsctp4(int to_fill, struct mbuf **recvmbuf, struct iovec *recv_iovec)
+void
+usrsctp_recv_function_udpsctp4(void)
 #else
-int
-usrsctp_recv_function_udpsctp4(int to_fill, struct mbuf **recvmbuf, WSABUF *rcv_iovec)
+void
+usrsctp_recv_function_udpsctp4(void)
 #endif
 {
 	struct sockaddr_in src, dst;
@@ -967,24 +964,22 @@ usrsctp_recv_function_udpsctp4(int to_fill, struct mbuf **recvmbuf, WSABUF *rcv_
 	bzero((void *)&src, sizeof(struct sockaddr_in));
 	bzero((void *)&dst, sizeof(struct sockaddr_in));
 
-	for (i = 0; i < to_fill; i++) {
+	for (i = 0; i < SCTP_BASE_VAR(udp_to_fill4); i++) {
 			/* Not getting the packet header. Tests with chain of one run
 			   as usual without having the packet header.
 			   Have tried both sending and receiving
 			 */
-		recvmbuf[i] = sctp_get_mbuf_for_msg(iovlen, want_header, M_NOWAIT, want_ext, MT_DATA);
+		SCTP_BASE_VAR(udp_recvmbuf4[i]) = sctp_get_mbuf_for_msg(iovlen, want_header, M_NOWAIT, want_ext, MT_DATA);
 #if !defined(__Userspace_os_Windows)
-		recv_iovec[i].iov_base = (caddr_t)recvmbuf[i]->m_data;
-		recv_iovec[i].iov_len = iovlen;
+		SCTP_BASE_VAR(udp_recv_iovec4[i].iov_base) = (caddr_t)SCTP_BASE_VAR(udp_recvmbuf4[i]->m_data);
+		SCTP_BASE_VAR(udp_recv_iovec4[i].iov_len) = iovlen;
 #else
-		recv_iovec[i].buf = (caddr_t)recvmbuf[i]->m_data;
-		recv_iovec[i].len = iovlen;
+		SCTP_BASE_VAR(udp_recv_iovec4[i].buf) = (caddr_t)SCTP_BASE_VAR(udp_recvmbuf4[i]->m_data);
+		SCTP_BASE_VAR(udp_recv_iovec4[i].len) = iovlen;
 #endif
 	}
 
-	to_fill = recv_udp4(recv_iovec, MAXLEN_MBUF_CHAIN, recvmbuf);
-
-	return to_fill;
+	SCTP_BASE_VAR(udp_to_fill4) = recv_udp4(SCTP_BASE_VAR(udp_recv_iovec4), MAXLEN_MBUF_CHAIN, SCTP_BASE_VAR(udp_recvmbuf4));
 }
 #endif
 
@@ -1210,11 +1205,11 @@ recv_udp6(WSABUF *iov, int len, struct mbuf **udprecvmbuf6)
 
 #ifdef INET6
 #if !defined(__Userspace_os_Windows)
-int
-usrsctp_recv_function_udpsctp6(int to_fill, struct mbuf **recvmbuf, struct iovec *recv_iovec)
+void
+usrsctp_recv_function_udpsctp6(void)
 #else
-int
-usrsctp_recv_function_udpsctp6(int to_fill, struct mbuf **recvmbuf, WSABUF *rcv_iovec)
+void
+usrsctp_recv_function_udpsctp6(void)
 #endif
 {
 	/* iovlen is the size of each mbuf in the chain */
@@ -1223,22 +1218,21 @@ usrsctp_recv_function_udpsctp6(int to_fill, struct mbuf **recvmbuf, WSABUF *rcv_
 	int want_ext = (iovlen > MLEN)? 1 : 0;
 	int want_header = 0;
 
-	for (i = 0; i < to_fill; i++) {
+	for (i = 0; i < SCTP_BASE_VAR(udp_to_fill6); i++) {
 			/* Not getting the packet header. Tests with chain of one run
 			   as usual without having the packet header.
 			   Have tried both sending and receiving
 			 */
-		recvmbuf[i] = sctp_get_mbuf_for_msg(iovlen, want_header, M_NOWAIT, want_ext, MT_DATA);
+		SCTP_BASE_VAR(udp_recvmbuf6[i]) = sctp_get_mbuf_for_msg(iovlen, want_header, M_NOWAIT, want_ext, MT_DATA);
 #if !defined(__Userspace_os_Windows)
-		recv_iovec[i].iov_base = (caddr_t)recvmbuf[i]->m_data;
-		recv_iovec[i].iov_len = iovlen;
+		SCTP_BASE_VAR(udp_recv_iovec6[i].iov_base) = (caddr_t)SCTP_BASE_VAR(udp_recvmbuf6[i]->m_data);
+		SCTP_BASE_VAR(udp_recv_iovec6[i].iov_len) = iovlen;
 #else
-		recv_iovec[i].buf = (caddr_t)recvmbuf[i]->m_data;
-		recv_iovec[i].len = iovlen;
+		SCTP_BASE_VAR(udp_recv_iovec6[i].buf) = (caddr_t)SCTP_BASE_VAR(udp_recvmbuf6[i]->m_data);
+		SCTP_BASE_VAR(udp_recv_iovec6[i].len) = iovlen;
 #endif
 	}
-	to_fill = recv_udp6(recv_iovec, MAXLEN_MBUF_CHAIN, recvmbuf);
-	return to_fill;
+	SCTP_BASE_VAR(udp_to_fill6) = recv_udp6(SCTP_BASE_VAR(udp_recv_iovec6), MAXLEN_MBUF_CHAIN, SCTP_BASE_VAR(udp_recvmbuf6));
 }
 #endif
 

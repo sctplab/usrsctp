@@ -3285,7 +3285,7 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	return;
 }
 
-void usrsctp_fire_timer(int delta)
+void usrsctp_handle_timers(unsigned int delta)
 {
 	sctp_handle_tick(MSEC_TO_TICKS(delta));
 }

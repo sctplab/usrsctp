@@ -970,7 +970,7 @@ int
 usrsctp_set_ulpinfo(struct socket *, void *);
 
 void
-usrsctp_fire_timer(int);
+usrsctp_handle_timers(int);
 
 int
 usrsctp_open_sctp4_socket(void);
@@ -984,17 +984,17 @@ usrsctp_open_sctp6_socket(void);
 int
 usrsctp_open_udpsctp6_socket(void);
 
-int
-usrsctp_recv_function_sctp4(int, struct mbuf **, struct iovec *);
+void
+usrsctp_recv_function_sctp4(void);
 
-int
-usrsctp_recv_function_udpsctp4(int, struct mbuf **, struct iovec *);
+void
+usrsctp_recv_function_udpsctp4(void);
 
-int
-usrsctp_recv_function_sctp6(int, struct mbuf **, struct iovec *);
+void
+usrsctp_recv_function_sctp6(void);
 
-int
-usrsctp_recv_function_udpsctp6(int, struct mbuf **, struct iovec *);
+void
+usrsctp_recv_function_udpsctp6(void);
 
 
 #define SCTP_DUMP_OUTBOUND 1
