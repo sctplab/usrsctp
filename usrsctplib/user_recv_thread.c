@@ -422,6 +422,7 @@ recv_raw4(WSABUF *rcv_iovec, int len, struct mbuf **recvmbuf)
 #endif
 
 #ifdef INET
+#if !defined(THREAD_SUPPORT)
 #if !defined(__Userspace_os_Windows)
 void
 usrsctp_recv_function_sctp4(void)
@@ -457,6 +458,7 @@ usrsctp_recv_function_sctp4(void)
 
 	SCTP_BASE_VAR(to_fill4) = recv_raw4(SCTP_BASE_VAR(recv_iovec4), MAXLEN_MBUF_CHAIN, SCTP_BASE_VAR(recvmbuf4));
 }
+#endif
 #endif
 
 
@@ -679,6 +681,7 @@ recv_raw6(WSABUF *recv_iovec, int len, struct mbuf **recvmbuf6)
 #endif
 
 #if defined(INET6)
+#if !defined(THREAD_SUPPORT)
 #if !defined(__Userspace_os_Windows)
 void
 usrsctp_recv_function_sctp6(void)
@@ -709,6 +712,7 @@ usrsctp_recv_function_sctp6(void)
 	}
 	SCTP_BASE_VAR(to_fill6) = recv_raw6(SCTP_BASE_VAR(recv_iovec6), MAXLEN_MBUF_CHAIN, SCTP_BASE_VAR(recvmbuf6));
 }
+#endif
 #endif
 
 #if defined(INET6)
@@ -946,6 +950,7 @@ recv_udp4(WSABUF *rcv_iovec, int len, struct mbuf **udprcvmbuf)
 }
 
 #ifdef INET
+#if !defined(THREAD_SUPPORT)
 #if !defined(__Userspace_os_Windows)
 void
 usrsctp_recv_function_udpsctp4(void)
@@ -981,6 +986,7 @@ usrsctp_recv_function_udpsctp4(void)
 
 	SCTP_BASE_VAR(udp_to_fill4) = recv_udp4(SCTP_BASE_VAR(udp_recv_iovec4), MAXLEN_MBUF_CHAIN, SCTP_BASE_VAR(udp_recvmbuf4));
 }
+#endif
 #endif
 
 static void *
@@ -1204,6 +1210,7 @@ recv_udp6(WSABUF *iov, int len, struct mbuf **udprecvmbuf6)
 #endif
 
 #ifdef INET6
+#if !defined(THREAD_SUPPORT)
 #if !defined(__Userspace_os_Windows)
 void
 usrsctp_recv_function_udpsctp6(void)
@@ -1234,6 +1241,7 @@ usrsctp_recv_function_udpsctp6(void)
 	}
 	SCTP_BASE_VAR(udp_to_fill6) = recv_udp6(SCTP_BASE_VAR(udp_recv_iovec6), MAXLEN_MBUF_CHAIN, SCTP_BASE_VAR(udp_recvmbuf6));
 }
+#endif
 #endif
 
 #if defined(INET6)
