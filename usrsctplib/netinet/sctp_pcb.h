@@ -338,10 +338,10 @@ struct sctp_base_info {
 	struct iovec udp_recv_iovec4[MAXLEN_MBUF_CHAIN];
 	struct iovec udp_recv_iovec6[MAXLEN_MBUF_CHAIN];
 #else
-    WSABUF *rcv_iovec4;
-    WSABUF *rcv_iovec6;
-    WSABUF *udp_rcv_iovec4;
-    WSABUF *udp_rcv_iovec6;
+	WSABUF *rcv_iovec4;
+	WSABUF *rcv_iovec6;
+	WSABUF *udp_rcv_iovec4;
+	WSABUF *udp_rcv_iovec6;
 #endif
 #endif
 #endif

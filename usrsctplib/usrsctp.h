@@ -48,7 +48,6 @@ extern "C" {
 #include <netinet/in.h>
 #endif
 
-#include <sys/mbuf.h>
 
 #ifndef MSG_NOTIFICATION
 /* This definition MUST be in sync with usrsctplib/user_socketvar.h */
