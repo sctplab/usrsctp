@@ -707,6 +707,27 @@ getsockaddr(namp, uaddr, len)
 	return (error);
 }
 
+int
+usrsctp_getsockopt(struct socket *so, int level, int option_name,
+                   void *option_value, socklen_t *option_len);
+
+sctp_assoc_t
+usrsctp_getassocid(struct socket *sock, struct sockaddr *sa)
+{
+	struct sctp_paddrinfo sp;
+	socklen_t siz;
+
+	/* First get the assoc id */
+	siz = sizeof(sp);
+	memset(&sp, 0, sizeof(sp));
+	memcpy((caddr_t)&sp.spinfo_address, sa, sa->sa_len);
+	if (usrsctp_getsockopt(sock, IPPROTO_SCTP, SCTP_GET_PEER_ADDR_INFO, &sp, &siz) != 0) {
+		/* We depend on the fact that 0 can never be returned */
+		return ((sctp_assoc_t) 0);
+	}
+	return (sp.spinfo_assoc_id);
+}
+
 
 /* Taken from  /src/lib/libc/net/sctp_sys_calls.c
  * and modified for __Userspace__
@@ -792,6 +813,7 @@ usrsctp_sendv(struct socket *so,
 	struct uio auio;
 	struct iovec iov[1];
 	int use_sinfo;
+	sctp_assoc_t *assoc_id;
 
 	if (so == NULL) {
 		errno = EBADF;
@@ -802,6 +824,7 @@ usrsctp_sendv(struct socket *so,
 		return (-1);
 	}
 	memset(&sinfo, 0, sizeof(struct sctp_sndrcvinfo));
+	assoc_id = NULL;
 	use_sinfo = 0;
 	switch (infotype) {
 	case SCTP_SENDV_NOINFO:
@@ -820,6 +843,7 @@ usrsctp_sendv(struct socket *so,
 		sinfo.sinfo_ppid = ((struct sctp_sndinfo *)info)->snd_ppid;
 		sinfo.sinfo_context = ((struct sctp_sndinfo *)info)->snd_context;
 		sinfo.sinfo_assoc_id = ((struct sctp_sndinfo *)info)->snd_assoc_id;
+		assoc_id = &(((struct sctp_sndinfo *)info)->snd_assoc_id);
 		use_sinfo = 1;
 		break;
 	case SCTP_SENDV_PRINFO:
@@ -846,6 +870,7 @@ usrsctp_sendv(struct socket *so,
 			sinfo.sinfo_ppid = ((struct sctp_sendv_spa *)info)->sendv_sndinfo.snd_ppid;
 			sinfo.sinfo_context = ((struct sctp_sendv_spa *)info)->sendv_sndinfo.snd_context;
 			sinfo.sinfo_assoc_id = ((struct sctp_sendv_spa *)info)->sendv_sndinfo.snd_assoc_id;
+			assoc_id = &(((struct sctp_sendv_spa *)info)->sendv_sndinfo.snd_assoc_id);
 		} else {
 			sinfo.sinfo_flags = 0;
 			sinfo.sinfo_stream = 0;
@@ -882,6 +907,9 @@ usrsctp_sendv(struct socket *so,
 	auio.uio_resid = len;
 	errno = sctp_lower_sosend(so, to, &auio, NULL, NULL, flags, use_sinfo ? &sinfo : NULL);
 	if (errno == 0) {
+		if ((to != NULL) && (assoc_id != NULL)) {
+			*assoc_id = usrsctp_getassocid(so, to);
+		}
 		return (len - auio.uio_resid);
 	} else {
 		return (-1);

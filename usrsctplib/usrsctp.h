@@ -943,6 +943,9 @@ usrsctp_connectx(struct socket *so,
 void
 usrsctp_close(struct socket *so);
 
+sctp_assoc_t
+usrsctp_getassocid(struct socket *, struct sockaddr *);
+
 int
 usrsctp_finish(void);
 
