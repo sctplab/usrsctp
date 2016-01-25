@@ -716,11 +716,36 @@ usrsctp_getassocid(struct socket *sock, struct sockaddr *sa)
 {
 	struct sctp_paddrinfo sp;
 	socklen_t siz;
+#ifndef HAVE_SA_LEN
+	size_t sa_len;
+#endif
 
 	/* First get the assoc id */
 	siz = sizeof(sp);
 	memset(&sp, 0, sizeof(sp));
+#ifdef HAVE_SA_LEN
 	memcpy((caddr_t)&sp.spinfo_address, sa, sa->sa_len);
+#else
+	switch (sa->sa_family) {
+#ifdef INET
+	case AF_INET:
+		sa_len = sizeof(struct sockaddr_in);
+		break;
+#endif
+#ifdef INET6
+	case AF_INET6:
+		sa_len = sizeof(struct sockaddr_in6);
+		break;
+#endif
+	case AF_CONN:
+		sa_len = sizeof(struct sockaddr_conn);
+		break;
+	default:
+		sa_len = 0;
+		break;
+	}
+	memcpy((caddr_t)&sp.spinfo_address, sa, sa_len);
+#endif
 	if (usrsctp_getsockopt(sock, IPPROTO_SCTP, SCTP_GET_PEER_ADDR_INFO, &sp, &siz) != 0) {
 		/* We depend on the fact that 0 can never be returned */
 		return ((sctp_assoc_t) 0);
