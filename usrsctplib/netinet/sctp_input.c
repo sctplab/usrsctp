@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 292060 2015-12-10 11:49:32Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 295070 2016-01-30 11:10:22Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5855,7 +5855,9 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 			stcb = sctp_findassociation_addr(m, offset, src, dst,
 			                                 sh, ch, &inp, &net, vrf_id);
 #if defined(INET) || defined(INET6)
-			if ((net != NULL) && (port != 0)) {
+			if ((net != NULL) &&
+			    (ch->chunk_type != SCTP_INITIATION) &&
+			    (port != 0)) {
 				if (net->port == 0) {
 					sctp_pathmtu_adjustment(stcb, net->mtu - sizeof(struct udphdr));
 				}
@@ -5888,7 +5890,9 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 	stcb = sctp_findassociation_addr(m, offset, src, dst,
 	                                 sh, ch, &inp, &net, vrf_id);
 #if defined(INET) || defined(INET6)
-	if ((net != NULL) && (port != 0)) {
+	if ((net != NULL) &&
+	    (ch->chunk_type != SCTP_INITIATION) &&
+	    (port != 0)) {
 		if (net->port == 0) {
 			sctp_pathmtu_adjustment(stcb, net->mtu - sizeof(struct udphdr));
 		}
@@ -6012,7 +6016,9 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 			 */
 			inp = stcb->sctp_ep;
 #if defined(INET) || defined(INET6)
-			if ((net != NULL) && (port != 0)) {
+			if ((net != NULL) &&
+			    (ch->chunk_type != SCTP_INITIATION) &&
+			    (port != 0)) {
 				if (net->port == 0) {
 					sctp_pathmtu_adjustment(stcb, net->mtu - sizeof(struct udphdr));
 				}
