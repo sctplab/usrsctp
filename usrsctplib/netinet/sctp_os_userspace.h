@@ -1034,8 +1034,10 @@ int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af);
 struct sockaddr_conn {
 #ifdef HAVE_SCONN_LEN
 	uint8_t sconn_len;
-#endif
 	uint8_t sconn_family;
+#else
+	uint16_t sconn_family;
+#endif
 	uint16_t sconn_port;
 	void *sconn_addr;
 };
