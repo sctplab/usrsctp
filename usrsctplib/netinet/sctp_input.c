@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 295070 2016-01-30 11:10:22Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 295072 2016-01-30 12:58:38Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -94,7 +94,7 @@ static void
 sctp_handle_init(struct mbuf *m, int iphlen, int offset,
                  struct sockaddr *src, struct sockaddr *dst, struct sctphdr *sh,
                  struct sctp_init_chunk *cp, struct sctp_inpcb *inp,
-                 struct sctp_tcb *stcb, int *abort_no_unlock,
+                 struct sctp_tcb *stcb, struct sctp_nets *net, int *abort_no_unlock,
 #if defined(__FreeBSD__)
                  uint8_t mflowtype, uint32_t mflowid,
 #endif
@@ -220,8 +220,8 @@ sctp_handle_init(struct mbuf *m, int iphlen, int offset,
 		sctp_chunk_output(inp, stcb, SCTP_OUTPUT_FROM_CONTROL_PROC, SCTP_SO_NOT_LOCKED);
 	} else {
 		SCTPDBG(SCTP_DEBUG_INPUT3, "sctp_handle_init: sending INIT-ACK\n");
-		sctp_send_initiate_ack(inp, stcb, m, iphlen, offset, src, dst,
-		                       sh, cp,
+		sctp_send_initiate_ack(inp, stcb, net, m, iphlen, offset,
+		                       src, dst, sh, cp,
 #if defined(__FreeBSD__)
 		                       mflowtype, mflowid,
 #endif
@@ -5004,7 +5004,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 			}
 			sctp_handle_init(m, iphlen, *offset, src, dst, sh,
 			                 (struct sctp_init_chunk *)ch, inp,
-			                 stcb, &abort_no_unlock,
+			                 stcb, *netp, &abort_no_unlock,
 #if defined(__FreeBSD__)
 			                 mflowtype, mflowid,
 #endif
