@@ -116,29 +116,39 @@ sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)
 int
 sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)
 {
-	PIP_ADAPTER_ADDRESSES pAdapterAddrs, pAdapt;
+	PIP_ADAPTER_ADDRESSES pAdapterAddrs = NULL, pAdapt = NULL;
 	DWORD AdapterAddrsSize, Err;
+	int ret = -1;
 
-	AdapterAddrsSize = 0;
-	if ((Err = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
-		if ((Err != ERROR_BUFFER_OVERFLOW) && (Err != ERROR_INSUFFICIENT_BUFFER)) {
-			SCTPDBG(SCTP_DEBUG_USR, "GetAdaptersAddresses() sizing failed with error code %d, AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
-			return (-1);
+	do {
+		AdapterAddrsSize = 0;
+		if ((Err = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
+			if ((Err != ERROR_BUFFER_OVERFLOW) && (Err != ERROR_INSUFFICIENT_BUFFER)) {
+				SCTPDBG(SCTP_DEBUG_USR, "GetAdaptersAddresses() sizing failed with error code %d, AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
+				break;
+			}
 		}
-	}
-	if ((pAdapterAddrs = (PIP_ADAPTER_ADDRESSES) GlobalAlloc(GPTR, AdapterAddrsSize)) == NULL) {
-		SCTPDBG(SCTP_DEBUG_USR, "Memory allocation error!\n");
-		return (-1);
-	}
-	if ((Err = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
-		SCTPDBG(SCTP_DEBUG_USR, "GetAdaptersAddresses() failed with error code %d\n", Err);
-		return (-1);
-	}
-	for (pAdapt = pAdapterAddrs; pAdapt; pAdapt = pAdapt->Next) {
-		if (pAdapt->IfIndex == if_index)
-			return (pAdapt->Mtu);
-	}
-	return (0);
+		if ((pAdapterAddrs = (PIP_ADAPTER_ADDRESSES)GlobalAlloc(GPTR, AdapterAddrsSize)) == NULL) {
+			SCTPDBG(SCTP_DEBUG_USR, "Memory allocation error!\n");
+			break;
+		}
+		if ((Err = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
+			SCTPDBG(SCTP_DEBUG_USR, "GetAdaptersAddresses() failed with error code %d\n", Err);
+			break;
+		}
+		for (pAdapt = pAdapterAddrs; pAdapt; pAdapt = pAdapt->Next) {
+			if (pAdapt->IfIndex == if_index) {
+				ret = (pAdapt->Mtu);
+				break;
+			}
+		}
+		ret = 0;
+	} while (0);
+
+	if (pAdapterAddrs)
+		GlobalFree(pAdapterAddrs);
+
+	return ret;
 }
 
 void
