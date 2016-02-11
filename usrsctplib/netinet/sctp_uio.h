@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 290444 2015-11-06 14:00:26Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 295136 2016-02-02 05:57:59Z alfred $");
 #endif
 
 #ifndef _NETINET_SCTP_UIO_H_
@@ -1198,13 +1198,22 @@ struct xsctp_inpcb {
 	uint32_t total_nospaces;
 	uint32_t fragmentation_point;
 	uint16_t local_port;
+#if defined(__FreeBSD__) && __FreeBSD_version > 1100096
+	uint16_t qlen_old;
+	uint16_t maxqlen_old;
+#else
 	uint16_t qlen;
 	uint16_t maxqlen;
+#endif
 #if defined(__Windows__)
 	uint16_t padding;
 #endif
 #if !(defined(__FreeBSD__) && (__FreeBSD_version < 1001517))
 	void *socket;
+#endif
+#if defined(__FreeBSD__) && __FreeBSD_version > 1100096
+	uint32_t qlen;
+	uint32_t maxqlen;
 #endif
 #if defined(__FreeBSD__) && __FreeBSD_version < 1000048
 	uint32_t extra_padding[32]; /* future */
@@ -1212,9 +1221,17 @@ struct xsctp_inpcb {
 	uint32_t extra_padding[31]; /* future */
 #else
 #if defined(__LP64__)
+#if defined(__FreeBSD__) && __FreeBSD_version > 1100096
+	uint32_t extra_padding[27]; /* future */
+#else
 	uint32_t extra_padding[29]; /* future */
+#endif
+#else
+#if defined(__FreeBSD__) && __FreeBSD_version > 1100096
+	uint32_t extra_padding[28]; /* future */
 #else
 	uint32_t extra_padding[30]; /* future */
+#endif
 #endif
 #endif
 };
