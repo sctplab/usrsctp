@@ -163,6 +163,7 @@ SET (check_PROGRAMS
 	ekr_peer.c
 	ekr_server.c
 	rtcweb.c
+	test_libmgmt.c
 	tsctp.c
 )
 

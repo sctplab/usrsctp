@@ -29,8 +29,11 @@
 #
 
 AM_CPPFLAGS = -I$(srcdir)/../usrsctplib
-EXTRA_DIST = Makefile.nmake tsctp.c daytime_server.c discard_server.c echo_server.c client.c rtcweb.c ekr_client.c ekr_server.c ekr_loop.c
-noinst_PROGRAMS = tsctp daytime_server discard_server echo_server client rtcweb ekr_client ekr_server ekr_peer ekr_loop
+EXTRA_DIST = Makefile.nmake tsctp.c daytime_server.c discard_server.c echo_server.c client.c rtcweb.c ekr_client.c ekr_server.c ekr_loop.c test_libmgmt.c
+
+noinst_PROGRAMS = tsctp daytime_server discard_server echo_server client rtcweb ekr_client ekr_server ekr_peer ekr_loop test_libmgmt
+test_libmgmt_SOURCES = test_libmgmt.c
+test_libmgmt_LDADD = ../usrsctplib/libusrsctp.la
 tsctp_SOURCES = tsctp.c
 tsctp_LDADD = ../usrsctplib/libusrsctp.la
 daytime_server_SOURCES = daytime_server.c
