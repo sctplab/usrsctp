@@ -47,7 +47,8 @@ all: \
 	ekr_client \
 	ekr_server \
 	ekr_peer \
-	ekr_loop
+	ekr_loop \
+	test_libmgmt
 
 client:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c client.c
@@ -89,6 +90,10 @@ ekr_loop:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c ekr_loop.c
 	link -out:ekr_loop.exe ekr_loop.obj $(LINKFLAGS)
 
+test_libmgmt:
+	$(CC) $(CFLAGS) $(CVARSDLL) -c test_libmgmt.c
+	link -out:test_libmgmt.exe test_libmgmt.obj $(LINKFLAGS)
+
 clean:
 	del /F client.exe
 	del /F client.obj
@@ -110,3 +115,5 @@ clean:
 	del /F ekr_peer.obj
 	del /F ekr_loop.exe
 	del /F ekr_loop.obj
+	del /F test_libmgmt.exe
+	del /F test_libmgmt.obj
