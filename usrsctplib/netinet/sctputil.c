@@ -7405,7 +7405,7 @@ sctp_bindx_add_address(struct socket *so, struct sctp_inpcb *inp,
 	}
 #endif
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND) {
-#if !(defined(__Panda__) || defined(__Windows__))
+#if !(defined(__Panda__) || defined(__Windows__) || defined(__Userspace__))
 		if (p == NULL) {
 			/* Can't get proc for Net/Open BSD */
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
