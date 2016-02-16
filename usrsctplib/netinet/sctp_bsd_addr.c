@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 276914 2015-01-10 20:49:57Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 295670 2016-02-16 20:33:18Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -682,6 +682,10 @@ sctp_addr_change(struct ifaddr *ifa, int cmd)
         return;
 #else
 	uint32_t ifa_flags = 0;
+
+	if (SCTP_BASE_VAR(sctp_pcb_initialized) == 0) {
+		return;
+	}
 	/* BSD only has one VRF, if this changes
 	 * we will need to hook in the right
 	 * things here to get the id to pass to

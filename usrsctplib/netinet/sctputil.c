@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 293828 2016-01-13 14:28:12Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 295670 2016-02-16 20:33:18Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1562,14 +1562,30 @@ sctp_handle_addr_wq(void)
 	if (asc->cnt == 0) {
 		SCTP_FREE(asc, SCTP_M_ASC_IT);
 	} else {
-		(void)sctp_initiate_iterator(sctp_asconf_iterator_ep,
-					     sctp_asconf_iterator_stcb,
-					     NULL, /* No ep end for boundall */
-					     SCTP_PCB_FLAGS_BOUNDALL,
-					     SCTP_PCB_ANY_FEATURES,
-					     SCTP_ASOC_ANY_STATE,
-					     (void *)asc, 0,
-					     sctp_asconf_iterator_end, NULL, 0);
+		int ret;
+
+		ret = sctp_initiate_iterator(sctp_asconf_iterator_ep,
+		                             sctp_asconf_iterator_stcb,
+		                             NULL, /* No ep end for boundall */
+		                             SCTP_PCB_FLAGS_BOUNDALL,
+		                             SCTP_PCB_ANY_FEATURES,
+		                             SCTP_ASOC_ANY_STATE,
+		                             (void *)asc, 0,
+		                             sctp_asconf_iterator_end, NULL, 0);
+		if (ret) {
+			SCTP_PRINTF("Failed to initiate iterator for handle_addr_wq\n");
+			/* Freeing if we are stopping or put back on the addr_wq. */
+			if (SCTP_BASE_VAR(sctp_pcb_initialized) == 0) {
+				sctp_asconf_iterator_end(asc, 0);
+			} else {
+				SCTP_WQ_ADDR_LOCK();
+				LIST_FOREACH(wi, &asc->list_of_work, sctp_nxt_addr) {
+					LIST_INSERT_HEAD(&SCTP_BASE_INFO(addr_wq), wi, sctp_nxt_addr);
+				}
+				SCTP_WQ_ADDR_UNLOCK();
+				SCTP_FREE(asc, SCTP_M_ASC_IT);
+			}
+		}
 	}
 }
 
