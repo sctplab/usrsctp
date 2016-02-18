@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.h 235828 2012-05-23 11:26:28Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.h 295709 2016-02-17 18:04:22Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_TIMER_H_
@@ -46,10 +46,6 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.h 235828 2012-05-23 11:26:28Z tu
 struct sctp_nets *
 sctp_find_alternate_net(struct sctp_tcb *,
     struct sctp_nets *, int mode);
-
-int
-sctp_threshold_management(struct sctp_inpcb *, struct sctp_tcb *,
-    struct sctp_nets *, uint16_t);
 
 int
 sctp_t3rxt_timer(struct sctp_inpcb *, struct sctp_tcb *,

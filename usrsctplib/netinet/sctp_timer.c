@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 291700 2015-12-03 15:19:29Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 295709 2016-02-17 18:04:22Z tuexen $");
 #endif
 
 #define _IP_VHL
@@ -95,7 +95,7 @@ sctp_audit_retranmission_queue(struct sctp_association *asoc)
 		asoc->sent_queue_cnt);
 }
 
-int
+static int
 sctp_threshold_management(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
     struct sctp_nets *net, uint16_t threshold)
 {
@@ -121,9 +121,9 @@ sctp_threshold_management(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				net->last_active = sctp_get_tick_count();
 				sctp_send_hb(stcb, net, SCTP_SO_NOT_LOCKED);
 				sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT,
-				                stcb->sctp_ep, stcb, net,
+				                inp, stcb, net,
 				                SCTP_FROM_SCTP_TIMER + SCTP_LOC_1);
-				sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net);
+				sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, inp, stcb, net);
 			}
 		}
 	}
