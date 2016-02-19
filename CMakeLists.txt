@@ -30,6 +30,6 @@
 #
 
 cmake_minimum_required(VERSION 2.6)
-message(">> WARNINING: CMAKE SUPPORT IS EXPERIMENTAL <<")
+message(">> WARNING: CMAKE SUPPORT IS EXPERIMENTAL <<")
 add_subdirectory(usrsctplib)
 add_subdirectory(programs)

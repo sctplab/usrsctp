@@ -48,6 +48,7 @@ extern "C" {
 #include <netinet/in.h>
 #endif
 
+
 #ifndef MSG_NOTIFICATION
 /* This definition MUST be in sync with usrsctplib/user_socketvar.h */
 #define MSG_NOTIFICATION 0x2000
@@ -969,6 +970,34 @@ usrsctp_deregister_address(void *);
 
 int
 usrsctp_set_ulpinfo(struct socket *, void *);
+
+void
+usrsctp_handle_timers(int);
+
+int
+usrsctp_open_sctp4_socket(void);
+
+int
+usrsctp_open_udpsctp4_socket(void);
+
+int
+usrsctp_open_sctp6_socket(void);
+
+int
+usrsctp_open_udpsctp6_socket(void);
+
+void
+usrsctp_recv_function_sctp4(void);
+
+void
+usrsctp_recv_function_udpsctp4(void);
+
+void
+usrsctp_recv_function_sctp6(void);
+
+void
+usrsctp_recv_function_udpsctp6(void);
+
 
 #define SCTP_DUMP_OUTBOUND 1
 #define SCTP_DUMP_INBOUND  0

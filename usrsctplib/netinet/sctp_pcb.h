@@ -58,6 +58,7 @@ TAILQ_HEAD(sctp_streamhead, sctp_stream_queue_pending);
 
 #define SCTP_PCBHASH_ALLADDR(port, mask) (port & mask)
 #define SCTP_PCBHASH_ASOC(tag, mask) (tag & mask)
+#define MAXLEN_MBUF_CHAIN 32
 
 struct sctp_vrf {
 	LIST_ENTRY (sctp_vrf) next_vrf;
@@ -322,6 +323,27 @@ struct sctp_base_info {
 	int userspace_udpsctp;
 	userland_thread_t recvthreadraw;
 	userland_thread_t recvthreadudp;
+#if !defined(THREAD_SUPPORT)
+	struct mbuf **recvmbuf4;
+	int to_fill4;
+	struct mbuf **recvmbuf6;
+	int to_fill6;
+	struct mbuf **udp_recvmbuf4;
+	int udp_to_fill4;
+	struct mbuf **udp_recvmbuf6;
+	int udp_to_fill6;
+#if !defined(__Userspace_os_Windows)
+	struct iovec recv_iovec4[MAXLEN_MBUF_CHAIN];
+	struct iovec recv_iovec6[MAXLEN_MBUF_CHAIN];
+	struct iovec udp_recv_iovec4[MAXLEN_MBUF_CHAIN];
+	struct iovec udp_recv_iovec6[MAXLEN_MBUF_CHAIN];
+#else
+	WSABUF *rcv_iovec4;
+	WSABUF *rcv_iovec6;
+	WSABUF *udp_rcv_iovec4;
+	WSABUF *udp_rcv_iovec6;
+#endif
+#endif
 #endif
 #ifdef INET6
 	int userspace_rawsctp6;
