@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 295670 2016-02-16 20:33:18Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 295805 2016-02-19 11:25:18Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6266,7 +6266,7 @@ sctp_select_primary_destination(struct sctp_tcb *stcb)
 
 
 /*
- * Delete the address from the endpoint local address list There is nothing
+ * Delete the address from the endpoint local address list. There is nothing
  * to be done if we are bound to all addresses
  */
 void
@@ -6307,14 +6307,14 @@ sctp_del_local_addr_ep(struct sctp_inpcb *inp, struct sctp_ifa *ifa)
 		/* clean up "last_used_address" */
 		LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 			struct sctp_nets *net;
+
 			SCTP_TCB_LOCK(stcb);
 			if (stcb->asoc.last_used_address == laddr)
 				/* delete this address */
 				stcb->asoc.last_used_address = NULL;
 			/* Now spin through all the nets and purge any ref to laddr */
 			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
-				if (net->ro._s_addr &&
-				    (net->ro._s_addr->ifa == laddr->ifa)) {
+				if (net->ro._s_addr == laddr->ifa) {
 					/* Yep, purge src address selected */
 					sctp_rtentry_t *rt;
 
