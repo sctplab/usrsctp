@@ -354,20 +354,14 @@ sctp_init_ifns_for_vrf(int vrfid)
 				if (IN4_ISLINKLOCAL_ADDRESS(&(((struct sockaddr_in *)(pUnicast->Address.lpSockaddr))->sin_addr))) {
 					continue;
 				}
-				ifa = (struct ifaddrs*)malloc(sizeof(struct ifaddrs));
-				ifa->ifa_name = _strdup(pAdapt->AdapterName);
-				ifa->ifa_flags = pAdapt->Flags;
-				ifa->ifa_addr = (struct sockaddr *)malloc(sizeof(struct sockaddr_in));
-				memcpy(ifa->ifa_addr, pUnicast->Address.lpSockaddr, sizeof(struct sockaddr_in));
-
 				sctp_ifa = sctp_add_addr_to_vrf(0,
 				                                NULL,
 				                                pAdapt->IfIndex,
 				                                (pAdapt->IfType == IF_TYPE_IEEE80211)?MIB_IF_TYPE_ETHERNET:pAdapt->IfType,
-				                                ifa->ifa_name,
+				                                pAdapt->AdapterName,
 				                                NULL,
-				                                ifa->ifa_addr,
-				                                ifa->ifa_flags,
+				                                pUnicast->Address.lpSockaddr,
+				                                pAdapt->Flags,
 				                                0);
 				if (sctp_ifa) {
 					sctp_ifa->localifa_flags &= ~SCTP_ADDR_DEFER_USE;
@@ -402,19 +396,14 @@ sctp_init_ifns_for_vrf(int vrfid)
 	for (pAdapt = pAdapterAddrs; pAdapt; pAdapt = pAdapt->Next) {
 		if (pAdapt->IfType == IF_TYPE_IEEE80211 || pAdapt->IfType == IF_TYPE_ETHERNET_CSMACD) {
 			for (pUnicast = pAdapt->FirstUnicastAddress; pUnicast; pUnicast = pUnicast->Next) {
-				ifa = (struct ifaddrs*)malloc(sizeof(struct ifaddrs));
-				ifa->ifa_name = _strdup(pAdapt->AdapterName);
-				ifa->ifa_flags = pAdapt->Flags;
-				ifa->ifa_addr = (struct sockaddr *)malloc(sizeof(struct sockaddr_in6));
-				memcpy(ifa->ifa_addr, pUnicast->Address.lpSockaddr, sizeof(struct sockaddr_in6));
 				sctp_ifa = sctp_add_addr_to_vrf(0,
 				                                NULL,
 				                                pAdapt->Ipv6IfIndex,
 				                                (pAdapt->IfType == IF_TYPE_IEEE80211)?MIB_IF_TYPE_ETHERNET:pAdapt->IfType,
-				                                ifa->ifa_name,
+				                                pAdapt->AdapterName,
 				                                NULL,
-				                                ifa->ifa_addr,
-				                                ifa->ifa_flags,
+				                                pUnicast->Address.lpSockaddr,
+				                                pAdapt->Flags,
 				                                0);
 				if (sctp_ifa) {
 					sctp_ifa->localifa_flags &= ~SCTP_ADDR_DEFER_USE;
@@ -431,15 +420,15 @@ sctp_init_ifns_for_vrf(int vrfid)
 {
 #if defined(INET) || defined(INET6)
 	int rc;
-	struct ifaddrs *ifa = NULL;
+	struct ifaddrs *ifa, *ifas;
 	struct sctp_ifa *sctp_ifa;
 	uint32_t ifa_flags;
 
-	rc = getifaddrs(&g_interfaces);
+	rc = getifaddrs(&ifas);
 	if (rc != 0) {
 		return;
 	}
-	for (ifa = g_interfaces; ifa; ifa = ifa->ifa_next) {
+	for (ifa = ifas; ifa; ifa = ifa->ifa_next) {
 		if (ifa->ifa_addr == NULL) {
 			continue;
 		}
@@ -486,6 +475,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 			sctp_ifa->localifa_flags &= ~SCTP_ADDR_DEFER_USE;
 		}
 	}
+	freeifaddrs(ifas);
 #endif
 }
 #endif
