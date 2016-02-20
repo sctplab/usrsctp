@@ -135,7 +135,7 @@ sctp_handle_ifamsg(unsigned char type, unsigned short index, struct sockaddr *sa
 		(void)sctp_add_addr_to_vrf(SCTP_DEFAULT_VRFID, ifa, if_nametoindex(ifa->ifa_name),
 		                           0,
 		                           ifa->ifa_name,
-		                           (void *)ifa,
+		                           NULL,
 		                           ifa->ifa_addr,
 		                           0,
 		                           1);

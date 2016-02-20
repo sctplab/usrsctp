@@ -365,7 +365,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 				                                pAdapt->IfIndex,
 				                                (pAdapt->IfType == IF_TYPE_IEEE80211)?MIB_IF_TYPE_ETHERNET:pAdapt->IfType,
 				                                ifa->ifa_name,
-				                                (void *)ifa,
+				                                NULL,
 				                                ifa->ifa_addr,
 				                                ifa->ifa_flags,
 				                                0);
@@ -412,7 +412,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 				                                pAdapt->Ipv6IfIndex,
 				                                (pAdapt->IfType == IF_TYPE_IEEE80211)?MIB_IF_TYPE_ETHERNET:pAdapt->IfType,
 				                                ifa->ifa_name,
-				                                (void *)ifa,
+				                                NULL,
 				                                ifa->ifa_addr,
 				                                ifa->ifa_flags,
 				                                0);
@@ -478,7 +478,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 		                                if_nametoindex(ifa->ifa_name),
 		                                0,
 		                                ifa->ifa_name,
-		                                (void *)ifa,
+		                                NULL,
 		                                ifa->ifa_addr,
 		                                ifa_flags,
 		                                0);
@@ -555,7 +555,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 			                                ifnet_index(ifn),
 			                                ifnet_type(ifn),
 			                                name,
-			                                (void *)ifa,
+			                                (void *)ifa, /* XXX */
 			                                ifa->ifa_addr,
 			                                ifa_flags,
 			                                0);
