@@ -408,7 +408,10 @@ recv_function_raw(void *arg)
 #if defined(SCTP_WITH_NO_CSUM)
 		SCTP_STAT_INCR(sctps_recvnocrc);
 #else
-		if (src.sin_addr.s_addr == dst.sin_addr.s_addr) {
+		if (SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) &&
+		    ((IN4_ISLOOPBACK_ADDRESS(&src.sin_addr) &&
+		      IN4_ISLOOPBACK_ADDRESS(&dst.sin_addr)) ||
+		     (src.sin_addr.s_addr == dst.sin_addr.s_addr))) {
 			compute_crc = 0;
 			SCTP_STAT_INCR(sctps_recvnocrc);
 		} else {
