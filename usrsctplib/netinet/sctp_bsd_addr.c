@@ -361,7 +361,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 				memcpy(ifa->ifa_addr, pUnicast->Address.lpSockaddr, sizeof(struct sockaddr_in));
 
 				sctp_ifa = sctp_add_addr_to_vrf(0,
-				                                ifa,
+				                                NULL,
 				                                pAdapt->IfIndex,
 				                                (pAdapt->IfType == IF_TYPE_IEEE80211)?MIB_IF_TYPE_ETHERNET:pAdapt->IfType,
 				                                ifa->ifa_name,
@@ -408,7 +408,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 				ifa->ifa_addr = (struct sockaddr *)malloc(sizeof(struct sockaddr_in6));
 				memcpy(ifa->ifa_addr, pUnicast->Address.lpSockaddr, sizeof(struct sockaddr_in6));
 				sctp_ifa = sctp_add_addr_to_vrf(0,
-				                                ifa,
+				                                NULL,
 				                                pAdapt->Ipv6IfIndex,
 				                                (pAdapt->IfType == IF_TYPE_IEEE80211)?MIB_IF_TYPE_ETHERNET:pAdapt->IfType,
 				                                ifa->ifa_name,
@@ -474,7 +474,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 #endif
 		ifa_flags = 0;
 		sctp_ifa = sctp_add_addr_to_vrf(vrfid,
-		                                ifa,
+		                                NULL,
 		                                if_nametoindex(ifa->ifa_name),
 		                                0,
 		                                ifa->ifa_name,
@@ -551,7 +551,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 			}
 			snprintf(name, SCTP_IFNAMSIZ, "%s%d", ifnet_name(ifn), ifnet_unit(ifn));
 			sctp_ifa = sctp_add_addr_to_vrf(vrfid,
-			                                (void *)ifn,
+			                                (void *)ifn, /* XXX */
 			                                ifnet_index(ifn),
 			                                ifnet_type(ifn),
 			                                name,

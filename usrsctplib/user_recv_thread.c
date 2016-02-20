@@ -132,7 +132,9 @@ sctp_handle_ifamsg(unsigned char type, unsigned short index, struct sockaddr *sa
 
 	/* relay the appropriate address change to the base code */
 	if (type == RTM_NEWADDR) {
-		(void)sctp_add_addr_to_vrf(SCTP_DEFAULT_VRFID, ifa, if_nametoindex(ifa->ifa_name),
+		(void)sctp_add_addr_to_vrf(SCTP_DEFAULT_VRFID,
+		                           NULL,
+		                           if_nametoindex(ifa->ifa_name),
 		                           0,
 		                           ifa->ifa_name,
 		                           NULL,
