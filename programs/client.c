@@ -169,8 +169,8 @@ main(int argc, char *argv[])
 				const char *name;
 
 				sin = (struct sockaddr_in *)addr;
-   				name = inet_ntop(AF_INET, &sin->sin_addr, buf, INET_ADDRSTRLEN);
-   				printf("%s", name);
+				name = inet_ntop(AF_INET, &sin->sin_addr, buf, INET_ADDRSTRLEN);
+				printf("%s", name);
 #ifndef HAVE_SA_LEN
 				addr = (struct sockaddr *)((caddr_t)addr + sizeof(struct sockaddr_in));
 #endif
@@ -183,8 +183,8 @@ main(int argc, char *argv[])
 				const char *name;
 
 				sin6 = (struct sockaddr_in6 *)addr;
-   				name = inet_ntop(AF_INET6, &sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
-   				printf("%s", name);
+				name = inet_ntop(AF_INET6, &sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
+				printf("%s", name);
 #ifndef HAVE_SA_LEN
 				addr = (struct sockaddr *)((caddr_t)addr + sizeof(struct sockaddr_in6));
 #endif
@@ -217,8 +217,8 @@ main(int argc, char *argv[])
 				const char *name;
 
 				sin = (struct sockaddr_in *)addr;
-   				name = inet_ntop(AF_INET, &sin->sin_addr, buf, INET_ADDRSTRLEN);
-   				printf("%s", name);
+				name = inet_ntop(AF_INET, &sin->sin_addr, buf, INET_ADDRSTRLEN);
+				printf("%s", name);
 #ifndef HAVE_SA_LEN
 				addr = (struct sockaddr *)((caddr_t)addr + sizeof(struct sockaddr_in));
 #endif
@@ -231,8 +231,8 @@ main(int argc, char *argv[])
 				const char *name;
 
 				sin6 = (struct sockaddr_in6 *)addr;
-   				name = inet_ntop(AF_INET6, &sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
-   				printf("%s", name);
+				name = inet_ntop(AF_INET6, &sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
+				printf("%s", name);
 #ifndef HAVE_SA_LEN
 				addr = (struct sockaddr *)((caddr_t)addr + sizeof(struct sockaddr_in6));
 #endif
