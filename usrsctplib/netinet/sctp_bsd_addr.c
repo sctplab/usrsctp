@@ -318,7 +318,6 @@ static void
 sctp_init_ifns_for_vrf(int vrfid)
 {
 #if defined(INET) || defined(INET6)
-	struct ifaddrs *ifa;
 	struct sctp_ifa *sctp_ifa;
 	DWORD Err, AdapterAddrsSize;
 	PIP_ADAPTER_ADDRESSES pAdapterAddrs, pAdapt;
