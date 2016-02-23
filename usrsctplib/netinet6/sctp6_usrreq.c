@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 295771 2016-02-18 21:05:04Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 295929 2016-02-23 18:50:34Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1397,6 +1397,9 @@ sctp6_getaddr(struct socket *so, struct mbuf *nam)
 			stcb = LIST_FIRST(&inp->sctp_asoc_list);
 			if (stcb == NULL) {
 				SCTP_INP_RUNLOCK(inp);
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
+				SCTP_FREE_SONAME(sin6);
+#endif
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP6_USRREQ, ENOENT);
 				return (ENOENT);
 			}
@@ -1416,6 +1419,9 @@ sctp6_getaddr(struct socket *so, struct mbuf *nam)
 			if ((!fnd) || (sin_a6 == NULL)) {
 				/* punt */
 				SCTP_INP_RUNLOCK(inp);
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
+				SCTP_FREE_SONAME(sin6);
+#endif
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP6_USRREQ, ENOENT);
 				return (ENOENT);
 			}
