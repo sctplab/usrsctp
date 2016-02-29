@@ -522,6 +522,10 @@ struct sctp_event_subscribe {
 
 #define SCTP_ENABLE_STREAM_RESET        0x00000900 /* struct sctp_assoc_value */
 
+/* Pluggable Stream Scheduling Socket option */
+#define SCTP_PLUGGABLE_SS               0x00001203
+#define SCTP_SS_VALUE                   0x00001204
+
 /*
  * read-only options
  */
@@ -778,6 +782,12 @@ struct sctp_authkeyid {
 struct sctp_cc_option {
 	int option;
 	struct sctp_assoc_value aid_value;
+};
+
+struct sctp_stream_value {
+	sctp_assoc_t assoc_id;
+	uint16_t stream_id;
+	uint16_t stream_value;
 };
 
 struct sctp_timeouts {
