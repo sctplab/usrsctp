@@ -92,51 +92,36 @@ static void
 sctp_handle_ifamsg(unsigned char type, unsigned short index, struct sockaddr *sa)
 {
 	int rc;
-	struct ifaddrs *ifa, *found_ifa = NULL;
+	struct ifaddrs *ifa, *ifas;
 
 	/* handle only the types we want */
 	if ((type != RTM_NEWADDR) && (type != RTM_DELADDR)) {
 		return;
 	}
 
-	rc = getifaddrs(&g_interfaces);
+	rc = getifaddrs(&ifas);
 	if (rc != 0) {
 		return;
 	}
-	for (ifa = g_interfaces; ifa; ifa = ifa->ifa_next) {
+	for (ifa = ifas; ifa; ifa = ifa->ifa_next) {
 		if (index == if_nametoindex(ifa->ifa_name)) {
-			found_ifa = ifa;
 			break;
 		}
 	}
-	if (found_ifa == NULL) {
+	if (ifa == NULL) {
+		freeifaddrs(ifas);
 		return;
-	}
-
-	switch (sa->sa_family) {
-#ifdef INET
-	case AF_INET:
-		ifa->ifa_addr = (struct sockaddr *)malloc(sizeof(struct sockaddr_in));
-		memcpy(ifa->ifa_addr, sa, sizeof(struct sockaddr_in));
-		break;
-#endif
-#ifdef INET6
-	case AF_INET6:
-		ifa->ifa_addr = (struct sockaddr *)malloc(sizeof(struct sockaddr_in6));
-		memcpy(ifa->ifa_addr, sa, sizeof(struct sockaddr_in6));
-		break;
-#endif
-	default:
-		SCTPDBG(SCTP_DEBUG_USR, "Address family %d not supported.\n", sa->sa_family);
 	}
 
 	/* relay the appropriate address change to the base code */
 	if (type == RTM_NEWADDR) {
-		(void)sctp_add_addr_to_vrf(SCTP_DEFAULT_VRFID, ifa, if_nametoindex(ifa->ifa_name),
+		(void)sctp_add_addr_to_vrf(SCTP_DEFAULT_VRFID,
+		                           NULL,
+		                           if_nametoindex(ifa->ifa_name),
 		                           0,
 		                           ifa->ifa_name,
-		                           (void *)ifa,
-		                           ifa->ifa_addr,
+		                           NULL,
+		                           sa,
 		                           0,
 		                           1);
 	} else {
@@ -144,6 +129,7 @@ sctp_handle_ifamsg(unsigned char type, unsigned short index, struct sockaddr *sa
 		                       if_nametoindex(ifa->ifa_name),
 		                       ifa->ifa_name);
 	}
+	freeifaddrs(ifas);
 }
 
 static void *
@@ -422,7 +408,10 @@ recv_function_raw(void *arg)
 #if defined(SCTP_WITH_NO_CSUM)
 		SCTP_STAT_INCR(sctps_recvnocrc);
 #else
-		if (src.sin_addr.s_addr == dst.sin_addr.s_addr) {
+		if (SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) &&
+		    ((IN4_ISLOOPBACK_ADDRESS(&src.sin_addr) &&
+		      IN4_ISLOOPBACK_ADDRESS(&dst.sin_addr)) ||
+		     (src.sin_addr.s_addr == dst.sin_addr.s_addr))) {
 			compute_crc = 0;
 			SCTP_STAT_INCR(sctps_recvnocrc);
 		} else {

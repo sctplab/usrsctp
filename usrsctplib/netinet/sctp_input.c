@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 295075 2016-01-30 16:56:39Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 295772 2016-02-18 21:21:45Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -388,8 +388,10 @@ sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb)
 	}
 	SCTP_TCB_SEND_UNLOCK(stcb);
 	asoc->streamoutcnt = asoc->pre_open_streams;
-	for (i = 0; i < asoc->streamoutcnt; i++) {
-		asoc->strmout[i].state = SCTP_STREAM_OPEN;
+	if (asoc->strmout) {
+		for (i = 0; i < asoc->streamoutcnt; i++) {
+			asoc->strmout[i].state = SCTP_STREAM_OPEN;
+		}
 	}
 	/* EY - nr_sack: initialize highest tsn in nr_mapping_array */
 	asoc->highest_tsn_inside_nr_map = asoc->highest_tsn_inside_map;
@@ -975,7 +977,9 @@ sctp_handle_shutdown(struct sctp_shutdown_chunk *cp,
 			return;
 		}
 #endif
-		sctp_sorwakeup(stcb->sctp_ep, stcb->sctp_socket);
+		if (stcb->sctp_socket) {
+			sctp_sorwakeup(stcb->sctp_ep, stcb->sctp_socket);
+		}
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 		SCTP_SOCKET_UNLOCK(so, 1);
 #endif
@@ -5024,7 +5028,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 				if ((stcb) && (stcb->asoc.total_output_queue_size)) {
 					;
 				} else {
-					if (locked_tcb != stcb) {
+					if ((locked_tcb != NULL) && (locked_tcb != stcb)) {
 						/* Very unlikely */
 						SCTP_TCB_UNLOCK(locked_tcb);
 					}
