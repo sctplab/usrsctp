@@ -1,4 +1,4 @@
-# usrsctp
+# usrsctp1
 
 This is a userland SCTP stack supporting FreeBSD, Linux, Mac OS X and Windows.
 
