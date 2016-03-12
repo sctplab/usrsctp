@@ -70,45 +70,6 @@ check_include_file(netinet/ip_icmp.h HAVE_NETINET_IP_ICMP_H)
 check_include_file(usrsctp.h HAVE_USRSCTP_H)
 
 
-#################################################
-# CHECK STRUCT MEMBERS
-#################################################
-
-check_struct_has_member("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" HAVE_SA_LEN)
-if(HAVE_SA_LEN)
-	add_definitions(-DHAVE_SA_LEN)
-endif()
-
-check_struct_has_member("struct sockaddr_in" "sin_len" "sys/types.h;netinet/in.h" HAVE_SIN_LEN)
-if(HAVE_SIN_LEN)
-	add_definitions(-DHAVE_SIN_LEN)
-endif()
-
-check_struct_has_member("struct sockaddr_in6" "sin6_len" "sys/types.h;netinet/in.h" HAVE_SIN6_LEN)
-if(HAVE_SIN6_LEN)
-	add_definitions(-DHAVE_SIN6_LEN)
-endif()
-
-
-#################################################
-# CHECK OPTIONS
-#################################################
-
-option(SCTP_DEBUG "Provide debug information" 1)
-if (SCTP_DEBUG)
-	add_definitions(-DSCTP_DEBUG)
-endif()
-
-option(INET "Support IPv4 " 1)
-if (INET)
-	add_definitions(-DINET)
-endif()
-
-option(INET6 "Support IPv6 " 1)
-if (INET6)
-	add_definitions(-DINET6)
-endif()
-
 option(LINK_STATIC "Link static" 0)
 # xxx enable W32 support for shared lib ...
 if (LINK_STATIC OR WIN32)
@@ -118,28 +79,6 @@ else()
 endif()
 
 option(WERROR "Warning as error" ON)
-
-#################################################
-# OS DEPENDENT
-#################################################
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	add_definitions(-D_GNU_SOURCE)
-endif()
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-	add_definitions(-DHAVE_SCONN_LEN)
-endif()
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	add_definitions(-DHAVE_SCONN_LEN)
-	add_definitions(-D__APPLE_USE_RFC_2292)
-endif()
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
-	add_definitions(-DHAVE_SCONN_LEN)
-endif()
-
 
 #################################################
 # MISC
@@ -188,6 +127,7 @@ IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC")
 	IF (WERROR)
 		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
 	ENDIF()
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd\"4267\" /wd\"4244\"")
 ENDIF ()
 
 FOREACH (source_file ${check_PROGRAMS})

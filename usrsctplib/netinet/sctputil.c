@@ -35,6 +35,7 @@
 __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 295670 2016-02-16 20:33:18Z tuexen $");
 #endif
 
+#include <usrsctp_config.h>
 #include <netinet/sctp_os.h>
 #include <netinet/sctp_pcb.h>
 #include <netinet/sctputil.h>

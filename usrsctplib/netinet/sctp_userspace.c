@@ -27,6 +27,7 @@
  */
 
 
+#include <usrsctp_config.h>
 #ifdef _WIN32
 #include <netinet/sctp_pcb.h>
 #include <sys/timeb.h>

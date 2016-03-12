@@ -35,6 +35,7 @@
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 295709 2016-02-17 18:04:22Z tuexen $");
 #endif
 
+#include <usrsctp_config.h>
 #define _IP_VHL
 #include <netinet/sctp_os.h>
 #include <netinet/sctp_pcb.h>

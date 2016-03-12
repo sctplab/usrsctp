@@ -31,6 +31,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <usrsctp_config.h>
 #include <netinet/sctp_sha1.h>
 
 #if defined(SCTP_USE_NSS_SHA1)
