@@ -32,41 +32,51 @@ AC_INIT([libusrsctp], [0.9.2.1])
 AM_INIT_AUTOMAKE
 
 AC_PROG_CC
+AC_CONFIG_HEADERS([usrsctplib/usrsctp_config.h])
 AC_PROG_LIBTOOL
 AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([m4])
 
-LIBCFLAGS="-DSCTP_PROCESS_LEVEL_LOCKS -DSCTP_SIMPLE_ALLOCATOR -D__Userspace__"
+AC_DEFINE(SCTP_PROCESS_LEVEL_LOCKS, 1, [Define this if the library has process level locks])
+AC_DEFINE(SCTP_SIMPLE_ALLOCATOR, 1, [Define this if the library has simple allocator])
+AC_DEFINE(__Userspace__, 1, [Define this if the library is used in user space])
 case $host_os in
 darwin*)
-  CFLAGS="$CFLAGS -std=c99 -D__APPLE_USE_RFC_2292"
-  LIBCFLAGS="$LIBCFLAGS -U__APPLE__ -D__Userspace_os_Darwin"
+  AC_DEFINE(__APPLE_USE_RFC_2292, 1, [Define this if the library uses RFC 2292])
+  AC_DEFINE(__Userspace_os_Darwin, 1, [apple specific])
+  CFLAGS="$CFLAGS -std=c99"
+  LIBCFLAGS="$LIBCFLAGS -U__APPLE__"
   ;;
 dragonfly*)
   CFLAGS="$CFLAGS -std=c99 -pthread"
-  LIBCFLAGS="$LIBCFLAGS -U__DragonFly__ -D__Userspace_os_DragonFly"
+  AC_DEFINE(__Userspace_os_DragonFly, 1, [DragonFly specific])
+  LIBCFLAGS="$LIBCFLAGS -U__DragonFly__"
   ;;
 freebsd*)
   CFLAGS="$CFLAGS -std=c99 -pthread"
   if $CC --version | grep -q clang; then
     LDFLAGS="$LDFLAGS -Qunused-arguments"
   fi
-  LIBCFLAGS="$LIBCFLAGS -U__FreeBSD__ -D__Userspace_os_FreeBSD"
+  AC_DEFINE(__Userspace_os_FreeBSD, 1, [FreeBSD specific])
+  LIBCFLAGS="$LIBCFLAGS -U__FreeBSD__"
   ;;
 linux*)
-  CFLAGS="$CFLAGS -std=c99 -pthread -D_GNU_SOURCE"
-  LIBCFLAGS="$LIBCFLAGS -D__Userspace_os_Linux"
+  AC_DEFINE(__Userspace_os_Linux, 1, [Linux specific])
+  AC_DEFINE(_GNU_SOURCE, 1, [Linux specific])
+  CFLAGS="$CFLAGS -std=c99 -pthread"
   ;;
 netbsd*)
+  AC_DEFINE(__Userspace_os_NetBSD, 1, [NetBSD specific])
   CFLAGS="$CFLAGS -std=c99 -pthread"
-  LIBCFLAGS="$LIBCFLAGS -U__NetBSD__ -D__Userspace_os_NetBSD"
+  LIBCFLAGS="$LIBCFLAGS -U__NetBSD__"
   ;;
 openbsd*)
+  AC_DEFINE(__Userspace_os_OpenBSD, 1, [OpenBSD specific])
   CFLAGS="$CFLAGS -std=c99 -pthread"
-  LIBCFLAGS="$LIBCFLAGS -U__OpenBSD__ -D__Userspace_os_OpenBSD"
+  LIBCFLAGS="$LIBCFLAGS -U__OpenBSD__"
   ;;
 solaris*)
-  CFLAGS="$CFLAGS -D_XPG4_2"
+  AC_DEFINE(_XPG4_2, 1, [Solaris specific])
   ;;
 esac
 

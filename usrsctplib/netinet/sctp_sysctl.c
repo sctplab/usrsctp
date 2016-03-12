@@ -35,6 +35,7 @@
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 295541 2016-02-11 18:35:46Z tuexen $");
 #endif
 
+#include <usrsctp_config.h>
 #include <netinet/sctp_os.h>
 #include <netinet/sctp.h>
 #include <netinet/sctp_constants.h>

@@ -30,6 +30,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <usrsctp_config.h>
 #if defined(__Userspace__)
 #include <sys/types.h>
 #if !defined (__Userspace_os_Windows)

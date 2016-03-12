@@ -28,12 +28,7 @@
 # SUCH DAMAGE.
 #
 
-CFLAGS=/I. /W3 /WX
-
-CVARSDLL=-DSCTP_DEBUG -DSCTP_SIMPLE_ALLOCATOR -DSCTP_PROCESS_LEVEL_LOCKS
-CVARSDLL=$(CVARSDLL) -D__Userspace__ -D__Userspace_os_Windows
-CVARSDLL=$(CVARSDLL) -DINET -DINET6
-CVARSDLL=$(CVARSDLL) -D_LIB
+CFLAGS=/I. /W3 /WX /wd"4267" /wd"4244"
 
 LINKFLAGS=/LIBPATH:. Ws2_32.lib
 
@@ -63,6 +58,7 @@ usrsctp_OBJECTS = \
 	sctp6_usrreq.obj
 
 usrsctp_HEADERS = \
+	usrsctp_config.h \
 	user_atomic.h \
 	user_environment.h \
 	user_inpcb.h \
@@ -104,6 +100,17 @@ usrsctp_HEADERS = \
 
 usrsctp.lib : $(usrsctp_OBJECTS)
 	lib /out:usrsctp.lib $(LINKFLAGS) $(usrsctp_OBJECTS)
+
+usrsctp_config.h:
+	@echo //THIS IS GENERATED >$@
+	@echo #define SCTP_DEBUG 1 >>$@
+	@echo #define SCTP_SIMPLE_ALLOCATOR 1 >>$@
+	@echo #define SCTP_PROCESS_LEVEL_LOCKS 1 >>$@
+	@echo #define __Userspace__ 1 >>$@
+	@echo #define __Userspace_os_Windows 1 >>$@
+	@echo #define INET 1 >>$@
+	@echo #define INET6 1 >>$@
+	@echo #define _LIB 1 >>$@
 
 user_environment.obj : user_environment.c $(usrsctp_HEADERS)
 	cl $(CVARSDLL) $(CFLAGS) -c user_environment.c
@@ -177,3 +184,4 @@ sctp6_usrreq.obj : netinet6\sctp6_usrreq.c $(usrsctp_HEADERS)
 clean:
 	del *.obj
 	del usrsctp.lib
+	del usrsctp_config.h

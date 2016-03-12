@@ -71,10 +71,11 @@ check_include_file(netinet/ip_icmp.h HAVE_NETINET_IP_ICMP_H)
 check_function_exists("socket" HAVE_SOCKET)
 check_function_exists("inet_addr" HAVE_INET_ADDR)
 
+file(WRITE "./usrsctp_config.h" "//THIS FILE IS GENERATED\n")
 
-add_definitions(-D__Userspace__)
-add_definitions(-D__Userspace_os_${CMAKE_SYSTEM_NAME})
-add_definitions(-D_GNU_SOURCE)
+file(APPEND "./usrsctp_config.h" "#define __Userspace__ 1\n")
+file(APPEND "./usrsctp_config.h" "#define __Userspace_os_${CMAKE_SYSTEM_NAME} 1\n")
+file(APPEND "./usrsctp_config.h" "#define _GNU_SOURCE 1\n")
 
 #################################################
 # CHECK STRUCT MEMBERS
@@ -83,19 +84,19 @@ add_definitions(-D_GNU_SOURCE)
 check_struct_has_member("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" HAVE_SA_LEN)
 if(HAVE_SA_LEN)
 	message("HAVE_SA_LEN")
-	add_definitions(-DHAVE_SA_LEN)
+	file(APPEND "./usrsctp_config.h" "#define HAVE_SA_LEN 1\n")
 endif()
 
 check_struct_has_member("struct sockaddr_in" "sin_len" "sys/types.h;netinet/in.h" HAVE_SIN_LEN)
 if(HAVE_SIN_LEN)
 	message("HAVE_SIN_LEN")
-	add_definitions(-DHAVE_SIN_LEN)
+	file(APPEND "./usrsctp_config.h" "#define HAVE_SIN_LEN 1\n")
 endif()
 
 check_struct_has_member("struct sockaddr_in6" "sin6_len" "sys/types.h;netinet/in.h" HAVE_SIN6_LEN)
 if(HAVE_SIN6_LEN)
 	message("HAVE_SIN6_LEN")
-	add_definitions(-DHAVE_SIN6_LEN)
+	file(APPEND "./usrsctp_config.h" "#define HAVE_SIN6_LEN 1\n")
 endif()
 
 
@@ -104,18 +105,18 @@ endif()
 #################################################
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	add_definitions(-D_GNU_SOURCE)
+	file(APPEND "./usrsctp_config.h" "#define _GNU_SOURCE 1\n")
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 	add_definitions(-U__FreeBSD__)
-	add_definitions(-DHAVE_SCONN_LEN)
+	file(APPEND "./usrsctp_config.h" "#define HAVE_SCONN_LEN 1\n")
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	add_definitions(-DHAVE_SCONN_LEN)
 	add_definitions(-U__APPLE__)
-	add_definitions(-D__APPLE_USE_RFC_2292)
+	file(APPEND "./usrsctp_config.h" "#define HAVE_SCONN_LEN 1\n")
+	file(APPEND "./usrsctp_config.h" "#define __APPLE_USE_RFC_2292 1\n")
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "DragonFly")
@@ -127,8 +128,8 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
-	add_definitions(-DHAVE_SCONN_LEN)
 	add_definitions(-U__OpenBSD__)
+	file(APPEND "./usrsctp_config.h" "#define HAVE_SCONN_LEN 1\n")
 endif()
 
 
@@ -138,62 +139,62 @@ endif()
 
 option(INVARIANTS "Add runtime checks" 0)
 if (INVARIANTS)
-	add_definitions(-DINVARIANTS)
+	file(APPEND "./usrsctp_config.h" "#define INVARIANTS 1\n")
 endif()
 
 option(SCTP_DEBUG "Provide debug information" 1)
 if (SCTP_DEBUG)
-	add_definitions(-DSCTP_DEBUG)
+	file(APPEND "./usrsctp_config.h" "#define SCTP_DEBUG 1\n")
 endif()
 
 option(INET "Support IPv4 " 1)
 if (INET)
-	add_definitions(-DINET)
+	file(APPEND "./usrsctp_config.h" "#define INET 1\n")
 endif()
 
 option(INET6 "Support IPv6 " 1)
 if (INET6)
-	add_definitions(-DINET6)
+	file(APPEND "./usrsctp_config.h" "#define INET6 1\n")
 endif()
 
 option(SCTP_SIMPLE_ALLOCATOR " " 1)
 if (SCTP_SIMPLE_ALLOCATOR)
-	add_definitions(-DSCTP_SIMPLE_ALLOCATOR)
+	file(APPEND "./usrsctp_config.h" "#define SCTP_SIMPLE_ALLOCATOR 1\n")
 endif()
 
 option(SCTP_PROCESS_LEVEL_LOCKS " " 1)
 if (SCTP_PROCESS_LEVEL_LOCKS)
-	add_definitions(-DSCTP_PROCESS_LEVEL_LOCKS)
+	file(APPEND "./usrsctp_config.h" "#define SCTP_PROCESS_LEVEL_LOCKS 1\n")
 endif()
 
 option(SCTP_WITH_NO_CSUM "Disable SCTP checksum" 0)
 if (SCTP_WITH_NO_CSUM)
-	add_definitions(-DSCTP_WITH_NO_CSUM)
+	file(APPEND "./usrsctp_config.h" "#define SCTP_WITH_NO_CSUM 1\n")
 endif()
 
 option(SCTP_MBUF_LOGGING " " 0)
 if (SCTP_MBUF_LOGGING)
-	add_definitions(-DSCTP_MBUF_LOGGING)
+	file(APPEND "./usrsctp_config.h" "#define SCTP_MBUF_LOGGING 1\n")
 endif()
 
 option(SCTP_PACKET_LOGGING " " 0)
 if (SCTP_PACKET_LOGGING)
-	add_definitions(-DSCTP_PACKET_LOGGING)
+	file(APPEND "./usrsctp_config.h" "#define SCTP_PACKET_LOGGING 1\n")
 endif()
 
 option(SCTP_SO_LOCK_TESTING " " 0)
 if (SCTP_SO_LOCK_TESTING)
-	add_definitions(-DSCTP_SO_LOCK_TESTING)
+	file(APPEND "./usrsctp_config.h" "#define SCTP_SO_LOCK_TESTING 1\n")
 endif()
 
 option(SCTP_EMBEDDED_V6_SCOPE " " 0)
 if (SCTP_EMBEDDED_V6_SCOPE)
-	add_definitions(-DSCTP_EMBEDDED_V6_SCOPE)
+	file(APPEND "./usrsctp_config.h" "#define SCTP_EMBEDDED_V6_SCOPE 1\n")
 endif()
 
 option(SCTP_KAME " " 0)
 if (SCTP_KAME)
-	add_definitions(-DSCTP_KAME)
+	file(APPEND "./usrsctp_config.h" "#define SCTP_KAME 1\n")
 endif()
 
 option(WERROR "Warning as error" ON)
@@ -262,6 +263,7 @@ IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC")
 	if (WERROR)
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
 	endif()
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd\"4267\" /wd\"4244\"")
 ENDIF ()
 
 IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC90" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC10")
@@ -279,3 +281,4 @@ ENDIF ()
 
 INSTALL (TARGETS usrsctp usrsctp-static DESTINATION ${CMAKE_INSTALL_LIBDIR})
 INSTALL (FILES usrsctp.h DESTINATION include)
+INSTALL (FILES usrsctp_config.h DESTINATION include)

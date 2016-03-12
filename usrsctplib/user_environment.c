@@ -30,6 +30,7 @@
 
 /* __Userspace__ */
 
+#include <usrsctp_config.h>
 #include <stdlib.h>
 #if !defined (__Userspace_os_Windows)
 #include <stdint.h>

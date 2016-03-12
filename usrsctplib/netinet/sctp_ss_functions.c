@@ -31,6 +31,7 @@
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_ss_functions.c 235828 2012-05-23 11:26:28Z tuexen $");
 #endif
 
+#include <usrsctp_config.h>
 #include <netinet/sctp_pcb.h>
 #if defined(__Userspace__)
 #include <netinet/sctp_os_userspace.h>

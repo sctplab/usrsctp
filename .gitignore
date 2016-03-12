@@ -64,6 +64,23 @@ programs/ekr_peer
 programs/ekr_server
 programs/rtcweb
 programs/tsctp
+programs/datachan_serv
+programs/test_libmgmt
 
 # callgrind
 callgrind.out*
+
+# cmake
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+
+# autohell
+AUTHORS
+COPYING
+ChangeLog
+INSTALL
+NEWS
+README
+usrsctp_config.h
+usrsctp_config.h.in

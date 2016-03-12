@@ -35,6 +35,7 @@
 extern "C" {
 #endif
 
+#include <usrsctp_config.h>
 #include <errno.h>
 #include <sys/types.h>
 #ifdef _WIN32

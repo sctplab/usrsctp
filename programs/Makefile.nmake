@@ -28,9 +28,7 @@
 # SUCH DAMAGE.
 #
 
-CFLAGS=/W3 /WX /I..\usrsctplib
-
-CVARSDLL=-DINET -DINET6
+CFLAGS=/W3 /WX /I..\usrsctplib /wd"4267" /wd"4244"
 
 LINKFLAGS=/LIBPATH:..\usrsctplib usrsctp.lib
 

@@ -35,6 +35,7 @@
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 289570 2015-10-19 11:17:54Z tuexen $");
 #endif
 
+#include <usrsctp_config.h>
 #include <netinet/sctp_os.h>
 #include <netinet/sctp.h>
 #include <netinet/sctp_header.h>
