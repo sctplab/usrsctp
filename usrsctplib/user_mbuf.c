@@ -732,7 +732,7 @@ m_pullup(struct mbuf *n, int len)
 		if (n->m_flags & M_PKTHDR)
 			M_MOVE_PKTHDR(m, n);
 	}
-	space = &m->m_dat[MLEN] - (m->m_data + m->m_len);
+	space = (int)(&m->m_dat[MLEN] - (m->m_data + m->m_len));
 	do {
 		count = min(min(max(len, max_protohdr), space), n->m_len);
 		bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len,
