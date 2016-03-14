@@ -695,7 +695,7 @@ getsockaddr(namp, uaddr, len)
 	if (len < offsetof(struct sockaddr, sa_data))
 		return (EINVAL);
 	MALLOC(sa, struct sockaddr *, len, M_SONAME, M_WAITOK);
-	error = copyin(uaddr, sa, len);
+	error = copyin(uaddr, sa, (int) len);
 	if (error) {
 		FREE(sa, M_SONAME);
 	} else {
@@ -806,14 +806,18 @@ userspace_sctp_sendmsg(struct socket *so,
 #endif
 
 	iov[0].iov_base = (caddr_t)data;
+#ifdef _WIN32
+	iov[0].iov_len = (int) len;
+#else
 	iov[0].iov_len = len;
+#endif
 
 	auio.uio_iov =  iov;
 	auio.uio_iovcnt = 1;
 	auio.uio_segflg = UIO_USERSPACE;
 	auio.uio_rw = UIO_WRITE;
 	auio.uio_offset = 0;			/* XXX */
-	auio.uio_resid = len;
+	auio.uio_resid = (int) len;
 	errno = sctp_lower_sosend(so, to, &auio, NULL, NULL, 0, sinfo);
 	if (errno == 0) {
 		return (len - auio.uio_resid);
@@ -922,14 +926,18 @@ usrsctp_sendv(struct socket *so,
 	}
 
 	iov[0].iov_base = (caddr_t)data;
+#ifdef _WIN32
+	iov[0].iov_len = (int) len;
+#else
 	iov[0].iov_len = len;
+#endif
 
 	auio.uio_iov =  iov;
 	auio.uio_iovcnt = 1;
 	auio.uio_segflg = UIO_USERSPACE;
 	auio.uio_rw = UIO_WRITE;
 	auio.uio_offset = 0;			/* XXX */
-	auio.uio_resid = len;
+	auio.uio_resid = (int) len;
 	errno = sctp_lower_sosend(so, to, &auio, NULL, NULL, flags, use_sinfo ? &sinfo : NULL);
 	if (errno == 0) {
 		if ((to != NULL) && (assoc_id != NULL)) {
@@ -990,7 +998,7 @@ userspace_sctp_sendmbuf(struct socket *so,
 sendmsg_return:
     /* TODO: Needs a condition for non-blocking when error is EWOULDBLOCK */
     if (0 == error)
-        retvalsendmsg = len;
+        retvalsendmsg = (int) len;
     else if (error == EWOULDBLOCK) {
         errno = EWOULDBLOCK;
         retvalsendmsg = (-1);
@@ -1029,7 +1037,11 @@ userspace_sctp_recvmsg(struct socket *so,
 	socklen_t fromlen;
 
 	iov[0].iov_base = dbuf;
+#ifdef _WIN32
+	iov[0].iov_len = (int) len;
+#else
 	iov[0].iov_len = len;
+#endif
 
 	auio.uio_iov = iov;
 	auio.uio_iovcnt = iovlen;
@@ -1124,7 +1136,11 @@ usrsctp_recvv(struct socket *so,
 		return (-1);
 	}
 	iov[0].iov_base = dbuf;
+#ifdef _WIN32
+	iov[0].iov_len = (int) len;
+#else
 	iov[0].iov_len = len;
+#endif
 
 	auio.uio_iov = iov;
 	auio.uio_iovcnt = iovlen;
@@ -3327,10 +3343,10 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	dst.sconn_len = sizeof(struct sockaddr_conn);
 #endif
 	dst.sconn_addr = addr;
-	if ((m = sctp_get_mbuf_for_msg(length, 1, M_NOWAIT, 0, MT_DATA)) == NULL) {
+	if ((m = sctp_get_mbuf_for_msg((unsigned int) length, 1, M_NOWAIT, 0, MT_DATA)) == NULL) {
 		return;
 	}
-	m_copyback(m, 0, length, (caddr_t)buffer);
+	m_copyback(m, 0, (int) length, (caddr_t)buffer);
 	if (SCTP_BUF_LEN(m) < (int)(sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr))) {
 		if ((m = m_pullup(m, sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr))) == NULL) {
 			SCTP_STAT_INCR(sctps_hdrops);
@@ -3341,7 +3357,7 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	ch = (struct sctp_chunkhdr *)((caddr_t)sh + sizeof(struct sctphdr));
 	src.sconn_port = sh->src_port;
 	dst.sconn_port = sh->dest_port;
-	sctp_common_input_processing(&m, 0, sizeof(struct sctphdr), length,
+	sctp_common_input_processing(&m, 0, (int) sizeof(struct sctphdr), (int) length,
 	                             (struct sockaddr *)&src,
 	                             (struct sockaddr *)&dst,
 	                             sh, ch,
