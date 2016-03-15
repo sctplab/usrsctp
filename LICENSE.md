@@ -1,4 +1,4 @@
-Copyright (c) 2015,  Randall Stewart and Michael Tuexen!!
+Copyright (c) 2015,  Randall Stewart and Michael Tuexen
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
