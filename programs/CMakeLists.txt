@@ -28,7 +28,6 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-message(">> WARNINING: CMAKE SUPPORT IS EXPERIMENTAL <<")
 
 cmake_minimum_required(VERSION 2.6)
 include_directories(../usrsctplib)
@@ -118,6 +117,7 @@ else()
 endif()
 
 option(WERROR "Warning as error" ON)
+
 
 #################################################
 # OS DEPENDENT
