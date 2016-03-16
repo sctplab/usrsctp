@@ -29,23 +29,38 @@
 # SUCH DAMAGE.
 #
 
-if [ -e /usr/bin/glibtoolize ] ; then
-    glibtoolize --force
-elif [ -e /usr/bin/libtoolize ] ; then
-    libtoolize --force
-elif [ -e /usr/local/bin/libtoolize ] ; then
-    libtoolize --force
-elif [ -e /usr/local/bin/glibtoolize ] ; then
-    glibtoolize --force
+#bail out on error
+set -e
+
+#detect (g)libtoolize
+if which libtoolize >/dev/null
+then
+	_LIBTOOLIZE=`which libtoolize`
+elif which glibtoolize >/dev/null
+then
+	_LIBTOOLIZE=`which glibtoolize`
 else
-   echo "ERROR: I cannot find libtoolize or glibtoolize!"
-   exit 1
+	echo "ERROR: I cannot find libtoolize or glibtoolize!"
+	exit 1
 fi
 
-if [ -e /usr/local/share/aclocal ] ; then
+#execute (g)libtoolize
+${_LIBTOOLIZE}
+
+#execute aclocal
+if [ -e /usr/local/share/aclocal ]
+then
    aclocal -I /usr/local/share/aclocal
-else
+elif [ -e /usr/share/aclocal ]
+then
    aclocal -I /usr/share/aclocal
+else
+   aclocal
 fi
+
+#execute autoconf
 autoconf
+
+#generate the ./configure
 automake --foreign --add-missing --copy
+
