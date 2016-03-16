@@ -5,10 +5,10 @@ SCTP is a message oriented, reliable transport protocol with direct support for 
 Like TCP, SCTP provides reliable, connection oriented data delivery with congestion control. Unlike TCP, SCTP also provides message boundary preservation, ordered and unordered message delivery, multi-streaming and multi-homing. Detection of data corruption, loss of data and duplication of data is achieved by using checksums and sequence numbers. A selective retransmission mechanism is applied to correct loss or corruption of data.
 
 In this manual the socket API for the SCTP User-land implementation will be described.  It is based on [RFC 6458](http://tools.ietf.org/html/rfc6458). The main focus of this document is on pointing out the differences to the SCTP Sockets API. For all aspects of the sockets API that are not mentioned in this document, please refer to [RFC 6458](http://tools.ietf.org/html/rfc6458). Questions about SCTP itself can hopefully be answered by [RFC 4960](http://tools.ietf.org/html/rfc4960).
- 
+
 ## Getting Started
 The user-land stack has been tested on FreeBSD 10.0, Ubuntu 11.10, Windows 7, Mac OS X 10.6, and Mac OS X 10.7. The current version of the user-land stack is provided on [github](https://github.com/sctplab/usrsctp). Download the tarball and untar it in a folder of your choice. The tarball contains all the sources to build the libusrsctp, which has to be linked to the object file of an example program. In addition there are two applications in the folder `programs` that can be built and run.
- 
+
 ### Building the Library and the Applications
 #### Unix-like Operating Systems
 In the folder `usrsctp` type
@@ -30,16 +30,17 @@ On Windows you need a compiler like Microsoft Visual Studio. You can build the l
 
 in the directory `usrsctp`.
 
-#### CMake (experimental)
+#### CMake
 Create a directory outside the `usrsctp` directory, enter it and generate files by typing
 
     $ cmake <path-to-usrsctp-sources>
+    $ cmake --build .
 
-By using the `-G`flag you can specify the target buildsystem e.g. `cmake -G Xcode ../usrsctp` will generate project files for Xcode.
+By default CMake generates a DEBUG build with verbose output.
 
 ### Running the Test Programs
 
-Several test programs are included, including a discard server and a client. You can run both to send data from the client to the server. The client reads data from stdin and sends them to the server, which prints the message in the terminal and discards it. The sources of the server are also provided  [here](https://github.com/sctplab/usrsctp/blob/master/programs/discard_server.c) and those of the client [here](https://github.com/sctplab/usrsctp/blob/master/programs/client.c).
+Several test programs are included, including a discard server and a client. You can run both to send data from the client to the server. The client reads data from stdin and sends them to the server, which prints the message in the terminal and discards it. The sources of the server are also provided [here](https://github.com/sctplab/usrsctp/blob/master/programs/discard_server.c) and those of the client [here](https://github.com/sctplab/usrsctp/blob/master/programs/client.c).
 
 ### Using UDP Encapsulation
 
@@ -86,13 +87,13 @@ The `discard_server` has a flag to switch between the two modi. If  `use_cb` is 
 
 ## Basic Operations
 
-All system calls start with the prefix `usrsctp_` to distinguish them from the kernel variants. Some of them are changed to account for the different demands in the userland environment. 
+All system calls start with the prefix `usrsctp_` to distinguish them from the kernel variants. Some of them are changed to account for the different demands in the userland environment.
 
 ## Differences to RFC 6458
 
 ### usrsctp_init()
 
-Every application has to start with `usrsctp_init()`. This function calls `sctp_init()` and reserves the memory necessary to administer the data transfer. The function prototype is 
+Every application has to start with `usrsctp_init()`. This function calls `sctp_init()` and reserves the memory necessary to administer the data transfer. The function prototype is
 
 ```c
 void usrsctp_init(uint16_t udp_port)
@@ -102,7 +103,7 @@ As it is not always possible to send data directly over SCTP because not all NAT
 
 ### usrsctp_finish()
 
-At the end of the program `usrsctp_finish()` should be called to free all the memory that has been allocated before. The function prototype is 
+At the end of the program `usrsctp_finish()` should be called to free all the memory that has been allocated before. The function prototype is
 
 ```c
 int usrsctp_finish(void)
@@ -112,20 +113,20 @@ The return code is 0 on success and -1 in case of an error.
 
 ### usrsctp_socket()
 
-A representation of an SCTP endpoint is a socket. Is it created with `usrsctp_socket()`. The function prototype is 
+A representation of an SCTP endpoint is a socket. Is it created with `usrsctp_socket()`. The function prototype is
 
 ```c
 struct socket *
-usrsctp_socket(int domain, 
-               int type, 
+usrsctp_socket(int domain,
+               int type,
                int protocol,
-               int (*receive_cb)(struct socket *sock, 
-                                 union sctp_sockstore addr, 
+               int (*receive_cb)(struct socket *sock,
+                                 union sctp_sockstore addr,
                                  void *data,
-                                 size_t datalen, 
-                                 struct sctp_rcvinfo, 
+                                 size_t datalen,
+                                 struct sctp_rcvinfo,
                                  int flags),
-               int (*send_cb)(struct socket *sock, 
+               int (*send_cb)(struct socket *sock,
                               uint32_t sb_free),
                uint32_t sb_threshold)
 ```
@@ -133,7 +134,7 @@ usrsctp_socket(int domain,
 and the arguments taken from [RFC 6458](http://tools.ietf.org/html/rfc6458) are
 
 * domain: PF_INET or PF_INET6 can be used.
-* type: In case of a one-to-many style socket it is SOCK_SEQPACKET, in case of a one-to-one style 
+* type: In case of a one-to-many style socket it is SOCK_SEQPACKET, in case of a one-to-one style
 socket it is SOCK_STREAM. For an explanation of the differences between the socket types please
 refer to [RFC 6458](http://tools.ietf.org/html/rfc6458).
 * protocol: Set IPPROTO_SCTP.
@@ -144,13 +145,13 @@ On success `usrsctp_socket()` returns the pointer to the new socket in the `stru
 
 ### usrsctp_close()
 
-The function prototype of `usrsctp_close()` is 
+The function prototype of `usrsctp_close()` is
 
-```c 
+```c
 void usrsctp_close(struct socket *so)
  ```
-Thus the only difference is the absence of a return code. 
- 
+Thus the only difference is the absence of a return code.
+
 ## Same Functionality as RFC 6458
 
 The following functions have the same functionality as their kernel pendants. There prototypes
@@ -333,7 +334,7 @@ Option | Datatype | r/w
 SCTP_RTOINFO | struct sctp_rtoinfo | r/w
 SCTP_ASSOCINFO | struct sctp_assocparams | r/w
 SCTP_INITMSG | struct sctp_initmsg | r/w
-SCTP_NODELAY | int | r/w 
+SCTP_NODELAY | int | r/w
 SCTP_AUTOCLOSE | int | r/w
 SCTP_PRIMARY_ADDR | struct sctp_setprim | r/w
 SCTP_ADAPTATION_LAYER | struct sctp_setadaptation | r/w
@@ -414,19 +415,19 @@ This parameter configures the threshold below which more space should be added t
 
 
 ## Configure RTO
-The retransmission timeout (RTO), i.e. the time that controls the retransmission of messages, has several parameters, that can be changed, for example to shorten the time, before a message is retransmitted. The range of these parameters is between 0 and `2^32 - 1`ms. 
+The retransmission timeout (RTO), i.e. the time that controls the retransmission of messages, has several parameters, that can be changed, for example to shorten the time, before a message is retransmitted. The range of these parameters is between 0 and `2^32 - 1`ms.
 
 #### usrsctp_sysctl_set_sctp_rto_max_default()
-The default value for the maximum retransmission timeout in ms is 60,000 (60secs). 
+The default value for the maximum retransmission timeout in ms is 60,000 (60secs).
 
 #### usrsctp_sysctl_set_sctp_rto_min_default()
-The default value for the minimum retransmission timeout in ms is 1,000 (1sec). 
+The default value for the minimum retransmission timeout in ms is 1,000 (1sec).
 
 #### usrsctp_sysctl_set_sctp_rto_initial_default()
 The default value for the initial retransmission timeout in ms is 3,000 (3sec). This value is only needed before the first calculation of a round trip time took place.
 
 #### usrsctp_sysctl_set_sctp_init_rto_max_default()
-The default value for the maximum retransmission timeout for an INIT chunk in ms is 60,000 (60secs). 
+The default value for the maximum retransmission timeout for an INIT chunk in ms is 60,000 (60secs).
 
 
 ## Set Timers
@@ -491,7 +492,7 @@ This is a flag to turn the controlling of the coherence of SACKs on or off. The 
 If a slow hosts receives data on a lossy link it is possible that its receiver window is full and new data can only be accepted if one chunk with a higher TSN (Transmission Sequence Number) that has previously been acknowledged is dropped. As a consequence the sender has to store data, even if they have been acknowledged in case they have to be retransmitted. If this behavior is not necessary, non-renegable SACKs can be turned on. By default the use of non-renegable SACKs is turned off.
 
 #### usrsctp_sysctl_set_sctp_enable_sack_immediately()
-In some cases it is not desirable to wait for the SACK timer to expire before a SACK is sent. In these cases a bit called SACK-IMMEDIATELY (see [draft-tuexen-tsvwg-sctp-sack-immediately-09](https://tools.ietf.org/html/draft-tuexen-tsvwg-sctp-sack-immediately-09)) can be set to provoke the instant sending of a SACK. The default is to turn it off. 
+In some cases it is not desirable to wait for the SACK timer to expire before a SACK is sent. In these cases a bit called SACK-IMMEDIATELY (see [draft-tuexen-tsvwg-sctp-sack-immediately-09](https://tools.ietf.org/html/draft-tuexen-tsvwg-sctp-sack-immediately-09)) can be set to provoke the instant sending of a SACK. The default is to turn it off.
 
 #### usrsctp_sysctl_set_sctp_L2_abc_variable()
 TBD
@@ -550,7 +551,7 @@ What to return when rtt and bw are unchanged. Default: 0
 
 
 ## Influence the Congestion Control
-The congestion control should protect the network against fast senders. 
+The congestion control should protect the network against fast senders.
 
 #### usrsctp_sysctl_set_sctp_ecn_enable
 Explicit congestion notifications are turned on by default.
@@ -629,7 +630,7 @@ Enable SCTP fast handoff. default: 0
 Calculating the checksum for packets sent on loopback is turned off by default. To turn it on, set this parameter to 0.
 
 #### usrsctp_sysctl_set_sctp_nr_outgoing_streams_default()
-The peer is notified about the number of outgoing streams in the INIT or INIT-ACK chunk. The default is 10. 
+The peer is notified about the number of outgoing streams in the INIT or INIT-ACK chunk. The default is 10.
 
 #### usrsctp_sysctl_set_sctp_do_drain()
 Determines whether SCTP should respond to the drain calls. Default: 1		
@@ -693,7 +694,7 @@ sctp_use_cwnd_based_maxburst | Use max burst based on the size of the congestion
 sctp_hb_maxburst | Confirmation Heartbeat max burst | 4
 sctp_max_chunks_on_queue | Default max chunks on queue per asoc | 512
 sctp_min_split_point | Minimum size when splitting a chunk | 2904
-sctp_chunkscale | Tunable for Scaling of number of chunks and messages | 10 
+sctp_chunkscale | Tunable for Scaling of number of chunks and messages | 10
 sctp_mbuf_threshold_count | Maximum number of small mbufs in a chain | 5
 sctp_heartbeat_interval_default | Deafult time between two Heartbeats | 30000ms
 sctp_pmtu_raise_time_default | Default PMTU raise timer | 600secs
