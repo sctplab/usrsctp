@@ -30,7 +30,6 @@
 #
 
 cmake_minimum_required(VERSION 2.6)
-message(">> WARNINING: CMAKE SUPPORT IS EXPERIMENTAL <<")
 
 project(usrsctplib)
 
@@ -50,9 +49,6 @@ SET (prefix ${CMAKE_INSTALL_PREFIX})
 SET (exec_prefix "\${prefix}")
 SET (libdir "\${exec_prefix}/lib")
 SET (includedir "\${prefix}/include/usrsctp")
-
-
-#include_directories(netinet netinet6)
 
 #################################################
 # CHECK FOR TYPES AND FUNCTIONS
@@ -82,19 +78,19 @@ add_definitions(-D_GNU_SOURCE)
 
 check_struct_has_member("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" HAVE_SA_LEN)
 if(HAVE_SA_LEN)
-	message("HAVE_SA_LEN")
+	message(STATUS "HAVE_SA_LEN")
 	add_definitions(-DHAVE_SA_LEN)
 endif()
 
 check_struct_has_member("struct sockaddr_in" "sin_len" "sys/types.h;netinet/in.h" HAVE_SIN_LEN)
 if(HAVE_SIN_LEN)
-	message("HAVE_SIN_LEN")
+	message(STATUS "HAVE_SIN_LEN")
 	add_definitions(-DHAVE_SIN_LEN)
 endif()
 
 check_struct_has_member("struct sockaddr_in6" "sin6_len" "sys/types.h;netinet/in.h" HAVE_SIN6_LEN)
 if(HAVE_SIN6_LEN)
-	message("HAVE_SIN6_LEN")
+	message(STATUS "HAVE_SIN6_LEN")
 	add_definitions(-DHAVE_SIN6_LEN)
 endif()
 
@@ -201,15 +197,15 @@ option(WERROR "Warning as error" ON)
 include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/netinet ${PROJECT_SOURCE_DIR}/netinet6)
 
 LIST (APPEND usrsctp_root_HEADERS
-user_atomic.h       user_inpcb.h    user_ip_icmp.h  user_mbuf.h   user_recv_thread.h  user_socketvar.h  usrsctp.h
-user_environment.h  user_ip6_var.h  user_malloc.h   user_queue.h  user_route.h        user_uma.h
+	user_atomic.h       user_inpcb.h    user_ip_icmp.h  user_mbuf.h   user_recv_thread.h  user_socketvar.h  usrsctp.h
+	user_environment.h  user_ip6_var.h  user_malloc.h   user_queue.h  user_route.h        user_uma.h
 )
 
 LIST (APPEND usrsctp_netinet_HEADERS
-netinet/sctp_asconf.h    netinet/sctp_constants.h  netinet/sctp_indata.h          netinet/sctp_os_userspace.h  netinet/sctp_process_lock.h  netinet/sctp_timer.h
-netinet/sctp_auth.h      netinet/sctp_crc32.h      netinet/sctp_input.h           netinet/sctp_output.h        netinet/sctp_sha1.h          netinet/sctp_uio.h
-netinet/sctp_bsd_addr.h  netinet/sctp.h            netinet/sctp_lock_userspace.h  netinet/sctp_pcb.h           netinet/sctp_structs.h       netinet/sctputil.h
-netinet/sctp_callout.h   netinet/sctp_header.h     netinet/sctp_os.h              netinet/sctp_peeloff.h       netinet/sctp_sysctl.h        netinet/sctp_var.h
+	netinet/sctp_asconf.h    netinet/sctp_constants.h  netinet/sctp_indata.h          netinet/sctp_os_userspace.h  netinet/sctp_process_lock.h  netinet/sctp_timer.h
+	netinet/sctp_auth.h      netinet/sctp_crc32.h      netinet/sctp_input.h           netinet/sctp_output.h        netinet/sctp_sha1.h          netinet/sctp_uio.h
+	netinet/sctp_bsd_addr.h  netinet/sctp.h            netinet/sctp_lock_userspace.h  netinet/sctp_pcb.h           netinet/sctp_structs.h       netinet/sctputil.h
+	netinet/sctp_callout.h   netinet/sctp_header.h     netinet/sctp_os.h              netinet/sctp_peeloff.h       netinet/sctp_sysctl.h        netinet/sctp_var.h
 )
 
 LIST (APPEND usrsctp_netinet6_HEADERS
@@ -223,17 +219,17 @@ LIST (APPEND usrsctp_HEADERS
 )
 
 LIST (APPEND usrsctp_SOURCES
-netinet6/sctp6_usrreq.c  netinet/sctp_callout.c       netinet/sctp_input.c    netinet/sctp_sha1.c          netinet/sctp_userspace.c  user_mbuf.c
-netinet/sctp_asconf.c    netinet/sctp_cc_functions.c  netinet/sctp_output.c   netinet/sctp_ss_functions.c  netinet/sctp_usrreq.c     user_recv_thread.c
-netinet/sctp_auth.c      netinet/sctp_crc32.c         netinet/sctp_pcb.c      netinet/sctp_sysctl.c        netinet/sctputil.c        user_socket.c
-netinet/sctp_bsd_addr.c  netinet/sctp_indata.c        netinet/sctp_peeloff.c  netinet/sctp_timer.c         user_environment.c
+	netinet6/sctp6_usrreq.c  netinet/sctp_callout.c       netinet/sctp_input.c    netinet/sctp_sha1.c          netinet/sctp_userspace.c  user_mbuf.c
+	netinet/sctp_asconf.c    netinet/sctp_cc_functions.c  netinet/sctp_output.c   netinet/sctp_ss_functions.c  netinet/sctp_usrreq.c     user_recv_thread.c
+	netinet/sctp_auth.c      netinet/sctp_crc32.c         netinet/sctp_pcb.c      netinet/sctp_sysctl.c        netinet/sctputil.c        user_socket.c
+	netinet/sctp_bsd_addr.c  netinet/sctp_indata.c        netinet/sctp_peeloff.c  netinet/sctp_timer.c         user_environment.c
 )
 
 add_library(usrsctp SHARED ${usrsctp_SOURCES} ${usrsctp_HEADERS})
 add_library(usrsctp-static STATIC ${usrsctp_SOURCES} ${usrsctp_HEADERS})
 
 if(WIN32)
-	message("link library: ws2_32")
+	message(STATUS "link library: ws2_32")
 	target_link_libraries(usrsctp ws2_32)
 	target_link_libraries(usrsctp-static ws2_32)
 endif()
