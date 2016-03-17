@@ -64,6 +64,7 @@ programs/ekr_peer
 programs/ekr_server
 programs/rtcweb
 programs/tsctp
+programs/test_libmgmt
 
 # callgrind
 callgrind.out*
