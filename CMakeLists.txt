@@ -30,5 +30,41 @@
 #
 
 cmake_minimum_required(VERSION 2.6)
+
+# Debug build type as default
+if (NOT CMAKE_BUILD_TYPE)
+    message(STATUS "No build type selected, using DEBUG")
+    set(CMAKE_BUILD_TYPE "DEBUG")
+endif()
+
+# Enable verbose output in DEBUG mode
+if (${CMAKE_BUILD_TYPE} MATCHES "DEBUG")
+    message(STATUS "enabling verbose outout")
+    set(CMAKE_VERBOSE_MAKEFILE on)
+endif()
+
+# SETTINGS FOR UNIX COMPILER
+IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xGNU")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic -Wall -std=c99")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -std=c99")
+	if (WERROR)
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+	endif()
+ENDIF ()
+
+# SETTINGS FOR VISUAL STUDIO COMPILER
+IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC")
+	IF (CMAKE_C_FLAGS MATCHES "/W[0-4]")
+		STRING(REGEX REPLACE "/W[0-4]" "/W3" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+	ELSE ()
+		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
+	ENDIF ()
+
+	IF (WERROR)
+		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
+	ENDIF()
+ENDIF ()
+
 add_subdirectory(usrsctplib)
 add_subdirectory(programs)
