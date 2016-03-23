@@ -28,7 +28,6 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-message(">> WARNINING: CMAKE SUPPORT IS EXPERIMENTAL <<")
 
 cmake_minimum_required(VERSION 2.6)
 include_directories(../usrsctplib)
@@ -110,6 +109,7 @@ if (INET6)
 endif()
 
 option(LINK_STATIC "Link static" 0)
+
 # xxx enable W32 support for shared lib ...
 if (LINK_STATIC OR WIN32)
 	set(LINK_STATIC "usrsctp-static")
@@ -118,6 +118,7 @@ else()
 endif()
 
 option(WERROR "Warning as error" ON)
+
 
 #################################################
 # OS DEPENDENT
@@ -166,29 +167,6 @@ SET (check_PROGRAMS
 	test_libmgmt.c
 	tsctp.c
 )
-
-# SETTINGS FOR UNIX COMPILER
-IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xGNU")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -pedantic -Wall -std=c99")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pedantic -Wall -std=c99")
-	if (WERROR)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-	endif()
-ENDIF ()
-
-# SETTINGS FOR VISUAL STUDIO COMPILER
-IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC")
-	IF (CMAKE_C_FLAGS MATCHES "/W[0-4]")
-		STRING(REGEX REPLACE "/W[0-4]" "/W3" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-	ELSE ()
-		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
-	ENDIF ()
-
-	IF (WERROR)
-		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
-	ENDIF()
-ENDIF ()
 
 FOREACH (source_file ${check_PROGRAMS})
 	GET_FILENAME_COMPONENT (source_file_we ${source_file} NAME_WE)
