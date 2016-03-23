@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_cc_functions.c 292384 2015-12-16 23:39:27Z markj $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_cc_functions.c 297208 2016-03-23 13:28:04Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1617,13 +1617,13 @@ sctp_rtt_rtcc_calculated(struct sctp_tcb *stcb SCTP_UNUSED,
 
 struct sctp_hs_raise_drop {
 	int32_t cwnd;
-	int32_t increase;
-	int32_t drop_percent;
+	int8_t increase;
+	int8_t drop_percent;
 };
 
 #define SCTP_HS_TABLE_SIZE 73
 
-struct sctp_hs_raise_drop sctp_cwnd_adjust[SCTP_HS_TABLE_SIZE] = {
+static const struct sctp_hs_raise_drop sctp_cwnd_adjust[SCTP_HS_TABLE_SIZE] = {
 	{38, 1, 50},		/* 0   */
 	{118, 2, 44},		/* 1   */
 	{221, 3, 41},		/* 2   */
@@ -1723,7 +1723,7 @@ sctp_hs_cwnd_increase(struct sctp_tcb *stcb, struct sctp_nets *net)
 			}
 		}
 		net->last_hs_used = indx;
-		incr = ((sctp_cwnd_adjust[indx].increase) << 10);
+		incr = (((int32_t)sctp_cwnd_adjust[indx].increase) << 10);
 		net->cwnd += incr;
 	}
 	sctp_enforce_cwnd_limit(&stcb->asoc, net);
@@ -1749,7 +1749,7 @@ sctp_hs_cwnd_decrease(struct sctp_tcb *stcb, struct sctp_nets *net)
 	} else {
 		/* drop by the proper amount */
 		net->ssthresh = net->cwnd - (int)((net->cwnd / 100) *
-		    sctp_cwnd_adjust[net->last_hs_used].drop_percent);
+		    (int32_t)sctp_cwnd_adjust[net->last_hs_used].drop_percent);
 		net->cwnd = net->ssthresh;
 		/* now where are we */
 		indx = net->last_hs_used;
@@ -2406,7 +2406,7 @@ sctp_htcp_cwnd_update_after_ecn_echo(struct sctp_tcb *stcb,
 	}
 }
 
-struct sctp_cc_functions sctp_cc_functions[] = {
+const struct sctp_cc_functions sctp_cc_functions[] = {
 {
 #if defined(__Windows__) || defined(__Userspace_os_Windows)
 	sctp_set_initial_cc_param,

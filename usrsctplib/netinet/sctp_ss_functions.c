@@ -28,7 +28,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_ss_functions.c 235828 2012-05-23 11:26:28Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_ss_functions.c 297208 2016-03-23 13:28:04Z tuexen $");
 #endif
 
 #include <netinet/sctp_pcb.h>
@@ -827,7 +827,7 @@ default_again:
 	return (strq);
 }
 
-struct sctp_ss_functions sctp_ss_functions[] = {
+const struct sctp_ss_functions sctp_ss_functions[] = {
 /* SCTP_SS_DEFAULT */
 {
 #if defined(__Windows__) || defined(__Userspace_os_Windows)

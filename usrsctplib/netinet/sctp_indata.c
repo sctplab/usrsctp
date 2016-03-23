@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 292558 2015-12-21 18:52:02Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 297208 2016-03-23 13:28:04Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1960,7 +1960,7 @@ finish_express_del:
 	return (1);
 }
 
-int8_t sctp_map_lookup_tab[256] = {
+static const int8_t sctp_map_lookup_tab[256] = {
   0, 1, 0, 2, 0, 1, 0, 3,
   0, 1, 0, 2, 0, 1, 0, 4,
   0, 1, 0, 2, 0, 1, 0, 3,

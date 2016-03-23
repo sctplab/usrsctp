@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 295773 2016-02-18 21:33:10Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 297208 2016-03-23 13:28:04Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -94,7 +94,7 @@ struct sack_track {
 	struct sctp_gap_ack_block gaps[SCTP_MAX_GAPS_INARRAY];
 };
 
-struct sack_track sack_array[256] = {
+const struct sack_track sack_array[256] = {
 	{0, 0, 0, 0,		/* 0x00 */
 		{{0, 0},
 		{0, 0},
@@ -10918,7 +10918,7 @@ sctp_send_sack(struct sctp_tcb *stcb, int so_locked
 	struct sctp_sack_chunk *sack;
 	struct sctp_nr_sack_chunk *nr_sack;
 	struct sctp_gap_ack_block *gap_descriptor;
-	struct sack_track *selector;
+	const struct sack_track *selector;
 	int mergeable = 0;
 	int offset;
 	caddr_t limit;
