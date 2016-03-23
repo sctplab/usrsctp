@@ -2463,7 +2463,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 						  SCTP_RTT_FROM_NON_DATA);
 #if defined(INET) || defined(INET6)
 		if (((*netp)->port == 0) && (port != 0)) {
-			sctp_pathmtu_adjustment(stcb, (*netp)->mtu - sizeof(struct udphdr));
+			sctp_pathmtu_adjustment(stcb, (uint16_t) ((*netp)->mtu - sizeof(struct udphdr)));
 		}
 		(*netp)->port = port;
 #endif
@@ -4264,7 +4264,7 @@ sctp_handle_str_reset_add_out_strm(struct sctp_tcb *stcb, struct sctp_tmit_chunk
 				stcb->asoc.last_reset_action[0] = SCTP_STREAM_RESET_RESULT_DENIED;
 			}
 		}
-		sctp_add_stream_reset_result(chk, seq, stcb->asoc.last_reset_action[0]);
+		sctp_add_stream_reset_result(chk, seq, (uint16_t) stcb->asoc.last_reset_action[0]);
 		asoc->str_reset_seq_in++;
 	} else if ((asoc->str_reset_seq_in - 1) == seq) {
 		/*
@@ -5765,7 +5765,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 					len = min(SCTP_SIZE32(chk_length), (uint32_t)(length - *offset));
 					cause = mtod(op_err, struct sctp_gen_error_cause *);
 					cause->code =  htons(SCTP_CAUSE_UNRECOG_CHUNK);
-					cause->length = htons(len + sizeof(struct sctp_gen_error_cause));
+					cause->length = htons(len + (uint16_t) sizeof(struct sctp_gen_error_cause));
 					SCTP_BUF_LEN(op_err) = sizeof(struct sctp_gen_error_cause);
 					SCTP_BUF_NEXT(op_err) = SCTP_M_COPYM(m, *offset, len, M_NOWAIT);
 					if (SCTP_BUF_NEXT(op_err) != NULL) {

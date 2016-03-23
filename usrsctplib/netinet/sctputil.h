@@ -361,7 +361,7 @@ sctp_soreceive(struct socket *so, struct sockaddr **psa,
     int *flagsp);
 
 void
-sctp_misc_ints(uint8_t from, uint32_t a, uint32_t b, uint32_t c, uint32_t d);
+sctp_misc_ints(uint8_t from, size_t a, size_t b, size_t c, size_t d);
 
 void
 sctp_wakeup_log(struct sctp_tcb *stcb,

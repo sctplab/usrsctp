@@ -509,10 +509,10 @@ sctp_log_mbcnt(uint8_t from, uint32_t total_oq, uint32_t book, uint32_t total_mb
 #endif
 
 void
-sctp_misc_ints(uint8_t from, uint32_t a, uint32_t b, uint32_t c, uint32_t d)
+sctp_misc_ints(uint8_t from, size_t a, size_t b, size_t c, size_t d)
 {
 #if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
-	SCTP_CTR6(KTR_SCTP, "SCTP:%d[%d]:%x-%x-%x-%x",
+	SCTP_CTR6(KTR_SCTP, "SCTP:%d[%d]:%zx-%zx-%zx-%zx",
 	     SCTP_LOG_MISC_EVENT,
 	     from,
 	     a, b, c, d);
@@ -2814,11 +2814,11 @@ sctp_notify_assoc_change(uint16_t state, struct sctp_tcb *stcb,
 		} else if ((state == SCTP_COMM_LOST) || (state == SCTP_CANT_STR_ASSOC)) {
 			notif_len += abort_len;
 		}
-		m_notify = sctp_get_mbuf_for_msg(notif_len, 0, M_NOWAIT, 1, MT_DATA);
+		m_notify = sctp_get_mbuf_for_msg((unsigned int) notif_len, 0, M_NOWAIT, 1, MT_DATA);
 		if (m_notify == NULL) {
 			/* Retry with smaller value. */
 			notif_len = sizeof(struct sctp_assoc_change);
-			m_notify = sctp_get_mbuf_for_msg(notif_len, 0, M_NOWAIT, 1, MT_DATA);
+			m_notify = sctp_get_mbuf_for_msg((unsigned int) notif_len, 0, M_NOWAIT, 1, MT_DATA);
 			if (m_notify == NULL) {
 				goto set_error;
 			}
@@ -2854,7 +2854,7 @@ sctp_notify_assoc_change(uint16_t state, struct sctp_tcb *stcb,
 				sac->sac_length += i;
 			} else if ((state == SCTP_COMM_LOST) || (state == SCTP_CANT_STR_ASSOC)) {
 				memcpy(sac->sac_info, abort, abort_len);
-				sac->sac_length += abort_len;
+				sac->sac_length += (uint32_t) abort_len;
 			}
 		}
 		SCTP_BUF_LEN(m_notify) = sac->sac_length;
@@ -3718,11 +3718,11 @@ sctp_notify_remote_error(struct sctp_tcb *stcb, uint16_t error, struct sctp_erro
 		chunk_len = 0;
 	}
 	notif_len = sizeof(struct sctp_remote_error) + chunk_len;
-	m_notify = sctp_get_mbuf_for_msg(notif_len, 0, M_NOWAIT, 1, MT_DATA);
+	m_notify = sctp_get_mbuf_for_msg((unsigned int) notif_len, 0, M_NOWAIT, 1, MT_DATA);
 	if (m_notify == NULL) {
 		/* Retry with smaller value. */
 		notif_len = sizeof(struct sctp_remote_error);
-		m_notify = sctp_get_mbuf_for_msg(notif_len, 0, M_NOWAIT, 1, MT_DATA);
+		m_notify = sctp_get_mbuf_for_msg((unsigned int) notif_len, 0, M_NOWAIT, 1, MT_DATA);
 		if (m_notify == NULL) {
 			return;
 		}
@@ -3737,7 +3737,7 @@ sctp_notify_remote_error(struct sctp_tcb *stcb, uint16_t error, struct sctp_erro
 	sre->sre_assoc_id = sctp_get_associd(stcb);
 	if (notif_len > sizeof(struct sctp_remote_error)) {
 		memcpy(sre->sre_data, chunk, chunk_len);
-		sre->sre_length += chunk_len;
+		sre->sre_length += (uint32_t) chunk_len;
 	}
 	SCTP_BUF_LEN(m_notify) = sre->sre_length;
 	control = sctp_build_readq_entry(stcb, stcb->asoc.primary_destination,
@@ -5193,9 +5193,9 @@ sctp_generate_cause(uint16_t code, char *info)
 	}
 	info_len = strlen(info);
 	len = sizeof(struct sctp_paramhdr) + info_len;
-	m = sctp_get_mbuf_for_msg(len, 0, M_NOWAIT, 1, MT_DATA);
+	m = sctp_get_mbuf_for_msg((unsigned int) len, 0, M_NOWAIT, 1, MT_DATA);
 	if (m != NULL) {
-		SCTP_BUF_LEN(m) = len;
+		SCTP_BUF_LEN(m) = (int) len;
 		cause = mtod(m, struct sctp_gen_error_cause *);
 		cause->code = htons(code);
 		cause->length = htons((uint16_t)len);
@@ -5212,9 +5212,9 @@ sctp_generate_no_user_data_cause(uint32_t tsn)
 	size_t len;
 
 	len = sizeof(struct sctp_error_no_user_data);
-	m = sctp_get_mbuf_for_msg(len, 0, M_NOWAIT, 1, MT_DATA);
+	m = sctp_get_mbuf_for_msg((unsigned int) len, 0, M_NOWAIT, 1, MT_DATA);
 	if (m != NULL) {
-		SCTP_BUF_LEN(m) = len;
+		SCTP_BUF_LEN(m) = (int) len;
 		no_user_data_cause = mtod(m, struct sctp_error_no_user_data *);
 		no_user_data_cause->cause.code = htons(SCTP_CAUSE_NO_USER_DATA);
 		no_user_data_cause->cause.length = htons((uint16_t)len);
@@ -7305,7 +7305,7 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 		}
 #endif
 		default:
-			*totaddr = i;
+			*totaddr = (int) i;
 			/* we are done */
 			break;
 		}
@@ -7321,7 +7321,7 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 			SCTP_INP_DECR_REF(inp);
 		}
 		if ((at + incr) > (size_t)limit) {
-			*totaddr = i;
+			*totaddr = (int) i;
 			break;
 		}
 		sa = (struct sockaddr *)((caddr_t)sa + incr);
