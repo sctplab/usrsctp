@@ -318,14 +318,24 @@ struct sctp_base_info {
 #endif
 #endif
 #ifdef INET
+#if defined(__Userspace_os_Windows)
+	SOCKET userspace_rawsctp;
+	SOCKET userspace_udpsctp;
+#else
 	int userspace_rawsctp;
 	int userspace_udpsctp;
+#endif
 	userland_thread_t recvthreadraw;
 	userland_thread_t recvthreadudp;
 #endif
 #ifdef INET6
+#if defined(__Userspace_os_Windows)
+	SOCKET userspace_rawsctp6;
+	SOCKET userspace_udpsctp6;
+#else
 	int userspace_rawsctp6;
 	int userspace_udpsctp6;
+#endif
 	userland_thread_t recvthreadraw6;
 	userland_thread_t recvthreadudp6;
 #endif
