@@ -3327,10 +3327,10 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	dst.sconn_len = sizeof(struct sockaddr_conn);
 #endif
 	dst.sconn_addr = addr;
-	if ((m = sctp_get_mbuf_for_msg(length, 1, M_NOWAIT, 0, MT_DATA)) == NULL) {
+	if ((m = sctp_get_mbuf_for_msg((unsigned int)length, 1, M_NOWAIT, 0, MT_DATA)) == NULL) {
 		return;
 	}
-	m_copyback(m, 0, length, (caddr_t)buffer);
+	m_copyback(m, 0, (int)length, (caddr_t)buffer);
 	if (SCTP_BUF_LEN(m) < (int)(sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr))) {
 		if ((m = m_pullup(m, sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr))) == NULL) {
 			SCTP_STAT_INCR(sctps_hdrops);
@@ -3341,7 +3341,7 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	ch = (struct sctp_chunkhdr *)((caddr_t)sh + sizeof(struct sctphdr));
 	src.sconn_port = sh->src_port;
 	dst.sconn_port = sh->dest_port;
-	sctp_common_input_processing(&m, 0, sizeof(struct sctphdr), length,
+	sctp_common_input_processing(&m, 0, sizeof(struct sctphdr), (int)length,
 	                             (struct sockaddr *)&src,
 	                             (struct sockaddr *)&dst,
 	                             sh, ch,

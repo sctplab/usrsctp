@@ -324,7 +324,7 @@ struct ip {
 	u_char    ip_ttl;
 	u_char    ip_p;
 	u_short   ip_sum;
-    struct in_addr ip_src, ip_dst;
+	struct in_addr ip_src, ip_dst;
 };
 
 struct ifaddrs {
@@ -345,7 +345,7 @@ struct udphdr {
 };
 
 struct iovec {
-	unsigned long len;
+	size_t len;
 	char *buf;
 };
 
