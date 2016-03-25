@@ -2509,7 +2509,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 					if (op_err != NULL) {
 						cause  = mtod(op_err, struct sctp_gen_error_cause *);
 						cause->code = htons(SCTP_CAUSE_UNRECOG_CHUNK);
-						cause->length = htons(chk_length + sizeof(struct sctp_gen_error_cause));
+						cause->length = htons((uint16_t)(chk_length + sizeof(struct sctp_gen_error_cause)));
 						SCTP_BUF_LEN(op_err) = sizeof(struct sctp_gen_error_cause);
 						SCTP_BUF_NEXT(op_err) = SCTP_M_COPYM(m, *offset, chk_length, M_NOWAIT);
 						if (SCTP_BUF_NEXT(op_err) != NULL) {
