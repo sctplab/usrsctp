@@ -273,7 +273,7 @@ sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint16_t nxtsz)
 					sctp_misc_ints(SCTP_FLIGHT_LOG_DOWN_PMTU,
 						       chk->whoTo->flight_size,
 						       chk->book_size,
-						       (uintptr_t)chk->whoTo,
+						       (uint32_t)(uintptr_t)chk->whoTo,
 						       chk->rec.data.TSN_seq);
 				}
 				/* Clear any time so NO RTT is being done */

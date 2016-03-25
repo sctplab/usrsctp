@@ -3498,7 +3498,7 @@ process_chunk_drop(struct sctp_tcb *stcb, struct sctp_chunk_desc *desc,
 				sctp_misc_ints(SCTP_FLIGHT_LOG_DOWN_PDRP,
 					       tp1->whoTo->flight_size,
 					       tp1->book_size,
-					       (uintptr_t)stcb,
+					       (uint32_t)(uintptr_t)stcb,
 					       tp1->rec.data.TSN_seq);
 			}
 			if (tp1->sent < SCTP_DATAGRAM_RESEND) {

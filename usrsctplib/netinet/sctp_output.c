@@ -7478,7 +7478,7 @@ sctp_clean_up_datalist(struct sctp_tcb *stcb,
 			sctp_misc_ints(SCTP_FLIGHT_LOG_UP,
 				       data_list[i]->whoTo->flight_size,
 				       data_list[i]->book_size,
-				       (uintptr_t)data_list[i]->whoTo,
+				       (uint32_t)(uintptr_t)data_list[i]->whoTo,
 				       data_list[i]->rec.data.TSN_seq);
 		}
 		sctp_flight_size_increase(data_list[i]);
@@ -8005,7 +8005,7 @@ re_look:
 #endif
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LOG_AT_SEND_2_OUTQ) {
 		sctp_misc_ints(SCTP_STRMOUT_LOG_SEND,
-		               (uintptr_t)stcb, sp->length,
+		               (uint32_t)(uintptr_t)stcb, sp->length,
 		               (uint32_t)((chk->rec.data.stream_number << 16) | chk->rec.data.stream_seq),
 		               chk->rec.data.TSN_seq);
 	}
@@ -10309,7 +10309,7 @@ sctp_chunk_retransmission(struct sctp_inpcb *inp,
 					sctp_misc_ints(SCTP_FLIGHT_LOG_UP_RSND,
 						       data_list[i]->whoTo->flight_size,
 						       data_list[i]->book_size,
-						       (uintptr_t)data_list[i]->whoTo,
+						       (uint32_t)(uintptr_t)data_list[i]->whoTo,
 						       data_list[i]->rec.data.TSN_seq);
 				}
 				sctp_flight_size_increase(data_list[i]);
