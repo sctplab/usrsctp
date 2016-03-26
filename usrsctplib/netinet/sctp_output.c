@@ -3602,7 +3602,7 @@ sctp_find_cmsg(int c_type, void *data, struct mbuf *control, size_t cpsize)
 					return (found);
 				}
 				/* It is exactly what we want. Copy it out. */
-				m_copydata(control, at + CMSG_ALIGN(sizeof(cmh)), cpsize, (caddr_t)data);
+				m_copydata(control, at + CMSG_ALIGN(sizeof(cmh)), (int)cpsize, (caddr_t)data);
 				return (1);
 			} else {
 				struct sctp_sndrcvinfo *sndrcvinfo;
@@ -7259,7 +7259,7 @@ sctp_copy_out_all(struct uio *uio, int len)
 	left = len;
 	SCTP_BUF_LEN(ret) = 0;
 	/* save space for the data chunk header */
-	cancpy = M_TRAILINGSPACE(ret);
+	cancpy = (int)M_TRAILINGSPACE(ret);
 	willcpy = min(cancpy, left);
 	at = ret;
 	while (left > 0) {
@@ -7280,7 +7280,7 @@ sctp_copy_out_all(struct uio *uio, int len)
 			}
 			at = SCTP_BUF_NEXT(at);
 			SCTP_BUF_LEN(at) = 0;
-			cancpy = M_TRAILINGSPACE(at);
+			cancpy = (int)M_TRAILINGSPACE(at);
 			willcpy = min(cancpy, left);
 		}
 	}
@@ -7321,7 +7321,7 @@ sctp_sendall(struct sctp_inpcb *inp, struct uio *uio, struct mbuf *m,
 		ca->sndlen = uio_resid(uio);
 #endif
 #else
-		ca->sndlen = uio->uio_resid;
+		ca->sndlen = (int)uio->uio_resid;
 #endif
 #if defined(__APPLE__)
 		SCTP_SOCKET_UNLOCK(SCTP_INP_SO(inp), 0);
