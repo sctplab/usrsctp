@@ -1968,7 +1968,7 @@ sctp_do_connect_x(struct socket *so, struct sctp_inpcb *inp, void *optval,
 	int creat_lock_on = 0;
 	struct sctp_tcb *stcb = NULL;
 	struct sockaddr *sa;
-	int num_v6 = 0, num_v4 = 0, *totaddrp, totaddr;
+	unsigned int num_v6 = 0, num_v4 = 0, *totaddrp, totaddr;
 	uint32_t vrf_id;
 	int bad_addresses = 0;
 	sctp_assoc_t *a_id;
@@ -2006,10 +2006,10 @@ sctp_do_connect_x(struct socket *so, struct sctp_inpcb *inp, void *optval,
 		error = EFAULT;
 		goto out_now;
 	}
-	totaddrp = (int *)optval;
+	totaddrp = (unsigned int *)optval;
 	totaddr = *totaddrp;
 	sa = (struct sockaddr *)(totaddrp + 1);
-	stcb = sctp_connectx_helper_find(inp, sa, &totaddr, &num_v4, &num_v6, &error, (int)(optsize - sizeof(int)), &bad_addresses);
+	stcb = sctp_connectx_helper_find(inp, sa, &totaddr, &num_v4, &num_v6, &error, (unsigned int)(optsize - sizeof(int)), &bad_addresses);
 	if ((stcb != NULL) || bad_addresses) {
 		/* Already have or am bring up an association */
 		SCTP_ASOC_CREATE_UNLOCK(inp);

@@ -7257,23 +7257,22 @@ sctp_connectx_helper_add(struct sctp_tcb *stcb, struct sockaddr *addr,
 
 struct sctp_tcb *
 sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
-			  int *totaddr, int *num_v4, int *num_v6, int *error,
-			  int limit, int *bad_addr)
+			  unsigned int *totaddr,
+			  unsigned int *num_v4, unsigned int *num_v6, int *error,
+			  unsigned int limit, int *bad_addr)
 {
 	struct sockaddr *sa;
 	struct sctp_tcb *stcb = NULL;
-	size_t incr, at, i;
+	unsigned int incr, at, i;
 
 	at = incr = 0;
 	sa = addr;
 	*error = *num_v6 = *num_v4 = 0;
 	/* account and validate addresses */
-	for (i = 0; i < (size_t)*totaddr; i++) {
+	for (i = 0; i < *totaddr; i++) {
 		switch (sa->sa_family) {
 #ifdef INET
 		case AF_INET:
-			(*num_v4) += 1;
-			incr = sizeof(struct sockaddr_in);
 #ifdef HAVE_SA_LEN
 			if (sa->sa_len != incr) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
@@ -7282,6 +7281,8 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 				return (NULL);
 			}
 #endif
+			(*num_v4) += 1;
+			incr = (unsigned int)sizeof(struct sockaddr_in);
 			break;
 #endif
 #ifdef INET6
@@ -7297,8 +7298,6 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 				*bad_addr = 1;
 				return (NULL);
 			}
-			(*num_v6) += 1;
-			incr = sizeof(struct sockaddr_in6);
 #ifdef HAVE_SA_LEN
 			if (sa->sa_len != incr) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
@@ -7307,6 +7306,8 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 				return (NULL);
 			}
 #endif
+			(*num_v6) += 1;
+			incr = (unsigned int)sizeof(struct sockaddr_in6);
 			break;
 		}
 #endif
@@ -7315,7 +7316,7 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 			/* we are done */
 			break;
 		}
-		if (i == (size_t)*totaddr) {
+		if (i == *totaddr) {
 			break;
 		}
 		SCTP_INP_INCR_REF(inp);
@@ -7326,7 +7327,7 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 		} else {
 			SCTP_INP_DECR_REF(inp);
 		}
-		if ((at + incr) > (size_t)limit) {
+		if ((at + incr) > limit) {
 			*totaddr = i;
 			break;
 		}

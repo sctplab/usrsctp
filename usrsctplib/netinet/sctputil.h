@@ -218,7 +218,8 @@ int sctp_connectx_helper_add(struct sctp_tcb *stcb, struct sockaddr *addr,
 
 struct sctp_tcb *
 sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
-    int *totaddr, int *num_v4, int *num_v6, int *error, int limit, int *bad_addr);
+    unsigned int *totaddr, unsigned int *num_v4, unsigned int *num_v6,
+    int *error, unsigned int limit, int *bad_addr);
 
 int sctp_is_there_an_abort_here(struct mbuf *, int, uint32_t *);
 #ifdef INET6
