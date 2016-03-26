@@ -671,7 +671,7 @@ uiomove(void *cp, int n, struct uio *uio)
 		iov->iov_base = (char *)iov->iov_base + cnt;
 		iov->iov_len -= cnt;
 		uio->uio_resid -= cnt;
-		uio->uio_offset += cnt;
+		uio->uio_offset += (off_t)cnt;
 		cp = (char *)cp + cnt;
 		n -= (int)cnt;
 	}
