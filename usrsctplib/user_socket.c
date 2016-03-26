@@ -587,7 +587,7 @@ copy_to_user(void *dst, void *src, int len) {
 }
 
 static __inline__ int
-copy_from_user(void *dst, void *src, int len) {
+copy_from_user(void *dst, void *src, size_t len) {
 	memcpy(dst, src, len);
 	return 0;
 }
@@ -631,7 +631,7 @@ int
 uiomove(void *cp, int n, struct uio *uio)
 {
 	struct iovec *iov;
-	int cnt;
+	size_t cnt;
 	int error = 0;
 
 	if ((uio->uio_rw != UIO_READ) &&
@@ -673,7 +673,7 @@ uiomove(void *cp, int n, struct uio *uio)
 		uio->uio_resid -= cnt;
 		uio->uio_offset += cnt;
 		cp = (char *)cp + cnt;
-		n -= cnt;
+		n -= (int)cnt;
 	}
 out:
 	return (error);
@@ -960,7 +960,7 @@ userspace_sctp_sendmbuf(struct socket *so,
           struct iovec iov[1]; */
     int error = 0;
     int uflags = 0;
-    int retvalsendmsg;
+    ssize_t retval;
 
     sinfo->sinfo_ppid = ppid;
     sinfo->sinfo_flags = flags;
@@ -990,16 +990,16 @@ userspace_sctp_sendmbuf(struct socket *so,
 sendmsg_return:
     /* TODO: Needs a condition for non-blocking when error is EWOULDBLOCK */
     if (0 == error)
-        retvalsendmsg = len;
+        retval = len;
     else if (error == EWOULDBLOCK) {
         errno = EWOULDBLOCK;
-        retvalsendmsg = (-1);
+        retval = -1;
     } else {
         SCTP_PRINTF("%s: error = %d\n", __func__, error);
         errno = error;
-        retvalsendmsg = (-1);
+        retval = -1;
     }
-    return retvalsendmsg;
+    return (retval);
 
 }
 
