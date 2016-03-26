@@ -11582,7 +11582,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		ip->ip_id = htons(ip_id++);
 #endif
 #elif defined(__Userspace__)
-                ip->ip_id = htons(ip_id++);
+		ip->ip_id = htons(ip_id++);
 #else
 		ip->ip_id = ip_id++;
 #endif
@@ -11641,10 +11641,10 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		udp->uh_sport = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
 		udp->uh_dport = port;
 		udp->uh_sum = 0;
-		udp->uh_ulen = htons(sizeof(struct udphdr) +
-		                     sizeof(struct sctphdr) +
-		                     sizeof(struct sctp_chunkhdr) +
-		                     cause_len + padding_len);
+		udp->uh_ulen = htons((uint16_t)(sizeof(struct udphdr) +
+		                                sizeof(struct sctphdr) +
+		                                sizeof(struct sctp_chunkhdr) +
+		                                cause_len + padding_len));
 		len += sizeof(struct udphdr);
 		shout = (struct sctphdr *)((caddr_t)shout + sizeof(struct udphdr));
 	} else {
@@ -13141,12 +13141,12 @@ sctp_copy_it_in(struct sctp_tcb *stcb,
 	sp->stream = srcv->sinfo_stream;
 #if defined(__APPLE__)
 #if defined(APPLE_LEOPARD)
-	sp->length = min(uio->uio_resid, max_send_len);
+	sp->length = (uint32_t)min(uio->uio_resid, max_send_len);
 #else
-	sp->length = min(uio_resid(uio), max_send_len);
+	sp->length = (uint32_t)min(uio_resid(uio), max_send_len);
 #endif
 #else
-	sp->length = min(uio->uio_resid, max_send_len);
+	sp->length = (uint32_t)min(uio->uio_resid, max_send_len);
 #endif
 #if defined(__APPLE__)
 #if defined(APPLE_LEOPARD)
