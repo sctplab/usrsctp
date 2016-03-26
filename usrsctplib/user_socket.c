@@ -581,7 +581,7 @@ struct sctp_generic_recvmsg_args {
    Source: /src/sys/gnu/fs/xfs/FreeBSD/xfs_ioctl.c
  */
 static __inline__ int
-copy_to_user(void *dst, void *src, int len) {
+copy_to_user(void *dst, void *src, size_t len) {
 	memcpy(dst, src, len);
 	return 0;
 }
