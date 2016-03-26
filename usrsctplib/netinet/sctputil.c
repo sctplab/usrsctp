@@ -5188,19 +5188,23 @@ sctp_generate_cause(uint16_t code, char *info)
 {
 	struct mbuf *m;
 	struct sctp_gen_error_cause *cause;
-	size_t info_len, len;
+	size_t info_len;
+	uint16_t len;
 
 	if ((code == 0) || (info == NULL)) {
 		return (NULL);
 	}
 	info_len = strlen(info);
-	len = sizeof(struct sctp_paramhdr) + info_len;
+	if (info_len > (SCTP_MAX_CAUSE_LENGTH - sizeof(struct sctp_paramhdr))) {
+		return (NULL);
+	}
+	len = (uint16_t)(sizeof(struct sctp_paramhdr) + info_len);
 	m = sctp_get_mbuf_for_msg(len, 0, M_NOWAIT, 1, MT_DATA);
 	if (m != NULL) {
 		SCTP_BUF_LEN(m) = len;
 		cause = mtod(m, struct sctp_gen_error_cause *);
 		cause->code = htons(code);
-		cause->length = htons((uint16_t)len);
+		cause->length = htons(len);
 		memcpy(cause->info, info, info_len);
 	}
 	return (m);
