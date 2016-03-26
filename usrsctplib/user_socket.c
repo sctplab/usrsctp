@@ -1025,7 +1025,8 @@ userspace_sctp_recvmsg(struct socket *so,
 	struct iovec *tiov;
 	int iovlen = 1;
 	int error = 0;
-	int ulen, i, retval;
+	ssize_t ulen;
+	int i;
 	socklen_t fromlen;
 
 	iov[0].iov_base = dbuf;
@@ -1056,7 +1057,7 @@ userspace_sctp_recvmsg(struct socket *so,
 		    (struct sctp_sndrcvinfo *)sinfo, 1);
 
 	if (error) {
-		if (auio.uio_resid != (int)ulen &&
+		if ((auio.uio_resid != ulen) &&
 		    (error == EINTR ||
 #if !defined(__Userspace_os_NetBSD)
 		     error == ERESTART ||
@@ -1088,10 +1089,9 @@ userspace_sctp_recvmsg(struct socket *so,
 			*fromlenp = fromlen;
 		}
 	}
-	if (error == 0){
+	if (error == 0) {
 		/* ready return value */
-		retval = (int)ulen - auio.uio_resid;
-		return (retval);
+		return (ulen - auio.uio_resid);
 	} else {
 		SCTP_PRINTF("%s: error = %d\n", __func__, error);
 		return (-1);
@@ -1113,7 +1113,8 @@ usrsctp_recvv(struct socket *so,
 	struct iovec iov[SCTP_SMALL_IOVEC_SIZE];
 	struct iovec *tiov;
 	int iovlen = 1;
-	int ulen, i;
+	ssize_t ulen;
+	int i;
 	socklen_t fromlen;
 	struct sctp_rcvinfo *rcv;
 	struct sctp_recvv_rn *rn;
@@ -1149,7 +1150,7 @@ usrsctp_recvv(struct socket *so,
 		    from, fromlen, msg_flags,
 		    (struct sctp_sndrcvinfo *)&seinfo, 1);
 	if (errno) {
-		if (auio.uio_resid != (int)ulen &&
+		if ((auio.uio_resid != ulen) &&
 		    (errno == EINTR ||
 #if !defined(__Userspace_os_NetBSD)
 		     errno == ERESTART ||
@@ -1234,7 +1235,7 @@ usrsctp_recvv(struct socket *so,
 	}
 	if (errno == 0) {
 		/* ready return value */
-		return ((int)ulen - auio.uio_resid);
+		return (ulen - auio.uio_resid);
 	} else {
 		return (-1);
 	}
