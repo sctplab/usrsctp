@@ -4341,7 +4341,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			udp = (struct udphdr *)((caddr_t)ip + sizeof(struct ip));
 			udp->uh_sport = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
 			udp->uh_dport = port;
-			udp->uh_ulen = htons(packet_length - sizeof(struct ip));
+			udp->uh_ulen = htons((uint16_t)(packet_length - sizeof(struct ip)));
 #if !defined(__Windows__) && !defined(__Userspace__)
 #if defined(__FreeBSD__) && ((__FreeBSD_version > 803000 && __FreeBSD_version < 900000) || __FreeBSD_version > 900000)
 			if (V_udp_cksum) {
@@ -4627,7 +4627,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		} else {
 			ip6h->ip6_nxt = IPPROTO_SCTP;
 		}
-		ip6h->ip6_plen = (packet_length - sizeof(struct ip6_hdr));
+		ip6h->ip6_plen = (uint16_t)(packet_length - sizeof(struct ip6_hdr));
 		ip6h->ip6_dst = sin6->sin6_addr;
 
 		/*
@@ -4796,7 +4796,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			udp = (struct udphdr *)((caddr_t)ip6h + sizeof(struct ip6_hdr));
 			udp->uh_sport = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
 			udp->uh_dport = port;
-			udp->uh_ulen = htons(packet_length - sizeof(struct ip6_hdr));
+			udp->uh_ulen = htons((uint16_t)(packet_length - sizeof(struct ip6_hdr)));
 			udp->uh_sum = 0;
 			sctphdr = (struct sctphdr *)((caddr_t)udp + sizeof(struct udphdr));
 		} else {
@@ -7093,7 +7093,7 @@ sctp_sendall_iterator(struct sctp_inpcb *inp, struct sctp_tcb *stcb, void *ptr,
 
 			ph = mtod(m, struct sctp_paramhdr *);
 			ph->param_type = htons(SCTP_CAUSE_USER_INITIATED_ABT);
-			ph->param_length = htons(sizeof(struct sctp_paramhdr) + ca->sndlen);
+			ph->param_length = htons((uint16_t)(sizeof(struct sctp_paramhdr) + ca->sndlen));
 		}
 		/* We add one here to keep the assoc from
 		 * dis-appearing on us.
@@ -7966,7 +7966,7 @@ re_look:
 		goto out_of;
 	}
 	sctp_snd_sb_alloc(stcb, sizeof(struct sctp_data_chunk));
-	chk->book_size = chk->send_size = (to_move + sizeof(struct sctp_data_chunk));
+	chk->book_size = chk->send_size = (uint16_t)(to_move + sizeof(struct sctp_data_chunk));
 	chk->book_size_scale = 0;
 	chk->sent = SCTP_DATAGRAM_UNSENT;
 
@@ -11262,9 +11262,9 @@ sctp_send_sack(struct sctp_tcb *stcb, int so_locked
 	 * queue.
 	 */
 	if (type == SCTP_SELECTIVE_ACK) {
-		a_chk->send_size = sizeof(struct sctp_sack_chunk) +
-		                   (num_gap_blocks + num_nr_gap_blocks) * sizeof(struct sctp_gap_ack_block) +
-		                   num_dups * sizeof(int32_t);
+		a_chk->send_size = (uint16_t)(sizeof(struct sctp_sack_chunk) +
+		                              (num_gap_blocks + num_nr_gap_blocks) * sizeof(struct sctp_gap_ack_block) +
+		                              num_dups * sizeof(int32_t));
 		SCTP_BUF_LEN(a_chk->data) = a_chk->send_size;
 		sack->sack.cum_tsn_ack = htonl(asoc->cumulative_tsn);
 		sack->sack.a_rwnd = htonl(asoc->my_rwnd);
@@ -11274,9 +11274,9 @@ sctp_send_sack(struct sctp_tcb *stcb, int so_locked
 		sack->ch.chunk_flags = flags;
 		sack->ch.chunk_length = htons(a_chk->send_size);
 	} else {
-		a_chk->send_size = sizeof(struct sctp_nr_sack_chunk) +
-		                   (num_gap_blocks + num_nr_gap_blocks) * sizeof(struct sctp_gap_ack_block) +
-		                   num_dups * sizeof(int32_t);
+		a_chk->send_size = (uint16_t)(sizeof(struct sctp_nr_sack_chunk) +
+		                              (num_gap_blocks + num_nr_gap_blocks) * sizeof(struct sctp_gap_ack_block) +
+		                              num_dups * sizeof(int32_t));
 		SCTP_BUF_LEN(a_chk->data) = a_chk->send_size;
 		nr_sack->nr_sack.cum_tsn_ack = htonl(asoc->cumulative_tsn);
 		nr_sack->nr_sack.a_rwnd = htonl(asoc->my_rwnd);
@@ -11667,7 +11667,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 	} else {
 		ch->chunk_flags = SCTP_HAD_NO_TCB;
 	}
-	ch->chunk_length = htons(sizeof(struct sctp_chunkhdr) + cause_len);
+	ch->chunk_length = htons((uint16_t)(sizeof(struct sctp_chunkhdr) + cause_len));
 	len += sizeof(struct sctp_chunkhdr);
 	len += cause_len + padding_len;
 
@@ -11761,7 +11761,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #endif
 #ifdef INET6
 	case AF_INET6:
-		ip6->ip6_plen = len - sizeof(struct ip6_hdr);
+		ip6->ip6_plen = (uint16_t)(len - sizeof(struct ip6_hdr));
 		if (port) {
 #if defined(SCTP_WITH_NO_CSUM)
 			SCTP_STAT_INCR(sctps_sendnocrc);
@@ -12166,7 +12166,7 @@ jump_out:
 		/* Len is already adjusted to size minus overhead above
 		 * take out the pkt_drop chunk itself from it.
 		 */
-		chk->send_size = len - sizeof(struct sctp_pktdrop_chunk);
+		chk->send_size = (uint16_t)(len - sizeof(struct sctp_pktdrop_chunk));
 		len = chk->send_size;
 	} else {
 		/* no truncation needed */
@@ -12302,7 +12302,7 @@ sctp_add_stream_reset_out(struct sctp_tcb *stcb, struct sctp_tmit_chunk *chk,
 	if (number_entries > SCTP_MAX_STREAMS_AT_ONCE_RESET) {
 		number_entries = SCTP_MAX_STREAMS_AT_ONCE_RESET;
 	}
-	len = (sizeof(struct sctp_stream_reset_out_request) + (sizeof(uint16_t) * number_entries));
+	len = (uint16_t)(sizeof(struct sctp_stream_reset_out_request) + (sizeof(uint16_t) * number_entries));
 	req_out->ph.param_type = htons(SCTP_STR_RESET_OUT_REQUEST);
 	req_out->ph.param_length = htons(len);
 	req_out->request_seq = htonl(seq);
@@ -12359,7 +12359,7 @@ sctp_add_stream_reset_in(struct sctp_tmit_chunk *chk,
 	/* get to new offset for the param. */
 	req_in = (struct sctp_stream_reset_in_request *)((caddr_t)ch + len);
 	/* now how long will this param be? */
-	len = (sizeof(struct sctp_stream_reset_in_request) + (sizeof(uint16_t) * number_entries));
+	len = (uint16_t)(sizeof(struct sctp_stream_reset_in_request) + (sizeof(uint16_t) * number_entries));
 	req_in->ph.param_type = htons(SCTP_STR_RESET_IN_REQUEST);
 	req_in->ph.param_length = htons(len);
 	req_in->request_seq = htonl(seq);
@@ -13850,7 +13850,7 @@ sctp_lower_sosend(struct socket *so,
 			/* now move forward the data pointer */
 			ph = mtod(mm, struct sctp_paramhdr *);
 			ph->param_type = htons(SCTP_CAUSE_USER_INITIATED_ABT);
-			ph->param_length = htons(sizeof(struct sctp_paramhdr) + tot_out);
+			ph->param_length = htons((uint16_t)(sizeof(struct sctp_paramhdr) + tot_out));
 			ph++;
 			SCTP_BUF_LEN(mm) = tot_out + sizeof(struct sctp_paramhdr);
 			if (top == NULL) {
