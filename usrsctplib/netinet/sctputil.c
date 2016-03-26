@@ -5792,7 +5792,7 @@ sctp_sorecvmsg(struct socket *so,
 	uint32_t rwnd_req = 0;
 	int hold_sblock = 0;
 	int hold_rlock = 0;
-	int slen = 0;
+	ssize_t slen = 0;
 	uint32_t held_length = 0;
 #if defined(__FreeBSD__) && __FreeBSD_version >= 700000
 	int sockbuf_lock = 0;
@@ -5859,7 +5859,7 @@ sctp_sorecvmsg(struct socket *so,
 #endif
 #else
 		sctp_misc_ints(SCTP_SORECV_ENTER,
-			       rwnd_req, in_eeor_mode, so->so_rcv.sb_cc, uio->uio_resid);
+			       rwnd_req, in_eeor_mode, so->so_rcv.sb_cc, (uint32_t)uio->uio_resid);
 #endif
 	}
 #if (defined(__FreeBSD__) && __FreeBSD_version < 700000) || defined(__Userspace__)
@@ -5877,7 +5877,7 @@ sctp_sorecvmsg(struct socket *so,
 #endif
 #else
 		sctp_misc_ints(SCTP_SORECV_ENTERPL,
-			       rwnd_req, block_allowed, so->so_rcv.sb_cc, uio->uio_resid);
+			       rwnd_req, block_allowed, so->so_rcv.sb_cc, (uint32_t)uio->uio_resid);
 #endif
 	}
 
@@ -6842,7 +6842,7 @@ sctp_sorecvmsg(struct socket *so,
 				       ((uio) ? (slen - uio_resid(uio)) : slen),
 #endif
 #else
-				       ((uio) ? (slen - uio->uio_resid) : slen),
+				       (uint32_t)((uio) ? (slen - uio->uio_resid) : slen),
 #endif
 				       stcb->asoc.my_rwnd,
 				       so->so_rcv.sb_cc);
@@ -6856,7 +6856,7 @@ sctp_sorecvmsg(struct socket *so,
 				       ((uio) ? (slen - uio_resid(uio)) : slen),
 #endif
 #else
-				       ((uio) ? (slen - uio->uio_resid) : slen),
+				       (uint32_t)((uio) ? (slen - uio->uio_resid) : slen),
 #endif
 				       0,
 				       so->so_rcv.sb_cc);
