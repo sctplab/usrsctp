@@ -114,7 +114,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 	if (send(*fdp, buf, length, 0) == SOCKET_ERROR) {
 		return (WSAGetLastError());
 #else
-	if (send(*fdp, buf, length, 0) < 0) {
+	if (send(*fdp, buf, (int)length, 0) < 0) {
 		return (errno);
 #endif
 	} else {

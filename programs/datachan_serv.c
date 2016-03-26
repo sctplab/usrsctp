@@ -417,7 +417,7 @@ main(int argc, char *argv[])
         else {
           struct rtcweb_datachannel_msg msg[4]; /* cheat to get space for label */
           int stream, reliable;
-          int len;
+          size_t len;
           uint32_t timeout;
           uint32_t flags;
 
