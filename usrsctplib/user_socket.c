@@ -647,7 +647,7 @@ uiomove(void *cp, int n, struct uio *uio)
 			uio->uio_iovcnt--;
 			continue;
 		}
-		if (cnt > n)
+		if (cnt > (size_t)n)
 			cnt = n;
 
 		switch (uio->uio_segflg) {
