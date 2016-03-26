@@ -14330,7 +14330,7 @@ skip_preblock:
 #endif
 #else
 					sctp_log_block(SCTP_BLOCK_LOG_INTO_BLK,
-						       asoc, uio->uio_resid);
+						       asoc, (size_t)uio->uio_resid);
 #endif
 				}
 				be.error = 0;
