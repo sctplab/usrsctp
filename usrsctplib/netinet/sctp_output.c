@@ -6935,10 +6935,10 @@ sctp_copy_mbufchain(struct mbuf *clonechain,
 					}
 				}
 				/* get the new end of length */
-				len = M_TRAILINGSPACE(*endofchain);
+				len = (int)M_TRAILINGSPACE(*endofchain);
 			} else {
 				/* how much is left at the end? */
-				len = M_TRAILINGSPACE(*endofchain);
+				len = (int)M_TRAILINGSPACE(*endofchain);
 			}
 			/* Find the end of the data, for appending */
 			cp = (mtod((*endofchain), caddr_t) + SCTP_BUF_LEN((*endofchain)));
@@ -10792,7 +10792,7 @@ sctp_fill_in_rest:
 		space_needed = (sizeof(struct sctp_forward_tsn_chunk) +
 		    (cnt_of_skipped * sizeof(struct sctp_strseq)));
 
-		cnt_of_space = M_TRAILINGSPACE(chk->data);
+		cnt_of_space = (unsigned int)M_TRAILINGSPACE(chk->data);
 
 		if (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) {
 			ovh = SCTP_MIN_OVERHEAD;
@@ -11050,7 +11050,7 @@ sctp_send_sack(struct sctp_tcb *stcb, int so_locked
 	}
 	/* ok, lets go through and fill it in */
 	SCTP_BUF_RESV_UF(a_chk->data, SCTP_MIN_OVERHEAD);
-	space = M_TRAILINGSPACE(a_chk->data);
+	space = (unsigned int)M_TRAILINGSPACE(a_chk->data);
 	if (space > (a_chk->whoTo->mtu - SCTP_MIN_OVERHEAD)) {
 		space = (a_chk->whoTo->mtu - SCTP_MIN_OVERHEAD);
 	}
@@ -12951,12 +12951,12 @@ sctp_copy_resume(struct uio *uio,
 
 #if defined(__APPLE__)
 #if defined(APPLE_LEOPARD)
-	left = min(uio->uio_resid, max_send_len);
+	left = (int)min(uio->uio_resid, max_send_len);
 #else
-	left = min(uio_resid(uio), max_send_len);
+	left = (int)min(uio_resid(uio), max_send_len);
 #endif
 #else
-	left = min(uio->uio_resid, max_send_len);
+	left = (int)min(uio->uio_resid, max_send_len);
 #endif
 	/* Always get a header just in case */
 	head = sctp_get_mbuf_for_msg(left, 0, M_WAITOK, 0, MT_DATA);
@@ -12965,7 +12965,7 @@ sctp_copy_resume(struct uio *uio,
 		*error = ENOBUFS;
 		return (NULL);
 	}
-	cancpy = M_TRAILINGSPACE(head);
+	cancpy = (int)M_TRAILINGSPACE(head);
 	willcpy = min(cancpy, left);
 	*error = uiomove(mtod(head, caddr_t), willcpy, uio);
 	if (*error) {
@@ -12988,7 +12988,7 @@ sctp_copy_resume(struct uio *uio,
 			return (NULL);
 		}
 		m = SCTP_BUF_NEXT(m);
-		cancpy = M_TRAILINGSPACE(m);
+		cancpy = (int)M_TRAILINGSPACE(m);
 		willcpy = min(cancpy, left);
 		*error = uiomove(mtod(m, caddr_t), willcpy, uio);
 		if (*error) {
@@ -13053,7 +13053,7 @@ sctp_copy_one(struct sctp_stream_queue_pending *sp,
 	 * have a bad cnt.
 	 */
 	SCTP_BUF_RESV_UF(m, resv_upfront);
-	cancpy = M_TRAILINGSPACE(m);
+	cancpy = (int)M_TRAILINGSPACE(m);
 	willcpy = min(cancpy, left);
 	while (left > 0) {
 		/* move in user data */
@@ -13077,7 +13077,7 @@ sctp_copy_one(struct sctp_stream_queue_pending *sp,
 				return (ENOBUFS);
 			}
 			m = SCTP_BUF_NEXT(m);
-			cancpy = M_TRAILINGSPACE(m);
+			cancpy = (int)M_TRAILINGSPACE(m);
 			willcpy = min(cancpy, left);
 		} else {
 			sp->tail_mbuf = m;
@@ -13389,12 +13389,12 @@ sctp_lower_sosend(struct socket *so,
 		}
 #if defined(__APPLE__)
 #if defined(APPLE_LEOPARD)
-		sndlen = uio->uio_resid;
+		sndlen = (unsigned int)uio->uio_resid;
 #else
-		sndlen = uio_resid(uio);
+		sndlen = (unsigned int)uio_resid(uio);
 #endif
 #else
-		sndlen = uio->uio_resid;
+		sndlen = (unsigned int)uio->uio_resid;
 #endif
 	} else {
 		top = SCTP_HEADER_TO_CHAIN(i_pak);
