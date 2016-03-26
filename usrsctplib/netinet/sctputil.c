@@ -568,7 +568,7 @@ sctp_wakeup_log(struct sctp_tcb *stcb, uint32_t wake_cnt, int from)
 }
 
 void
-sctp_log_block(uint8_t from, struct sctp_association *asoc, int sendlen)
+sctp_log_block(uint8_t from, struct sctp_association *asoc, size_t sendlen)
 {
 #if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
@@ -579,7 +579,7 @@ sctp_log_block(uint8_t from, struct sctp_association *asoc, int sendlen)
 	sctp_clog.x.blk.stream_qcnt = (uint16_t) asoc->stream_queue_cnt;
 	sctp_clog.x.blk.chunks_on_oque = (uint16_t) asoc->chunks_on_out_queue;
 	sctp_clog.x.blk.flight_size = (uint16_t) (asoc->total_flight/1024);
-	sctp_clog.x.blk.sndlen = sendlen;
+	sctp_clog.x.blk.sndlen = (uint32_t)sendlen;
 	SCTP_CTR6(KTR_SCTP, "SCTP:%d[%d]:%x-%x-%x-%x",
 	     SCTP_LOG_EVENT_BLOCK,
 	     from,
