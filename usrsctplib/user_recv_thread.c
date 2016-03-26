@@ -1042,8 +1042,13 @@ recv_function_udp6(void *arg)
 }
 #endif
 
+#if defined (__Userspace_os_Windows)
+static void
+setReceiveBufferSize(SOCKET sfd, int new_size)
+#else
 static void
 setReceiveBufferSize(int sfd, int new_size)
+#endif
 {
 	int ch = new_size;
 
@@ -1057,8 +1062,13 @@ setReceiveBufferSize(int sfd, int new_size)
 	return;
 }
 
+#if defined (__Userspace_os_Windows)
+static void
+setSendBufferSize(SOCKET sfd, int new_size)
+#else
 static void
 setSendBufferSize(int sfd, int new_size)
+#endif
 {
 	int ch = new_size;
 

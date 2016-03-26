@@ -318,7 +318,7 @@ server_receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		return (1);
 	}
 	if (first_length == 0) {
-		first_length = datalen;
+		first_length = (unsigned int)datalen;
 		gettimeofday(&start_time, NULL);
 	}
 	sum += datalen;

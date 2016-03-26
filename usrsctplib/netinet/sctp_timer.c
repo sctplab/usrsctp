@@ -665,7 +665,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 					sctp_misc_ints(SCTP_FLIGHT_LOG_DOWN_RSND_TO,
 						       chk->whoTo->flight_size,
 						       chk->book_size,
-						       (uintptr_t)chk->whoTo,
+						       (uint32_t)(uintptr_t)chk->whoTo,
 						       chk->rec.data.TSN_seq);
 				}
 				sctp_flight_size_decrease(chk);
@@ -793,7 +793,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 					sctp_misc_ints(SCTP_FLIGHT_LOG_UP,
 						       chk->whoTo->flight_size,
 						       chk->book_size,
-						       (uintptr_t)chk->whoTo,
+						       (uint32_t)(uintptr_t)chk->whoTo,
 						       chk->rec.data.TSN_seq);
 				}
 

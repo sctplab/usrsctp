@@ -102,7 +102,7 @@ conn_output(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df
 	fdp = (int *)addr;
 #endif
 #ifdef _WIN32
-	if (send(*fdp, buffer, length, 0) == SOCKET_ERROR) {
+	if (send(*fdp, buffer, (int)length, 0) == SOCKET_ERROR) {
 		return (WSAGetLastError());
 #else
 	if (send(*fdp, buffer, length, 0) < 0) {

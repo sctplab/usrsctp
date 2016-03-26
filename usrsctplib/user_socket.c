@@ -581,13 +581,13 @@ struct sctp_generic_recvmsg_args {
    Source: /src/sys/gnu/fs/xfs/FreeBSD/xfs_ioctl.c
  */
 static __inline__ int
-copy_to_user(void *dst, void *src, int len) {
+copy_to_user(void *dst, void *src, size_t len) {
 	memcpy(dst, src, len);
 	return 0;
 }
 
 static __inline__ int
-copy_from_user(void *dst, void *src, int len) {
+copy_from_user(void *dst, void *src, size_t len) {
 	memcpy(dst, src, len);
 	return 0;
 }
@@ -631,7 +631,7 @@ int
 uiomove(void *cp, int n, struct uio *uio)
 {
 	struct iovec *iov;
-	int cnt;
+	size_t cnt;
 	int error = 0;
 
 	if ((uio->uio_rw != UIO_READ) &&
@@ -647,7 +647,7 @@ uiomove(void *cp, int n, struct uio *uio)
 			uio->uio_iovcnt--;
 			continue;
 		}
-		if (cnt > n)
+		if (cnt > (size_t)n)
 			cnt = n;
 
 		switch (uio->uio_segflg) {
@@ -671,9 +671,9 @@ uiomove(void *cp, int n, struct uio *uio)
 		iov->iov_base = (char *)iov->iov_base + cnt;
 		iov->iov_len -= cnt;
 		uio->uio_resid -= cnt;
-		uio->uio_offset += cnt;
+		uio->uio_offset += (off_t)cnt;
 		cp = (char *)cp + cnt;
-		n -= cnt;
+		n -= (int)cnt;
 	}
 out:
 	return (error);
@@ -960,7 +960,7 @@ userspace_sctp_sendmbuf(struct socket *so,
           struct iovec iov[1]; */
     int error = 0;
     int uflags = 0;
-    int retvalsendmsg;
+    ssize_t retval;
 
     sinfo->sinfo_ppid = ppid;
     sinfo->sinfo_flags = flags;
@@ -990,16 +990,16 @@ userspace_sctp_sendmbuf(struct socket *so,
 sendmsg_return:
     /* TODO: Needs a condition for non-blocking when error is EWOULDBLOCK */
     if (0 == error)
-        retvalsendmsg = len;
+        retval = len;
     else if (error == EWOULDBLOCK) {
         errno = EWOULDBLOCK;
-        retvalsendmsg = (-1);
+        retval = -1;
     } else {
         SCTP_PRINTF("%s: error = %d\n", __func__, error);
         errno = error;
-        retvalsendmsg = (-1);
+        retval = -1;
     }
-    return retvalsendmsg;
+    return (retval);
 
 }
 
@@ -1025,7 +1025,8 @@ userspace_sctp_recvmsg(struct socket *so,
 	struct iovec *tiov;
 	int iovlen = 1;
 	int error = 0;
-	int ulen, i, retval;
+	ssize_t ulen;
+	int i;
 	socklen_t fromlen;
 
 	iov[0].iov_base = dbuf;
@@ -1056,7 +1057,7 @@ userspace_sctp_recvmsg(struct socket *so,
 		    (struct sctp_sndrcvinfo *)sinfo, 1);
 
 	if (error) {
-		if (auio.uio_resid != (int)ulen &&
+		if ((auio.uio_resid != ulen) &&
 		    (error == EINTR ||
 #if !defined(__Userspace_os_NetBSD)
 		     error == ERESTART ||
@@ -1088,10 +1089,9 @@ userspace_sctp_recvmsg(struct socket *so,
 			*fromlenp = fromlen;
 		}
 	}
-	if (error == 0){
+	if (error == 0) {
 		/* ready return value */
-		retval = (int)ulen - auio.uio_resid;
-		return (retval);
+		return (ulen - auio.uio_resid);
 	} else {
 		SCTP_PRINTF("%s: error = %d\n", __func__, error);
 		return (-1);
@@ -1113,7 +1113,8 @@ usrsctp_recvv(struct socket *so,
 	struct iovec iov[SCTP_SMALL_IOVEC_SIZE];
 	struct iovec *tiov;
 	int iovlen = 1;
-	int ulen, i;
+	ssize_t ulen;
+	int i;
 	socklen_t fromlen;
 	struct sctp_rcvinfo *rcv;
 	struct sctp_recvv_rn *rn;
@@ -1149,7 +1150,7 @@ usrsctp_recvv(struct socket *so,
 		    from, fromlen, msg_flags,
 		    (struct sctp_sndrcvinfo *)&seinfo, 1);
 	if (errno) {
-		if (auio.uio_resid != (int)ulen &&
+		if ((auio.uio_resid != ulen) &&
 		    (errno == EINTR ||
 #if !defined(__Userspace_os_NetBSD)
 		     errno == ERESTART ||
@@ -1234,7 +1235,7 @@ usrsctp_recvv(struct socket *so,
 	}
 	if (errno == 0) {
 		/* ready return value */
-		return ((int)ulen - auio.uio_resid);
+		return (ulen - auio.uio_resid);
 	} else {
 		return (-1);
 	}
@@ -3327,10 +3328,10 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	dst.sconn_len = sizeof(struct sockaddr_conn);
 #endif
 	dst.sconn_addr = addr;
-	if ((m = sctp_get_mbuf_for_msg(length, 1, M_NOWAIT, 0, MT_DATA)) == NULL) {
+	if ((m = sctp_get_mbuf_for_msg((unsigned int)length, 1, M_NOWAIT, 0, MT_DATA)) == NULL) {
 		return;
 	}
-	m_copyback(m, 0, length, (caddr_t)buffer);
+	m_copyback(m, 0, (int)length, (caddr_t)buffer);
 	if (SCTP_BUF_LEN(m) < (int)(sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr))) {
 		if ((m = m_pullup(m, sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr))) == NULL) {
 			SCTP_STAT_INCR(sctps_hdrops);
@@ -3341,7 +3342,7 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	ch = (struct sctp_chunkhdr *)((caddr_t)sh + sizeof(struct sctphdr));
 	src.sconn_port = sh->src_port;
 	dst.sconn_port = sh->dest_port;
-	sctp_common_input_processing(&m, 0, sizeof(struct sctphdr), length,
+	sctp_common_input_processing(&m, 0, sizeof(struct sctphdr), (int)length,
 	                             (struct sockaddr *)&src,
 	                             (struct sockaddr *)&dst,
 	                             sh, ch,
