@@ -2793,7 +2793,7 @@ sctp_notify_assoc_change(uint16_t state, struct sctp_tcb *stcb,
 	struct mbuf *m_notify;
 	struct sctp_assoc_change *sac;
 	struct sctp_queued_to_read *control;
-	size_t notif_len;
+	unsigned int notif_len;
 	uint16_t abort_len;
 	unsigned int i;
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
@@ -2804,7 +2804,7 @@ sctp_notify_assoc_change(uint16_t state, struct sctp_tcb *stcb,
 		return;
 	}
 	if (sctp_stcb_is_feature_on(stcb->sctp_ep, stcb, SCTP_PCB_FLAGS_RECVASSOCEVNT)) {
-		notif_len = sizeof(struct sctp_assoc_change);
+		notif_len = (unsigned int)sizeof(struct sctp_assoc_change);
 		if (abort != NULL) {
 			abort_len = ntohs(abort->ch.chunk_length);
 		} else {
@@ -2818,7 +2818,7 @@ sctp_notify_assoc_change(uint16_t state, struct sctp_tcb *stcb,
 		m_notify = sctp_get_mbuf_for_msg(notif_len, 0, M_NOWAIT, 1, MT_DATA);
 		if (m_notify == NULL) {
 			/* Retry with smaller value. */
-			notif_len = sizeof(struct sctp_assoc_change);
+			notif_len = (unsigned int)sizeof(struct sctp_assoc_change);
 			m_notify = sctp_get_mbuf_for_msg(notif_len, 0, M_NOWAIT, 1, MT_DATA);
 			if (m_notify == NULL) {
 				goto set_error;
@@ -3707,7 +3707,7 @@ sctp_notify_remote_error(struct sctp_tcb *stcb, uint16_t error, struct sctp_erro
 	struct mbuf *m_notify;
 	struct sctp_remote_error *sre;
 	struct sctp_queued_to_read *control;
-	size_t notif_len;
+	unsigned int notif_len;
 	uint16_t chunk_len;
 
 	if ((stcb == NULL) ||
@@ -3719,11 +3719,11 @@ sctp_notify_remote_error(struct sctp_tcb *stcb, uint16_t error, struct sctp_erro
 	} else {
 		chunk_len = 0;
 	}
-	notif_len = sizeof(struct sctp_remote_error) + chunk_len;
+	notif_len = (unsigned int)(sizeof(struct sctp_remote_error) + chunk_len);
 	m_notify = sctp_get_mbuf_for_msg(notif_len, 0, M_NOWAIT, 1, MT_DATA);
 	if (m_notify == NULL) {
 		/* Retry with smaller value. */
-		notif_len = sizeof(struct sctp_remote_error);
+		notif_len = (unsigned int)sizeof(struct sctp_remote_error);
 		m_notify = sctp_get_mbuf_for_msg(notif_len, 0, M_NOWAIT, 1, MT_DATA);
 		if (m_notify == NULL) {
 			return;
