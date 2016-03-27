@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 295709 2016-02-17 18:04:22Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 297312 2016-03-27 10:04:25Z tuexen $");
 #endif
 
 #define _IP_VHL
