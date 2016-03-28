@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 295805 2016-02-19 11:25:18Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 297361 2016-03-28 19:31:10Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6173,6 +6173,7 @@ void
 sctp_add_local_addr_ep(struct sctp_inpcb *inp, struct sctp_ifa *ifa, uint32_t action)
 {
 	struct sctp_laddr *laddr;
+	struct sctp_tcb *stcb;
 	int fnd, error = 0;
 
 	fnd = 0;
@@ -6230,6 +6231,9 @@ sctp_add_local_addr_ep(struct sctp_inpcb *inp, struct sctp_ifa *ifa, uint32_t ac
 #endif
 		default:
 			break;
+		}
+		LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+			sctp_add_local_addr_restricted(stcb, ifa);
 		}
 	}
 	return;
