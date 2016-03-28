@@ -90,9 +90,9 @@ sctp_init(void)
 	sctp_init_sysctls();
 #if defined(__Userspace__)
 #if defined(__Userspace_os_Windows) || defined(__Userspace_os_NaCl)
-	srandom((unsigned int)GetCurrentProcessId() | (unsigned int)time(NULL));
+	srandom((unsigned int)GetCurrentProcessId() ^ (unsigned int)time(NULL));
 #else
-	srandom((unsigned int)getpid() | (unsigned int)time(NULL));
+	srandom((unsigned int)getpid() ^ (unsigned int)time(NULL));
 #endif
 #endif
 #if defined(__Panda__)
