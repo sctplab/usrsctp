@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 297312 2016-03-27 10:04:25Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 297349 2016-03-28 11:32:20Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6225,7 +6225,9 @@ trigger_send:
 	if (!TAILQ_EMPTY(&stcb->asoc.control_send_queue)) {
 		cnt_ctrl_ready = stcb->asoc.ctrl_queue_cnt - stcb->asoc.ecn_echo_cnt_onq;
 	}
-	if (cnt_ctrl_ready || stcb->asoc.trigger_reset ||
+	if (!TAILQ_EMPTY(&stcb->asoc.asconf_send_queue) ||
+	    cnt_ctrl_ready ||
+	    stcb->asoc.trigger_reset ||
 	    ((un_sent) &&
 	     (stcb->asoc.peers_rwnd > 0 ||
 	      (stcb->asoc.peers_rwnd <= 0 && stcb->asoc.total_flight == 0)))) {
