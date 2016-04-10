@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 295136 2016-02-02 05:57:59Z alfred $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 297662 2016-04-07 09:10:34Z rrs $");
 #endif
 
 #ifndef _NETINET_SCTP_UIO_H_
@@ -347,12 +347,13 @@ struct sctp_assoc_change {
 #define SCTP_CANT_STR_ASSOC     0x0005
 
 /* sac_info values */
-#define SCTP_ASSOC_SUPPORTS_PR        0x01
-#define SCTP_ASSOC_SUPPORTS_AUTH      0x02
-#define SCTP_ASSOC_SUPPORTS_ASCONF    0x03
-#define SCTP_ASSOC_SUPPORTS_MULTIBUF  0x04
-#define SCTP_ASSOC_SUPPORTS_RE_CONFIG 0x05
-#define SCTP_ASSOC_SUPPORTS_MAX       0x05
+#define SCTP_ASSOC_SUPPORTS_PR			0x01
+#define SCTP_ASSOC_SUPPORTS_AUTH		0x02
+#define SCTP_ASSOC_SUPPORTS_ASCONF		0x03
+#define SCTP_ASSOC_SUPPORTS_MULTIBUF		0x04
+#define SCTP_ASSOC_SUPPORTS_RE_CONFIG		0x05
+#define SCTP_ASSOC_SUPPORTS_INTERLEAVING	0x06
+#define SCTP_ASSOC_SUPPORTS_MAX			0x06
 /*
  * Address event
  */

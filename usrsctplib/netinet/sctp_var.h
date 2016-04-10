@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_var.h 295077 2016-01-30 17:32:46Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_var.h 297663 2016-04-07 09:34:41Z rrs $");
 #endif
 
 #ifndef _NETINET_SCTP_VAR_H_
@@ -101,11 +101,19 @@ extern struct pr_usrreqs sctp_usrreqs;
  * an mbuf cache as well so it is not really worth doing, at least
  * right now :-D
  */
-
+#ifdef INVARIANTS
+#define sctp_free_a_readq(_stcb, _readq) { \
+	if ((_readq)->on_strm_q) \
+		panic("On strm q stcb:%p readq:%p", (_stcb), (_readq)); \
+	SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_readq), (_readq)); \
+	SCTP_DECR_READQ_COUNT(); \
+}
+#else
 #define sctp_free_a_readq(_stcb, _readq) { \
 	SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_readq), (_readq)); \
 	SCTP_DECR_READQ_COUNT(); \
 }
+#endif
 
 #define sctp_alloc_a_readq(_stcb, _readq) { \
 	(_readq) = SCTP_ZONE_GET(SCTP_BASE_INFO(ipi_zone_readq), struct sctp_queued_to_read); \
@@ -216,7 +224,7 @@ extern struct pr_usrreqs sctp_usrreqs;
 	atomic_add_int(&(sb)->sb_cc,SCTP_BUF_LEN((m))); \
 	atomic_add_int(&(sb)->sb_mbcnt, MSIZE); \
 	if (stcb) { \
-		atomic_add_int(&(stcb)->asoc.sb_cc,SCTP_BUF_LEN((m))); \
+		atomic_add_int(&(stcb)->asoc.sb_cc, SCTP_BUF_LEN((m))); \
 		atomic_add_int(&(stcb)->asoc.my_rwnd_control_len, MSIZE); \
 	} \
 	if (SCTP_BUF_TYPE(m) != MT_DATA && SCTP_BUF_TYPE(m) != MT_HEADER && \
@@ -413,7 +421,7 @@ void sctp_ctlinput(int, struct sockaddr *, void *);
 int sctp_ctloutput(struct socket *, struct sockopt *);
 #ifdef INET
 void sctp_input_with_port(struct mbuf *, int, uint16_t);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020  
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020
 int sctp_input(struct mbuf **, int *, int);
 #else
 void sctp_input(struct mbuf *, int);

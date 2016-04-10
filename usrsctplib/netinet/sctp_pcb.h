@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 295668 2016-02-16 19:36:25Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 297662 2016-04-07 09:10:34Z rrs $");
 #endif
 
 #ifndef _NETINET_SCTP_PCB_H_
@@ -495,6 +495,7 @@ struct sctp_inpcb {
 	uint8_t ecn_supported;
 	uint8_t prsctp_supported;
 	uint8_t auth_supported;
+	uint8_t idata_supported;
 	uint8_t asconf_supported;
 	uint8_t reconfig_supported;
 	uint8_t nrsack_supported;
@@ -859,6 +860,8 @@ int sctp_is_vtag_good(uint32_t, uint16_t lport, uint16_t rport, struct timeval *
 int sctp_destination_is_reachable(struct sctp_tcb *, struct sockaddr *);
 
 int sctp_swap_inpcb_for_listen(struct sctp_inpcb *inp);
+
+void sctp_clean_up_stream(struct sctp_tcb *stcb, struct sctp_readhead *rh);
 
 /*-
  * Null in last arg inpcb indicate run on ALL ep's. Specific inp in last arg
