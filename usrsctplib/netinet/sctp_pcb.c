@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 297662 2016-04-07 09:10:34Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 297361 2016-03-28 19:31:10Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -49,7 +49,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 297662 2016-04-07 09:10:34Z rrs 
 #include <netinet/sctp_output.h>
 #include <netinet/sctp_timer.h>
 #include <netinet/sctp_bsd_addr.h>
-#if defined(__FreeBSD__) && __FreeBSD_version >= 1000000
+#if defined(__FreeBSD__) && __FreeBSD_version >= 803000
 #include <netinet/sctp_dtrace_define.h>
 #endif
 #if defined(INET) || defined(INET6)
@@ -2832,8 +2832,6 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	inp->reconfig_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_reconfig_enable);
 	inp->nrsack_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_nrsack_enable);
 	inp->pktdrop_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_pktdrop_enable);
-	inp->idata_supported = 0;
-
 #if defined(__FreeBSD__)
 	inp->fibnum = so->so_fibnum;
 #else
@@ -4274,7 +4272,8 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 		 * no need to free the net count, since at this point all
 		 * assoc's are gone.
 		 */
-		sctp_free_a_readq(NULL, sq);
+		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_readq), sq);
+		SCTP_DECR_READQ_COUNT();
 	}
 	/* Now the sctp_pcb things */
 	/*
@@ -5420,45 +5419,6 @@ sctp_add_vtag_to_timewait(uint32_t tag, uint32_t time, uint16_t lport, uint16_t 
 	}
 }
 
-void
-sctp_clean_up_stream(struct sctp_tcb *stcb, struct sctp_readhead *rh)
-{
-	struct sctp_tmit_chunk *chk, *nchk;
-	struct sctp_queued_to_read *ctl, *nctl;
-	TAILQ_FOREACH_SAFE(ctl, rh, next_instrm, nctl) {
-		TAILQ_REMOVE(rh, ctl, next_instrm);
-		ctl->on_strm_q = 0;
-		if (ctl->on_read_q == 0) {
-			sctp_free_remote_addr(ctl->whoFrom);
-			if (ctl->data) {
-				sctp_m_freem(ctl->data);
-				ctl->data = NULL;
-			}
-		}
-		/* Reassembly free? */
-		TAILQ_FOREACH_SAFE(chk, &ctl->reasm, sctp_next, nchk) {
-			TAILQ_REMOVE(&ctl->reasm, chk, sctp_next);
-			if (chk->data) {
-				sctp_m_freem(chk->data);
-				chk->data = NULL;
-			}
-			if (chk->holds_key_ref)
-				sctp_auth_key_release(stcb, chk->auth_keyid, SCTP_SO_LOCKED);
-			sctp_free_remote_addr(chk->whoTo);
-			SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_chunk), chk);
-			SCTP_DECR_CHK_COUNT();
-			/*sa_ignore FREED_MEMORY*/
-		}
-		/*
-		 * We don't free the address here
-		 * since all the net's were freed
-		 * above.
-		 */
-		if (ctl->on_read_q == 0) {
-			sctp_free_a_readq(stcb, ctl);
-		}
-	}
-}
 
 #ifdef __Panda__
 void panda_wakeup_socket(struct socket *so);
@@ -5807,7 +5767,8 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		sq->whoFrom = NULL;
 		sq->stcb = NULL;
 		/* Free the ctl entry */
-		sctp_free_a_readq(stcb, sq);
+		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_readq), sq);
+		SCTP_DECR_READQ_COUNT();
 		/*sa_ignore FREED_MEMORY*/
 	}
 	TAILQ_FOREACH_SAFE(chk, &asoc->free_chunks, sctp_next, nchk) {
@@ -5920,6 +5881,20 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		SCTP_DECR_CHK_COUNT();
 		/*sa_ignore FREED_MEMORY*/
 	}
+	TAILQ_FOREACH_SAFE(chk, &asoc->reasmqueue, sctp_next, nchk) {
+		TAILQ_REMOVE(&asoc->reasmqueue, chk, sctp_next);
+		if (chk->data) {
+			sctp_m_freem(chk->data);
+			chk->data = NULL;
+		}
+		if (chk->holds_key_ref)
+			sctp_auth_key_release(stcb, chk->auth_keyid, SCTP_SO_LOCKED);
+		sctp_free_remote_addr(chk->whoTo);
+		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_chunk), chk);
+		SCTP_DECR_CHK_COUNT();
+		/*sa_ignore FREED_MEMORY*/
+	}
+
 	if (asoc->mapping_array) {
 		SCTP_FREE(asoc->mapping_array, SCTP_M_MAP);
 		asoc->mapping_array = NULL;
@@ -5935,9 +5910,24 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 	}
 	asoc->strm_realoutsize = asoc->streamoutcnt = 0;
 	if (asoc->strmin) {
+		struct sctp_queued_to_read *ctl, *nctl;
+
 		for (i = 0; i < asoc->streamincnt; i++) {
-			sctp_clean_up_stream(stcb, &asoc->strmin[i].inqueue);
-			sctp_clean_up_stream(stcb, &asoc->strmin[i].uno_inqueue);
+			TAILQ_FOREACH_SAFE(ctl, &asoc->strmin[i].inqueue, next, nctl) {
+				TAILQ_REMOVE(&asoc->strmin[i].inqueue, ctl, next);
+				sctp_free_remote_addr(ctl->whoFrom);
+				if (ctl->data) {
+					sctp_m_freem(ctl->data);
+					ctl->data = NULL;
+				}
+				/*
+				 * We don't free the address here
+				 * since all the net's were freed
+				 * above.
+				 */
+				SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_readq), ctl);
+				SCTP_DECR_READQ_COUNT();
+			}
 		}
 		SCTP_FREE(asoc->strmin, SCTP_M_STRMI);
 		asoc->strmin = NULL;
@@ -7139,7 +7129,6 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 	uint8_t peer_supports_reconfig;
 	uint8_t peer_supports_nrsack;
 	uint8_t peer_supports_pktdrop;
-	uint8_t peer_supports_idata;
 #ifdef INET
 	struct sockaddr_in sin;
 #endif
@@ -7169,7 +7158,6 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 	} else {
 		sa = src;
 	}
-	peer_supports_idata = 0;
 	peer_supports_ecn = 0;
 	peer_supports_prsctp = 0;
 	peer_supports_auth = 0;
@@ -7548,9 +7536,6 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 				case SCTP_AUTHENTICATION:
 					peer_supports_auth = 1;
 					break;
-				case SCTP_IDATA:
-					peer_supports_idata = 1;
-					break;
 				default:
 					/* one I have not learned yet */
 					break;
@@ -7708,10 +7693,6 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 	if ((stcb->asoc.reconfig_supported == 1) &&
 	    (peer_supports_reconfig == 0)) {
 		stcb->asoc.reconfig_supported = 0;
-	}
-	if ((stcb->asoc.idata_supported == 1) &&
-	    (peer_supports_idata == 0)) {
-		stcb->asoc.idata_supported = 0;
 	}
 	if ((stcb->asoc.nrsack_supported == 1) &&
 	    (peer_supports_nrsack == 0)) {
@@ -7904,9 +7885,26 @@ sctp_drain_mbufs(struct sctp_tcb *stcb)
 	SCTP_STAT_INCR(sctps_protocol_drains_done);
 	cumulative_tsn_p1 = asoc->cumulative_tsn + 1;
 	cnt = 0;
+	/* First look in the re-assembly queue */
+	TAILQ_FOREACH_SAFE(chk, &asoc->reasmqueue, sctp_next, nchk) {
+		if (SCTP_TSN_GT(chk->rec.data.TSN_seq, cumulative_tsn_p1)) {
+			/* Yep it is above cum-ack */
+			cnt++;
+			SCTP_CALC_TSN_TO_GAP(gap, chk->rec.data.TSN_seq, asoc->mapping_array_base_tsn);
+			asoc->size_on_reasm_queue = sctp_sbspace_sub(asoc->size_on_reasm_queue, chk->send_size);
+			sctp_ucount_decr(asoc->cnt_on_reasm_queue);
+			SCTP_UNSET_TSN_PRESENT(asoc->mapping_array, gap);
+			TAILQ_REMOVE(&asoc->reasmqueue, chk, sctp_next);
+			if (chk->data) {
+				sctp_m_freem(chk->data);
+				chk->data = NULL;
+			}
+			sctp_free_a_chunk(stcb, chk, SCTP_SO_NOT_LOCKED);
+		}
+	}
 	/* Ok that was fun, now we will drain all the inbound streams? */
 	for (strmat = 0; strmat < asoc->streamincnt; strmat++) {
-		TAILQ_FOREACH_SAFE(ctl, &asoc->strmin[strmat].inqueue, next_instrm, nctl) {
+		TAILQ_FOREACH_SAFE(ctl, &asoc->strmin[strmat].inqueue, next, nctl) {
 			if (SCTP_TSN_GT(ctl->sinfo_tsn, cumulative_tsn_p1)) {
 				/* Yep it is above cum-ack */
 				cnt++;
@@ -7914,58 +7912,14 @@ sctp_drain_mbufs(struct sctp_tcb *stcb)
 				asoc->size_on_all_streams = sctp_sbspace_sub(asoc->size_on_all_streams, ctl->length);
 				sctp_ucount_decr(asoc->cnt_on_all_streams);
 				SCTP_UNSET_TSN_PRESENT(asoc->mapping_array, gap);
-				TAILQ_REMOVE(&asoc->strmin[strmat].inqueue, ctl, next_instrm);
+				TAILQ_REMOVE(&asoc->strmin[strmat].inqueue, ctl, next);
 				if (ctl->data) {
 					sctp_m_freem(ctl->data);
 					ctl->data = NULL;
 				}
 				sctp_free_remote_addr(ctl->whoFrom);
-				/* Now its reasm? */
-				TAILQ_FOREACH_SAFE(chk, &ctl->reasm, sctp_next, nchk) {
-					cnt++;
-					SCTP_CALC_TSN_TO_GAP(gap, chk->rec.data.TSN_seq, asoc->mapping_array_base_tsn);
-					asoc->size_on_reasm_queue = sctp_sbspace_sub(asoc->size_on_reasm_queue, chk->send_size);
-					sctp_ucount_decr(asoc->cnt_on_reasm_queue);
-					SCTP_UNSET_TSN_PRESENT(asoc->mapping_array, gap);
-					TAILQ_REMOVE(&ctl->reasm, chk, sctp_next);
-					if (chk->data) {
-						sctp_m_freem(chk->data);
-						chk->data = NULL;
-					}
-					sctp_free_a_chunk(stcb, chk, SCTP_SO_NOT_LOCKED);
-				}
-				sctp_free_a_readq(stcb, ctl);
-			}
-		}
-		TAILQ_FOREACH_SAFE(ctl, &asoc->strmin[strmat].uno_inqueue, next_instrm, nctl) {
-			if (SCTP_TSN_GT(ctl->sinfo_tsn, cumulative_tsn_p1)) {
-				/* Yep it is above cum-ack */
-				cnt++;
-				SCTP_CALC_TSN_TO_GAP(gap, ctl->sinfo_tsn, asoc->mapping_array_base_tsn);
-				asoc->size_on_all_streams = sctp_sbspace_sub(asoc->size_on_all_streams, ctl->length);
-				sctp_ucount_decr(asoc->cnt_on_all_streams);
-				SCTP_UNSET_TSN_PRESENT(asoc->mapping_array, gap);
-				TAILQ_REMOVE(&asoc->strmin[strmat].uno_inqueue, ctl, next_instrm);
-				if (ctl->data) {
-					sctp_m_freem(ctl->data);
-					ctl->data = NULL;
-				}
-				sctp_free_remote_addr(ctl->whoFrom);
-				/* Now its reasm? */
-				TAILQ_FOREACH_SAFE(chk, &ctl->reasm, sctp_next, nchk) {
-					cnt++;
-					SCTP_CALC_TSN_TO_GAP(gap, chk->rec.data.TSN_seq, asoc->mapping_array_base_tsn);
-					asoc->size_on_reasm_queue = sctp_sbspace_sub(asoc->size_on_reasm_queue, chk->send_size);
-					sctp_ucount_decr(asoc->cnt_on_reasm_queue);
-					SCTP_UNSET_TSN_PRESENT(asoc->mapping_array, gap);
-					TAILQ_REMOVE(&ctl->reasm, chk, sctp_next);
-					if (chk->data) {
-						sctp_m_freem(chk->data);
-						chk->data = NULL;
-					}
-					sctp_free_a_chunk(stcb, chk, SCTP_SO_NOT_LOCKED);
-				}
-				sctp_free_a_readq(stcb, ctl);
+				SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_readq), ctl);
+				SCTP_DECR_READQ_COUNT();
 			}
 		}
 	}
