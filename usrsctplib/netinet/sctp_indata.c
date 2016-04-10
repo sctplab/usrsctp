@@ -1250,8 +1250,16 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 {
 	uint32_t next_fsn;
 	struct sctp_tmit_chunk *at, *nat;
-	int cnt_added;
+	int cnt_added, unordered;
 
+	/*
+	 * For old un-ordered data chunks.
+	 */
+	if ((control->sinfo_flags >> 8) & SCTP_DATA_UNORDERED) {
+		unordered = 1;
+	} else {
+		unordered = 0;
+	}
 	/* Must be added to the stream-in queue */
 	if (created_control) {
 		if (sctp_place_control_in_stream(strm, asoc, control)) {
