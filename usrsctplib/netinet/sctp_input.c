@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 297349 2016-03-28 11:32:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 297662 2016-04-07 09:10:34Z rrs $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -409,17 +409,9 @@ sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb)
 
 	if (asoc->strmin != NULL) {
 		/* Free the old ones */
-		struct sctp_queued_to_read *ctl, *nctl;
-
 		for (i = 0; i < asoc->streamincnt; i++) {
-			TAILQ_FOREACH_SAFE(ctl, &asoc->strmin[i].inqueue, next, nctl) {
-				TAILQ_REMOVE(&asoc->strmin[i].inqueue, ctl, next);
-				sctp_free_remote_addr(ctl->whoFrom);
-				ctl->whoFrom = NULL;
-				sctp_m_freem(ctl->data);
-				ctl->data = NULL;
-				sctp_free_a_readq(stcb, ctl);
-			}
+			sctp_clean_up_stream(stcb, &asoc->strmin[i].inqueue);
+			sctp_clean_up_stream(stcb, &asoc->strmin[i].uno_inqueue);
 		}
 		SCTP_FREE(asoc->strmin, SCTP_M_STRMI);
 	}
@@ -437,8 +429,10 @@ sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb)
 	}
 	for (i = 0; i < asoc->streamincnt; i++) {
 		asoc->strmin[i].stream_no = i;
-		asoc->strmin[i].last_sequence_delivered = 0xffff;
+		asoc->strmin[i].last_sequence_delivered = 0xffffffff;
 		TAILQ_INIT(&asoc->strmin[i].inqueue);
+		TAILQ_INIT(&asoc->strmin[i].uno_inqueue);
+		asoc->strmin[i].pd_api_started = 0;
 		asoc->strmin[i].delivery_started = 0;
 	}
 	/*
@@ -960,6 +954,29 @@ sctp_handle_shutdown(struct sctp_shutdown_chunk *cp,
 		 * we assume the end of last record.
 		 */
 		SCTP_INP_READ_LOCK(stcb->sctp_ep);
+		if (asoc->control_pdapi->on_strm_q) {
+			struct sctp_stream_in *strm;
+
+			strm = &asoc->strmin[asoc->control_pdapi->sinfo_stream];
+			if (asoc->control_pdapi->on_strm_q == SCTP_ON_UNORDERED) {
+				/* Unordered */
+				TAILQ_REMOVE(&strm->uno_inqueue, asoc->control_pdapi, next_instrm);
+				asoc->control_pdapi->on_strm_q = 0;
+			} else if (asoc->control_pdapi->on_strm_q == SCTP_ON_ORDERED) {
+				/* Ordered */
+				TAILQ_REMOVE(&strm->inqueue, asoc->control_pdapi, next_instrm);
+				asoc->control_pdapi->on_strm_q = 0;
+			} else {
+				panic("Unknown state on ctrl:%p on_strm_q:%d",
+				      asoc->control_pdapi,
+				      asoc->control_pdapi->on_strm_q);
+			}
+		}
+		printf("%s:%d End added to ctl:%p (%d)\n",
+		       __FUNCTION__,
+		       __LINE__,
+		       asoc->control_pdapi,
+		       asoc->control_pdapi->on_strm_q);
 		asoc->control_pdapi->end_added = 1;
 		asoc->control_pdapi->pdapi_aborted = 1;
 		asoc->control_pdapi = NULL;
@@ -1071,6 +1088,11 @@ sctp_handle_shutdown_ack(struct sctp_shutdown_ack_chunk *cp SCTP_UNUSED,
 		 * we assume the end of last record.
 		 */
 		SCTP_INP_READ_LOCK(stcb->sctp_ep);
+		printf("%s:%d End added to ctl:%p (%d)\n",
+		       __FUNCTION__,
+		       __LINE__,
+		       asoc->control_pdapi,
+		       asoc->control_pdapi->on_strm_q);
 		asoc->control_pdapi->end_added = 1;
 		asoc->control_pdapi->pdapi_aborted = 1;
 		asoc->control_pdapi = NULL;
@@ -1145,6 +1167,7 @@ sctp_process_unrecog_chunk(struct sctp_tcb *stcb, struct sctp_paramhdr *phdr,
 	case SCTP_ASCONF:
 		sctp_asconf_cleanup(stcb, net);
 		break;
+	case SCTP_IFORWARD_CUM_TSN:
 	case SCTP_FORWARD_CUM_TSN:
 		stcb->asoc.prsctp_supported = 0;
 		break;
@@ -3606,6 +3629,7 @@ process_chunk_drop(struct sctp_tcb *stcb, struct sctp_chunk_desc *desc,
 		/* resend last asconf ack */
 		sctp_send_asconf_ack(stcb);
 		break;
+	case SCTP_IFORWARD_CUM_TSN:
 	case SCTP_FORWARD_CUM_TSN:
 		send_forward_tsn(stcb, &stcb->asoc);
 		break;
@@ -3631,7 +3655,7 @@ sctp_reset_in_stream(struct sctp_tcb *stcb, uint32_t number_entries, uint16_t *l
 	uint16_t temp;
 
 	/*
-	 * We set things to 0xffff since this is the last delivered sequence
+	 * We set things to 0xffffffff since this is the last delivered sequence
 	 * and we will be sending in 0 after the reset.
 	 */
 
@@ -3641,12 +3665,12 @@ sctp_reset_in_stream(struct sctp_tcb *stcb, uint32_t number_entries, uint16_t *l
 			if (temp >= stcb->asoc.streamincnt) {
 				continue;
 			}
-			stcb->asoc.strmin[temp].last_sequence_delivered = 0xffff;
+			stcb->asoc.strmin[temp].last_sequence_delivered = 0xffffffff;
 		}
 	} else {
 		list = NULL;
 		for (i = 0; i < stcb->asoc.streamincnt; i++) {
-			stcb->asoc.strmin[i].last_sequence_delivered = 0xffff;
+			stcb->asoc.strmin[i].last_sequence_delivered = 0xffffffff;
 		}
 	}
 	sctp_ulp_notify(SCTP_NOTIFY_STR_RESET_RECV, stcb, number_entries, (void *)list, SCTP_SO_NOT_LOCKED);
@@ -4184,20 +4208,28 @@ sctp_handle_str_reset_add_strm(struct sctp_tcb *stcb, struct sctp_tmit_chunk *ch
 			/* copy off the old data */
 			for (i = 0; i < stcb->asoc.streamincnt; i++) {
 				TAILQ_INIT(&stcb->asoc.strmin[i].inqueue);
+				TAILQ_INIT(&stcb->asoc.strmin[i].uno_inqueue);
 				stcb->asoc.strmin[i].stream_no = i;
 				stcb->asoc.strmin[i].last_sequence_delivered = oldstrm[i].last_sequence_delivered;
 				stcb->asoc.strmin[i].delivery_started = oldstrm[i].delivery_started;
+				stcb->asoc.strmin[i].pd_api_started = oldstrm[i].pd_api_started;
 				/* now anything on those queues? */
-				TAILQ_FOREACH_SAFE(ctl, &oldstrm[i].inqueue, next, nctl) {
-					TAILQ_REMOVE(&oldstrm[i].inqueue, ctl, next);
-					TAILQ_INSERT_TAIL(&stcb->asoc.strmin[i].inqueue, ctl, next);
+				TAILQ_FOREACH_SAFE(ctl, &oldstrm[i].inqueue, next_instrm, nctl) {
+					TAILQ_REMOVE(&oldstrm[i].inqueue, ctl, next_instrm);
+					TAILQ_INSERT_TAIL(&stcb->asoc.strmin[i].inqueue, ctl, next_instrm);
+				}
+				TAILQ_FOREACH_SAFE(ctl, &oldstrm[i].uno_inqueue, next_instrm, nctl) {
+					TAILQ_REMOVE(&oldstrm[i].uno_inqueue, ctl, next_instrm);
+					TAILQ_INSERT_TAIL(&stcb->asoc.strmin[i].uno_inqueue, ctl, next_instrm);
 				}
 			}
 			/* Init the new streams */
 			for (i = stcb->asoc.streamincnt; i < num_stream; i++) {
 				TAILQ_INIT(&stcb->asoc.strmin[i].inqueue);
+				TAILQ_INIT(&stcb->asoc.strmin[i].uno_inqueue);
 				stcb->asoc.strmin[i].stream_no = i;
-				stcb->asoc.strmin[i].last_sequence_delivered = 0xffff;
+				stcb->asoc.strmin[i].last_sequence_delivered = 0xffffffff;
+				stcb->asoc.strmin[i].pd_api_started = 0;
 				stcb->asoc.strmin[i].delivery_started = 0;
 			}
 			SCTP_FREE(oldstrm, SCTP_M_STRMI);
@@ -5606,6 +5638,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 			}
 			break;
 		case SCTP_FORWARD_CUM_TSN:
+		case SCTP_IFORWARD_CUM_TSN:
 			SCTPDBG(SCTP_DEBUG_INPUT3, "SCTP_FWD-TSN\n");
 			if (chk_length < sizeof(struct sctp_forward_tsn_chunk)) {
 				/* Its not ours */
