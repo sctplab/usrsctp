@@ -2570,12 +2570,13 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 		if ((ch->chunk_type == SCTP_DATA) ||
 		    (ch->chunk_type == SCTP_IDATA)) {
 			int clen;
+
 			if (ch->chunk_type == SCTP_DATA) {
 				clen = sizeof(struct sctp_data_chunk);
 			} else {
 				clen = sizeof(struct sctp_idata_chunk);
 			}
-			if ((size_t)chk_length < clen) {
+			if (chk_length < clen) {
 				/*
 				 * Need to send an abort since we had a
 				 * invalid data chunk.
