@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 298132 2016-04-16 21:34:49Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 298223 2016-04-18 20:16:41Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -408,7 +408,6 @@ sctp6_notify(struct sctp_inpcb *inp,
 		} else {
 			timer_stopped = 0;
 		}
-		break;
 		/* Update the path MTU. */
 		if (net->mtu > next_mtu) {
 			net->mtu = next_mtu;
@@ -479,7 +478,7 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 		 * verification tag of the SCTP common header.
 		 */
 		if (ip6cp->ip6c_m->m_pkthdr.len <
-		    ip6cp->ip6c_off + offsetof(struct sctphdr, checksum)) {
+		    (int32_t)(ip6cp->ip6c_off + offsetof(struct sctphdr, checksum))) {
 			return;
 		}
 

@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 298132 2016-04-16 21:34:49Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 298223 2016-04-18 20:16:41Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -396,13 +396,18 @@ void *
 #endif
 sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 {
-	struct ip *outer_ip, *inner_ip;
+#if defined(__FreeBSD__)
+	struct ip *outer_ip;
+#endif
+	struct ip *inner_ip;
 	struct sctphdr *sh;
 	struct icmp *icmp;
 	struct sctp_inpcb *inp;
 	struct sctp_tcb *stcb;
 	struct sctp_nets *net;
+#if defined(__FreeBSD__)
 	struct sctp_init_chunk *ch;
+#endif
 	struct sockaddr_in src, dst;
 
 	if (sa->sa_family != AF_INET ||
@@ -426,7 +431,9 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 		inner_ip = (struct ip *)vip;
 		icmp = (struct icmp *)((caddr_t)inner_ip -
 		    (sizeof(struct icmp) - sizeof(struct ip)));
+#if defined(__FreeBSD__)
 		outer_ip = (struct ip *)((caddr_t)icmp - sizeof(struct ip));
+#endif
 		sh = (struct sctphdr *)((caddr_t)inner_ip + (inner_ip->ip_hl << 2));
 		memset(&src, 0, sizeof(struct sockaddr_in));
 		src.sin_family = AF_INET;
@@ -499,7 +506,7 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 #if defined(__FreeBSD__) && __FreeBSD_version >= 1000000
 			            ntohs(inner_ip->ip_len),
 #else
-			            ip_inner->ip_len,
+			            inner_ip->ip_len,
 #endif
 			            ntohs(icmp->icmp_nextmtu));
 		} else {
