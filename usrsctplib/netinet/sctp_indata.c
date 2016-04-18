@@ -1154,7 +1154,7 @@ deliver_more:
 						  SCTP_READ_LOCK_NOT_HELD, SCTP_SO_NOT_LOCKED);
 			}
 			strm->last_sequence_delivered = next_to_del;
-			if ((control->end_added) && (control->last_frag_seen)){
+			if ((control->end_added) && (control->last_frag_seen)) {
 				control = nctl;
 				goto deliver_more;
 			} else {
@@ -1284,7 +1284,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 			}
 		}
 	}
-	if ((asoc->idata_supported == 0) && ((control->sinfo_flags >> 8) & SCTP_DATA_UNORDERED)) {
+	if ((asoc->idata_supported == 0) && (unordered == 1)) {
 		sctp_inject_old_data_unordered(stcb, asoc, strm, control, chk, abort_flag);
 		return;
 	}
@@ -1322,7 +1322,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	} else {
 		/* Place the chunk in our list */
 		int inserted=0;
-		if(control->last_frag_seen == 0) {
+		if (control->last_frag_seen == 0) {
 			/* Still willing to raise highest FSN seen */
 			if (SCTP_TSN_GT(chk->rec.data.fsn_num, control->top_fsn)) {
 				SCTPDBG(SCTP_DEBUG_XXX,
@@ -1483,7 +1483,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 			}
 		}
 	}
-	if ((control->on_read_q) && (cnt_added > 0)){
+	if ((control->on_read_q) && (cnt_added > 0)) {
 		/* Need to wakeup the reader */
 		sctp_wakeup_the_read_socket(stcb->sctp_ep);
 	}
@@ -5182,7 +5182,7 @@ sctp_kick_prsctp_reorder_queue(struct sctp_tcb *stcb,
 				if (ctl->on_strm_q) {
 					if (ctl->on_strm_q == SCTP_ON_ORDERED) {
 						TAILQ_REMOVE(&strmin->inqueue, ctl, next_instrm);
-					} else if (ctl->on_strm_q == SCTP_ON_UNORDERED){
+					} else if (ctl->on_strm_q == SCTP_ON_UNORDERED) {
 						TAILQ_REMOVE(&strmin->uno_inqueue, ctl, next_instrm);
 #ifdef INVARIANTS
 					} else {
@@ -5243,7 +5243,7 @@ sctp_kick_prsctp_reorder_queue(struct sctp_tcb *stcb,
 				if (ctl->on_strm_q) {
 					if (ctl->on_strm_q == SCTP_ON_ORDERED) {
 						TAILQ_REMOVE(&strmin->inqueue, ctl, next_instrm);
-					} else if (ctl->on_strm_q == SCTP_ON_UNORDERED){
+					} else if (ctl->on_strm_q == SCTP_ON_UNORDERED) {
 						TAILQ_REMOVE(&strmin->uno_inqueue, ctl, next_instrm);
 #ifdef INVARIANTS
 					} else {
@@ -5501,7 +5501,7 @@ sctp_handle_forward_tsn(struct sctp_tcb *stcb,
 					ctl->end_added = 1;
 					if (ctl->on_strm_q == SCTP_ON_ORDERED) {
 						TAILQ_REMOVE(&strm->inqueue, ctl, next_instrm);
-					} else if (ctl->on_strm_q == SCTP_ON_UNORDERED){
+					} else if (ctl->on_strm_q == SCTP_ON_UNORDERED) {
 						TAILQ_REMOVE(&strm->uno_inqueue, ctl, next_instrm);
 #ifdef INVARIANTS
 					} else if (ctl->on_strm_q) {
