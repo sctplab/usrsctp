@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 297663 2016-04-07 09:34:41Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 298199 2016-04-18 09:29:14Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6115,10 +6115,12 @@ sctp_sorecvmsg(struct socket *so,
 			sctp_m_free (control->aux_data);
 			control->aux_data = NULL;
 		}
+#ifdef INVARIANTS
 		if (control->on_strm_q) {
 			panic("About to free ctl:%p so:%p and its in %d",
 			      control, so, control->on_strm_q);
 		}
+#endif
 		sctp_free_remote_addr(control->whoFrom);
 		sctp_free_a_readq(stcb, control);
 		if (hold_rlock) {
@@ -6549,10 +6551,12 @@ sctp_sorecvmsg(struct socket *so,
 				no_rcv_needed = control->do_not_ref_stcb;
 				sctp_free_remote_addr(control->whoFrom);
 				control->data = NULL;
+#ifdef INVARIANTS
 				if (control->on_strm_q) {
 					panic("About to free ctl:%p so:%p and its in %d",
 					      control, so, control->on_strm_q);
 				}
+#endif
 				sctp_free_a_readq(stcb, control);
 				control = NULL;
 				if ((freed_so_far >= rwnd_req) &&
