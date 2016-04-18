@@ -7644,7 +7644,8 @@ sctp_move_to_outqueue(struct sctp_tcb *stcb,
 	struct sctp_tmit_chunk *chk;
 	struct sctp_data_chunk *dchkh=NULL;
 	struct sctp_idata_chunk *ndchkh=NULL;
-	uint32_t to_move, length, leading;
+	uint32_t to_move, length;
+	int leading;
 	uint8_t rcv_flags = 0;
 	uint8_t some_taken;
 	uint8_t send_lock_up = 0;
