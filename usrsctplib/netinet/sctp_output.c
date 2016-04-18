@@ -7942,9 +7942,9 @@ re_look:
 		atomic_subtract_int(&sp->length, to_move);
 	}
 	if (stcb->asoc.idata_supported == 0) {
-		leading = (int)sizeof(struct sctp_data_chunk);
+		leading = sizeof(struct sctp_data_chunk);
 	} else {
-		leading = (int)sizeof(struct sctp_idata_chunk);
+		leading = sizeof(struct sctp_idata_chunk);
 	}
 	if (M_LEADINGSPACE(chk->data) < leading) {
 		/* Not enough room for a chunk header, get some */
