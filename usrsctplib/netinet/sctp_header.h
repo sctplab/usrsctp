@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_header.h 297662 2016-04-07 09:10:34Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_header.h 298187 2016-04-18 06:38:53Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_HEADER_H_
@@ -172,7 +172,7 @@ struct sctp_idata {
 	union {
 		uint32_t protocol_id;
 		uint32_t fsn;	/* Fragment Sequence Number */
-	};
+	} ppid_fsn;
 	/* user data follows */
 } SCTP_PACKED;
 

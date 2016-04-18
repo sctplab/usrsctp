@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 297663 2016-04-07 09:34:41Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 298187 2016-04-18 06:38:53Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -8095,9 +8095,9 @@ re_look:
 		ndchkh->dp.reserved = htons(0);
 		ndchkh->dp.msg_id = htonl(sp->msg_id);
 		if (sp->fsn == 0)
-			ndchkh->dp.protocol_id = chk->rec.data.payloadtype;
+			ndchkh->dp.ppid_fsn.protocol_id = chk->rec.data.payloadtype;
 		else
-			ndchkh->dp.fsn = htonl(sp->fsn);
+			ndchkh->dp.ppid_fsn.fsn = htonl(sp->fsn);
 		sp->fsn++;
 		ndchkh->ch.chunk_length = htons(chk->send_size);
 	}

@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 297662 2016-04-07 09:10:34Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 298187 2016-04-18 06:38:53Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1540,7 +1540,7 @@ sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		if (ch->ch.chunk_flags & SCTP_DATA_FIRST_FRAG)
 			fsn = 0;
 		else
-			fsn = ntohl(nch->dp.fsn);
+			fsn = ntohl(nch->dp.ppid_fsn.fsn);
 		old_data = 0;
 	} else {
 		ch = (struct sctp_data_chunk *)sctp_m_getptr(*m, offset,
