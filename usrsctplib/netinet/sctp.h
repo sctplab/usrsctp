@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 287717 2015-09-12 17:08:51Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 297662 2016-04-07 09:10:34Z rrs $");
 #endif
 
 #ifndef _NETINET_SCTP_H_
@@ -202,6 +202,9 @@ struct sctp_paramhdr {
 #define SCTP_PLUGGABLE_SS		0x00001203
 #define SCTP_SS_VALUE			0x00001204
 #define SCTP_CC_OPTION			0x00001205 /* Options for CC modules */
+/* For I-DATA */
+#define SCTP_INTERLEAVING_SUPPORTED	0x00001206
+
 /* read only */
 #define SCTP_GET_SNDBUF_USE		0x00001101
 #define SCTP_GET_STAT_LOG		0x00001103
@@ -466,6 +469,7 @@ struct sctp_error_auth_invalid_hmac {
 /* EY nr_sack chunk id*/
 #define SCTP_NR_SELECTIVE_ACK	0x10
 /************0x40 series ***********/
+#define SCTP_IDATA		0x40
 /************0x80 series ***********/
 /* RFC5061 */
 #define	SCTP_ASCONF_ACK		0x80
@@ -481,7 +485,7 @@ struct sctp_error_auth_invalid_hmac {
 #define SCTP_FORWARD_CUM_TSN	0xc0
 /* RFC5061 */
 #define SCTP_ASCONF		0xc1
-
+#define SCTP_IFORWARD_CUM_TSN	0xc2
 
 /* ABORT and SHUTDOWN COMPLETE FLAG */
 #define SCTP_HAD_NO_TCB		0x01

@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 297312 2016-03-27 10:04:25Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 298223 2016-04-18 20:16:41Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UTIL_H_
@@ -105,6 +105,14 @@ sctp_dynamic_set_primary(struct sockaddr *sa, uint32_t vrf_id);
 
 void
 sctp_mtu_size_reset(struct sctp_inpcb *, struct sctp_association *, uint32_t);
+
+void
+sctp_wakeup_the_read_socket(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
+    int so_locked
+#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+    SCTP_UNUSED
+#endif
+);
 
 void
 sctp_add_to_readq(struct sctp_inpcb *inp,
