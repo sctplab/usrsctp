@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Felix Weinrank
+ * Copyright (C) 2016 Felix Weinrank
  *
  * All rights reserved.
  *
@@ -29,7 +29,7 @@
  */
 
 /*
- * Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port]
+ * Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]
  */
 
 #include <stdio.h>
@@ -50,7 +50,9 @@
 #include <usrsctp.h>
 
 int done = 0;
-static const char *request = "GET / HTTP/1.0\r\nUser-agent: libusrsctp\r\nConnection: close\r\n\r\n";
+static const char *request_prefix = "GET";
+static const char *request_postfix = "HTTP/1.0\r\nUser-agent: libusrsctp\r\nConnection: close\r\n\r\n";
+char request[512];
 
 #ifdef _WIN32
 typedef char* caddr_t;
@@ -93,20 +95,23 @@ main(int argc, char *argv[])
 	struct sockaddr_in addr4;
 	struct sockaddr_in6 addr6;
 	struct sctp_udpencaps encaps;
-	struct sctpstat stat;
 
 	if (argc > 4) {
 		usrsctp_init(atoi(argv[4]), NULL, debug_printf);
 	} else {
 		usrsctp_init(9899, NULL, debug_printf);
 	}
+
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 #endif
+
 	usrsctp_sysctl_set_sctp_blackhole(2);
+
 	if ((sock = usrsctp_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 	}
+
 	if (argc > 3) {
 		memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
 #ifdef HAVE_SIN6_LEN
@@ -119,6 +124,7 @@ main(int argc, char *argv[])
 			perror("bind");
 		}
 	}
+
 	if (argc > 5) {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET6;
@@ -127,6 +133,15 @@ main(int argc, char *argv[])
 			perror("setsockopt");
 		}
 	}
+
+    if (argc > 6) {
+        snprintf(request, sizeof(request), "%s %s %s", request_prefix, argv[6], request_postfix);
+    } else {
+        snprintf(request, sizeof(request), "%s %s %s", request_prefix, "/", request_postfix);
+    }
+
+    printf("\nrequest:\n%s\n",request);
+
 	memset((void *)&addr4, 0, sizeof(struct sockaddr_in));
 	memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
 #ifdef HAVE_SIN_LEN
@@ -154,17 +169,6 @@ main(int argc, char *argv[])
 	// send GET request
 	usrsctp_sendv(sock, request, strlen(request), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
 
-#ifdef _WIN32
-		Sleep(2*1000);
-#else
-		sleep(2);
-#endif
-
-	if (!done) {
-		if (usrsctp_shutdown(sock, SHUT_WR) < 0) {
-			perror("usrsctp_shutdown");
-		}
-	}
 	while (!done) {
 #ifdef _WIN32
 		Sleep(1*1000);
@@ -172,9 +176,7 @@ main(int argc, char *argv[])
 		sleep(1);
 #endif
 	}
-	usrsctp_get_stat(&stat);
-	printf("Number of packets (sent/received): (%u/%u).\n",
-	       stat.sctps_outpackets, stat.sctps_inpackets);
+
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
 		Sleep(1000);
