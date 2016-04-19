@@ -48,7 +48,8 @@ all: \
 	ekr_server \
 	ekr_peer \
 	ekr_loop \
-	test_libmgmt
+	test_libmgmt \
+	http_client
 
 client:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c client.c
