@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 298223 2016-04-18 20:16:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 298508 2016-04-23 09:15:58Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UTIL_H_
@@ -126,16 +126,6 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
     SCTP_UNUSED
 #endif
     );
-
-int
-sctp_append_to_readq(struct sctp_inpcb *inp,
-    struct sctp_tcb *stcb,
-    struct sctp_queued_to_read *control,
-    struct mbuf *m,
-    int end,
-    int new_cumack,
-    struct sockbuf *sb);
-
 
 void sctp_iterator_worker(void);
 
