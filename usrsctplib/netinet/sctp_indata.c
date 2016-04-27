@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 298223 2016-04-18 20:16:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 298713 2016-04-27 18:58:47Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -827,11 +827,6 @@ restart:
 						control->on_strm_q = 0;
 					}
 				}
-				if (control->on_read_q == 0) {
-					sctp_add_to_readq(stcb->sctp_ep, stcb, control,
-							  &stcb->sctp_socket->so_rcv, control->end_added,
-							  SCTP_READ_LOCK_NOT_HELD, SCTP_SO_NOT_LOCKED);
-				}
 				if (control->pdapi_started) {
 					strm->pd_api_started = 0;
 					control->pdapi_started = 0;
@@ -839,6 +834,11 @@ restart:
 				if (control->on_strm_q) {
 					TAILQ_REMOVE(&strm->uno_inqueue, control, next_instrm);
 					control->on_strm_q = 0;
+				}
+				if (control->on_read_q == 0) {
+					sctp_add_to_readq(stcb->sctp_ep, stcb, control,
+							  &stcb->sctp_socket->so_rcv, control->end_added,
+							  SCTP_READ_LOCK_NOT_HELD, SCTP_SO_NOT_LOCKED);
 				}
 				sctp_wakeup_the_read_socket(stcb->sctp_ep, stcb, SCTP_SO_NOT_LOCKED);
 				if ((nc) && (nc->first_frag_seen)) {
@@ -855,11 +855,11 @@ restart:
 		}
 	}
 	if ((control->length > pd_point) && (strm->pd_api_started == 0)) {
+		strm->pd_api_started = 1;
+		control->pdapi_started = 1;
 		sctp_add_to_readq(stcb->sctp_ep, stcb, control,
 		                  &stcb->sctp_socket->so_rcv, control->end_added,
 		                  SCTP_READ_LOCK_NOT_HELD, SCTP_SO_NOT_LOCKED);
-		strm->pd_api_started = 1;
-		control->pdapi_started = 1;
 		sctp_wakeup_the_read_socket(stcb->sctp_ep, stcb, SCTP_SO_NOT_LOCKED);
 		return (0);
 	} else {
@@ -1091,15 +1091,15 @@ done_un:
 				TAILQ_REMOVE(&strm->inqueue, control, next_instrm);
 				control->on_strm_q = 0;
 			}
+			if (strm->pd_api_started && control->pdapi_started) {
+				control->pdapi_started = 0;
+				strm->pd_api_started = 0;
+			}
 			if (control->on_read_q == 0) {
 				sctp_add_to_readq(stcb->sctp_ep, stcb,
 						  control,
 						  &stcb->sctp_socket->so_rcv, control->end_added,
 						  SCTP_READ_LOCK_NOT_HELD, SCTP_SO_NOT_LOCKED);
-			}
-			if (strm->pd_api_started && control->pdapi_started) {
-				control->pdapi_started = 0;
-				strm->pd_api_started = 0;
 			}
 			control = nctl;
 		}
@@ -1118,6 +1118,8 @@ deliver_more:
 		nctl = TAILQ_NEXT(control, next_instrm);
 		if ((control->sinfo_ssn == next_to_del) &&
 		    (control->first_frag_seen)) {
+			int done;
+
 			/* Ok we can deliver it onto the stream. */
 			if (control->end_added) {
 				/* We are done with it afterwards */
@@ -1143,6 +1145,7 @@ deliver_more:
 					goto out;
 				}
 			}
+			done = (control->end_added) && (control->last_frag_seen);
 			if (control->on_read_q == 0) {
 				sctp_add_to_readq(stcb->sctp_ep, stcb,
 						  control,
@@ -1150,7 +1153,7 @@ deliver_more:
 						  SCTP_READ_LOCK_NOT_HELD, SCTP_SO_NOT_LOCKED);
 			}
 			strm->last_sequence_delivered = next_to_del;
-			if ((control->end_added) && (control->last_frag_seen)) {
+			if (done) {
 				control = nctl;
 				goto deliver_more;
 			} else {
@@ -1175,7 +1178,7 @@ sctp_add_chk_to_control(struct sctp_queued_to_read *control,
 	 * data from the chk onto the control and free
 	 * up the chunk resources.
 	 */
-	int i_locked=0;
+	int i_locked = 0;
 
 	if (control->on_read_q) {
 		/*
@@ -1246,7 +1249,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 {
 	uint32_t next_fsn;
 	struct sctp_tmit_chunk *at, *nat;
-	int cnt_added, unordered;
+	int do_wakeup, unordered;
 
 	/*
 	 * For old un-ordered data chunks.
@@ -1442,7 +1445,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	 * Ok lets see if we can suck any up into the control
 	 * structure that are in seq if it makes sense.
 	 */
-	cnt_added = 0;
+	do_wakeup = 0;
 	/*
 	 * If the first fragment has not been
 	 * seen there is no sense in looking.
@@ -1459,7 +1462,9 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 					next_fsn, control->fsn_included);
 				TAILQ_REMOVE(&control->reasm, at, sctp_next);
 				sctp_add_chk_to_control(control, strm, stcb, asoc, at);
-				cnt_added++;
+				if (control->on_read_q) {
+					do_wakeup = 1;
+				}
 				next_fsn++;
 				if (control->end_added && control->pdapi_started) {
 					if (strm->pd_api_started) {
@@ -1471,6 +1476,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 								  control,
 								  &stcb->sctp_socket->so_rcv, control->end_added,
 								  SCTP_READ_LOCK_NOT_HELD, SCTP_SO_NOT_LOCKED);
+						do_wakeup = 1;
 					}
 					break;
 				}
@@ -1479,7 +1485,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 			}
 		}
 	}
-	if ((control->on_read_q) && (cnt_added > 0)) {
+	if (do_wakeup) {
 		/* Need to wakeup the reader */
 		sctp_wakeup_the_read_socket(stcb->sctp_ep, stcb, SCTP_SO_NOT_LOCKED);
 	}
@@ -1488,27 +1494,27 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 static struct sctp_queued_to_read *
 find_reasm_entry(struct sctp_stream_in *strm, uint32_t msg_id, int ordered, int old)
 {
-	struct sctp_queued_to_read *reasm;
+	struct sctp_queued_to_read *control;
+
 	if (ordered) {
-		TAILQ_FOREACH(reasm, &strm->inqueue, next_instrm) {
-			if (reasm->msg_id == msg_id) {
+		TAILQ_FOREACH(control, &strm->inqueue, next_instrm) {
+			if (control->msg_id == msg_id) {
 				break;
 			}
 		}
 	} else {
 		if (old) {
-			reasm = TAILQ_FIRST(&strm->uno_inqueue);
-			return (reasm);
+			control = TAILQ_FIRST(&strm->uno_inqueue);
+			return (control);
 		}
-		TAILQ_FOREACH(reasm, &strm->uno_inqueue, next_instrm) {
-			if (reasm->msg_id == msg_id) {
+		TAILQ_FOREACH(control, &strm->uno_inqueue, next_instrm) {
+			if (control->msg_id == msg_id) {
 				break;
 			}
 		}
 	}
-	return(reasm);
+	return (control);
 }
-
 
 static int
 sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,
