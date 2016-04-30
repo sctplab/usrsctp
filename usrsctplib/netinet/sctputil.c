@@ -4881,9 +4881,22 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 	}
 #if defined(__Userspace__)
 	if (inp->recv_callback != NULL) {
-		if (inp_read_lock_held == 0)
+		uint32_t pd_point, length;
+
+		TAILQ_INSERT_TAIL(&inp->read_queue, control, next);
+		control->on_read_q = 1;
+		if (inp_read_lock_held == 0) {
 			SCTP_INP_READ_UNLOCK(inp);
-		if ((control->end_added == 1) &&
+		}
+		length = control->length;
+		if (stcb != NULL && stcb->sctp_socket != NULL) {
+			pd_point = min(SCTP_SB_LIMIT_RCV(stcb->sctp_socket) >> SCTP_PARTIAL_DELIVERY_SHIFT,
+			               stcb->sctp_ep->partial_delivery_point);
+		} else {
+			pd_point = inp->partial_delivery_point;
+		}
+printf("length = %u, pd_point = %u\n", length, pd_point);
+		if (((control->end_added == 1) || (length >= pd_point)) &&
 		    (stcb != NULL) && (stcb->sctp_socket != NULL)) {
 			struct socket *so;
 			struct mbuf *m;
@@ -4892,7 +4905,7 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 			union sctp_sockstore addr;
 			int flags;
 
-			if ((buffer = malloc(control->length)) == NULL) {
+			if ((buffer = malloc(length)) == NULL) {
 				return;
 			}
 			so = stcb->sctp_socket;
@@ -4901,7 +4914,7 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 			}
 			atomic_add_int(&stcb->asoc.refcnt, 1);
 			SCTP_TCB_UNLOCK(stcb);
-			m_copydata(control->data, 0, control->length, buffer);
+			m_copydata(control->data, 0, length, buffer);
 			memset(&rcv, 0, sizeof(struct sctp_rcvinfo));
 			rcv.rcv_sid = control->sinfo_stream;
 			rcv.rcv_ssn = control->sinfo_ssn;
@@ -4930,19 +4943,38 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 				addr.sa = control->whoFrom->ro._l_addr.sa;
 				break;
 			}
-			flags = MSG_EOR;
+			flags = 0;
+			if (control->end_added == 1) {
+				flags |= MSG_EOR;
+			}
 			if (control->spec_flags & M_NOTIFICATION) {
 				flags |= MSG_NOTIFICATION;
 			}
-			inp->recv_callback(so, addr, buffer, control->length, rcv, flags, inp->ulp_info);
-			SCTP_TCB_LOCK(stcb);
-			atomic_subtract_int(&stcb->asoc.refcnt, 1);
-			sctp_free_remote_addr(control->whoFrom);
-			control->whoFrom = NULL;
 			sctp_m_freem(control->data);
 			control->data = NULL;
+			control->tail_mbuf = NULL;
 			control->length = 0;
-			sctp_free_a_readq(stcb, control);
+			if (control->end_added) {
+				sctp_free_remote_addr(control->whoFrom);
+				control->whoFrom = NULL;
+				sctp_free_a_readq(stcb, control);
+			} else {
+				TAILQ_INSERT_TAIL(&inp->read_queue, control, next);
+				control->on_read_q = 1;
+				control->some_taken = 1; /* XXX: Is this needed? */
+			}
+			if (inp_read_lock_held == 0) {
+				SCTP_INP_READ_UNLOCK(inp);
+			}
+			inp->recv_callback(so, addr, buffer, length, rcv, flags, inp->ulp_info);
+			SCTP_TCB_LOCK(stcb);
+			atomic_subtract_int(&stcb->asoc.refcnt, 1);
+		} else {
+			TAILQ_INSERT_TAIL(&inp->read_queue, control, next);
+			control->on_read_q = 1;
+			if (inp_read_lock_held == 0) {
+				SCTP_INP_READ_UNLOCK(inp);
+			}
 		}
 		return;
 	}
