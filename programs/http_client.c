@@ -103,7 +103,7 @@ main(int argc, char *argv[])
 	}
 
 #ifdef SCTP_DEBUG
-	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
+	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 #endif
 
 	usrsctp_sysctl_set_sctp_blackhole(2);
