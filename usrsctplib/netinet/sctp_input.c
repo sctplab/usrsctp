@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 298199 2016-04-18 09:29:14Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 298847 2016-04-30 14:25:00Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2851,7 +2851,8 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 	 */
 	if (netl == NULL) {
 		/* TSNH! Huh, why do I need to add this address here? */
-		if (sctp_add_remote_addr(*stcb, to, NULL, SCTP_DONOT_SETSCOPE, SCTP_IN_COOKIE_PROC)) {
+		if (sctp_add_remote_addr(*stcb, to, NULL, port,
+		                         SCTP_DONOT_SETSCOPE, SCTP_IN_COOKIE_PROC)) {
 			return (NULL);
 		}
 		netl = sctp_findnet(*stcb, to);
