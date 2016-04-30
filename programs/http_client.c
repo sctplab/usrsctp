@@ -95,7 +95,9 @@ main(int argc, char *argv[])
 	struct sockaddr_in addr4;
 	struct sockaddr_in6 addr6;
 	struct sctp_udpencaps encaps;
+	int result;
 
+	result = 0;
 	if (argc > 4) {
 		usrsctp_init(atoi(argv[4]), NULL, debug_printf);
 	} else {
@@ -110,6 +112,7 @@ main(int argc, char *argv[])
 
 	if ((sock = usrsctp_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
+		result = 1;
 		goto out;
 	}
 
@@ -124,6 +127,7 @@ main(int argc, char *argv[])
 		if (usrsctp_bind(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
 			perror("bind");
 			usrsctp_close(sock);
+			result = 2;
 			goto out;
 		}
 	}
@@ -135,6 +139,7 @@ main(int argc, char *argv[])
 		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
 			perror("setsockopt");
 			usrsctp_close(sock);
+			result = 3;
 			goto out;
 		}
 	}
@@ -164,17 +169,20 @@ main(int argc, char *argv[])
 		if (usrsctp_connect(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
 			perror("usrsctp_connect");
 			usrsctp_close(sock);
+			result = 4;
 			goto out;
 		}
 	} else if (inet_pton(AF_INET, argv[1], &addr4.sin_addr) == 1) {
 		if (usrsctp_connect(sock, (struct sockaddr *)&addr4, sizeof(struct sockaddr_in)) < 0) {
 			perror("usrsctp_connect");
 			usrsctp_close(sock);
+			result = 5;
 			goto out;
 		}
 	} else {
 		printf("Illegal destination address.\n");
 		usrsctp_close(sock);
+		result = 6;
 		goto out;
 	}
 
@@ -196,5 +204,5 @@ out:
 		sleep(1);
 #endif
 	}
-	return (0);
+	return (result);
 }
