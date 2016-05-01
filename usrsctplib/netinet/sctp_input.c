@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 298199 2016-04-18 09:29:14Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 298902 2016-05-01 21:48:55Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -490,7 +490,7 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 	/* load all addresses */
 	if ((retval = sctp_load_addresses_from_init(stcb, m,
 	    (offset + sizeof(struct sctp_init_chunk)), initack_limit,
-	    src, dst, NULL))) {
+	    src, dst, NULL, stcb->asoc.port))) {
 		op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
 		                             "Problem with address parameters");
 		SCTPDBG(SCTP_DEBUG_INPUT1,
@@ -1749,7 +1749,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		 */
 		if (sctp_load_addresses_from_init(stcb, m,
 						  init_offset + sizeof(struct sctp_init_chunk),
-						  initack_offset, src, dst, init_src)) {
+						  initack_offset, src, dst, init_src, stcb->asoc.port)) {
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 4;
 			return (NULL);
@@ -1874,7 +1874,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		}
 		if (sctp_load_addresses_from_init(stcb, m,
 						  init_offset + sizeof(struct sctp_init_chunk),
-						  initack_offset, src, dst, init_src)) {
+						  initack_offset, src, dst, init_src, stcb->asoc.port)) {
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 10;
 			return (NULL);
@@ -2084,7 +2084,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 
 		if (sctp_load_addresses_from_init(stcb, m,
 						  init_offset + sizeof(struct sctp_init_chunk),
-						  initack_offset, src, dst, init_src)) {
+						  initack_offset, src, dst, init_src, stcb->asoc.port)) {
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 14;
 
@@ -2188,23 +2188,24 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 	 * and popluate
 	 */
 
-        /*
+	/*
 	 * Here we do a trick, we set in NULL for the proc/thread argument. We
 	 * do this since in effect we only use the p argument when
 	 * the socket is unbound and we must do an implicit bind.
 	 * Since we are getting a cookie, we cannot be unbound.
 	 */
 	stcb = sctp_aloc_assoc(inp, init_src, &error,
-			       ntohl(initack_cp->init.initiate_tag), vrf_id,
-			       ntohs(initack_cp->init.num_outbound_streams),
+	                       ntohl(initack_cp->init.initiate_tag), vrf_id,
+	                       ntohs(initack_cp->init.num_outbound_streams),
+	                       port,
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
-			       (struct thread *)NULL
+	                       (struct thread *)NULL
 #elif defined(__Windows__)
-			       (PKTHREAD)NULL
+	                       (PKTHREAD)NULL
 #else
-			       (struct proc *)NULL
+	                       (struct proc *)NULL
 #endif
-			       );
+	                       );
 	if (stcb == NULL) {
 		struct mbuf *op_err;
 
@@ -2302,7 +2303,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 	/* load all addresses */
 	if (sctp_load_addresses_from_init(stcb, m,
 	    init_offset + sizeof(struct sctp_init_chunk), initack_offset,
-	    src, dst, init_src)) {
+	    src, dst, init_src, port)) {
 		atomic_add_int(&stcb->asoc.refcnt, 1);
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 		SCTP_TCB_UNLOCK(stcb);
@@ -2476,12 +2477,6 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 		(*netp)->RTO = sctp_calculate_rto(stcb, asoc, *netp,
 						  &cookie->time_entered, sctp_align_unsafe_makecopy,
 						  SCTP_RTT_FROM_NON_DATA);
-#if defined(INET) || defined(INET6)
-		if (((*netp)->port == 0) && (port != 0)) {
-			sctp_pathmtu_adjustment(stcb, (uint16_t)((*netp)->mtu - sizeof(struct udphdr)));
-		}
-		(*netp)->port = port;
-#endif
 	}
 	/* respond with a COOKIE-ACK */
 	sctp_send_cookie_ack(stcb);
@@ -2851,7 +2846,8 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 	 */
 	if (netl == NULL) {
 		/* TSNH! Huh, why do I need to add this address here? */
-		if (sctp_add_remote_addr(*stcb, to, NULL, SCTP_DONOT_SETSCOPE, SCTP_IN_COOKIE_PROC)) {
+		if (sctp_add_remote_addr(*stcb, to, NULL, port,
+		                         SCTP_DONOT_SETSCOPE, SCTP_IN_COOKIE_PROC)) {
 			return (NULL);
 		}
 		netl = sctp_findnet(*stcb, to);

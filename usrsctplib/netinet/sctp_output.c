@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 298203 2016-04-18 11:39:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 298902 2016-05-01 21:48:55Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3772,7 +3772,7 @@ sctp_process_cmsgs_for_init(struct sctp_tcb *stcb, struct mbuf *control, int *er
 					*error = EINVAL;
 					return (1);
 				}
-				if (sctp_add_remote_addr(stcb, (struct sockaddr *)&sin, NULL,
+				if (sctp_add_remote_addr(stcb, (struct sockaddr *)&sin, NULL, stcb->asoc.port,
 				                         SCTP_DONOT_SETSCOPE, SCTP_ADDR_IS_CONFIRMED)) {
 					*error = ENOBUFS;
 					return (1);
@@ -3806,14 +3806,14 @@ sctp_process_cmsgs_for_init(struct sctp_tcb *stcb, struct mbuf *control, int *er
 						*error = EINVAL;
 						return (1);
 					}
-					if (sctp_add_remote_addr(stcb, (struct sockaddr *)&sin, NULL,
+					if (sctp_add_remote_addr(stcb, (struct sockaddr *)&sin, NULL, stcb->asoc.port,
 					                         SCTP_DONOT_SETSCOPE, SCTP_ADDR_IS_CONFIRMED)) {
 						*error = ENOBUFS;
 						return (1);
 					}
 				} else
 #endif
-					if (sctp_add_remote_addr(stcb, (struct sockaddr *)&sin6, NULL,
+					if (sctp_add_remote_addr(stcb, (struct sockaddr *)&sin6, NULL, stcb->asoc.port,
 					                         SCTP_DONOT_SETSCOPE, SCTP_ADDR_IS_CONFIRMED)) {
 						*error = ENOBUFS;
 						return (1);
@@ -13733,12 +13733,12 @@ sctp_lower_sosend(struct socket *so,
 #endif
 			stcb = sctp_aloc_assoc(inp, addr, &error, 0, vrf_id,
 			                       inp->sctp_ep.pre_open_stream_count,
+			                       inp->sctp_ep.port,
 #if !(defined( __Panda__) || defined(__Userspace__))
-					       p
+			                       p);
 #else
-					       (struct proc *)NULL
+			                       (struct proc *)NULL);
 #endif
-				);
 			if (stcb == NULL) {
 				/* Error is setup for us in the call */
 				goto out_unlocked;
