@@ -180,7 +180,7 @@ main(int argc, char *argv[])
 			goto out;
 		}
 	} else {
-		printf("Illegal destination address.\n");
+		printf("Illegal destination address\n");
 		usrsctp_close(sock);
 		result = 6;
 		goto out;
