@@ -186,8 +186,13 @@ main(int argc, char *argv[])
 		goto out;
 	}
 
-	// send GET request
-	usrsctp_sendv(sock, request, strlen(request), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
+	/* send GET request */
+	if (usrsctp_sendv(sock, request, strlen(request), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0) < 0) {
+		perror("usrsctp_sendv");
+		usrsctp_close(sock);
+		result = 6;
+		goto out;
+	}
 
 	while (!done) {
 #ifdef _WIN32
