@@ -4909,8 +4909,6 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 			for (m = control->data; m; m = SCTP_BUF_NEXT(m)) {
 				sctp_sbfree(control, control->stcb, &so->so_rcv, m);
 			}
-			atomic_add_int(&stcb->asoc.refcnt, 1);
-			SCTP_TCB_UNLOCK(stcb);
 			m_copydata(control->data, 0, length, buffer);
 			memset(&rcv, 0, sizeof(struct sctp_rcvinfo));
 			rcv.rcv_sid = control->sinfo_stream;
@@ -4960,6 +4958,8 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 				control->on_read_q = 1;
 				control->some_taken = 1; /* XXX: Is this needed? */
 			}
+			atomic_add_int(&stcb->asoc.refcnt, 1);
+			SCTP_TCB_UNLOCK(stcb);
 			if (inp_read_lock_held == 0) {
 				SCTP_INP_READ_UNLOCK(inp);
 			}

@@ -1227,10 +1227,100 @@ sctp_add_chk_to_control(struct sctp_queued_to_read *control,
 		control->end_added = 1;
 		control->last_frag_seen = 1;
 	}
+	sctp_free_a_chunk(stcb, chk, SCTP_SO_NOT_LOCKED);
+#if defined(__Userspace__)
+	if ((stcb->sctp_ep->recv_callback != NULL) && (control->on_read_q)) {
+		uint32_t pd_point, length;
+
+		length = control->length;
+		if (stcb != NULL && stcb->sctp_socket != NULL) {
+			pd_point = min(SCTP_SB_LIMIT_RCV(stcb->sctp_socket) >> SCTP_PARTIAL_DELIVERY_SHIFT,
+			               stcb->sctp_ep->partial_delivery_point);
+		} else {
+			pd_point = stcb->sctp_ep->partial_delivery_point;
+		}
+		if (((control->end_added == 1) || (length >= pd_point)) &&
+		    (stcb != NULL) && (stcb->sctp_socket != NULL)) {
+			struct socket *so;
+			struct mbuf *m;
+			char *buffer;
+			struct sctp_rcvinfo rcv;
+			union sctp_sockstore addr;
+			int flags;
+
+			if ((buffer = malloc(length)) == NULL) {
+				return;
+			}
+			so = stcb->sctp_socket;
+			for (m = control->data; m; m = SCTP_BUF_NEXT(m)) {
+				sctp_sbfree(control, control->stcb, &so->so_rcv, m);
+			}
+			m_copydata(control->data, 0, length, buffer);
+			memset(&rcv, 0, sizeof(struct sctp_rcvinfo));
+			rcv.rcv_sid = control->sinfo_stream;
+			rcv.rcv_ssn = control->sinfo_ssn;
+			rcv.rcv_flags = control->sinfo_flags;
+			rcv.rcv_ppid = control->sinfo_ppid;
+			rcv.rcv_tsn = control->sinfo_tsn;
+			rcv.rcv_cumtsn = control->sinfo_cumtsn;
+			rcv.rcv_context = control->sinfo_context;
+			rcv.rcv_assoc_id = control->sinfo_assoc_id;
+			memset(&addr, 0, sizeof(union sctp_sockstore));
+			switch (control->whoFrom->ro._l_addr.sa.sa_family) {
+#ifdef INET
+			case AF_INET:
+				addr.sin = control->whoFrom->ro._l_addr.sin;
+				break;
+#endif
+#ifdef INET6
+			case AF_INET6:
+				addr.sin6 = control->whoFrom->ro._l_addr.sin6;
+				break;
+#endif
+			case AF_CONN:
+				addr.sconn = control->whoFrom->ro._l_addr.sconn;
+				break;
+			default:
+				addr.sa = control->whoFrom->ro._l_addr.sa;
+				break;
+			}
+			flags = 0;
+			if (control->end_added == 1) {
+				flags |= MSG_EOR;
+			}
+			if (control->spec_flags & M_NOTIFICATION) {
+				flags |= MSG_NOTIFICATION;
+			}
+			sctp_m_freem(control->data);
+			control->data = NULL;
+			control->tail_mbuf = NULL;
+			control->length = 0;
+			if (control->end_added) {
+				TAILQ_REMOVE(&stcb->sctp_ep->read_queue, control, next);
+				control->on_read_q = 0;
+				sctp_free_remote_addr(control->whoFrom);
+				control->whoFrom = NULL;
+				sctp_free_a_readq(stcb, control);
+			}
+			atomic_add_int(&stcb->asoc.refcnt, 1);
+			SCTP_TCB_UNLOCK(stcb);
+			if (i_locked) {
+				SCTP_INP_READ_UNLOCK(stcb->sctp_ep);
+			}
+			stcb->sctp_ep->recv_callback(so, addr, buffer, length, rcv, flags, stcb->sctp_ep->ulp_info);
+			SCTP_TCB_LOCK(stcb);
+			atomic_subtract_int(&stcb->asoc.refcnt, 1);
+		} else {
+			if (i_locked) {
+				SCTP_INP_READ_UNLOCK(stcb->sctp_ep);
+			}
+		}
+		return;
+	}
+#endif
 	if (i_locked) {
 		SCTP_INP_READ_UNLOCK(stcb->sctp_ep);
 	}
-	sctp_free_a_chunk(stcb, chk, SCTP_SO_NOT_LOCKED);
 }
 
 /*
