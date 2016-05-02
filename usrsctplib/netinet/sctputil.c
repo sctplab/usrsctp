@@ -4886,11 +4886,6 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 	if (inp->recv_callback != NULL) {
 		uint32_t pd_point, length;
 
-		TAILQ_INSERT_TAIL(&inp->read_queue, control, next);
-		control->on_read_q = 1;
-		if (inp_read_lock_held == 0) {
-			SCTP_INP_READ_UNLOCK(inp);
-		}
 		length = control->length;
 		if (stcb != NULL && stcb->sctp_socket != NULL) {
 			pd_point = min(SCTP_SB_LIMIT_RCV(stcb->sctp_socket) >> SCTP_PARTIAL_DELIVERY_SHIFT,
@@ -4898,7 +4893,6 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 		} else {
 			pd_point = inp->partial_delivery_point;
 		}
-printf("length = %u, pd_point = %u\n", length, pd_point);
 		if (((control->end_added == 1) || (length >= pd_point)) &&
 		    (stcb != NULL) && (stcb->sctp_socket != NULL)) {
 			struct socket *so;
