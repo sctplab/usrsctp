@@ -32,6 +32,9 @@
  * Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]
  */
 
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -145,9 +148,17 @@ main(int argc, char *argv[])
 	}
 
 	if (argc > 6) {
+#ifdef _WIN32
+		_snprintf(request, sizeof(request), "%s %s %s", request_prefix, argv[6], request_postfix);
+#else
 		snprintf(request, sizeof(request), "%s %s %s", request_prefix, argv[6], request_postfix);
+#endif
 	} else {
+#ifdef _WIN32
+		_snprintf(request, sizeof(request), "%s %s %s", request_prefix, "/", request_postfix);
+#else
 		snprintf(request, sizeof(request), "%s %s %s", request_prefix, "/", request_postfix);
+#endif
 	}
 
 	printf("\nHTTP request:\n%s\n", request);
