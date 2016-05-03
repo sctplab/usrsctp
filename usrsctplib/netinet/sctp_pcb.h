@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 298902 2016-05-01 21:48:55Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 298942 2016-05-02 20:56:11Z pfg $");
 #endif
 
 #ifndef _NETINET_SCTP_PCB_H_
@@ -109,7 +109,7 @@ struct sctp_ifa {
 				 * appropriate locks. This is for V6.
 				 */
 	union sctp_sockstore address;
-	uint32_t refcount;	/* number of folks refering to this */
+	uint32_t refcount;	/* number of folks referring to this */
 	uint32_t flags;
 	uint32_t localifa_flags;
 	uint32_t vrf_id;	/* vrf_id of this addr (for deleting) */
@@ -444,7 +444,7 @@ struct sctp_pcbtsn_rlog {
 struct sctp_inpcb {
 	/*-
 	 * put an inpcb in front of it all, kind of a waste but we need to
-	 * for compatability with all the other stuff.
+	 * for compatibility with all the other stuff.
 	 */
 	union {
 		struct inpcb inp;

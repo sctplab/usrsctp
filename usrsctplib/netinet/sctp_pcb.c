@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 298902 2016-05-01 21:48:55Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 298942 2016-05-02 20:56:11Z pfg $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -394,7 +394,7 @@ sctp_mark_ifa_addr_down(uint32_t vrf_id, struct sockaddr *addr,
 		goto out;
 	}
 	if (sctp_ifap->ifn_p == NULL) {
-		SCTPDBG(SCTP_DEBUG_PCB4, "IFA has no IFN - can't mark unuseable\n");
+		SCTPDBG(SCTP_DEBUG_PCB4, "IFA has no IFN - can't mark unusable\n");
 		goto out;
 	}
 	if (if_name) {
@@ -438,7 +438,7 @@ sctp_mark_ifa_addr_up(uint32_t vrf_id, struct sockaddr *addr,
 		goto out;
 	}
 	if (sctp_ifap->ifn_p == NULL) {
-		SCTPDBG(SCTP_DEBUG_PCB4, "IFA has no IFN - can't mark unuseable\n");
+		SCTPDBG(SCTP_DEBUG_PCB4, "IFA has no IFN - can't mark unusable\n");
 		goto out;
 	}
 	if (if_name) {
@@ -6644,7 +6644,7 @@ sctp_pcb_init()
 {
 	/*
 	 * SCTP initialization for the PCB structures should be called by
-	 * the sctp_init() funciton.
+	 * the sctp_init() function.
 	 */
 	int i;
 	struct timeval tv;

@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 297662 2016-04-07 09:10:34Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 298942 2016-05-02 20:56:11Z pfg $");
 #endif
 
 #ifndef _NETINET_SCTP_STRUCTS_H_
@@ -1027,7 +1027,7 @@ struct sctp_association {
 	uint32_t sat_t3_recovery_tsn;
 	uint32_t tsn_last_delivered;
 	/*
-	 * For the pd-api we should re-write this a bit more efficent. We
+	 * For the pd-api we should re-write this a bit more efficient. We
 	 * could have multiple sctp_queued_to_read's that we are building at
 	 * once. Now we only do this when we get ready to deliver to the
 	 * socket buffer. Note that we depend on the fact that the struct is

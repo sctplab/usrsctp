@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 298713 2016-04-27 18:58:47Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 298945 2016-05-02 21:23:05Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -499,7 +499,7 @@ sctp_queue_data_to_stream(struct sctp_tcb *stcb,
 	 * FIX-ME maybe? What happens when the ssn wraps? If we are getting
 	 * all the data in one stream this could happen quite rapidly. One
 	 * could use the TSN to keep track of things, but this scheme breaks
-	 * down in the other type of stream useage that could occur. Send a
+	 * down in the other type of stream usage that could occur. Send a
 	 * single msg to stream 0, send 4Billion messages to stream 1, now
 	 * send a message to stream 0. You have a situation where the TSN
 	 * has wrapped but not in the stream. Is this worth worrying about
@@ -1429,7 +1429,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 				/* 
 				 * For IDATA we always check since we know that
 				 * the first fragment is 0. For old DATA we have
-				 * to receive the first before we knwo the first FSN
+				 * to receive the first before we know the first FSN
 				 * (which is the TSN).
 				 */
 				if (SCTP_TSN_GE(control->fsn_included, chk->rec.data.fsn_num)) {
@@ -1455,7 +1455,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 				/* 
 				 * For IDATA we always check since we know that
 				 * the first fragment is 0. For old DATA we have
-				 * to receive the first before we knwo the first FSN
+				 * to receive the first before we know the first FSN
 				 * (which is the TSN).
 				 */
 
@@ -2296,7 +2296,7 @@ sctp_slide_mapping_arrays(struct sctp_tcb *stcb)
 	 * 1) Did we move the cum-ack point?
 	 *
 	 * When you first glance at this you might think
-	 * that all entries that make up the postion
+	 * that all entries that make up the position
 	 * of the cum-ack would be in the nr-mapping array
 	 * only.. i.e. things up to the cum-ack are always
 	 * deliverable. Thats true with one exception, when
@@ -2604,7 +2604,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 			/* copy the length and free up the old */
 			SCTP_BUF_LEN(m) = SCTP_BUF_LEN((*mm));
 			sctp_m_freem(*mm);
-			/* sucess, back copy */
+			/* success, back copy */
 			*mm = m;
 		} else {
 			/* We are in trouble in the mbuf world .. yikes */
@@ -4768,7 +4768,7 @@ sctp_handle_sack(struct mbuf *m, int offset_seg, int offset_dup,
 	}
 	if (TAILQ_EMPTY(&asoc->sent_queue) && (asoc->total_flight > 0)) {
 #ifdef INVARIANTS
-		panic("Warning flight size is postive and should be 0");
+		panic("Warning flight size is positive and should be 0");
 #else
 		SCTP_PRINTF("Warning flight size incorrect should be 0 is %d\n",
 		            asoc->total_flight);

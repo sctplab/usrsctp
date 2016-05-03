@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 298847 2016-04-30 14:25:00Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 298942 2016-05-02 20:56:11Z pfg $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1719,7 +1719,7 @@ sctp_timeout_handler(void *t)
 			return;
 		}
 	}
-	/* record in stopped what t-o occured */
+	/* record in stopped what t-o occurred */
 	tmr->stopped_from = type;
 
 	/* mark as being serviced now */
