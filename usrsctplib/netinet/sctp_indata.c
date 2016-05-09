@@ -1231,10 +1231,10 @@ sctp_add_chk_to_control(struct sctp_queued_to_read *control,
 		control->end_added = 1;
 		control->last_frag_seen = 1;
 	}
-	sctp_free_a_chunk(stcb, chk, SCTP_SO_NOT_LOCKED);
 	if (i_locked) {
 		SCTP_INP_READ_UNLOCK(stcb->sctp_ep);
 	}
+	sctp_free_a_chunk(stcb, chk, SCTP_SO_NOT_LOCKED);
 }
 
 /*
@@ -1490,10 +1490,10 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		}
 	}
 	if (do_wakeup) {
-		/* Need to wakeup the reader */
 #if defined(__Userspace__)
 		sctp_invoke_recv_callback(stcb->sctp_ep, stcb, control, SCTP_READ_LOCK_NOT_HELD);
 #endif
+		/* Need to wakeup the reader */
 		sctp_wakeup_the_read_socket(stcb->sctp_ep, stcb, SCTP_SO_NOT_LOCKED);
 	}
 }
