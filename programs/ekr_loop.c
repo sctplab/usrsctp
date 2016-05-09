@@ -75,6 +75,9 @@ handle_packets(void *arg)
 	fdp = (int *)arg;
 #endif
 	for (;;) {
+#if defined(__NetBSD__)
+		pthread_testcancel();
+#endif
 		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
 			if ((dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
@@ -380,7 +383,7 @@ main(void)
 	};
 #endif
 #ifdef SCTP_DEBUG
-	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
+	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 #endif
 	usrsctp_sysctl_set_sctp_ecn_enable(0);
 	usrsctp_register_address((void *)&fd_c);

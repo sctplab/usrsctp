@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 295668 2016-02-16 19:36:25Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 298942 2016-05-02 20:56:11Z pfg $");
 #endif
 
 #ifndef _NETINET_SCTP_PCB_H_
@@ -109,7 +109,7 @@ struct sctp_ifa {
 				 * appropriate locks. This is for V6.
 				 */
 	union sctp_sockstore address;
-	uint32_t refcount;	/* number of folks refering to this */
+	uint32_t refcount;	/* number of folks referring to this */
 	uint32_t flags;
 	uint32_t localifa_flags;
 	uint32_t vrf_id;	/* vrf_id of this addr (for deleting) */
@@ -444,7 +444,7 @@ struct sctp_pcbtsn_rlog {
 struct sctp_inpcb {
 	/*-
 	 * put an inpcb in front of it all, kind of a waste but we need to
-	 * for compatability with all the other stuff.
+	 * for compatibility with all the other stuff.
 	 */
 	union {
 		struct inpcb inp;
@@ -495,6 +495,7 @@ struct sctp_inpcb {
 	uint8_t ecn_supported;
 	uint8_t prsctp_supported;
 	uint8_t auth_supported;
+	uint8_t idata_supported;
 	uint8_t asconf_supported;
 	uint8_t reconfig_supported;
 	uint8_t nrsack_supported;
@@ -805,16 +806,16 @@ void sctp_inpcb_free(struct sctp_inpcb *, int, int);
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
 struct sctp_tcb *
 sctp_aloc_assoc(struct sctp_inpcb *, struct sockaddr *,
-                int *, uint32_t, uint32_t, uint16_t, struct thread *);
+                int *, uint32_t, uint32_t, uint16_t, uint16_t, struct thread *);
 #elif defined(__Windows__)
 struct sctp_tcb *
 sctp_aloc_assoc(struct sctp_inpcb *, struct sockaddr *,
-                int *, uint32_t, uint32_t, uint16_t, PKTHREAD);
+                int *, uint32_t, uint32_t, uint16_t, uint16_t, PKTHREAD);
 #else
 /* proc will be NULL for __Userspace__ */
 struct sctp_tcb *
 sctp_aloc_assoc(struct sctp_inpcb *, struct sockaddr *,
-                int *, uint32_t, uint32_t, uint16_t, struct proc *);
+                int *, uint32_t, uint32_t, uint16_t, uint16_t, struct proc *);
 #endif
 
 int sctp_free_assoc(struct sctp_inpcb *, struct sctp_tcb *, int, int);
@@ -831,7 +832,7 @@ void sctp_add_local_addr_ep(struct sctp_inpcb *, struct sctp_ifa *, uint32_t);
 
 void sctp_del_local_addr_ep(struct sctp_inpcb *, struct sctp_ifa *);
 
-int sctp_add_remote_addr(struct sctp_tcb *, struct sockaddr *, struct sctp_nets **, int, int);
+int sctp_add_remote_addr(struct sctp_tcb *, struct sockaddr *, struct sctp_nets **, uint16_t, int, int);
 
 void sctp_remove_net(struct sctp_tcb *, struct sctp_nets *);
 
@@ -846,7 +847,7 @@ void sctp_del_local_addr_restricted(struct sctp_tcb *, struct sctp_ifa *);
 
 int
 sctp_load_addresses_from_init(struct sctp_tcb *, struct mbuf *, int, int,
-    struct sockaddr *, struct sockaddr *, struct sockaddr *);
+    struct sockaddr *, struct sockaddr *, struct sockaddr *, uint16_t);
 
 int
 sctp_set_primary_addr(struct sctp_tcb *, struct sockaddr *,
@@ -859,6 +860,8 @@ int sctp_is_vtag_good(uint32_t, uint16_t lport, uint16_t rport, struct timeval *
 int sctp_destination_is_reachable(struct sctp_tcb *, struct sockaddr *);
 
 int sctp_swap_inpcb_for_listen(struct sctp_inpcb *inp);
+
+void sctp_clean_up_stream(struct sctp_tcb *stcb, struct sctp_readhead *rh);
 
 /*-
  * Null in last arg inpcb indicate run on ALL ep's. Specific inp in last arg

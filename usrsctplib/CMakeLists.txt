@@ -33,6 +33,7 @@ cmake_minimum_required(VERSION 2.6)
 
 project(usrsctplib)
 
+
 #################################################
 # INCLUDE MODULES
 #################################################
@@ -49,6 +50,8 @@ SET (prefix ${CMAKE_INSTALL_PREFIX})
 SET (exec_prefix "\${prefix}")
 SET (libdir "\${exec_prefix}/lib")
 SET (includedir "\${prefix}/include/usrsctp")
+SET (CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR})
+
 
 #################################################
 # CHECK FOR TYPES AND FUNCTIONS
@@ -63,6 +66,7 @@ check_include_file(sys/queue.h HAVE_SYS_QUEUE_H)
 check_include_file(linux/if_addr.h HAVE_LINUX_IF_ADDR_H)
 check_include_file(linux/rtnetlink.h HAVE_LINUX_RTNETLINK_H)
 check_include_file(netinet/ip_icmp.h HAVE_NETINET_IP_ICMP_H)
+check_include_file(usrsctp.h HAVE_USRSCTP_H)
 
 check_function_exists("socket" HAVE_SOCKET)
 check_function_exists("inet_addr" HAVE_INET_ADDR)
@@ -70,6 +74,7 @@ check_function_exists("inet_addr" HAVE_INET_ADDR)
 add_definitions(-D__Userspace__)
 add_definitions(-D__Userspace_os_${CMAKE_SYSTEM_NAME})
 add_definitions(-D_GNU_SOURCE)
+
 
 #################################################
 # CHECK STRUCT MEMBERS
@@ -93,6 +98,12 @@ if(HAVE_SIN6_LEN)
 	add_definitions(-DHAVE_SIN6_LEN)
 endif()
 
+check_struct_has_member("struct sockaddr_conn" "sconn_len" "usrsctp.h" HAVE_SCONN_LEN)
+if(HAVE_SCONN_LEN)
+	message(STATUS "HAVE_SCONN_LEN")
+	add_definitions(-DHAVE_SCONN_LEN)
+endif()
+
 
 #################################################
 # OS DEPENDENT
@@ -104,11 +115,9 @@ endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 	add_definitions(-U__FreeBSD__)
-	add_definitions(-DHAVE_SCONN_LEN)
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	add_definitions(-DHAVE_SCONN_LEN)
 	add_definitions(-U__APPLE__)
 	add_definitions(-D__APPLE_USE_RFC_2292)
 endif()
@@ -122,7 +131,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
-	add_definitions(-DHAVE_SCONN_LEN)
 	add_definitions(-U__OpenBSD__)
 endif()
 
