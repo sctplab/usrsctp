@@ -4819,6 +4819,9 @@ sctp_invoke_recv_callback(struct sctp_inpcb *inp,
 		if ((buffer = malloc(length)) == NULL) {
 			return;
 		}
+		if (inp_read_lock_held == 0) {
+			SCTP_INP_READ_LOCK(inp);
+		}
 		so = stcb->sctp_socket;
 		for (m = control->data; m; m = SCTP_BUF_NEXT(m)) {
 			sctp_sbfree(control, control->stcb, &so->so_rcv, m);
