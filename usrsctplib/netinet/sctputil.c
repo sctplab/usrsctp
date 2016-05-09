@@ -4785,8 +4785,8 @@ sctp_wakeup_the_read_socket(struct sctp_inpcb *inp,
 		}
 	}
 }
-
 #if defined(__Userspace__)
+
 void
 sctp_invoke_recv_callback(struct sctp_inpcb *inp,
                           struct sctp_tcb *stcb,
