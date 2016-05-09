@@ -88,6 +88,11 @@ if(HAVE_SIN6_LEN)
 	add_definitions(-DHAVE_SIN6_LEN)
 endif()
 
+check_struct_has_member("struct sockaddr_conn" "sconn_len" "usrsctp.h" HAVE_SCONN_LEN)
+if(HAVE_SCONN_LEN)
+	add_definitions(-DHAVE_SCONN_LEN)
+endif()
+
 
 #################################################
 # CHECK OPTIONS
@@ -128,17 +133,8 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	add_definitions(-D_GNU_SOURCE)
 endif()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-	add_definitions(-DHAVE_SCONN_LEN)
-endif()
-
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	add_definitions(-DHAVE_SCONN_LEN)
 	add_definitions(-D__APPLE_USE_RFC_2292)
-endif()
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
-	add_definitions(-DHAVE_SCONN_LEN)
 endif()
 
 
