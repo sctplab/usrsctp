@@ -245,7 +245,7 @@ sctp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 }
 
 /* Defines for instantaneous bw decisions */
-#define SCTP_INST_LOOSING 1 /* Loosing to other flows */
+#define SCTP_INST_LOOSING 1 /* Losing to other flows */
 #define SCTP_INST_NEUTRAL 2 /* Neutral, no indication */
 #define SCTP_INST_GAINING 3 /* Gaining, step down possible */
 
@@ -1396,7 +1396,7 @@ sctp_cwnd_update_after_ecn_echo(struct sctp_tcb *stcb, struct sctp_nets *net,
 
 /* Here starts the RTCCVAR type CC invented by RRS which
  * is a slight mod to RFC2581. We reuse a common routine or
- * two since these algorithm are so close and need to
+ * two since these algorithms are so close and need to
  * remain the same.
  */
 static void
