@@ -74,6 +74,9 @@ handle_packets(void *arg)
 	fdp = (int *)arg;
 #endif
 	for (;;) {
+#if defined(__NetBSD__)
+		pthread_testcancel();
+#endif
 		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
 			if ((dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
