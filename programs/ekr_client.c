@@ -199,7 +199,7 @@ main(int argc, char *argv[])
 	/* set up a connected UDP socket */
 #ifdef _WIN32
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
-		printf("socket() failed with error: %ld\n", WSAGetLastError());
+		printf("socket() failed with error: %d\n", WSAGetLastError());
 	}
 #else
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
@@ -218,7 +218,7 @@ main(int argc, char *argv[])
 	}
 #ifdef _WIN32
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
-		printf("bind() failed with error: %ld\n", WSAGetLastError());
+		printf("bind() failed with error: %d\n", WSAGetLastError());
 	}
 #else
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
@@ -237,7 +237,7 @@ main(int argc, char *argv[])
 	}
 #ifdef _WIN32
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
-		printf("connect() failed with error: %ld\n", WSAGetLastError());
+		printf("connect() failed with error: %d\n", WSAGetLastError());
 	}
 #else
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
@@ -302,7 +302,7 @@ main(int argc, char *argv[])
 	TerminateThread(tid, 0);
 	WaitForSingleObject(tid, INFINITE);
 	if (closesocket(fd) == SOCKET_ERROR) {
-		printf("closesocket() failed with error: %ld\n", WSAGetLastError());
+		printf("closesocket() failed with error: %d\n", WSAGetLastError());
 	}
 	WSACleanup();
 #else
