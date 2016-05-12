@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 298945 2016-05-02 21:23:05Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 299533 2016-05-12 14:41:53Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2554,7 +2554,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 			struct mbuf *op_err;
 			char msg[SCTP_DIAG_INFO_LEN];
 
-			snprintf(msg, sizeof(msg), "I-DATA chunk received when DATA was negotiated");
+			snprintf(msg, sizeof(msg), "%s", "I-DATA chunk received when DATA was negotiated");
 			op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
 			stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA + SCTP_LOC_18;
 			sctp_abort_an_association(inp, stcb, op_err, SCTP_SO_NOT_LOCKED);
@@ -2565,7 +2565,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 			struct mbuf *op_err;
 			char msg[SCTP_DIAG_INFO_LEN];
 
-			snprintf(msg, sizeof(msg), "DATA chunk received when I-DATA was negotiated");
+			snprintf(msg, sizeof(msg), "%s", "DATA chunk received when I-DATA was negotiated");
 			op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
 			stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA + SCTP_LOC_19;
 			sctp_abort_an_association(inp, stcb, op_err, SCTP_SO_NOT_LOCKED);
