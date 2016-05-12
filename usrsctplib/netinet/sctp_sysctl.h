@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.h 297663 2016-04-07 09:34:41Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.h 299537 2016-05-12 15:48:08Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_SYSCTL_H_
@@ -521,7 +521,7 @@ struct sctp_sysctl {
 #define SCTPCTL_SACK_IMMEDIATELY_ENABLE_DESC	"Enable sending of the SACK-IMMEDIATELY-bit."
 #define SCTPCTL_SACK_IMMEDIATELY_ENABLE_MIN	0
 #define SCTPCTL_SACK_IMMEDIATELY_ENABLE_MAX	1
-#define SCTPCTL_SACK_IMMEDIATELY_ENABLE_DEFAULT	SCTPCTL_SACK_IMMEDIATELY_ENABLE_MIN
+#define SCTPCTL_SACK_IMMEDIATELY_ENABLE_DEFAULT	SCTPCTL_SACK_IMMEDIATELY_ENABLE_MAX
 
 /* Enable sending of the NAT-FRIENDLY message */
 #define SCTPCTL_NAT_FRIENDLY_INITS_DESC	"Enable sending of the nat-friendly SCTP option on INITs."
