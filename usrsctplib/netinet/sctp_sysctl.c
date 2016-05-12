@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 295541 2016-02-11 18:35:46Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 299543 2016-05-12 16:34:59Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -72,7 +72,6 @@ sctp_init_sysctls()
 	SCTP_BASE_SYSCTL(sctp_reconfig_enable) = SCTPCTL_RECONFIG_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_nrsack_enable) = SCTPCTL_NRSACK_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_pktdrop_enable) = SCTPCTL_PKTDROP_ENABLE_DEFAULT;
-	SCTP_BASE_SYSCTL(sctp_strict_sacks) = SCTPCTL_STRICT_SACKS_DEFAULT;
 #if !(defined(__FreeBSD__) && __FreeBSD_version >= 800000)
 #if !defined(SCTP_WITH_NO_CSUM)
 	SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) = SCTPCTL_LOOPBACK_NOCSUM_DEFAULT;
@@ -115,7 +114,6 @@ sctp_init_sysctls()
 	SCTP_BASE_SYSCTL(sctp_do_drain) = SCTPCTL_DO_SCTP_DRAIN_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_hb_maxburst) = SCTPCTL_HB_MAX_BURST_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_abort_if_one_2_one_hits_limit) = SCTPCTL_ABORT_AT_LIMIT_DEFAULT;
-	SCTP_BASE_SYSCTL(sctp_strict_data_order) = SCTPCTL_STRICT_DATA_ORDER_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_min_residual) = SCTPCTL_MIN_RESIDUAL_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_max_retran_chunk) = SCTPCTL_MAX_RETRAN_CHUNK_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_logging_level) = SCTPCTL_LOGGING_LEVEL_DEFAULT;
@@ -1221,7 +1219,6 @@ SYSCTL_PROC(_net_inet_sctp, OID_AUTO, asconf_enable, CTLFLAG_VNET|CTLTYPE_UINT|C
 SCTP_UINT_SYSCTL(reconfig_enable, sctp_reconfig_enable, SCTPCTL_RECONFIG_ENABLE)
 SCTP_UINT_SYSCTL(nrsack_enable, sctp_nrsack_enable, SCTPCTL_NRSACK_ENABLE)
 SCTP_UINT_SYSCTL(pktdrop_enable, sctp_pktdrop_enable, SCTPCTL_PKTDROP_ENABLE)
-SCTP_UINT_SYSCTL(strict_sacks, sctp_strict_sacks, SCTPCTL_STRICT_SACKS)
 #if defined(__APPLE__)
 #if !defined(SCTP_WITH_NO_CSUM)
 SCTP_UINT_SYSCTL(loopback_nocsum, sctp_no_csum_on_loopback, SCTPCTL_LOOPBACK_NOCSUM)
@@ -1264,7 +1261,6 @@ SCTP_UINT_SYSCTL(max_chained_mbufs, sctp_mbuf_threshold_count, SCTPCTL_MAX_CHAIN
 SCTP_UINT_SYSCTL(do_sctp_drain, sctp_do_drain, SCTPCTL_DO_SCTP_DRAIN)
 SCTP_UINT_SYSCTL(hb_max_burst, sctp_hb_maxburst, SCTPCTL_HB_MAX_BURST)
 SCTP_UINT_SYSCTL(abort_at_limit, sctp_abort_if_one_2_one_hits_limit, SCTPCTL_ABORT_AT_LIMIT)
-SCTP_UINT_SYSCTL(strict_data_order, sctp_strict_data_order, SCTPCTL_STRICT_DATA_ORDER)
 SCTP_UINT_SYSCTL(min_residual, sctp_min_residual, SCTPCTL_MIN_RESIDUAL)
 SCTP_UINT_SYSCTL(max_retran_chunk, sctp_max_retran_chunk, SCTPCTL_MAX_RETRAN_CHUNK)
 SCTP_UINT_SYSCTL(log_level, sctp_logging_level, SCTPCTL_LOGGING_LEVEL)
@@ -1333,7 +1329,6 @@ sctp_sysctl_handle_int(SYSCTL_HANDLER_ARGS)
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_reconfig_enable), SCTPCTL_RECONFIG_ENABLE_MIN, SCTPCTL_RECONFIG_ENABLE_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_nrsack_enable), SCTPCTL_NRSACK_ENABLE_MIN, SCTPCTL_NRSACK_ENABLE_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_pktdrop_enable), SCTPCTL_PKTDROP_ENABLE_MIN, SCTPCTL_PKTDROP_ENABLE_MAX);
-		RANGECHK(SCTP_BASE_SYSCTL(sctp_strict_sacks), SCTPCTL_STRICT_SACKS_MIN, SCTPCTL_STRICT_SACKS_MAX);
 #if !defined(SCTP_WITH_NO_CSUM)
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback), SCTPCTL_LOOPBACK_NOCSUM_MIN, SCTPCTL_LOOPBACK_NOCSUM_MAX);
 #endif
@@ -1374,7 +1369,6 @@ sctp_sysctl_handle_int(SYSCTL_HANDLER_ARGS)
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_do_drain), SCTPCTL_DO_SCTP_DRAIN_MIN, SCTPCTL_DO_SCTP_DRAIN_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_hb_maxburst), SCTPCTL_HB_MAX_BURST_MIN, SCTPCTL_HB_MAX_BURST_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_abort_if_one_2_one_hits_limit), SCTPCTL_ABORT_AT_LIMIT_MIN, SCTPCTL_ABORT_AT_LIMIT_MAX);
-		RANGECHK(SCTP_BASE_SYSCTL(sctp_strict_data_order), SCTPCTL_STRICT_DATA_ORDER_MIN, SCTPCTL_STRICT_DATA_ORDER_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_min_residual), SCTPCTL_MIN_RESIDUAL_MIN, SCTPCTL_MIN_RESIDUAL_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_max_retran_chunk), SCTPCTL_MAX_RETRAN_CHUNK_MIN, SCTPCTL_MAX_RETRAN_CHUNK_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_logging_level), SCTPCTL_LOGGING_LEVEL_MIN, SCTPCTL_LOGGING_LEVEL_MAX);
@@ -1444,10 +1438,6 @@ sysctl_setup_sctp(void)
 	sysctl_add_oid(&sysctl_oid_top, "pktdrop_enable", CTLTYPE_INT|CTLFLAG_RW,
             &SCTP_BASE_SYSCTL(sctp_pktdrop_enable), 0, sctp_sysctl_handle_int,
 	    SCTPCTL_PKTDROP_ENABLE_DESC);
-
-	sysctl_add_oid(&sysctl_oid_top, "strict_sacks", CTLTYPE_INT|CTLFLAG_RW,
-            &SCTP_BASE_SYSCTL(sctp_strict_sacks), 0, sctp_sysctl_handle_int,
-	    SCTPCTL_STRICT_SACKS_DESC);
 
 #if !defined(SCTP_WITH_NO_CSUM)
 	sysctl_add_oid(&sysctl_oid_top, "loopback_nocsum", CTLTYPE_INT|CTLFLAG_RW,
@@ -1602,10 +1592,6 @@ sysctl_setup_sctp(void)
 	sysctl_add_oid(&sysctl_oid_top, "abort_at_limit", CTLTYPE_INT|CTLFLAG_RW,
             &SCTP_BASE_SYSCTL(sctp_abort_if_one_2_one_hits_limit), 0, sctp_sysctl_handle_int,
 	    SCTPCTL_ABORT_AT_LIMIT_DESC);
-
-	sysctl_add_oid(&sysctl_oid_top, "strict_data_order", CTLTYPE_INT|CTLFLAG_RW,
-            &SCTP_BASE_SYSCTL(sctp_strict_data_order), 0, sctp_sysctl_handle_int,
-	    SCTPCTL_STRICT_DATA_ORDER_DESC);
 
 	sysctl_add_oid(&sysctl_oid_top, "min_residual", CTLTYPE_INT|CTLFLAG_RW,
             &SCTP_BASE_SYSCTL(sctp_min_residual), 0, sctp_sysctl_handle_int,
