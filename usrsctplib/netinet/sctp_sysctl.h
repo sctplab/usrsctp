@@ -148,13 +148,21 @@ struct sctp_sysctl {
 #define SCTPCTL_MAXDGRAM_DESC		"Maximum outgoing SCTP buffer size"
 #define SCTPCTL_MAXDGRAM_MIN		0
 #define SCTPCTL_MAXDGRAM_MAX		0xFFFFFFFF
+#if defined(__Userspace__)
+#define SCTPCTL_MAXDGRAM_DEFAULT	SB_MAX
+#else
 #define SCTPCTL_MAXDGRAM_DEFAULT	262144	/* 256k */
+#endif
 
 /* recvspace: Maximum incoming SCTP buffer size */
 #define SCTPCTL_RECVSPACE_DESC		"Maximum incoming SCTP buffer size"
 #define SCTPCTL_RECVSPACE_MIN		0
 #define SCTPCTL_RECVSPACE_MAX		0xFFFFFFFF
+#if defined(__Userspace__)
+#define SCTPCTL_RECVSPACE_DEFAULT	SB_RAW
+#else
 #define SCTPCTL_RECVSPACE_DEFAULT	262144	/* 256k */
+#endif
 
 /* autoasconf: Enable SCTP Auto-ASCONF */
 #define SCTPCTL_AUTOASCONF_DESC		"Enable SCTP Auto-ASCONF"

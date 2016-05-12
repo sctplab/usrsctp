@@ -100,8 +100,6 @@ sctp_init(void)
 	sctp_recvspace = SB_MAX;
 
 #elif defined(__Userspace__)
-	SCTP_BASE_SYSCTL(sctp_sendspace) = SB_MAX;
-	SCTP_BASE_SYSCTL(sctp_recvspace) = SB_RAW;
 	SCTP_BASE_SYSCTL(sctp_udp_tunneling_port) = port;
 #else
 #if !defined(__APPLE__)
