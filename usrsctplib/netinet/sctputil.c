@@ -6044,8 +6044,7 @@ sctp_sorecvmsg(struct socket *so,
 	}
 
 	/* First lets get off the sinfo and sockaddr info */
-	if ((sinfo) && filling_sinfo) {
-		memcpy(sinfo, control, sizeof(struct sctp_nonpad_sndrcvinfo));
+	if ((sinfo != NULL) && (filling_sinfo != 0)) {
 		sinfo->sinfo_stream = control->sinfo_stream;
 		sinfo->sinfo_ssn = (uint16_t)control->sinfo_ssn;
 		sinfo->sinfo_flags = control->sinfo_flags;
