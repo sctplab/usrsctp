@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 298942 2016-05-02 20:56:11Z pfg $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 300995 2016-05-30 11:18:39Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6094,7 +6094,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			stc.addr_type = SCTP_IPV6_ADDRESS;
 			memcpy(&stc.address, &src6->sin6_addr, sizeof(struct in6_addr));
 #if defined(__FreeBSD__) && (((__FreeBSD_version < 900000) && (__FreeBSD_version >= 804000)) || (__FreeBSD_version > 900000))
-			stc.scope_id = in6_getscope(&src6->sin6_addr);
+			stc.scope_id = ntohs(in6_getscope(&src6->sin6_addr));
 #else
 			stc.scope_id = 0;
 #endif
