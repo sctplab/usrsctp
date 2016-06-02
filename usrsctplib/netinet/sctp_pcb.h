@@ -321,10 +321,13 @@ struct sctp_base_info {
 #if defined(__Userspace_os_Windows)
 	SOCKET userspace_rawsctp;
 	SOCKET userspace_udpsctp;
+	SOCKET userspace_icmp;
 #else
 	int userspace_rawsctp;
 	int userspace_udpsctp;
+	int userspace_icmp;
 #endif
+	userland_thread_t recvthreadicmp;
 	userland_thread_t recvthreadraw;
 	userland_thread_t recvthreadudp;
 #endif

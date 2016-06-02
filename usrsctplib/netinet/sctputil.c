@@ -55,6 +55,9 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 299637 2016-05-13 09:11:41Z tuex
 #include <netinet/sctp_bsd_addr.h>
 #if defined(__Userspace__)
 #include <netinet/sctp_constants.h>
+#if !defined(__Userspace_os_Windows)
+#include <netinet/udp.h>
+#endif
 #endif
 #if defined(__FreeBSD__)
 #include <netinet/udp.h>
@@ -7751,10 +7754,11 @@ sctp_recv_udp_tunneled_packet(struct mbuf *m, int off, struct inpcb *inp,
 	m_freem(m);
 }
 #endif
+#endif
 
-#if __FreeBSD_version >= 1100000
+#if defined(__Userspace__) || (defined(__FreeBSD__) && __FreeBSD_version >= 1100000)
 #ifdef INET
-static void
+void
 sctp_recv_icmp_tunneled_packet(int cmd, struct sockaddr *sa, void *vip, void *ctx SCTP_UNUSED)
 {
 	struct ip *outer_ip, *inner_ip;
@@ -7774,6 +7778,7 @@ sctp_recv_icmp_tunneled_packet(int cmd, struct sockaddr *sa, void *vip, void *ct
 	outer_ip = (struct ip *)((caddr_t)icmp - sizeof(struct ip));
 	if (ntohs(outer_ip->ip_len) <
 	    sizeof(struct ip) + 8 + (inner_ip->ip_hl << 2) + sizeof(struct udphdr) + 8) {
+	    SCTPDBG(SCTP_DEBUG_USR, "Packet too short!!\n");
 		return;
 	}
 	udp = (struct udphdr *)((caddr_t)inner_ip + (inner_ip->ip_hl << 2));
@@ -7878,7 +7883,9 @@ sctp_recv_icmp_tunneled_packet(int cmd, struct sockaddr *sa, void *vip, void *ct
 	return;
 }
 #endif
+#endif
 
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1100000
 #ifdef INET6
 static void
 sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa, void *d, void *ctx SCTP_UNUSED)
@@ -8041,6 +8048,7 @@ sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa, void *d, void *ctx
 #endif
 #endif
 
+#if defined(__FreeBSD__)
 void
 sctp_over_udp_stop(void)
 {
@@ -8103,7 +8111,7 @@ sctp_over_udp_start(void)
 	/* Call the special UDP hook. */
 	if ((ret = udp_set_kernel_tunneling(SCTP_BASE_INFO(udp4_tun_socket),
 	                                    sctp_recv_udp_tunneled_packet,
-#if __FreeBSD_version >= 1100000
+#if __FreeBSD_version >= 1100000 || defined(__Userspace__)
 	                                    sctp_recv_icmp_tunneled_packet,
 #endif
 	                                    NULL))) {
