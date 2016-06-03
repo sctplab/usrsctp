@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 300995 2016-05-30 11:18:39Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 301244 2016-06-03 07:24:41Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6277,7 +6277,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	/* Now lets put the SCTP header in place */
 	initack = mtod(m, struct sctp_init_ack_chunk *);
 	/* Save it off for quick ref */
-	stc.peers_vtag = init_chk->init.initiate_tag;
+	stc.peers_vtag = ntohl(init_chk->init.initiate_tag);
 	/* who are we */
 	memcpy(stc.identification, SCTP_VERSION_STRING,
 	       min(strlen(SCTP_VERSION_STRING), sizeof(stc.identification)));
