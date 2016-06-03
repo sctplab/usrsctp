@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 299637 2016-05-13 09:11:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 301246 2016-06-03 07:43:04Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_STRUCTS_H_
@@ -237,6 +237,9 @@ struct sctp_net_route {
 	int ro_flags;
 #endif
 #else
+#if __FreeBSD_version >= 1100116
+	struct llentry *ro_lle;
+#endif
 	char		*ro_prepend;
 	uint16_t	ro_plen;
 	uint16_t	ro_flags;
