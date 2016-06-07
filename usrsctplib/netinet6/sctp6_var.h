@@ -44,6 +44,11 @@ extern void in6_sin6_2_sin(struct sockaddr_in *, struct sockaddr_in6 *);
 extern void in6_sin6_2_sin_in_sock(struct sockaddr *);
 extern void in6_sin_2_v4mapsin6(struct sockaddr_in *, struct sockaddr_in6 *);
 #endif
+#ifdef INET6
+void sctp6_notify(struct sctp_inpcb *, struct sctp_tcb *, struct sctp_nets *,
+                  uint8_t, uint8_t, uint16_t);
+void sctp6_ctlinput(int, struct sockaddr *, void *);
+#endif
 #endif
 #if defined(_KERNEL)
 

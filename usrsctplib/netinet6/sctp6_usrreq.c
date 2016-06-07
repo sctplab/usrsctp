@@ -348,6 +348,7 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto SCTP_UNUSED)
 	return (sctp6_input_with_port(i_pak, offp, 0));
 }
 #endif
+#endif
 
 void
 sctp6_notify(struct sctp_inpcb *inp,
@@ -450,6 +451,7 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 		return;
 	}
 
+#if !defined(__Userspace__)
 	if ((unsigned)cmd >= PRC_NCMDS) {
 		return;
 	}
@@ -458,6 +460,7 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 	} else if (inet6ctlerrmap[cmd] == 0) {
 		return;
 	}
+#endif
 	/* If the parameter is from icmp6, decode it. */
 	if (d != NULL) {
 		ip6cp = (struct ip6ctlparam *)d;
@@ -533,7 +536,7 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 					return;
 				}
 			} else {
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__Userspace__)
 				if (ip6cp->ip6c_m->m_pkthdr.len >=
 				    ip6cp->ip6c_off + sizeof(struct sctphdr) +
 				                      sizeof(struct sctp_chunkhdr) +
@@ -594,7 +597,6 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 		}
 	}
 }
-#endif
 
 /*
  * this routine can probably be collasped into the one in sctp_userreq.c
