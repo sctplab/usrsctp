@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 298942 2016-05-02 20:56:11Z pfg $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 301538 2016-06-07 04:51:50Z sephe $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6532,7 +6532,7 @@ sctp_input(struct mbuf *m, int off)
 			tag = htonl(sh->v_tag);
 			flowid = tag ^ ntohs(sh->dest_port) ^ ntohs(sh->src_port);
 			m->m_pkthdr.flowid = flowid;
-			M_HASHTYPE_SET(m, M_HASHTYPE_OPAQUE);
+			M_HASHTYPE_SET(m, M_HASHTYPE_OPAQUE_HASH);
 		}
 		cpu_to_use = sctp_cpuarry[flowid % mp_ncpus];
 		sctp_queue_to_mcore(m, off, cpu_to_use);

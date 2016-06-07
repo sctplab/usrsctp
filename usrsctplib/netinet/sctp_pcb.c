@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 298942 2016-05-02 20:56:11Z pfg $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 301538 2016-06-07 04:51:50Z sephe $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4792,7 +4792,7 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 	net->flowid = stcb->asoc.my_vtag ^
 	              ntohs(stcb->rport) ^
 	              ntohs(stcb->sctp_ep->sctp_lport);
-	net->flowtype = M_HASHTYPE_OPAQUE;
+	net->flowtype = M_HASHTYPE_OPAQUE_HASH;
 #endif
 	if (netp) {
 		*netp = net;
