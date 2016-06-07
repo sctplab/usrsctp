@@ -537,10 +537,10 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 				}
 			} else {
 #if defined(__FreeBSD__) || defined(__Userspace__)
-				if (ip6cp->ip6c_m->m_pkthdr.len >=
-				    ip6cp->ip6c_off + sizeof(struct sctphdr) +
+                if (ip6cp->ip6c_m->m_pkthdr.len >= (uint16_t)
+                    (ip6cp->ip6c_off + sizeof(struct sctphdr) +
 				                      sizeof(struct sctp_chunkhdr) +
-				                      offsetof(struct sctp_init, a_rwnd)) {
+                                      offsetof(struct sctp_init, a_rwnd))) {
 					/*
 					 * In this case we can check if we
 					 * got an INIT chunk and if the

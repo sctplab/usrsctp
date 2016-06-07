@@ -457,7 +457,12 @@ recv_function_icmp6(void *arg)
 	WSABUF recv_iovec[MAXLEN_MBUF_CHAIN];
 	int nResult, m_ErrorCode;
 	DWORD flags;
-	struct sockaddr_in from;
+    struct sockaddr_in6 from;
+    GUID WSARecvMsg_GUID = WSAID_WSARECVMSG;
+    LPFN_WSARECVMSG WSARecvMsg;
+    WSACMSGHDR *cmsgptr;
+    WSAMSG msg;
+    char ControlBuffer[1024];
 	int fromlen;
 #endif
 	/*Initially the entire set of mbufs is to be allocated.
