@@ -7911,8 +7911,8 @@ sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa, void *d, void *ctx
 	/* Check if we can safely examine the ports and the
 	 * verification tag of the SCTP common header.
 	 */
-    if (ip6cp->ip6c_m->m_pkthdr.len < (uint16_t)
-        (ip6cp->ip6c_off + sizeof(struct udphdr)+ offsetof(struct sctphdr, checksum))) {
+	if (ip6cp->ip6c_m->m_pkthdr.len < (uint16_t)
+	    (ip6cp->ip6c_off + sizeof(struct udphdr)+ offsetof(struct sctphdr, checksum))) {
 	    SCTPDBG(SCTP_DEBUG_USR, "Packet too short!!\n");
 		return;
 	}
@@ -7980,11 +7980,11 @@ sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa, void *d, void *ctx
 			}
 		} else {
 #if defined(__FreeBSD__) || defined(__Userspace__)
-            if (ip6cp->ip6c_m->m_pkthdr.len >= (uint16_t)
-                (ip6cp->ip6c_off + sizeof(struct udphdr) +
-                                   sizeof(struct sctphdr) +
-                                   sizeof(struct sctp_chunkhdr) +
-                                   offsetof(struct sctp_init, a_rwnd))) {
+			if (ip6cp->ip6c_m->m_pkthdr.len >= (uint16_t)
+			    (ip6cp->ip6c_off + sizeof(struct udphdr) +
+			                       sizeof(struct sctphdr) +
+			                       sizeof(struct sctp_chunkhdr) +
+			                       offsetof(struct sctp_init, a_rwnd))) {
 				/*
 				 * In this case we can check if we
 				 * got an INIT chunk and if the
