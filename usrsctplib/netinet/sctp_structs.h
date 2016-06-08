@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 301246 2016-06-03 07:43:04Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 301666 2016-06-08 17:57:42Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_STRUCTS_H_
@@ -579,7 +579,6 @@ struct sctp_stream_queue_pending {
 	TAILQ_ENTRY (sctp_stream_queue_pending) next;
 	TAILQ_ENTRY (sctp_stream_queue_pending) ss_next;
 	uint32_t fsn;
-	uint32_t msg_id;
 	uint32_t length;
 	uint32_t timetolive;
 	uint32_t ppid;
@@ -676,7 +675,11 @@ struct sctp_stream_out {
 	uint32_t abandoned_unsent[1];
 	uint32_t abandoned_sent[1];
 #endif
-	uint32_t next_sequence_send;	/* next one I expect to send out */
+	/* For associations using DATA chunks, the lower 16-bit of
+	 * next_mid_ordered are used as the next SSN.
+	 */
+	uint32_t next_mid_ordered;
+	uint32_t next_mid_unordered;
 	uint16_t stream_no;
 	uint8_t last_msg_incomplete;
 	uint8_t state;
@@ -951,7 +954,6 @@ struct sctp_association {
 	uint32_t stream_scheduling_module;
 
 	uint32_t vrf_id;
-	uint32_t assoc_msg_id;
 	uint32_t cookie_preserve_req;
 	/* ASCONF next seq I am sending out, inits at init-tsn */
 	uint32_t asconf_seq_out;
