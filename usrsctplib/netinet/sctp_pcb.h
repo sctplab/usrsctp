@@ -317,8 +317,6 @@ struct sctp_base_info {
 	userland_thread_t recvthreadroute;
 #endif
 #endif
-
-
 #ifdef INET
 #if defined(__Userspace_os_Windows)
 	SOCKET userspace_rawsctp;
