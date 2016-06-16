@@ -496,6 +496,7 @@ struct sx {int dummy;};
 #include <sys/types.h>
 #if !defined(__Userspace_os_Windows)
 #if defined(INET) || defined(INET6)
+#define INVALID_SOCKET -1
 #include <ifaddrs.h>
 #endif
 

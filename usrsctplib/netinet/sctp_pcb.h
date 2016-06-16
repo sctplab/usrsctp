@@ -318,9 +318,6 @@ struct sctp_base_info {
 #endif
 #endif
 
-#ifndef INVALID_SOCKET
-#define INVALID_SOCKET -1
-#endif
 
 #ifdef INET
 #if defined(__Userspace_os_Windows)
