@@ -317,6 +317,11 @@ struct sctp_base_info {
 	userland_thread_t recvthreadroute;
 #endif
 #endif
+
+#ifndef INVALID_SOCKET
+#define INVALID_SOCKET -1
+#endif
+
 #ifdef INET
 #if defined(__Userspace_os_Windows)
 	SOCKET userspace_rawsctp;

@@ -1145,8 +1145,8 @@ recv_thread_init(void)
 	}
 #endif
 #if defined(INET)
-	if (SCTP_BASE_VAR(userspace_rawsctp) == -1) {
-		if ((SCTP_BASE_VAR(userspace_rawsctp) = socket(AF_INET, SOCK_RAW, IPPROTO_SCTP)) == -1) {
+	if (SCTP_BASE_VAR(userspace_rawsctp) == INVALID_SOCKET) {
+		if ((SCTP_BASE_VAR(userspace_rawsctp) = socket(AF_INET, SOCK_RAW, IPPROTO_SCTP)) == INVALID_SOCKET) {
 #if defined(__Userspace_os_Windows)
 			SCTPDBG(SCTP_DEBUG_USR, "Can't create raw socket for IPv4 (errno = %d).\n", WSAGetLastError());
 #else
@@ -1162,7 +1162,7 @@ recv_thread_init(void)
 				SCTPDBG(SCTP_DEBUG_USR, "Can't set IP_HDRINCL (errno = %d).\n", errno);
 				close(SCTP_BASE_VAR(userspace_rawsctp));
 #endif
-				SCTP_BASE_VAR(userspace_rawsctp) = -1;
+				SCTP_BASE_VAR(userspace_rawsctp) = INVALID_SOCKET;
 			} else if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp), SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0) {
 #if defined(__Userspace_os_Windows)
 				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/IPv4 (errno = %d).\n", WSAGetLastError());
@@ -1171,7 +1171,7 @@ recv_thread_init(void)
 				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/IPv4 (errno = %d).\n", errno);
 				close(SCTP_BASE_VAR(userspace_rawsctp));
 #endif
-				SCTP_BASE_VAR(userspace_rawsctp) = -1;
+				SCTP_BASE_VAR(userspace_rawsctp) = INVALID_SOCKET;
 			} else {
 				memset((void *)&addr_ipv4, 0, sizeof(struct sockaddr_in));
 #ifdef HAVE_SIN_LEN
@@ -1188,7 +1188,7 @@ recv_thread_init(void)
 					SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/IPv4 (errno = %d).\n", errno);
 					close(SCTP_BASE_VAR(userspace_rawsctp));
 #endif
-					SCTP_BASE_VAR(userspace_rawsctp) = -1;
+					SCTP_BASE_VAR(userspace_rawsctp) = INVALID_SOCKET;
 				} else {
 					setReceiveBufferSize(SCTP_BASE_VAR(userspace_rawsctp), SB_RAW); /* 128K */
 					setSendBufferSize(SCTP_BASE_VAR(userspace_rawsctp), SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
@@ -1196,8 +1196,8 @@ recv_thread_init(void)
 			}
 		}
 	}
-	if (SCTP_BASE_VAR(userspace_udpsctp) == -1) {
-		if ((SCTP_BASE_VAR(userspace_udpsctp) = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
+	if (SCTP_BASE_VAR(userspace_udpsctp) == INVALID_SOCKET) {
+		if ((SCTP_BASE_VAR(userspace_udpsctp) = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
 #if defined(__Userspace_os_Windows)
 			SCTPDBG(SCTP_DEBUG_USR, "Can't create socket for SCTP/UDP/IPv4 (errno = %d).\n", WSAGetLastError());
 #else
@@ -1224,7 +1224,7 @@ recv_thread_init(void)
 #endif
 				close(SCTP_BASE_VAR(userspace_udpsctp));
 #endif
-				SCTP_BASE_VAR(userspace_udpsctp) = -1;
+				SCTP_BASE_VAR(userspace_udpsctp) = INVALID_SOCKET;
 			} else if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp), SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout)) < 0) {
 #if defined(__Userspace_os_Windows)
 				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/UDP/IPv4 (errno = %d).\n", WSAGetLastError());
@@ -1233,7 +1233,7 @@ recv_thread_init(void)
 				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/UDP/IPv4 (errno = %d).\n", errno);
 				close(SCTP_BASE_VAR(userspace_udpsctp));
 #endif
-				SCTP_BASE_VAR(userspace_udpsctp) = -1;
+				SCTP_BASE_VAR(userspace_udpsctp) = INVALID_SOCKET;
 			} else {
 				memset((void *)&addr_ipv4, 0, sizeof(struct sockaddr_in));
 #ifdef HAVE_SIN_LEN
@@ -1250,7 +1250,7 @@ recv_thread_init(void)
 					SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/UDP/IPv4 (errno = %d).\n", errno);
 					close(SCTP_BASE_VAR(userspace_udpsctp));
 #endif
-					SCTP_BASE_VAR(userspace_udpsctp) = -1;
+					SCTP_BASE_VAR(userspace_udpsctp) = INVALID_SOCKET;
 				} else {
 					setReceiveBufferSize(SCTP_BASE_VAR(userspace_udpsctp), SB_RAW); /* 128K */
 					setSendBufferSize(SCTP_BASE_VAR(userspace_udpsctp), SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
@@ -1260,8 +1260,8 @@ recv_thread_init(void)
 	}
 #endif
 #if defined(INET6)
-	if (SCTP_BASE_VAR(userspace_rawsctp6) == -1) {
-		if ((SCTP_BASE_VAR(userspace_rawsctp6) = socket(AF_INET6, SOCK_RAW, IPPROTO_SCTP)) == -1) {
+	if (SCTP_BASE_VAR(userspace_rawsctp6) == INVALID_SOCKET) {
+		if ((SCTP_BASE_VAR(userspace_rawsctp6) = socket(AF_INET6, SOCK_RAW, IPPROTO_SCTP)) == INVALID_SOCKET) {
 #if defined(__Userspace_os_Windows)
 			SCTPDBG(SCTP_DEBUG_USR, "Can't create socket for SCTP/IPv6 (errno = %d).\n", WSAGetLastError());
 #else
@@ -1278,7 +1278,7 @@ recv_thread_init(void)
 				SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_RECVPKTINFO on socket for SCTP/IPv6 (errno = %d).\n", errno);
 				close(SCTP_BASE_VAR(userspace_rawsctp6));
 #endif
-				SCTP_BASE_VAR(userspace_rawsctp6) = -1;
+				SCTP_BASE_VAR(userspace_rawsctp6) = INVALID_SOCKET;
 			} else {
 #else
 			if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), IPPROTO_IPV6, IPV6_PKTINFO,(const void*)&on, sizeof(on)) < 0) {
@@ -1289,7 +1289,7 @@ recv_thread_init(void)
 				SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_PKTINFO on socket for SCTP/IPv6 (errno = %d).\n", errno);
 				close(SCTP_BASE_VAR(userspace_rawsctp6));
 #endif
-				SCTP_BASE_VAR(userspace_rawsctp6) = -1;
+				SCTP_BASE_VAR(userspace_rawsctp6) = INVALID_SOCKET;
 			} else {
 #endif
 				if (setsockopt(SCTP_BASE_VAR(userspace_rawsctp6), IPPROTO_IPV6, IPV6_V6ONLY, (const void*)&on, (socklen_t)sizeof(on)) < 0) {
@@ -1307,7 +1307,7 @@ recv_thread_init(void)
 					SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/IPv6 (errno = %d).\n", errno);
 					close(SCTP_BASE_VAR(userspace_rawsctp6));
 #endif
-					SCTP_BASE_VAR(userspace_rawsctp6) = -1;
+					SCTP_BASE_VAR(userspace_rawsctp6) = INVALID_SOCKET;
 				} else {
 					memset((void *)&addr_ipv6, 0, sizeof(struct sockaddr_in6));
 #ifdef HAVE_SIN6_LEN
@@ -1324,7 +1324,7 @@ recv_thread_init(void)
 						SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/IPv6 (errno = %d).\n", errno);
 						close(SCTP_BASE_VAR(userspace_rawsctp6));
 #endif
-						SCTP_BASE_VAR(userspace_rawsctp6) = -1;
+						SCTP_BASE_VAR(userspace_rawsctp6) = INVALID_SOCKET;
 					} else {
 						setReceiveBufferSize(SCTP_BASE_VAR(userspace_rawsctp6), SB_RAW); /* 128K */
 						setSendBufferSize(SCTP_BASE_VAR(userspace_rawsctp6), SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
@@ -1333,8 +1333,8 @@ recv_thread_init(void)
 			}
 		}
 	}
-	if (SCTP_BASE_VAR(userspace_udpsctp6) == -1) {
-		if ((SCTP_BASE_VAR(userspace_udpsctp6) = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
+	if (SCTP_BASE_VAR(userspace_udpsctp6) == INVALID_SOCKET) {
+		if ((SCTP_BASE_VAR(userspace_udpsctp6) = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
 #if defined(__Userspace_os_Windows)
 			SCTPDBG(SCTP_DEBUG_USR, "Can't create socket for SCTP/UDP/IPv6 (errno = %d).\n", WSAGetLastError());
 #else
@@ -1350,7 +1350,7 @@ recv_thread_init(void)
 			SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_RECVPKTINFO on socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
 			close(SCTP_BASE_VAR(userspace_udpsctp6));
 #endif
-			SCTP_BASE_VAR(userspace_udpsctp6) = -1;
+			SCTP_BASE_VAR(userspace_udpsctp6) = INVALID_SOCKET;
 		} else {
 #else
 		if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), IPPROTO_IPV6, IPV6_PKTINFO, (const void *)&on, (int)sizeof(int)) < 0) {
@@ -1361,7 +1361,7 @@ recv_thread_init(void)
 			SCTPDBG(SCTP_DEBUG_USR, "Can't set IPV6_PKTINFO on socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
 			close(SCTP_BASE_VAR(userspace_udpsctp6));
 #endif
-			SCTP_BASE_VAR(userspace_udpsctp6) = -1;
+			SCTP_BASE_VAR(userspace_udpsctp6) = INVALID_SOCKET;
 		} else {
 #endif
 			if (setsockopt(SCTP_BASE_VAR(userspace_udpsctp6), IPPROTO_IPV6, IPV6_V6ONLY, (const void *)&on, (socklen_t)sizeof(on)) < 0) {
@@ -1379,7 +1379,7 @@ recv_thread_init(void)
 				SCTPDBG(SCTP_DEBUG_USR, "Can't set timeout on socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
 				close(SCTP_BASE_VAR(userspace_udpsctp6));
 #endif
-				SCTP_BASE_VAR(userspace_udpsctp6) = -1;
+				SCTP_BASE_VAR(userspace_udpsctp6) = INVALID_SOCKET;
 			} else {
 				memset((void *)&addr_ipv6, 0, sizeof(struct sockaddr_in6));
 #ifdef HAVE_SIN6_LEN
@@ -1396,7 +1396,7 @@ recv_thread_init(void)
 					SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/UDP/IPv6 (errno = %d).\n", errno);
 					close(SCTP_BASE_VAR(userspace_udpsctp6));
 #endif
-					SCTP_BASE_VAR(userspace_udpsctp6) = -1;
+					SCTP_BASE_VAR(userspace_udpsctp6) = INVALID_SOCKET;
 				} else {
 					setReceiveBufferSize(SCTP_BASE_VAR(userspace_udpsctp6), SB_RAW); /* 128K */
 					setSendBufferSize(SCTP_BASE_VAR(userspace_udpsctp6), SB_RAW); /* 128K Is this setting net.inet.raw.maxdgram value? Should it be set to 64K? */
@@ -1419,7 +1419,7 @@ recv_thread_init(void)
 #endif
 #endif
 #if defined(INET)
-	if (SCTP_BASE_VAR(userspace_rawsctp) != -1) {
+	if (SCTP_BASE_VAR(userspace_rawsctp) != INVALID_SOCKET) {
 		int rc;
 
 		if ((rc = sctp_userspace_thread_create(&SCTP_BASE_VAR(recvthreadraw), &recv_function_raw))) {
@@ -1429,10 +1429,10 @@ recv_thread_init(void)
 #else
 			close(SCTP_BASE_VAR(userspace_rawsctp));
 #endif
-			SCTP_BASE_VAR(userspace_rawsctp) = -1;
+			SCTP_BASE_VAR(userspace_rawsctp) = INVALID_SOCKET;
 		}
 	}
-	if (SCTP_BASE_VAR(userspace_udpsctp) != -1) {
+	if (SCTP_BASE_VAR(userspace_udpsctp) != INVALID_SOCKET) {
 		int rc;
 
 		if ((rc = sctp_userspace_thread_create(&SCTP_BASE_VAR(recvthreadudp), &recv_function_udp))) {
@@ -1442,12 +1442,12 @@ recv_thread_init(void)
 #else
 			close(SCTP_BASE_VAR(userspace_udpsctp));
 #endif
-			SCTP_BASE_VAR(userspace_udpsctp) = -1;
+			SCTP_BASE_VAR(userspace_udpsctp) = INVALID_SOCKET;
 		}
 	}
 #endif
 #if defined(INET6)
-	if (SCTP_BASE_VAR(userspace_rawsctp6) != -1) {
+	if (SCTP_BASE_VAR(userspace_rawsctp6) != INVALID_SOCKET) {
 		int rc;
 
 		if ((rc = sctp_userspace_thread_create(&SCTP_BASE_VAR(recvthreadraw6), &recv_function_raw6))) {
@@ -1457,10 +1457,10 @@ recv_thread_init(void)
 #else
 			close(SCTP_BASE_VAR(userspace_rawsctp6));
 #endif
-			SCTP_BASE_VAR(userspace_rawsctp6) = -1;
+			SCTP_BASE_VAR(userspace_rawsctp6) = INVALID_SOCKET;
 		}
 	}
-	if (SCTP_BASE_VAR(userspace_udpsctp6) != -1) {
+	if (SCTP_BASE_VAR(userspace_udpsctp6) != INVALID_SOCKET) {
 		int rc;
 
 		if ((rc = sctp_userspace_thread_create(&SCTP_BASE_VAR(recvthreadudp6), &recv_function_udp6))) {
@@ -1470,7 +1470,7 @@ recv_thread_init(void)
 #else
 			close(SCTP_BASE_VAR(userspace_udpsctp6));
 #endif
-			SCTP_BASE_VAR(userspace_udpsctp6) = -1;
+			SCTP_BASE_VAR(userspace_udpsctp6) = INVALID_SOCKET;
 		}
 	}
 #endif
@@ -1487,14 +1487,14 @@ recv_thread_destroy(void)
 #endif
 #endif
 #if defined(INET)
-	if (SCTP_BASE_VAR(userspace_rawsctp) != -1) {
+	if (SCTP_BASE_VAR(userspace_rawsctp) != INVALID_SOCKET) {
 #if defined(__Userspace_os_Windows)
 		closesocket(SCTP_BASE_VAR(userspace_rawsctp));
 #else
 		close(SCTP_BASE_VAR(userspace_rawsctp));
 #endif
 	}
-	if (SCTP_BASE_VAR(userspace_udpsctp) != -1) {
+	if (SCTP_BASE_VAR(userspace_udpsctp) != INVALID_SOCKET) {
 #if defined(__Userspace_os_Windows)
 		closesocket(SCTP_BASE_VAR(userspace_udpsctp));
 #else
@@ -1503,14 +1503,14 @@ recv_thread_destroy(void)
 	}
 #endif
 #if defined(INET6)
-	if (SCTP_BASE_VAR(userspace_rawsctp6) != -1) {
+	if (SCTP_BASE_VAR(userspace_rawsctp6) != INVALID_SOCKET) {
 #if defined(__Userspace_os_Windows)
 		closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
 #else
 		close(SCTP_BASE_VAR(userspace_rawsctp6));
 #endif
 	}
-	if (SCTP_BASE_VAR(userspace_udpsctp6) != -1) {
+	if (SCTP_BASE_VAR(userspace_udpsctp6) != INVALID_SOCKET) {
 #if defined(__Userspace_os_Windows)
 		closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
 #else

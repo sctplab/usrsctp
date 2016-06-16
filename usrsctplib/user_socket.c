@@ -2993,12 +2993,12 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	msg_hdr.msg_controllen = 0;
 	msg_hdr.msg_flags = 0;
 
-	if ((!use_udp_tunneling) && (SCTP_BASE_VAR(userspace_rawsctp) != -1)) {
+	if ((!use_udp_tunneling) && (SCTP_BASE_VAR(userspace_rawsctp) != INVALID_SOCKET)) {
 		if ((res = sendmsg(SCTP_BASE_VAR(userspace_rawsctp), &msg_hdr, MSG_DONTWAIT)) != send_len) {
 			*result = errno;
 		}
 	}
-	if ((use_udp_tunneling) && (SCTP_BASE_VAR(userspace_udpsctp) != -1)) {
+	if ((use_udp_tunneling) && (SCTP_BASE_VAR(userspace_udpsctp) != INVALID_SOCKET)) {
 		if ((res = sendmsg(SCTP_BASE_VAR(userspace_udpsctp), &msg_hdr, MSG_DONTWAIT)) != send_len) {
 			*result = errno;
 		}
@@ -3151,12 +3151,12 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	msg_hdr.msg_controllen = 0;
 	msg_hdr.msg_flags = 0;
 
-	if ((!use_udp_tunneling) && (SCTP_BASE_VAR(userspace_rawsctp6) > -1)) {
+	if ((!use_udp_tunneling) && (SCTP_BASE_VAR(userspace_rawsctp6) != INVALID_SOCKET)) {
 		if ((res = sendmsg(SCTP_BASE_VAR(userspace_rawsctp6), &msg_hdr, MSG_DONTWAIT)) != send_len) {
 			*result = errno;
 		}
 	}
-	if ((use_udp_tunneling) && (SCTP_BASE_VAR(userspace_udpsctp6) > -1)) {
+	if ((use_udp_tunneling) && (SCTP_BASE_VAR(userspace_udpsctp6) != INVALID_SOCKET)) {
 		if ((res = sendmsg(SCTP_BASE_VAR(userspace_udpsctp6), &msg_hdr, MSG_DONTWAIT)) != send_len) {
 			*result = errno;
 		}
