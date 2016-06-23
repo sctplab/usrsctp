@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 300733 2016-05-26 11:38:26Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 302138 2016-06-23 09:13:15Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -164,6 +164,16 @@ sctp_init(void)
 #endif
 }
 
+#if defined(__FreeBSD__)
+#ifdef VIMAGE
+static void
+sctp_finish(void *unused __unused)
+{
+         sctp_pcb_finish();
+}
+VNET_SYSUNINIT(sctp, SI_SUB_PROTO_DOMAIN, SI_ORDER_FOURTH, sctp_finish, NULL);
+#endif
+#else
 void
 sctp_finish(void)
 {
@@ -233,8 +243,7 @@ sctp_finish(void)
 	sctp_finish_sysctls();
 #endif
 }
-
-
+#endif
 
 void
 sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint16_t nxtsz)
@@ -460,8 +469,7 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 		                                    SCTP_DEFAULT_VRFID);
 		if ((stcb != NULL) &&
 		    (net != NULL) &&
-		    (inp != NULL) &&
-		    (inp->sctp_socket != NULL)) {
+		    (inp != NULL)) {
 			/* Check the verification tag */
 			if (ntohl(sh->v_tag) != 0) {
 				/*
