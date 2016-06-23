@@ -164,6 +164,16 @@ sctp_init(void)
 #endif
 }
 
+#if defined(__FreeBSD__)
+#ifdef VIMAGE
+static void
+sctp_finish(void *unused __unused)
+{
+         sctp_pcb_finish();
+}
+VNET_SYSUNINIT(sctp, SI_SUB_PROTO_DOMAIN, SI_ORDER_FOURTH, sctp_finish, NULL);
+#endif
+#else
 void
 sctp_finish(void)
 {
@@ -233,8 +243,7 @@ sctp_finish(void)
 	sctp_finish_sysctls();
 #endif
 }
-
-
+#endif
 
 void
 sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint16_t nxtsz)
