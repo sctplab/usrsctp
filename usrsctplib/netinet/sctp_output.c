@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 302207 2016-06-26 12:41:02Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 302293 2016-06-30 06:06:35Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7781,10 +7781,12 @@ re_look:
 			/* All of it fits in the MTU */
 			if (sp->some_taken) {
 				rcv_flags |= SCTP_DATA_LAST_FRAG;
-				sp->put_last_out = 1;
 			} else {
 				rcv_flags |= SCTP_DATA_NOT_FRAG;
-				sp->put_last_out = 1;
+			}
+			sp->put_last_out = 1;
+			if (sp->sinfo_flags & SCTP_SACK_IMMEDIATELY) {
+				rcv_flags |= SCTP_DATA_SACK_IMMEDIATELY;
 			}
 		} else {
 			/* Not all of it fits, we fragment */
@@ -7848,8 +7850,8 @@ re_look:
 	if (sp->sinfo_flags & SCTP_UNORDERED) {
 		rcv_flags |= SCTP_DATA_UNORDERED;
 	}
-	if ((SCTP_BASE_SYSCTL(sctp_enable_sack_immediately) && ((sp->sinfo_flags & SCTP_EOF) == SCTP_EOF)) ||
-	    ((sp->sinfo_flags & SCTP_SACK_IMMEDIATELY) == SCTP_SACK_IMMEDIATELY)) {
+	if (SCTP_BASE_SYSCTL(sctp_enable_sack_immediately) &&
+	    (sp->sinfo_flags & SCTP_EOF) == SCTP_EOF) {
 		rcv_flags |= SCTP_DATA_SACK_IMMEDIATELY;
 	}
 	/* clear out the chunk before setting up */
@@ -14297,8 +14299,11 @@ skip_preblock:
 					sp->tail_mbuf = new_tail;
 				}
 				sctp_snd_sb_alloc(stcb, sndout);
-				atomic_add_int(&sp->length,sndout);
+				atomic_add_int(&sp->length, sndout);
 				len += sndout;
+				if (srcv->sinfo_flags & SCTP_SACK_IMMEDIATELY) {
+					sp->sinfo_flags |= SCTP_SACK_IMMEDIATELY;
+				}
 
 				/* Did we reach EOR? */
 #if defined(__APPLE__)
