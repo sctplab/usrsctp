@@ -791,6 +791,7 @@ restart:
 			if (nc == NULL) {
 				break;
 			}
+			memset(nc, 0, sizeof(struct sctp_queued_to_read));
 			TAILQ_REMOVE(&control->reasm, chk, sctp_next);
 			sctp_add_chk_to_control(control, strm, stcb, asoc, chk);
 			fsn++;
