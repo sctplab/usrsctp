@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_header.h 298187 2016-04-18 06:38:53Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_header.h 302949 2016-07-17 13:14:51Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_HEADER_H_
@@ -415,7 +415,7 @@ struct sctp_strseq {
 
 struct sctp_strseq_mid {
 	uint16_t stream;
-	uint16_t reserved;
+	uint16_t flags;
 	uint32_t msg_id;
 };
 

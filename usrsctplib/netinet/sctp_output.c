@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 302293 2016-06-30 06:06:35Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 302949 2016-07-17 13:14:51Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -10889,7 +10889,7 @@ sctp_fill_in_rest:
 				/* no more to look at */
 				break;
 			}
-			if (at->rec.data.rcv_flags & SCTP_DATA_UNORDERED) {
+			if ((at->rec.data.rcv_flags & SCTP_DATA_UNORDERED) && old) {
 				/* We don't report these */
 				continue;
 			}
@@ -11010,7 +11010,7 @@ sctp_fill_in_rest:
 			tp1 = TAILQ_NEXT(at, sctp_next);
 			if (tp1 == NULL)
 				break;
-			if (at->rec.data.rcv_flags & SCTP_DATA_UNORDERED) {
+			if (old && (at->rec.data.rcv_flags & SCTP_DATA_UNORDERED)) {
 				/* We don't report these */
 				i--;
 				at = tp1;
@@ -11025,8 +11025,11 @@ sctp_fill_in_rest:
 				strseq++;
 			} else {
 				strseq_m->stream = ntohs(at->rec.data.stream_number);
-				strseq_m->reserved = ntohs(0);
 				strseq_m->msg_id = ntohl(at->rec.data.stream_seq);
+				if (at->rec.data.rcv_flags & SCTP_DATA_UNORDERED)
+					strseq_m->flags = ntohs(PR_SCTP_UNORDERED_FLAG);
+				else
+					strseq_m->flags = 0;
 				strseq_m++;
 			}
 			at = tp1;
