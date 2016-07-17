@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 302935 2016-07-16 12:25:37Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 302942 2016-07-17 08:31:21Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -838,6 +838,7 @@ restart:
 				if (control->on_strm_q) {
 					TAILQ_REMOVE(&strm->uno_inqueue, control, next_instrm);
 					control->on_strm_q = 0;
+					SCTP_STAT_INCR_COUNTER64(sctps_reasmusrmsgs);
 				}
 				if (control->on_read_q == 0) {
 					sctp_add_to_readq(stcb->sctp_ep, stcb, control,
@@ -1041,6 +1042,7 @@ sctp_deliver_reasm_check(struct sctp_tcb *stcb, struct sctp_association *asoc, s
 					      control, control->on_strm_q);
 				}
 #endif
+				SCTP_STAT_INCR_COUNTER64(sctps_reasmusrmsgs);
 				TAILQ_REMOVE(&strm->uno_inqueue, control, next_instrm);
 				control->on_strm_q = 0;
 			}
@@ -1094,6 +1096,7 @@ done_un:
 					      control, control->on_strm_q);
 				}
 #endif
+				SCTP_STAT_INCR_COUNTER64(sctps_reasmusrmsgs);
 				TAILQ_REMOVE(&strm->inqueue, control, next_instrm);
 				control->on_strm_q = 0;
 			}
@@ -1136,6 +1139,7 @@ deliver_more:
 						      control, control->on_strm_q);
 					}
 #endif
+					SCTP_STAT_INCR_COUNTER64(sctps_reasmusrmsgs);
 					TAILQ_REMOVE(&strm->inqueue, control, next_instrm);
 					control->on_strm_q = 0;
 				}
