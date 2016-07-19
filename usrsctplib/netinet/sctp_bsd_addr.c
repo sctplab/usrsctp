@@ -306,14 +306,6 @@ sctp_is_vmware_interface(struct ifnet *ifn)
 #endif
 
 #if defined(__Userspace_os_Windows)
-#ifdef MALLOC
-#undef MALLOC
-#define MALLOC(x) HeapAlloc(GetProcessHeap(), 0, (x))
-#endif
-#ifdef FREE
-#undef FREE
-#define FREE(x) HeapFree(GetProcessHeap(), 0, (x))
-#endif
 static void
 sctp_init_ifns_for_vrf(int vrfid)
 {
@@ -343,7 +335,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 	/* Get actual adapter information */
 	if ((Err = GetAdaptersAddresses(AF_INET, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
 		SCTP_PRINTF("GetAdaptersV4Addresses() failed with error code %d\n", Err);
-		FREE(pAdapterAddrs);
+		GlobalFree(pAdapterAddrs);
 		return;
 	}
 	/* Enumerate through each returned adapter and save its information */
@@ -368,7 +360,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 			}
 		}
 	}
-	FREE(pAdapterAddrs);
+	GlobalFree(pAdapterAddrs);
 #endif
 #ifdef INET6
 	AdapterAddrsSize = 0;
@@ -388,7 +380,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 	/* Get actual adapter information */
 	if ((Err = GetAdaptersAddresses(AF_INET6, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
 		SCTP_PRINTF("GetAdaptersV6Addresses() failed with error code %d\n", Err);
-		FREE(pAdapterAddrs);
+		GlobalFree(pAdapterAddrs);
 		return;
 	}
 	/* Enumerate through each returned adapter and save its information */
@@ -410,7 +402,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 			}
 		}
 	}
-	FREE(pAdapterAddrs);
+	GlobalFree(pAdapterAddrs);
 #endif
 }
 #elif defined(__Userspace__)
