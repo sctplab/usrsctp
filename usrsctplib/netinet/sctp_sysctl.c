@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 299543 2016-05-12 16:34:59Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 303024 2016-07-19 09:48:08Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -328,9 +328,6 @@ sctp_sysctl_copy_out_local_addresses(struct sctp_inpcb *inp, struct sctp_tcb *st
 					if (ipv6_addr_legal) {
 						struct sockaddr_in6 *sin6;
 
-#if defined(SCTP_EMBEDDED_V6_SCOPE) && !defined(SCTP_KAME)
-						struct sockaddr_in6 lsa6;
-#endif
 						sin6 = &sctp_ifa->address.sin6;
 						if (IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr))
 							continue;
@@ -343,21 +340,6 @@ sctp_sysctl_copy_out_local_addresses(struct sctp_inpcb *inp, struct sctp_tcb *st
 						if (IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr)) {
 							if (local_scope == 0)
 								continue;
-#if defined(SCTP_EMBEDDED_V6_SCOPE)
-							if (sin6->sin6_scope_id == 0) {
-#ifdef SCTP_KAME
-								/* bad link local address */
-								if (sa6_recoverscope(sin6) != 0)
-									continue;
-#else
-								lsa6 = *sin6;
-								/* bad link local address */
-								if (in6_recoverscope(&lsa6, &lsa6.sin6_addr, NULL))
-									continue;
-								sin6 = &lsa6;
-#endif	/* SCTP_KAME */
-							}
-#endif /* SCTP_EMBEDDED_V6_SCOPE */
 						}
 						if ((site_scope == 0) && (IN6_IS_ADDR_SITELOCAL(&sin6->sin6_addr)))
 							continue;
