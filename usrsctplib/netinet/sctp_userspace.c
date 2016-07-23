@@ -259,10 +259,12 @@ Win_getifaddrs(struct ifaddrs** interfaces)
 		interfaces[count] = ifa;
 	}
 #endif
+#if defined(INET) || defined(INET6)
 cleanup:
 	if (pAdapterAddrs != NULL) {
 		GlobalFree(pAdapterAddrs);
 	}
+#endif
 	return (ret);
 }
 
