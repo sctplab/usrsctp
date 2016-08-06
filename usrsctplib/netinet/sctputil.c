@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 303792 2016-08-06 12:33:15Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 303798 2016-08-06 15:29:46Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6669,9 +6669,9 @@ sctp_sorecvmsg(struct socket *so,
 			goto stage_left;
 #endif
 		}
-		atomic_add_int(&stcb->asoc.refcnt, -1);
 		/* Save the value back for next time */
 		stcb->freed_by_sorcv_sincelast = freed_so_far;
+		atomic_add_int(&stcb->asoc.refcnt, -1);
 	}
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) &SCTP_RECV_RWND_LOGGING_ENABLE) {
 		if (stcb) {
