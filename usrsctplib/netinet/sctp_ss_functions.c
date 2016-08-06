@@ -28,7 +28,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_ss_functions.c 303792 2016-08-06 12:33:15Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_ss_functions.c 303793 2016-08-06 12:51:07Z tuexen $");
 #endif
 
 #include <netinet/sctp_pcb.h>
@@ -225,9 +225,11 @@ default_again:
 }
 
 static void
-sctp_ss_default_scheduled(struct sctp_tcb *stcb, struct sctp_nets *net SCTP_UNUSED,
+sctp_ss_default_scheduled(struct sctp_tcb *stcb,
+                          struct sctp_nets *net SCTP_UNUSED,
                           struct sctp_association *asoc,
-                          struct sctp_stream_out *strq, int moved_how_much)
+                          struct sctp_stream_out *strq,
+                          int moved_how_much SCTP_UNUSED)
 {
 	struct sctp_stream_queue_pending *sp;
 
