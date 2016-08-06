@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 301538 2016-06-07 04:51:50Z sephe $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 303792 2016-08-06 12:33:15Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4037,7 +4037,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 			} else if (TAILQ_EMPTY(&asoc->asoc.send_queue) &&
 			           TAILQ_EMPTY(&asoc->asoc.sent_queue) &&
 			           (asoc->asoc.stream_queue_cnt == 0)) {
-				if (asoc->asoc.locked_on_sending) {
+				if ((*asoc->asoc.ss_functions.sctp_ss_is_user_msgs_incomplete)(asoc, &asoc->asoc)) {
 					goto abort_anyway;
 				}
 				if ((SCTP_GET_STATE(&asoc->asoc) != SCTP_STATE_SHUTDOWN_SENT) &&
@@ -4069,22 +4069,11 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 				}
 			} else {
 				/* mark into shutdown pending */
-				struct sctp_stream_queue_pending *sp;
-
 				asoc->asoc.state |= SCTP_STATE_SHUTDOWN_PENDING;
 				sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD, asoc->sctp_ep, asoc,
 						 asoc->asoc.primary_destination);
-				if (asoc->asoc.locked_on_sending) {
-					sp = TAILQ_LAST(&((asoc->asoc.locked_on_sending)->outqueue),
-						sctp_streamhead);
-					if (sp == NULL) {
-						SCTP_PRINTF("Error, sp is NULL, locked on sending is %p strm:%d\n",
-						       (void *)asoc->asoc.locked_on_sending,
-						       asoc->asoc.locked_on_sending->stream_no);
-					} else {
-						if ((sp->length == 0) && (sp->msg_is_complete == 0))
-							asoc->asoc.state |= SCTP_STATE_PARTIAL_MSG_LEFT;
-					}
+				if ((*asoc->asoc.ss_functions.sctp_ss_is_user_msgs_incomplete)(asoc, &asoc->asoc)) {
+					asoc->asoc.state |= SCTP_STATE_PARTIAL_MSG_LEFT;
 				}
 				if (TAILQ_EMPTY(&asoc->asoc.send_queue) &&
 				    TAILQ_EMPTY(&asoc->asoc.sent_queue) &&
@@ -6608,7 +6597,7 @@ sctp_startup_mcore_threads(void)
 	}
 }
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_cc_version >= 1200000
+#if defined(__FreeBSD__) && __FreeBSD_cc_version >= 1300000
 static struct mbuf *
 sctp_netisr_hdlr(struct mbuf *m, uintptr_t source)
 {
@@ -6634,6 +6623,7 @@ sctp_netisr_hdlr(struct mbuf *m, uintptr_t source)
 	tag = htonl(sh->v_tag);
 	flowid = tag ^ ntohs(sh->dest_port) ^ ntohs(sh->src_port);
 	m->m_pkthdr.flowid = flowid;
+/* FIX ME */
 	m->m_flags |= M_FLOWID;
 	return (m);
 }
@@ -6841,7 +6831,7 @@ sctp_pcb_init()
 	 */
 	sctp_init_vrf_list(SCTP_DEFAULT_VRF);
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_cc_version >= 1200000
+#if defined(__FreeBSD__) && __FreeBSD_cc_version >= 1300000
 	if (ip_register_flow_handler(sctp_netisr_hdlr, IPPROTO_SCTP)) {
 		SCTP_PRINTF("***SCTP- Error can't register netisr handler***\n");
 	}
@@ -7907,6 +7897,12 @@ sctp_drain_mbufs(struct sctp_tcb *stcb)
 	/* Ok that was fun, now we will drain all the inbound streams? */
 	for (strmat = 0; strmat < asoc->streamincnt; strmat++) {
 		TAILQ_FOREACH_SAFE(ctl, &asoc->strmin[strmat].inqueue, next_instrm, nctl) {
+#ifdef INVARIANTS
+			if (ctl->on_strm_q != SCTP_ON_ORDERED ) {
+				panic("Huh control: %p on_q: %d -- not ordered?",
+				      ctl, ctl->on_strm_q);
+			}
+#endif
 			if (SCTP_TSN_GT(ctl->sinfo_tsn, cumulative_tsn_p1)) {
 				/* Yep it is above cum-ack */
 				cnt++;
@@ -7914,7 +7910,12 @@ sctp_drain_mbufs(struct sctp_tcb *stcb)
 				asoc->size_on_all_streams = sctp_sbspace_sub(asoc->size_on_all_streams, ctl->length);
 				sctp_ucount_decr(asoc->cnt_on_all_streams);
 				SCTP_UNSET_TSN_PRESENT(asoc->mapping_array, gap);
+				if (ctl->on_read_q) {
+					TAILQ_REMOVE(&stcb->sctp_ep->read_queue, ctl, next);
+					ctl->on_read_q = 0;
+				}
 				TAILQ_REMOVE(&asoc->strmin[strmat].inqueue, ctl, next_instrm);
+				ctl->on_strm_q = 0;
 				if (ctl->data) {
 					sctp_m_freem(ctl->data);
 					ctl->data = NULL;
@@ -7938,6 +7939,12 @@ sctp_drain_mbufs(struct sctp_tcb *stcb)
 			}
 		}
 		TAILQ_FOREACH_SAFE(ctl, &asoc->strmin[strmat].uno_inqueue, next_instrm, nctl) {
+#ifdef INVARIANTS
+			if (ctl->on_strm_q != SCTP_ON_UNORDERED ) {
+				panic("Huh control: %p on_q: %d -- not unordered?",
+				      ctl, ctl->on_strm_q);
+			}
+#endif
 			if (SCTP_TSN_GT(ctl->sinfo_tsn, cumulative_tsn_p1)) {
 				/* Yep it is above cum-ack */
 				cnt++;
@@ -7945,7 +7952,12 @@ sctp_drain_mbufs(struct sctp_tcb *stcb)
 				asoc->size_on_all_streams = sctp_sbspace_sub(asoc->size_on_all_streams, ctl->length);
 				sctp_ucount_decr(asoc->cnt_on_all_streams);
 				SCTP_UNSET_TSN_PRESENT(asoc->mapping_array, gap);
+				if (ctl->on_read_q) {
+					TAILQ_REMOVE(&stcb->sctp_ep->read_queue, ctl, next);
+					ctl->on_read_q = 0;
+				}
 				TAILQ_REMOVE(&asoc->strmin[strmat].uno_inqueue, ctl, next_instrm);
+				ctl->on_strm_q = 0;
 				if (ctl->data) {
 					sctp_m_freem(ctl->data);
 					ctl->data = NULL;
