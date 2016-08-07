@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 303798 2016-08-06 15:29:46Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 303813 2016-08-07 12:51:13Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4075,8 +4075,9 @@ sctp_report_all_outbound(struct sctp_tcb *stcb, uint16_t error, int holds_lock, 
 		outs = &asoc->strmout[i];
 		/* clean up any sends there */
 		TAILQ_FOREACH_SAFE(sp, &outs->outqueue, next, nsp) {
-			asoc->stream_queue_cnt--;
+			atomic_subtract_int(&asoc->stream_queue_cnt, 1);
 			TAILQ_REMOVE(&outs->outqueue, sp, next);
+			stcb->asoc.ss_functions.sctp_ss_remove_from_stream(stcb, asoc, outs, sp, holds_lock);
 			sctp_free_spbufspace(stcb, asoc, sp);
 			if (sp->data) {
 				sctp_ulp_notify(SCTP_NOTIFY_SPECIAL_SP_FAIL, stcb,

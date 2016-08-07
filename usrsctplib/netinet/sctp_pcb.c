@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 303792 2016-08-06 12:33:15Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 303813 2016-08-07 12:51:13Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5759,7 +5759,9 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		outs = &asoc->strmout[i];
 		/* now clean up any chunks here */
 		TAILQ_FOREACH_SAFE(sp, &outs->outqueue, next, nsp) {
+			atomic_subtract_int(&asoc->stream_queue_cnt, 1);
 			TAILQ_REMOVE(&outs->outqueue, sp, next);
+			stcb->asoc.ss_functions.sctp_ss_remove_from_stream(stcb, asoc, outs, sp, 0);
 			sctp_free_spbufspace(stcb, asoc, sp);
 			if (sp->data) {
 				if (so) {
