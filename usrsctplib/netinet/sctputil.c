@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 303813 2016-08-07 12:51:13Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 303831 2016-08-08 08:20:10Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6000,20 +6000,16 @@ sctp_sorecvmsg(struct socket *so,
 	}
 	/* Clear the held length since there is something to read */
 	control->held_length = 0;
-	if (hold_rlock) {
-		SCTP_INP_READ_UNLOCK(inp);
-		hold_rlock = 0;
-	}
  found_one:
 	/*
 	 * If we reach here, control has a some data for us to read off.
 	 * Note that stcb COULD be NULL.
 	 */
-	control->some_taken++;
-	if (hold_sblock) {
-		SOCKBUF_UNLOCK(&so->so_rcv);
-		hold_sblock = 0;
+	if (hold_rlock == 0) {
+		hold_rlock = 1;
+		SCTP_INP_READ_LOCK(inp);
 	}
+	control->some_taken++;
 	stcb = control->stcb;
 	if (stcb) {
 		if ((control->do_not_ref_stcb == 0) &&
@@ -6191,6 +6187,14 @@ sctp_sorecvmsg(struct socket *so,
 		}
 #endif
 #endif
+	}
+	if (hold_rlock) {
+		SCTP_INP_READ_UNLOCK(inp);
+		hold_rlock = 0;
+	}
+	if (hold_sblock) {
+		SOCKBUF_UNLOCK(&so->so_rcv);
+		hold_sblock = 0;
 	}
 	/* now copy out what data we can */
 	if (mp == NULL) {
