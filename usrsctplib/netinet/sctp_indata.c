@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 303792 2016-08-06 12:33:15Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 303927 2016-08-10 17:19:33Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1740,21 +1740,28 @@ sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	 * If its a fragmented message, lets see if we can
 	 * find the control on the reassembly queues.
 	 */
-	if ((chtype == SCTP_IDATA) && ((chunk_flags & SCTP_DATA_FIRST_FRAG) == 0) && (fsn == 0)) {
+	if ((chtype == SCTP_IDATA) &&
+	    ((chunk_flags & SCTP_DATA_FIRST_FRAG) == 0) &&
+	    (fsn == 0)) {
 		/* 
 		 *  The first *must* be fsn 0, and other 
 		 *  (middle/end) pieces can *not* be fsn 0.
+		 * XXX: This can happen in case of a wrap around.
+		 *      Ignore is for now.
 		 */
+		snprintf(msg, sizeof(msg), "FSN zero for MID=%8.8x, but flags=%2.2x",
+		         msg_id, chunk_flags);
 		goto err_out;
 	}
+	control = sctp_find_reasm_entry(strm, msg_id, ordered, old_data);
+	SCTPDBG(SCTP_DEBUG_XXX, "chunk_flags:0x%x look for control on queues %p\n",
+		chunk_flags, control);
 	if ((chunk_flags & SCTP_DATA_NOT_FRAG) != SCTP_DATA_NOT_FRAG) {
 		/* See if we can find the re-assembly entity */
-		control = sctp_find_reasm_entry(strm, msg_id, ordered, old_data);
-		SCTPDBG(SCTP_DEBUG_XXX, "chunk_flags:0x%x look for control on queues %p\n",
-			chunk_flags, control);
-		if (control) {
+		if (control != NULL) {
 			/* We found something, does it belong? */
 			if (ordered && (msg_id != control->sinfo_ssn)) {
+				snprintf(msg, sizeof(msg), "Reassembly problem (MID=%8.8x)", msg_id);
 			err_out:
 				op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
 				stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA + SCTP_LOC_15;
@@ -1764,10 +1771,14 @@ sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,
 			}
 			if (ordered && ((control->sinfo_flags >> 8) & SCTP_DATA_UNORDERED)) {
 				/* We can't have a switched order with an unordered chunk */
+				snprintf(msg, sizeof(msg), "All fragments of a user message must be ordered or unordered (TSN=%8.8x)",
+					 tsn);
 				goto err_out;
 			}
 			if (!ordered && (((control->sinfo_flags >> 8) & SCTP_DATA_UNORDERED) == 0)) {
 				/* We can't have a switched unordered with a ordered chunk */
+				snprintf(msg, sizeof(msg), "All fragments of a user message must be ordered or unordered (TSN=%8.8x)",
+					 tsn);
 				goto err_out;
 			}
 		}
@@ -1777,14 +1788,21 @@ sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		 * the same Stream/Seq (for ordered) or in
 		 * the same Stream for unordered.
 		 */
-		SCTPDBG(SCTP_DEBUG_XXX, "chunk_flags:0x%x look for msg in case we have dup\n",
-			chunk_flags);
-		if (sctp_find_reasm_entry(strm, msg_id, ordered, old_data)) {
-			SCTPDBG(SCTP_DEBUG_XXX, "chunk_flags: 0x%x dup detected on msg_id: %u\n",
-				chunk_flags,
-				msg_id);
-
-			goto err_out;
+		if (control != NULL) {
+			if (ordered || (old_data == 0)) {
+				SCTPDBG(SCTP_DEBUG_XXX, "chunk_flags: 0x%x dup detected on msg_id: %u\n",
+					chunk_flags, msg_id);
+				snprintf(msg, sizeof(msg), "Duplicate MID=%8.8x detected.", msg_id);
+				goto err_out;
+			} else {
+				if ((tsn == control->fsn_included + 1) &&
+				    (control->end_added == 0)) {
+					snprintf(msg, sizeof(msg), "Illegal message sequence, missing end for MID: %8.8x", control->fsn_included);
+					goto err_out;
+				} else {
+					control = NULL;
+				}
+			}
 		}
 	}
 	/* now do the tests */
