@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 303831 2016-08-08 08:20:10Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 304146 2016-08-15 10:16:08Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1356,6 +1356,7 @@ sctp_iterator_work(struct sctp_iterator *it)
 
 	SCTP_INP_INFO_RLOCK();
 	SCTP_ITERATOR_LOCK();
+	sctp_it_ctl.cur_it = it;
 	if (it->inp) {
 		SCTP_INP_RLOCK(it->inp);
 		SCTP_INP_DECR_REF(it->inp);
@@ -1363,6 +1364,7 @@ sctp_iterator_work(struct sctp_iterator *it)
 	if (it->inp == NULL) {
 		/* iterator is complete */
 done_with_iterator:
+		sctp_it_ctl.cur_it = NULL;
 		SCTP_ITERATOR_UNLOCK();
 		SCTP_INP_INFO_RUNLOCK();
 		if (it->function_atend != NULL) {
@@ -1378,7 +1380,7 @@ select_a_new_ep:
 		SCTP_INP_RLOCK(it->inp);
 	}
 	while (((it->pcb_flags) &&
-		((it->inp->sctp_flags & it->pcb_flags) != it->pcb_flags)) ||
+	        ((it->inp->sctp_flags & it->pcb_flags) != it->pcb_flags)) ||
 	       ((it->pcb_features) &&
 		((it->inp->sctp_features & it->pcb_features) != it->pcb_features))) {
 		/* endpoint flags or features don't match, so keep looking */
@@ -1510,7 +1512,6 @@ sctp_iterator_worker(void)
 
 	sctp_it_ctl.iterator_running = 1;
 	TAILQ_FOREACH_SAFE(it, &sctp_it_ctl.iteratorhead, sctp_nxt_itr, nit) {
-		sctp_it_ctl.cur_it = it;
 		/* now lets work on this one */
 		TAILQ_REMOVE(&sctp_it_ctl.iteratorhead, it, sctp_nxt_itr);
 		SCTP_IPI_ITERATOR_WQ_UNLOCK();
@@ -1518,7 +1519,6 @@ sctp_iterator_worker(void)
 		CURVNET_SET(it->vn);
 #endif
 		sctp_iterator_work(it);
-		sctp_it_ctl.cur_it = NULL;
 #if defined(__FreeBSD__) && __FreeBSD_version >= 801000
 		CURVNET_RESTORE();
 #endif
@@ -1528,7 +1528,7 @@ sctp_iterator_worker(void)
 			break;
 		}
 #endif
-	        /*sa_ignore FREED_MEMORY*/
+		/*sa_ignore FREED_MEMORY*/
 	}
 	sctp_it_ctl.iterator_running = 0;
 	return;
