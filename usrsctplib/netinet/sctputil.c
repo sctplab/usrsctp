@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 304146 2016-08-15 10:16:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 304543 2016-08-20 20:15:36Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7112,7 +7112,7 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 	struct sctp_tcb *stcb = NULL;
 	unsigned int incr, at, i;
 
-	at = incr = 0;
+	at = 0;
 	sa = addr;
 	*error = *num_v6 = *num_v4 = 0;
 	/* account and validate addresses */
@@ -7120,6 +7120,7 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 		switch (sa->sa_family) {
 #ifdef INET
 		case AF_INET:
+			incr = (unsigned int)sizeof(struct sockaddr_in);
 #ifdef HAVE_SA_LEN
 			if (sa->sa_len != incr) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
@@ -7129,7 +7130,6 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 			}
 #endif
 			(*num_v4) += 1;
-			incr = (unsigned int)sizeof(struct sockaddr_in);
 			break;
 #endif
 #ifdef INET6
@@ -7145,6 +7145,7 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 				*bad_addr = 1;
 				return (NULL);
 			}
+			incr = (unsigned int)sizeof(struct sockaddr_in6);
 #ifdef HAVE_SA_LEN
 			if (sa->sa_len != incr) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
@@ -7154,7 +7155,6 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 			}
 #endif
 			(*num_v6) += 1;
-			incr = (unsigned int)sizeof(struct sockaddr_in6);
 			break;
 		}
 #endif
