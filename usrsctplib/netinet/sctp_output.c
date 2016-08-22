@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 303834 2016-08-08 13:52:18Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 304579 2016-08-22 01:45:29Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -13609,7 +13609,10 @@ sctp_lower_sosend(struct socket *so,
 		}
 		SCTP_INP_RUNLOCK(inp);
 	} else if (sinfo_assoc_id) {
-		stcb = sctp_findassociation_ep_asocid(inp, sinfo_assoc_id, 0);
+		stcb = sctp_findassociation_ep_asocid(inp, sinfo_assoc_id, 1);
+		if (stcb != NULL) {
+			hold_tcblock = 1;
+		}
 	} else if (addr) {
 		/*-
 		 * Since we did not use findep we must
@@ -14458,6 +14461,10 @@ skip_preblock:
 			}
 		}
 		SCTP_TCB_SEND_LOCK(stcb);
+		if (stcb->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED) {
+			SCTP_TCB_SEND_UNLOCK(stcb);
+			goto out_unlocked;
+		}
 		if (sp) {
 			if (sp->msg_is_complete == 0) {
 				strm->last_msg_incomplete = 1;
