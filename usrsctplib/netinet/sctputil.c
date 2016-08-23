@@ -7160,6 +7160,7 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 #endif
 		default:
 			*totaddr = i;
+			incr = 0;
 			/* we are done */
 			break;
 		}
