@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 303819 2016-08-07 23:04:46Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 304837 2016-08-26 07:49:23Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5681,6 +5681,11 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 					*offset = length;
 					return (NULL);
 				}
+				/*
+				 * For sending a SACK this looks like DATA
+				 * chunks.
+				 */
+				stcb->asoc.last_data_chunk_from = stcb->asoc.last_control_chunk_from;
 				sctp_handle_forward_tsn(stcb,
 							(struct sctp_forward_tsn_chunk *)ch, &abort_flag, m, *offset);
 				if (abort_flag) {
