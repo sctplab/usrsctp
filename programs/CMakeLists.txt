@@ -88,6 +88,11 @@ if(HAVE_SIN6_LEN)
 	add_definitions(-DHAVE_SIN6_LEN)
 endif()
 
+check_struct_has_member("struct sockaddr_conn" "sconn_len" "usrsctp.h" HAVE_SCONN_LEN)
+if(HAVE_SCONN_LEN)
+	add_definitions(-DHAVE_SCONN_LEN)
+endif()
+
 
 #################################################
 # CHECK OPTIONS
@@ -109,6 +114,7 @@ if (INET6)
 endif()
 
 option(LINK_STATIC "Link static" 0)
+
 # xxx enable W32 support for shared lib ...
 if (LINK_STATIC OR WIN32)
 	set(LINK_STATIC "usrsctp-static")
@@ -127,17 +133,8 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	add_definitions(-D_GNU_SOURCE)
 endif()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-	add_definitions(-DHAVE_SCONN_LEN)
-endif()
-
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	add_definitions(-DHAVE_SCONN_LEN)
 	add_definitions(-D__APPLE_USE_RFC_2292)
-endif()
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
-	add_definitions(-DHAVE_SCONN_LEN)
 endif()
 
 
@@ -162,6 +159,7 @@ SET (check_PROGRAMS
 	ekr_loop.c
 	ekr_peer.c
 	ekr_server.c
+	http_client.c
 	rtcweb.c
 	test_libmgmt.c
 	tsctp.c
@@ -169,8 +167,8 @@ SET (check_PROGRAMS
 
 # SETTINGS FOR UNIX COMPILER
 IF ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xGNU")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -pedantic -Wall -std=c99")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pedantic -Wall -std=c99")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic -Wall -std=c99")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -std=c99")
 	if (WERROR)
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")

@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.h 287832 2015-09-15 21:16:45Z brd $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.h 299543 2016-05-12 16:34:59Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_SYSCTL_H_
@@ -54,7 +54,6 @@ struct sctp_sysctl {
 	uint32_t sctp_nrsack_enable;
 	uint32_t sctp_pktdrop_enable;
 	uint32_t sctp_fr_max_burst_default;
-	uint32_t sctp_strict_sacks;
 #if !(defined(__FreeBSD__) && __FreeBSD_version >= 800000)
 #if !defined(SCTP_WITH_NO_CSUM)
 	uint32_t sctp_no_csum_on_loopback;
@@ -96,7 +95,6 @@ struct sctp_sysctl {
 	uint32_t sctp_do_drain;
 	uint32_t sctp_hb_maxburst;
 	uint32_t sctp_abort_if_one_2_one_hits_limit;
-	uint32_t sctp_strict_data_order;
 	uint32_t sctp_min_residual;
 	uint32_t sctp_max_retran_chunk;
 	uint32_t sctp_logging_level;
@@ -148,13 +146,21 @@ struct sctp_sysctl {
 #define SCTPCTL_MAXDGRAM_DESC		"Maximum outgoing SCTP buffer size"
 #define SCTPCTL_MAXDGRAM_MIN		0
 #define SCTPCTL_MAXDGRAM_MAX		0xFFFFFFFF
+#if defined(__Userspace__)
+#define SCTPCTL_MAXDGRAM_DEFAULT	SB_MAX
+#else
 #define SCTPCTL_MAXDGRAM_DEFAULT	262144	/* 256k */
+#endif
 
 /* recvspace: Maximum incoming SCTP buffer size */
 #define SCTPCTL_RECVSPACE_DESC		"Maximum incoming SCTP buffer size"
 #define SCTPCTL_RECVSPACE_MIN		0
 #define SCTPCTL_RECVSPACE_MAX		0xFFFFFFFF
+#if defined(__Userspace__)
+#define SCTPCTL_RECVSPACE_DEFAULT	SB_RAW
+#else
 #define SCTPCTL_RECVSPACE_DEFAULT	262144	/* 256k */
+#endif
 
 /* autoasconf: Enable SCTP Auto-ASCONF */
 #define SCTPCTL_AUTOASCONF_DESC		"Enable SCTP Auto-ASCONF"
@@ -209,12 +215,6 @@ struct sctp_sysctl {
 #define SCTPCTL_PKTDROP_ENABLE_MIN	0
 #define SCTPCTL_PKTDROP_ENABLE_MAX	1
 #define SCTPCTL_PKTDROP_ENABLE_DEFAULT	0
-
-/* strict_sacks: Enable SCTP Strict SACK checking */
-#define SCTPCTL_STRICT_SACKS_DESC	"Enable SCTP Strict SACK checking"
-#define SCTPCTL_STRICT_SACKS_MIN	0
-#define SCTPCTL_STRICT_SACKS_MAX	1
-#define SCTPCTL_STRICT_SACKS_DEFAULT	1
 
 /* loopback_nocsum: Enable NO Csum on packets sent on loopback */
 #define SCTPCTL_LOOPBACK_NOCSUM_DESC	"Enable NO Csum on packets sent on loopback"
@@ -445,12 +445,6 @@ struct sctp_sysctl {
 #define SCTPCTL_ABORT_AT_LIMIT_MAX	1
 #define SCTPCTL_ABORT_AT_LIMIT_DEFAULT	0
 
-/* strict_data_order: Enforce strict data ordering, abort if control inside data */
-#define SCTPCTL_STRICT_DATA_ORDER_DESC	"Enforce strict data ordering, abort if control inside data"
-#define SCTPCTL_STRICT_DATA_ORDER_MIN	0
-#define SCTPCTL_STRICT_DATA_ORDER_MAX	1
-#define SCTPCTL_STRICT_DATA_ORDER_DEFAULT	0
-
 /* min_residual: min residual in a data fragment leftover */
 #define SCTPCTL_MIN_RESIDUAL_DESC	"Minimum residual data chunk in second part of split"
 #define SCTPCTL_MIN_RESIDUAL_MIN	20
@@ -513,7 +507,7 @@ struct sctp_sysctl {
 #define SCTPCTL_SACK_IMMEDIATELY_ENABLE_DESC	"Enable sending of the SACK-IMMEDIATELY-bit."
 #define SCTPCTL_SACK_IMMEDIATELY_ENABLE_MIN	0
 #define SCTPCTL_SACK_IMMEDIATELY_ENABLE_MAX	1
-#define SCTPCTL_SACK_IMMEDIATELY_ENABLE_DEFAULT	SCTPCTL_SACK_IMMEDIATELY_ENABLE_MIN
+#define SCTPCTL_SACK_IMMEDIATELY_ENABLE_DEFAULT	SCTPCTL_SACK_IMMEDIATELY_ENABLE_MAX
 
 /* Enable sending of the NAT-FRIENDLY message */
 #define SCTPCTL_NAT_FRIENDLY_INITS_DESC	"Enable sending of the nat-friendly SCTP option on INITs."

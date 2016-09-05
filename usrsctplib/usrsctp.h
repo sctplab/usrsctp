@@ -67,6 +67,7 @@ extern "C" {
 #define uint8_t   unsigned __int8
 #define uint16_t  unsigned __int16
 #define uint32_t  unsigned __int32
+#define uint64_t  unsigned __int64
 #define int16_t   __int16
 #define int32_t   __int32
 #endif
@@ -90,7 +91,8 @@ typedef uint32_t sctp_assoc_t;
 /* The definition of struct sockaddr_conn MUST be in
  * tune with other sockaddr_* structures.
  */
-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__APPLE__) || defined(__Bitrig__) || defined(__DragonFly__) || \
+    defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
 struct sockaddr_conn {
 	uint8_t sconn_len;
 	uint8_t sconn_family;
@@ -1004,7 +1006,6 @@ USRSCTP_SYSCTL_DECL(sctp_asconf_enable)
 USRSCTP_SYSCTL_DECL(sctp_reconfig_enable)
 USRSCTP_SYSCTL_DECL(sctp_nrsack_enable)
 USRSCTP_SYSCTL_DECL(sctp_pktdrop_enable)
-USRSCTP_SYSCTL_DECL(sctp_strict_sacks)
 #if !defined(SCTP_WITH_NO_CSUM)
 USRSCTP_SYSCTL_DECL(sctp_no_csum_on_loopback)
 #endif
@@ -1043,7 +1044,6 @@ USRSCTP_SYSCTL_DECL(sctp_mbuf_threshold_count)
 USRSCTP_SYSCTL_DECL(sctp_do_drain)
 USRSCTP_SYSCTL_DECL(sctp_hb_maxburst)
 USRSCTP_SYSCTL_DECL(sctp_abort_if_one_2_one_hits_limit)
-USRSCTP_SYSCTL_DECL(sctp_strict_data_order)
 USRSCTP_SYSCTL_DECL(sctp_min_residual)
 USRSCTP_SYSCTL_DECL(sctp_max_retran_chunk)
 USRSCTP_SYSCTL_DECL(sctp_logging_level)

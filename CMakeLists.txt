@@ -30,5 +30,18 @@
 #
 
 cmake_minimum_required(VERSION 2.6)
+
+# Debug build type as default
+if (NOT CMAKE_BUILD_TYPE)
+    message(STATUS "No build type selected, using DEBUG")
+    set(CMAKE_BUILD_TYPE "DEBUG")
+endif()
+
+# Enable verbose output in DEBUG mode
+if (${CMAKE_BUILD_TYPE} MATCHES "DEBUG")
+    message(STATUS "enabling verbose outout")
+    set(CMAKE_VERBOSE_MAKEFILE on)
+endif()
+
 add_subdirectory(usrsctplib)
 add_subdirectory(programs)

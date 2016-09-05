@@ -75,6 +75,9 @@ handle_packets(void *arg)
 	fdp = (int *)arg;
 #endif
 	for (;;) {
+#if defined(__NetBSD__)
+		pthread_testcancel();
+#endif
 		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
 			if ((dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
@@ -111,7 +114,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 		usrsctp_freedumpbuffer(dump_buf);
 	}
 #ifdef _WIN32
-	if (send(*fdp, buf, length, 0) == SOCKET_ERROR) {
+	if (send(*fdp, buf, (int)length, 0) == SOCKET_ERROR) {
 		return (WSAGetLastError());
 #else
 	if (send(*fdp, buf, length, 0) < 0) {
@@ -131,7 +134,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		if (flags & MSG_NOTIFICATION) {
 			printf("Notification of length %d received.\n", (int)datalen);
 		} else {
-			printf("Msg of length %d received via %p:%u on stream %d with SSN %u and TSN %u, PPID %d, context %u.\n",
+			printf("Msg of length %d received via %p:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u.\n",
 			       (int)datalen,
 			       addr.sconn.sconn_addr,
 			       ntohs(addr.sconn.sconn_port),
@@ -196,7 +199,7 @@ main(int argc, char *argv[])
 	/* set up a connected UDP socket */
 #ifdef _WIN32
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
-		printf("socket() failed with error: %ld\n", WSAGetLastError());
+		printf("socket() failed with error: %d\n", WSAGetLastError());
 	}
 #else
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
@@ -215,7 +218,7 @@ main(int argc, char *argv[])
 	}
 #ifdef _WIN32
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
-		printf("bind() failed with error: %ld\n", WSAGetLastError());
+		printf("bind() failed with error: %d\n", WSAGetLastError());
 	}
 #else
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
@@ -234,7 +237,7 @@ main(int argc, char *argv[])
 	}
 #ifdef _WIN32
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
-		printf("connect() failed with error: %ld\n", WSAGetLastError());
+		printf("connect() failed with error: %d\n", WSAGetLastError());
 	}
 #else
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
@@ -299,7 +302,7 @@ main(int argc, char *argv[])
 	TerminateThread(tid, 0);
 	WaitForSingleObject(tid, INFINITE);
 	if (closesocket(fd) == SOCKET_ERROR) {
-		printf("closesocket() failed with error: %ld\n", WSAGetLastError());
+		printf("closesocket() failed with error: %d\n", WSAGetLastError());
 	}
 	WSACleanup();
 #else

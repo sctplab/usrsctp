@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2013 Michael Tuexen
+ * Copyright (C) 2016 Felix Weinrank
  *
  * All rights reserved.
  *
@@ -29,9 +29,12 @@
  */
 
 /*
- * Usage: client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port]
+ * Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]
  */
 
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,6 +53,9 @@
 #include <usrsctp.h>
 
 int done = 0;
+static const char *request_prefix = "GET";
+static const char *request_postfix = "HTTP/1.0\r\nUser-agent: libusrsctp\r\nConnection: close\r\n\r\n";
+char request[512];
 
 #ifdef _WIN32
 typedef char* caddr_t;
@@ -89,26 +95,35 @@ int
 main(int argc, char *argv[])
 {
 	struct socket *sock;
-	struct sockaddr *addr, *addrs;
 	struct sockaddr_in addr4;
 	struct sockaddr_in6 addr6;
 	struct sctp_udpencaps encaps;
-	struct sctpstat stat;
-	char buffer[80];
-	int i, n;
+	int result;
 
+    if (argc < 3) {
+        printf("Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
+        return(EXIT_FAILURE);
+    }
+
+	result = 0;
 	if (argc > 4) {
 		usrsctp_init(atoi(argv[4]), NULL, debug_printf);
 	} else {
 		usrsctp_init(9899, NULL, debug_printf);
 	}
+
 #ifdef SCTP_DEBUG
-	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
+	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 #endif
+
 	usrsctp_sysctl_set_sctp_blackhole(2);
+
 	if ((sock = usrsctp_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
+		result = 1;
+		goto out;
 	}
+
 	if (argc > 3) {
 		memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
 #ifdef HAVE_SIN6_LEN
@@ -119,16 +134,41 @@ main(int argc, char *argv[])
 		addr6.sin6_addr = in6addr_any;
 		if (usrsctp_bind(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
 			perror("bind");
+			usrsctp_close(sock);
+			result = 2;
+			goto out;
 		}
 	}
+
 	if (argc > 5) {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET6;
 		encaps.sue_port = htons(atoi(argv[5]));
-		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void *)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
 			perror("setsockopt");
+			usrsctp_close(sock);
+			result = 3;
+			goto out;
 		}
 	}
+
+	if (argc > 6) {
+#ifdef _WIN32
+		_snprintf(request, sizeof(request), "%s %s %s", request_prefix, argv[6], request_postfix);
+#else
+		snprintf(request, sizeof(request), "%s %s %s", request_prefix, argv[6], request_postfix);
+#endif
+	} else {
+#ifdef _WIN32
+		_snprintf(request, sizeof(request), "%s %s %s", request_prefix, "/", request_postfix);
+#else
+		snprintf(request, sizeof(request), "%s %s %s", request_prefix, "/", request_postfix);
+#endif
+	}
+
+	printf("\nHTTP request:\n%s\n", request);
+	printf("\nHTTP response:\n");
+
 	memset((void *)&addr4, 0, sizeof(struct sockaddr_in));
 	memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
 #ifdef HAVE_SIN_LEN
@@ -144,118 +184,32 @@ main(int argc, char *argv[])
 	if (inet_pton(AF_INET6, argv[1], &addr6.sin6_addr) == 1) {
 		if (usrsctp_connect(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
 			perror("usrsctp_connect");
+			usrsctp_close(sock);
+			result = 4;
+			goto out;
 		}
 	} else if (inet_pton(AF_INET, argv[1], &addr4.sin_addr) == 1) {
 		if (usrsctp_connect(sock, (struct sockaddr *)&addr4, sizeof(struct sockaddr_in)) < 0) {
 			perror("usrsctp_connect");
+			usrsctp_close(sock);
+			result = 5;
+			goto out;
 		}
 	} else {
-		printf("Illegal destination address.\n");
+		printf("Illegal destination address\n");
+		usrsctp_close(sock);
+		result = 6;
+		goto out;
 	}
-	if ((n = usrsctp_getladdrs(sock, 0, &addrs)) < 0) {
-		perror("usrsctp_getladdrs");
-	} else {
-		addr = addrs;
-		printf("Local addresses: ");
-		for (i = 0; i < n; i++) {
-			if (i > 0) {
-				printf("%s", ", ");
-			}
-			switch (addr->sa_family) {
-			case AF_INET:
-			{
-				struct sockaddr_in *sin;
-				char buf[INET_ADDRSTRLEN];
-				const char *name;
 
-				sin = (struct sockaddr_in *)addr;
-				name = inet_ntop(AF_INET, &sin->sin_addr, buf, INET_ADDRSTRLEN);
-				printf("%s", name);
-#ifndef HAVE_SA_LEN
-				addr = (struct sockaddr *)((caddr_t)addr + sizeof(struct sockaddr_in));
-#endif
-				break;
-			}
-			case AF_INET6:
-			{
-				struct sockaddr_in6 *sin6;
-				char buf[INET6_ADDRSTRLEN];
-				const char *name;
+	/* send GET request */
+	if (usrsctp_sendv(sock, request, strlen(request), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0) < 0) {
+		perror("usrsctp_sendv");
+		usrsctp_close(sock);
+		result = 6;
+		goto out;
+	}
 
-				sin6 = (struct sockaddr_in6 *)addr;
-				name = inet_ntop(AF_INET6, &sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
-				printf("%s", name);
-#ifndef HAVE_SA_LEN
-				addr = (struct sockaddr *)((caddr_t)addr + sizeof(struct sockaddr_in6));
-#endif
-				break;
-			}
-			default:
-				break;
-			}
-#ifdef HAVE_SA_LEN
-			addr = (struct sockaddr *)((caddr_t)addr + addr->sa_len);
-#endif
-		}
-		printf(".\n");
-		usrsctp_freeladdrs(addrs);
-	}
-	if ((n = usrsctp_getpaddrs(sock, 0, &addrs)) < 0) {
-		perror("usrsctp_getpaddrs");
-	} else {
-		addr = addrs;
-		printf("Peer addresses: ");
-		for (i = 0; i < n; i++) {
-			if (i > 0) {
-				printf("%s", ", ");
-			}
-			switch (addr->sa_family) {
-			case AF_INET:
-			{
-				struct sockaddr_in *sin;
-				char buf[INET_ADDRSTRLEN];
-				const char *name;
-
-				sin = (struct sockaddr_in *)addr;
-				name = inet_ntop(AF_INET, &sin->sin_addr, buf, INET_ADDRSTRLEN);
-				printf("%s", name);
-#ifndef HAVE_SA_LEN
-				addr = (struct sockaddr *)((caddr_t)addr + sizeof(struct sockaddr_in));
-#endif
-				break;
-			}
-			case AF_INET6:
-			{
-				struct sockaddr_in6 *sin6;
-				char buf[INET6_ADDRSTRLEN];
-				const char *name;
-
-				sin6 = (struct sockaddr_in6 *)addr;
-				name = inet_ntop(AF_INET6, &sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
-				printf("%s", name);
-#ifndef HAVE_SA_LEN
-				addr = (struct sockaddr *)((caddr_t)addr + sizeof(struct sockaddr_in6));
-#endif
-				break;
-			}
-			default:
-				break;
-			}
-#ifdef HAVE_SA_LEN
-			addr = (struct sockaddr *)((caddr_t)addr + addr->sa_len);
-#endif
-		}
-		printf(".\n");
-		usrsctp_freepaddrs(addrs);
-	}
-	while ((fgets(buffer, sizeof(buffer), stdin) != NULL) && !done) {
-		usrsctp_sendv(sock, buffer, strlen(buffer), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
-	}
-	if (!done) {
-		if (usrsctp_shutdown(sock, SHUT_WR) < 0) {
-			perror("usrsctp_shutdown");
-		}
-	}
 	while (!done) {
 #ifdef _WIN32
 		Sleep(1*1000);
@@ -263,9 +217,7 @@ main(int argc, char *argv[])
 		sleep(1);
 #endif
 	}
-	usrsctp_get_stat(&stat);
-	printf("Number of packets (sent/received): (%u/%u).\n",
-	       stat.sctps_outpackets, stat.sctps_inpackets);
+out:
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
 		Sleep(1000);
@@ -273,5 +225,5 @@ main(int argc, char *argv[])
 		sleep(1);
 #endif
 	}
-	return(0);
+	return (result);
 }

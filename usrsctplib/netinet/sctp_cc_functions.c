@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_cc_functions.c 292384 2015-12-16 23:39:27Z markj $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_cc_functions.c 298942 2016-05-02 20:56:11Z pfg $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -245,7 +245,7 @@ sctp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 }
 
 /* Defines for instantaneous bw decisions */
-#define SCTP_INST_LOOSING 1 /* Loosing to other flows */
+#define SCTP_INST_LOOSING 1 /* Losing to other flows */
 #define SCTP_INST_NEUTRAL 2 /* Neutral, no indication */
 #define SCTP_INST_GAINING 3 /* Gaining, step down possible */
 
@@ -618,7 +618,7 @@ cc_bw_increase(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_nets *net, uint64_
 	return (0);
 }
 
-/* RTCC Algoritm to limit growth of cwnd, return
+/* RTCC Algorithm to limit growth of cwnd, return
  * true if you want to NOT allow cwnd growth
  */
 static int
@@ -1199,7 +1199,7 @@ sctp_cwnd_update_after_ecn_echo_common(struct sctp_tcb *stcb, struct sctp_nets *
 				sctp_log_cwnd(stcb, net, (net->cwnd - old_cwnd), SCTP_CWND_LOG_FROM_SAT);
 			}
 		} else {
-			/* Further tuning down required over the drastic orginal cut */
+			/* Further tuning down required over the drastic original cut */
 			net->ssthresh -= (net->mtu * num_pkt_lost);
 			net->cwnd -= (net->mtu * num_pkt_lost);
 			if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_CWND_MONITOR_ENABLE) {
@@ -1382,7 +1382,7 @@ sctp_cwnd_update_after_sack(struct sctp_tcb *stcb,
 			    struct sctp_association *asoc,
 			    int accum_moved, int reneged_all, int will_exit)
 {
-	/* Passing a zero argument in last disables the rtcc algoritm */
+	/* Passing a zero argument in last disables the rtcc algorithm */
 	sctp_cwnd_update_after_sack_common(stcb, asoc, accum_moved, reneged_all, will_exit, 0);
 }
 
@@ -1390,13 +1390,13 @@ static void
 sctp_cwnd_update_after_ecn_echo(struct sctp_tcb *stcb, struct sctp_nets *net,
 	int in_window, int num_pkt_lost)
 {
-	/* Passing a zero argument in last disables the rtcc algoritm */
+	/* Passing a zero argument in last disables the rtcc algorithm */
 	sctp_cwnd_update_after_ecn_echo_common(stcb, net, in_window, num_pkt_lost, 0);
 }
 
 /* Here starts the RTCCVAR type CC invented by RRS which
  * is a slight mod to RFC2581. We reuse a common routine or
- * two since these algoritms are so close and need to
+ * two since these algorithms are so close and need to
  * remain the same.
  */
 static void
@@ -1601,7 +1601,7 @@ sctp_cwnd_update_rtcc_after_sack(struct sctp_tcb *stcb,
 				 struct sctp_association *asoc,
 				 int accum_moved, int reneged_all, int will_exit)
 {
-	/* Passing a one argument at the last enables the rtcc algoritm */
+	/* Passing a one argument at the last enables the rtcc algorithm */
 	sctp_cwnd_update_after_sack_common(stcb, asoc, accum_moved, reneged_all, will_exit, 1);
 }
 
@@ -1617,13 +1617,13 @@ sctp_rtt_rtcc_calculated(struct sctp_tcb *stcb SCTP_UNUSED,
 
 struct sctp_hs_raise_drop {
 	int32_t cwnd;
-	int32_t increase;
-	int32_t drop_percent;
+	int8_t increase;
+	int8_t drop_percent;
 };
 
 #define SCTP_HS_TABLE_SIZE 73
 
-struct sctp_hs_raise_drop sctp_cwnd_adjust[SCTP_HS_TABLE_SIZE] = {
+static const struct sctp_hs_raise_drop sctp_cwnd_adjust[SCTP_HS_TABLE_SIZE] = {
 	{38, 1, 50},		/* 0   */
 	{118, 2, 44},		/* 1   */
 	{221, 3, 41},		/* 2   */
@@ -1723,7 +1723,7 @@ sctp_hs_cwnd_increase(struct sctp_tcb *stcb, struct sctp_nets *net)
 			}
 		}
 		net->last_hs_used = indx;
-		incr = ((sctp_cwnd_adjust[indx].increase) << 10);
+		incr = (((int32_t)sctp_cwnd_adjust[indx].increase) << 10);
 		net->cwnd += incr;
 	}
 	sctp_enforce_cwnd_limit(&stcb->asoc, net);
@@ -1749,7 +1749,7 @@ sctp_hs_cwnd_decrease(struct sctp_tcb *stcb, struct sctp_nets *net)
 	} else {
 		/* drop by the proper amount */
 		net->ssthresh = net->cwnd - (int)((net->cwnd / 100) *
-		    sctp_cwnd_adjust[net->last_hs_used].drop_percent);
+		    (int32_t)sctp_cwnd_adjust[net->last_hs_used].drop_percent);
 		net->cwnd = net->ssthresh;
 		/* now where are we */
 		indx = net->last_hs_used;
@@ -2406,7 +2406,7 @@ sctp_htcp_cwnd_update_after_ecn_echo(struct sctp_tcb *stcb,
 	}
 }
 
-struct sctp_cc_functions sctp_cc_functions[] = {
+const struct sctp_cc_functions sctp_cc_functions[] = {
 {
 #if defined(__Windows__) || defined(__Userspace_os_Windows)
 	sctp_set_initial_cc_param,

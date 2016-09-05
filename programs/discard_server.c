@@ -91,7 +91,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 				port = 0;
 				break;
 			}
-			printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d, context %u.\n",
+			printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u.\n",
 			       (int)datalen,
 			       name,
 			       port,
@@ -147,7 +147,7 @@ main(int argc, char *argv[])
 		usrsctp_init(9899, NULL, debug_printf);
 	}
 #ifdef SCTP_DEBUG
-	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
+	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 #endif
 	usrsctp_sysctl_set_sctp_blackhole(2);
 
@@ -215,7 +215,7 @@ main(int argc, char *argv[])
 					printf("Notification of length %llu received.\n", (unsigned long long)n);
 				} else {
 					if (infotype == SCTP_RECVV_RCVINFO) {
-						printf("Msg of length %llu received from %s:%u on stream %d with SSN %u and TSN %u, PPID %d, context %u, complete %d.\n",
+						printf("Msg of length %llu received from %s:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u, complete %d.\n",
 						        (unsigned long long)n,
 						        inet_ntop(AF_INET6, &addr.sin6_addr, name, INET6_ADDRSTRLEN), ntohs(addr.sin6_port),
 						        rcv_info.rcv_sid,
