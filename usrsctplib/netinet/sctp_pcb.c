@@ -6844,7 +6844,7 @@ sctp_pcb_init()
 	TAILQ_INIT(&SCTP_BASE_INFO(callqueue));
 #endif
 #if defined(__Userspace__)
-	mbuf_init(NULL);
+	usrsctp_mbuf_init(NULL);
 	atomic_init();
 #if defined(INET) || defined(INET6)
 	recv_thread_init();

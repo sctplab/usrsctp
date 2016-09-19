@@ -328,11 +328,11 @@ m_tag_setup(struct m_tag *t, u_int32_t cookie, int type, int len)
 /************ End functions to substitute umem_cache_alloc and umem_cache_free **************/
 
 /* __Userspace__
- * TODO: mbuf_init must be called in the initialization routines
+ * TODO: usrsctp_mbuf_init must be called in the initialization routines
  * of userspace stack.
  */
 void
-mbuf_init(void *dummy)
+usrsctp_mbuf_init(void *dummy)
 {
 
 	/*
