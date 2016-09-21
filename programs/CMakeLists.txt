@@ -95,13 +95,13 @@ if (INET6)
     add_definitions(-DINET6)
 endif ()
 
-option(link_static "Link static" 0)
+option(LINK_STATIC "Link static" 0)
 
 # xxx enable W32 support for shared lib ...
-if (link_static OR WIN32)
-    set(link_static "usrsctp-static")
+if (LINK_STATIC OR WIN32)
+    set(LINK_STATIC "usrsctp-static")
 else()
-    set(link_static "usrsctp")
+    set(LINK_STATIC "usrsctp")
 endif ()
 
 option(WERROR "Warning as error" ON)
@@ -131,7 +131,7 @@ find_package(Threads)
 # PROGRAMS
 #################################################
 
-set(check_PROGRAMS
+set(CHECK_PROGRAMS
     client.c
     datachan_serv.c
     daytime_server.c
@@ -170,17 +170,17 @@ if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC")
     endif ()
 endif ()
 
-foreach (source_file ${check_PROGRAMS})
-    get_filename_component(source_file_we ${source_file} NAME_WE)
+foreach (SOURCE_FILE ${CHECK_PROGRAMS})
+    get_filename_component(SOURCE_FILE_WE ${SOURCE_FILE} NAME_WE)
     add_executable(
-        ${source_file_we}
-        ${source_file}
+        ${SOURCE_FILE_WE}
+        ${SOURCE_FILE}
     )
 
-    target_link_libraries (${source_file_we}
-        ${link_static}
+    target_link_libraries(${SOURCE_FILE_WE}
+        ${LINK_STATIC}
         ${cmake_thread_libs_init}
     )
 
-    add_test(${source_file_we} ${source_file_we})
+    add_test(${SOURCE_FILE_WE} ${SOURCE_FILE_WE})
 endforeach ()
