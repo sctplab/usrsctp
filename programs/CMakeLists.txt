@@ -95,13 +95,13 @@ if (INET6)
     add_definitions(-DINET6)
 endif ()
 
-option(link_static"Link static" 0)
+option(link_static "Link static" 0)
 
 # xxx enable W32 support for shared lib ...
-if (link_staticOR WIN32)
-    set(link_static"usrsctp-static")
+if (link_static OR WIN32)
+    set(link_static "usrsctp-static")
 else()
-    set(link_static"usrsctp")
+    set(link_static "usrsctp")
 endif ()
 
 option(WERROR "Warning as error" ON)
