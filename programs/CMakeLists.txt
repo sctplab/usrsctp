@@ -177,7 +177,7 @@ foreach (source_file ${check_PROGRAMS})
         ${source_file}
     )
 
-    target_link_library (${source_file_we}
+    target_link_libraries (${source_file_we}
         ${link_static}
         ${cmake_thread_libs_init}
     )
