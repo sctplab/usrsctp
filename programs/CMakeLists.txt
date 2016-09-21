@@ -179,7 +179,7 @@ foreach (SOURCE_FILE ${CHECK_PROGRAMS})
 
     target_link_libraries(${SOURCE_FILE_WE}
         ${LINK_STATIC}
-        ${cmake_thread_libs_init}
+        ${CMAKE_THREAD_LIBS_INIT}
     )
 
     add_test(${SOURCE_FILE_WE} ${SOURCE_FILE_WE})
