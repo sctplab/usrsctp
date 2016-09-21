@@ -67,6 +67,7 @@ check_include_file(linux/if_addr.h HAVE_LINUX_IF_ADDR_H)
 check_include_file(linux/rtnetlink.h HAVE_LINUX_RTNETLINK_H)
 check_include_file(netinet/ip_icmp.h HAVE_NETINET_IP_ICMP_H)
 check_include_file(usrsctp.h HAVE_USRSCTP_H)
+check_include_file(stdatomic.h HAVE_STDATOMIC_H)
 
 check_function_exists("socket" HAVE_SOCKET)
 check_function_exists("inet_addr" HAVE_INET_ADDR)
@@ -74,6 +75,10 @@ check_function_exists("inet_addr" HAVE_INET_ADDR)
 add_definitions(-D__Userspace__)
 add_definitions(-D__Userspace_os_${CMAKE_SYSTEM_NAME})
 add_definitions(-D_GNU_SOURCE)
+
+if(HAVE_STDATOMIC_H)
+    add_definitions(-DHAVE_STDATOMIC_H)
+endif()
 
 
 #################################################
