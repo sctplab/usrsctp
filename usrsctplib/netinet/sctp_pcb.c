@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 303813 2016-08-07 12:51:13Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 307217 2016-10-13 13:53:01Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5689,6 +5689,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 #else
 				socantrcvmore_locked(so);
 #endif
+				socantsendmore(so);
 				sctp_sowwakeup(inp, so);
 				sctp_sorwakeup(inp, so);
 				SCTP_SOWAKEUP(so);
