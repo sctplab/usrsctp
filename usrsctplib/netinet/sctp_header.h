@@ -204,7 +204,7 @@ struct sctp_init {
 /* state cookie header */
 struct sctp_state_cookie {	/* this is our definition... */
 	uint8_t identification[SCTP_IDENTIFICATION_SIZE];/* id of who we are */
-	struct timeval time_entered;	/* the time I built cookie */
+	struct timeval *time_entered;	/* the time I built cookie */
 	uint32_t cookie_life;	/* life I will award this cookie */
 	uint32_t tie_tag_my_vtag;	/* my tag in old association */
 
