@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 301666 2016-06-08 17:57:42Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 304736 2016-08-24 06:22:53Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1154,7 +1154,6 @@ sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	asoc->minrto = inp->sctp_ep.sctp_minrto;
 	asoc->maxrto = inp->sctp_ep.sctp_maxrto;
 
-	asoc->locked_on_sending = NULL;
 	asoc->stream_locked_on = 0;
 	asoc->ecn_echo_cnt_onq = 0;
 	asoc->stream_locked = 0;
@@ -1216,7 +1215,7 @@ sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		asoc->strmout[i].stream_no = i;
 		asoc->strmout[i].last_msg_incomplete = 0;
 		asoc->strmout[i].state = SCTP_STREAM_OPENING;
-		asoc->ss_functions.sctp_ss_init_stream(&asoc->strmout[i], NULL);
+		asoc->ss_functions.sctp_ss_init_stream(stcb, &asoc->strmout[i], NULL);
 	}
 	asoc->ss_functions.sctp_ss_init(stcb, asoc, 0);
 
@@ -1357,6 +1356,7 @@ sctp_iterator_work(struct sctp_iterator *it)
 
 	SCTP_INP_INFO_RLOCK();
 	SCTP_ITERATOR_LOCK();
+	sctp_it_ctl.cur_it = it;
 	if (it->inp) {
 		SCTP_INP_RLOCK(it->inp);
 		SCTP_INP_DECR_REF(it->inp);
@@ -1364,6 +1364,7 @@ sctp_iterator_work(struct sctp_iterator *it)
 	if (it->inp == NULL) {
 		/* iterator is complete */
 done_with_iterator:
+		sctp_it_ctl.cur_it = NULL;
 		SCTP_ITERATOR_UNLOCK();
 		SCTP_INP_INFO_RUNLOCK();
 		if (it->function_atend != NULL) {
@@ -1379,7 +1380,7 @@ select_a_new_ep:
 		SCTP_INP_RLOCK(it->inp);
 	}
 	while (((it->pcb_flags) &&
-		((it->inp->sctp_flags & it->pcb_flags) != it->pcb_flags)) ||
+	        ((it->inp->sctp_flags & it->pcb_flags) != it->pcb_flags)) ||
 	       ((it->pcb_features) &&
 		((it->inp->sctp_features & it->pcb_features) != it->pcb_features))) {
 		/* endpoint flags or features don't match, so keep looking */
@@ -1511,7 +1512,6 @@ sctp_iterator_worker(void)
 
 	sctp_it_ctl.iterator_running = 1;
 	TAILQ_FOREACH_SAFE(it, &sctp_it_ctl.iteratorhead, sctp_nxt_itr, nit) {
-		sctp_it_ctl.cur_it = it;
 		/* now lets work on this one */
 		TAILQ_REMOVE(&sctp_it_ctl.iteratorhead, it, sctp_nxt_itr);
 		SCTP_IPI_ITERATOR_WQ_UNLOCK();
@@ -1519,7 +1519,6 @@ sctp_iterator_worker(void)
 		CURVNET_SET(it->vn);
 #endif
 		sctp_iterator_work(it);
-		sctp_it_ctl.cur_it = NULL;
 #if defined(__FreeBSD__) && __FreeBSD_version >= 801000
 		CURVNET_RESTORE();
 #endif
@@ -1529,7 +1528,7 @@ sctp_iterator_worker(void)
 			break;
 		}
 #endif
-	        /*sa_ignore FREED_MEMORY*/
+		/*sa_ignore FREED_MEMORY*/
 	}
 	sctp_it_ctl.iterator_running = 0;
 	return;
@@ -3062,7 +3061,8 @@ sctp_notify_send_failed(struct sctp_tcb *stcb, uint8_t sent, uint32_t error,
 	struct sctp_send_failed *ssf;
 	struct sctp_send_failed_event *ssfe;
 	struct sctp_queued_to_read *control;
-	int length;
+	struct sctp_chunkhdr *chkhdr;
+	int notifhdr_len, chk_len, chkhdr_len, padding_len, payload_len;
 
 	if ((stcb == NULL) ||
 	    (sctp_stcb_is_feature_off(stcb->sctp_ep, stcb, SCTP_PCB_FLAGS_RECVSENDFAILEVNT) &&
@@ -3072,27 +3072,49 @@ sctp_notify_send_failed(struct sctp_tcb *stcb, uint8_t sent, uint32_t error,
 	}
 
 	if (sctp_stcb_is_feature_on(stcb->sctp_ep, stcb, SCTP_PCB_FLAGS_RECVNSENDFAILEVNT)) {
-		length = sizeof(struct sctp_send_failed_event);
+		notifhdr_len = sizeof(struct sctp_send_failed_event);
 	} else {
-		length = sizeof(struct sctp_send_failed);
+		notifhdr_len = sizeof(struct sctp_send_failed);
 	}
-	m_notify = sctp_get_mbuf_for_msg(length, 0, M_NOWAIT, 1, MT_DATA);
+	m_notify = sctp_get_mbuf_for_msg(notifhdr_len, 0, M_NOWAIT, 1, MT_DATA);
 	if (m_notify == NULL)
 		/* no space left */
 		return;
-	SCTP_BUF_LEN(m_notify) = 0;
+	SCTP_BUF_LEN(m_notify) = notifhdr_len;
+	if (stcb->asoc.idata_supported) {
+		chkhdr_len = sizeof(struct sctp_idata_chunk);
+	} else {
+		chkhdr_len = sizeof(struct sctp_data_chunk);
+	}
+	/* Use some defaults in case we can't access the chunk header */
+	if (chk->send_size >= chkhdr_len) {
+		payload_len = chk->send_size - chkhdr_len;
+	} else {
+		payload_len = 0;
+	}
+	padding_len = 0;
+	if (chk->data != NULL) {
+		chkhdr = mtod(chk->data, struct sctp_chunkhdr *);
+		if (chkhdr != NULL) {
+			chk_len = ntohs(chkhdr->chunk_length);
+			if ((chk_len >= chkhdr_len) &&
+			    (chk->send_size >= chk_len) &&
+			    (chk->send_size - chk_len < 4)) {
+				padding_len = chk->send_size - chk_len;
+				payload_len = chk->send_size - chkhdr_len - padding_len;
+			}
+		}
+	}
 	if (sctp_stcb_is_feature_on(stcb->sctp_ep, stcb, SCTP_PCB_FLAGS_RECVNSENDFAILEVNT)) {
 		ssfe = mtod(m_notify, struct sctp_send_failed_event *);
-		memset(ssfe, 0, length);
+		memset(ssfe, 0, notifhdr_len);
 		ssfe->ssfe_type = SCTP_SEND_FAILED_EVENT;
 		if (sent) {
 			ssfe->ssfe_flags = SCTP_DATA_SENT;
 		} else {
 			ssfe->ssfe_flags = SCTP_DATA_UNSENT;
 		}
-		length += chk->send_size;
-		length -= sizeof(struct sctp_data_chunk);
-		ssfe->ssfe_length = length;
+		ssfe->ssfe_length = (uint32_t)(notifhdr_len + payload_len);
 		ssfe->ssfe_error = error;
 		/* not exactly what the user sent in, but should be close :) */
 		ssfe->ssfe_info.snd_sid = chk->rec.data.stream_number;
@@ -3101,40 +3123,33 @@ sctp_notify_send_failed(struct sctp_tcb *stcb, uint8_t sent, uint32_t error,
 		ssfe->ssfe_info.snd_context = chk->rec.data.context;
 		ssfe->ssfe_info.snd_assoc_id = sctp_get_associd(stcb);
 		ssfe->ssfe_assoc_id = sctp_get_associd(stcb);
-		SCTP_BUF_LEN(m_notify) = sizeof(struct sctp_send_failed_event);
 	} else {
 		ssf = mtod(m_notify, struct sctp_send_failed *);
-		memset(ssf, 0, length);
+		memset(ssf, 0, notifhdr_len);
 		ssf->ssf_type = SCTP_SEND_FAILED;
 		if (sent) {
 			ssf->ssf_flags = SCTP_DATA_SENT;
 		} else {
 			ssf->ssf_flags = SCTP_DATA_UNSENT;
 		}
-		length += chk->send_size;
-		length -= sizeof(struct sctp_data_chunk);
-		ssf->ssf_length = length;
+		ssf->ssf_length = (uint32_t)(notifhdr_len + payload_len);
 		ssf->ssf_error = error;
 		/* not exactly what the user sent in, but should be close :) */
-		bzero(&ssf->ssf_info, sizeof(ssf->ssf_info));
 		ssf->ssf_info.sinfo_stream = chk->rec.data.stream_number;
-		ssf->ssf_info.sinfo_ssn = chk->rec.data.stream_seq;
+		ssf->ssf_info.sinfo_ssn = (uint16_t)chk->rec.data.stream_seq;
 		ssf->ssf_info.sinfo_flags = chk->rec.data.rcv_flags;
 		ssf->ssf_info.sinfo_ppid = chk->rec.data.payloadtype;
 		ssf->ssf_info.sinfo_context = chk->rec.data.context;
 		ssf->ssf_info.sinfo_assoc_id = sctp_get_associd(stcb);
 		ssf->ssf_assoc_id = sctp_get_associd(stcb);
-		SCTP_BUF_LEN(m_notify) = sizeof(struct sctp_send_failed);
 	}
-	if (chk->data) {
-		/*
-		 * trim off the sctp chunk header(it should
-		 * be there)
-		 */
-		if (chk->send_size >= sizeof(struct sctp_data_chunk)) {
-			m_adj(chk->data, sizeof(struct sctp_data_chunk));
+	if (chk->data != NULL) {
+		/* Trim off the sctp chunk header (it should be there) */
+		if (chk->send_size == chkhdr_len + payload_len + padding_len) {
+			m_adj(chk->data, chkhdr_len);
+			m_adj(chk->data, -padding_len);
 			sctp_mbuf_crush(chk->data);
-			chk->send_size -= sizeof(struct sctp_data_chunk);
+			chk->send_size -= (chkhdr_len + padding_len);
 		}
 	}
 	SCTP_BUF_NEXT(m_notify) = chk->data;
@@ -3179,7 +3194,7 @@ sctp_notify_send_failed2(struct sctp_tcb *stcb, uint32_t error,
 	struct sctp_send_failed *ssf;
 	struct sctp_send_failed_event *ssfe;
 	struct sctp_queued_to_read *control;
-	int length;
+	int notifhdr_len;
 
 	if ((stcb == NULL) ||
 	    (sctp_stcb_is_feature_off(stcb->sctp_ep, stcb, SCTP_PCB_FLAGS_RECVSENDFAILEVNT) &&
@@ -3188,23 +3203,22 @@ sctp_notify_send_failed2(struct sctp_tcb *stcb, uint32_t error,
 		return;
 	}
 	if (sctp_stcb_is_feature_on(stcb->sctp_ep, stcb, SCTP_PCB_FLAGS_RECVNSENDFAILEVNT)) {
-		length = sizeof(struct sctp_send_failed_event);
+		notifhdr_len = sizeof(struct sctp_send_failed_event);
 	} else {
-		length = sizeof(struct sctp_send_failed);
+		notifhdr_len = sizeof(struct sctp_send_failed);
 	}
-	m_notify = sctp_get_mbuf_for_msg(length, 0, M_NOWAIT, 1, MT_DATA);
+	m_notify = sctp_get_mbuf_for_msg(notifhdr_len, 0, M_NOWAIT, 1, MT_DATA);
 	if (m_notify == NULL) {
 		/* no space left */
 		return;
 	}
-	SCTP_BUF_LEN(m_notify) = 0;
+	SCTP_BUF_LEN(m_notify) = notifhdr_len;
 	if (sctp_stcb_is_feature_on(stcb->sctp_ep, stcb, SCTP_PCB_FLAGS_RECVNSENDFAILEVNT)) {
 		ssfe = mtod(m_notify, struct sctp_send_failed_event *);
-		memset(ssfe, 0, length);
+		memset(ssfe, 0, notifhdr_len);
 		ssfe->ssfe_type = SCTP_SEND_FAILED_EVENT;
 		ssfe->ssfe_flags = SCTP_DATA_UNSENT;
-		length += sp->length;
-		ssfe->ssfe_length = length;
+		ssfe->ssfe_length = (uint32_t)(notifhdr_len + sp->length);
 		ssfe->ssfe_error = error;
 		/* not exactly what the user sent in, but should be close :) */
 		ssfe->ssfe_info.snd_sid = sp->stream;
@@ -3217,14 +3231,12 @@ sctp_notify_send_failed2(struct sctp_tcb *stcb, uint32_t error,
 		ssfe->ssfe_info.snd_context = sp->context;
 		ssfe->ssfe_info.snd_assoc_id = sctp_get_associd(stcb);
 		ssfe->ssfe_assoc_id = sctp_get_associd(stcb);
-		SCTP_BUF_LEN(m_notify) = sizeof(struct sctp_send_failed_event);
 	} else {
 		ssf = mtod(m_notify, struct sctp_send_failed *);
-		memset(ssf, 0, length);
+		memset(ssf, 0, notifhdr_len);
 		ssf->ssf_type = SCTP_SEND_FAILED;
 		ssf->ssf_flags = SCTP_DATA_UNSENT;
-		length += sp->length;
-		ssf->ssf_length = length;
+		ssf->ssf_length = (uint32_t)(notifhdr_len + sp->length);
 		ssf->ssf_error = error;
 		/* not exactly what the user sent in, but should be close :) */
 		ssf->ssf_info.sinfo_stream = sp->stream;
@@ -3238,7 +3250,6 @@ sctp_notify_send_failed2(struct sctp_tcb *stcb, uint32_t error,
 		ssf->ssf_info.sinfo_context = sp->context;
 		ssf->ssf_info.sinfo_assoc_id = sctp_get_associd(stcb);
 		ssf->ssf_assoc_id = sctp_get_associd(stcb);
-		SCTP_BUF_LEN(m_notify) = sizeof(struct sctp_send_failed);
 	}
 	SCTP_BUF_NEXT(m_notify) = sp->data;
 
@@ -4063,10 +4074,10 @@ sctp_report_all_outbound(struct sctp_tcb *stcb, uint16_t error, int holds_lock, 
 		/* For each stream */
 		outs = &asoc->strmout[i];
 		/* clean up any sends there */
-		asoc->locked_on_sending = NULL;
 		TAILQ_FOREACH_SAFE(sp, &outs->outqueue, next, nsp) {
-			asoc->stream_queue_cnt--;
+			atomic_subtract_int(&asoc->stream_queue_cnt, 1);
 			TAILQ_REMOVE(&outs->outqueue, sp, next);
+			stcb->asoc.ss_functions.sctp_ss_remove_from_stream(stcb, asoc, outs, sp, holds_lock);
 			sctp_free_spbufspace(stcb, asoc, sp);
 			if (sp->data) {
 				sctp_ulp_notify(SCTP_NOTIFY_SPECIAL_SP_FAIL, stcb,
@@ -4147,12 +4158,8 @@ sctp_abort_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 
 	vtag = 0;
 	if (stcb != NULL) {
-		/* We have a TCB to abort, send notification too */
 		vtag = stcb->asoc.peer_vtag;
-		sctp_abort_notification(stcb, 0, 0, NULL, SCTP_SO_NOT_LOCKED);
-		/* get the assoc vrf id and table id */
 		vrf_id = stcb->asoc.vrf_id;
-		stcb->asoc.state |= SCTP_STATE_WAS_ABORTED;
 	}
 	sctp_send_abort(m, iphlen, src, dst, sh, vtag, op_err,
 #if defined(__FreeBSD__)
@@ -4160,6 +4167,9 @@ sctp_abort_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 #endif
 	                vrf_id, port);
 	if (stcb != NULL) {
+		/* We have a TCB to abort, send notification too */
+		sctp_abort_notification(stcb, 0, 0, NULL, SCTP_SO_NOT_LOCKED);
+		stcb->asoc.state |= SCTP_STATE_WAS_ABORTED;
 		/* Ok, now lets free it */
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 		so = SCTP_INP_SO(inp);
@@ -4288,16 +4298,16 @@ sctp_abort_an_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	} else {
 		stcb->asoc.state |= SCTP_STATE_WAS_ABORTED;
 	}
-	/* notify the ulp */
-	if ((inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) {
-		sctp_abort_notification(stcb, 0, 0, NULL, so_locked);
-	}
 	/* notify the peer */
 	sctp_send_abort_tcb(stcb, op_err, so_locked);
 	SCTP_STAT_INCR_COUNTER32(sctps_aborted);
 	if ((SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_OPEN) ||
 	    (SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) {
 		SCTP_STAT_DECR_GAUGE32(sctps_currestab);
+	}
+	/* notify the ulp */
+	if ((inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) {
+		sctp_abort_notification(stcb, 0, 0, NULL, so_locked);
 	}
 	/* now free the asoc */
 #ifdef SCTP_ASOCLOG_OF_TSNS
@@ -5268,6 +5278,9 @@ sctp_release_pr_sctp_chunk(struct sctp_tcb *stcb, struct sctp_tmit_chunk *tp1,
 				stcb->asoc.pr_sctp_cnt++;
 			}
 			chk->rec.data.rcv_flags |= SCTP_DATA_LAST_FRAG;
+			if (sp->sinfo_flags & SCTP_UNORDERED) {
+				chk->rec.data.rcv_flags |= SCTP_DATA_UNORDERED;
+			}
 			if (stcb->asoc.idata_supported == 0) {
 				if ((sp->sinfo_flags & SCTP_UNORDERED) == 0) {
 					strq->next_mid_ordered++;
@@ -5782,8 +5795,14 @@ sctp_sorecvmsg(struct socket *so,
 			}
 		}
 	}
-	if ((so->so_rcv.sb_cc <= held_length) && block_allowed) {
-		/* we need to wait for data */
+	if (so->so_rcv.sb_cc <= held_length) {
+		if (so->so_error) {
+			error = so->so_error;
+			if ((in_flags & MSG_PEEK) == 0) {
+				so->so_error = 0;
+			}
+			goto out;
+		}
 		if ((so->so_rcv.sb_cc == 0) &&
 		    ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 		     (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL))) {
@@ -5809,46 +5828,18 @@ sctp_sorecvmsg(struct socket *so,
 				goto out;
 			}
 		}
-		error = sbwait(&so->so_rcv);
-		if (error) {
-			goto out;
-		}
-		held_length = 0;
-		goto restart_nosblocks;
-	} else if (so->so_rcv.sb_cc == 0) {
-		if (so->so_error) {
-			error = so->so_error;
-			if ((in_flags & MSG_PEEK) == 0)
-				so->so_error = 0;
-		} else {
-			if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
-			    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL)) {
-				if ((inp->sctp_flags & SCTP_PCB_FLAGS_CONNECTED) == 0) {
-					/* For active open side clear flags for re-use
-					 * passive open is blocked by connect.
-					 */
-					if (inp->sctp_flags & SCTP_PCB_FLAGS_WAS_ABORTED) {
-						/* You were aborted, passive side always hits here */
-						SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, ECONNRESET);
-						error = ECONNRESET;
-					}
-					so->so_state &= ~(SS_ISCONNECTING |
-							  SS_ISDISCONNECTING |
-							  SS_ISCONFIRMING |
-							  SS_ISCONNECTED);
-					if (error == 0) {
-						if ((inp->sctp_flags & SCTP_PCB_FLAGS_WAS_CONNECTED) == 0) {
-							SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, ENOTCONN);
-							error = ENOTCONN;
-						}
-					}
-					goto out;
-				}
+		if (block_allowed) {
+			error = sbwait(&so->so_rcv);
+			if (error) {
+				goto out;
 			}
+			held_length = 0;
+			goto restart_nosblocks;
+		} else {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EWOULDBLOCK);
 			error = EWOULDBLOCK;
+			goto out;
 		}
-		goto out;
 	}
 	if (hold_sblock == 1) {
 		SOCKBUF_UNLOCK(&so->so_rcv);
@@ -6008,20 +5999,16 @@ sctp_sorecvmsg(struct socket *so,
 	}
 	/* Clear the held length since there is something to read */
 	control->held_length = 0;
-	if (hold_rlock) {
-		SCTP_INP_READ_UNLOCK(inp);
-		hold_rlock = 0;
-	}
  found_one:
 	/*
 	 * If we reach here, control has a some data for us to read off.
 	 * Note that stcb COULD be NULL.
 	 */
-	control->some_taken++;
-	if (hold_sblock) {
-		SOCKBUF_UNLOCK(&so->so_rcv);
-		hold_sblock = 0;
+	if (hold_rlock == 0) {
+		hold_rlock = 1;
+		SCTP_INP_READ_LOCK(inp);
 	}
+	control->some_taken++;
 	stcb = control->stcb;
 	if (stcb) {
 		if ((control->do_not_ref_stcb == 0) &&
@@ -6199,6 +6186,14 @@ sctp_sorecvmsg(struct socket *so,
 		}
 #endif
 #endif
+	}
+	if (hold_rlock) {
+		SCTP_INP_READ_UNLOCK(inp);
+		hold_rlock = 0;
+	}
+	if (hold_sblock) {
+		SOCKBUF_UNLOCK(&so->so_rcv);
+		hold_sblock = 0;
 	}
 	/* now copy out what data we can */
 	if (mp == NULL) {
@@ -6678,9 +6673,9 @@ sctp_sorecvmsg(struct socket *so,
 			goto stage_left;
 #endif
 		}
-		atomic_add_int(&stcb->asoc.refcnt, -1);
 		/* Save the value back for next time */
 		stcb->freed_by_sorcv_sincelast = freed_so_far;
+		atomic_add_int(&stcb->asoc.refcnt, -1);
 	}
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) &SCTP_RECV_RWND_LOGGING_ENABLE) {
 		if (stcb) {
@@ -7116,7 +7111,7 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 	struct sctp_tcb *stcb = NULL;
 	unsigned int incr, at, i;
 
-	at = incr = 0;
+	at = 0;
 	sa = addr;
 	*error = *num_v6 = *num_v4 = 0;
 	/* account and validate addresses */
@@ -7124,6 +7119,7 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 		switch (sa->sa_family) {
 #ifdef INET
 		case AF_INET:
+			incr = (unsigned int)sizeof(struct sockaddr_in);
 #ifdef HAVE_SA_LEN
 			if (sa->sa_len != incr) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
@@ -7133,7 +7129,6 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 			}
 #endif
 			(*num_v4) += 1;
-			incr = (unsigned int)sizeof(struct sockaddr_in);
 			break;
 #endif
 #ifdef INET6
@@ -7149,6 +7144,7 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 				*bad_addr = 1;
 				return (NULL);
 			}
+			incr = (unsigned int)sizeof(struct sockaddr_in6);
 #ifdef HAVE_SA_LEN
 			if (sa->sa_len != incr) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
@@ -7158,12 +7154,12 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 			}
 #endif
 			(*num_v6) += 1;
-			incr = (unsigned int)sizeof(struct sockaddr_in6);
 			break;
 		}
 #endif
 		default:
 			*totaddr = i;
+			incr = 0;
 			/* we are done */
 			break;
 		}
@@ -7827,8 +7823,7 @@ sctp_recv_icmp_tunneled_packet(int cmd, struct sockaddr *sa, void *vip, void *ct
 	                                    SCTP_DEFAULT_VRFID);
 	if ((stcb != NULL) &&
 	    (net != NULL) &&
-	    (inp != NULL) &&
-	    (inp->sctp_socket != NULL)) {
+	    (inp != NULL)) {
 		/* Check the UDP port numbers */
 		if ((udp->uh_dport != net->port) ||
 		    (udp->uh_sport != htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port)))) {
@@ -7972,8 +7967,7 @@ sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa, void *d, void *ctx
 	                                    &inp, &net, 1, SCTP_DEFAULT_VRFID);
 	if ((stcb != NULL) &&
 	    (net != NULL) &&
-	    (inp != NULL) &&
-	    (inp->sctp_socket != NULL)) {
+	    (inp != NULL)) {
 		/* Check the UDP port numbers */
 		if ((udp.uh_dport != net->port) ||
 		    (udp.uh_sport != htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port)))) {

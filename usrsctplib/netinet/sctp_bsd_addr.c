@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 298942 2016-05-02 20:56:11Z pfg $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 307779 2016-10-22 17:21:21Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -576,7 +576,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 #endif
 
 	IFNET_RLOCK();
-	TAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_list) {
+	TAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_link) {
 		if (sctp_is_desired_interface_type(ifn) == 0) {
 			/* non desired type */
 			continue;
@@ -586,7 +586,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 #else
 		IF_ADDR_LOCK(ifn);
 #endif
-		TAILQ_FOREACH(ifa, &ifn->if_addrlist, ifa_list) {
+		TAILQ_FOREACH(ifa, &ifn->if_addrhead, ifa_link) {
 			if (ifa->ifa_addr == NULL) {
 				continue;
 			}
@@ -753,11 +753,11 @@ sctp_add_or_del_interfaces(int (*pred)(struct ifnet *), int add)
 	struct ifaddr *ifa;
 
 	IFNET_RLOCK();
-	TAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_list) {
+	TAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_link) {
 		if (!(*pred)(ifn)) {
 			continue;
 		}
-		TAILQ_FOREACH(ifa, &ifn->if_addrlist, ifa_list) {
+		TAILQ_FOREACH(ifa, &ifn->if_addrhead, ifa_link) {
 			sctp_addr_change(ifa, add ? RTM_ADD : RTM_DELETE);
 		}
 	}

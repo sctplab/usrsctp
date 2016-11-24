@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 300733 2016-05-26 11:38:26Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 302950 2016-07-17 13:33:35Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UIO_H_
@@ -288,7 +288,8 @@ struct sctp_snd_all_completes {
 /* The lower four bits is an enumeration of PR-SCTP policies */
 #define SCTP_PR_SCTP_NONE 0x0000 /* Reliable transfer */
 #define SCTP_PR_SCTP_TTL  0x0001 /* Time based PR-SCTP */
-#define SCTP_PR_SCTP_BUF  0x0002 /* Buffer based PR-SCTP */
+#define SCTP_PR_SCTP_PRIO 0x0002 /* Buffer based PR-SCTP */
+#define SCTP_PR_SCTP_BUF  SCTP_PR_SCTP_PRIO /* For backwards compatibility */
 #define SCTP_PR_SCTP_RTX  0x0003 /* Number of retransmissions based PR-SCTP */
 #define SCTP_PR_SCTP_MAX  SCTP_PR_SCTP_RTX
 #define SCTP_PR_SCTP_ALL  0x000f /* Used for aggregated stats */

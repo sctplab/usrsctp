@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 300733 2016-05-26 11:38:26Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 304573 2016-08-22 00:40:45Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -164,6 +164,16 @@ sctp_init(void)
 #endif
 }
 
+#if defined(__FreeBSD__)
+#ifdef VIMAGE
+static void
+sctp_finish(void *unused __unused)
+{
+         sctp_pcb_finish();
+}
+VNET_SYSUNINIT(sctp, SI_SUB_PROTO_DOMAIN, SI_ORDER_FOURTH, sctp_finish, NULL);
+#endif
+#else
 void
 sctp_finish(void)
 {
@@ -233,8 +243,7 @@ sctp_finish(void)
 	sctp_finish_sysctls();
 #endif
 }
-
-
+#endif
 
 void
 sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint16_t nxtsz)
@@ -460,8 +469,7 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 		                                    SCTP_DEFAULT_VRFID);
 		if ((stcb != NULL) &&
 		    (net != NULL) &&
-		    (inp != NULL) &&
-		    (inp->sctp_socket != NULL)) {
+		    (inp != NULL)) {
 			/* Check the verification tag */
 			if (ntohl(sh->v_tag) != 0) {
 				/*
@@ -1147,7 +1155,7 @@ sctp_disconnect(struct socket *so)
 			    TAILQ_EMPTY(&asoc->sent_queue) &&
 			    (asoc->stream_queue_cnt == 0)) {
 				/* there is nothing queued to send, so done */
-				if (asoc->locked_on_sending) {
+				if ((*asoc->ss_functions.sctp_ss_is_user_msgs_incomplete)(stcb, asoc)) {
 					goto abort_anyway;
 				}
 				if ((SCTP_GET_STATE(asoc) != SCTP_STATE_SHUTDOWN_SENT) &&
@@ -1195,17 +1203,8 @@ sctp_disconnect(struct socket *so)
 				asoc->state |= SCTP_STATE_SHUTDOWN_PENDING;
 				sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD, stcb->sctp_ep, stcb,
 						 netp);
-				if (asoc->locked_on_sending) {
-					/* Locked to send out the data */
-					struct sctp_stream_queue_pending *sp;
-					sp = TAILQ_LAST(&asoc->locked_on_sending->outqueue, sctp_streamhead);
-					if (sp == NULL) {
-						SCTP_PRINTF("Error, sp is NULL, locked on sending is non-null strm:%d\n",
-							    asoc->locked_on_sending->stream_no);
-					} else {
-						if ((sp->length == 0) && (sp->msg_is_complete == 0))
-							asoc->state |= SCTP_STATE_PARTIAL_MSG_LEFT;
-					}
+				if ((*asoc->ss_functions.sctp_ss_is_user_msgs_incomplete)(stcb, asoc)) {
+					asoc->state |= SCTP_STATE_PARTIAL_MSG_LEFT;
 				}
 				if (TAILQ_EMPTY(&asoc->send_queue) &&
 				    TAILQ_EMPTY(&asoc->sent_queue) &&
@@ -1372,7 +1371,7 @@ sctp_shutdown(struct socket *so)
 		    TAILQ_EMPTY(&asoc->send_queue) &&
 		    TAILQ_EMPTY(&asoc->sent_queue) &&
 		    (asoc->stream_queue_cnt == 0)) {
-			if (asoc->locked_on_sending) {
+			if ((*asoc->ss_functions.sctp_ss_is_user_msgs_incomplete)(stcb, asoc)) {
 				goto abort_anyway;
 			}
 			/* there is nothing queued to send, so I'm done... */
@@ -1389,19 +1388,8 @@ sctp_shutdown(struct socket *so)
 			 * SHUTDOWN_PENDING.
 			 */
 			SCTP_ADD_SUBSTATE(asoc, SCTP_STATE_SHUTDOWN_PENDING);
-			if (asoc->locked_on_sending) {
-				/* Locked to send out the data */
-				struct sctp_stream_queue_pending *sp;
-
-				sp = TAILQ_LAST(&asoc->locked_on_sending->outqueue, sctp_streamhead);
-				if (sp == NULL) {
-					SCTP_PRINTF("Error, sp is NULL, locked on sending is non-null strm:%d\n",
-						    asoc->locked_on_sending->stream_no);
-				} else {
-					if ((sp->length == 0)  && (sp-> msg_is_complete == 0)) {
-						SCTP_ADD_SUBSTATE(asoc, SCTP_STATE_PARTIAL_MSG_LEFT);
-					}
-				}
+			if ((*asoc->ss_functions.sctp_ss_is_user_msgs_incomplete)(stcb, asoc)) {
+				SCTP_ADD_SUBSTATE(asoc, SCTP_STATE_PARTIAL_MSG_LEFT);
 			}
 			if (TAILQ_EMPTY(&asoc->send_queue) &&
 			    TAILQ_EMPTY(&asoc->sent_queue) &&
@@ -2096,11 +2084,6 @@ sctp_do_connect_x(struct socket *so, struct sctp_inpcb *inp, void *optval,
 		sctp_send_initiate(inp, stcb, SCTP_SO_LOCKED);
 	}
 	SCTP_TCB_UNLOCK(stcb);
-	if (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) {
-		stcb->sctp_ep->sctp_flags |= SCTP_PCB_FLAGS_CONNECTED;
-		/* Set the connected flag so we can queue data */
-		soisconnecting(so);
-	}
  out_now:
 	if (creat_lock_on) {
 		SCTP_ASOC_CREATE_UNLOCK(inp);
@@ -2116,19 +2099,19 @@ sctp_do_connect_x(struct socket *so, struct sctp_inpcb *inp, void *optval,
 		stcb = LIST_FIRST(&inp->sctp_asoc_list); \
 		if (stcb) { \
 			SCTP_TCB_LOCK(stcb); \
-                } \
+		} \
 		SCTP_INP_RUNLOCK(inp); \
 	} else if (assoc_id > SCTP_ALL_ASSOC) { \
 		stcb = sctp_findassociation_ep_asocid(inp, assoc_id, 1); \
 		if (stcb == NULL) { \
-		        SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOENT); \
+			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOENT); \
 			error = ENOENT; \
 			break; \
 		} \
 	} else { \
 		stcb = NULL; \
-        } \
-  }
+	} \
+}
 
 
 #define SCTP_CHECK_AND_CAST(destp, srcp, type, size) {\
@@ -2139,7 +2122,7 @@ sctp_do_connect_x(struct socket *so, struct sctp_inpcb *inp, void *optval,
 	} else { \
 		destp = (type *)srcp; \
 	} \
-      }
+}
 
 #if defined(__Panda__) || defined(__Userspace__)
 int
