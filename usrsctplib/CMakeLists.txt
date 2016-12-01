@@ -46,10 +46,10 @@ include(CheckTypeSize)
 
 set(VERSION "1.0.0")
 
-set(prefix ${CMAKE_INSTALL_PREFIX})
-set(exec_prefix "\${prefix}")
-set(libdir "\${exec_prefix}/lib")
-set(includedir "\${prefix}/include/usrsctp")
+# set(prefix ${CMAKE_INSTALL_PREFIX})
+# set(exec_prefix "\${prefix}")
+# set(libdir "\${exec_prefix}/lib")
+# set(includedir "\${prefix}/include/usrsctp")
 set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR})
 
 
@@ -293,4 +293,4 @@ endif ()
 #################################################
 
 install(TARGETS usrsctp usrsctp-static DESTINATION ${CMAKE_INSTALL_LIBDIR})
-install(FILES usrsctp.h DESTINATION include)
+install(FILES usrsctp.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

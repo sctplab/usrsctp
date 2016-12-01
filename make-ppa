@@ -20,7 +20,7 @@
 # Contact: dreibh@iem.uni-due.de
 
 ./clean-deb
-./make-deb wily xenial yakkety zesty unstable
+./make-deb precise trusty wily xenial yakkety zesty unstable
 changeFiles=`ls *.changes`
 for changeFile in $changeFiles ; do
    if [[ $changeFile =~ .*unstable.* ]] ; then
