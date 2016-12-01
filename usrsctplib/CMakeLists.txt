@@ -256,6 +256,13 @@ set_target_properties(usrsctp-static PROPERTIES OUTPUT_NAME "usrsctp")
 set_target_properties(usrsctp PROPERTIES IMPORT_SUFFIX "_import.lib")
 set_target_properties(usrsctp PROPERTIES SOVERSION 1 VERSION 1.0.0)
 
+if(THREADS_HAVE_PTHREAD_ARG)
+   target_compile_options(PUBLIC usrsctp "-pthread")
+   target_compile_options(PUBLIC usrsctp-static "-pthread")
+endif()
+target_link_libraries (usrsctp "${CMAKE_THREAD_LIBS_INIT}")
+target_link_libraries (usrsctp-static "${CMAKE_THREAD_LIBS_INIT}")
+
 # SETTINGS FOR UNIX COMPILER
 if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xGNU")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic -Wall -std=c99")

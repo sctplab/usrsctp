@@ -34,7 +34,7 @@ project(libusrsctp)
 
 set(BUILD_MAJOR "1")
 set(BUILD_MINOR "0")
-set(BUILD_PATCH "0~td100")
+set(BUILD_PATCH "0~td101")
 set(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
 
 
@@ -92,6 +92,8 @@ if (${CMAKE_BUILD_TYPE} MATCHES "DEBUG")
     message(STATUS "enabling verbose outout")
     set(CMAKE_VERBOSE_MAKEFILE on)
 endif()
+
+find_package(Threads REQUIRED)
 
 add_subdirectory(usrsctplib)
 add_subdirectory(programs)

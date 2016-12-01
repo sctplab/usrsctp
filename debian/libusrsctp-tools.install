@@ -1,12 +1,12 @@
-/usr/bin/client
-/usr/bin/daytime_server
-/usr/bin/discard_server
-/usr/bin/echo_server
-/usr/bin/ekr_client
-/usr/bin/ekr_loop
-/usr/bin/ekr_peer
-/usr/bin/ekr_server
-/usr/bin/http_client
-/usr/bin/rtcweb
-/usr/bin/test_libmgmt
-/usr/bin/tsctp
+/usr/bin/client                 /usr/lib/libusrsctp/
+/usr/bin/daytime_server                 /usr/lib/libusrsctp/
+/usr/bin/discard_server                 /usr/lib/libusrsctp/
+/usr/bin/echo_server                 /usr/lib/libusrsctp/
+/usr/bin/ekr_client                 /usr/lib/libusrsctp/
+/usr/bin/ekr_loop                 /usr/lib/libusrsctp/
+/usr/bin/ekr_peer                 /usr/lib/libusrsctp/
+/usr/bin/ekr_server                 /usr/lib/libusrsctp/
+/usr/bin/http_client                 /usr/lib/libusrsctp/
+/usr/bin/rtcweb                 /usr/lib/libusrsctp/
+/usr/bin/test_libmgmt                 /usr/lib/libusrsctp/
+/usr/bin/tsctp                 /usr/lib/libusrsctp/

@@ -3,7 +3,8 @@ Maintainer: Michael Tüxen <tuexen@fh-muenster.de>
 Section: net
 Priority: optional
 Build-Depends: cmake,
-               debhelper (>= 9)
+               debhelper (>= 9),
+               libfile-fcntllock-perl
 Standards-Version: 3.9.8
 Vcs-Browser: https://github.com/sctplib/usrsctp
 Vcs-Git: https://github.com/sctplib/usrsctp.git
