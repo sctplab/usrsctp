@@ -3,4 +3,8 @@
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 %:
-	dh $@ --parallel
+	dh $@ --buildsystem cmake --parallel
+
+
+override_dh_auto_build:
+	dh_auto_build --parallel
