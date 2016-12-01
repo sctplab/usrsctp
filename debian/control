@@ -29,7 +29,7 @@ Description: Portable SCTP Userland Stack (Development Files)
  .
  This package contains the development files for the Portable SCTP Userland Stack.
 
-Package: libusrsctp-tools
+Package: libusrsctp-examples
 Architecture: any
 Depends: libusrsctp1 (= ${binary:Version}),
          ${misc:Depends},
@@ -37,4 +37,4 @@ Depends: libusrsctp1 (= ${binary:Version}),
 Description: Portable SCTP Userland Stack (Examples)
  This is a userland SCTP stack supporting FreeBSD, Linux, Mac OS X and Windows.
  .
- This package contains the test tools for the Portable SCTP Userland Stack.
+ This package contains the examples for the Portable SCTP Userland Stack.

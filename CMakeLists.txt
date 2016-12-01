@@ -34,7 +34,7 @@ project(libusrsctp)
 
 set(BUILD_MAJOR "1")
 set(BUILD_MINOR "0")
-set(BUILD_PATCH "0~td104")
+set(BUILD_PATCH "0~td105")
 set(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
 
 
