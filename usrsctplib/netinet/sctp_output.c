@@ -10938,8 +10938,10 @@ sctp_fill_in_rest:
 	 */
 	if (old) {
 		strseq = (struct sctp_strseq *)fwdtsn;
+      strseq_m = NULL;
 	} else {
 		strseq_m = (struct sctp_strseq_mid *)fwdtsn;
+      strseq = NULL;
 	}
 	/*-
 	 * Now populate the strseq list. This is done blindly

@@ -419,7 +419,7 @@ main(int argc, char *argv[])
           int stream, reliable;
           size_t len;
           uint32_t timeout;
-          uint32_t flags;
+          uint32_t flags = 0;
 
           if (sscanf(inputline,"open %d %d:",&stream,&reliable) == 2)
           {

@@ -46,10 +46,6 @@ include(CheckTypeSize)
 
 set(VERSION "1.0.0")
 
-# set(prefix ${CMAKE_INSTALL_PREFIX})
-# set(exec_prefix "\${prefix}")
-# set(libdir "\${exec_prefix}/lib")
-# set(includedir "\${prefix}/include/usrsctp")
 set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR})
 
 
@@ -267,10 +263,10 @@ target_link_libraries (usrsctp-static "${CMAKE_THREAD_LIBS_INIT}")
 if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xGNU")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic -Wall -std=c99")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -std=c99")
-#     if (WERROR)
-#         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-#         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-#     endif ()
+    if (WERROR)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+    endif ()
 endif ()
 
 # SETTINGS FOR VISUAL STUDIO COMPILER
