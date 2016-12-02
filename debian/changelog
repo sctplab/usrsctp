@@ -1,5 +1,5 @@
-libusrsctp (1.0.0~td105-1ppa1) xenial; urgency=high
+libusrsctp (1.0.0~td107-1ppa1) xenial; urgency=high
 
   * Initial release.
 
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Thu, 01 Dec 2016 08:08:08 +0800
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Fri, 02 Dec 2016 08:08:08 +0800
