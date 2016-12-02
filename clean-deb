@@ -24,5 +24,5 @@
 CHANGELOG_HEADER="`head -n1 debian/changelog`"
 PACKAGE=`echo $CHANGELOG_HEADER | sed -e "s/(.*//" -e "s/ //g"`
 
-rm -f *.deb *.dsc *.asc *.changes *.build *.upload *.tar.gz stamp-h* svn-commit* *~ CMakeFiles _CPack_Packages
-rm -rf $PACKAGE-[0-9]*.[0-9]*.* $PACKAGE"_"[0-9]*.[0-9]*.*
+rm -f *.deb *.dsc *.asc *.changes *.build *.upload *.tar.gz stamp-h* svn-commit* *~
+rm -rf $PACKAGE-[0-9]*.[0-9]*.* $PACKAGE"_"[0-9]*.[0-9]*.* CMakeFiles _CPack_Packages
