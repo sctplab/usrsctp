@@ -75,7 +75,7 @@ set(CPACK_SOURCE_GENERATOR "TGZ")
 set(CPACK_SOURCE_PACKAGE_FILE_NAME
    "${CMAKE_PROJECT_NAME}-${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH}")
 set(CPACK_SOURCE_IGNORE_FILES
-   "/build/;/.git/;/CMakeFiles/;CMakeCache.txt$;/${CMAKE_PROJECT_NAME}-*;/${CMAKE_PROJECT_NAME}_*;.cmake$;.tar.gz$;/_CPack_Packages;/Makefile$;~$;/build-deb;/clean-deb;/filter-empty-entries;/make-symbols;/make-ppa;/make-deb;/debian.conf;${CPACK_SOURCE_IGNORE_FILES}")
+   "/build/;/.git/;/CMakeFiles/;CMakeCache.txt$;/${CMAKE_PROJECT_NAME}-*;/${CMAKE_PROJECT_NAME}_*;.cmake$;.tar.gz$;/_CPack_Packages;/Makefile$;~$;/build-deb;/clean-deb;/filter-empty-entries;/make-symbols;/make-ppa;/make-deb;/debian.conf;/make-rpm;/rpm.conf;${CPACK_SOURCE_IGNORE_FILES}")
 include(CPack)
 
 add_custom_target(dist COMMAND ${CMAKE_MAKE_PROGRAM} clean package_source)
