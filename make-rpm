@@ -2,7 +2,7 @@
 # $Id$
 #
 # Packaging Scripts
-# Copyright (C) 2014 by Thomas Dreibholz
+# Copyright (C) 2014-2017 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,9 +22,9 @@
 
 # ---------------------------------------------------------------------------
 # USAGE:
-# ./make-rpm default            => for default distribution (F18, amd64)
-# ./make-rpm fedora-18-x86_64   => F18, amd64
-# ./make-rpm fedora-18-i386     => F18, i386
+# ./make-rpm default            => for default distribution (F24, amd64)
+# ./make-rpm fedora-24-x86_64   => F24, amd64
+# ./make-rpm fedora-24-i386     => F24, i386
 # ...
 # ---------------------------------------------------------------------------
 
@@ -37,7 +37,7 @@ while [ x$1 != "x" ] ; do \
 done \
 ) | sort -u`
 if [ "$DISTRIBUTIONS" == "" ] ; then
-   DISTRIBUTIONS="fedora-18-x86_64"
+   DISTRIBUTIONS="fedora-24-x86_64"
 fi
 
 PACKAGE=`grep "^Name:" rpm/*.spec | head -n1 | sed -e "s/Name://g" -e "s/[ \t]*//g"`
@@ -58,9 +58,9 @@ if [ -e debian/changelog ] ; then
    # The package's version, e.g. 1.2.3-1ubuntu1
    DEBIAN_PACKAGE_VERSION=`echo $DEBIAN_CHANGELOG_HEADER | sed -e "s/.*(//" -e "s/).*//" -e "s/ //g" -e "s/ //g"`
    # The package's output version, e.g. 1.2.3-1ubuntu
-   DEBIAN_OUTPUT_VERSION=`echo $DEBIAN_PACKAGE_VERSION   | sed -e "s/\(ubuntu\)[0-9]*$/\1/"`
+   OUTPUT_VERSION=`echo $PACKAGE_VERSION   | sed -e "s/\(ubuntu\|ppa\)[0-9]*$/\1/"`
    # The package's Debian version, e.g. 1.2.3-1
-   DEBIAN_VERSION=`echo $DEBIAN_OUTPUT_VERSION    | sed -e "s/ubuntu$//1"`
+   DEBIAN_VERSION=`echo $OUTPUT_VERSION    | sed -e "s/\(ubuntu\|ppa\)$//1"`
    # The package's upstream version, e.g. 1.2.3
    DEBIAN_UPSTREAM_VERSION=`echo $DEBIAN_VERSION  | sed -e "s/-[0-9]*$//"`
 

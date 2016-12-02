@@ -1,4 +1,4 @@
-Name: rsplib
+Name: libusrsctp
 Version: 1.0.0~td105
 Release: 1
 Summary: Portable SCTP Userland Stack
