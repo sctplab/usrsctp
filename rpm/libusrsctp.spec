@@ -5,7 +5,7 @@ Summary: Portable SCTP Userland Stack
 License: BSD
 Group: Applications/Internet
 URL: https://github.com/sctplib/usrsctp
-Source: https://github.com/sctplib/usrsctp
+Source: %{name}-%{version}.tar.gz
 
 AutoReqProv: on
 BuildRequires: cmake
@@ -41,33 +41,38 @@ Requires: chrpath
 %setup -q
 
 %build
-cmake -DCMAKE_INSTALL_PREFIX=/usr .
-
-%configure
+%cmake -DCMAKE_INSTALL_PREFIX=/usr .
 make %{?_smp_mflags}
 
 %install
 make install DESTDIR=%{buildroot}
 
-%clean
-rm -rf "$RPM_BUILD_ROOT"
+#%clean
+#rm -rf "$RPM_BUILD_ROOT"
 
 %files
 %defattr(-,root,root,-)
-%{_libdir}/libusrsctp.so*
+/usr/lib/libusrsctp.so*
 
 %files devel
-%{_includedir}/usrsctp.h
-%{_libdir}/libusrsctp*.a
-%{_libdir}/libusrsctp*.la
-%{_libdir}/libusrsctp*.so
+/usr/include/usrsctp.h
+/usr/lib//libusrsctp*.a
+/usr/lib/libusrsctp*.so
 
 %files examples
-%{_bindir}/cspmonitor
-%{_bindir}/hsdump
-%{_bindir}/rspserver
-%{_bindir}/rspterminal
-
+/usr/bin/client
+/usr/bin/datachan_serv
+/usr/bin/daytime_server
+/usr/bin/discard_server
+/usr/bin/echo_server
+/usr/bin/ekr_client
+/usr/bin/ekr_loop
+/usr/bin/ekr_peer
+/usr/bin/ekr_server
+/usr/bin/http_client
+/usr/bin/rtcweb
+/usr/bin/test_libmgmt
+/usr/bin/tsctp
 
 %changelog
 * Fri Dec 02 2016 Thomas Dreibholz <dreibh@simula.no> 1.0.0
