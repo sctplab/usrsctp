@@ -1,5 +1,5 @@
 Name: libusrsctp
-Version: 1.0.0~td105
+Version: 1.0.0~td106
 Release: 1
 Summary: Portable SCTP Userland Stack
 License: BSD
@@ -29,8 +29,6 @@ Requires: %{name} = %{version}-%{release}
 Summary: Portable SCTP Userland Stack (Examples)
 Group: Applications/Internet
 Requires: %{name} = %{version}-%{release}
-Requires: %{name}-docs
-Requires: chrpath
 
 %description examples
  This is a userland SCTP stack supporting FreeBSD, Linux, Mac OS X and Windows.
