@@ -60,19 +60,19 @@ make install DESTDIR=%{buildroot}
 /usr/lib/libusrsctp*.so
 
 %files examples
-/usr/bin/client
-/usr/bin/datachan_serv
-/usr/bin/daytime_server
-/usr/bin/discard_server
-/usr/bin/echo_server
-/usr/bin/ekr_client
-/usr/bin/ekr_loop
-/usr/bin/ekr_peer
-/usr/bin/ekr_server
-/usr/bin/http_client
-/usr/bin/rtcweb
-/usr/bin/test_libmgmt
-/usr/bin/tsctp
+/usr/lib/libusrsctp/client
+/usr/lib/libusrsctp/datachan_serv
+/usr/lib/libusrsctp/daytime_server
+/usr/lib/libusrsctp/discard_server
+/usr/lib/libusrsctp/echo_server
+/usr/lib/libusrsctp/ekr_client
+/usr/lib/libusrsctp/ekr_loop
+/usr/lib/libusrsctp/ekr_peer
+/usr/lib/libusrsctp/ekr_server
+/usr/lib/libusrsctp/http_client
+/usr/lib/libusrsctp/rtcweb
+/usr/lib/libusrsctp/test_libmgmt
+/usr/lib/libusrsctp/tsctp
 
 %changelog
 * Fri Dec 02 2016 Thomas Dreibholz <dreibh@simula.no> 1.0.0
