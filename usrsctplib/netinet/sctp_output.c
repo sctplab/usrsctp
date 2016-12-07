@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 309682 2016-12-07 19:30:59Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 309685 2016-12-07 22:01:09Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -10931,8 +10931,10 @@ sctp_fill_in_rest:
 	 */
 	if (asoc->idata_supported) {
 		strseq_m = (struct sctp_strseq_mid *)fwdtsn;
+		strseq = NULL;
 	} else {
 		strseq = (struct sctp_strseq *)fwdtsn;
+		strseq_m = NULL;
 	}
 	/*-
 	 * Now populate the strseq list. This is done blindly
