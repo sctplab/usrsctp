@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 309685 2016-12-07 22:01:09Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 309743 2016-12-09 17:57:17Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -9700,40 +9700,61 @@ sctp_send_shutdown(struct sctp_tcb *stcb, struct sctp_nets *net)
 	struct sctp_shutdown_chunk *shutdown_cp;
 	struct sctp_tmit_chunk *chk;
 
-	m_shutdown = sctp_get_mbuf_for_msg(sizeof(struct sctp_shutdown_chunk), 0, M_NOWAIT, 1, MT_HEADER);
-	if (m_shutdown == NULL) {
-		/* no mbuf's */
-		return;
+	TAILQ_FOREACH(chk, &stcb->asoc.control_send_queue, sctp_next) {
+		if (chk->rec.chunk_id.id == SCTP_SHUTDOWN) {
+			/* We already have a SHUTDOWN queued. Reuse it. */
+			if (chk->whoTo) {
+				sctp_free_remote_addr(chk->whoTo);
+				chk->whoTo = NULL;
+			}
+			break;
+		}
 	}
-	SCTP_BUF_RESV_UF(m_shutdown, SCTP_MIN_OVERHEAD);
-	sctp_alloc_a_chunk(stcb, chk);
 	if (chk == NULL) {
-		/* no memory */
-		sctp_m_freem(m_shutdown);
-		return;
+		m_shutdown = sctp_get_mbuf_for_msg(sizeof(struct sctp_shutdown_chunk), 0, M_NOWAIT, 1, MT_HEADER);
+		if (m_shutdown == NULL) {
+			/* no mbuf's */
+			return;
+		}
+		SCTP_BUF_RESV_UF(m_shutdown, SCTP_MIN_OVERHEAD);
+		sctp_alloc_a_chunk(stcb, chk);
+		if (chk == NULL) {
+			/* no memory */
+			sctp_m_freem(m_shutdown);
+			return;
+		}
+		chk->copy_by_ref = 0;
+		chk->rec.chunk_id.id = SCTP_SHUTDOWN;
+		chk->rec.chunk_id.can_take_data = 1;
+		chk->flags = 0;
+		chk->send_size = sizeof(struct sctp_shutdown_chunk);
+		chk->sent = SCTP_DATAGRAM_UNSENT;
+		chk->snd_count = 0;
+		chk->flags = 0;
+		chk->asoc = &stcb->asoc;
+		chk->data = m_shutdown;
+		chk->whoTo = net;
+		if (chk->whoTo) {
+			atomic_add_int(&chk->whoTo->ref_count, 1);
+		}
+		shutdown_cp = mtod(m_shutdown, struct sctp_shutdown_chunk *);
+		shutdown_cp->ch.chunk_type = SCTP_SHUTDOWN;
+		shutdown_cp->ch.chunk_flags = 0;
+		shutdown_cp->ch.chunk_length = htons(chk->send_size);
+		shutdown_cp->cumulative_tsn_ack = htonl(stcb->asoc.cumulative_tsn);
+		SCTP_BUF_LEN(m_shutdown) = chk->send_size;
+		TAILQ_INSERT_TAIL(&chk->asoc->control_send_queue, chk, sctp_next);
+		chk->asoc->ctrl_queue_cnt++;
+	} else {
+		TAILQ_REMOVE(&stcb->asoc.control_send_queue, chk, sctp_next);
+		chk->whoTo = net;
+		if (chk->whoTo) {
+			atomic_add_int(&chk->whoTo->ref_count, 1);
+		}
+		shutdown_cp = mtod(chk->data, struct sctp_shutdown_chunk *);
+		shutdown_cp->cumulative_tsn_ack = htonl(stcb->asoc.cumulative_tsn);
+		TAILQ_INSERT_TAIL(&stcb->asoc.control_send_queue, chk, sctp_next);
 	}
-	chk->copy_by_ref = 0;
-	chk->rec.chunk_id.id = SCTP_SHUTDOWN;
-	chk->rec.chunk_id.can_take_data = 1;
-	chk->flags = 0;
-	chk->send_size = sizeof(struct sctp_shutdown_chunk);
-	chk->sent = SCTP_DATAGRAM_UNSENT;
-	chk->snd_count = 0;
-	chk->flags = 0;
-	chk->asoc = &stcb->asoc;
-	chk->data = m_shutdown;
-	chk->whoTo = net;
-	if (chk->whoTo) {
-		atomic_add_int(&chk->whoTo->ref_count, 1);
-	}
-	shutdown_cp = mtod(m_shutdown, struct sctp_shutdown_chunk *);
-	shutdown_cp->ch.chunk_type = SCTP_SHUTDOWN;
-	shutdown_cp->ch.chunk_flags = 0;
-	shutdown_cp->ch.chunk_length = htons(chk->send_size);
-	shutdown_cp->cumulative_tsn_ack = htonl(stcb->asoc.cumulative_tsn);
-	SCTP_BUF_LEN(m_shutdown) = chk->send_size;
-	TAILQ_INSERT_TAIL(&chk->asoc->control_send_queue, chk, sctp_next);
-	chk->asoc->ctrl_queue_cnt++;
 	return;
 }
 
