@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 309682 2016-12-07 19:30:59Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 309744 2016-12-09 17:58:07Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2454,13 +2454,17 @@ sctp_sack_check(struct sctp_tcb *stcb, int was_a_gap)
 {
 	struct sctp_association *asoc;
 	uint32_t highest_tsn;
+	int is_a_gap;
 
+	sctp_slide_mapping_arrays(stcb);
 	asoc = &stcb->asoc;
 	if (SCTP_TSN_GT(asoc->highest_tsn_inside_nr_map, asoc->highest_tsn_inside_map)) {
 		highest_tsn = asoc->highest_tsn_inside_nr_map;
 	} else {
 		highest_tsn = asoc->highest_tsn_inside_map;
 	}
+	/* Is there a gap now? */
+	is_a_gap = SCTP_TSN_GT(highest_tsn, stcb->asoc.cumulative_tsn);
 
 	/*
 	 * Now we need to see if we need to queue a sack or just start the
@@ -2478,14 +2482,11 @@ sctp_sack_check(struct sctp_tcb *stcb, int was_a_gap)
 			                SCTP_FROM_SCTP_INDATA + SCTP_LOC_17);
 		}
 		sctp_send_shutdown(stcb,
-				   ((stcb->asoc.alternate) ? stcb->asoc.alternate : stcb->asoc.primary_destination));
-		sctp_send_sack(stcb, SCTP_SO_NOT_LOCKED);
+		                   ((stcb->asoc.alternate) ? stcb->asoc.alternate : stcb->asoc.primary_destination));
+		if (is_a_gap) {
+			sctp_send_sack(stcb, SCTP_SO_NOT_LOCKED);
+		}
 	} else {
-		int is_a_gap;
-
-		/* is there a gap now ? */
-		is_a_gap = SCTP_TSN_GT(highest_tsn, stcb->asoc.cumulative_tsn);
-
 		/*
 		 * CMT DAC algorithm: increase number of packets
 		 * received since last ack
