@@ -62,6 +62,7 @@ programs/ekr_client
 programs/ekr_loop
 programs/ekr_peer
 programs/ekr_server
+programs/http_client
 programs/rtcweb
 programs/tsctp
 programs/test_libmgmt
