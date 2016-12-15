@@ -51,6 +51,7 @@ set(exec_prefix "\${prefix}")
 set(libdir "\${exec_prefix}/lib")
 set(includedir "\${prefix}/include/usrsctp")
 set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR})
+set(CMAKE_MACOSX_RPATH 1)
 
 
 #################################################
