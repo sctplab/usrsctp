@@ -5049,7 +5049,6 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked
 	struct sctp_supported_chunk_types_param *pr_supported;
 	struct sctp_paramhdr *ph;
 	int cnt_inits_to = 0;
-	int ret;
 	uint16_t num_ext, chunk_len, padding_len, parameter_len;
 
 #if defined(__APPLE__)
@@ -5312,7 +5311,7 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked
 		}
 	}
 	SCTPDBG(SCTP_DEBUG_OUTPUT4, "Sending INIT - calls lowlevel_output\n");
-	ret = sctp_lowlevel_chunk_output(inp, stcb, net,
+	sctp_lowlevel_chunk_output(inp, stcb, net,
 	                                 (struct sockaddr *)&net->ro._l_addr,
 	                                 m, 0, NULL, 0, 0, 0, 0,
 	                                 inp->sctp_lport, stcb->rport, htonl(0),
