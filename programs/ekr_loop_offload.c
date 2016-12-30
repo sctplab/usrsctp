@@ -99,7 +99,7 @@ handle_packets(void *arg)
 					        ntohl(computed_crc32c), ntohl(received_crc32c));
 				}
 			} else {
-				fprintf(stderr, "Packet too short: length %zd", length);
+				fprintf(stderr, "Packet too short: length %zu", (size_t)length);
 			}
 		}
 	}
