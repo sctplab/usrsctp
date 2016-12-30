@@ -341,6 +341,7 @@ struct sctp_base_info {
 #endif
 	int (*conn_output)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df);
 	void (*debug_printf)(const char *format, ...);
+	int crc32c_offloaded;
 #endif
 };
 
