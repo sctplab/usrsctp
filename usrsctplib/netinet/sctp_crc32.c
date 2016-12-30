@@ -696,8 +696,11 @@ singletable_crc32c(uint32_t crc32c,
 	return (crc32c);
 }
 
-
+#if defined(__Userspace__)
+uint32_t
+#else
 static uint32_t
+#endif
 calculate_crc32c(uint32_t crc32c,
                  const unsigned char *buffer,
                  unsigned int length)
@@ -710,7 +713,11 @@ calculate_crc32c(uint32_t crc32c,
 }
 #endif /* FreeBSD < 80000 || other OS */
 
+#if defined(__Userspace__)
+uint32_t
+#else
 static uint32_t
+#endif
 sctp_finalize_crc32c(uint32_t crc32c)
 {
 	uint32_t result;
