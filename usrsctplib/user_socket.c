@@ -3307,6 +3307,18 @@ usrsctp_freedumpbuffer(char *buf)
 }
 
 void
+usrsctp_enable_crc32c_offload(void)
+{
+	SCTP_BASE_VAR(crc32c_offloaded) = 1;
+}
+
+void
+usrsctp_disable_crc32c_offload(void)
+{
+	SCTP_BASE_VAR(crc32c_offloaded) = 0;
+}
+
+void
 usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bits)
 {
 	struct sockaddr_conn src, dst;
@@ -3347,7 +3359,7 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	                             (struct sockaddr *)&dst,
 	                             sh, ch,
 #if !defined(SCTP_WITH_NO_CSUM)
-	                             1,
+	                             SCTP_BASE_VAR(crc32c_offloaded) == 1 ? 0 : 1,
 #endif
 	                             ecn_bits,
 	                             SCTP_DEFAULT_VRFID, 0);

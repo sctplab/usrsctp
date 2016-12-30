@@ -147,6 +147,7 @@ sctp_init(void)
 	SCTP_BASE_VAR(timer_thread_should_exit) = 0;
 	SCTP_BASE_VAR(conn_output) = conn_output;
 	SCTP_BASE_VAR(debug_printf) = debug_printf;
+	SCTP_BASE_VAR(crc32c_offloaded) = 0;
 #endif
 	sctp_pcb_init();
 #if defined(__Userspace__)

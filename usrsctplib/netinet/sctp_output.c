@@ -5002,8 +5002,12 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #if defined(SCTP_WITH_NO_CSUM)
 		SCTP_STAT_INCR(sctps_sendnocrc);
 #else
-		sctphdr->checksum = sctp_calculate_cksum(m, 0);
-		SCTP_STAT_INCR(sctps_sendswcrc);
+		if (SCTP_BASE_VAR(crc32c_offloaded) == 0) {
+			sctphdr->checksum = sctp_calculate_cksum(m, 0);
+			SCTP_STAT_INCR(sctps_sendswcrc);
+		} else {
+			SCTP_STAT_INCR(sctps_sendhwcrc);
+		}
 #endif
 		if (tos_value == 0) {
 			tos_value = inp->ip_inp.inp.inp_ip_tos;
@@ -11962,8 +11966,12 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #if defined(SCTP_WITH_NO_CSUM)
 		SCTP_STAT_INCR(sctps_sendnocrc);
 #else
-		shout->checksum = sctp_calculate_cksum(mout, 0);
-		SCTP_STAT_INCR(sctps_sendswcrc);
+		if (SCTP_BASE_VAR(crc32c_offloaded) == 0) {
+			shout->checksum = sctp_calculate_cksum(mout, 0);
+			SCTP_STAT_INCR(sctps_sendswcrc);
+		} else {
+			SCTP_STAT_INCR(sctps_sendhwcrc);
+		}
 #endif
 #ifdef SCTP_PACKET_LOGGING
 		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING) {
