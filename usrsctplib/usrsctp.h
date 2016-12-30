@@ -997,6 +997,9 @@ usrsctp_enable_crc32c_offload(void);
 void
 usrsctp_disable_crc32c_offload(void);
 
+uint32_t
+usrsctp_crc32c(void *, size_t);
+
 #define USRSCTP_SYSCTL_DECL(__field)                \
 void usrsctp_sysctl_set_ ## __field(uint32_t value);\
 uint32_t usrsctp_sysctl_get_ ## __field(void);
