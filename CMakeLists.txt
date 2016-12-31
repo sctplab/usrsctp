@@ -41,6 +41,7 @@ endif()
 if (${CMAKE_BUILD_TYPE} MATCHES "DEBUG")
     message(STATUS "enabling verbose outout")
     set(CMAKE_VERBOSE_MAKEFILE on)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g")
 endif()
 
 add_subdirectory(usrsctplib)
