@@ -40,7 +40,7 @@ endif()
 # Enable verbose output in DEBUG mode
 if (${CMAKE_BUILD_TYPE} MATCHES "DEBUG")
     message(STATUS "enabling verbose outout")
-    set(CMAKE_VERBOSE_MAKEFILE on)
+    #set(CMAKE_VERBOSE_MAKEFILE on)
 endif()
 
 add_subdirectory(usrsctplib)
