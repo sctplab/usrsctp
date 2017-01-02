@@ -60,11 +60,14 @@ programs/discard_server
 programs/echo_server
 programs/ekr_client
 programs/ekr_loop
+programs/ekr_loop_offload
 programs/ekr_peer
 programs/ekr_server
+programs/http_client
 programs/rtcweb
 programs/tsctp
 programs/test_libmgmt
+programs/test_timer
 
 # callgrind
 callgrind.out*

@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 304573 2016-08-22 00:40:45Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 310590 2016-12-26 11:06:41Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -147,6 +147,7 @@ sctp_init(void)
 	SCTP_BASE_VAR(timer_thread_should_exit) = 0;
 	SCTP_BASE_VAR(conn_output) = conn_output;
 	SCTP_BASE_VAR(debug_printf) = debug_printf;
+	SCTP_BASE_VAR(crc32c_offloaded) = 0;
 #endif
 	sctp_pcb_init();
 #if defined(__Userspace__)
@@ -281,7 +282,7 @@ sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint16_t nxtsz)
 						       chk->whoTo->flight_size,
 						       chk->book_size,
 						       (uint32_t)(uintptr_t)chk->whoTo,
-						       chk->rec.data.TSN_seq);
+						       chk->rec.data.tsn);
 				}
 				/* Clear any time so NO RTT is being done */
 				chk->do_rtt = 0;
