@@ -90,8 +90,6 @@ else
         AC_MSG_RESULT(no)
 fi
 
-LIBCFLAGS="$CFLAGS $LIBCFLAGS"
-
 AC_ARG_ENABLE(invariants,
   AC_HELP_STRING( [--enable-invariants],
                   [add additional runtime checks @<:@default=no@:>@]),

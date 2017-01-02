@@ -48,6 +48,8 @@ void sctp_delayed_cksum(struct mbuf *, uint32_t offset);
 #endif				/* _KERNEL */
 #if defined(__Userspace__)
 #if !defined(SCTP_WITH_NO_CSUM)
+uint32_t calculate_crc32c(uint32_t, const unsigned char *, unsigned int);
+uint32_t sctp_finalize_crc32c(uint32_t);
 uint32_t sctp_calculate_cksum(struct mbuf *, uint32_t);
 #endif
 #endif

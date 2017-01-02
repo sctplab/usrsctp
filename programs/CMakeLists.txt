@@ -139,11 +139,13 @@ set(CHECK_PROGRAMS
     echo_server.c
     ekr_client.c
     ekr_loop.c
+    ekr_loop_offload.c
     ekr_peer.c
     ekr_server.c
     http_client.c
     rtcweb.c
     test_libmgmt.c
+    test_timer.c
     tsctp.c
 )
 
