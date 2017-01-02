@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2015-2015 Oleg Alexeenkov
-# Copyright (C) 2015-2015 Felix Weinrank
+# Copyright (C) 2015-2017 Felix Weinrank
 #
 # All rights reserved.
 #
