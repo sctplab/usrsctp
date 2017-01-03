@@ -58,7 +58,7 @@ void m_clget(struct mbuf *m, int how);
 
 
 /* mbuf initialization function */
-void mbuf_init(void *);
+void usrsctp_mbuf_init(void *);
 
 #define	M_MOVE_PKTHDR(to, from)	m_move_pkthdr((to), (from))
 #define	MGET(m, how, type)	((m) = m_get((how), (type)))
