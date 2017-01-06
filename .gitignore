@@ -51,6 +51,7 @@ Makefile.in
 /libtool
 /ltmain.sh
 /m4
+/usrsctp.pc
 .dirstamp
 
 # binaries
