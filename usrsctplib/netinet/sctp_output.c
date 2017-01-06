@@ -6017,7 +6017,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	memset(&stc, 0, sizeof(struct sctp_state_cookie));
 
 	/* the time I built cookie */
-	(void)SCTP_GETTIME_TIMEVAL(&stc.time_entered);
+	(void)SCTP_GETTIME_TIMEVAL(stc.time_entered);
 
 	/* populate any tie tags */
 	if (asoc != NULL) {
@@ -8232,7 +8232,7 @@ sctp_fill_outqueue(struct sctp_tcb *stcb,
 	while ((goal_mtu > 0) && strq) {
 		giveup = 0;
 		bail = 0;
-		moved_how_much = sctp_move_to_outqueue(stcb, strq, goal_mtu, frag_point, 
+		moved_how_much = sctp_move_to_outqueue(stcb, strq, goal_mtu, frag_point,
 						       &giveup, eeor_mode, &bail, so_locked);
 		stcb->asoc.ss_functions.sctp_ss_scheduled(stcb, net, asoc, strq, moved_how_much);
 
@@ -10717,7 +10717,7 @@ do_it_again:
 			un_sent = ((stcb->asoc.total_output_queue_size - stcb->asoc.total_flight) +
 			           (stcb->asoc.stream_queue_cnt * sizeof(struct sctp_data_chunk)));
 			if ((un_sent < (int)(stcb->asoc.smallest_mtu - SCTP_MIN_OVERHEAD)) &&
-			    (stcb->asoc.total_flight > 0)) { 
+			    (stcb->asoc.total_flight > 0)) {
 /*	&&		     sctp_is_feature_on(inp, SCTP_PCB_FLAGS_EXPLICIT_EOR))) {*/
 				break;
 			}
