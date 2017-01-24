@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 310642 2016-12-27 22:14:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 312722 2017-01-24 21:30:31Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7577,11 +7577,9 @@ sctp_clean_up_ctl(struct sctp_tcb *stcb, struct sctp_association *asoc, int so_l
 	}
 }
 
-
-static int
-sctp_can_we_split_this(struct sctp_tcb *stcb,
-                       uint32_t length,
-                       uint32_t goal_mtu, uint32_t frag_point, int eeor_on)
+static uint32_t
+sctp_can_we_split_this(struct sctp_tcb *stcb, uint32_t length,
+                       uint32_t space_left, uint32_t frag_point, int eeor_on)
 {
 	/* Make a decision on if I should split a
 	 * msg into multiple parts. This is only asked of
@@ -7592,7 +7590,7 @@ sctp_can_we_split_this(struct sctp_tcb *stcb,
 		 * it if its the entire thing, since it might
 		 * be all the guy is putting in the hopper.
 		 */
-		if (goal_mtu >= length) {
+		if (space_left >= length) {
 			/*-
 			 * If we have data outstanding,
 			 * we get another chance when the sack
@@ -7608,7 +7606,7 @@ sctp_can_we_split_this(struct sctp_tcb *stcb,
 
 		} else {
 			/* You can fill the rest */
-			return (goal_mtu);
+			return (space_left);
 		}
 	}
 	/*-
@@ -7619,29 +7617,27 @@ sctp_can_we_split_this(struct sctp_tcb *stcb,
 	if (SCTP_SB_LIMIT_SND(stcb->sctp_socket) < frag_point) {
 		return (length);
 	}
-
-	if ((length <= goal_mtu) ||
-	    ((length - goal_mtu) < SCTP_BASE_SYSCTL(sctp_min_residual))) {
+	if ((length <= space_left) ||
+	    ((length - space_left) < SCTP_BASE_SYSCTL(sctp_min_residual))) {
 		/* Sub-optimial residual don't split in non-eeor mode. */
 		return (0);
 	}
 	/* If we reach here length is larger
-	 * than the goal_mtu. Do we wish to split
+	 * than the space_left. Do we wish to split
 	 * it for the sake of packet putting together?
 	 */
-	if (goal_mtu >= min(SCTP_BASE_SYSCTL(sctp_min_split_point), frag_point)) {
+	if (space_left >= min(SCTP_BASE_SYSCTL(sctp_min_split_point), frag_point)) {
 		/* Its ok to split it */
-		return (min(goal_mtu, frag_point));
+		return (min(space_left, frag_point));
 	}
 	/* Nope, can't split */
 	return (0);
-
 }
 
 static uint32_t
 sctp_move_to_outqueue(struct sctp_tcb *stcb,
                       struct sctp_stream_out *strq,
-                      uint32_t goal_mtu,
+                      uint32_t space_left,
                       uint32_t frag_point,
                       int *giveup,
                       int eeor_mode,
@@ -7800,7 +7796,7 @@ re_look:
 			sp->some_taken = 1;
 		}
 	} else {
-		to_move = sctp_can_we_split_this(stcb, length, goal_mtu, frag_point, eeor_mode);
+		to_move = sctp_can_we_split_this(stcb, length, space_left, frag_point, eeor_mode);
 		if (to_move) {
 			/*-
 			 * We use a snapshot of length in case it
@@ -8193,61 +8189,71 @@ sctp_fill_outqueue(struct sctp_tcb *stcb,
 {
 	struct sctp_association *asoc;
 	struct sctp_stream_out *strq;
-	int goal_mtu, moved_how_much, total_moved = 0, bail = 0;
-	int giveup;
+	uint32_t space_left, moved, total_moved;
+	int bail, giveup;
 
 	SCTP_TCB_LOCK_ASSERT(stcb);
 	asoc = &stcb->asoc;
+	total_moved = 0;
 	switch (net->ro._l_addr.sa.sa_family) {
 #ifdef INET
 		case AF_INET:
-			goal_mtu = net->mtu - SCTP_MIN_V4_OVERHEAD;
+			space_left = net->mtu - SCTP_MIN_V4_OVERHEAD;
 			break;
 #endif
 #ifdef INET6
 		case AF_INET6:
-			goal_mtu = net->mtu - SCTP_MIN_OVERHEAD;
+			space_left = net->mtu - SCTP_MIN_OVERHEAD;
 			break;
 #endif
 #if defined(__Userspace__)
 		case AF_CONN:
-			goal_mtu = net->mtu - sizeof(struct sctphdr);
+			space_left = net->mtu - sizeof(struct sctphdr);
 			break;
 #endif
 		default:
 			/* TSNH */
-			goal_mtu = net->mtu;
+			space_left = net->mtu;
 			break;
 	}
 	/* Need an allowance for the data chunk header too */
 	if (stcb->asoc.idata_supported == 0) {
-		goal_mtu -= sizeof(struct sctp_data_chunk);
+		space_left -= sizeof(struct sctp_data_chunk);
 	} else {
-		goal_mtu -= sizeof(struct sctp_idata_chunk);
+		space_left -= sizeof(struct sctp_idata_chunk);
 	}
 
 	/* must make even word boundary */
-	goal_mtu &= 0xfffffffc;
+	space_left &= 0xfffffffc;
 	strq = stcb->asoc.ss_functions.sctp_ss_select_stream(stcb, net, asoc);
-	while ((goal_mtu > 0) && strq) {
+	while ((space_left > 0) && (strq != NULL)) {
 		giveup = 0;
 		bail = 0;
-		moved_how_much = sctp_move_to_outqueue(stcb, strq, goal_mtu, frag_point, 
-						       &giveup, eeor_mode, &bail, so_locked);
-		stcb->asoc.ss_functions.sctp_ss_scheduled(stcb, net, asoc, strq, moved_how_much);
-
-		if ((giveup) || bail) {
+		moved = sctp_move_to_outqueue(stcb, strq, space_left, frag_point,
+			                      &giveup, eeor_mode, &bail, so_locked);
+		stcb->asoc.ss_functions.sctp_ss_scheduled(stcb, net, asoc, strq, moved);
+		if ((giveup != 0) || (bail != 0)) {
 			break;
 		}
 		strq = stcb->asoc.ss_functions.sctp_ss_select_stream(stcb, net, asoc);
-		if (strq == NULL) {
-			break;
+		total_moved += moved;
+		space_left -= moved;
+		if (stcb->asoc.idata_supported == 0) {
+			if (space_left >= sizeof(struct sctp_data_chunk)) {
+				space_left -= sizeof(struct sctp_data_chunk);
+			} else {
+				space_left = 0;
+			}
+		} else {
+			if (space_left >= sizeof(struct sctp_idata_chunk)) {
+				space_left -= sizeof(struct sctp_idata_chunk);
+			} else {
+				space_left = 0;
+			}
 		}
-		total_moved += moved_how_much;
-		goal_mtu -= (moved_how_much + sizeof(struct sctp_data_chunk));
-		goal_mtu &= 0xfffffffc;
+		space_left &= 0xfffffffc;
 	}
-	if (bail)
+	if (bail != 0)
 		*quit_now = 1;
 
 	stcb->asoc.ss_functions.sctp_ss_packet_done(stcb, net, asoc);
@@ -10490,7 +10496,7 @@ sctp_timer_validation(struct sctp_inpcb *inp,
 }
 
 void
-sctp_chunk_output (struct sctp_inpcb *inp,
+sctp_chunk_output(struct sctp_inpcb *inp,
     struct sctp_tcb *stcb,
     int from_where,
     int so_locked
