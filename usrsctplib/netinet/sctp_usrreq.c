@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 313031 2017-01-31 23:36:31Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -255,7 +255,7 @@ sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint16_t nxtsz)
 	/* Adjust that too */
 	stcb->asoc.smallest_mtu = nxtsz;
 	/* now off to subtract IP_DF flag if needed */
-	overhead = IP_HDR_SIZE;
+	overhead = IP_HDR_SIZE + sizeof(struct sctphdr);
 	if (sctp_auth_is_required_chunk(SCTP_DATA, stcb->asoc.peer_auth_chunks)) {
 		overhead += sctp_get_auth_chunk_len(stcb->asoc.peer_hmac_id);
 	}

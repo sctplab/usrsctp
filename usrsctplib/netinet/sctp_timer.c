@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 313030 2017-01-31 23:34:02Z tuexen $");
 #endif
 
 #define _IP_VHL
@@ -726,13 +726,9 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 	if (num_mk) {
 		SCTPDBG(SCTP_DEBUG_TIMER1, "LAST TSN marked was %x\n",
 			tsnlast);
-		SCTPDBG(SCTP_DEBUG_TIMER1, "Num marked for retransmission was %d peer-rwd:%ld\n",
-			num_mk, (u_long)stcb->asoc.peers_rwnd);
-		SCTPDBG(SCTP_DEBUG_TIMER1, "LAST TSN marked was %x\n",
-			tsnlast);
-		SCTPDBG(SCTP_DEBUG_TIMER1, "Num marked for retransmission was %d peer-rwd:%d\n",
+		SCTPDBG(SCTP_DEBUG_TIMER1, "Num marked for retransmission was %d peer-rwd:%u\n",
 			num_mk,
-			(int)stcb->asoc.peers_rwnd);
+			stcb->asoc.peers_rwnd);
 	}
 #endif
 	*num_marked = num_mk;
