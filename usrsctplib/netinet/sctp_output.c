@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 312722 2017-01-24 21:30:31Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 313032 2017-02-01 00:10:29Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -8226,11 +8226,11 @@ sctp_fill_outqueue(struct sctp_tcb *stcb,
 	/* must make even word boundary */
 	space_left &= 0xfffffffc;
 	strq = stcb->asoc.ss_functions.sctp_ss_select_stream(stcb, net, asoc);
+	giveup = 0;
+	bail = 0;
 	while ((space_left > 0) && (strq != NULL)) {
-		giveup = 0;
-		bail = 0;
 		moved = sctp_move_to_outqueue(stcb, strq, space_left, frag_point,
-			                      &giveup, eeor_mode, &bail, so_locked);
+		                              &giveup, eeor_mode, &bail, so_locked);
 		stcb->asoc.ss_functions.sctp_ss_scheduled(stcb, net, asoc, strq, moved);
 		if ((giveup != 0) || (bail != 0)) {
 			break;
