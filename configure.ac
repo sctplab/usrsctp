@@ -81,7 +81,7 @@ if test "x$GCC" = "xyes" -o "x$CC" = "xclang" ; then
 fi
 
 if test "x$ac_supports_gcc_flags" = "xyes" ; then
-        CFLAGS="$CFLAGS -pedantic -Wall"
+        CFLAGS="$CFLAGS -Wall"
 fi
 
 AC_MSG_CHECKING(whether we should treat compiler warnings as errors)
