@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 313330 2017-02-06 08:49:57Z ae $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5995,34 +5995,6 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 	} else if (stcb == NULL) {
 		inp_decr = inp;
 	}
-#ifdef IPSEC
-	/*-
-	 * I very much doubt any of the IPSEC stuff will work but I have no
-	 * idea, so I will leave it in place.
-	 */
-	if (inp != NULL) {
-		switch (dst->sa_family) {
-#ifdef INET
-		case AF_INET:
-			if (ipsec4_in_reject(m, &inp->ip_inp.inp)) {
-				SCTP_STAT_INCR(sctps_hdrops);
-				goto out;
-			}
-			break;
-#endif
-#ifdef INET6
-		case AF_INET6:
-			if (ipsec6_in_reject(m, &inp->ip_inp.inp)) {
-				SCTP_STAT_INCR(sctps_hdrops);
-				goto out;
-			}
-			break;
-#endif
-		default:
-			break;
-		}
-	}
-#endif
 	SCTPDBG(SCTP_DEBUG_INPUT1, "Ok, Common input processing called, m:%p iphlen:%d offset:%d length:%d stcb:%p\n",
 		(void *)m, iphlen, offset, length, (void *)stcb);
 	if (stcb) {
