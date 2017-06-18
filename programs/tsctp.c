@@ -31,8 +31,8 @@
 
 #include <sys/types.h>
 #ifdef _WIN32
-#include <WinSock2.h>
-#include <WS2tcpip.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <stdlib.h>
 #include <crtdbg.h>
 #include <sys/timeb.h>

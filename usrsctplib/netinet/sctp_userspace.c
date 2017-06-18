@@ -31,7 +31,9 @@
 #include <netinet/sctp_pcb.h>
 #include <sys/timeb.h>
 #include <iphlpapi.h>
+#if !defined(__MINGW32__)
 #pragma comment(lib, "IPHLPAPI.lib")
+#endif
 #endif
 #include <netinet/sctp_os_userspace.h>
 #if defined(__Userspace_os_FreeBSD)
@@ -46,6 +48,10 @@
 /* Adapter to translate Unix thread start routines to Windows thread start
  * routines.
  */
+#if defined(__MINGW32__)
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 static DWORD WINAPI
 sctp_create_thread_adapter(void *arg) {
 	start_routine_t start_routine = (start_routine_t)arg;
@@ -61,6 +67,9 @@ sctp_userspace_thread_create(userland_thread_t *thread, start_routine_t start_ro
 		return GetLastError();
 	return 0;
 }
+#if defined(__MINGW32__)
+#pragma GCC diagnostic pop
+#endif
 #else
 int
 sctp_userspace_thread_create(userland_thread_t *thread, start_routine_t start_routine)
@@ -142,8 +151,10 @@ sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)
 	}
 	for (pAdapt = pAdapterAddrs; pAdapt; pAdapt = pAdapt->Next) {
 		if (pAdapt->IfIndex == if_index)
+		{
 			ret = pAdapt->Mtu;
 			break;
+		}
 	}
 cleanup:
 	if (pAdapterAddrs != NULL) {
@@ -205,7 +216,7 @@ Win_getifaddrs(struct ifaddrs** interfaces)
 		goto cleanup;
 	}
 	/* Enumerate through each returned adapter and save its information */
-	for (pAdapt = pAdapterAddrs, count; pAdapt; pAdapt = pAdapt->Next, count++) {
+	for (pAdapt = pAdapterAddrs, count = 0; pAdapt; pAdapt = pAdapt->Next, count++) {
 		addr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
 		ifa = (struct ifaddrs *)malloc(sizeof(struct ifaddrs));
 		if ((addr == NULL) || (ifa == NULL)) {
@@ -244,7 +255,7 @@ Win_getifaddrs(struct ifaddrs** interfaces)
 		goto cleanup;
 	}
 	/* Enumerate through each returned adapter and save its information */
-	for (pAdapt = pAdapterAddrs, count; pAdapt; pAdapt = pAdapt->Next, count++) {
+	for (pAdapt = pAdapterAddrs, count = 0; pAdapt; pAdapt = pAdapt->Next, count++) {
 		addr6 = (struct sockaddr_in6 *)malloc(sizeof(struct sockaddr_in6));
 		ifa = (struct ifaddrs *)malloc(sizeof(struct ifaddrs));
 		if ((addr6 == NULL) || (ifa == NULL)) {

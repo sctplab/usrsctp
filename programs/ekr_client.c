@@ -141,7 +141,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 			       rcv.rcv_sid,
 			       rcv.rcv_ssn,
 			       rcv.rcv_tsn,
-			       ntohl(rcv.rcv_ppid),
+			       (int)ntohl(rcv.rcv_ppid),
 			       rcv.rcv_context);
 		}
 		free(data);

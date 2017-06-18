@@ -265,7 +265,7 @@ handle_send_failed_event(struct sctp_send_failed_event *ssfe)
 		printf("(flags = %x) ", ssfe->ssfe_flags);
 	}
 	printf("message with PPID = %u, SID = %d, flags: 0x%04x due to error = 0x%08x",
-	       ntohl(ssfe->ssfe_info.snd_ppid), ssfe->ssfe_info.snd_sid,
+	       (unsigned int)ntohl(ssfe->ssfe_info.snd_ppid), ssfe->ssfe_info.snd_sid,
 	       ssfe->ssfe_info.snd_flags, ssfe->ssfe_error);
 	n = ssfe->ssfe_length - sizeof(struct sctp_send_failed_event);
 	for (i = 0; i < n; i++) {
@@ -331,7 +331,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 			       rcv.rcv_sid,
 			       rcv.rcv_ssn,
 			       rcv.rcv_tsn,
-			       ntohl(rcv.rcv_ppid),
+			       (unsigned int)ntohl(rcv.rcv_ppid),
 			       rcv.rcv_context);
 		}
 		free(data);
@@ -486,7 +486,7 @@ main(int argc, char *argv[])
 		perror("usrsctp_connect");
 	}
 	for (;;) {
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
 		if (gets_s(line, LINE_LENGTH) == NULL) {
 #else
 		if (fgets(line, LINE_LENGTH, stdin) == NULL) {

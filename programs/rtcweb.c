@@ -38,8 +38,8 @@
 #include <sys/types.h>
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
-#include <WinSock2.h>
-#include <WS2tcpip.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <crtdbg.h>
 #else
 #include <sys/socket.h>
@@ -1103,8 +1103,8 @@ handle_send_failed_event(struct sctp_send_failed_event *ssfe)
 	if (ssfe->ssfe_flags & ~(SCTP_DATA_SENT | SCTP_DATA_UNSENT)) {
 		printf("(flags = %x) ", ssfe->ssfe_flags);
 	}
-	printf("message with PPID = %d, SID = %d, flags: 0x%04x due to error = 0x%08x",
-	       ntohl(ssfe->ssfe_info.snd_ppid), ssfe->ssfe_info.snd_sid,
+	printf("message with PPID = %u, SID = %d, flags: 0x%04x due to error = 0x%08x",
+	       (unsigned int)ntohl(ssfe->ssfe_info.snd_ppid), ssfe->ssfe_info.snd_sid,
 	       ssfe->ssfe_info.snd_flags, ssfe->ssfe_error);
 	n = ssfe->ssfe_length - sizeof(struct sctp_send_failed_event);
 	for (i = 0; i < n; i++) {
@@ -1426,7 +1426,7 @@ main(int argc, char *argv[])
 	unlock_peer_connection(&peer_connection);
 
 	for (;;) {
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
 		if (gets_s(line, LINE_LENGTH) == NULL) {
 #else
 		if (fgets(line, LINE_LENGTH, stdin) == NULL) {

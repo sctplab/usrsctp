@@ -451,11 +451,12 @@ recv_function_raw6(void *arg)
 	struct iovec recv_iovec[MAXLEN_MBUF_CHAIN];
 	struct msghdr msg;
 	struct cmsghdr *cmsgptr;
+	int ncounter = 0;
 	char cmsgbuf[CMSG_SPACE(sizeof (struct in6_pktinfo))];
 #else
 	WSABUF recv_iovec[MAXLEN_MBUF_CHAIN];
 	int nResult, m_ErrorCode;
-	DWORD flags;
+	DWORD flags, ncounter = 0;
 	struct sockaddr_in6 from;
 	int fromlen;
 	GUID WSARecvMsg_GUID = WSAID_WSARECVMSG;
@@ -472,7 +473,7 @@ recv_function_raw6(void *arg)
 	  to_fill indicates this amount. */
 	int to_fill = MAXLEN_MBUF_CHAIN;
 	/* iovlen is the size of each mbuf in the chain */
-	int i, n, ncounter = 0;
+	int i, n = 0;
 #if !defined(SCTP_WITH_NO_CSUM)
 	int compute_crc = 1;
 #endif
@@ -645,7 +646,7 @@ recv_function_udp(void *arg)
 	  to_fill indicates this amount. */
 	int to_fill = MAXLEN_MBUF_CHAIN;
 	/* iovlen is the size of each mbuf in the chain */
-	int i, n, ncounter, offset;
+	int i, n, offset;
 	int iovlen = MCLBYTES;
 	int want_ext = (iovlen > MLEN)? 1 : 0;
 	int want_header = 0;
@@ -665,6 +666,7 @@ recv_function_udp(void *arg)
 	struct iovec iov[MAXLEN_MBUF_CHAIN];
 	struct msghdr msg;
 	struct cmsghdr *cmsgptr;
+	int ncounter;
 #else
 	GUID WSARecvMsg_GUID = WSAID_WSARECVMSG;
 	LPFN_WSARECVMSG WSARecvMsg;
@@ -673,6 +675,7 @@ recv_function_udp(void *arg)
 	WSAMSG msg;
 	int nResult, m_ErrorCode;
 	WSACMSGHDR *cmsgptr;
+	DWORD ncounter;
 #endif
 
 	sctp_userspace_set_threadname("SCTP/UDP/IP4 rcv");
@@ -857,7 +860,7 @@ recv_function_udp6(void *arg)
 	  to_fill indicates this amount. */
 	int to_fill = MAXLEN_MBUF_CHAIN;
 	/* iovlen is the size of each mbuf in the chain */
-	int i, n, ncounter, offset;
+	int i, n, offset;
 	int iovlen = MCLBYTES;
 	int want_ext = (iovlen > MLEN)? 1 : 0;
 	int want_header = 0;
@@ -873,6 +876,7 @@ recv_function_udp6(void *arg)
 	struct iovec iov[MAXLEN_MBUF_CHAIN];
 	struct msghdr msg;
 	struct cmsghdr *cmsgptr;
+	int ncounter;
 #else
 	GUID WSARecvMsg_GUID = WSAID_WSARECVMSG;
 	LPFN_WSARECVMSG WSARecvMsg;
@@ -881,6 +885,7 @@ recv_function_udp6(void *arg)
 	WSAMSG msg;
 	int nResult, m_ErrorCode;
 	WSACMSGHDR *cmsgptr;
+	DWORD ncounter;
 #endif
 
 	sctp_userspace_set_threadname("SCTP/UDP/IP6 rcv");

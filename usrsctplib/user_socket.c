@@ -2898,7 +2898,7 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	struct sockaddr_in dst;
 #if defined (__Userspace_os_Windows)
 	WSAMSG win_msg_hdr;
-	int win_sent_len;
+	DWORD win_sent_len;
 	WSABUF send_iovec[MAXLEN_MBUF_CHAIN];
 	WSABUF winbuf;
 #else
@@ -3053,7 +3053,7 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	struct sockaddr_in6 dst;
 #if defined (__Userspace_os_Windows)
 	WSAMSG win_msg_hdr;
-	int win_sent_len;
+	DWORD win_sent_len;
 	WSABUF send_iovec[MAXLEN_MBUF_CHAIN];
 	WSABUF winbuf;
 #else
@@ -3262,9 +3262,15 @@ usrsctp_dumppacket(const void *buf, size_t len, int outbound)
 #ifdef _WIN32
 	ftime(&tb);
 	localtime_s(&t, &tb.time);
+#if defined(__MINGW32__)
+	snprintf(dump_buf, PREAMBLE_LENGTH + 1, PREAMBLE_FORMAT,
+	            outbound ? 'O' : 'I',
+	            t.tm_hour, t.tm_min, t.tm_sec, (long)(1000 * tb.millitm));
+#else
 	_snprintf_s(dump_buf, PREAMBLE_LENGTH + 1, PREAMBLE_LENGTH, PREAMBLE_FORMAT,
 	            outbound ? 'O' : 'I',
 	            t.tm_hour, t.tm_min, t.tm_sec, (long)(1000 * tb.millitm));
+#endif
 #else
 	gettimeofday(&tv, NULL);
 	sec = (time_t)tv.tv_sec;
@@ -3274,7 +3280,7 @@ usrsctp_dumppacket(const void *buf, size_t len, int outbound)
 	         t->tm_hour, t->tm_min, t->tm_sec, (long)tv.tv_usec);
 #endif
 	pos += PREAMBLE_LENGTH;
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
 	strncpy_s(dump_buf + pos, strlen(HEADER) + 1, HEADER, strlen(HEADER));
 #else
 	strcpy(dump_buf + pos, HEADER);
@@ -3291,7 +3297,7 @@ usrsctp_dumppacket(const void *buf, size_t len, int outbound)
 		dump_buf[pos++] = low < 10 ? '0' + low : 'a' + (low - 10);
 		dump_buf[pos++] = ' ';
 	}
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
 	strncpy_s(dump_buf + pos, strlen(TRAILER) + 1, TRAILER, strlen(TRAILER));
 #else
 	strcpy(dump_buf + pos, TRAILER);
