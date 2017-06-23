@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 313031 2017-01-31 23:36:31Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 320261 2017-06-23 08:35:54Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -300,7 +300,7 @@ sctp_notify(struct sctp_inpcb *inp,
             uint8_t icmp_type,
             uint8_t icmp_code,
             uint16_t ip_len,
-            uint16_t next_mtu)
+            uint32_t next_mtu)
 {
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 	struct socket *so;
@@ -375,11 +375,18 @@ sctp_notify(struct sctp_inpcb *inp,
 			timer_stopped = 0;
 		}
 		/* Update the path MTU. */
+		if (net->port) {
+			next_mtu -= sizeof(struct udphdr);
+		}
 		if (net->mtu > next_mtu) {
 			net->mtu = next_mtu;
+#if defined(__FreeBSD__)
 			if (net->port) {
-				net->mtu -= sizeof(struct udphdr);
+				sctp_hc_set_mtu(&net->ro._l_addr, inp->fibnum, next_mtu + sizeof(struct udphdr));
+			} else {
+				sctp_hc_set_mtu(&net->ro._l_addr, inp->fibnum, next_mtu);
 			}
+#endif
 		}
 		/* Update the association MTU */
 		if (stcb->asoc.smallest_mtu > next_mtu) {
@@ -515,7 +522,7 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 #else
 			            inner_ip->ip_len,
 #endif
-			            ntohs(icmp->icmp_nextmtu));
+			            (uint32_t)ntohs(icmp->icmp_nextmtu));
 		} else {
 #if defined(__FreeBSD__) && __FreeBSD_version < 500000
 			/*
@@ -8171,7 +8178,7 @@ sctp_listen(struct socket *so, struct proc *p)
 				if (tinp && (tinp != inp) &&
 				    ((tinp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) == 0) &&
 				    ((tinp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
-				    (tinp->sctp_socket->so_qlimit)) {
+				    (SCTP_IS_LISTENING(tinp))) {
 					/* we have a listener already and its not this inp. */
 					SCTP_INP_DECR_REF(tinp);
 					return (EADDRINUSE);
@@ -8234,7 +8241,7 @@ sctp_listen(struct socket *so, struct proc *p)
 			if (tinp && (tinp != inp) &&
 			    ((tinp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) == 0) &&
 			    ((tinp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
-			    (tinp->sctp_socket->so_qlimit)) {
+			    (SCTP_IS_LISTENING(tinp))) {
 				/* we have a listener already and its not this inp. */
 				SCTP_INP_DECR_REF(tinp);
 				return (EADDRINUSE);
@@ -8288,17 +8295,26 @@ sctp_listen(struct socket *so, struct proc *p)
 			return (error);
 		}
 	}
-	SOCK_LOCK(so);
+	SCTP_INP_WLOCK(inp);
 #if (defined(__FreeBSD__) && __FreeBSD_version > 500000) || defined(__Windows__) || defined(__Userspace__)
-#if __FreeBSD_version >= 700000 || defined(__Windows__) || defined(__Userspace__)
+#if __FreeBSD_version >= 1200034
+	if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) == 0) {
+		SOCK_LOCK(so);
+		solisten_proto(so, backlog);
+		SOCK_UNLOCK(so);
+	}
+#elif __FreeBSD_version >= 700000 || defined(__Windows__) || defined(__Userspace__)
 	/* It appears for 7.0 and on, we must always call this. */
+	SOCK_LOCK(so);
 	solisten_proto(so, backlog);
 #else
+	SOCK_LOCK(so);
 	if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) == 0) {
 		solisten_proto(so);
 	}
 #endif
 #endif
+#if !defined(__FreeBSD__) || __FreeBSD_version < 1200034
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) {
 		/* remove the ACCEPTCONN flag for one-to-many sockets */
 #if defined(__Userspace__)
@@ -8307,18 +8323,18 @@ sctp_listen(struct socket *so, struct proc *p)
 		so->so_options &= ~SO_ACCEPTCONN;
 #endif
 	}
-
-#if __FreeBSD_version >= 700000 || defined(__Windows__) || defined(__Userspace__)
-	if (backlog == 0) {
-		/* turning off listen */
-#if defined(__Userspace__)
-		so->so_options &= ~SCTP_SO_ACCEPTCONN;
-#else
-		so->so_options &= ~SO_ACCEPTCONN;
-#endif
-	}
-#endif
 	SOCK_UNLOCK(so);
+#endif
+#if (defined(__FreeBSD__) && __FreeBSD_version >= 700000) || defined(__Windows__) || defined(__Userspace__)
+	if (backlog > 0) {
+		inp->sctp_flags |= SCTP_PCB_FLAGS_ACCEPTING;
+	} else {
+		inp->sctp_flags &= ~SCTP_PCB_FLAGS_ACCEPTING;
+	}
+#else
+	inp->sctp_flags |= SCTP_PCB_FLAGS_ACCEPTING;
+#endif
+	SCTP_INP_WUNLOCK(inp);
 	return (error);
 }
 

@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 313032 2017-02-01 00:10:29Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 318958 2017-05-26 16:29:00Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4220,7 +4220,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		if (ecn_ok) {
 			tos_value |= sctp_get_ect(stcb);
 		}
-                if ((nofragment_flag) && (port == 0)) {
+		if ((nofragment_flag) && (port == 0)) {
 #if defined(__FreeBSD__)
 #if __FreeBSD_version >= 1000000
 			ip->ip_off = htons(IP_DF);
@@ -4249,7 +4249,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		ip->ip_id = htons(ip_id++);
 #endif
 #elif defined(__Userspace__)
-                ip->ip_id = htons(SCTP_IP_ID(inp)++);
+		ip->ip_id = htons(SCTP_IP_ID(inp)++);
 #else
 		ip->ip_id = SCTP_IP_ID(inp)++;
 #endif
@@ -11732,7 +11732,17 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		ip->ip_v = IPVERSION;
 		ip->ip_hl = (sizeof(struct ip) >> 2);
 		ip->ip_tos = 0;
-		ip->ip_off = 0;
+#if defined(__FreeBSD__)
+#if __FreeBSD_version >= 1000000
+		ip->ip_off = htons(IP_DF);
+#else
+		ip->ip_off = IP_DF;
+#endif
+#elif defined(WITH_CONVERT_IP_OFF) || defined(__APPLE__) || defined(__Userspace__)
+		ip->ip_off = IP_DF;
+#else
+		ip->ip_off = htons(IP_DF);
+#endif
 #if defined(__FreeBSD__)
 		ip_fillid(ip);
 #elif defined(__APPLE__)
@@ -13595,7 +13605,7 @@ sctp_lower_sosend(struct socket *so,
 	}
 #endif
 	if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) &&
-	    (inp->sctp_socket->so_qlimit)) {
+	    SCTP_IS_LISTENING(inp)) {
 		/* The listener can NOT send */
 		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOTCONN);
 		error = ENOTCONN;

@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 320260 2017-06-23 08:34:01Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UTIL_H_
@@ -418,6 +418,11 @@ sctp_auditing(int, struct sctp_inpcb *, struct sctp_tcb *,
     struct sctp_nets *);
 void sctp_audit_log(uint8_t, uint8_t);
 
+#endif
+uint32_t sctp_min_mtu(uint32_t, uint32_t, uint32_t);
+#if defined(__FreeBSD__)
+void sctp_hc_set_mtu(union sctp_sockstore *, uint16_t, uint32_t);
+uint32_t sctp_hc_get_mtu(union sctp_sockstore *, uint16_t);
 #endif
 #endif				/* _KERNEL */
 #endif

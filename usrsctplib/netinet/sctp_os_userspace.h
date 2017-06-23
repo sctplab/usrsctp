@@ -1160,4 +1160,6 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header, int how, int a
 	    ((tvp)->tv_sec cmp (uvp)->tv_sec))
 #endif
 
+#define SCTP_IS_LISTENING(inp) ((inp->sctp_flags & SCTP_PCB_FLAGS_ACCEPTING) != 0)
+
 #endif

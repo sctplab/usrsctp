@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 318958 2017-05-26 16:29:00Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -503,19 +503,38 @@ sctp_sysctl_handle_assoclist(SYSCTL_HANDLER_ARGS)
 #endif
 		so = inp->sctp_socket;
 		if ((so == NULL) ||
+		    (!SCTP_IS_LISTENING(inp)) ||
 		    (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
 			xinpcb.qlen = 0;
 			xinpcb.maxqlen = 0;
 		} else {
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1200034
+			xinpcb.qlen = so->sol_qlen;
+#else
 			xinpcb.qlen = so->so_qlen;
+#endif
 #if defined(__FreeBSD__) && __FreeBSD_version > 1100096
+#if __FreeBSD_version >= 1200034
+			xinpcb.qlen_old = so->sol_qlen > USHRT_MAX ?
+			    USHRT_MAX : (uint16_t) so->sol_qlen;
+#else
 			xinpcb.qlen_old = so->so_qlen > USHRT_MAX ?
 			    USHRT_MAX : (uint16_t) so->so_qlen;
 #endif
+#endif
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1200034
+			xinpcb.maxqlen = so->sol_qlimit;
+#else
 			xinpcb.maxqlen = so->so_qlimit;
+#endif
 #if defined(__FreeBSD__) && __FreeBSD_version > 1100096
+#if __FreeBSD_version >= 1200034
+			xinpcb.maxqlen_old = so->sol_qlimit > USHRT_MAX ?
+			    USHRT_MAX : (uint16_t) so->sol_qlimit;
+#else
 			xinpcb.maxqlen_old = so->so_qlimit > USHRT_MAX ?
 			    USHRT_MAX : (uint16_t) so->so_qlimit;
+#endif
 #endif
 		}
 		SCTP_INP_INCR_REF(inp);
