@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 318958 2017-05-26 16:29:00Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 320300 2017-06-23 21:01:57Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1975,7 +1975,7 @@ static struct mbuf *
 sctp_add_addr_to_mbuf(struct mbuf *m, struct sctp_ifa *ifa, uint16_t *len)
 {
 #if defined(INET) || defined(INET6)
-	struct sctp_paramhdr *parmh;
+	struct sctp_paramhdr *paramh;
 	struct mbuf *mret;
 	uint16_t plen;
 #endif
@@ -1997,7 +1997,7 @@ sctp_add_addr_to_mbuf(struct mbuf *m, struct sctp_ifa *ifa, uint16_t *len)
 #if defined(INET) || defined(INET6)
 	if (M_TRAILINGSPACE(m) >= plen) {
 		/* easy side we just drop it on the end */
-		parmh = (struct sctp_paramhdr *)(SCTP_BUF_AT(m, SCTP_BUF_LEN(m)));
+		paramh = (struct sctp_paramhdr *)(SCTP_BUF_AT(m, SCTP_BUF_LEN(m)));
 		mret = m;
 	} else {
 		/* Need more space */
@@ -2011,7 +2011,7 @@ sctp_add_addr_to_mbuf(struct mbuf *m, struct sctp_ifa *ifa, uint16_t *len)
 			return (m);
 		}
 		mret = SCTP_BUF_NEXT(mret);
-		parmh = mtod(mret, struct sctp_paramhdr *);
+		paramh = mtod(mret, struct sctp_paramhdr *);
 	}
 	/* now add the parameter */
 	switch (ifa->address.sa.sa_family) {
@@ -2022,9 +2022,9 @@ sctp_add_addr_to_mbuf(struct mbuf *m, struct sctp_ifa *ifa, uint16_t *len)
 		struct sockaddr_in *sin;
 
 		sin = &ifa->address.sin;
-		ipv4p = (struct sctp_ipv4addr_param *)parmh;
-		parmh->param_type = htons(SCTP_IPV4_ADDRESS);
-		parmh->param_length = htons(plen);
+		ipv4p = (struct sctp_ipv4addr_param *)paramh;
+		paramh->param_type = htons(SCTP_IPV4_ADDRESS);
+		paramh->param_length = htons(plen);
 		ipv4p->addr = sin->sin_addr.s_addr;
 		SCTP_BUF_LEN(mret) += plen;
 		break;
@@ -2037,9 +2037,9 @@ sctp_add_addr_to_mbuf(struct mbuf *m, struct sctp_ifa *ifa, uint16_t *len)
 		struct sockaddr_in6 *sin6;
 
 		sin6 = &ifa->address.sin6;
-		ipv6p = (struct sctp_ipv6addr_param *)parmh;
-		parmh->param_type = htons(SCTP_IPV6_ADDRESS);
-		parmh->param_length = htons(plen);
+		ipv6p = (struct sctp_ipv6addr_param *)paramh;
+		paramh->param_type = htons(SCTP_IPV6_ADDRESS);
+		paramh->param_length = htons(plen);
 		memcpy(ipv6p->addr, &sin6->sin6_addr,
 		    sizeof(ipv6p->addr));
 #if defined(SCTP_EMBEDDED_V6_SCOPE)
@@ -5531,7 +5531,10 @@ sctp_arethere_unrecognized_parameters(struct mbuf *in_initpkt,
 				s.param_length = htons(sizeof(s) + plen);
 				m_copyback(op_err, err_at, sizeof(s), (caddr_t)&s);
 				err_at += sizeof(s);
-				phdr = sctp_get_next_param(mat, at, (struct sctp_paramhdr *)tempbuf, min(sizeof(tempbuf),plen));
+				if (plen > sizeof(tempbuf)) {
+					plen = sizeof(tempbuf);
+				}
+				phdr = sctp_get_next_param(mat, at, (struct sctp_paramhdr *)tempbuf, plen);
 				if (phdr == NULL) {
 					sctp_m_freem(op_err);
 					/*
@@ -5597,7 +5600,7 @@ sctp_arethere_unrecognized_parameters(struct mbuf *in_initpkt,
 					if (plen > sizeof(tempbuf)) {
 						plen = sizeof(tempbuf);
 					}
-					phdr = sctp_get_next_param(mat, at, (struct sctp_paramhdr *)tempbuf, min(sizeof(tempbuf),plen));
+					phdr = sctp_get_next_param(mat, at, (struct sctp_paramhdr *)tempbuf, plen);
 					if (phdr == NULL) {
 						sctp_m_freem(op_err);
 						/*
@@ -5804,10 +5807,12 @@ sctp_are_there_new_addresses(struct sctp_association *asoc,
 		{
 			struct sctp_ipv4addr_param *p4, p4_buf;
 
+			if (plen != sizeof(struct sctp_ipv4addr_param)) {
+				return (1);
+			}
 			phdr = sctp_get_next_param(in_initpkt, offset,
 			    (struct sctp_paramhdr *)&p4_buf, sizeof(p4_buf));
-			if (plen != sizeof(struct sctp_ipv4addr_param) ||
-			    phdr == NULL) {
+			if (phdr == NULL) {
 				return (1);
 			}
 			if (asoc->scope.ipv4_addr_legal) {
@@ -5823,10 +5828,12 @@ sctp_are_there_new_addresses(struct sctp_association *asoc,
 		{
 			struct sctp_ipv6addr_param *p6, p6_buf;
 
+			if (plen != sizeof(struct sctp_ipv6addr_param)) {
+				return (1);
+			}
 			phdr = sctp_get_next_param(in_initpkt, offset,
 			    (struct sctp_paramhdr *)&p6_buf, sizeof(p6_buf));
-			if (plen != sizeof(struct sctp_ipv6addr_param) ||
-			    phdr == NULL) {
+			if (phdr == NULL) {
 				return (1);
 			}
 			if (asoc->scope.ipv6_addr_legal) {
@@ -9504,7 +9511,7 @@ sctp_send_cookie_echo(struct mbuf *m,
 	 */
 	int at;
 	struct mbuf *cookie;
-	struct sctp_paramhdr parm, *phdr;
+	struct sctp_paramhdr param, *phdr;
 	struct sctp_chunkhdr *hdr;
 	struct sctp_tmit_chunk *chk;
 	uint16_t ptype, plen;
@@ -9514,7 +9521,7 @@ sctp_send_cookie_echo(struct mbuf *m,
 	cookie = NULL;
 	at = offset + sizeof(struct sctp_init_chunk);
 	for (;;) {
-		phdr = sctp_get_next_param(m, at, &parm, sizeof(parm));
+		phdr = sctp_get_next_param(m, at, &param, sizeof(param));
 		if (phdr == NULL) {
 			return (-3);
 		}

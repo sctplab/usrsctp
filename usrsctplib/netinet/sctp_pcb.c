@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 318958 2017-05-26 16:29:00Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 320300 2017-06-23 21:01:57Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2394,7 +2394,7 @@ sctp_findassociation_special_addr(struct mbuf *m, int offset,
     struct sctphdr *sh, struct sctp_inpcb **inp_p, struct sctp_nets **netp,
     struct sockaddr *dst)
 {
-	struct sctp_paramhdr *phdr, parm_buf;
+	struct sctp_paramhdr *phdr, param_buf;
 #if defined(INET) || defined(INET6)
 	struct sctp_tcb *stcb;
 	uint16_t ptype;
@@ -2426,7 +2426,7 @@ sctp_findassociation_special_addr(struct mbuf *m, int offset,
 
 	offset += sizeof(struct sctp_init_chunk);
 
-	phdr = sctp_get_next_param(m, offset, &parm_buf, sizeof(parm_buf));
+	phdr = sctp_get_next_param(m, offset, &param_buf, sizeof(param_buf));
 	while (phdr != NULL) {
 		/* now we must see if we want the parameter */
 #if defined(INET) || defined(INET6)
@@ -2440,10 +2440,10 @@ sctp_findassociation_special_addr(struct mbuf *m, int offset,
 		if (ptype == SCTP_IPV4_ADDRESS &&
 		    plen == sizeof(struct sctp_ipv4addr_param)) {
 			/* Get the rest of the address */
-			struct sctp_ipv4addr_param ip4_parm, *p4;
+			struct sctp_ipv4addr_param ip4_param, *p4;
 
 			phdr = sctp_get_next_param(m, offset,
-			    (struct sctp_paramhdr *)&ip4_parm, min(plen, sizeof(ip4_parm)));
+			    (struct sctp_paramhdr *)&ip4_param, sizeof(ip4_param));
 			if (phdr == NULL) {
 				return (NULL);
 			}
@@ -2461,10 +2461,10 @@ sctp_findassociation_special_addr(struct mbuf *m, int offset,
 		if (ptype == SCTP_IPV6_ADDRESS &&
 		    plen == sizeof(struct sctp_ipv6addr_param)) {
 			/* Get the rest of the address */
-			struct sctp_ipv6addr_param ip6_parm, *p6;
+			struct sctp_ipv6addr_param ip6_param, *p6;
 
 			phdr = sctp_get_next_param(m, offset,
-			    (struct sctp_paramhdr *)&ip6_parm, min(plen,sizeof(ip6_parm)));
+			    (struct sctp_paramhdr *)&ip6_param, sizeof(ip6_param));
 			if (phdr == NULL) {
 				return (NULL);
 			}
@@ -2479,8 +2479,8 @@ sctp_findassociation_special_addr(struct mbuf *m, int offset,
 		}
 #endif
 		offset += SCTP_SIZE32(plen);
-		phdr = sctp_get_next_param(m, offset, &parm_buf,
-					   sizeof(parm_buf));
+		phdr = sctp_get_next_param(m, offset, &param_buf,
+					   sizeof(param_buf));
 	}
 	return (NULL);
 }
@@ -2664,7 +2664,7 @@ sctp_findassociation_ep_asconf(struct mbuf *m, int offset,
 {
 	struct sctp_tcb *stcb;
 	union sctp_sockstore remote_store;
-	struct sctp_paramhdr parm_buf, *phdr;
+	struct sctp_paramhdr param_buf, *phdr;
 	int ptype;
 	int zero_address = 0;
 #ifdef INET
@@ -2676,7 +2676,7 @@ sctp_findassociation_ep_asconf(struct mbuf *m, int offset,
 
 	memset(&remote_store, 0, sizeof(remote_store));
 	phdr = sctp_get_next_param(m, offset + sizeof(struct sctp_asconf_chunk),
-				   &parm_buf, sizeof(struct sctp_paramhdr));
+				   &param_buf, sizeof(struct sctp_paramhdr));
 	if (phdr == NULL) {
 		SCTPDBG(SCTP_DEBUG_INPUT3, "%s: failed to get asconf lookup addr\n",
 			__func__);
@@ -2696,7 +2696,7 @@ sctp_findassociation_ep_asconf(struct mbuf *m, int offset,
 		}
 		p6 = (struct sctp_ipv6addr_param *)sctp_get_next_param(m,
 								       offset + sizeof(struct sctp_asconf_chunk),
-								       &p6_buf.ph, sizeof(*p6));
+								       &p6_buf.ph, sizeof(p6_buf));
 		if (p6 == NULL) {
 			SCTPDBG(SCTP_DEBUG_INPUT3, "%s: failed to get asconf v6 lookup addr\n",
 				__func__);
@@ -2725,7 +2725,7 @@ sctp_findassociation_ep_asconf(struct mbuf *m, int offset,
 		}
 		p4 = (struct sctp_ipv4addr_param *)sctp_get_next_param(m,
 								       offset + sizeof(struct sctp_asconf_chunk),
-								       &p4_buf.ph, sizeof(*p4));
+								       &p4_buf.ph, sizeof(p4_buf));
 		if (p4 == NULL) {
 			SCTPDBG(SCTP_DEBUG_INPUT3, "%s: failed to get asconf v4 lookup addr\n",
 				__func__);
@@ -7068,7 +7068,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 	 */
 	struct sctp_inpcb *inp;
 	struct sctp_nets *net, *nnet, *net_tmp;
-	struct sctp_paramhdr *phdr, parm_buf;
+	struct sctp_paramhdr *phdr, param_buf;
 	struct sctp_tcb *stcb_tmp;
 	uint16_t ptype, plen;
 	struct sockaddr *sa;
@@ -7191,7 +7191,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 		return (-4);
 	}
 	/* now we must go through each of the params. */
-	phdr = sctp_get_next_param(m, offset, &parm_buf, sizeof(parm_buf));
+	phdr = sctp_get_next_param(m, offset, &param_buf, sizeof(param_buf));
 	while (phdr) {
 		ptype = ntohs(phdr->param_type);
 		plen = ntohs(phdr->param_length);
@@ -7420,7 +7420,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 			}
 			phdr = sctp_get_next_param(m, offset,
 						   (struct sctp_paramhdr *)&lstore,
-						   min(plen,sizeof(lstore)));
+						   plen);
 			if (phdr == NULL) {
 				return (-24);
 			}
@@ -7473,8 +7473,11 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 			uint8_t local_store[SCTP_PARAM_BUFFER_SIZE];
 			int num_ent, i;
 
+			if (plen > sizeof(local_store)) {
+				return (-35);
+			}
 			phdr = sctp_get_next_param(m, offset,
-						   (struct sctp_paramhdr *)&local_store, min(sizeof(local_store),plen));
+						   (struct sctp_paramhdr *)&local_store, plen);
 			if (phdr == NULL) {
 				return (-25);
 			}
@@ -7521,7 +7524,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 			}
 			phdr = sctp_get_next_param(m, offset,
 						   (struct sctp_paramhdr *)random_store,
-						   min(sizeof(random_store),plen));
+						   plen);
 			if (phdr == NULL)
 				return (-26);
 			p_random = (struct sctp_auth_random *)phdr;
@@ -7544,7 +7547,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 			}
 			phdr = sctp_get_next_param(m, offset,
 						   (struct sctp_paramhdr *)hmacs_store,
-						   min(plen,sizeof(hmacs_store)));
+						   plen);
 			if (phdr == NULL)
 				return (-28);
 			hmacs = (struct sctp_auth_hmac_algo *)phdr;
@@ -7575,7 +7578,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 			}
 			phdr = sctp_get_next_param(m, offset,
 						   (struct sctp_paramhdr *)chunks_store,
-						   min(plen,sizeof(chunks_store)));
+						   plen);
 			if (phdr == NULL)
 				return (-30);
 			chunks = (struct sctp_auth_chunk_list *)phdr;
@@ -7623,8 +7626,8 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 		if (offset >= limit) {
 			break;
 		}
-		phdr = sctp_get_next_param(m, offset, &parm_buf,
-					   sizeof(parm_buf));
+		phdr = sctp_get_next_param(m, offset, &param_buf,
+					   sizeof(param_buf));
 	}
 	/* Now check to see if we need to purge any addresses */
 	TAILQ_FOREACH_SAFE(net, &stcb->asoc.nets, sctp_next, nnet) {
