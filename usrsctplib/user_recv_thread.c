@@ -273,12 +273,14 @@ recv_function_raw(void *arg)
 	struct sctp_chunkhdr *ch;
 	struct sockaddr_in src, dst;
 #if !defined(__Userspace_os_Windows)
+	int ncounter;
 	struct msghdr msg;
 	struct iovec recv_iovec[MAXLEN_MBUF_CHAIN];
 #else
 	WSABUF recv_iovec[MAXLEN_MBUF_CHAIN];
 	int nResult, m_ErrorCode;
 	DWORD flags;
+	DWORD ncounter;
 	struct sockaddr_in from;
 	int fromlen;
 #endif
@@ -286,11 +288,11 @@ recv_function_raw(void *arg)
 	  to_fill indicates this amount. */
 	int to_fill = MAXLEN_MBUF_CHAIN;
 	/* iovlen is the size of each mbuf in the chain */
-	int i, n, ncounter = 0;
+	int i, n;
 	int iovlen = MCLBYTES;
 	int want_ext = (iovlen > MLEN)? 1 : 0;
 	int want_header = 0;
-	
+
 	sctp_userspace_set_threadname("SCTP/IP4 rcv");
 
 	bzero((void *)&src, sizeof(struct sockaddr_in));
@@ -320,7 +322,7 @@ recv_function_raw(void *arg)
 		fromlen = sizeof(struct sockaddr_in);
 		bzero((void *)&from, sizeof(struct sockaddr_in));
 
-		nResult = WSARecvFrom(SCTP_BASE_VAR(userspace_rawsctp), recv_iovec, MAXLEN_MBUF_CHAIN, (LPDWORD)&ncounter, (LPDWORD)&flags, (struct sockaddr*)&from, &fromlen, NULL, NULL);
+		nResult = WSARecvFrom(SCTP_BASE_VAR(userspace_rawsctp), recv_iovec, MAXLEN_MBUF_CHAIN, &ncounter, &flags, (struct sockaddr *)&from, &fromlen, NULL, NULL);
 		if (nResult != 0) {
 			m_ErrorCode = WSAGetLastError();
 			if (m_ErrorCode == WSAETIMEDOUT) {
@@ -369,16 +371,16 @@ recv_function_raw(void *arg)
 				(to_fill)++;
 			} while (ncounter > 0);
 		}
-		
+
 		iphdr = mtod(recvmbuf[0], struct ip *);
 		sh = (struct sctphdr *)((caddr_t)iphdr + sizeof(struct ip));
 		ch = (struct sctp_chunkhdr *)((caddr_t)sh + sizeof(struct sctphdr));
 		offset = sizeof(struct ip) + sizeof(struct sctphdr);
-		
+
 		if (iphdr->ip_tos != 0) {
 			ecn = iphdr->ip_tos & 0x02;
 		}
-		
+
 		dst.sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
 		dst.sin_len = sizeof(struct sockaddr_in);
@@ -392,7 +394,7 @@ recv_function_raw(void *arg)
 #endif
 		src.sin_addr = iphdr->ip_src;
 		src.sin_port = sh->src_port;
-		
+
 		/* SCTP does not allow broadcasts or multicasts */
 		if (IN_MULTICAST(ntohl(dst.sin_addr.s_addr))) {
 			m_freem(recvmbuf[0]);
@@ -420,7 +422,7 @@ recv_function_raw(void *arg)
 #endif
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
 		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_common_input_processing with off=%d\n", offset);
-		sctp_common_input_processing(&recvmbuf[0], sizeof(struct ip), offset, n, 
+		sctp_common_input_processing(&recvmbuf[0], sizeof(struct ip), offset, n,
 		                             (struct sockaddr *)&src,
 		                             (struct sockaddr *)&dst,
 		                             sh, ch,
@@ -448,6 +450,7 @@ recv_function_raw6(void *arg)
 {
 	struct mbuf **recvmbuf6;
 #if !defined(__Userspace_os_Windows)
+	int ncounter = 0;
 	struct iovec recv_iovec[MAXLEN_MBUF_CHAIN];
 	struct msghdr msg;
 	struct cmsghdr *cmsgptr;
@@ -456,6 +459,7 @@ recv_function_raw6(void *arg)
 	WSABUF recv_iovec[MAXLEN_MBUF_CHAIN];
 	int nResult, m_ErrorCode;
 	DWORD flags;
+	DWORD ncounter = 0;
 	struct sockaddr_in6 from;
 	int fromlen;
 	GUID WSARecvMsg_GUID = WSAID_WSARECVMSG;
@@ -472,7 +476,7 @@ recv_function_raw6(void *arg)
 	  to_fill indicates this amount. */
 	int to_fill = MAXLEN_MBUF_CHAIN;
 	/* iovlen is the size of each mbuf in the chain */
-	int i, n, ncounter = 0;
+	int i, n;
 #if !defined(SCTP_WITH_NO_CSUM)
 	int compute_crc = 1;
 #endif
@@ -614,7 +618,7 @@ recv_function_raw6(void *arg)
 #endif
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
 		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_common_input_processing with off=%d\n", offset);
-		sctp_common_input_processing(&recvmbuf6[0], 0, offset, n, 
+		sctp_common_input_processing(&recvmbuf6[0], 0, offset, n,
 		                             (struct sockaddr *)&src,
 		                             (struct sockaddr *)&dst,
 		                             sh, ch,
@@ -645,7 +649,7 @@ recv_function_udp(void *arg)
 	  to_fill indicates this amount. */
 	int to_fill = MAXLEN_MBUF_CHAIN;
 	/* iovlen is the size of each mbuf in the chain */
-	int i, n, ncounter, offset;
+	int i, n, offset;
 	int iovlen = MCLBYTES;
 	int want_ext = (iovlen > MLEN)? 1 : 0;
 	int want_header = 0;
@@ -662,6 +666,7 @@ recv_function_udp(void *arg)
 	int compute_crc = 1;
 #endif
 #if !defined(__Userspace_os_Windows)
+	int ncounter;
 	struct iovec iov[MAXLEN_MBUF_CHAIN];
 	struct msghdr msg;
 	struct cmsghdr *cmsgptr;
@@ -673,6 +678,7 @@ recv_function_udp(void *arg)
 	WSAMSG msg;
 	int nResult, m_ErrorCode;
 	WSACMSGHDR *cmsgptr;
+	DWORD ncounter;
 #endif
 
 	sctp_userspace_set_threadname("SCTP/UDP/IP4 rcv");
@@ -826,7 +832,7 @@ recv_function_udp(void *arg)
 #endif
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
 		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_common_input_processing with off=%d\n", offset);
-		sctp_common_input_processing(&udprecvmbuf[0], 0, offset, n, 
+		sctp_common_input_processing(&udprecvmbuf[0], 0, offset, n,
 		                             (struct sockaddr *)&src,
 		                             (struct sockaddr *)&dst,
 		                             sh, ch,
@@ -857,7 +863,7 @@ recv_function_udp6(void *arg)
 	  to_fill indicates this amount. */
 	int to_fill = MAXLEN_MBUF_CHAIN;
 	/* iovlen is the size of each mbuf in the chain */
-	int i, n, ncounter, offset;
+	int i, n, offset;
 	int iovlen = MCLBYTES;
 	int want_ext = (iovlen > MLEN)? 1 : 0;
 	int want_header = 0;
@@ -870,6 +876,7 @@ recv_function_udp6(void *arg)
 	int compute_crc = 1;
 #endif
 #if !defined(__Userspace_os_Windows)
+	int ncounter;
 	struct iovec iov[MAXLEN_MBUF_CHAIN];
 	struct msghdr msg;
 	struct cmsghdr *cmsgptr;
@@ -880,6 +887,7 @@ recv_function_udp6(void *arg)
 	WSABUF iov[MAXLEN_MBUF_CHAIN];
 	WSAMSG msg;
 	int nResult, m_ErrorCode;
+	DWORD ncounter;
 	WSACMSGHDR *cmsgptr;
 #endif
 
@@ -1000,11 +1008,11 @@ recv_function_udp6(void *arg)
 			m_freem(udprecvmbuf6[0]);
 			continue;
 		}
-		
+
 		sh = mtod(udprecvmbuf6[0], struct sctphdr *);
 		ch = (struct sctp_chunkhdr *)((caddr_t)sh + sizeof(struct sctphdr));
 		offset = sizeof(struct sctphdr);
-		
+
 		port = src.sin6_port;
 		src.sin6_port = sh->src_port;
 		dst.sin6_port = sh->dest_port;
@@ -1020,7 +1028,7 @@ recv_function_udp6(void *arg)
 #endif
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
 		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_common_input_processing with off=%d\n", (int)sizeof(struct sctphdr));
-		sctp_common_input_processing(&udprecvmbuf6[0], 0, offset, n, 
+		sctp_common_input_processing(&udprecvmbuf6[0], 0, offset, n,
 		                             (struct sockaddr *)&src,
 		                             (struct sockaddr *)&dst,
 		                             sh, ch,
@@ -1388,7 +1396,7 @@ recv_thread_init(void)
 				addr_ipv6.sin6_family      = AF_INET6;
 				addr_ipv6.sin6_port        = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
 				addr_ipv6.sin6_addr        = in6addr_any;
-				if (bind(SCTP_BASE_VAR(userspace_udpsctp6), (const struct sockaddr *)&addr_ipv6, sizeof(struct sockaddr_in6)) < 0) {				
+				if (bind(SCTP_BASE_VAR(userspace_udpsctp6), (const struct sockaddr *)&addr_ipv6, sizeof(struct sockaddr_in6)) < 0) {
 #if defined(__Userspace_os_Windows)
 					SCTPDBG(SCTP_DEBUG_USR, "Can't bind socket for SCTP/UDP/IPv6 (errno = %d).\n", WSAGetLastError());
 					closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
