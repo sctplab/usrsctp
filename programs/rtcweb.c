@@ -38,8 +38,8 @@
 #include <sys/types.h>
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
-#include <WinSock2.h>
-#include <WS2tcpip.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <crtdbg.h>
 #else
 #include <sys/socket.h>
