@@ -55,7 +55,7 @@ dragonfly*)
 freebsd*)
   CFLAGS="$CFLAGS -std=c99 -pthread"
   if $CC --version | grep -q clang; then
-    CFLAGS="$CFLAGS -Wno-address-of-packed-member"
+    CFLAGS="$CFLAGS -Wnounknown-warning-option -Wno-address-of-packed-member"
     LDFLAGS="$LDFLAGS -Qunused-arguments"
   fi
   LIBCFLAGS="$LIBCFLAGS -U__FreeBSD__ -D__Userspace_os_FreeBSD"
