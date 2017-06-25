@@ -354,7 +354,7 @@ recv_function_raw(void *arg)
 		SCTP_STAT_INCR(sctps_recvpackets);
 		SCTP_STAT_INCR_COUNTER64(sctps_inpackets);
 
-		if (n <= iovlen) {
+		if ((unsigned int)n <= iovlen) {
 			SCTP_BUF_LEN(recvmbuf[0]) = n;
 			(to_fill)++;
 		} else {
@@ -557,7 +557,7 @@ recv_function_raw6(void *arg)
 		SCTP_STAT_INCR(sctps_recvpackets);
 		SCTP_STAT_INCR_COUNTER64(sctps_inpackets);
 
-		if (n <= iovlen) {
+		if ((unsigned int)n <= iovlen) {
 			SCTP_BUF_LEN(recvmbuf6[0]) = n;
 			(to_fill)++;
 		} else {
@@ -757,7 +757,7 @@ recv_function_udp(void *arg)
 		SCTP_STAT_INCR(sctps_recvpackets);
 		SCTP_STAT_INCR_COUNTER64(sctps_inpackets);
 
-		if (n <= iovlen) {
+		if ((unsigned int)n <= iovlen) {
 			SCTP_BUF_LEN(udprecvmbuf[0]) = n;
 			(to_fill)++;
 		} else {
@@ -971,7 +971,7 @@ recv_function_udp6(void *arg)
 		SCTP_STAT_INCR(sctps_recvpackets);
 		SCTP_STAT_INCR_COUNTER64(sctps_inpackets);
 
-		if (n <= iovlen) {
+		if ((unsigned int)n <= iovlen) {
 			SCTP_BUF_LEN(udprecvmbuf6[0]) = n;
 			(to_fill)++;
 		} else {
