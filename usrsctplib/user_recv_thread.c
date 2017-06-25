@@ -273,7 +273,7 @@ recv_function_raw(void *arg)
 	struct sctp_chunkhdr *ch;
 	struct sockaddr_in src, dst;
 #if !defined(__Userspace_os_Windows)
-	int ncounter;
+	unsigned int ncounter;
 	struct msghdr msg;
 	struct iovec recv_iovec[MAXLEN_MBUF_CHAIN];
 #else
@@ -289,7 +289,7 @@ recv_function_raw(void *arg)
 	int to_fill = MAXLEN_MBUF_CHAIN;
 	/* iovlen is the size of each mbuf in the chain */
 	int i, n;
-	int iovlen = MCLBYTES;
+	unsigned int iovlen = MCLBYTES;
 	int want_ext = (iovlen > MLEN)? 1 : 0;
 	int want_header = 0;
 
@@ -450,7 +450,7 @@ recv_function_raw6(void *arg)
 {
 	struct mbuf **recvmbuf6;
 #if !defined(__Userspace_os_Windows)
-	int ncounter = 0;
+	unsigned int ncounter = 0;
 	struct iovec recv_iovec[MAXLEN_MBUF_CHAIN];
 	struct msghdr msg;
 	struct cmsghdr *cmsgptr;
@@ -480,7 +480,7 @@ recv_function_raw6(void *arg)
 #if !defined(SCTP_WITH_NO_CSUM)
 	int compute_crc = 1;
 #endif
-	int iovlen = MCLBYTES;
+	unsigned int iovlen = MCLBYTES;
 	int want_ext = (iovlen > MLEN)? 1 : 0;
 	int want_header = 0;
 
@@ -650,7 +650,7 @@ recv_function_udp(void *arg)
 	int to_fill = MAXLEN_MBUF_CHAIN;
 	/* iovlen is the size of each mbuf in the chain */
 	int i, n, offset;
-	int iovlen = MCLBYTES;
+	unsigned int iovlen = MCLBYTES;
 	int want_ext = (iovlen > MLEN)? 1 : 0;
 	int want_header = 0;
 	struct sctphdr *sh;
@@ -666,7 +666,7 @@ recv_function_udp(void *arg)
 	int compute_crc = 1;
 #endif
 #if !defined(__Userspace_os_Windows)
-	int ncounter;
+	unsigned int ncounter;
 	struct iovec iov[MAXLEN_MBUF_CHAIN];
 	struct msghdr msg;
 	struct cmsghdr *cmsgptr;
@@ -864,7 +864,7 @@ recv_function_udp6(void *arg)
 	int to_fill = MAXLEN_MBUF_CHAIN;
 	/* iovlen is the size of each mbuf in the chain */
 	int i, n, offset;
-	int iovlen = MCLBYTES;
+	unsigned int iovlen = MCLBYTES;
 	int want_ext = (iovlen > MLEN)? 1 : 0;
 	int want_header = 0;
 	struct sockaddr_in6 src, dst;
@@ -876,7 +876,7 @@ recv_function_udp6(void *arg)
 	int compute_crc = 1;
 #endif
 #if !defined(__Userspace_os_Windows)
-	int ncounter;
+	unsigned int ncounter;
 	struct iovec iov[MAXLEN_MBUF_CHAIN];
 	struct msghdr msg;
 	struct cmsghdr *cmsgptr;
