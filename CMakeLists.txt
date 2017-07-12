@@ -121,6 +121,8 @@ endif ()
 # CHECK STRUCT MEMBERS
 #################################################
 
+include_directories(${CMAKE_SOURCE_DIR}/usrsctplib)
+
 check_struct_has_member("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" HAVE_SA_LEN)
 if (HAVE_SA_LEN)
     message(STATUS "HAVE_SA_LEN")
