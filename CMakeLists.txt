@@ -39,6 +39,9 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 include(CheckStructHasMember)
+include(CheckIncludeFile)
+include(CheckIncludeFiles)
+
 
 #################################################
 # CHECK OPTIONS
@@ -118,10 +121,44 @@ endif ()
 
 
 #################################################
+# CHECK FOR TYPES AND FUNCTIONS
+#################################################
+
+check_include_files("sys/queue.h" HAVE_SYS_QUEUE_H)
+if (HAVE_SYS_QUEUE_H)
+    add_definitions(-DHAVE_SYS_QUEUE_H)
+endif ()
+
+check_include_files("sys/socket.h;linux/if_addr.h" HAVE_LINUX_IF_ADDR_H)
+if (HAVE_LINUX_IF_ADDR_H)
+    add_definitions(-DHAVE_LINUX_IF_ADDR_H)
+endif ()
+
+check_include_files("sys/socket.h;linux/rtnetlink.h" HAVE_LINUX_RTNETLINK_H)
+if (HAVE_LINUX_RTNETLINK_H)
+    add_definitions(-DHAVE_LINUX_RTNETLINK_H)
+endif ()
+
+check_include_files("sys/types.h;netinet/in.h;netinet/ip.h;netinet/ip_icmp.h" HAVE_NETINET_IP_ICMP_H)
+if (HAVE_NETINET_IP_ICMP_H)
+    add_definitions(-DHAVE_NETINET_IP_ICMP_H)
+endif ()
+
+check_include_files("stdatomic.h" HAVE_STDATOMIC_H)
+if (HAVE_STDATOMIC_H)
+    add_definitions(-DHAVE_STDATOMIC_H)
+endif ()
+
+
+#################################################
 # CHECK STRUCT MEMBERS
 #################################################
 
-include_directories(${CMAKE_SOURCE_DIR}/usrsctplib)
+set (CMAKE_REQUIRED_INCLUDES "${CMAKE_SOURCE_DIR}/usrsctplib")
+check_include_file(usrsctp.h HAVE_USRSCTP_H)
+if (NOT HAVE_USRSCTP_H)
+    message(FATAL_ERROR "usrsctp.h not found")
+endif ()
 
 check_struct_has_member("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" HAVE_SA_LEN)
 if (HAVE_SA_LEN)

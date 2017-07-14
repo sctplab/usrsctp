@@ -41,7 +41,7 @@ include(CheckIncludeFile)
 # CHECK INCLUDES
 #################################################
 
-check_include_file(usrsctp.h HAVE_USRSCTP_H)
+include_directories(${CMAKE_SOURCE_DIR}/usrsctplib)
 
 
 #################################################
