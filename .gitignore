@@ -72,3 +72,6 @@ programs/test_timer
 
 # callgrind
 callgrind.out*
+
+# cmake build
+/build
