@@ -85,7 +85,7 @@ endif ()
 # LIBRARY FILES
 #################################################
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/netinet ${CMAKE_CURRENT_SOURCE_DIR}/netinet6)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 list(APPEND usrsctp_root_HEADERS
     user_atomic.h
