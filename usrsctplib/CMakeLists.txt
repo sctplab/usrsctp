@@ -179,10 +179,6 @@ set_target_properties(usrsctp-static PROPERTIES OUTPUT_NAME "usrsctp")
 set_target_properties(usrsctp PROPERTIES IMPORT_SUFFIX "_import.lib")
 set_target_properties(usrsctp PROPERTIES SOVERSION 1 VERSION 1.0.0)
 
-if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC90" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC10")
-    SET_SOURCE_FILES_PROPERTIES(${usrsctp_SOURCES} PROPERTIES LANGUAGE C)
-endif()
-
 if (NOT DEFINED CMAKE_INSTALL_LIBDIR)
     SET(CMAKE_INSTALL_LIBDIR lib)
 endif ()
