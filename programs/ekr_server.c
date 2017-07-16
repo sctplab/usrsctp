@@ -271,7 +271,6 @@ main(int argc, char *argv[])
 			perror("usrsctp_accept");
 		}
 	}
-#if 0 // unreachable codepath
 	usrsctp_close(s);
 	usrsctp_deregister_address((void *)&fd);
 	while (usrsctp_finish() != 0) {
@@ -294,7 +293,6 @@ main(int argc, char *argv[])
 	if (close(fd) < 0) {
 		perror("close");
 	}
-#endif
 #endif
 	return (0);
 }

@@ -125,7 +125,6 @@ main(int argc, char *argv[])
 		              (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0);
 		usrsctp_close(conn_sock);
 	}
-#if 0 // unreachable codepath
 	usrsctp_close(sock);
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
@@ -134,6 +133,5 @@ main(int argc, char *argv[])
 		sleep(1);
 #endif
 	}
-#endif
 	return (0);
 }
