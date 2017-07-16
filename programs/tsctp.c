@@ -67,7 +67,7 @@ struct socket *psock = NULL;
 static struct timeval start_time;
 unsigned int runtime = 0;
 static unsigned long messages = 0;
-static unsigned long first_length = 0;
+static unsigned long long first_length = 0;
 static unsigned long long sum = 0;
 static unsigned int use_cb = 0;
 
@@ -211,7 +211,7 @@ handle_connection(void *arg)
 	gettimeofday(&time_now, NULL);
 	timersub(&time_now, &time_start, &time_diff);
 	seconds = time_diff.tv_sec + (double)time_diff.tv_usec/1000000.0;
-	printf("%lu, %lu, %lu, %lu, %llu, %f, %f\n",
+	printf("%llu, %lu, %lu, %lu, %llu, %f, %f\n",
 	        first_length, messages, recv_calls, notifications, sum, seconds, (double)first_length * (double)messages / seconds);
 	fflush(stdout);
 	usrsctp_close(conn_sock);
@@ -307,7 +307,7 @@ server_receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		gettimeofday(&now, NULL);
 		timersub(&now, &start_time, &diff_time);
 		seconds = diff_time.tv_sec + (double)diff_time.tv_usec/1000000.0;
-		printf("%lu, %lu, %llu, %f, %f\n",
+		printf("%llu, %lu, %llu, %f, %f\n",
 			first_length, messages, sum, seconds, (double)first_length * (double)messages / seconds);
 		usrsctp_close(sock);
 		first_length = 0;
