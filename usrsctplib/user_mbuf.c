@@ -245,18 +245,18 @@ m_clget(struct mbuf *m, int how)
 {
 	caddr_t mclust_ret;
 #if defined(SCTP_SIMPLE_ALLOCATOR)
-	struct clust_args clust_mb_args;
+	struct clust_args clust_mb_args_l;
 #endif
 	if (m->m_flags & M_EXT) {
 		SCTPDBG(SCTP_DEBUG_USR, "%s: %p mbuf already has cluster\n", __func__, (void *)m);
 	}
 	m->m_ext.ext_buf = (char *)NULL;
 #if defined(SCTP_SIMPLE_ALLOCATOR)
-	clust_mb_args.parent_mbuf = m;
+	clust_mb_args_l.parent_mbuf = m;
 #endif
 	mclust_ret = SCTP_ZONE_GET(zone_clust, char);
 #if defined(SCTP_SIMPLE_ALLOCATOR)
-	mb_ctor_clust(mclust_ret, &clust_mb_args, 0);
+	mb_ctor_clust(mclust_ret, &clust_mb_args_l, 0);
 #endif
 	/*mclust_ret = umem_cache_alloc(zone_clust, UMEM_DEFAULT);*/
 	/*
