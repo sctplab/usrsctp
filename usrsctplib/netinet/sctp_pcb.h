@@ -402,7 +402,7 @@ struct sctp_pcb {
 
 	/* Zero copy full buffer timer */
 	struct sctp_timer zero_copy_timer;
-        /* Zero copy app to transport (sendq) read repulse timer */
+	/* Zero copy app to transport (sendq) read repulse timer */
 	struct sctp_timer zero_copy_sendq_timer;
 	uint32_t def_cookie_life;
 	/* defaults to 0 */
