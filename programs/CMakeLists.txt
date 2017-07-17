@@ -68,7 +68,7 @@ find_package(Threads)
 # PROGRAMS
 #################################################
 
-set(CHECK_PROGRAMS
+list(APPEND CHECK_PROGRAMS
     client.c
     daytime_server.c
     discard_server.c
@@ -84,6 +84,11 @@ set(CHECK_PROGRAMS
     test_timer.c
     tsctp.c
 )
+
+# if in fuzzing mode, only build the fuzzer
+if (FUZZING_MODE)
+    set(CHECK_PROGRAMS fuzzer.c)
+endif ()
 
 foreach (SOURCE_FILE ${CHECK_PROGRAMS})
     get_filename_component(SOURCE_FILE_WE ${SOURCE_FILE} NAME_WE)

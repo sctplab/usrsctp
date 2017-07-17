@@ -53,6 +53,8 @@ add_definitions(-D__Userspace_os_${CMAKE_SYSTEM_NAME})
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     add_definitions(-D_GNU_SOURCE)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-address-of-packed-member")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member")
 endif ()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")

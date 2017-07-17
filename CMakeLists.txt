@@ -113,6 +113,8 @@ option(LINK_PROGRAMS_STATIC "Link example programs static" 0)
 
 option(BUILD_PROGRAMS "Build example programs" 1)
 
+option(FUZZING_MODE "Fuzzing mode" 0)
+
 if (LINK_PROGRAMS_STATIC OR WIN32)
     set(PROGRAMS_LINK_LIBRARY "usrsctp-static")
 else ()
@@ -196,6 +198,10 @@ if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STR
     if (WERROR)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+    endif ()
+    if (FUZZING_MODE)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer,address -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=fuzzer,address -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
     endif ()
 endif ()
 
