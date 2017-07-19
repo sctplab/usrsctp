@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 321204 2017-07-19 14:28:58Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -187,7 +187,7 @@ sctp_process_asconf_add_ip(struct sockaddr *src, struct sctp_asconf_paramhdr *ap
 		}
 		v4addr = (struct sctp_ipv4addr_param *)ph;
 		sin = &store.sin;
-		bzero(sin, sizeof(*sin));
+		memset(sin, 0, sizeof(*sin));
 		sin->sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
 		sin->sin_len = sizeof(struct sockaddr_in);
@@ -212,7 +212,7 @@ sctp_process_asconf_add_ip(struct sockaddr *src, struct sctp_asconf_paramhdr *ap
 		}
 		v6addr = (struct sctp_ipv6addr_param *)ph;
 		sin6 = &store.sin6;
-		bzero(sin6, sizeof(*sin6));
+		memset(sin6, 0, sizeof(*sin6));
 		sin6->sin6_family = AF_INET6;
 #ifdef HAVE_SIN6_LEN
 		sin6->sin6_len = sizeof(struct sockaddr_in6);
@@ -342,7 +342,7 @@ sctp_process_asconf_delete_ip(struct sockaddr *src,
 		}
 		v4addr = (struct sctp_ipv4addr_param *)ph;
 		sin = &store.sin;
-		bzero(sin, sizeof(*sin));
+		memset(sin, 0, sizeof(*sin));
 		sin->sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
 		sin->sin_len = sizeof(struct sockaddr_in);
@@ -364,7 +364,7 @@ sctp_process_asconf_delete_ip(struct sockaddr *src,
 		}
 		v6addr = (struct sctp_ipv6addr_param *)ph;
 		sin6 = &store.sin6;
-		bzero(sin6, sizeof(*sin6));
+		memset(sin6, 0, sizeof(*sin6));
 		sin6->sin6_family = AF_INET6;
 #ifdef HAVE_SIN6_LEN
 		sin6->sin6_len = sizeof(struct sockaddr_in6);
@@ -477,7 +477,7 @@ sctp_process_asconf_set_primary(struct sockaddr *src,
 		}
 		v4addr = (struct sctp_ipv4addr_param *)ph;
 		sin = &store.sin;
-		bzero(sin, sizeof(*sin));
+		memset(sin, 0, sizeof(*sin));
 		sin->sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
 		sin->sin_len = sizeof(struct sockaddr_in);
@@ -497,7 +497,7 @@ sctp_process_asconf_set_primary(struct sockaddr *src,
 		}
 		v6addr = (struct sctp_ipv6addr_param *)ph;
 		sin6 = &store.sin6;
-		bzero(sin6, sizeof(*sin6));
+		memset(sin6, 0, sizeof(*sin6));
 		sin6->sin6_family = AF_INET6;
 #ifdef HAVE_SIN6_LEN
 		sin6->sin6_len = sizeof(struct sockaddr_in6);
@@ -2636,7 +2636,7 @@ sctp_compose_asconf(struct sctp_tcb *stcb, int *retlen, int addr_locked)
 	SCTP_BUF_LEN(m_asconf_chk) = sizeof(struct sctp_asconf_chunk);
 	SCTP_BUF_LEN(m_asconf) = 0;
 	acp = mtod(m_asconf_chk, struct sctp_asconf_chunk *);
-	bzero(acp, sizeof(struct sctp_asconf_chunk));
+	memset(acp, 0, sizeof(struct sctp_asconf_chunk));
 	/* save pointers to lookup address and asconf params */
 	lookup_ptr = (caddr_t)(acp + 1);	/* after the header */
 	ptr = mtod(m_asconf, caddr_t);	/* beginning of cluster */
@@ -2769,7 +2769,7 @@ sctp_compose_asconf(struct sctp_tcb *stcb, int *retlen, int addr_locked)
 			/* XXX for now, we send a IPv4 address of 0.0.0.0 */
 			lookup->ph.param_type = htons(SCTP_IPV4_ADDRESS);
 			lookup->ph.param_length = htons(SCTP_SIZE32(sizeof(struct sctp_ipv4addr_param)));
-			bzero(lookup->addr, sizeof(struct in_addr));
+			memset(lookup->addr, 0, sizeof(struct in_addr));
 			SCTP_BUF_LEN(m_asconf_chk) += SCTP_SIZE32(sizeof(struct sctp_ipv4addr_param));
 		}
 	}

@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 320261 2017-06-23 08:35:54Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 321204 2017-07-19 14:28:58Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -156,7 +156,7 @@ sctp_init(void)
 #if defined(SCTP_PACKET_LOGGING)
 	SCTP_BASE_VAR(packet_log_writers) = 0;
 	SCTP_BASE_VAR(packet_log_end) = 0;
-	bzero(&SCTP_BASE_VAR(packet_log_buffer), SCTP_PACKET_LOG_SIZE);
+	memset(&SCTP_BASE_VAR(packet_log_buffer), 0, SCTP_PACKET_LOG_SIZE);
 #endif
 #if defined(__APPLE__)
 	SCTP_BASE_VAR(sctp_main_timer_ticks) = 0;
@@ -8401,7 +8401,7 @@ sctp_accept(struct socket *so, struct mbuf *nam)
 			return (ENOMEM);
 #else
 		sin = (struct sockaddr_in *)addr;
-		bzero((caddr_t)sin, sizeof(*sin));
+		memset(sin, 0, sizeof(*sin));
 #endif
 		sin->sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
@@ -8428,7 +8428,7 @@ sctp_accept(struct socket *so, struct mbuf *nam)
 			return (ENOMEM);
 #else
 		sin6 = (struct sockaddr_in6 *)addr;
-		bzero((caddr_t)sin6, sizeof(*sin6));
+		memset(sin6, 0, sizeof(*sin6));
 #endif
 		sin6->sin6_family = AF_INET6;
 #ifdef HAVE_SIN6_LEN
@@ -8568,7 +8568,7 @@ sctp_ingetaddr(struct socket *so, struct mbuf *nam)
 	if (sin == NULL)
 		return (ENOMEM);
 #elif defined(__Panda__)
-	bzero(sin, sizeof(*sin));
+	memset(sin, 0, sizeof(*sin));
 #else
 	SCTP_BUF_LEN(nam) = sizeof(*sin);
 	memset(sin, 0, sizeof(*sin));
