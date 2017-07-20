@@ -216,8 +216,6 @@ typedef HANDLE userland_thread_t;
 
 typedef char* caddr_t;
 
-#define bzero(buf, len) memset(buf, 0, len)
-#define bcopy(srcKey, dstKey, len) memcpy(dstKey, srcKey, len)
 #if _MSC_VER < 1900
 #define snprintf(data, size, format, ...) _snprintf_s(data, size, _TRUNCATE, format, __VA_ARGS__)
 #endif

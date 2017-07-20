@@ -115,6 +115,14 @@ option(BUILD_PROGRAMS "Build example programs" 1)
 
 option(FUZZING_MODE "Fuzzing mode" 0)
 
+option(SANITIZER_ADDRESS "Compile with address sanitizer" 0)
+
+option(SANITIZER_MEMORY "Compile with memory sanitizer" 0)
+
+if (SANITIZER_ADDRESS AND SANITIZER_MEMORY)
+    message(FATAL_ERROR "Can not compile with both sanitizer options")
+endif ()
+
 if (LINK_PROGRAMS_STATIC OR WIN32)
     set(PROGRAMS_LINK_LIBRARY "usrsctp-static")
 else ()
@@ -193,17 +201,30 @@ endif ()
 
 # SETTINGS FOR UNIX COMPILER
 if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xGNU")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -pedantic -Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Winit-self -Wno-unused-function -Wno-unused-parameter")
+    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c99 -pedantic -Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Winit-self -Wno-unused-function -Wno-unused-parameter")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99 -pedantic -Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Winit-self -Wno-unused-function -Wno-unused-parameter")
+
     if (WERROR)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Werror")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
     endif ()
+
     if (FUZZING_MODE)
         #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -g -O1 -fsanitize-memory-track-origins -fno-omit-frame-pointer -fsanitize=fuzzer,memory -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
         #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O1 -fsanitize-memory-track-origins -fno-omit-frame-pointer -fsanitize=fuzzer,memory -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -g -O1 -fno-omit-frame-pointer -fsanitize=fuzzer,address -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O1 -fno-omit-frame-pointer -fsanitize=fuzzer,address -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
+    endif ()
+
+    if (SANITIZER_ADDRESS)
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=address -O1 -fno-omit-frame-pointer -g -Wno-address-of-packed-member")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -O1 -fno-omit-frame-pointer -g -Wno-address-of-packed-member")
+    endif ()
+
+    if (SANITIZER_MEMORY)
+        # maybe add "-fPIE -pie" here
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=memory -fno-omit-frame-pointer -g -Wno-address-of-packed-member -fsanitize-memory-track-origins")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -g -Wno-address-of-packed-member -fsanitize-memory-track-origins")
     endif ()
 endif ()
 

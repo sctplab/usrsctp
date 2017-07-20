@@ -731,8 +731,7 @@ m_pullup(struct mbuf *n, int len)
 	space = (int)(&m->m_dat[MLEN] - (m->m_data + m->m_len));
 	do {
 		count = min(min(max(len, max_protohdr), space), n->m_len);
-		bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len,
-		  (u_int)count);
+		memcpy(mtod(m, caddr_t) + m->m_len,mtod(n, caddr_t), (u_int)count);
 		len -= count;
 		m->m_len += count;
 		n->m_len -= count;
@@ -898,7 +897,7 @@ m_pulldown(struct mbuf *m, int off, int len, int *offp)
 	    && writable) {
 		n->m_next->m_data -= hlen;
 		n->m_next->m_len += hlen;
-		bcopy(mtod(n, caddr_t) + off, mtod(n->m_next, caddr_t), hlen);
+		memcpy( mtod(n->m_next, caddr_t), mtod(n, caddr_t) + off,hlen);
 		n->m_len -= hlen;
 		n = n->m_next;
 		off = 0;
@@ -920,7 +919,7 @@ m_pulldown(struct mbuf *m, int off, int len, int *offp)
 	}
 	/* get hlen from <n, off> into <o, 0> */
 	o->m_len = hlen;
-	bcopy(mtod(n, caddr_t) + off, mtod(o, caddr_t), hlen);
+	memcpy(mtod(o, caddr_t), mtod(n, caddr_t) + off, hlen);
 	n->m_len -= hlen;
 	/* get tlen from <n->m_next, 0> into <o, hlen> */
 	m_copydata(n->m_next, 0, tlen, mtod(o, caddr_t) + o->m_len);
@@ -1026,8 +1025,7 @@ m_copym(struct mbuf *m, int off0, int len, int wait)
 			n->m_data = m->m_data + off;
 			mb_dupcl(n, m);
 		} else
-			bcopy(mtod(m, caddr_t)+off, mtod(n, caddr_t),
-			    (u_int)n->m_len);
+			memcpy(mtod(n, caddr_t), mtod(m, caddr_t) + off, (u_int)n->m_len);
 		if (len != M_COPYALL)
 			len -= n->m_len;
 		off = 0;
@@ -1035,7 +1033,7 @@ m_copym(struct mbuf *m, int off0, int len, int wait)
 		np = &n->m_next;
 	}
 	if (top == NULL)
-            mbstat.m_mcfail++;	/* XXX: No consistency. */
+		mbstat.m_mcfail++;	/* XXX: No consistency. */
 
 	return (top);
 nospace:
@@ -1096,7 +1094,7 @@ m_tag_copy(struct m_tag *t, int how)
 	p = m_tag_alloc(t->m_tag_cookie, t->m_tag_id, t->m_tag_len, how);
 	if (p == NULL)
 		return (NULL);
-	bcopy(t + 1, p + 1, t->m_tag_len); /* Copy the data */
+	memcpy(p + 1, t + 1, t->m_tag_len); /* Copy the data */
 	return p;
 }
 
@@ -1144,7 +1142,7 @@ m_copyback(struct mbuf *m0, int off, int len, caddr_t cp)
 			n = m_get(M_NOWAIT, m->m_type);
 			if (n == NULL)
 				goto out;
-			bzero(mtod(n, caddr_t), MLEN);
+			memset(mtod(n, caddr_t), 0, MLEN);
 			n->m_len = min(MLEN, len + off);
 			m->m_next = n;
 		}
@@ -1152,7 +1150,7 @@ m_copyback(struct mbuf *m0, int off, int len, caddr_t cp)
 	}
 	while (len > 0) {
 		mlen = min (m->m_len - off, len);
-		bcopy(cp, off + mtod(m, caddr_t), (u_int)mlen);
+		memcpy(off + mtod(m, caddr_t), cp, (u_int)mlen);
 		cp += mlen;
 		len -= mlen;
 		mlen += off;
@@ -1228,7 +1226,7 @@ m_copydata(const struct mbuf *m, int off, int len, caddr_t cp)
 	while (len > 0) {
 		KASSERT(m != NULL, ("m_copydata, length > size of mbuf chain"));
 		count = min(m->m_len - off, len);
-		bcopy(mtod(m, caddr_t) + off, cp, count);
+		memcpy(cp, mtod(m, caddr_t) + off, count);
 		len -= count;
 		cp += count;
 		off = 0;
@@ -1255,7 +1253,7 @@ m_cat(struct mbuf *m, struct mbuf *n)
 			return;
 		}
 		/* splat the data from one into the other */
-		bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len, (u_int)n->m_len);
+		memcpy(mtod(m, caddr_t) + m->m_len, mtod(n, caddr_t), (u_int)n->m_len);
 		m->m_len += n->m_len;
 		n = m_free(n);
 	}
@@ -1398,7 +1396,7 @@ extpacket:
 		n->m_data = m->m_data + len;
 		mb_dupcl(n, m);
 	} else {
-		bcopy(mtod(m, caddr_t) + len, mtod(n, caddr_t), remain);
+		memcpy(mtod(n, caddr_t), mtod(m, caddr_t) + len, remain);
 	}
 	n->m_len = remain;
 	m->m_len = len;
@@ -1419,7 +1417,7 @@ pack_send_buffer(caddr_t buffer, struct mbuf* mb){
 
 	do {
 		count_to_copy = mb->m_len;
-		bcopy(mtod(mb, caddr_t), buffer+offset, count_to_copy);
+		memcpy(buffer+offset, mtod(mb, caddr_t), count_to_copy);
 		offset += count_to_copy;
 		total_count_copied += count_to_copy;
 		mb = mb->m_next;

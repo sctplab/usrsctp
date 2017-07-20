@@ -80,7 +80,7 @@ static sctp_os_timer_t *sctp_os_timer_next = NULL;
 void
 sctp_os_timer_init(sctp_os_timer_t *c)
 {
-	bzero(c, sizeof(*c));
+	memset(c, 0, sizeof(*c));
 }
 
 void

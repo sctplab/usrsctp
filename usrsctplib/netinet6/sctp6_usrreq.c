@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 317464 2017-04-26 20:21:05Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 321204 2017-07-19 14:28:58Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -78,7 +78,7 @@ in6_sin6_2_sin(struct sockaddr_in *sin, struct sockaddr_in6 *sin6)
 #if defined(__Userspace_os_Windows)
 	uint32_t temp;
 #endif
-	bzero(sin, sizeof(*sin));
+	memset(sin, 0, sizeof(*sin));
 #ifdef HAVE_SIN_LEN
 	sin->sin_len = sizeof(struct sockaddr_in);
 #endif
@@ -109,7 +109,7 @@ in6_sin6_2_sin_in_sock(struct sockaddr *nam)
 void
 in6_sin_2_v4mapsin6(struct sockaddr_in *sin, struct sockaddr_in6 *sin6)
 {
-	bzero(sin6, sizeof(struct sockaddr_in6));
+	memset(sin6, 0, sizeof(struct sockaddr_in6));
  	sin6->sin6_family = AF_INET6;
 #ifdef HAVE_SIN6_LEN
 	sin6->sin6_len = sizeof(struct sockaddr_in6);
@@ -478,7 +478,7 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 		}
 
 		/* Copy out the port numbers and the verification tag. */
-		bzero(&sh, sizeof(sh));
+		memset(&sh, 0, sizeof(sh));
 		m_copydata(ip6cp->ip6c_m,
 		           ip6cp->ip6c_off,
 		           sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint32_t),
@@ -1325,10 +1325,10 @@ sctp6_getaddr(struct socket *so, struct mbuf *nam)
 	if (sin6 == NULL)
 		return (ENOMEM);
 #elif defined(__Panda__)
-	bzero(sin6, sizeof(*sin6));
+	memset(sin6, 0, sizeof(*sin6));
 #else
 	SCTP_BUF_LEN(nam) = sizeof(*sin6);
-	bzero(sin6, sizeof(*sin6));
+	memset(sin6, 0, sizeof(*sin6));
 #endif
 	sin6->sin6_family = AF_INET6;
 #ifdef HAVE_SIN6_LEN

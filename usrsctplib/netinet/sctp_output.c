@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 321034 2017-07-15 19:54:03Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 321204 2017-07-19 14:28:58Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4637,7 +4637,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		 * limited degree the kame src-addr-sel, since we can try
 		 * their selection but it may not be bound.
 		 */
-		bzero(&lsa6_tmp, sizeof(lsa6_tmp));
+		memset(&lsa6_tmp, 0, sizeof(lsa6_tmp));
 		lsa6_tmp.sin6_family = AF_INET6;
 #ifdef HAVE_SIN6_LEN
 		lsa6_tmp.sin6_len = sizeof(lsa6_tmp);
@@ -4764,7 +4764,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		 * XXX: sa6 may not have a valid sin6_scope_id in the
 		 * non-SCOPEDROUTING case.
 		 */
-		bzero(&lsa6_storage, sizeof(lsa6_storage));
+		memset(&lsa6_storage, 0, sizeof(lsa6_storage));
 		lsa6_storage.sin6_family = AF_INET6;
 #ifdef HAVE_SIN6_LEN
 		lsa6_storage.sin6_len = sizeof(lsa6_storage);
@@ -11828,7 +11828,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 	case AF_INET:
 #if defined(__APPLE__) || defined(__Panda__)
 		/* zap the stack pointer to the route */
-		bzero(&ro, sizeof(sctp_route_t));
+		memset(&ro, 0, sizeof(sctp_route_t));
 #if defined(__Panda__)
 		ro._l_addr.sa.sa_family = AF_INET;
 #endif
@@ -14873,7 +14873,7 @@ sctp_add_auth_chunk(struct mbuf *m, struct mbuf **m_end,
 		SCTP_BUF_RESV_UF(m_auth, SCTP_MIN_OVERHEAD);
 	/* fill in the AUTH chunk details */
 	auth = mtod(m_auth, struct sctp_auth_chunk *);
-	bzero(auth, sizeof(*auth));
+	memset(auth, 0, sizeof(*auth));
 	auth->ch.chunk_type = SCTP_AUTHENTICATION;
 	auth->ch.chunk_flags = 0;
 	chunk_len = sizeof(*auth) +
