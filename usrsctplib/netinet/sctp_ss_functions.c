@@ -28,7 +28,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_ss_functions.c 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_ss_functions.c 321289 2017-07-20 11:09:33Z tuexen $");
 #endif
 
 #include <netinet/sctp_pcb.h>
@@ -272,9 +272,23 @@ sctp_ss_default_set_value(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_associa
 }
 
 static int
-sctp_ss_default_is_user_msgs_incomplete(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_association *asoc SCTP_UNUSED)
+sctp_ss_default_is_user_msgs_incomplete(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_association *asoc)
 {
-	return (0);
+	struct sctp_stream_out *strq;
+	struct sctp_stream_queue_pending *sp;
+
+	if (asoc->stream_queue_cnt != 1) {
+		return (0);
+	}
+	strq = asoc->ss_data.locked_on_sending;
+	if (strq == NULL) {
+		return (0);
+	}
+	sp = TAILQ_FIRST(&strq->outqueue);
+	if (sp == NULL) {
+		return (0);
+	}
+	return (!sp->msg_is_complete);
 }
 
 /*
