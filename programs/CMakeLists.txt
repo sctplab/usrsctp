@@ -83,6 +83,8 @@ list(APPEND CHECK_PROGRAMS
     test_libmgmt.c
     test_timer.c
     tsctp.c
+    fuzzer2.c
+    fuzzer3.c
 )
 
 # if in fuzzing mode, only build the fuzzer

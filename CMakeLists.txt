@@ -114,6 +114,9 @@ option(LINK_PROGRAMS_STATIC "Link example programs static" 0)
 option(BUILD_PROGRAMS "Build example programs" 1)
 
 option(FUZZING_MODE "Fuzzing mode" 0)
+if (FUZZING_MODE)
+    add_definitions(-DFUZZING_MODE)
+endif ()
 
 option(SANITIZER_ADDRESS "Compile with address sanitizer" 0)
 
