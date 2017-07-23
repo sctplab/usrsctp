@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 321205 2017-07-19 15:12:23Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 321289 2017-07-20 11:09:33Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4287,47 +4287,44 @@ again:
 		    ((*asoc->ss_functions.sctp_ss_is_user_msgs_incomplete)(stcb, asoc))) {
 			asoc->state |= SCTP_STATE_PARTIAL_MSG_LEFT;
 		}
+		if (((asoc->state & SCTP_STATE_SHUTDOWN_PENDING) ||
+		      (SCTP_GET_STATE(asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) &&
+		    (asoc->stream_queue_cnt == 1) &&
+		    (asoc->state & SCTP_STATE_PARTIAL_MSG_LEFT)) {
+			struct mbuf *op_err;
+
+			*abort_now = 1;
+			/* XXX */
+			op_err = sctp_generate_cause(SCTP_CAUSE_USER_INITIATED_ABT, "");
+			stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA + SCTP_LOC_24;
+			sctp_abort_an_association(stcb->sctp_ep, stcb, op_err, SCTP_SO_NOT_LOCKED);
+			return;
+		}
 		if ((asoc->state & SCTP_STATE_SHUTDOWN_PENDING) &&
 		    (asoc->stream_queue_cnt == 0)) {
-			if (asoc->state & SCTP_STATE_PARTIAL_MSG_LEFT) {
-				/* Need to abort here */
-				struct mbuf *op_err;
+			struct sctp_nets *netp;
 
-			abort_out_now:
-				*abort_now = 1;
-				/* XXX */
-				op_err = sctp_generate_cause(SCTP_CAUSE_USER_INITIATED_ABT, "");
-				stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA + SCTP_LOC_24;
-				sctp_abort_an_association(stcb->sctp_ep, stcb, op_err, SCTP_SO_NOT_LOCKED);
-				return;
-			} else {
-				struct sctp_nets *netp;
-
-				if ((SCTP_GET_STATE(asoc) == SCTP_STATE_OPEN) ||
-				    (SCTP_GET_STATE(asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) {
-					SCTP_STAT_DECR_GAUGE32(sctps_currestab);
-				}
-				SCTP_SET_STATE(asoc, SCTP_STATE_SHUTDOWN_SENT);
-				SCTP_CLEAR_SUBSTATE(asoc, SCTP_STATE_SHUTDOWN_PENDING);
-				sctp_stop_timers_for_shutdown(stcb);
-				if (asoc->alternate) {
-					netp = asoc->alternate;
-				} else {
-					netp = asoc->primary_destination;
-				}
-				sctp_send_shutdown(stcb, netp);
-				sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWN,
-						 stcb->sctp_ep, stcb, netp);
-				sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD,
-						 stcb->sctp_ep, stcb, netp);
+			if ((SCTP_GET_STATE(asoc) == SCTP_STATE_OPEN) ||
+			    (SCTP_GET_STATE(asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) {
+				SCTP_STAT_DECR_GAUGE32(sctps_currestab);
 			}
+			SCTP_SET_STATE(asoc, SCTP_STATE_SHUTDOWN_SENT);
+			SCTP_CLEAR_SUBSTATE(asoc, SCTP_STATE_SHUTDOWN_PENDING);
+			sctp_stop_timers_for_shutdown(stcb);
+			if (asoc->alternate) {
+				netp = asoc->alternate;
+			} else {
+				netp = asoc->primary_destination;
+			}
+			sctp_send_shutdown(stcb, netp);
+			sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWN,
+					 stcb->sctp_ep, stcb, netp);
+			sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD,
+					 stcb->sctp_ep, stcb, netp);
 		} else if ((SCTP_GET_STATE(asoc) == SCTP_STATE_SHUTDOWN_RECEIVED) &&
 			   (asoc->stream_queue_cnt == 0)) {
 			struct sctp_nets *netp;
 
-			if (asoc->state & SCTP_STATE_PARTIAL_MSG_LEFT) {
-				goto abort_out_now;
-			}
 			SCTP_STAT_DECR_GAUGE32(sctps_currestab);
 			SCTP_SET_STATE(asoc, SCTP_STATE_SHUTDOWN_ACK_SENT);
 			SCTP_CLEAR_SUBSTATE(asoc, SCTP_STATE_SHUTDOWN_PENDING);
@@ -5011,48 +5008,45 @@ sctp_handle_sack(struct mbuf *m, int offset_seg, int offset_dup,
 		    ((*asoc->ss_functions.sctp_ss_is_user_msgs_incomplete)(stcb, asoc))) {
 			asoc->state |= SCTP_STATE_PARTIAL_MSG_LEFT;
 		}
+		if (((asoc->state & SCTP_STATE_SHUTDOWN_PENDING) ||
+		      (SCTP_GET_STATE(asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) &&
+		    (asoc->stream_queue_cnt == 1) &&
+		    (asoc->state & SCTP_STATE_PARTIAL_MSG_LEFT)) {
+			struct mbuf *op_err;
+
+			*abort_now = 1;
+			/* XXX */
+			op_err = sctp_generate_cause(SCTP_CAUSE_USER_INITIATED_ABT, "");
+			stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA + SCTP_LOC_24;
+			sctp_abort_an_association(stcb->sctp_ep, stcb, op_err, SCTP_SO_NOT_LOCKED);
+			return;
+		}
 		if ((asoc->state & SCTP_STATE_SHUTDOWN_PENDING) &&
 		    (asoc->stream_queue_cnt == 0)) {
-			if (asoc->state & SCTP_STATE_PARTIAL_MSG_LEFT) {
-				/* Need to abort here */
-				struct mbuf *op_err;
+			struct sctp_nets *netp;
 
-			abort_out_now:
-				*abort_now = 1;
-				/* XXX */
-				op_err = sctp_generate_cause(SCTP_CAUSE_USER_INITIATED_ABT, "");
-				stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA + SCTP_LOC_31;
-				sctp_abort_an_association(stcb->sctp_ep, stcb, op_err, SCTP_SO_NOT_LOCKED);
-				return;
-			} else {
-				struct sctp_nets *netp;
-
-				if ((SCTP_GET_STATE(asoc) == SCTP_STATE_OPEN) ||
-				    (SCTP_GET_STATE(asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) {
-					SCTP_STAT_DECR_GAUGE32(sctps_currestab);
-				}
-				SCTP_SET_STATE(asoc, SCTP_STATE_SHUTDOWN_SENT);
-				SCTP_CLEAR_SUBSTATE(asoc, SCTP_STATE_SHUTDOWN_PENDING);
-				sctp_stop_timers_for_shutdown(stcb);
-				if (asoc->alternate) {
-					netp = asoc->alternate;
-				} else {
-					netp = asoc->primary_destination;
-				}
-				sctp_send_shutdown(stcb, netp);
-				sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWN,
-				                 stcb->sctp_ep, stcb, netp);
-				sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD,
-				                 stcb->sctp_ep, stcb, netp);
+			if ((SCTP_GET_STATE(asoc) == SCTP_STATE_OPEN) ||
+			    (SCTP_GET_STATE(asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) {
+				SCTP_STAT_DECR_GAUGE32(sctps_currestab);
 			}
+			SCTP_SET_STATE(asoc, SCTP_STATE_SHUTDOWN_SENT);
+			SCTP_CLEAR_SUBSTATE(asoc, SCTP_STATE_SHUTDOWN_PENDING);
+			sctp_stop_timers_for_shutdown(stcb);
+			if (asoc->alternate) {
+				netp = asoc->alternate;
+			} else {
+				netp = asoc->primary_destination;
+			}
+			sctp_send_shutdown(stcb, netp);
+			sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWN,
+					 stcb->sctp_ep, stcb, netp);
+			sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD,
+					 stcb->sctp_ep, stcb, netp);
 			return;
 		} else if ((SCTP_GET_STATE(asoc) == SCTP_STATE_SHUTDOWN_RECEIVED) &&
 			   (asoc->stream_queue_cnt == 0)) {
 			struct sctp_nets *netp;
 
-			if (asoc->state & SCTP_STATE_PARTIAL_MSG_LEFT) {
-				goto abort_out_now;
-			}
 			SCTP_STAT_DECR_GAUGE32(sctps_currestab);
 			SCTP_SET_STATE(asoc, SCTP_STATE_SHUTDOWN_ACK_SENT);
 			SCTP_CLEAR_SUBSTATE(asoc, SCTP_STATE_SHUTDOWN_PENDING);
