@@ -129,7 +129,6 @@ sctp_sha1_init(struct sctp_sha1_context *ctx)
 
 static void
 sctp_sha1_process_a_block(struct sctp_sha1_context *ctx, unsigned int *block)
-	__attribute__((no_sanitize("memory")))
 {
 	int i;
 
