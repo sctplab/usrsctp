@@ -41,7 +41,7 @@
 #include <unistd.h>
 #include <usrsctp.h>
 
-#define FUZZ_FAST 0
+//#define FUZZ_FAST 1
 #define MAX_PACKET_SIZE (1 << 16)
 #define LINE_LENGTH (1 << 20)
 #define DISCARD_PPID 39
@@ -49,8 +49,8 @@
 static int fd_c, fd_s;
 static struct socket *s_c, *s_s, *s_l;
 static pthread_t tid_c, tid_s;
-static char *s_cheader[12];
-static char *c_cheader[12];
+//static char *s_cheader[12];
+//static char *c_cheader[12];
 
 static int
 conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
@@ -59,7 +59,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 	int *fdp;
 
 	fdp = (int *)addr;
-
+#if 0
 	if (*fdp == fd_c) {
 		memcpy(c_cheader, buf, 12);
 	}
@@ -69,7 +69,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 	}
 
 	fprintf(stderr, "%s - %d - %d - %d\n", __func__, fd_c, fd_s, *fdp);
-
+#endif
 	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
 		//fprintf(stderr, "%s", dump_buf);
 		usrsctp_freedumpbuffer(dump_buf);
@@ -85,9 +85,9 @@ static int
 receive_cb(struct socket* sock, union sctp_sockstore addr, void* data,
 	size_t datalen, struct sctp_rcvinfo rcv, int flags, void* ulp_info)
 {
-	printf("Message %p received on sock = %p.\n", data, (void*)sock);
+	//printf("Message %p received on sock = %p.\n", data, (void*)sock);
 	if (data) {
-		if ((flags & MSG_NOTIFICATION) == 0) {
+		if ((flags & MSG_NOTIFICATION) == 0 && 0) {
 			printf("Messsage of length %d received via %p:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u, flags %x.\n",
 				(int)datalen,
 				addr.sconn.sconn_addr,
@@ -223,7 +223,7 @@ int init_fuzzer(void)
 		perror("usrsctp_getsockopt");
 		exit(EXIT_FAILURE);
 	}
-	printf("Change send socket buffer size from %d ", cur_buf_size);
+	//printf("Change send socket buffer size from %d ", cur_buf_size);
 	snd_buf_size = 1 << 20; /* 1 MB */
 	if (usrsctp_setsockopt(s_c, SOL_SOCKET, SO_SNDBUF, &snd_buf_size, sizeof(int)) < 0) {
 		perror("usrsctp_setsockopt");
@@ -235,7 +235,7 @@ int init_fuzzer(void)
 		perror("usrsctp_getsockopt");
 		exit(EXIT_FAILURE);
 	}
-	printf("to %d.\n", cur_buf_size);
+	//printf("to %d.\n", cur_buf_size);
 	if ((s_l = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_s)) == NULL) {
 		perror("usrsctp_socket");
 		exit(EXIT_FAILURE);
@@ -246,7 +246,7 @@ int init_fuzzer(void)
 		perror("usrsctp_getsockopt");
 		exit(EXIT_FAILURE);
 	}
-	printf("Change receive socket buffer size from %d ", cur_buf_size);
+	//printf("Change receive socket buffer size from %d ", cur_buf_size);
 	rcv_buf_size = 1 << 16; /* 64 KB */
 	if (usrsctp_setsockopt(s_l, SOL_SOCKET, SO_RCVBUF, &rcv_buf_size, sizeof(int)) < 0) {
 		perror("usrsctp_setsockopt");
@@ -258,7 +258,7 @@ int init_fuzzer(void)
 		perror("usrsctp_getsockopt");
 		exit(EXIT_FAILURE);
 	}
-	printf("to %d.\n", cur_buf_size);
+	//printf("to %d.\n", cur_buf_size);
 	/* Bind the client side. */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
@@ -315,7 +315,7 @@ int init_fuzzer(void)
 }
 
 #if defined(FUZZING_MODE)
-int LLVMFuzzerTestOneInput(uint8_t* data, size_t data_size)
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 #else // defined(FUZZING_MODE)
 int main(void)
@@ -326,8 +326,11 @@ int main(void)
 
 	init_fuzzer();
 
-	memcpy(data, c_cheader, 12);
-
+#if 0
+	if (data_size >= 12) {
+		memcpy(data, c_cheader, 12);
+	}
+#endif
 	// magic happens here
 	usrsctp_conninput(&fd_s, data, data_size, 0);
 
