@@ -68,27 +68,30 @@ find_package(Threads)
 # PROGRAMS
 #################################################
 
-list(APPEND CHECK_PROGRAMS
-    client.c
-    daytime_server.c
-    discard_server.c
-    echo_server.c
-    ekr_client.c
-    ekr_loop_offload.c
-    ekr_loop.c
-    ekr_peer.c
-    ekr_server.c
-    http_client.c
-    rtcweb.c
-    test_libmgmt.c
-    test_timer.c
-    tsctp.c
-    fuzzer2.c
-)
-
 # if in fuzzing mode, only build the fuzzer
 if (FUZZING_MODE)
-    set(CHECK_PROGRAMS fuzzer.c)
+    list(APPEND CHECK_PROGRAMS
+        fuzzer.c
+        fuzzer2.c
+    )
+else ()
+    list(APPEND CHECK_PROGRAMS
+        client.c
+        daytime_server.c
+        discard_server.c
+        echo_server.c
+        ekr_client.c
+        ekr_loop_offload.c
+        ekr_loop.c
+        ekr_peer.c
+        ekr_server.c
+        fuzzer2.c
+        http_client.c
+        rtcweb.c
+        test_libmgmt.c
+        test_timer.c
+        tsctp.c
+    )
 endif ()
 
 foreach (SOURCE_FILE ${CHECK_PROGRAMS})
