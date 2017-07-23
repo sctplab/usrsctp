@@ -49,8 +49,8 @@
 static int fd_c, fd_s;
 static struct socket *s_c, *s_s, *s_l;
 static pthread_t tid_c, tid_s;
-//static char *s_cheader[12];
-//static char *c_cheader[12];
+static char *s_cheader[12];
+static char *c_cheader[12];
 
 static int
 conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
@@ -59,7 +59,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 	int *fdp;
 
 	fdp = (int *)addr;
-#if 0
+
 	if (*fdp == fd_c) {
 		memcpy(c_cheader, buf, 12);
 	}
@@ -68,8 +68,8 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 		memcpy(s_cheader, buf, 12);
 	}
 
-	fprintf(stderr, "%s - %d - %d - %d\n", __func__, fd_c, fd_s, *fdp);
-#endif
+	//fprintf(stderr, "%s - %d - %d - %d\n", __func__, fd_c, fd_s, *fdp);
+
 	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
 		//fprintf(stderr, "%s", dump_buf);
 		usrsctp_freedumpbuffer(dump_buf);
@@ -326,16 +326,23 @@ int main(void)
 
 	init_fuzzer();
 
-#if 0
-	if (data_size >= 12) {
-		memcpy(data, c_cheader, 12);
-	}
-#endif
+#if 1
+	char *pkt = malloc(data_size + 12);
+	memcpy(pkt, c_cheader, 12);
+	memcpy(pkt + 12, data, data_size);
+
 	// magic happens here
+	usrsctp_conninput(&fd_s, pkt, data_size + 12, 0);
+
+	free(pkt);
+#elif
+
 	usrsctp_conninput(&fd_s, data, data_size, 0);
+#endif
 
 #if !defined(FUZZ_FAST)
-	usrsctp_shutdown(s_c, SHUT_WR);
+	//usrsctp_shutdown(s_c, SHUT_WR);
+	usrsctp_close(s_c);
 
 	while (usrsctp_finish() != 0) {
 		//sleep(1);
