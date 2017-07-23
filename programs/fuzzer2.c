@@ -41,28 +41,44 @@
 #include <unistd.h>
 #include <usrsctp.h>
 
-#define FUZZ_FAST 1
+#define FUZZ_FAST 0
 #define MAX_PACKET_SIZE (1 << 16)
 #define LINE_LENGTH (1 << 20)
 #define DISCARD_PPID 39
 
-int fd_c, fd_s;
-struct socket *s_c, *s_s, *s_l;
-pthread_t tid_c, tid_s;
+static int fd_c, fd_s;
+static struct socket *s_c, *s_s, *s_l;
+static pthread_t tid_c, tid_s;
+static char *s_cheader[12];
+static char *c_cheader[12];
 
 static int
-conn_output(void* addr, void* buf, size_t length, uint8_t tos, uint8_t set_df)
+conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 {
-	char* dump_buf;
+	char *dump_buf;
+	int *fdp;
 
-	//return 0;
-	fprintf(stderr, "%s - %d\n", __func__, (int)addr);
+	fdp = (int *)addr;
+
+	if (*fdp == fd_c) {
+		memcpy(c_cheader, buf, 12);
+	}
+
+	if (*fdp == fd_s) {
+		memcpy(s_cheader, buf, 12);
+	}
+
+	fprintf(stderr, "%s - %d - %d - %d\n", __func__, fd_c, fd_s, *fdp);
 
 	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
-		fprintf(stderr, "%s", dump_buf);
+		//fprintf(stderr, "%s", dump_buf);
 		usrsctp_freedumpbuffer(dump_buf);
 	}
-	return (0);
+	if (send(*fdp, buf, length, 0) < 0) {
+		return (errno);
+	} else {
+		return (0);
+	}
 }
 
 static int
@@ -142,6 +158,7 @@ int init_fuzzer(void)
 	socklen_t opt_len;
 
 	usrsctp_init(0, conn_output, debug_printf);
+	usrsctp_enable_crc32c_offload();
 	/* set up a connected UDP socket */
 	if ((fd_c = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 		perror("socket");
@@ -279,14 +296,17 @@ int init_fuzzer(void)
 #endif
 	sconn.sconn_port = htons(5001);
 	sconn.sconn_addr = &fd_c;
+
 	if (usrsctp_connect(s_c, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_connect");
 		exit(EXIT_FAILURE);
 	}
+
 	if ((s_s = usrsctp_accept(s_l, NULL, NULL)) == NULL) {
 		perror("usrsctp_accept");
 		exit(EXIT_FAILURE);
 	}
+
 	usrsctp_close(s_l);
 
 	initialized = 1;
@@ -295,25 +315,27 @@ int init_fuzzer(void)
 }
 
 #if defined(FUZZING_MODE)
-int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
+int LLVMFuzzerTestOneInput(uint8_t* data, size_t data_size)
 {
 #else // defined(FUZZING_MODE)
 int main(void)
 {
-	const char* data = "hallo";
+	char data[] = "SCTPSCTPSCTPSCTPSCTPSCTPSCTP!!!!";
 	size_t data_size = strlen(data);
 #endif // defined(FUZZING_MODE)
 
 	init_fuzzer();
 
+	memcpy(data, c_cheader, 12);
+
 	// magic happens here
-	usrsctp_conninput((void*)1, data, data_size, 0);
+	usrsctp_conninput(&fd_s, data, data_size, 0);
 
 #if !defined(FUZZ_FAST)
 	usrsctp_shutdown(s_c, SHUT_WR);
 
 	while (usrsctp_finish() != 0) {
-		sleep(1);
+		//sleep(1);
 	}
 	pthread_cancel(tid_c);
 	pthread_join(tid_c, NULL);
