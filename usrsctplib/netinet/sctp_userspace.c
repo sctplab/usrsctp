@@ -91,16 +91,19 @@ sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)
 	int fd;
 
 	memset(&ifr, 0, sizeof(struct ifreq));
-	if_indextoname(if_index, ifr.ifr_name);
-	/* TODO can I use the raw socket here and not have to open a new one with each query? */
-	if ((fd = socket(af, SOCK_DGRAM, 0)) < 0)
-		return (0);
-	if (ioctl(fd, SIOCGIFMTU, &ifr) < 0) {
+	if (if_indextoname(if_index, ifr.ifr_name) != NULL) {
+		/* TODO can I use the raw socket here and not have to open a new one with each query? */
+		if ((fd = socket(af, SOCK_DGRAM, 0)) < 0)
+			return (0);
+		if (ioctl(fd, SIOCGIFMTU, &ifr) < 0) {
+			close(fd);
+			return (0);
+		}
 		close(fd);
+		return ifr.ifr_mtu;
+	} else {
 		return (0);
 	}
-	close(fd);
-	return ifr.ifr_mtu;
 }
 #endif
 
