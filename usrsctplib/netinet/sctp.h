@@ -609,7 +609,7 @@ struct sctp_error_auth_invalid_hmac {
 #define SCTP_SMALLEST_PMTU 512	 /* smallest pmtu allowed when disabling PMTU discovery */
 
 #if defined(__Userspace_os_Windows)
-#pragma pack()
+#pragma pack(pop)
 #endif
 #undef SCTP_PACKED
 

@@ -140,7 +140,7 @@ struct rtcweb_datachannel_ack {
 } SCTP_PACKED;
 
 #ifdef _WIN32
-#pragma pack()
+#pragma pack(pop)
 #endif
 
 #undef SCTP_PACKED
