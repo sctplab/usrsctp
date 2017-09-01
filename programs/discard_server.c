@@ -48,7 +48,9 @@
 #endif
 #include <usrsctp.h>
 
+#define PORT 9
 #define BUFFER_SIZE 10240
+#define SLEEP 1
 
 const int use_cb = 0;
 
@@ -189,7 +191,7 @@ main(int argc, char *argv[])
 	addr.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 	addr.sin6_family = AF_INET6;
-	addr.sin6_port = htons(9);
+	addr.sin6_port = htons(PORT);
 	addr.sin6_addr = in6addr_any;
 	if (usrsctp_bind(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in6)) < 0) {
 		perror("usrsctp_bind");
@@ -200,9 +202,9 @@ main(int argc, char *argv[])
 	while (1) {
 		if (use_cb) {
 #ifdef _WIN32
-			Sleep(1*1000);
+			Sleep(SLEEP * 1000);
 #else
-			sleep(1);
+			sleep(SLEEP);
 #endif
 		} else {
 			from_len = (socklen_t)sizeof(struct sockaddr_in6);
@@ -239,9 +241,9 @@ main(int argc, char *argv[])
 	usrsctp_close(sock);
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
-		Sleep(1000);
+		Sleep(SLEEP * 1000);
 #else
-		sleep(1);
+		sleep(SLEEP);
 #endif
 	}
 	return (0);

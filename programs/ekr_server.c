@@ -50,7 +50,9 @@
 #endif
 #include <usrsctp.h>
 
+#define PORT 5001
 #define MAX_PACKET_SIZE (1<<16)
+#define SLEEP 1
 
 #ifdef _WIN32
 static DWORD WINAPI
@@ -264,7 +266,7 @@ main(int argc, char *argv[])
 #ifdef HAVE_SCONN_LEN
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif
-	sconn.sconn_port = htons(5001);
+	sconn.sconn_port = htons(PORT);
 	sconn.sconn_addr = (void *)&fd;
 	if (usrsctp_bind(s, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_bind");
@@ -281,9 +283,9 @@ main(int argc, char *argv[])
 	usrsctp_deregister_address((void *)&fd);
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
-		Sleep(1000);
+		Sleep(SLEEP * 1000);
 #else
-		sleep(1);
+		sleep(SLEEP);
 #endif
 	}
 #ifdef _WIN32
