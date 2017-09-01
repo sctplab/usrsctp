@@ -414,7 +414,9 @@ int main(int argc, char **argv)
 				fragpoint = atoi(optarg);
 				break;
 			case 'L':
-				inet_pton(AF_INET, optarg, &srcAddr);
+				if (inet_pton(AF_INET, optarg, &srcAddr) != 1) {
+					printf("Can't parse %s\n", optarg);
+				}
 				break;
 			case 'R':
 				rcvbufsize = atoi(optarg);
