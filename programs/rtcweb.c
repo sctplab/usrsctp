@@ -146,11 +146,23 @@ struct rtcweb_datachannel_ack {
 #undef SCTP_PACKED
 
 static void
+lock_peer_connection(struct peer_connection *);
+
+static void
+unlock_peer_connection(struct peer_connection *);
+
+static void
 init_peer_connection(struct peer_connection *pc)
 {
 	uint32_t i;
 	struct channel *channel;
 
+#ifdef _WIN32
+	InitializeCriticalSection(&(pc->mutex));
+#else
+	pthread_mutex_init(&pc->mutex, NULL);
+#endif
+	lock_peer_connection(pc);
 	for (i = 0; i < NUMBER_OF_CHANNELS; i++) {
 		channel = &(pc->channels[i]);
 		channel->id = i;
@@ -169,11 +181,7 @@ init_peer_connection(struct peer_connection *pc)
 	}
 	pc->o_stream_buffer_counter = 0;
 	pc->sock = NULL;
-#ifdef _WIN32
-	InitializeCriticalSection(&(pc->mutex));
-#else
-	pthread_mutex_init(&pc->mutex, NULL);
-#endif
+	unlock_peer_connection(pc);
 }
 
 static void
