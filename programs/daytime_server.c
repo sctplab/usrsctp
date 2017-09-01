@@ -121,8 +121,10 @@ main(int argc, char *argv[])
 		sndinfo.snd_ppid = htonl(DAYTIME_PPID);
 		sndinfo.snd_context = 0;
 		sndinfo.snd_assoc_id = 0;
-		usrsctp_sendv(conn_sock, buffer, strlen(buffer), NULL, 0, (void *)&sndinfo,
-		              (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0);
+		if (usrsctp_sendv(conn_sock, buffer, strlen(buffer), NULL, 0, (void *)&sndinfo,
+		                  (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
+			perror("usrsctp_sendv");
+		}
 		usrsctp_close(conn_sock);
 	}
 	usrsctp_close(sock);
