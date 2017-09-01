@@ -49,6 +49,10 @@
 #endif
 #include <usrsctp.h>
 
+#define PORT 13
+#define DAYTIME_PPID 40
+#define SLEEP 1
+
 void
 debug_printf(const char *format, ...)
 {
@@ -59,7 +63,6 @@ debug_printf(const char *format, ...)
 	va_end(ap);
 }
 
-#define DAYTIME_PPID 40
 int
 main(int argc, char *argv[])
 {
@@ -97,7 +100,7 @@ main(int argc, char *argv[])
 	addr.sin_len = sizeof(struct sockaddr_in);
 #endif
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(13);
+	addr.sin_port = htons(PORT);
 	addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	if (usrsctp_bind(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) < 0) {
 		perror("usrsctp_bind");
@@ -130,9 +133,9 @@ main(int argc, char *argv[])
 	usrsctp_close(sock);
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
-		Sleep(1000);
+		Sleep(SLEEP * 1000);
 #else
-		sleep(1);
+		sleep(SLEEP);
 #endif
 	}
 	return (0);
