@@ -3445,7 +3445,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		/* got to be root to get at low ports */
 #if !defined(__Windows__)
 		if (ntohs(lport) < IPPORT_RESERVED) {
-			if (p && (error =
+			if ((p != NULL) && ((error =
 #ifdef __FreeBSD__
 #if __FreeBSD_version > 602000
 				  priv_check(p, PRIV_NETINET_RESERVEDPORT)
@@ -3461,7 +3461,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 #else
 				  suser(p, 0)
 #endif
-				    )) {
+				    ) != 0)) {
 				SCTP_INP_DECR_REF(inp);
 				SCTP_INP_WUNLOCK(inp);
 				SCTP_INP_INFO_WUNLOCK();
