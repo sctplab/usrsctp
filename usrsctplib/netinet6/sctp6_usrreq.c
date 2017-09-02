@@ -1247,7 +1247,7 @@ sctp6_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_CONNECTED) {
 		stcb = LIST_FIRST(&inp->sctp_asoc_list);
 		if (stcb) {
-			SCTP_TCB_UNLOCK(stcb);
+			SCTP_TCB_LOCK(stcb);
 		}
 		SCTP_INP_RUNLOCK(inp);
 	} else {
