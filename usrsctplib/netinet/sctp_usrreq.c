@@ -3741,7 +3741,6 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		if (event_type > 0) {
 			if (stcb) {
 				event->se_on = sctp_stcb_is_feature_on(inp, stcb, event_type);
-				SCTP_TCB_UNLOCK(stcb);
 			} else {
 				if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 				    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
@@ -3754,6 +3753,9 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 					error = EINVAL;
 				}
 			}
+		}
+		if (stcb != NULL) {
+			SCTP_TCB_UNLOCK(stcb);
 		}
 		if (error == 0) {
 			*optsize = sizeof(struct sctp_event);
