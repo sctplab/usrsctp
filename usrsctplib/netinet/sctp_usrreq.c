@@ -4349,11 +4349,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			sprstat->sprstat_abandoned_unsent = stcb->asoc.strmout[sid].abandoned_unsent[0];
 			sprstat->sprstat_abandoned_sent = stcb->asoc.strmout[sid].abandoned_sent[0];
 #endif
-			SCTP_TCB_UNLOCK(stcb);
-			*optsize = sizeof(struct sctp_prstatus);
 		} else {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			error = EINVAL;
+		}
+		if (stcb != NULL) {
+			SCTP_TCB_UNLOCK(stcb);
+		}
+		if (error == 0) {
+			*optsize = sizeof(struct sctp_prstatus);
 		}
 		break;
 	}
