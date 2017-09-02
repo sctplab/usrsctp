@@ -6595,9 +6595,9 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 #else
 		error = suser(p, 0);
 #endif
-#endif
 		if (error)
 			break;
+#endif
 
 		SCTP_CHECK_AND_CAST(ss, optval, union sctp_sockstore, optsize);
 		/* SUPER USER CHECK? */
@@ -7835,7 +7835,7 @@ sctp_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 	    (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
 		/* Should I really unlock ? */
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EFAULT);
-	        error = EFAULT;
+		error = EFAULT;
 		goto out_now;
 	}
 #ifdef INET6
