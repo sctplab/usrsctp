@@ -2557,6 +2557,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
 		} else {
 			id->assoc_value = stcb->asoc.vrf_id;
+			SCTP_TCB_UNLOCK(stcb);
 			*optsize = sizeof(struct sctp_assoc_value);
 		}
 		break;
