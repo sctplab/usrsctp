@@ -4479,12 +4479,15 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			if ((ro->ro_rt != NULL) &&
 			    (net->ro._s_addr)) {
 				uint32_t mtu;
+	
 				mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._l_addr.sa, ro->ro_rt);
-				if (net->port) {
-					mtu -= sizeof(struct udphdr);
-				}
-				if (mtu && (stcb->asoc.smallest_mtu > mtu)) {
-					sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
+				if (mtu > 0) {
+					if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
+						sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
+					}
+					if (net->port) {
+						mtu -= sizeof(struct udphdr);
+					}
 					net->mtu = mtu;
 				}
 			} else if (ro->ro_rt == NULL) {
@@ -4948,14 +4951,14 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 				uint32_t mtu;
 
 				mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._l_addr.sa, ro->ro_rt);
-				if ((stcb != NULL) &&
-				    (mtu > 0) &&
-				    (stcb->asoc.smallest_mtu > mtu)) {
-					sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
-					net->mtu = mtu;
-					if (net->port) {
-						net->mtu -= sizeof(struct udphdr);
+				if (mtu > 0) {
+					if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
+						sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
 					}
+					if (net->port) {
+						mtu -= sizeof(struct udphdr);
+					}
+					net->mtu = mtu;
 				}
 			}
 #if !defined(__Panda__) && !defined(__Userspace__)
