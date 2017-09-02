@@ -2657,9 +2657,13 @@ usrsctp_connectx(struct socket *so,
 				return (-1);
 			}
 #endif
+			len += sizeof(struct sockaddr_in);
+			if (len > SCTP_STACK_BUF_SIZE) {
+				errno = ENOMEM;
+				return (-1);
+			}
 			memcpy(cpto, at, sizeof(struct sockaddr_in));
 			cpto = ((caddr_t)cpto + sizeof(struct sockaddr_in));
-			len += sizeof(struct sockaddr_in);
 			at = (struct sockaddr *)((caddr_t)at + sizeof(struct sockaddr_in));
 			break;
 #endif
@@ -2673,18 +2677,30 @@ usrsctp_connectx(struct socket *so,
 #endif
 #ifdef INET
 			if (IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)at)->sin6_addr)) {
+				len += sizeof(struct sockaddr_in);
+				if (len > SCTP_STACK_BUF_SIZE) {
+					errno = ENOMEM;
+					return (-1);
+				}
 				in6_sin6_2_sin((struct sockaddr_in *)cpto, (struct sockaddr_in6 *)at);
 				cpto = ((caddr_t)cpto + sizeof(struct sockaddr_in));
-				len += sizeof(struct sockaddr_in);
 			} else {
+				len += sizeof(struct sockaddr_in6);
+				if (len > SCTP_STACK_BUF_SIZE) {
+					errno = ENOMEM;
+					return (-1);
+				}
 				memcpy(cpto, at, sizeof(struct sockaddr_in6));
 				cpto = ((caddr_t)cpto + sizeof(struct sockaddr_in6));
-				len += sizeof(struct sockaddr_in6);
 			}
 #else
+			len += sizeof(struct sockaddr_in6);
+			if (len > SCTP_STACK_BUF_SIZE) {
+				errno = ENOMEM;
+				return (-1);
+			}
 			memcpy(cpto, at, sizeof(struct sockaddr_in6));
 			cpto = ((caddr_t)cpto + sizeof(struct sockaddr_in6));
-			len += sizeof(struct sockaddr_in6);
 #endif
 			at = (struct sockaddr *)((caddr_t)at + sizeof(struct sockaddr_in6));
 			break;
@@ -2693,17 +2709,7 @@ usrsctp_connectx(struct socket *so,
 			errno = EINVAL;
 			return (-1);
 		}
-		if (len > (sizeof(buf) - sizeof(int))) {
-			/* Never enough memory */
-			errno = E2BIG;
-			return (-1);
-		}
 		cnt++;
-	}
-	/* do we have any? */
-	if (cnt == 0) {
-		errno = EINVAL;
-		return (-1);
 	}
 	aa = (int *)buf;
 	*aa = cnt;
