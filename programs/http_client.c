@@ -30,6 +30,8 @@
 
 /*
  * Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]
+ * 
+ * Example?
  */
 
 #ifdef _WIN32
