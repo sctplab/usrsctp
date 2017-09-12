@@ -30,6 +30,10 @@
 
 /*
  * Usage: daytime_server [local_encaps_port] [remote_encaps_port]
+ * 
+ * Example
+ * Server: $ ./daytime_server 11111 22222
+ * Client: $ ./client 127.0.0.1 13 0 22222 11111
  */
 
 #ifdef _WIN32

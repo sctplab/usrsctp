@@ -29,7 +29,11 @@
  */
 
 /*
- * Usage: discard_server [local_encaps_port] [remote_encaps_port]
+ * Usage: echo_server [local_encaps_port] [remote_encaps_port]
+ * 
+ * Example
+ * Server: $ ./echo_server 11111 22222
+ * Client: $ ./client 127.0.0.1 7 0 22222 11111
  */
 
 #ifdef _WIN32
