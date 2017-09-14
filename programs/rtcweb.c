@@ -187,6 +187,8 @@ init_peer_connection(struct peer_connection *pc)
 static void
 lock_peer_connection(struct peer_connection *pc)
 {
+    if(!pc)
+        return;
 #ifdef _WIN32
 	EnterCriticalSection(&(pc->mutex));
 #else
@@ -197,6 +199,8 @@ lock_peer_connection(struct peer_connection *pc)
 static void
 unlock_peer_connection(struct peer_connection *pc)
 {
+    if(!pc)
+        return;
 #ifdef _WIN32
 	LeaveCriticalSection(&(pc->mutex));
 #else
@@ -207,7 +211,9 @@ unlock_peer_connection(struct peer_connection *pc)
 static struct channel *
 find_channel_by_i_stream(struct peer_connection *pc, uint16_t i_stream)
 {
-	if (i_stream < NUMBER_OF_STREAMS) {
+    if(!pc)
+        return (NULL);
+    if (i_stream < NUMBER_OF_STREAMS) {
 		return (pc->i_stream_channel[i_stream]);
 	} else {
 		return (NULL);
@@ -217,6 +223,8 @@ find_channel_by_i_stream(struct peer_connection *pc, uint16_t i_stream)
 static struct channel *
 find_channel_by_o_stream(struct peer_connection *pc, uint16_t o_stream)
 {
+    if(!pc)
+        return (NULL);
 	if (o_stream < NUMBER_OF_STREAMS) {
 		return (pc->o_stream_channel[o_stream]);
 	} else {
@@ -227,6 +235,8 @@ find_channel_by_o_stream(struct peer_connection *pc, uint16_t o_stream)
 static struct channel *
 find_free_channel(struct peer_connection *pc)
 {
+    if(!pc)
+        return (NULL);
 	uint32_t i;
 
 	for (i = 0; i < NUMBER_OF_CHANNELS; i++) {
@@ -244,6 +254,8 @@ find_free_channel(struct peer_connection *pc)
 static uint16_t
 find_free_o_stream(struct peer_connection *pc)
 {
+    if(!pc)
+        return (0);
 	struct sctp_status status;
 	uint32_t i, limit;
 	socklen_t len;
@@ -274,6 +286,8 @@ find_free_o_stream(struct peer_connection *pc)
 static void
 request_more_o_streams(struct peer_connection *pc)
 {
+    if(!pc)
+        return;
 	struct sctp_status status;
 	struct sctp_add_streams sas;
 	uint32_t i, o_streams_needed;
@@ -1278,6 +1292,8 @@ static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
            size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
 {
+    if(!ulp_info)
+        return (0);
 	struct peer_connection *pc;
 
 	pc = (struct peer_connection *)ulp_info;
