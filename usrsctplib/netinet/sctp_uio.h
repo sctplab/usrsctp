@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 309607 2016-12-06 10:21:25Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 323505 2017-09-12 21:08:50Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UIO_H_
@@ -1306,13 +1306,17 @@ struct xsctp_raddr {
 	uint32_t rtt;
 	uint32_t heartbeat_interval;
 	uint32_t ssthresh;
-	uint32_t extra_padding[30];              /* future */
+	uint16_t encaps_port;
+	uint16_t state;
+	uint32_t extra_padding[29];              /* future */
 #endif
 #else
 	uint32_t rtt;
 	uint32_t heartbeat_interval;
 	uint32_t ssthresh;
-	uint32_t extra_padding[30];              /* future */
+	uint16_t encaps_port;
+	uint16_t state;
+	uint32_t extra_padding[29];              /* future */
 #endif
 };
 
