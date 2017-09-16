@@ -32,8 +32,7 @@
  * Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]
  * 
  * Example
- * Server: $ ./echo_server 11111 22222
- * Client: $ ./http_client 127.0.0.1 7 0 22222 11111 "/index.html"
+ * Client: $ ./http_client 212.201.121.100 80 0 9899 9899 /index.html
  */
 
 #ifdef _WIN32
