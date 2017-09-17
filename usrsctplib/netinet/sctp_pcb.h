@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 323657 2017-09-16 21:26:06Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_PCB_H_
@@ -400,10 +400,6 @@ struct sctp_pcb {
 	 */
 	struct sctp_timer signature_change;
 
-	/* Zero copy full buffer timer */
-	struct sctp_timer zero_copy_timer;
-        /* Zero copy app to transport (sendq) read repulse timer */
-	struct sctp_timer zero_copy_sendq_timer;
 	uint32_t def_cookie_life;
 	/* defaults to 0 */
 	int auto_close_time;

@@ -2882,11 +2882,9 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	} else if (SCTP_SO_TYPE(so) == SOCK_FASTSEQPACKET) {
 		inp->sctp_flags = (SCTP_PCB_FLAGS_UDPTYPE |
 		    SCTP_PCB_FLAGS_UNBOUND);
-		sctp_feature_on(inp, SCTP_PCB_FLAGS_ZERO_COPY_ACTIVE);
 	} else if (SCTP_SO_TYPE(so) == SOCK_FASTSTREAM) {
 		inp->sctp_flags = (SCTP_PCB_FLAGS_TCPTYPE |
 		    SCTP_PCB_FLAGS_UNBOUND);
-		sctp_feature_on(inp, SCTP_PCB_FLAGS_ZERO_COPY_ACTIVE);
 #endif
 	} else {
 		/*
@@ -4199,18 +4197,6 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 #endif
 #endif
 
-#if defined(__Panda__)
-	if (inp->pak_to_read) {
-		(void)SCTP_OS_TIMER_STOP(&inp->sctp_ep.zero_copy_timer.timer);
-		SCTP_RELEASE_PKT(inp->pak_to_read);
-		inp->pak_to_read = NULL;
-	}
-	if (inp->pak_to_read_sendq) {
-		(void)SCTP_OS_TIMER_STOP(&inp->sctp_ep.zero_copy_sendq_timer.timer);
-		SCTP_RELEASE_PKT(inp->pak_to_read_sendq);
-		inp->pak_to_read_sendq = NULL;
-	}
-#endif
 	if ((inp->sctp_asocidhash) != NULL) {
 		SCTP_HASH_FREE(inp->sctp_asocidhash, inp->hashasocidmark);
 		inp->sctp_asocidhash = NULL;
