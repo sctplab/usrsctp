@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 321204 2017-07-19 14:28:58Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 323376 2017-09-09 20:44:56Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2557,6 +2557,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
 		} else {
 			id->assoc_value = stcb->asoc.vrf_id;
+			SCTP_TCB_UNLOCK(stcb);
 			*optsize = sizeof(struct sctp_assoc_value);
 		}
 		break;
@@ -3740,7 +3741,6 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		if (event_type > 0) {
 			if (stcb) {
 				event->se_on = sctp_stcb_is_feature_on(inp, stcb, event_type);
-				SCTP_TCB_UNLOCK(stcb);
 			} else {
 				if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 				    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) ||
@@ -3753,6 +3753,9 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 					error = EINVAL;
 				}
 			}
+		}
+		if (stcb != NULL) {
+			SCTP_TCB_UNLOCK(stcb);
 		}
 		if (error == 0) {
 			*optsize = sizeof(struct sctp_event);
@@ -4346,11 +4349,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			sprstat->sprstat_abandoned_unsent = stcb->asoc.strmout[sid].abandoned_unsent[0];
 			sprstat->sprstat_abandoned_sent = stcb->asoc.strmout[sid].abandoned_sent[0];
 #endif
-			SCTP_TCB_UNLOCK(stcb);
-			*optsize = sizeof(struct sctp_prstatus);
 		} else {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			error = EINVAL;
+		}
+		if (stcb != NULL) {
+			SCTP_TCB_UNLOCK(stcb);
+		}
+		if (error == 0) {
+			*optsize = sizeof(struct sctp_prstatus);
 		}
 		break;
 	}
@@ -4374,11 +4381,15 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 				sprstat->sprstat_abandoned_unsent = stcb->asoc.abandoned_unsent[policy];
 				sprstat->sprstat_abandoned_sent = stcb->asoc.abandoned_sent[policy];
 			}
-			SCTP_TCB_UNLOCK(stcb);
-			*optsize = sizeof(struct sctp_prstatus);
 		} else {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			error = EINVAL;
+		}
+		if (stcb != NULL) {
+			SCTP_TCB_UNLOCK(stcb);
+		}
+		if (error == 0) {
+			*optsize = sizeof(struct sctp_prstatus);
 		}
 		break;
 	}
@@ -6595,9 +6606,9 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 #else
 		error = suser(p, 0);
 #endif
-#endif
 		if (error)
 			break;
+#endif
 
 		SCTP_CHECK_AND_CAST(ss, optval, union sctp_sockstore, optsize);
 		/* SUPER USER CHECK? */
@@ -7835,7 +7846,7 @@ sctp_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 	    (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
 		/* Should I really unlock ? */
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EFAULT);
-	        error = EFAULT;
+		error = EFAULT;
 		goto out_now;
 	}
 #ifdef INET6

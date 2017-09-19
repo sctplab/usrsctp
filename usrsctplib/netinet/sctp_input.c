@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 320653 2017-07-04 18:24:50Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 323372 2017-09-09 19:49:50Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3316,14 +3316,14 @@ sctp_handle_ecn_cwr(struct sctp_cwr_chunk *cp, struct sctp_tcb *stcb, struct sct
 	 * make sure that we have a covered ECNE in the control chunk part.
 	 * If so remove it.
 	 */
-	struct sctp_tmit_chunk *chk;
+	struct sctp_tmit_chunk *chk, *nchk;
 	struct sctp_ecne_chunk *ecne;
 	int override;
 	uint32_t cwr_tsn;
 
 	cwr_tsn = ntohl(cp->tsn);
 	override = cp->ch.chunk_flags & SCTP_CWR_REDUCE_OVERRIDE;
-	TAILQ_FOREACH(chk, &stcb->asoc.control_send_queue, sctp_next) {
+	TAILQ_FOREACH_SAFE(chk, &stcb->asoc.control_send_queue, sctp_next, nchk) {
 		if (chk->rec.chunk_id.id != SCTP_ECN_ECHO) {
 			continue;
 		}

@@ -102,7 +102,7 @@ struct sctp_common_header {
 } SCTP_PACKED;
 
 #if defined(_WIN32) && defined(_MSC_VER)
-#pragma pack()
+#pragma pack(pop)
 #endif
 #undef SCTP_PACKED
 

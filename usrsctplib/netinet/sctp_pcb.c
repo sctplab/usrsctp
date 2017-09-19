@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 321204 2017-07-19 14:28:58Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 323374 2017-09-09 20:08:26Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2882,11 +2882,9 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	} else if (SCTP_SO_TYPE(so) == SOCK_FASTSEQPACKET) {
 		inp->sctp_flags = (SCTP_PCB_FLAGS_UDPTYPE |
 		    SCTP_PCB_FLAGS_UNBOUND);
-		sctp_feature_on(inp, SCTP_PCB_FLAGS_ZERO_COPY_ACTIVE);
 	} else if (SCTP_SO_TYPE(so) == SOCK_FASTSTREAM) {
 		inp->sctp_flags = (SCTP_PCB_FLAGS_TCPTYPE |
 		    SCTP_PCB_FLAGS_UNBOUND);
-		sctp_feature_on(inp, SCTP_PCB_FLAGS_ZERO_COPY_ACTIVE);
 #endif
 	} else {
 		/*
@@ -3446,7 +3444,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		/* got to be root to get at low ports */
 #if !defined(__Windows__)
 		if (ntohs(lport) < IPPORT_RESERVED) {
-			if (p && (error =
+			if ((p != NULL) && ((error =
 #ifdef __FreeBSD__
 #if __FreeBSD_version > 602000
 				  priv_check(p, PRIV_NETINET_RESERVEDPORT)
@@ -3462,7 +3460,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 #else
 				  suser(p, 0)
 #endif
-				    )) {
+				    ) != 0)) {
 				SCTP_INP_DECR_REF(inp);
 				SCTP_INP_WUNLOCK(inp);
 				SCTP_INP_INFO_WUNLOCK();
@@ -4200,18 +4198,6 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 #endif
 #endif
 
-#if defined(__Panda__)
-	if (inp->pak_to_read) {
-		(void)SCTP_OS_TIMER_STOP(&inp->sctp_ep.zero_copy_timer.timer);
-		SCTP_RELEASE_PKT(inp->pak_to_read);
-		inp->pak_to_read = NULL;
-	}
-	if (inp->pak_to_read_sendq) {
-		(void)SCTP_OS_TIMER_STOP(&inp->sctp_ep.zero_copy_sendq_timer.timer);
-		SCTP_RELEASE_PKT(inp->pak_to_read_sendq);
-		inp->pak_to_read_sendq = NULL;
-	}
-#endif
 	if ((inp->sctp_asocidhash) != NULL) {
 		SCTP_HASH_FREE(inp->sctp_asocidhash, inp->hashasocidmark);
 		inp->sctp_asocidhash = NULL;

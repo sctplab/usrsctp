@@ -603,7 +603,7 @@ struct sctp_auth_chunk {
 #include <packoff.h>
 #endif
 #if defined(__Userspace_os_Windows)
-#pragma pack ()
+#pragma pack(pop)
 #endif
 #undef SCTP_PACKED
 #endif				/* !__sctp_header_h__ */

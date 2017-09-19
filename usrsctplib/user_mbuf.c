@@ -204,39 +204,39 @@ m_free(struct mbuf *m)
 }
 
 
-static int clust_constructor_dup(caddr_t m_clust, struct mbuf* m)
+static void
+clust_constructor_dup(caddr_t m_clust, struct mbuf* m)
 {
 	u_int *refcnt;
 	int type, size;
 
+	if (m == NULL) {
+		return;
+	}
 	/* Assigning cluster of MCLBYTES. TODO: Add jumbo frame functionality */
 	type = EXT_CLUSTER;
 	size = MCLBYTES;
 
 	refcnt = SCTP_ZONE_GET(zone_ext_refcnt, u_int);
 	/*refcnt = (u_int *)umem_cache_alloc(zone_ext_refcnt, UMEM_DEFAULT);*/
-	if (refcnt == NULL) {
 #if !defined(SCTP_SIMPLE_ALLOCATOR)
+	if (refcnt == NULL) {
 		umem_reap();
-#endif
 		refcnt = SCTP_ZONE_GET(zone_ext_refcnt, u_int);
 		/*refcnt = (u_int *)umem_cache_alloc(zone_ext_refcnt, UMEM_DEFAULT);*/
 	}
+#endif
 	*refcnt = 1;
-	if (m != NULL) {
-		m->m_ext.ext_buf = (caddr_t)m_clust;
-		m->m_data = m->m_ext.ext_buf;
-		m->m_flags |= M_EXT;
-		m->m_ext.ext_free = NULL;
-		m->m_ext.ext_args = NULL;
-		m->m_ext.ext_size = size;
-		m->m_ext.ext_type = type;
-		m->m_ext.ref_cnt = refcnt;
-	}
-
-	return (0);
+	m->m_ext.ext_buf = (caddr_t)m_clust;
+	m->m_data = m->m_ext.ext_buf;
+	m->m_flags |= M_EXT;
+	m->m_ext.ext_free = NULL;
+	m->m_ext.ext_args = NULL;
+	m->m_ext.ext_size = size;
+	m->m_ext.ext_type = type;
+	m->m_ext.ref_cnt = refcnt;
+	return;
 }
-
 
 
 /* __Userspace__ */
