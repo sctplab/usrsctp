@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 323670 2017-09-17 09:27:27Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 323763 2017-09-19 15:00:19Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4211,7 +4211,6 @@ sctp_express_handle_sack(struct sctp_tcb *stcb, uint32_t cumack,
 again:
 	j = 0;
 	TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
-		int to_ticks;
 		if (win_probe_recovery && (net->window_probe)) {
 			win_probe_recovered = 1;
 			/*
@@ -4226,11 +4225,6 @@ again:
 					break;
 				}
 			}
-		}
-		if (net->RTO == 0) {
-			to_ticks = MSEC_TO_TICKS(stcb->asoc.initial_rto);
-		} else {
-			to_ticks = MSEC_TO_TICKS(net->RTO);
 		}
 		if (net->flight_size) {
 			j++;

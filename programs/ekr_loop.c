@@ -50,7 +50,7 @@
 #include <usrsctp.h>
 
 #define MAX_PACKET_SIZE (1<<16)
-#define LINE_LENGTH (1<<20)
+#define LINE_LENGTH (1<<10)
 #define DISCARD_PPID 39
 
 #ifdef _WIN32
