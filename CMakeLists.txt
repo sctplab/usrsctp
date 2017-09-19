@@ -175,19 +175,19 @@ if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STR
     if (FUZZING_MODE)
         #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -g -O1 -fsanitize-memory-track-origins -fno-omit-frame-pointer -fsanitize=fuzzer,memory -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
         #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O1 -fsanitize-memory-track-origins -fno-omit-frame-pointer -fsanitize=fuzzer,memory -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -g -O1 -fno-omit-frame-pointer -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=undefined -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div -Wno-address-of-packed-member")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O1 -fno-omit-frame-pointer -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=undefined -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div -Wno-address-of-packed-member")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -g -fno-omit-frame-pointer -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=undefined -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div -Wno-address-of-packed-member")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fno-omit-frame-pointer -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=undefined -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div -Wno-address-of-packed-member")
     endif ()
 
     if (SANITIZER_ADDRESS)
-        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=address -O1 -fno-omit-frame-pointer -g -Wno-address-of-packed-member")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -O1 -fno-omit-frame-pointer -g -Wno-address-of-packed-member")
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -g -fsanitize=address -fno-omit-frame-pointer -Wno-address-of-packed-member")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fsanitize=address -fno-omit-frame-pointer -Wno-address-of-packed-member")
     endif ()
 
     if (SANITIZER_MEMORY)
         # maybe add "-fPIE -pie" here
-        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=memory -fno-omit-frame-pointer -g -Wno-address-of-packed-member -fsanitize-memory-track-origins")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -g -Wno-address-of-packed-member -fsanitize-memory-track-origins")
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -g -fsanitize=memory -fno-omit-frame-pointer -Wno-address-of-packed-member -fsanitize-memory-track-origins")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fsanitize=memory -fno-omit-frame-pointer -Wno-address-of-packed-member -fsanitize-memory-track-origins")
     endif ()
 endif ()
 
