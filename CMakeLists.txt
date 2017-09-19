@@ -67,46 +67,6 @@ if (INET6)
     add_definitions(-DINET6)
 endif ()
 
-option(SCTP_SIMPLE_ALLOCATOR " " 1)
-if (SCTP_SIMPLE_ALLOCATOR)
-    add_definitions(-DSCTP_SIMPLE_ALLOCATOR)
-endif ()
-
-option(SCTP_PROCESS_LEVEL_LOCKS " " 1)
-if (SCTP_PROCESS_LEVEL_LOCKS)
-    add_definitions(-DSCTP_PROCESS_LEVEL_LOCKS)
-endif ()
-
-option(SCTP_WITH_NO_CSUM "Disable SCTP checksum" 0)
-if (SCTP_WITH_NO_CSUM)
-    add_definitions(-DSCTP_WITH_NO_CSUM)
-endif ()
-
-option(SCTP_MBUF_LOGGING " " 0)
-if (SCTP_MBUF_LOGGING)
-    add_definitions(-DSCTP_MBUF_LOGGING)
-endif ()
-
-option(SCTP_PACKET_LOGGING " " 0)
-if (SCTP_PACKET_LOGGING)
-    add_definitions(-DSCTP_PACKET_LOGGING)
-endif ()
-
-option(SCTP_SO_LOCK_TESTING " " 0)
-if (SCTP_SO_LOCK_TESTING)
-    add_definitions(-DSCTP_SO_LOCK_TESTING)
-endif ()
-
-option(SCTP_EMBEDDED_V6_SCOPE " " 0)
-if (SCTP_EMBEDDED_V6_SCOPE)
-    add_definitions(-DSCTP_EMBEDDED_V6_SCOPE)
-endif ()
-
-option(SCTP_KAME " " 0)
-if (SCTP_KAME)
-    add_definitions(-DSCTP_KAME)
-endif ()
-
 option(WERROR "Warning as error" 1)
 
 option(LINK_PROGRAMS_STATIC "Link example programs static" 0)
