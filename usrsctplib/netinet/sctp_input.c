@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 323774 2017-09-19 20:09:58Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 323776 2017-09-19 20:24:13Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2716,7 +2716,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 		} else {
 			staleness = diff.tv_sec * 1000000;
 		}
-		if (UINT32_MAX - staleness >= diff.tv_usec) {
+		if (UINT32_MAX - staleness >= (uint32_t)diff.tv_usec) {
 			staleness += diff.tv_usec;
 		} else {
 			staleness = UINT32_MAX;
