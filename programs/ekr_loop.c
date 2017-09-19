@@ -50,7 +50,7 @@
 #include <usrsctp.h>
 
 #define MAX_PACKET_SIZE (1<<16)
-#define LINE_LENGTH (1<<14)
+#define LINE_LENGTH (1<<10)
 #define DISCARD_PPID 39
 #define DUMP_PKTS_TO_FILE 1
 
