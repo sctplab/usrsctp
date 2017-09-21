@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 323763 2017-09-19 15:00:19Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 323847 2017-09-21 09:18:05Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1605,7 +1605,6 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 								  control,
 								  &stcb->sctp_socket->so_rcv, control->end_added,
 								  SCTP_READ_LOCK_NOT_HELD, SCTP_SO_NOT_LOCKED);
-						do_wakeup = 1;
 					}
 					break;
 				}
