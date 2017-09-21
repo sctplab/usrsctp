@@ -1315,13 +1315,13 @@ sctp_shutdown(struct socket *so)
 	if (!((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 	      (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL))) {
 		/* Restore the flags that the soshutdown took away. */
-#if (defined(__FreeBSD__) && __FreeBSD_version >= 502115) || defined(__Windows__)
 		SOCKBUF_LOCK(&so->so_rcv);
+#if (defined(__FreeBSD__) && __FreeBSD_version >= 502115) || defined(__Windows__)
 		so->so_rcv.sb_state &= ~SBS_CANTRCVMORE;
-		SOCKBUF_UNLOCK(&so->so_rcv);
 #else
 		so->so_state &= ~SS_CANTRCVMORE;
 #endif
+		SOCKBUF_UNLOCK(&so->so_rcv);
 		/* This proc will wakeup for read and do nothing (I hope) */
 		SCTP_INP_RUNLOCK(inp);
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EOPNOTSUPP);
