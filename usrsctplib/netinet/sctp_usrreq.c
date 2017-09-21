@@ -170,7 +170,7 @@ sctp_init(void)
 static void
 sctp_finish(void *unused __unused)
 {
-         sctp_pcb_finish();
+	sctp_pcb_finish();
 }
 VNET_SYSUNINIT(sctp, SI_SUB_PROTO_DOMAIN, SI_ORDER_FOURTH, sctp_finish, NULL);
 #endif
@@ -1253,7 +1253,7 @@ sctp_disconnect(struct socket *so)
 int
 sctp_flush(struct socket *so, int how)
 {
-        /*
+	/*
 	 * We will just clear out the values and let
 	 * subsequent close clear out the data, if any.
 	 * Note if the user did a shutdown(SHUT_RD) they
@@ -1274,7 +1274,7 @@ sctp_flush(struct socket *so, int how)
 		return (0);
 	}
 	SCTP_INP_RUNLOCK(inp);
-        if ((how == PRU_FLUSH_RD) || (how == PRU_FLUSH_RDWR)) {
+	if ((how == PRU_FLUSH_RD) || (how == PRU_FLUSH_RDWR)) {
 		/* First make sure the sb will be happy, we don't
 		 * use these except maybe the count
 		 */
@@ -1287,7 +1287,7 @@ sctp_flush(struct socket *so, int how)
 		so->so_rcv.sb_mbcnt = 0;
 		so->so_rcv.sb_mb = NULL;
 	}
-        if ((how == PRU_FLUSH_WR) || (how == PRU_FLUSH_RDWR)) {
+	if ((how == PRU_FLUSH_WR) || (how == PRU_FLUSH_RDWR)) {
 		/* First make sure the sb will be happy, we don't
 		 * use these except maybe the count
 		 */
@@ -1315,13 +1315,15 @@ sctp_shutdown(struct socket *so)
 	if (!((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 	      (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL))) {
 		/* Restore the flags that the soshutdown took away. */
-		SOCKBUF_LOCK(&so->so_rcv);
 #if (defined(__FreeBSD__) && __FreeBSD_version >= 502115) || defined(__Windows__)
+		SOCKBUF_LOCK(&so->so_rcv);
 		so->so_rcv.sb_state &= ~SBS_CANTRCVMORE;
-#else
-		so->so_state &= ~SS_CANTRCVMORE;
-#endif
 		SOCKBUF_UNLOCK(&so->so_rcv);
+#else
+		SOCK_LOCK(so);
+		so->so_state &= ~SS_CANTRCVMORE;
+		SOCK_UNLOCK(so);
+#endif
 		/* This proc will wakeup for read and do nothing (I hope) */
 		SCTP_INP_RUNLOCK(inp);
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EOPNOTSUPP);

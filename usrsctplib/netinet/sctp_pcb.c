@@ -2875,7 +2875,9 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 		inp->sctp_flags = (SCTP_PCB_FLAGS_TCPTYPE |
 		    SCTP_PCB_FLAGS_UNBOUND);
 		/* Be sure we have blocking IO by default */
+		SOCK_LOCK(so);
 		SCTP_CLEAR_SO_NBIO(so);
+		SOCK_UNLOCK(so);
 #if defined(__Panda__)
 	} else if (SCTP_SO_TYPE(so) == SOCK_FASTSEQPACKET) {
 		inp->sctp_flags = (SCTP_PCB_FLAGS_UDPTYPE |
