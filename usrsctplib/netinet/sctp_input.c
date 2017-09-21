@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 323776 2017-09-19 20:24:13Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 323861 2017-09-21 11:56:31Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -224,8 +224,7 @@ sctp_handle_init(struct mbuf *m, int iphlen, int offset,
 #if defined(__FreeBSD__)
 		                       mflowtype, mflowid,
 #endif
-		                       vrf_id, port,
-		                       ((stcb == NULL) ? SCTP_HOLDS_LOCK : SCTP_NOT_LOCKED));
+		                       vrf_id, port);
 	}
  outnow:
 	if (stcb == NULL) {

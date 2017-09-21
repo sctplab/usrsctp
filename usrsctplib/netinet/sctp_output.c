@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 323378 2017-09-09 21:03:40Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 323861 2017-09-21 11:56:31Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5909,7 +5909,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 #if defined(__FreeBSD__)
 		       uint8_t mflowtype, uint32_t mflowid,
 #endif
-                       uint32_t vrf_id, uint16_t port, int hold_inp_lock)
+                       uint32_t vrf_id, uint16_t port)
 {
 	struct sctp_association *asoc;
 	struct mbuf *m, *m_tmp, *m_last, *m_cookie, *op_err;
@@ -6322,10 +6322,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		initack->init.initial_tsn = htonl(asoc->init_seq_number);
 	} else {
 		uint32_t vtag, itsn;
-		if (hold_inp_lock) {
-			SCTP_INP_INCR_REF(inp);
-			SCTP_INP_RUNLOCK(inp);
-		}
+
 		if (asoc) {
 			atomic_add_int(&asoc->refcnt, 1);
 			SCTP_TCB_UNLOCK(stcb);
@@ -6344,12 +6341,12 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			SCTP_TCB_LOCK(stcb);
 			atomic_add_int(&asoc->refcnt, -1);
 		} else {
+			SCTP_INP_INCR_REF(inp);
+			SCTP_INP_RUNLOCK(inp);
 			vtag = sctp_select_a_tag(inp, inp->sctp_lport, sh->src_port, 1);
 			initack->init.initiate_tag = htonl(vtag);
 			/* get a TSN to use too */
 			initack->init.initial_tsn = htonl(sctp_select_initial_TSN(&inp->sctp_ep));
-		}
-		if (hold_inp_lock) {
 			SCTP_INP_RLOCK(inp);
 			SCTP_INP_DECR_REF(inp);
 		}

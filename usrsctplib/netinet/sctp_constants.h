@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 323657 2017-09-16 21:26:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 323861 2017-09-21 11:56:31Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_CONSTANTS_H_
@@ -993,9 +993,6 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_SO_LOCKED		1
 #define SCTP_SO_NOT_LOCKED	0
 
-
-#define SCTP_HOLDS_LOCK 1
-#define SCTP_NOT_LOCKED 0
 
 /*-
  * For address locks, do we hold the lock?
