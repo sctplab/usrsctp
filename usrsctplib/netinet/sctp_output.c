@@ -13342,7 +13342,9 @@ sctp_copy_it_in(struct sctp_tcb *stcb,
 #endif
  skip_copy:
 	if (*error) {
+		SCTP_TCB_LOCK(stcb);
 		sctp_free_a_strmoq(stcb, sp, SCTP_SO_LOCKED);
+		SCTP_TCB_UNLOCK(stcb);
 		sp = NULL;
 	} else {
 		if (sp->sinfo_flags & SCTP_ADDR_OVER) {
