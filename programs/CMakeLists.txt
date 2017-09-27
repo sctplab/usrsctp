@@ -85,7 +85,6 @@ else ()
         ekr_loop.c
         ekr_peer.c
         ekr_server.c
-        fuzzer2.c
         http_client.c
         rtcweb.c
         test_libmgmt.c
