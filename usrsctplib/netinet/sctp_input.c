@@ -6291,6 +6291,20 @@ trigger_send:
 		SCTP_INP_DECR_REF(inp_decr);
 		SCTP_INP_WUNLOCK(inp_decr);
 	}
+
+	/* go through all our PCB's */
+	SCTP_INP_INFO_RLOCK();
+	LIST_FOREACH(inp, &SCTP_BASE_INFO(listhead), sctp_list) {
+		/* process for all associations for this endpoint */
+		SCTP_INP_RLOCK(inp);
+		LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+			KASSERT(pthread_mutex_trylock(&stcb->tcb_mtx) == 0, ("%s: tcb_mtx locked", __func__));
+			KASSERT(pthread_mutex_unlock(&stcb->tcb_mtx) == 0, ("%s: tcb_mtx not locked", __func__));
+		}
+		SCTP_INP_RUNLOCK(inp);
+	}
+	SCTP_INP_INFO_RUNLOCK();
+
 	return;
 }
 
