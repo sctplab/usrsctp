@@ -96,7 +96,11 @@ int sctp_os_timer_stop(sctp_os_timer_t *);
 #define SCTP_OS_TIMER_STOP_DRAIN SCTP_OS_TIMER_STOP
 #define	SCTP_OS_TIMER_PENDING(tmr) ((tmr)->c_flags & SCTP_CALLOUT_PENDING)
 #define	SCTP_OS_TIMER_ACTIVE(tmr) ((tmr)->c_flags & SCTP_CALLOUT_ACTIVE)
-#define	SCTP_OS_TIMER_DEACTIVATE(tmr) ((tmr)->c_flags &= ~SCTP_CALLOUT_ACTIVE)
+#define	SCTP_OS_TIMER_DEACTIVATE(tmr) do {				\
+	SCTP_TIMERQ_LOCK();						\
+	(tmr)->c_flags &= ~SCTP_CALLOUT_ACTIVE;				\
+	SCTP_TIMERQ_UNLOCK();						\
+} while (0)
 
 #if defined(__Userspace__)
 void sctp_start_timer(void);
