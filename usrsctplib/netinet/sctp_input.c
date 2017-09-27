@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 323776 2017-09-19 20:24:13Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 323904 2017-09-22 06:33:01Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -224,8 +224,7 @@ sctp_handle_init(struct mbuf *m, int iphlen, int offset,
 #if defined(__FreeBSD__)
 		                       mflowtype, mflowid,
 #endif
-		                       vrf_id, port,
-		                       ((stcb == NULL) ? SCTP_HOLDS_LOCK : SCTP_NOT_LOCKED));
+		                       vrf_id, port);
 	}
  outnow:
 	if (stcb == NULL) {
@@ -776,6 +775,14 @@ sctp_handle_nat_colliding_state(struct sctp_tcb *stcb)
 	*/
 	struct sctpasochead *head;
 
+	if ((SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_COOKIE_WAIT) ||
+	    (SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_COOKIE_ECHOED)) {
+		atomic_add_int(&stcb->asoc.refcnt, 1);
+		SCTP_TCB_UNLOCK(stcb);
+		SCTP_INP_INFO_WLOCK();
+		SCTP_TCB_LOCK(stcb);
+		atomic_subtract_int(&stcb->asoc.refcnt, 1);
+	}
 	if (SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_COOKIE_WAIT) {
 		/* generate a new vtag and send init */
 		LIST_REMOVE(stcb, sctp_asocs);
@@ -784,6 +791,7 @@ sctp_handle_nat_colliding_state(struct sctp_tcb *stcb)
 		/* put it in the bucket in the vtag hash of assoc's for the system */
 		LIST_INSERT_HEAD(head, stcb, sctp_asocs);
 		sctp_send_initiate(stcb->sctp_ep, stcb, SCTP_SO_NOT_LOCKED);
+		SCTP_INP_INFO_WUNLOCK();
 		return (1);
 	}
 	if (SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_COOKIE_ECHOED) {
@@ -803,6 +811,7 @@ sctp_handle_nat_colliding_state(struct sctp_tcb *stcb)
 		/* put it in the bucket in the vtag hash of assoc's for the system */
 		LIST_INSERT_HEAD(head, stcb, sctp_asocs);
 		sctp_send_initiate(stcb->sctp_ep, stcb, SCTP_SO_NOT_LOCKED);
+		SCTP_INP_INFO_WUNLOCK();
 		return (1);
 	}
 	return (0);

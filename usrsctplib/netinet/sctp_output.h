@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.h 321034 2017-07-15 19:54:03Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.h 323861 2017-09-21 11:56:31Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_OUTPUT_H_
@@ -91,7 +91,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *, struct sctp_tcb *,
 #if defined(__FreeBSD__)
                        uint8_t, uint32_t,
 #endif
-                       uint32_t, uint16_t, int);
+                       uint32_t, uint16_t);
 
 struct mbuf *
 sctp_arethere_unrecognized_parameters(struct mbuf *, int, int *,
