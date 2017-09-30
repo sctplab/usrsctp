@@ -306,7 +306,8 @@ main(int argc, char *argv[])
 	                          SCTP_PEER_ADDR_CHANGE,
 	                          SCTP_SEND_FAILED_EVENT};
 	char buffer[80];
-	int i, n;
+	unsigned int i;
+	int n;
 
 	if (argc < 3) {
 		printf("%s", "Usage: client remote_addr remote_port local_port local_encaps_port remote_encaps_port\n");
@@ -381,7 +382,7 @@ main(int argc, char *argv[])
 	} else {
 		addr = addrs;
 		printf("Local addresses: ");
-		for (i = 0; i < n; i++) {
+		for (i = 0; i < (unsigned int)n; i++) {
 			if (i > 0) {
 				printf("%s", ", ");
 			}
@@ -429,7 +430,7 @@ main(int argc, char *argv[])
 	} else {
 		addr = addrs;
 		printf("Peer addresses: ");
-		for (i = 0; i < n; i++) {
+		for (i = 0; i < (unsigned int)n; i++) {
 			if (i > 0) {
 				printf("%s", ", ");
 			}
