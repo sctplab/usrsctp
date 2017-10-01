@@ -483,7 +483,7 @@ main(int argc, char *argv[])
 	}
 	while (!done) {
 #ifdef _WIN32
-		Sleep(1*1000);
+		Sleep(1 * 1000);
 #else
 		sleep(1);
 #endif
