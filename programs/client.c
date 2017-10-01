@@ -266,17 +266,17 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		done = 1;
 		usrsctp_close(sock);
 	} else {
-                if (flags & MSG_NOTIFICATION) {
+		if (flags & MSG_NOTIFICATION) {
 			handle_notification((union sctp_notification *)data, datalen);
 		} else {
 #ifdef _WIN32
-		      _write(_fileno(stdout), data, (unsigned int)datalen);
+			_write(_fileno(stdout), data, (unsigned int)datalen);
 #else
-		      if (write(fileno(stdout), data, datalen) < 0) {
-			                           perror("write");
-		                                         }
+			if (write(fileno(stdout), data, datalen) < 0) {
+				perror("write");
+			}
 #endif
-                }
+		}
 		free(data);
 	}
 	return (1);
@@ -301,7 +301,7 @@ main(int argc, char *argv[])
 	struct sockaddr_in6 addr6;
 	struct sctp_udpencaps encaps;
 	struct sctpstat stat;
-        struct sctp_event event;
+	struct sctp_event event;
 	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
 	                          SCTP_PEER_ADDR_CHANGE,
 	                          SCTP_SEND_FAILED_EVENT};
@@ -325,16 +325,16 @@ main(int argc, char *argv[])
 	if ((sock = usrsctp_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 	}
-        memset(&event, 0, sizeof(event));
-        event.se_assoc_id = SCTP_ALL_ASSOC;
-        event.se_on = 1;
-        for (i = 0; i < sizeof(event_types)/sizeof(uint16_t); i++) {
-                event.se_type = event_types[i];
-                if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
-                        perror("setsockopt SCTP_EVENT");
-                }
-        }
-        if (argc > 3) {
+	memset(&event, 0, sizeof(event));
+	event.se_assoc_id = SCTP_ALL_ASSOC;
+	event.se_on = 1;
+	for (i = 0; i < sizeof(event_types)/sizeof(uint16_t); i++) {
+		event.se_type = event_types[i];
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
+			perror("setsockopt SCTP_EVENT");
+		}
+	}
+	if (argc > 3) {
 		memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
 #ifdef HAVE_SIN6_LEN
 		addr6.sin6_len = sizeof(struct sockaddr_in6);
@@ -493,7 +493,7 @@ main(int argc, char *argv[])
 	       stat.sctps_outpackets, stat.sctps_inpackets);
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
-		Sleep(1000);
+		Sleep(1 * 1000);
 #else
 		sleep(1);
 #endif
