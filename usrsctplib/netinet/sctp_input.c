@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 323904 2017-09-22 06:33:01Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 324317 2017-10-05 13:29:54Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4864,6 +4864,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 			if ((((ch->chunk_flags & SCTP_HAD_NO_TCB) == 0) &&
 			     (vtag_in == asoc->my_vtag)) ||
 			    (((ch->chunk_flags & SCTP_HAD_NO_TCB) == SCTP_HAD_NO_TCB) &&
+			     (asoc->peer_vtag != htonl(0)) &&
 			     (vtag_in == asoc->peer_vtag))) {
 				/* this is valid */
 			} else {
