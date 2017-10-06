@@ -6299,7 +6299,7 @@ trigger_send:
 		/* process for all associations for this endpoint */
 		SCTP_INP_RLOCK(inp);
 		LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
-			KASSERT(pthread_mutex_trylock(&stcb->tcb_mtx) == 0, ("%s: tcb_mtx locked", __func__));
+			KASSERT(pthread_mutex_trylock(&stcb->tcb_mtx) == 0, ("%s: tcb_mtx still locked at %s:%d", __func__, stcb->filename, stcb->line));
 			KASSERT(pthread_mutex_unlock(&stcb->tcb_mtx) == 0, ("%s: tcb_mtx not locked", __func__));
 		}
 		SCTP_INP_RUNLOCK(inp);
