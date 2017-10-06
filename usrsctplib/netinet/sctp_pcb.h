@@ -641,6 +641,7 @@ struct sctp_tcb {
 	userland_mutex_t tcb_send_mtx;
 	char filename[128];
 	int line;
+	int info;
 #elif defined(__APPLE__)
 	lck_mtx_t* tcb_mtx;
 	lck_mtx_t* tcb_send_mtx;
