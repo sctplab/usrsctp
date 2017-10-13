@@ -597,6 +597,8 @@ struct sctp_inpcb {
                              struct sctp_rcvinfo, int, void *);
 	uint32_t send_sb_threshold;
 	int (*send_callback)(struct socket *, uint32_t);
+	char use_notif_fd;
+	int notif_fd;
 #endif
 };
 
