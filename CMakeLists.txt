@@ -168,14 +168,14 @@ if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STR
     endif ()
 
     if (SANITIZER_ADDRESS)
-        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=address -O1 -fno-omit-frame-pointer -g -Wno-address-of-packed-member")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -O1 -fno-omit-frame-pointer -g -Wno-address-of-packed-member")
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=address -O1 -fno-omit-frame-pointer -g")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -O1 -fno-omit-frame-pointer -g")
     endif ()
 
     if (SANITIZER_MEMORY)
         # maybe add "-fPIE -pie" here
-        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=memory -fno-omit-frame-pointer -g -Wno-address-of-packed-member -fsanitize-memory-track-origins")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -g -Wno-address-of-packed-member -fsanitize-memory-track-origins")
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins")
     endif ()
 endif ()
 

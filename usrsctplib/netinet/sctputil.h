@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 320260 2017-06-23 08:34:01Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 324615 2017-10-14 10:02:59Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UTIL_H_
@@ -144,7 +144,7 @@ sctp_timeout_handler(void *);
 
 uint32_t
 sctp_calculate_rto(struct sctp_tcb *, struct sctp_association *,
-    struct sctp_nets *, struct timeval *, int, int);
+    struct sctp_nets *, struct timeval *, int);
 
 uint32_t sctp_calculate_len(struct mbuf *);
 

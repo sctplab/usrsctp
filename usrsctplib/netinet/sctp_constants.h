@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 323861 2017-09-21 11:56:31Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 324615 2017-10-14 10:02:59Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_CONSTANTS_H_
@@ -101,10 +101,6 @@ extern void getwintimeofday(struct timeval *tv);
  * make the initial array of VRF's to.
  */
 #define SCTP_DEFAULT_VRF_SIZE 4
-
-/* constants for rto calc */
-#define sctp_align_safe_nocopy 0
-#define sctp_align_unsafe_makecopy 1
 
 /* JRS - Values defined for the HTCP algorithm */
 #define ALPHA_BASE	(1<<7)  /* 1.0 with shift << 7 */
