@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 323861 2017-09-21 11:56:31Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 324615 2017-10-14 10:02:59Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5919,6 +5919,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	struct sctp_paramhdr *ph;
 	union sctp_sockstore *over_addr;
 	struct sctp_scoping scp;
+	struct timeval now;
 #ifdef INET
 	struct sockaddr_in *dst4 = (struct sockaddr_in *)dst;
 	struct sockaddr_in *src4 = (struct sockaddr_in *)src;
@@ -6029,7 +6030,9 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	memset(&stc, 0, sizeof(struct sctp_state_cookie));
 
 	/* the time I built cookie */
-	(void)SCTP_GETTIME_TIMEVAL(&stc.time_entered);
+	(void)SCTP_GETTIME_TIMEVAL(&now);
+	stc.time_entered.tv_sec = now.tv_sec;
+	stc.time_entered.tv_usec = now.tv_usec;
 
 	/* populate any tie tags */
 	if (asoc != NULL) {

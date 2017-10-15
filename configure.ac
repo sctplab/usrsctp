@@ -45,7 +45,7 @@ APPCFLAGS=""
 
 case $host_os in
 darwin*)
-  CFLAGS="$CFLAGS -std=c99 -Wno-deprecated-declarations -Wno-address-of-packed-member -D__APPLE_USE_RFC_2292"
+  CFLAGS="$CFLAGS -std=c99 -Wno-deprecated-declarations -D__APPLE_USE_RFC_2292"
   LIBCFLAGS="$LIBCFLAGS -U__APPLE__ -D__Userspace_os_Darwin"
   ;;
 dragonfly*)
@@ -55,7 +55,7 @@ dragonfly*)
 freebsd*)
   CFLAGS="$CFLAGS -std=c99 -pthread"
   if $CC --version | grep -q clang; then
-    CFLAGS="$CFLAGS -Wno-unknown-warning-option -Wno-address-of-packed-member"
+    CFLAGS="$CFLAGS -Wno-unknown-warning-option"
     LDFLAGS="$LDFLAGS -Qunused-arguments"
   fi
   LIBCFLAGS="$LIBCFLAGS -U__FreeBSD__ -D__Userspace_os_FreeBSD"
