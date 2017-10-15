@@ -446,8 +446,6 @@
 } while (0)
 #else
 #define SCTP_TCB_LOCK(_tcb) \
-	strncpy((_tcb)->filename, __FILE__, 127); \
-	(_tcb)->line = __LINE__; \
 	KASSERT(pthread_mutex_lock(&(_tcb)->tcb_mtx) == 0, ("%s: tcb_mtx already locked", __func__))
 #endif
 #define SCTP_TCB_UNLOCK(_tcb) \
