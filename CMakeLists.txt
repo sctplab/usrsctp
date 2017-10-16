@@ -164,8 +164,8 @@ endif ()
 
 # SETTINGS FOR UNIX COMPILER
 if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xGNU")
-    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c99 -pedantic -Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Winit-self -Wno-unused-function -Wno-unused-parameter -Wno-address-of-packed-member")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99 -pedantic -Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Winit-self -Wno-unused-function -Wno-unused-parameter -Wno-address-of-packed-member")
+    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c99 -pedantic -Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Winit-self -Wno-unused-function -Wno-unused-parameter")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99 -pedantic -Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Winit-self -Wno-unused-function -Wno-unused-parameter")
 
     if (WERROR)
         set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Werror")
@@ -175,13 +175,13 @@ if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STR
     if (FUZZING_MODE)
         #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}   -fno-omit-frame-pointer -fsanitize=fuzzer,memory ")
         #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=fuzzer,memory ")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -O1 -g -fno-omit-frame-pointer -fsanitize=fuzzer,address,undefined -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div -Wno-address-of-packed-member")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 -g -fno-omit-frame-pointer -fsanitize=fuzzer,address,undefined -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div -Wno-address-of-packed-member")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -g -fno-omit-frame-pointer -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=undefined -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fno-omit-frame-pointer -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=undefined -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
     endif ()
 
     if (SANITIZER_ADDRESS)
-        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=address -O1 -fno-omit-frame-pointer -g")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -O1 -fno-omit-frame-pointer -g")
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=address -fno-omit-frame-pointer -g")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g")
     endif ()
 
     if (SANITIZER_MEMORY)
