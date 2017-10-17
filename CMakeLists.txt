@@ -175,8 +175,8 @@ if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STR
     if (FUZZING_MODE)
         #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}   -fno-omit-frame-pointer -fsanitize=fuzzer,memory ")
         #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=fuzzer,memory ")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -g -fno-omit-frame-pointer -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=undefined -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fno-omit-frame-pointer -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=undefined -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -g -fno-omit-frame-pointer -fsanitize=fuzzer,address,undefined -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fno-omit-frame-pointer -fsanitize=fuzzer,address,undefined -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
     endif ()
 
     if (SANITIZER_ADDRESS)

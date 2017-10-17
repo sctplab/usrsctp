@@ -41,7 +41,6 @@
 #include <unistd.h>
 #include <usrsctp.h>
 
-//#define FUZZ_FAST 1
 #define MAX_PACKET_SIZE (1 << 16)
 #define LINE_LENGTH (1 << 20)
 #define DISCARD_PPID 39
@@ -55,25 +54,17 @@ static char *c_cheader[12];
 static int
 conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 {
-	char *dump_buf;
 	int *fdp;
 
 	fdp = (int *)addr;
 
+	// copy from client/server side
 	if (*fdp == fd_c) {
 		memcpy(c_cheader, buf, 12);
-	}
-
-	if (*fdp == fd_s) {
+	} else if (*fdp == fd_s) {
 		memcpy(s_cheader, buf, 12);
 	}
 
-	//fprintf(stderr, "%s - %d - %d - %d\n", __func__, fd_c, fd_s, *fdp);
-
-	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
-		//fprintf(stderr, "%s", dump_buf);
-		usrsctp_freedumpbuffer(dump_buf);
-	}
 	if (send(*fdp, buf, length, 0) < 0) {
 		return (errno);
 	} else {
@@ -82,8 +73,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 }
 
 static int
-receive_cb(struct socket* sock, union sctp_sockstore addr, void* data,
-	size_t datalen, struct sctp_rcvinfo rcv, int flags, void* ulp_info)
+receive_cb(struct socket* sock, union sctp_sockstore addr, void* data, size_t datalen, struct sctp_rcvinfo rcv, int flags, void* ulp_info)
 {
 	//printf("Message %p received on sock = %p.\n", data, (void*)sock);
 	if (data) {
@@ -101,10 +91,6 @@ receive_cb(struct socket* sock, union sctp_sockstore addr, void* data,
 		}
 		free(data);
 	}
-	else {
-		usrsctp_deregister_address(ulp_info);
-		usrsctp_close(sock);
-	}
 	return (1);
 }
 
@@ -112,21 +98,13 @@ static void*
 handle_packets(void* arg)
 {
 	int* fdp;
-	char* dump_buf;
 	ssize_t length;
 	char buf[MAX_PACKET_SIZE];
 
 	fdp = (int*)arg;
 	for (;;) {
-#if defined(__NetBSD__)
-		pthread_testcancel();
-#endif
 		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
-			if ((dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
-				//fprintf(stderr, "%s", dump_buf);
-				usrsctp_freedumpbuffer(dump_buf);
-			}
 			usrsctp_conninput(fdp, buf, (size_t)length, 0);
 		}
 	}
@@ -145,20 +123,16 @@ void debug_printf(const char* format, ...)
 int init_fuzzer(void)
 {
 	static uint8_t initialized = 0;
+	struct sockaddr_in sin_s, sin_c;
+	socklen_t name_len;
 
-#if defined(FUZZ_FAST)
 	if (initialized) {
 		return 0;
 	}
-#endif
-
-	struct sockaddr_in sin_s, sin_c;
-	struct sockaddr_conn sconn;
-	int cur_buf_size, snd_buf_size, rcv_buf_size;
-	socklen_t opt_len;
 
 	usrsctp_init(0, conn_output, debug_printf);
 	usrsctp_enable_crc32c_offload();
+
 	/* set up a connected UDP socket */
 	if ((fd_c = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 		perror("socket");
@@ -173,23 +147,37 @@ int init_fuzzer(void)
 #ifdef HAVE_SIN_LEN
 	sin_c.sin_len = sizeof(struct sockaddr_in);
 #endif
-	sin_c.sin_port = htons(9900);
+	sin_c.sin_port = htons(0);
 	sin_c.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
 	memset(&sin_s, 0, sizeof(struct sockaddr_in));
 	sin_s.sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
 	sin_s.sin_len = sizeof(struct sockaddr_in);
 #endif
-	sin_s.sin_port = htons(9901);
+	sin_s.sin_port = htons(0);
 	sin_s.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
 	if (bind(fd_c, (struct sockaddr*)&sin_c, sizeof(struct sockaddr_in)) < 0) {
 		perror("bind");
 		exit(EXIT_FAILURE);
 	}
+	name_len = (socklen_t) sizeof(struct sockaddr_in);
+	if (getsockname(fd_c, (struct sockaddr*)&sin_c, &name_len)) {
+		perror("getsockname");
+		exit(EXIT_FAILURE);
+	}
+
 	if (bind(fd_s, (struct sockaddr*)&sin_s, sizeof(struct sockaddr_in)) < 0) {
 		perror("bind");
 		exit(EXIT_FAILURE);
 	}
+	name_len = (socklen_t) sizeof(struct sockaddr_in);
+	if (getsockname(fd_s, (struct sockaddr*)&sin_s, &name_len)) {
+		perror("getsockname");
+		exit(EXIT_FAILURE);
+	}
+
 	if (connect(fd_c, (struct sockaddr*)&sin_s, sizeof(struct sockaddr_in)) < 0) {
 		perror("connect");
 		exit(EXIT_FAILURE);
@@ -207,107 +195,13 @@ int init_fuzzer(void)
 		perror("pthread_create tid_s");
 		exit(EXIT_FAILURE);
 	};
+
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 #endif
-	usrsctp_sysctl_set_sctp_ecn_enable(0);
+
 	usrsctp_register_address((void*)&fd_c);
 	usrsctp_register_address((void*)&fd_s);
-	if ((s_c = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_c)) == NULL) {
-		perror("usrsctp_socket");
-		exit(EXIT_FAILURE);
-	}
-	opt_len = (socklen_t)sizeof(int);
-	cur_buf_size = 0;
-	if (usrsctp_getsockopt(s_c, SOL_SOCKET, SO_SNDBUF, &cur_buf_size, &opt_len) < 0) {
-		perror("usrsctp_getsockopt");
-		exit(EXIT_FAILURE);
-	}
-	//printf("Change send socket buffer size from %d ", cur_buf_size);
-	snd_buf_size = 1 << 20; /* 1 MB */
-	if (usrsctp_setsockopt(s_c, SOL_SOCKET, SO_SNDBUF, &snd_buf_size, sizeof(int)) < 0) {
-		perror("usrsctp_setsockopt");
-		exit(EXIT_FAILURE);
-	}
-	opt_len = (socklen_t)sizeof(int);
-	cur_buf_size = 0;
-	if (usrsctp_getsockopt(s_c, SOL_SOCKET, SO_SNDBUF, &cur_buf_size, &opt_len) < 0) {
-		perror("usrsctp_getsockopt");
-		exit(EXIT_FAILURE);
-	}
-	//printf("to %d.\n", cur_buf_size);
-	if ((s_l = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_s)) == NULL) {
-		perror("usrsctp_socket");
-		exit(EXIT_FAILURE);
-	}
-	opt_len = (socklen_t)sizeof(int);
-	cur_buf_size = 0;
-	if (usrsctp_getsockopt(s_l, SOL_SOCKET, SO_RCVBUF, &cur_buf_size, &opt_len) < 0) {
-		perror("usrsctp_getsockopt");
-		exit(EXIT_FAILURE);
-	}
-	//printf("Change receive socket buffer size from %d ", cur_buf_size);
-	rcv_buf_size = 1 << 16; /* 64 KB */
-	if (usrsctp_setsockopt(s_l, SOL_SOCKET, SO_RCVBUF, &rcv_buf_size, sizeof(int)) < 0) {
-		perror("usrsctp_setsockopt");
-		exit(EXIT_FAILURE);
-	}
-	opt_len = (socklen_t)sizeof(int);
-	cur_buf_size = 0;
-	if (usrsctp_getsockopt(s_l, SOL_SOCKET, SO_RCVBUF, &cur_buf_size, &opt_len) < 0) {
-		perror("usrsctp_getsockopt");
-		exit(EXIT_FAILURE);
-	}
-	//printf("to %d.\n", cur_buf_size);
-	/* Bind the client side. */
-	memset(&sconn, 0, sizeof(struct sockaddr_conn));
-	sconn.sconn_family = AF_CONN;
-#ifdef HAVE_SCONN_LEN
-	sconn.sconn_len = sizeof(struct sockaddr_conn);
-#endif
-	sconn.sconn_port = htons(5001);
-	sconn.sconn_addr = &fd_c;
-	if (usrsctp_bind(s_c, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
-		perror("usrsctp_bind");
-		exit(EXIT_FAILURE);
-	}
-	/* Bind the server side. */
-	memset(&sconn, 0, sizeof(struct sockaddr_conn));
-	sconn.sconn_family = AF_CONN;
-#ifdef HAVE_SCONN_LEN
-	sconn.sconn_len = sizeof(struct sockaddr_conn);
-#endif
-	sconn.sconn_port = htons(5001);
-	sconn.sconn_addr = &fd_s;
-	if (usrsctp_bind(s_l, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
-		perror("usrsctp_bind");
-		exit(EXIT_FAILURE);
-	}
-	/* Make server side passive... */
-	if (usrsctp_listen(s_l, 1) < 0) {
-		perror("usrsctp_listen");
-		exit(EXIT_FAILURE);
-	}
-	/* Initiate the handshake */
-	memset(&sconn, 0, sizeof(struct sockaddr_conn));
-	sconn.sconn_family = AF_CONN;
-#ifdef HAVE_SCONN_LEN
-	sconn.sconn_len = sizeof(struct sockaddr_conn);
-#endif
-	sconn.sconn_port = htons(5001);
-	sconn.sconn_addr = &fd_c;
-
-	if (usrsctp_connect(s_c, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
-		perror("usrsctp_connect");
-		exit(EXIT_FAILURE);
-	}
-
-	if ((s_s = usrsctp_accept(s_l, NULL, NULL)) == NULL) {
-		perror("usrsctp_accept");
-		exit(EXIT_FAILURE);
-	}
-
-	usrsctp_close(s_l);
 
 	initialized = 1;
 
@@ -323,10 +217,85 @@ int main(void)
 	char data[] = "SCTPSCTPSCTPSCTPSCTPSCTPSCTP!!!!";
 	size_t data_size = strlen(data);
 #endif // defined(FUZZING_MODE)
-
+	struct sockaddr_conn sconn;
+	static uint16_t port = 1;
 	init_fuzzer();
 
-#if 1
+
+	port = (port % 1024) + 1;
+
+	//printf("schleife!\n");
+
+// ##########################
+	if ((s_c = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_c)) == NULL) {
+		perror("usrsctp_socket");
+		exit(EXIT_FAILURE);
+	}
+
+	if ((s_l = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_s)) == NULL) {
+		perror("usrsctp_socket");
+		exit(EXIT_FAILURE);
+	}
+
+
+	/* Bind the client side. */
+	memset(&sconn, 0, sizeof(struct sockaddr_conn));
+	sconn.sconn_family = AF_CONN;
+#ifdef HAVE_SCONN_LEN
+	sconn.sconn_len = sizeof(struct sockaddr_conn);
+#endif
+	sconn.sconn_port = htons(port);
+	sconn.sconn_addr = &fd_c;
+	if (usrsctp_bind(s_c, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
+		printf("bind failed : %d\n", __LINE__);
+		perror("usrsctp_bind");
+		exit(EXIT_FAILURE);
+	}
+
+	/* Bind the server side. */
+	memset(&sconn, 0, sizeof(struct sockaddr_conn));
+	sconn.sconn_family = AF_CONN;
+#ifdef HAVE_SCONN_LEN
+	sconn.sconn_len = sizeof(struct sockaddr_conn);
+#endif
+	sconn.sconn_port = htons(port);
+	sconn.sconn_addr = &fd_s;
+	if (usrsctp_bind(s_l, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
+		printf("bind failed : %d\n", __LINE__);
+		perror("usrsctp_bind");
+		exit(EXIT_FAILURE);
+	}
+
+	/* Make server side passive... */
+	if (usrsctp_listen(s_l, 1) < 0) {
+		perror("usrsctp_listen");
+		exit(EXIT_FAILURE);
+	}
+
+	/* Initiate the handshake */
+	memset(&sconn, 0, sizeof(struct sockaddr_conn));
+	sconn.sconn_family = AF_CONN;
+#ifdef HAVE_SCONN_LEN
+	sconn.sconn_len = sizeof(struct sockaddr_conn);
+#endif
+	sconn.sconn_port = htons(port);
+	sconn.sconn_addr = &fd_c;
+
+	if (usrsctp_connect(s_c, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
+		printf(">> PORT %d\n", port);
+		perror("usrsctp_connect");
+		exit(EXIT_FAILURE);
+	}
+
+	if ((s_s = usrsctp_accept(s_l, NULL, NULL)) == NULL) {
+		perror("usrsctp_accept");
+		exit(EXIT_FAILURE);
+	}
+
+	// close listening socket
+	usrsctp_close(s_l);
+
+#if 0
 	char *pkt = malloc(data_size + 12);
 	memcpy(pkt, c_cheader, 12);
 	memcpy(pkt + 12, data, data_size);
@@ -335,31 +304,15 @@ int main(void)
 	usrsctp_conninput(&fd_s, pkt, data_size + 12, 0);
 
 	free(pkt);
-#elif
+#else
 
 	usrsctp_conninput(&fd_s, data, data_size, 0);
 #endif
 
-#if !defined(FUZZ_FAST)
-	//usrsctp_shutdown(s_c, SHUT_WR);
+	//
+	//usrsctp_shutdown(s_c, SHUT_RDWR);
 	usrsctp_close(s_c);
-
-	while (usrsctp_finish() != 0) {
-		//sleep(1);
-	}
-	pthread_cancel(tid_c);
-	pthread_join(tid_c, NULL);
-	pthread_cancel(tid_s);
-	pthread_join(tid_s, NULL);
-	if (close(fd_c) < 0) {
-		perror("close");
-		exit(EXIT_FAILURE);
-	}
-	if (close(fd_s) < 0) {
-		perror("close");
-		exit(EXIT_FAILURE);
-	}
-#endif //!defined(FUZZ_FAST)
+	usrsctp_close(s_s);
 
 	return (0);
 }

@@ -90,6 +90,7 @@ else ()
         test_libmgmt.c
         test_timer.c
         tsctp.c
+        fuzzer2.c
     )
 endif ()
 
