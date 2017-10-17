@@ -75,7 +75,7 @@ option(BUILD_PROGRAMS "Build example programs" 1)
 
 option(FUZZER_CLANG "Clang Fuzzer" 0)
 option(FUZZER_HONGGFUZZ "Honggfuzz Fuzzer" 0)
-if (CLANG_FUZZER OR FUZZER_HONGGFUZZ)
+if (FUZZER_CLANG OR FUZZER_HONGGFUZZ)
     add_definitions(-DFUZZING_MODE)
 endif ()
 
