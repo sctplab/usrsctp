@@ -69,7 +69,7 @@ find_package(Threads)
 #################################################
 
 # if in fuzzing mode, only build the fuzzer
-if (FUZZING_MODE)
+if (FUZZER_CLANG OR FUZZER_HONGGFUZZ)
     list(APPEND CHECK_PROGRAMS
         fuzzer.c
         fuzzer2.c

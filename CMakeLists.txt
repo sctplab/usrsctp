@@ -73,8 +73,9 @@ option(LINK_PROGRAMS_STATIC "Link example programs static" 0)
 
 option(BUILD_PROGRAMS "Build example programs" 1)
 
-option(FUZZING_MODE "Fuzzing mode" 0)
-if (FUZZING_MODE)
+option(FUZZER_CLANG "Clang Fuzzer" 0)
+option(FUZZER_HONGGFUZZ "Honggfuzz Fuzzer" 0)
+if (CLANG_FUZZER OR FUZZER_HONGGFUZZ)
     add_definitions(-DFUZZING_MODE)
 endif ()
 
@@ -172,7 +173,7 @@ if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STR
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
     endif ()
 
-    if (FUZZING_MODE)
+    if (FUZZER_CLANG)
         #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}   -fno-omit-frame-pointer -fsanitize=fuzzer,memory ")
         #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=fuzzer,memory ")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -g -fno-omit-frame-pointer -fsanitize=fuzzer,address,undefined -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
