@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 324729 2017-10-18 20:17:44Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 324730 2017-10-18 21:08:35Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2629,10 +2629,11 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 	struct sctp_association *asoc;
 	int num_chunks = 0;	/* number of control chunks processed */
 	int stop_proc = 0;
-	int chk_length, break_flag, last_chunk;
+	int break_flag, last_chunk;
 	int abort_flag = 0, was_a_gap;
 	struct mbuf *m;
 	uint32_t highest_tsn;
+	uint16_t chk_length;
 
 	/* set the rwnd */
 	sctp_set_rwnd(stcb, &stcb->asoc);
@@ -2728,7 +2729,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 		}
 		if ((ch->chunk_type == SCTP_DATA) ||
 		    (ch->chunk_type == SCTP_IDATA)) {
-			int clen;
+			uint16_t clen;
 
 			if (ch->chunk_type == SCTP_DATA) {
 				clen = sizeof(struct sctp_data_chunk);
@@ -2743,7 +2744,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 				struct mbuf *op_err;
 				char msg[SCTP_DIAG_INFO_LEN];
 
-				snprintf(msg, sizeof(msg), "%s chunk of length %d",
+				snprintf(msg, sizeof(msg), "%s chunk of length %u",
 				         ch->chunk_type == SCTP_DATA ? "DATA" : "I-DATA",
 				         chk_length);
 				op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
@@ -2831,7 +2832,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 					struct mbuf *op_err;
 					char msg[SCTP_DIAG_INFO_LEN];
 
-					snprintf(msg, sizeof(msg), "Chunk of length %d",
+					snprintf(msg, sizeof(msg), "Chunk of length %u",
 						 chk_length);
 					op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
 					stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA + SCTP_LOC_20;
