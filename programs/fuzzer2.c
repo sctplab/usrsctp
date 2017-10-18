@@ -219,6 +219,7 @@ int main(void)
 #endif // defined(FUZZING_MODE)
 	struct sockaddr_conn sconn;
 	static uint16_t port = 1;
+	struct linger so_linger;
 	init_fuzzer();
 
 
@@ -232,10 +233,22 @@ int main(void)
 		exit(EXIT_FAILURE);
 	}
 
+	memset(&so_linger, 0, sizeof(struct linger));
+	if (usrsctp_setsockopt(s_c, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
+		perror("usrsctp_setsockopt 1");
+		exit(EXIT_FAILURE);
+	}
+
 	if ((s_l = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_s)) == NULL) {
 		perror("usrsctp_socket");
 		exit(EXIT_FAILURE);
 	}
+
+	if (usrsctp_setsockopt(s_l, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
+		perror("usrsctp_setsockopt 2");
+		exit(EXIT_FAILURE);
+	}
+
 
 
 	/* Bind the client side. */
@@ -247,7 +260,6 @@ int main(void)
 	sconn.sconn_port = htons(port);
 	sconn.sconn_addr = &fd_c;
 	if (usrsctp_bind(s_c, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
-		printf("bind failed : %d\n", __LINE__);
 		perror("usrsctp_bind");
 		exit(EXIT_FAILURE);
 	}
@@ -261,7 +273,6 @@ int main(void)
 	sconn.sconn_port = htons(port);
 	sconn.sconn_addr = &fd_s;
 	if (usrsctp_bind(s_l, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
-		printf("bind failed : %d\n", __LINE__);
 		perror("usrsctp_bind");
 		exit(EXIT_FAILURE);
 	}
@@ -282,13 +293,17 @@ int main(void)
 	sconn.sconn_addr = &fd_c;
 
 	if (usrsctp_connect(s_c, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
-		printf(">> PORT %d\n", port);
 		perror("usrsctp_connect");
 		exit(EXIT_FAILURE);
 	}
 
 	if ((s_s = usrsctp_accept(s_l, NULL, NULL)) == NULL) {
 		perror("usrsctp_accept");
+		exit(EXIT_FAILURE);
+	}
+
+	if (usrsctp_setsockopt(s_s, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
+		perror("usrsctp_setsockopt 3");
 		exit(EXIT_FAILURE);
 	}
 
