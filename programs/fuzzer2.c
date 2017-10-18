@@ -221,6 +221,11 @@ int main(int argc, char *argv[])
 
 	if (argc > 1) {
 		file = fopen(argv[1], "rb");
+
+		if (!file) {
+			perror("fopen");
+		}
+
 		fseek(file, 0, SEEK_END);
 		data_size = ftell(file);
 		fseek(file, 0, SEEK_SET);
