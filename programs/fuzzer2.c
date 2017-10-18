@@ -212,11 +212,26 @@ int init_fuzzer(void)
 int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 #else // defined(FUZZING_MODE)
-int main(void)
+int main(int argc, char *argv[])
 {
-	char data[] = "SCTPSCTPSCTPSCTPSCTPSCTPSCTP!!!!";
+	char *data_sample = "SCTPSCTPSCTPSCTPSCTPSCTPSCTP!!!!";
+	char *data = data_sample;
 	size_t data_size = strlen(data);
+	FILE *file;
+
+	if (argc > 1) {
+		file = fopen(argv[1], "rb");
+		fseek(file, 0, SEEK_END);
+		data_size = ftell(file);
+		fseek(file, 0, SEEK_SET);
+		data = malloc(data_size);
+		fread(data, data_size, 1, file);
+		fclose(file);
+		printf("read file - %zu bytes\n", data_size);
+	}
 #endif // defined(FUZZING_MODE)
+
+
 	struct sockaddr_conn sconn;
 	static uint16_t port = 1;
 	struct linger so_linger;
@@ -225,9 +240,6 @@ int main(void)
 
 	port = (port % 1024) + 1;
 
-	//printf("schleife!\n");
-
-// ##########################
 	if ((s_c = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_c)) == NULL) {
 		perror("usrsctp_socket");
 		exit(EXIT_FAILURE);
@@ -248,8 +260,6 @@ int main(void)
 		perror("usrsctp_setsockopt 2");
 		exit(EXIT_FAILURE);
 	}
-
-
 
 	/* Bind the client side. */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
@@ -310,7 +320,7 @@ int main(void)
 	// close listening socket
 	usrsctp_close(s_l);
 
-#if 0
+#if 1
 	char *pkt = malloc(data_size + 12);
 	memcpy(pkt, c_cheader, 12);
 	memcpy(pkt + 12, data, data_size);
@@ -320,12 +330,9 @@ int main(void)
 
 	free(pkt);
 #else
-
 	usrsctp_conninput(&fd_s, data, data_size, 0);
 #endif
 
-	//
-	//usrsctp_shutdown(s_c, SHUT_RDWR);
 	usrsctp_close(s_c);
 	usrsctp_close(s_s);
 
