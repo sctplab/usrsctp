@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 324638 2017-10-15 19:33:30Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 324725 2017-10-18 18:56:56Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4725,6 +4725,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 	if (ntohs(ch->chunk_length) < sizeof(*ch)) {
 		SCTPDBG(SCTP_DEBUG_INPUT1, "Invalid header length %d\n",
 			ntohs(ch->chunk_length));
+		*offset = length;
 		return (stcb);
 	}
 	/*
