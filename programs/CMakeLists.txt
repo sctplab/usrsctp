@@ -74,6 +74,9 @@ if (FUZZER_CLANG OR FUZZER_HONGGFUZZ)
         fuzzer.c
         fuzzer2.c
     )
+
+    configure_file(crashtest.py crashtest.py COPYONLY)
+    configure_file(run-fuzzer.sh run-fuzzer.sh COPYONLY)
 else ()
     list(APPEND CHECK_PROGRAMS
         client.c
