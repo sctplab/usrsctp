@@ -240,8 +240,9 @@ int main(int argc, char *argv[])
 	struct sockaddr_conn sconn;
 	static uint16_t port = 1;
 	struct linger so_linger;
-	init_fuzzer();
+	char *pkt;
 
+	init_fuzzer();
 
 	port = (port % 1024) + 1;
 
@@ -321,8 +322,8 @@ int main(int argc, char *argv[])
 	// close listening socket
 	usrsctp_close(s_l);
 
-#if 1
-	char *pkt = malloc(data_size + 12);
+
+	pkt = malloc(data_size + 12);
 	memcpy(pkt, c_cheader, 12);
 	memcpy(pkt + 12, data, data_size);
 
@@ -333,11 +334,10 @@ int main(int argc, char *argv[])
 	}
 
 	free(pkt);
+#if !defined(FUZZING_MODE)
 	if (data != data_sample) {
 		free(data);
 	}
-#else
-	usrsctp_conninput(&fd_s, data, data_size, 0);
 #endif
 
 	usrsctp_close(s_c);

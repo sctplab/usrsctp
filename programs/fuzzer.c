@@ -173,13 +173,14 @@ int main(int argc, char *argv[])
 #endif
 
 	init_fuzzer();
-
 	// magic happens here
 	usrsctp_conninput((void *)1, data, data_size, 0);
 
+#if !defined(FUZZING_MODE)
 	if (data != data_sample) {
 		free(data);
 	}
+#endif
 
 #if !defined(FUZZ_FAST)
 	usrsctp_close(s_l);
