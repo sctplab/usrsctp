@@ -250,7 +250,8 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	memset(&so_linger, 0, sizeof(struct linger));
+	so_linger.l_onoff = 1;
+	so_linger.l_linger = 0;
 	if (usrsctp_setsockopt(s_c, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
 		perror("usrsctp_setsockopt 1");
 		exit(EXIT_FAILURE);
@@ -258,11 +259,6 @@ int main(int argc, char *argv[])
 
 	if ((s_l = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_s)) == NULL) {
 		perror("usrsctp_socket");
-		exit(EXIT_FAILURE);
-	}
-
-	if (usrsctp_setsockopt(s_l, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
-		perror("usrsctp_setsockopt 2");
 		exit(EXIT_FAILURE);
 	}
 
@@ -331,7 +327,10 @@ int main(int argc, char *argv[])
 	memcpy(pkt + 12, data, data_size);
 
 	// magic happens here
-	usrsctp_conninput(&fd_s, pkt, data_size + 12, 0);
+	//usrsctp_conninput(&fd_s, pkt, data_size + 12, 0);
+	if (send(fd_c, pkt, data_size + 12, 0) < 0) {
+		exit(EXIT_FAILURE);
+	}
 
 	free(pkt);
 #else
