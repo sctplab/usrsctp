@@ -170,15 +170,16 @@ int main(int argc, char *argv[])
 		//printf("read file - %zu bytes\n", data_size);
 	}
 
-
 #endif
-
-
 
 	init_fuzzer();
 
 	// magic happens here
 	usrsctp_conninput((void *)1, data, data_size, 0);
+
+	if (data != data_sample) {
+		free(data);
+	}
 
 #if !defined(FUZZ_FAST)
 	usrsctp_close(s_l);
