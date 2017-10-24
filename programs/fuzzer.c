@@ -142,13 +142,43 @@ init_fuzzer(void) {
 	return 0;
 }
 
-int
-LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
+
+#if defined(FUZZING_MODE)
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
+{
+#else // defined(FUZZING_MODE)
+int main(int argc, char *argv[])
+{
+	char *data_sample = "SCTPSCTPSCTPSCTPSCTPSCTPSCTP!!!!";
+	char *data = data_sample;
+	size_t data_size = strlen(data);
+	FILE *file;
+
+	if (argc > 1) {
+		file = fopen(argv[1], "rb");
+
+		if (!file) {
+			perror("fopen");
+		}
+
+		fseek(file, 0, SEEK_END);
+		data_size = ftell(file);
+		fseek(file, 0, SEEK_SET);
+		data = malloc(data_size);
+		fread(data, data_size, 1, file);
+		fclose(file);
+		//printf("read file - %zu bytes\n", data_size);
+	}
+
+
+#endif
+
+
 
 	init_fuzzer();
 
 	// magic happens here
-	usrsctp_conninput((void *)1, Data, Size, 0);
+	usrsctp_conninput((void *)1, data, data_size, 0);
 
 #if !defined(FUZZ_FAST)
 	usrsctp_close(s_l);
