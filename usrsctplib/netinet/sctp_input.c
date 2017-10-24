@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 324725 2017-10-18 18:56:56Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 324954 2017-10-24 14:28:56Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5062,9 +5062,6 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 				if ((stcb != NULL) && (stcb->asoc.total_output_queue_size)) {
 					;
 				} else {
-					if (stcb != NULL) {
-						SCTP_TCB_UNLOCK(stcb);
-					}
 					*offset = length;
 					if (stcb != NULL) {
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
