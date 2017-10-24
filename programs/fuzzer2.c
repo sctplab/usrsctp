@@ -224,6 +224,7 @@ int main(int argc, char *argv[])
 
 		if (!file) {
 			perror("fopen");
+			exit(EXIT_FAILURE);
 		}
 
 		fseek(file, 0, SEEK_END);
@@ -232,7 +233,6 @@ int main(int argc, char *argv[])
 		data = malloc(data_size);
 		fread(data, data_size, 1, file);
 		fclose(file);
-		printf("read file - %zu bytes\n", data_size);
 	}
 #endif // defined(FUZZING_MODE)
 
@@ -333,6 +333,9 @@ int main(int argc, char *argv[])
 	}
 
 	free(pkt);
+	if (data != data_sample) {
+		free(data);
+	}
 #else
 	usrsctp_conninput(&fd_s, data, data_size, 0);
 #endif
