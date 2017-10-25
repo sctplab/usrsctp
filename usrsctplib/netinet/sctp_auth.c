@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 321204 2017-07-19 14:28:58Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 324971 2017-10-25 09:12:22Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1633,9 +1633,9 @@ sctp_zero_m(struct mbuf *m, uint32_t m_offset, uint32_t size)
 	/* now use the rest of the mbuf chain */
 	while ((m_tmp != NULL) && (size > 0)) {
 		data = mtod(m_tmp, uint8_t *) + m_offset;
-		if (size > (uint32_t) SCTP_BUF_LEN(m_tmp)) {
-			memset(data, 0, SCTP_BUF_LEN(m_tmp));
-			size -= SCTP_BUF_LEN(m_tmp);
+		if (size > (uint32_t)(SCTP_BUF_LEN(m_tmp) - m_offset)) {
+			memset(data, 0, SCTP_BUF_LEN(m_tmp) - m_offset);
+			size -= SCTP_BUF_LEN(m_tmp) - m_offset;
 		} else {
 			memset(data, 0, size);
 			size = 0;
