@@ -189,6 +189,8 @@ struct socket {
 		int	sb_lowat;	/* (c/d) low water mark */
 		int	sb_timeo;	/* (c/d) timeout for read/write */
 		short	sb_flags;	/* (c/d) flags, see below */
+		char filename[200];
+		int lineno;
 	} so_rcv, so_snd;
 /*
  * Constants for sb_flags field of struct sockbuf.

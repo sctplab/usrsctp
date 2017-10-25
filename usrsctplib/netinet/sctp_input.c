@@ -1245,6 +1245,8 @@ sctp_handle_error(struct sctp_chunkhdr *ch,
 	struct socket *so;
 #endif
 
+	return(0);
+
 	/* parse through all of the errors and process */
 	asoc = &stcb->asoc;
 	phdr = (struct sctp_paramhdr *)((caddr_t)ch +

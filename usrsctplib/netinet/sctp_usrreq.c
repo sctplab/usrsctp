@@ -8269,8 +8269,8 @@ sctp_listen(struct socket *so, struct proc *p)
 		sctp_log_lock(inp, (struct sctp_tcb *)NULL, SCTP_LOG_LOCK_SOCK);
 	}
 #endif
-	SOCK_LOCK(so);
 #if (defined(__FreeBSD__) && __FreeBSD_version > 500000) || defined(__Userspace__)
+	SOCK_LOCK(so);
 	error = solisten_proto_check(so);
 	SOCK_UNLOCK(so);
 	if (error) {
