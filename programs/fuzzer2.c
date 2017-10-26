@@ -113,6 +113,8 @@ handle_packets(void* arg)
 
 void debug_printf(const char* format, ...)
 {
+
+	return;
 	va_list ap;
 
 	va_start(ap, format);
@@ -328,10 +330,14 @@ int main(int argc, char *argv[])
 	memcpy(pkt + 12, data, data_size);
 
 	// magic happens here
-	//usrsctp_conninput(&fd_s, pkt, data_size + 12, 0);
+
+#ifdef 1
+	usrsctp_conninput(&fd_s, pkt, data_size + 12, 0);
+#else
 	if (send(fd_c, pkt, data_size + 12, 0) < 0) {
 		exit(EXIT_FAILURE);
 	}
+#endif
 
 	free(pkt);
 #if !defined(FUZZING_MODE)
