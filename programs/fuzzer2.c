@@ -42,8 +42,6 @@
 #include <usrsctp.h>
 
 #define MAX_PACKET_SIZE (1 << 16)
-#define LINE_LENGTH (1 << 20)
-#define DISCARD_PPID 39
 
 static int fd_c, fd_s;
 static struct socket *s_c, *s_s, *s_l;
@@ -331,7 +329,7 @@ int main(int argc, char *argv[])
 
 	// magic happens here
 
-#ifdef 1
+#if 1
 	usrsctp_conninput(&fd_s, pkt, data_size + 12, 0);
 #else
 	if (send(fd_c, pkt, data_size + 12, 0) < 0) {
