@@ -463,7 +463,7 @@ struct sx {int dummy;};
 #include <sys/priv.h>
 #endif
 /* #include <sys/random.h> */
-/* #include <sys/limits.h> */
+#include <limits.h>
 /* #include <machine/cpu.h> */
 
 #if defined(__Userspace_os_Darwin)
