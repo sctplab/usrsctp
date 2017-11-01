@@ -3245,6 +3245,11 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 				paddri->spinfo_mtu -= SCTP_MIN_OVERHEAD;
 				break;
 #endif
+#if defined(__Userspace__)
+			case AF_CONN:
+				paddri->spinfo_mtu -= sizeof(struct sctphdr);
+				break;
+#endif
 			default:
 				break;
 			}
@@ -3254,7 +3259,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 			if (stcb != NULL) {
 				SCTP_TCB_UNLOCK(stcb);
 			}
-		        SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOENT);
+			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOENT);
 			error = ENOENT;
 		}
 		break;
@@ -3340,6 +3345,11 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 #if defined(INET6)
 		case AF_INET6:
 			sstat->sstat_primary.spinfo_mtu -= SCTP_MIN_OVERHEAD;
+			break;
+#endif
+#if defined(__Userspace__)
+		case AF_CONN:
+			sstat->sstat_primary.spinfo_mtu -= sizeof(struct sctphdr);
 			break;
 #endif
 		default:
