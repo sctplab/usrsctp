@@ -4440,6 +4440,28 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		}
 		break;
 	}
+	case SCTP_NOTIF_FD:
+	{
+		int fd;
+
+		if (*optsize < sizeof(int)) {
+			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
+			error = EINVAL;
+		} else {
+			SCTP_INP_RLOCK(inp);
+			if (inp->use_notif_fd) {
+			    fd = inp->notif_fd;
+			} else {
+			    fd = -1;
+			}
+			SCTP_INP_RUNLOCK(inp);
+		}
+		if (error == 0) {
+		    *(int *)optval = fd;
+		    *optsize = sizeof(int);
+		}
+		break;
+	}
 	default:
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ENOPROTOOPT);
 		error = ENOPROTOOPT;
@@ -7685,6 +7707,21 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				error = EINVAL;
 			}
 		}
+		break;
+	}
+	case SCTP_NOTIF_FD:
+	{
+		int *fd;
+
+		SCTP_CHECK_AND_CAST(fd, optval, int, optsize);
+		SCTP_INP_WLOCK(inp);
+		if (*fd > 0) {
+			inp->use_notif_fd = 1;
+			inp->notif_fd = *fd;
+		} else {
+			inp->use_notif_fd = 0;
+		}
+		SCTP_INP_WUNLOCK(inp);
 		break;
 	}
 	default:

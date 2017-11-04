@@ -4770,6 +4770,14 @@ sctp_invoke_recv_callback(struct sctp_inpcb *inp,
 {
 	uint32_t pd_point, length;
 
+	if (inp->use_notif_fd &&
+	    (stcb != NULL) &&
+	    (stcb->sctp_socket != NULL)) {
+		char b = 1;
+		write(inp->notif_fd, &b, 1);
+		return;
+	}
+
 	if ((inp->recv_callback == NULL) ||
 	    (stcb == NULL) ||
 	    (stcb->sctp_socket == NULL)) {
