@@ -49,11 +49,11 @@ include_directories(${CMAKE_SOURCE_DIR}/usrsctplib)
 #################################################
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    add_definitions(-D_GNU_SOURCE)
+	add_definitions(-D_GNU_SOURCE)
 endif ()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    add_definitions(-D__APPLE_USE_RFC_2292)
+	add_definitions(-D__APPLE_USE_RFC_2292)
 endif ()
 
 
@@ -69,31 +69,31 @@ find_package(Threads)
 #################################################
 
 set(CHECK_PROGRAMS
-    client.c
-    daytime_server.c
-    discard_server.c
-    echo_server.c
-    ekr_client.c
-    ekr_loop_offload.c
-    ekr_loop.c
-    ekr_peer.c
-    ekr_server.c
-    http_client.c
-    rtcweb.c
-    test_libmgmt.c
-    test_timer.c
-    tsctp.c
+	client.c
+	daytime_server.c
+	discard_server.c
+	echo_server.c
+	ekr_client.c
+	ekr_loop_offload.c
+	ekr_loop.c
+	ekr_peer.c
+	ekr_server.c
+	http_client.c
+	rtcweb.c
+	test_libmgmt.c
+	test_timer.c
+	tsctp.c
 )
 
 foreach (SOURCE_FILE ${CHECK_PROGRAMS})
-    get_filename_component(SOURCE_FILE_WE ${SOURCE_FILE} NAME_WE)
-    add_executable(
-        ${SOURCE_FILE_WE}
-        ${SOURCE_FILE}
-    )
+	get_filename_component(SOURCE_FILE_WE ${SOURCE_FILE} NAME_WE)
+	add_executable(
+		${SOURCE_FILE_WE}
+		${SOURCE_FILE}
+	)
 
-    target_link_libraries(${SOURCE_FILE_WE}
-        ${PROGRAMS_LINK_LIBRARY}
-        ${CMAKE_THREAD_LIBS_INIT}
-    )
+	target_link_libraries(${SOURCE_FILE_WE}
+		${PROGRAMS_LINK_LIBRARY}
+		${CMAKE_THREAD_LIBS_INIT}
+	)
 endforeach ()
