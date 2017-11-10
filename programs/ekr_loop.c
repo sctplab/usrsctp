@@ -50,7 +50,7 @@
 #include <usrsctp.h>
 
 #define MAX_PACKET_SIZE (1<<16)
-#define LINE_LENGTH (1<<10)
+#define LINE_LENGTH (1<<20)
 #define DISCARD_PPID 39
 #define DUMP_PKTS_TO_FILE 1
 
@@ -395,7 +395,7 @@ main(void)
 	};
 #endif
 #ifdef SCTP_DEBUG
-	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
+	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
 #endif
 	usrsctp_sysctl_set_sctp_ecn_enable(0);
 	usrsctp_register_address((void *)&fd_c);
@@ -411,7 +411,7 @@ main(void)
 		exit(EXIT_FAILURE);
 	}
 	printf("Change send socket buffer size from %d ", cur_buf_size);
-	snd_buf_size = 1<<20; /* 1 MB */
+	snd_buf_size = 1<<22; /* 4 MB */
 	if (usrsctp_setsockopt(s_c, SOL_SOCKET, SO_SNDBUF, &snd_buf_size, sizeof(int)) < 0) {
 		perror("usrsctp_setsockopt");
 		exit(EXIT_FAILURE);
@@ -501,7 +501,13 @@ main(void)
 	sndinfo.snd_ppid = htonl(DISCARD_PPID);
 	sndinfo.snd_context = 0;
 	sndinfo.snd_assoc_id = 0;
-	/* Send a 1 MB message */
+	/* Send a 1 MB ordered message */
+	if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
+	                 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
+		perror("usrsctp_sendv");
+		exit(EXIT_FAILURE);
+	}
+	/* Send a 1 MB ordered message */
 	if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
 	                 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("usrsctp_sendv");

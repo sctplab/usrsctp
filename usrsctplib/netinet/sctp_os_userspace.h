@@ -274,7 +274,7 @@ typedef char* caddr_t;
 
 #else /* !defined(Userspace_os_Windows) */
 #include <sys/socket.h>
-#if defined(__Userspace_os_DragonFly) || defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Linux) || defined(__Userspace_os_NetBSD) || defined(__Userspace_os_OpenBSD) || defined(__Userspace_os_NaCl)
+#if defined(__Userspace_os_DragonFly) || defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Linux) || defined(__Userspace_os_NetBSD) || defined(__Userspace_os_OpenBSD) || defined(__Userspace_os_NaCl) || defined(__Userspace_os_Fuchsia)
 #include <pthread.h>
 #endif
 typedef pthread_mutex_t userland_mutex_t;
@@ -463,7 +463,7 @@ struct sx {int dummy;};
 #include <sys/priv.h>
 #endif
 /* #include <sys/random.h> */
-/* #include <sys/limits.h> */
+#include <limits.h>
 /* #include <machine/cpu.h> */
 
 #if defined(__Userspace_os_Darwin)

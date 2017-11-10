@@ -32,7 +32,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 323657 2017-09-16 21:26:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 325370 2017-11-03 20:46:12Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_PCB_H_
@@ -373,6 +373,7 @@ struct sctp_pcb {
 	sctp_auth_chklist_t *local_auth_chunks;
 	sctp_hmaclist_t *local_hmacs;
 	uint16_t default_keyid;
+	uint32_t default_mtu;
 
 	/* various thresholds */
 	/* Max times I will init at a guy */
