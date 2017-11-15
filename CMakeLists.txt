@@ -193,6 +193,18 @@ if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STR
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Winit-self")
 	endif ()
 
+	check_c_compiler_flag(-Wno-unused-function has_wno_unused_function)
+	if (has_wno_unused_function)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unused-function")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-function")
+	endif ()
+
+	check_c_compiler_flag(-Wno-unused-parameter has_wno_unused_parameter)
+	if (has_wno_unused_parameter)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unused-parameter")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-parameter")
+	endif ()
+
 	if (sctp_werror)
 		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Werror")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
