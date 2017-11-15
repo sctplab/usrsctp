@@ -68,7 +68,7 @@ find_package(Threads)
 # PROGRAMS
 #################################################
 
-set(CHECK_PROGRAMS
+set(check_programs
 	client.c
 	daytime_server.c
 	discard_server.c
@@ -85,15 +85,15 @@ set(CHECK_PROGRAMS
 	tsctp.c
 )
 
-foreach (SOURCE_FILE ${CHECK_PROGRAMS})
-	get_filename_component(SOURCE_FILE_WE ${SOURCE_FILE} NAME_WE)
+foreach (source_file ${check_programs})
+	get_filename_component(source_file_we ${source_file} NAME_WE)
 	add_executable(
-		${SOURCE_FILE_WE}
-		${SOURCE_FILE}
+		${source_file_we}
+		${source_file}
 	)
 
-	target_link_libraries(${SOURCE_FILE_WE}
-		${PROGRAMS_LINK_LIBRARY}
+	target_link_libraries(${source_file_we}
+		${programs_link_library}
 		${CMAKE_THREAD_LIBS_INIT}
 	)
 endforeach ()

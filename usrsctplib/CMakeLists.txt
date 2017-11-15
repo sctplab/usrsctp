@@ -36,12 +36,12 @@
 
 set(VERSION "1.0.0")
 
-set(prefix ${CMAKE_INSTALL_PREFIX})
-set(exec_prefix "\${prefix}")
-set(libdir "\${exec_prefix}/lib")
-set(includedir "\${prefix}/include/usrsctp")
+set(prefix 					${CMAKE_INSTALL_PREFIX})
+set(exec_prefix 			${prefix})
+set(libdir 					${exec_prefix}/lib)
+set(includedir 				${prefix}/include/usrsctp)
 set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR})
-set(CMAKE_MACOSX_RPATH 1)
+set(CMAKE_MACOSX_RPATH 		1)
 
 add_definitions(-D__Userspace__)
 add_definitions(-D__Userspace_os_${CMAKE_SYSTEM_NAME})
@@ -89,7 +89,7 @@ endif ()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-list(APPEND usrsctp_root_HEADERS
+list(APPEND usrsctp_root_headers
 	user_atomic.h
 	user_environment.h
 	user_inpcb.h
@@ -105,7 +105,7 @@ list(APPEND usrsctp_root_HEADERS
 	usrsctp.h
 )
 
-list(APPEND usrsctp_netinet_HEADERS
+list(APPEND usrsctp_netinet_headers
 	netinet/sctp_asconf.h
 	netinet/sctp_auth.h
 	netinet/sctp_bsd_addr.h
@@ -132,17 +132,17 @@ list(APPEND usrsctp_netinet_HEADERS
 	netinet/sctp.h
 )
 
-list(APPEND usrsctp_netinet6_HEADERS
+list(APPEND usrsctp_netinet6_headers
 	netinet6/sctp6_var.h
 )
 
-list(APPEND usrsctp_HEADERS
-	${usrsctp_root_HEADERS}
-	${usrsctp_netinet_HEADERS}
-	${usrsctp_netinet6_HEADERS}
+list(APPEND usrsctp_headers
+	${usrsctp_root_headers}
+	${usrsctp_netinet_headers}
+	${usrsctp_netinet6_headers}
 )
 
-list(APPEND usrsctp_SOURCES
+list(APPEND usrsctp_sources
 	netinet/sctp_asconf.c
 	netinet/sctp_auth.c
 	netinet/sctp_bsd_addr.c
@@ -168,8 +168,8 @@ list(APPEND usrsctp_SOURCES
 	user_socket.c
 )
 
-add_library(usrsctp SHARED ${usrsctp_SOURCES} ${usrsctp_HEADERS})
-add_library(usrsctp-static STATIC ${usrsctp_SOURCES} ${usrsctp_HEADERS})
+add_library(usrsctp SHARED ${usrsctp_sources} ${usrsctp_headers})
+add_library(usrsctp-static STATIC ${usrsctp_sources} ${usrsctp_headers})
 
 if (WIN32)
 	message(STATUS "link library: ws2_32")
