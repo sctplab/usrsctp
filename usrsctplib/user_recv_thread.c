@@ -361,13 +361,13 @@ recv_function_raw(void *arg)
 			i = 0;
 			SCTP_BUF_LEN(recvmbuf[0]) = iovlen;
 
-			ncounter -= iovlen;
+			ncounter -= min(ncounter, iovlen);
 			(to_fill)++;
 			do {
 				recvmbuf[i]->m_next = recvmbuf[i+1];
 				SCTP_BUF_LEN(recvmbuf[i]->m_next) = min(ncounter, iovlen);
 				i++;
-				ncounter -= iovlen;
+				ncounter -= min(ncounter, iovlen);
 				(to_fill)++;
 			} while (ncounter > 0);
 		}
@@ -564,13 +564,13 @@ recv_function_raw6(void *arg)
 			i = 0;
 			SCTP_BUF_LEN(recvmbuf6[0]) = iovlen;
 
-			ncounter -= iovlen;
+			ncounter -= min(ncounter, iovlen);
 			(to_fill)++;
 			do {
 				recvmbuf6[i]->m_next = recvmbuf6[i+1];
 				SCTP_BUF_LEN(recvmbuf6[i]->m_next) = min(ncounter, iovlen);
 				i++;
-				ncounter -= iovlen;
+				ncounter -= min(ncounter, iovlen);
 				(to_fill)++;
 			} while (ncounter > 0);
 		}
@@ -764,13 +764,13 @@ recv_function_udp(void *arg)
 			i = 0;
 			SCTP_BUF_LEN(udprecvmbuf[0]) = iovlen;
 
-			ncounter -= iovlen;
+			ncounter -= min(ncounter, iovlen);
 			(to_fill)++;
 			do {
 				udprecvmbuf[i]->m_next = udprecvmbuf[i+1];
 				SCTP_BUF_LEN(udprecvmbuf[i]->m_next) = min(ncounter, iovlen);
 				i++;
-				ncounter -= iovlen;
+				ncounter -= min(ncounter, iovlen);
 				(to_fill)++;
 			} while (ncounter > 0);
 		}
@@ -978,13 +978,13 @@ recv_function_udp6(void *arg)
 			i = 0;
 			SCTP_BUF_LEN(udprecvmbuf6[0]) = iovlen;
 
-			ncounter -= iovlen;
+			ncounter -= min(ncounter, iovlen);
 			(to_fill)++;
 			do {
 				udprecvmbuf6[i]->m_next = udprecvmbuf6[i+1];
 				SCTP_BUF_LEN(udprecvmbuf6[i]->m_next) = min(ncounter, iovlen);
 				i++;
-				ncounter -= iovlen;
+				ncounter -= min(ncounter, iovlen);
 				(to_fill)++;
 			} while (ncounter > 0);
 		}
