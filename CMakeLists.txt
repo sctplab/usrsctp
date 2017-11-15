@@ -63,11 +63,11 @@ if (sctp_inet)
 endif ()
 
 option(sctp_inet6 "Support IPv6" 1)
-if (INET6)
+if (sctp_inet6)
 	add_definitions(-DINET6)
 endif ()
 
-option(sctp_werror "Warning as error" 1)
+option(sctp_werror "Thread warning as error" 1)
 
 option(sctp_link_programs_static "Link example programs static" 0)
 
