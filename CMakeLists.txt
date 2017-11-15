@@ -193,48 +193,6 @@ if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STR
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Winit-self")
 	endif ()
 
-	check_c_compiler_flag(-Wno-unused-function has_wno_unused_function)
-	if (has_wno_unused_function)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unused-function")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-function")
-	endif ()
-
-	check_c_compiler_flag(-Wno-unused-parameter has_wno_unused_parameter)
-	if (has_wno_unused_parameter)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unused-parameter")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-parameter")
-	endif ()
-
-	check_c_compiler_flag(-Wno-overlength-strings has_wno_overlength_strings)
-	if (has_wno_overlength_strings)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-overlength-strings")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-overlength-strings")
-	endif ()
-
-	check_c_compiler_flag(-Wno-unused-command-line-argument has_wno_unused_command_line_argument)
-	if (has_wno_unused_command_line_argument)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unused-command-line-argument")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-command-line-argument")
-	endif ()
-
-	check_c_compiler_flag(-Wno-unreachable-code has_wno_unreachable_code)
-	if (has_wno_unreachable_code)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unreachable-code")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unreachable-code")
-	endif ()
-
-	check_c_compiler_flag(-Wno-parentheses-equality has_wno_parantheses_equality)
-	if (has_wno_parantheses_equality)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-parentheses-equality")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-parentheses-equality")
-	endif ()
-
-	check_c_compiler_flag(-Wno-array-bounds has_wno_array_bounds)
-	if (has_wno_array_bounds)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-array-bounds")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-array-bounds")
-	endif ()
-
 	if (sctp_werror)
 		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Werror")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
