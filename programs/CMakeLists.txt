@@ -67,23 +67,36 @@ find_package(Threads)
 #################################################
 # PROGRAMS
 #################################################
+# if in fuzzing mode, only build the fuzzer
+if (sctp_fuzzer_clang)
+	list(APPEND check_programs
+		fuzzer.c
+		fuzzer2.c
+	)
 
-set(check_programs
-	client.c
-	daytime_server.c
-	discard_server.c
-	echo_server.c
-	ekr_client.c
-	ekr_loop_offload.c
-	ekr_loop.c
-	ekr_peer.c
-	ekr_server.c
-	http_client.c
-	rtcweb.c
-	test_libmgmt.c
-	test_timer.c
-	tsctp.c
-)
+	configure_file(crashtest.py crashtest.py COPYONLY)
+	configure_file(run-fuzzer.sh run-fuzzer.sh COPYONLY)
+	configure_file(run-fuzzer2.sh run-fuzzer2.sh COPYONLY)
+else ()
+	list(APPEND check_programs
+		client.c
+		daytime_server.c
+		discard_server.c
+		echo_server.c
+		ekr_client.c
+		ekr_loop_offload.c
+		ekr_loop.c
+		ekr_peer.c
+		ekr_server.c
+		fuzzer.c
+		fuzzer2.c
+		http_client.c
+		rtcweb.c
+		test_libmgmt.c
+		test_timer.c
+		tsctp.c
+	)
+endif ()
 
 foreach (source_file ${check_programs})
 	get_filename_component(source_file_we ${source_file} NAME_WE)

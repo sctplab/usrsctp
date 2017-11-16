@@ -77,6 +77,8 @@ option(sctp_sanitizer_address "Compile with address sanitizer" 0)
 
 option(sctp_sanitizer_memory "Compile with memory sanitizer" 0)
 
+option(sctp_fuzzer_clang "Compile in Clang fuzzing mode" 0)
+
 if (sctp_sanitizer_address AND sctp_sanitizer_memory)
 	message(FATAL_ERROR "Can not compile with both sanitizer options")
 endif ()
@@ -224,6 +226,11 @@ if ("${CMAKE_C_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_C_COMPILER_ID}" MATCHES
 	if (sctp_sanitizer_memory)
 		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins")
+	endif ()
+
+	if (sctp_fuzzer_clang)
+		set(CMAKE_C_FLAGS 	"${CMAKE_C_FLAGS}   -fsanitize=fuzzer,address,undefined -g -fno-omit-frame-pointer -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=fuzzer,address,undefined -g -fno-omit-frame-pointer -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
 	endif ()
 endif ()
 
