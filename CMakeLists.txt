@@ -229,7 +229,7 @@ if ("${CMAKE_C_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_C_COMPILER_ID}" MATCHES
 	endif ()
 
 	if (sctp_fuzzer_clang)
-		set(CMAKE_C_FLAGS 	"${CMAKE_C_FLAGS}   -fsanitize=fuzzer,address,undefined -g -fno-omit-frame-pointer -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=fuzzer,address,undefined -g -fno-omit-frame-pointer -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=fuzzer,address,undefined -g -fno-omit-frame-pointer -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
 	endif ()
 endif ()
