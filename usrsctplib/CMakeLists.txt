@@ -59,8 +59,8 @@ endif ()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 	add_definitions(-U__FreeBSD__)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -Wno-address-of-packed-member -Wno-unknown-warning-option")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member -Wno-unknown-warning-option")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -Wno-address-of-packed-member")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member")
 endif ()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
