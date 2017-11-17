@@ -111,7 +111,6 @@ handle_packets(void* arg)
 
 void debug_printf(const char* format, ...)
 {
-
 	return;
 	va_list ap;
 
@@ -162,6 +161,7 @@ int init_fuzzer(void)
 		perror("bind");
 		exit(EXIT_FAILURE);
 	}
+
 	name_len = (socklen_t) sizeof(struct sockaddr_in);
 	if (getsockname(fd_c, (struct sockaddr*)&sin_c, &name_len)) {
 		perror("getsockname");
@@ -172,6 +172,7 @@ int init_fuzzer(void)
 		perror("bind");
 		exit(EXIT_FAILURE);
 	}
+
 	name_len = (socklen_t) sizeof(struct sockaddr_in);
 	if (getsockname(fd_s, (struct sockaddr*)&sin_s, &name_len)) {
 		perror("getsockname");
@@ -236,14 +237,12 @@ int main(int argc, char *argv[])
 	}
 #endif // defined(FUZZING_MODE)
 
-
 	struct sockaddr_conn sconn;
 	static uint16_t port = 1;
 	struct linger so_linger;
 	char *pkt;
 
 	init_fuzzer();
-
 	port = (port % 1024) + 1;
 
 	if ((s_c = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_c)) == NULL) {
@@ -328,7 +327,6 @@ int main(int argc, char *argv[])
 	memcpy(pkt + 12, data, data_size);
 
 	// magic happens here
-
 #if 1
 	usrsctp_conninput(&fd_s, pkt, data_size + 12, 0);
 #else

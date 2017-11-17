@@ -78,6 +78,9 @@ option(sctp_sanitizer_address "Compile with address sanitizer" 0)
 option(sctp_sanitizer_memory "Compile with memory sanitizer" 0)
 
 option(sctp_fuzzer_clang "Compile in Clang fuzzing mode" 0)
+if (sctp_fuzzer_clang)
+	add_definitions(-DFUZZING_MODE)
+endif ()
 
 if (sctp_sanitizer_address AND sctp_sanitizer_memory)
 	message(FATAL_ERROR "Can not compile with both sanitizer options")
