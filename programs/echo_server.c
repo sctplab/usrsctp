@@ -141,17 +141,18 @@ int
 main(int argc, char *argv[])
 {
 	struct socket *sock;
-	struct sockaddr_in6 addr;
-	struct sctp_udpencaps encaps;
-	struct sctp_event event;
+	struct sockaddr_in6 addr = {0};
+	struct sctp_udpencaps encaps = {0};
+	struct sctp_event event = {0};
+    struct sctp_assoc_value av = {0};
+    struct sctp_rcvinfo rcv_info = {0};
 	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
 	                          SCTP_PEER_ADDR_CHANGE,
 	                          SCTP_REMOTE_ERROR,
 	                          SCTP_SHUTDOWN_EVENT,
 	                          SCTP_ADAPTATION_INDICATION,
 	                          SCTP_PARTIAL_DELIVERY_EVENT};
-	unsigned int i;
-	struct sctp_assoc_value av;
+	unsigned int i;	
 	const int on = 1;
 	ssize_t n;
 	int flags;
@@ -159,7 +160,7 @@ main(int argc, char *argv[])
 	char buffer[BUFFER_SIZE];
 	char name[INET6_ADDRSTRLEN];
 	socklen_t infolen;
-	struct sctp_rcvinfo rcv_info;
+	
 	unsigned int infotype;
 
 	if (argc > 1) {
@@ -178,7 +179,7 @@ main(int argc, char *argv[])
 	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, (const void*)&on, (socklen_t)sizeof(int)) < 0) {
 		perror("usrsctp_setsockopt SCTP_I_WANT_MAPPED_V4_ADDR");
 	}
-	memset(&av, 0, sizeof(struct sctp_assoc_value));
+	
 	av.assoc_id = SCTP_ALL_ASSOC;
 	av.assoc_value = 47;
 
@@ -188,15 +189,13 @@ main(int argc, char *argv[])
 	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_RECVRCVINFO, &on, sizeof(int)) < 0) {
 		perror("usrsctp_setsockopt SCTP_RECVRCVINFO");
 	}
-	if (argc > 2) {
-		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
+	if (argc > 2) {		
 		encaps.sue_address.ss_family = AF_INET6;
 		encaps.sue_port = htons(atoi(argv[2]));
 		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
 			perror("usrsctp_setsockopt SCTP_REMOTE_UDP_ENCAPS_PORT");
 		}
-	}
-	memset(&event, 0, sizeof(event));
+	}	
 	event.se_assoc_id = SCTP_FUTURE_ASSOC;
 	event.se_on = 1;
 	for (i = 0; i < (unsigned int)(sizeof(event_types)/sizeof(uint16_t)); i++) {
@@ -205,7 +204,7 @@ main(int argc, char *argv[])
 			perror("usrsctp_setsockopt SCTP_EVENT");
 		}
 	}
-	memset((void *)&addr, 0, sizeof(struct sockaddr_in6));
+	
 #ifdef HAVE_SIN6_LEN
 	addr.sin6_len = sizeof(struct sockaddr_in6);
 #endif

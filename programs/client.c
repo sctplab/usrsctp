@@ -279,7 +279,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		}
 		free(data);
 	}
-	return (1);
+	return (0);
 }
 
 void
@@ -297,11 +297,11 @@ main(int argc, char *argv[])
 {
 	struct socket *sock;
 	struct sockaddr *addr, *addrs;
-	struct sockaddr_in addr4;
-	struct sockaddr_in6 addr6;
-	struct sctp_udpencaps encaps;
-	struct sctpstat stat;
-	struct sctp_event event;
+	struct sockaddr_in addr4 = {0};
+	struct sockaddr_in6 addr6 = {0};
+	struct sctp_udpencaps encaps = {0};
+	struct sctpstat stat = {0};
+	struct sctp_event event = {0};
 	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
 	                          SCTP_PEER_ADDR_CHANGE,
 	                          SCTP_SEND_FAILED_EVENT};
@@ -325,7 +325,7 @@ main(int argc, char *argv[])
 	if ((sock = usrsctp_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 	}
-	memset(&event, 0, sizeof(event));
+	
 	event.se_assoc_id = SCTP_ALL_ASSOC;
 	event.se_on = 1;
 	for (i = 0; i < sizeof(event_types)/sizeof(uint16_t); i++) {
@@ -334,8 +334,7 @@ main(int argc, char *argv[])
 			perror("setsockopt SCTP_EVENT");
 		}
 	}
-	if (argc > 3) {
-		memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
+	if (argc > 3) {		
 #ifdef HAVE_SIN6_LEN
 		addr6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
@@ -346,16 +345,13 @@ main(int argc, char *argv[])
 			perror("bind");
 		}
 	}
-	if (argc > 5) {
-		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
+	if (argc > 5) {		
 		encaps.sue_address.ss_family = AF_INET6;
 		encaps.sue_port = htons(atoi(argv[5]));
 		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
 			perror("setsockopt");
 		}
-	}
-	memset((void *)&addr4, 0, sizeof(struct sockaddr_in));
-	memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
+	}	
 #ifdef HAVE_SIN_LEN
 	addr4.sin_len = sizeof(struct sockaddr_in);
 #endif
