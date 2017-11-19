@@ -71,12 +71,12 @@ int
 main(int argc, char *argv[])
 {
 	struct socket *sock, *conn_sock;
-	struct sockaddr_in addr;
-	struct sctp_udpencaps encaps;
+	struct sockaddr_in addr = {0};
+	struct sctp_udpencaps encaps = {0};
 	socklen_t addr_len;
 	char buffer[80];
 	time_t now;
-	struct sctp_sndinfo sndinfo;
+	struct sctp_sndinfo sndinfo = {0};
 
 	if (argc > 1) {
 		usrsctp_init(atoi(argv[1]), NULL, debug_printf);
@@ -91,15 +91,13 @@ main(int argc, char *argv[])
 	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 	}
-	if (argc > 2) {
-		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
+	if (argc > 2) {		
 		encaps.sue_address.ss_family = AF_INET;
 		encaps.sue_port = htons(atoi(argv[2]));
 		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
 			perror("setsockopt");
 		}
-	}
-	memset((void *)&addr, 0, sizeof(struct sockaddr_in));
+	}	
 #ifdef HAVE_SIN_LEN
 	addr.sin_len = sizeof(struct sockaddr_in);
 #endif
