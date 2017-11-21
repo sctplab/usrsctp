@@ -898,6 +898,13 @@ usrsctp_getsockopt(struct socket *so,
                    socklen_t *option_len);
 
 int
+usrsctp_opt_info(struct socket *so,
+                 sctp_assoc_t id,
+                 int opt,
+                 void *arg,
+                 socklen_t *size);
+
+int
 usrsctp_getpaddrs(struct socket *so,
                   sctp_assoc_t id,
                   struct sockaddr **raddrs);
