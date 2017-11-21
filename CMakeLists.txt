@@ -29,62 +29,62 @@
 # SUCH DAMAGE.
 #
 
-cmake_minimum_required(VERSION 2.6)
 project(usrsctplib)
+cmake_minimum_required(VERSION 3.0)
 
 # Debug build type as default
 if (NOT CMAKE_BUILD_TYPE)
-    message(STATUS "No build type selected, using DEBUG")
-    set(CMAKE_BUILD_TYPE "DEBUG")
+	message(STATUS "No build type selected, using DEBUG")
+	set(CMAKE_BUILD_TYPE "DEBUG")
 endif ()
 
 include(CheckStructHasMember)
 include(CheckIncludeFile)
 include(CheckIncludeFiles)
-
+include(CheckCCompilerFlag)
 
 #################################################
 # CHECK OPTIONS
 #################################################
 
-option(INVARIANTS "Add runtime checks" 0)
-if (INVARIANTS)
-    add_definitions(-DINVARIANTS)
+option(sctp_invariants "Add runtime checks" 0)
+if (sctp_invariants)
+	add_definitions(-DINVARIANTS)
 endif ()
 
-option(SCTP_DEBUG "Provide debug information" 1)
-if (SCTP_DEBUG)
-    add_definitions(-DSCTP_DEBUG)
+option(sctp_debug "Provide debug information" 1)
+if (sctp_debug)
+	add_definitions(-DSCTP_DEBUG)
 endif ()
 
-option(INET "Support IPv4" 1)
-if (INET)
-    add_definitions(-DINET)
+option(sctp_inet "Support IPv4" 1)
+if (sctp_inet)
+	add_definitions(-DINET)
 endif ()
 
-option(INET6 "Support IPv6" 1)
-if (INET6)
-    add_definitions(-DINET6)
+option(sctp_inet6 "Support IPv6" 1)
+if (sctp_inet6)
+	add_definitions(-DINET6)
 endif ()
 
-option(WERROR "Warning as error" 1)
+option(sctp_werror "Thread warning as error" 1)
 
-option(LINK_PROGRAMS_STATIC "Link example programs static" 0)
+option(sctp_link_programs_static "Link example programs static" 0)
 
-option(BUILD_PROGRAMS "Build example programs" 1)
+option(sctp_build_programs "Build example programs" 1)
 
-option(SANITIZER_ADDRESS "Compile with address sanitizer" 0)
+option(sctp_sanitizer_address "Compile with address sanitizer" 0)
 
-option(SANITIZER_MEMORY "Compile with memory sanitizer" 0)
+option(sctp_sanitizer_memory "Compile with memory sanitizer" 0)
 
-if (SANITIZER_ADDRESS AND SANITIZER_MEMORY)
-    message(FATAL_ERROR "Can not compile with both sanitizer options")
+if (sctp_sanitizer_address AND sctp_sanitizer_memory)
+	message(FATAL_ERROR "Can not compile with both sanitizer options")
 endif ()
 
-if (LINK_PROGRAMS_STATIC OR WIN32)
-    set(PROGRAMS_LINK_LIBRARY "usrsctp-static")
+if (sctp_link_programs_static OR WIN32)
+	set(programs_link_library "usrsctp-static")
 else ()
-    set(PROGRAMS_LINK_LIBRARY "usrsctp")
+	set(programs_link_library "usrsctp")
 endif ()
 
 
@@ -92,29 +92,29 @@ endif ()
 # CHECK FOR TYPES AND FUNCTIONS
 #################################################
 
-check_include_files("sys/queue.h" HAVE_SYS_QUEUE_H)
-if (HAVE_SYS_QUEUE_H)
-    add_definitions(-DHAVE_SYS_QUEUE_H)
+check_include_files("sys/queue.h" have_sys_queue_h)
+if (have_sys_queue_h)
+	add_definitions(-DHAVE_SYS_QUEUE_H)
 endif ()
 
-check_include_files("sys/socket.h;linux/if_addr.h" HAVE_LINUX_IF_ADDR_H)
-if (HAVE_LINUX_IF_ADDR_H)
-    add_definitions(-DHAVE_LINUX_IF_ADDR_H)
+check_include_files("sys/socket.h;linux/if_addr.h" have_linux_if_addr_h)
+if (have_linux_if_addr_h)
+	add_definitions(-DHAVE_LINUX_IF_ADDR_H)
 endif ()
 
-check_include_files("sys/socket.h;linux/rtnetlink.h" HAVE_LINUX_RTNETLINK_H)
-if (HAVE_LINUX_RTNETLINK_H)
-    add_definitions(-DHAVE_LINUX_RTNETLINK_H)
+check_include_files("sys/socket.h;linux/rtnetlink.h" have_linux_rtnetlink_h)
+if (have_linux_rtnetlink_h)
+	add_definitions(-DHAVE_LINUX_RTNETLINK_H)
 endif ()
 
-check_include_files("sys/types.h;netinet/in.h;netinet/ip.h;netinet/ip_icmp.h" HAVE_NETINET_IP_ICMP_H)
-if (HAVE_NETINET_IP_ICMP_H)
-    add_definitions(-DHAVE_NETINET_IP_ICMP_H)
+check_include_files("sys/types.h;netinet/in.h;netinet/ip.h;netinet/ip_icmp.h" have_netinet_ip_icmp_h)
+if (have_netinet_ip_icmp_h)
+	add_definitions(-DHAVE_NETINET_IP_ICMP_H)
 endif ()
 
-check_include_files("stdatomic.h" HAVE_STDATOMIC_H)
-if (HAVE_STDATOMIC_H)
-    add_definitions(-DHAVE_STDATOMIC_H)
+check_include_files("stdatomic.h" have_stdatomic_h)
+if (have_stdatomic_h)
+	add_definitions(-DHAVE_STDATOMIC_H)
 endif ()
 
 
@@ -122,34 +122,35 @@ endif ()
 # CHECK STRUCT MEMBERS
 #################################################
 
-set (CMAKE_REQUIRED_INCLUDES "${CMAKE_SOURCE_DIR}/usrsctplib")
-check_include_file(usrsctp.h HAVE_USRSCTP_H)
-if (NOT HAVE_USRSCTP_H)
-    message(FATAL_ERROR "usrsctp.h not found")
+set(CMAKE_REQUIRED_INCLUDES "${CMAKE_SOURCE_DIR}/usrsctplib")
+
+check_include_file(usrsctp.h have_usrsctp_h)
+if (NOT have_usrsctp_h)
+	message(FATAL_ERROR "usrsctp.h not found")
 endif ()
 
-check_struct_has_member("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" HAVE_SA_LEN)
-if (HAVE_SA_LEN)
-    message(STATUS "HAVE_SA_LEN")
-    add_definitions(-DHAVE_SA_LEN)
+check_struct_has_member("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" have_sa_len)
+if (have_sa_len)
+	message(STATUS "have_sa_len")
+	add_definitions(-DHAVE_SA_LEN)
 endif ()
 
-check_struct_has_member("struct sockaddr_in" "sin_len" "sys/types.h;netinet/in.h" HAVE_SIN_LEN)
-if (HAVE_SIN_LEN)
-    message(STATUS "HAVE_SIN_LEN")
-    add_definitions(-DHAVE_SIN_LEN)
+check_struct_has_member("struct sockaddr_in" "sin_len" "sys/types.h;netinet/in.h" have_sin_len)
+if (have_sin_len)
+	message(STATUS "have_sin_len")
+	add_definitions(-DHAVE_SIN_LEN)
 endif ()
 
-check_struct_has_member("struct sockaddr_in6" "sin6_len" "sys/types.h;netinet/in.h" HAVE_SIN6_LEN)
-if (HAVE_SIN6_LEN)
-    message(STATUS "HAVE_SIN6_LEN")
-    add_definitions(-DHAVE_SIN6_LEN)
+check_struct_has_member("struct sockaddr_in6" "sin6_len" "sys/types.h;netinet/in.h" have_sin6_len)
+if (have_sin6_len)
+	message(STATUS "have_sin6_len")
+	add_definitions(-DHAVE_SIN6_LEN)
 endif ()
 
-check_struct_has_member("struct sockaddr_conn" "sconn_len" "usrsctp.h" HAVE_SCONN_LEN)
-if (HAVE_SCONN_LEN)
-    message(STATUS "HAVE_SCONN_LEN")
-    add_definitions(-DHAVE_SCONN_LEN)
+check_struct_has_member("struct sockaddr_conn" "sconn_len" "usrsctp.h" have_sconn_len)
+if (have_sconn_len)
+	message(STATUS "HAVE_SCONN_LEN")
+	add_definitions(-DHAVE_SCONN_LEN)
 endif ()
 
 
@@ -158,38 +159,85 @@ endif ()
 #################################################
 
 # SETTINGS FOR UNIX COMPILER
-if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xGNU")
-    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c99 -pedantic -Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Winit-self -Wno-unused-function -Wno-unused-parameter")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99 -pedantic -Wall -Wextra -Wfloat-equal -Wshadow -Wpointer-arith -Winit-self -Wno-unused-function -Wno-unused-parameter")
+if ("${CMAKE_C_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_C_COMPILER_ID}" MATCHES "AppleClang" OR "${CMAKE_C_COMPILER_ID}" MATCHES "GNU")
+	set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c99 -pedantic -Wall -Wextra")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99 -pedantic -Wall -Wextra")
 
-    if (WERROR)
-        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Werror")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-    endif ()
+	check_c_compiler_flag(-Wfloat-equal has_wfloat_equal)
+	if (has_wfloat_equal)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wfloat-equal")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wfloat-equal")
+	endif ()
 
-    if (SANITIZER_ADDRESS)
-        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=address -O1 -fno-omit-frame-pointer -g")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -O1 -fno-omit-frame-pointer -g")
-    endif ()
+	check_c_compiler_flag(-Wshadow has_wshadow)
+	if (has_wshadow)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wshadow")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow")
+	endif ()
 
-    if (SANITIZER_MEMORY)
-        # maybe add "-fPIE -pie" here
-        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins")
-    endif ()
+	check_c_compiler_flag(-Wpointer-arith has_wpointer_aritih)
+	if (has_wpointer_aritih)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wpointer-arith")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpointer-arith")
+	endif ()
+
+	check_c_compiler_flag(-Wunreachable-code has_wunreachable_code)
+	if (has_wunreachable_code)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wunreachable-code")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wunreachable-code")
+	endif ()
+
+	check_c_compiler_flag(-Winit-self has_winit_self)
+	if (has_winit_self)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Winit-self")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Winit-self")
+	endif ()
+
+	check_c_compiler_flag(-Wno-unused-function has_wno_unused_function)
+	if (has_wno_unused_function)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unused-function")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-function")
+	endif ()
+
+	check_c_compiler_flag(-Wno-unused-parameter has_wno_unused_parameter)
+	if (has_wno_unused_parameter)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unused-parameter")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-parameter")
+	endif ()
+
+	check_c_compiler_flag(-Wno-unreachable-code has_wno_unreachable_code)
+	if (has_wno_unreachable_code)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unreachable-code")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unreachable-code")
+	endif ()
+
+	if (sctp_werror)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Werror")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+	endif ()
+
+	if (sctp_sanitizer_address)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=address -fno-omit-frame-pointer -g")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g")
+	endif ()
+
+	if (sctp_sanitizer_memory)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins")
+	endif ()
 endif ()
 
 # SETTINGS FOR VISUAL STUDIO COMPILER
 if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC")
-    if (CMAKE_C_FLAGS MATCHES "/W[0-4]")
-        string(REGEX REPLACE "/W[0-4]" "/W3" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    else ()
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
-    endif ()
+	if (CMAKE_C_FLAGS MATCHES "/W[0-4]")
+		string(REGEX REPLACE "/W[0-4]" "/W3" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+	else ()
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
+	endif ()
 
-    if (WERROR)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
-    endif ()
+	if (WERROR)
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
+	endif ()
 endif ()
 
 
@@ -199,6 +247,6 @@ endif ()
 
 add_subdirectory(usrsctplib)
 
-if (BUILD_PROGRAMS)
-    add_subdirectory(programs)
+if (sctp_build_programs)
+	add_subdirectory(programs)
 endif ()
