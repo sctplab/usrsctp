@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 325370 2017-11-03 20:46:12Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 326163 2017-11-24 12:18:48Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5091,14 +5091,14 @@ sctp_release_pr_sctp_chunk(struct sctp_tcb *stcb, struct sctp_tmit_chunk *tp1,
 		stcb->asoc.abandoned_sent[PR_SCTP_POLICY(tp1->flags)]++;
 		stcb->asoc.strmout[sid].abandoned_sent[0]++;
 #if defined(SCTP_DETAILED_STR_STATS)
-		stcb->asoc.strmout[stream].abandoned_sent[PR_SCTP_POLICY(tp1->flags)]++;
+		stcb->asoc.strmout[sid].abandoned_sent[PR_SCTP_POLICY(tp1->flags)]++;
 #endif
 	} else {
 		stcb->asoc.abandoned_unsent[0]++;
 		stcb->asoc.abandoned_unsent[PR_SCTP_POLICY(tp1->flags)]++;
 		stcb->asoc.strmout[sid].abandoned_unsent[0]++;
 #if defined(SCTP_DETAILED_STR_STATS)
-		stcb->asoc.strmout[stream].abandoned_unsent[PR_SCTP_POLICY(tp1->flags)]++;
+		stcb->asoc.strmout[sid].abandoned_unsent[PR_SCTP_POLICY(tp1->flags)]++;
 #endif
 	}
 	do {
