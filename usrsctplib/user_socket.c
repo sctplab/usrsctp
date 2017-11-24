@@ -2436,6 +2436,121 @@ userspace_getsockopt(struct socket *so, int level, int option_name,
 }
 
 int
+usrsctp_opt_info(struct socket *so, sctp_assoc_t id, int opt, void *arg, socklen_t *size)
+{
+	if (arg == NULL) {
+		errno = EINVAL;
+		return (-1);
+	}
+	if ((id == SCTP_CURRENT_ASSOC) ||
+	    (id == SCTP_ALL_ASSOC)) {
+		errno = EINVAL;
+		return (-1);
+	}
+	switch (opt) {
+	case SCTP_RTOINFO:
+		((struct sctp_rtoinfo *)arg)->srto_assoc_id = id;
+		break;
+	case SCTP_ASSOCINFO:
+		((struct sctp_assocparams *)arg)->sasoc_assoc_id = id;
+		break;
+	case SCTP_DEFAULT_SEND_PARAM:
+		((struct sctp_assocparams *)arg)->sasoc_assoc_id = id;
+		break;
+	case SCTP_PRIMARY_ADDR:
+		((struct sctp_setprim *)arg)->ssp_assoc_id = id;
+		break;
+	case SCTP_PEER_ADDR_PARAMS:
+		((struct sctp_paddrparams *)arg)->spp_assoc_id = id;
+		break;
+	case SCTP_MAXSEG:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_AUTH_KEY:
+		((struct sctp_authkey *)arg)->sca_assoc_id = id;
+		break;
+	case SCTP_AUTH_ACTIVE_KEY:
+		((struct sctp_authkeyid *)arg)->scact_assoc_id = id;
+		break;
+	case SCTP_DELAYED_SACK:
+		((struct sctp_sack_info *)arg)->sack_assoc_id = id;
+		break;
+	case SCTP_CONTEXT:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_STATUS:
+		((struct sctp_status *)arg)->sstat_assoc_id = id;
+		break;
+	case SCTP_GET_PEER_ADDR_INFO:
+		((struct sctp_paddrinfo *)arg)->spinfo_assoc_id = id;
+		break;
+	case SCTP_PEER_AUTH_CHUNKS:
+		((struct sctp_authchunks *)arg)->gauth_assoc_id = id;
+		break;
+	case SCTP_LOCAL_AUTH_CHUNKS:
+		((struct sctp_authchunks *)arg)->gauth_assoc_id = id;
+		break;
+	case SCTP_TIMEOUTS:
+		((struct sctp_timeouts *)arg)->stimo_assoc_id = id;
+		break;
+	case SCTP_EVENT:
+		((struct sctp_event *)arg)->se_assoc_id = id;
+		break;
+	case SCTP_DEFAULT_SNDINFO:
+		((struct sctp_sndinfo *)arg)->snd_assoc_id = id;
+		break;
+	case SCTP_DEFAULT_PRINFO:
+		((struct sctp_default_prinfo *)arg)->pr_assoc_id = id;
+		break;
+	case SCTP_PEER_ADDR_THLDS:
+		((struct sctp_paddrthlds *)arg)->spt_assoc_id = id;
+		break;
+	case SCTP_REMOTE_UDP_ENCAPS_PORT:
+		((struct sctp_udpencaps *)arg)->sue_assoc_id = id;
+		break;
+	case SCTP_ECN_SUPPORTED:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_PR_SUPPORTED:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_AUTH_SUPPORTED:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_ASCONF_SUPPORTED:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_RECONFIG_SUPPORTED:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_NRSACK_SUPPORTED:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_PKTDROP_SUPPORTED:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_MAX_BURST:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_ENABLE_STREAM_RESET:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	case SCTP_PR_STREAM_STATUS:
+		((struct sctp_prstatus *)arg)->sprstat_assoc_id = id;
+		break;
+	case SCTP_PR_ASSOC_STATUS:
+		((struct sctp_prstatus *)arg)->sprstat_assoc_id = id;
+		break;
+	case SCTP_MAX_CWND:
+		((struct sctp_assoc_value *)arg)->assoc_id = id;
+		break;
+	default:
+		break;
+	}
+	return (usrsctp_getsockopt(so, IPPROTO_SCTP, opt, arg, size));
+}
+
+int
 usrsctp_set_ulpinfo(struct socket *so, void *ulp_info)
 {
 	return (register_ulp_info(so, ulp_info));
