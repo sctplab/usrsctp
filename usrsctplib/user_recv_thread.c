@@ -267,9 +267,7 @@ recv_function_raw(void *arg)
 	struct sctphdr *sh;
 	uint16_t port;
 	int offset, ecn = 0;
-#if !defined(SCTP_WITH_NO_CSUM)
 	int compute_crc = 1;
-#endif
 	struct sctp_chunkhdr *ch;
 	struct sockaddr_in src, dst;
 #if !defined(__Userspace_os_Windows)
@@ -407,28 +405,22 @@ recv_function_raw(void *arg)
 
 		port = 0;
 
-#if defined(SCTP_WITH_NO_CSUM)
-		SCTP_STAT_INCR(sctps_recvnocrc);
-#else
 		if (SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) &&
 		    ((IN4_ISLOOPBACK_ADDRESS(&src.sin_addr) &&
 		      IN4_ISLOOPBACK_ADDRESS(&dst.sin_addr)) ||
 		     (src.sin_addr.s_addr == dst.sin_addr.s_addr))) {
 			compute_crc = 0;
-			SCTP_STAT_INCR(sctps_recvnocrc);
+			SCTP_STAT_INCR(sctps_recvhwcrc);
 		} else {
 			SCTP_STAT_INCR(sctps_recvswcrc);
 		}
-#endif
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
 		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_common_input_processing with off=%d\n", offset);
 		sctp_common_input_processing(&recvmbuf[0], sizeof(struct ip), offset, n,
 		                             (struct sockaddr *)&src,
 		                             (struct sockaddr *)&dst,
 		                             sh, ch,
-#if !defined(SCTP_WITH_NO_CSUM)
 		                             compute_crc,
-#endif
 		                             ecn,
 		                             SCTP_DEFAULT_VRFID, port);
 		if (recvmbuf[0]) {
@@ -477,9 +469,7 @@ recv_function_raw6(void *arg)
 	int to_fill = MAXLEN_MBUF_CHAIN;
 	/* iovlen is the size of each mbuf in the chain */
 	int i, n;
-#if !defined(SCTP_WITH_NO_CSUM)
 	int compute_crc = 1;
-#endif
 	unsigned int iovlen = MCLBYTES;
 	int want_ext = (iovlen > MLEN)? 1 : 0;
 	int want_header = 0;
@@ -606,25 +596,19 @@ recv_function_raw6(void *arg)
 		src.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 		src.sin6_port = sh->src_port;
-#if defined(SCTP_WITH_NO_CSUM)
-		SCTP_STAT_INCR(sctps_recvnocrc);
-#else
 		if (memcmp(&src.sin6_addr, &dst.sin6_addr, sizeof(struct in6_addr)) == 0) {
 			compute_crc = 0;
-			SCTP_STAT_INCR(sctps_recvnocrc);
+			SCTP_STAT_INCR(sctps_recvhwcrc);
 		} else {
 			SCTP_STAT_INCR(sctps_recvswcrc);
 		}
-#endif
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
 		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_common_input_processing with off=%d\n", offset);
 		sctp_common_input_processing(&recvmbuf6[0], 0, offset, n,
 		                             (struct sockaddr *)&src,
 		                             (struct sockaddr *)&dst,
 		                             sh, ch,
-#if !defined(SCTP_WITH_NO_CSUM)
 		                             compute_crc,
-#endif
 		                             0,
 		                             SCTP_DEFAULT_VRFID, 0);
 		if (recvmbuf6[0]) {
@@ -662,9 +646,7 @@ recv_function_udp(void *arg)
 #else
 	char cmsgbuf[CMSG_SPACE(sizeof(struct in_addr))];
 #endif
-#if !defined(SCTP_WITH_NO_CSUM)
 	int compute_crc = 1;
-#endif
 #if !defined(__Userspace_os_Windows)
 	unsigned int ncounter;
 	struct iovec iov[MAXLEN_MBUF_CHAIN];
@@ -820,25 +802,19 @@ recv_function_udp(void *arg)
 		port = src.sin_port;
 		src.sin_port = sh->src_port;
 		dst.sin_port = sh->dest_port;
-#if defined(SCTP_WITH_NO_CSUM)
-		SCTP_STAT_INCR(sctps_recvnocrc);
-#else
 		if (src.sin_addr.s_addr == dst.sin_addr.s_addr) {
 			compute_crc = 0;
-			SCTP_STAT_INCR(sctps_recvnocrc);
+			SCTP_STAT_INCR(sctps_recvhwcrc);
 		} else {
 			SCTP_STAT_INCR(sctps_recvswcrc);
 		}
-#endif
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
 		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_common_input_processing with off=%d\n", offset);
 		sctp_common_input_processing(&udprecvmbuf[0], 0, offset, n,
 		                             (struct sockaddr *)&src,
 		                             (struct sockaddr *)&dst,
 		                             sh, ch,
-#if !defined(SCTP_WITH_NO_CSUM)
 		                             compute_crc,
-#endif
 		                             0,
 		                             SCTP_DEFAULT_VRFID, port);
 		if (udprecvmbuf[0]) {
@@ -872,9 +848,7 @@ recv_function_udp6(void *arg)
 	uint16_t port;
 	struct sctp_chunkhdr *ch;
 	char cmsgbuf[CMSG_SPACE(sizeof (struct in6_pktinfo))];
-#if !defined(SCTP_WITH_NO_CSUM)
 	int compute_crc = 1;
-#endif
 #if !defined(__Userspace_os_Windows)
 	unsigned int ncounter;
 	struct iovec iov[MAXLEN_MBUF_CHAIN];
@@ -1016,25 +990,19 @@ recv_function_udp6(void *arg)
 		port = src.sin6_port;
 		src.sin6_port = sh->src_port;
 		dst.sin6_port = sh->dest_port;
-#if defined(SCTP_WITH_NO_CSUM)
-		SCTP_STAT_INCR(sctps_recvnocrc);
-#else
 		if ((memcmp(&src.sin6_addr, &dst.sin6_addr, sizeof(struct in6_addr)) == 0)) {
 			compute_crc = 0;
-			SCTP_STAT_INCR(sctps_recvnocrc);
+			SCTP_STAT_INCR(sctps_recvhwcrc);
 		} else {
 			SCTP_STAT_INCR(sctps_recvswcrc);
 		}
-#endif
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
 		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_common_input_processing with off=%d\n", (int)sizeof(struct sctphdr));
 		sctp_common_input_processing(&udprecvmbuf6[0], 0, offset, n,
 		                             (struct sockaddr *)&src,
 		                             (struct sockaddr *)&dst,
 		                             sh, ch,
-#if !defined(SCTP_WITH_NO_CSUM)
 		                             compute_crc,
-#endif
 		                             0,
 		                             SCTP_DEFAULT_VRFID, port);
 		if (udprecvmbuf6[0]) {

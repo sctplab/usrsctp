@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 323505 2017-09-12 21:08:50Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 326672 2017-12-07 22:19:08Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UIO_H_
@@ -1012,7 +1012,7 @@ struct sctpstat {
 	uint32_t  sctps_recvauthfailed;      /* total number of auth failed */
 	uint32_t  sctps_recvexpress;         /* total fast path receives all one chunk */
 	uint32_t  sctps_recvexpressm;        /* total fast path multi-part data */
-	uint32_t  sctps_recvnocrc;
+	uint32_t  sctps_recv_spare;          /* formerly sctps_recvnocrc */
 	uint32_t  sctps_recvswcrc;
 	uint32_t  sctps_recvhwcrc;
 
@@ -1023,13 +1023,13 @@ struct sctpstat {
 	uint32_t  sctps_sendretransdata;     /* total output retransmitted DATA chunks */
 	uint32_t  sctps_sendfastretrans;     /* total output fast retransmitted DATA chunks */
 	uint32_t  sctps_sendmultfastretrans; /* total FR's that happened more than once
-                                              * to same chunk (u-del multi-fr algo).
-					      */
+	                                      * to same chunk (u-del multi-fr algo).
+	                                      */
 	uint32_t  sctps_sendheartbeat;       /* total output HB chunks     */
 	uint32_t  sctps_sendecne;            /* total output ECNE chunks    */
 	uint32_t  sctps_sendauth;            /* total output AUTH chunks FIXME   */
-	uint32_t  sctps_senderrors;	     /* ip_output error counter */
-	uint32_t  sctps_sendnocrc;
+	uint32_t  sctps_senderrors;          /* ip_output error counter */
+	uint32_t  sctps_send_spare;          /* formerly sctps_sendnocrc */
 	uint32_t  sctps_sendswcrc;
 	uint32_t  sctps_sendhwcrc;
 	/* PCKDROPREP statistics: */

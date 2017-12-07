@@ -1041,9 +1041,7 @@ USRSCTP_SYSCTL_DECL(sctp_asconf_enable)
 USRSCTP_SYSCTL_DECL(sctp_reconfig_enable)
 USRSCTP_SYSCTL_DECL(sctp_nrsack_enable)
 USRSCTP_SYSCTL_DECL(sctp_pktdrop_enable)
-#if !defined(SCTP_WITH_NO_CSUM)
 USRSCTP_SYSCTL_DECL(sctp_no_csum_on_loopback)
-#endif
 USRSCTP_SYSCTL_DECL(sctp_peer_chunk_oh)
 USRSCTP_SYSCTL_DECL(sctp_max_burst_default)
 USRSCTP_SYSCTL_DECL(sctp_max_chunks_on_queue)
@@ -1156,7 +1154,7 @@ struct sctpstat {
 	uint32_t  sctps_recvauthfailed;      /* total number of auth failed */
 	uint32_t  sctps_recvexpress;         /* total fast path receives all one chunk */
 	uint32_t  sctps_recvexpressm;        /* total fast path multi-part data */
-	uint32_t  sctps_recvnocrc;
+	uint32_t  sctps_recv_spare;          /* formerly sctps_recvnocrc */
 	uint32_t  sctps_recvswcrc;
 	uint32_t  sctps_recvhwcrc;
 
@@ -1173,7 +1171,7 @@ struct sctpstat {
 	uint32_t  sctps_sendecne;            /* total output ECNE chunks    */
 	uint32_t  sctps_sendauth;            /* total output AUTH chunks FIXME   */
 	uint32_t  sctps_senderrors;          /* ip_output error counter */
-	uint32_t  sctps_sendnocrc;
+	uint32_t  sctps_send_spare;          /* formerly sctps_sendnocrc */
 	uint32_t  sctps_sendswcrc;
 	uint32_t  sctps_sendhwcrc;
 	/* PCKDROPREP statistics: */
