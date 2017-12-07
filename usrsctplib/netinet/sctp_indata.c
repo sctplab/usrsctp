@@ -96,7 +96,6 @@ sctp_calc_rwnd(struct sctp_tcb *stcb, struct sctp_association *asoc)
 	if (stcb->sctp_socket == NULL) {
 		return (calc);
 	}
-SCTP_PRINTF("sctp_calc_rwnd: sb_cc=%u, size_on_reasm_queue=%u, cnt_on_reasm_queue=%u, size_on_all_streams=%u, cnt_on_all_streams=%u, my_rwnd_control_len=%u\n", stcb->asoc.sb_cc, asoc->size_on_reasm_queue, asoc->cnt_on_reasm_queue, asoc->size_on_all_streams, asoc->cnt_on_all_streams, asoc->my_rwnd_control_len);
 
 	KASSERT(asoc->cnt_on_reasm_queue > 0 || asoc->size_on_reasm_queue == 0,
 	        ("size_on_reasm_queue is %u", asoc->size_on_reasm_queue));
@@ -824,7 +823,6 @@ sctp_handle_old_unordered_data(struct sctp_tcb *stcb,
 	struct sctp_queued_to_read *nc;
 	int cnt_added;
 
-printf("Entering %s\n", __func__);
 	if (control->first_frag_seen == 0) {
 		/* Nothing we can do, we have not seen the first piece yet */
 		return (1);
@@ -933,7 +931,6 @@ restart:
 	if ((control->length > pd_point) && (strm->pd_api_started == 0)) {
 		strm->pd_api_started = 1;
 		control->pdapi_started = 1;
-printf("Strarting PD-API\n");
 		sctp_add_to_readq(stcb->sctp_ep, stcb, control,
 		                  &stcb->sctp_socket->so_rcv, control->end_added,
 		                  inp_read_lock_held, SCTP_SO_NOT_LOCKED);
@@ -953,8 +950,6 @@ sctp_inject_old_unordered_data(struct sctp_tcb *stcb,
 {
 	struct sctp_tmit_chunk *at;
 	int inserted;
-
-printf("Entering %s\n", __func__);
 	/*
 	 * Here we need to place the chunk into the control structure
 	 * sorted in the correct order.
@@ -1087,7 +1082,6 @@ sctp_deliver_reasm_check(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	uint32_t pd_point;
 	int ret = 0;
 
-printf("Entering %s\n", __func__);
 	if (stcb->sctp_socket) {
 		pd_point = min(SCTP_SB_LIMIT_RCV(stcb->sctp_socket) >> SCTP_PARTIAL_DELIVERY_SHIFT,
 			       stcb->sctp_ep->partial_delivery_point);
@@ -1139,7 +1133,7 @@ printf("Entering %s\n", __func__);
 						  control,
 						  &stcb->sctp_socket->so_rcv, control->end_added,
 						  inp_read_lock_held, SCTP_SO_NOT_LOCKED);
-printf("String PD_API\n");
+
 				break;
 			}
 		}
@@ -1379,7 +1373,6 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	int do_wakeup, unordered;
 	uint32_t lenadded;
 
-printf("Entering %s\n", __func__);
 	strm = &asoc->strmin[control->sinfo_stream];
 	/*
 	 * For old un-ordered data chunks.
