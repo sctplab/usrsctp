@@ -30,6 +30,10 @@
 
 /*
  * Usage: discard_server [local_encaps_port] [remote_encaps_port]
+ * 
+ * Example
+ * Server: $ ./discard_server 11111 22222
+ * Client: $ ./client 127.0.0.1 9 0 22222 11111
  */
 
 #ifdef _WIN32
@@ -48,7 +52,9 @@
 #endif
 #include <usrsctp.h>
 
+#define PORT 9
 #define BUFFER_SIZE 10240
+#define SLEEP 1
 
 const int use_cb = 0;
 
@@ -91,7 +97,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 				port = 0;
 				break;
 			}
-			printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u.\n",
+			printf("Msg of length %d received from %s:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u.\n",
 			       (int)datalen,
 			       name,
 			       port,
@@ -189,7 +195,7 @@ main(int argc, char *argv[])
 	addr.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 	addr.sin6_family = AF_INET6;
-	addr.sin6_port = htons(9);
+	addr.sin6_port = htons(PORT);
 	addr.sin6_addr = in6addr_any;
 	if (usrsctp_bind(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in6)) < 0) {
 		perror("usrsctp_bind");
@@ -200,9 +206,9 @@ main(int argc, char *argv[])
 	while (1) {
 		if (use_cb) {
 #ifdef _WIN32
-			Sleep(1*1000);
+			Sleep(SLEEP * 1000);
 #else
-			sleep(1);
+			sleep(SLEEP);
 #endif
 		} else {
 			from_len = (socklen_t)sizeof(struct sockaddr_in6);
@@ -215,7 +221,7 @@ main(int argc, char *argv[])
 					printf("Notification of length %llu received.\n", (unsigned long long)n);
 				} else {
 					if (infotype == SCTP_RECVV_RCVINFO) {
-						printf("Msg of length %llu received from %s:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u, complete %d.\n",
+						printf("Msg of length %llu received from %s:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u, complete %d.\n",
 						        (unsigned long long)n,
 						        inet_ntop(AF_INET6, &addr.sin6_addr, name, INET6_ADDRSTRLEN), ntohs(addr.sin6_port),
 						        rcv_info.rcv_sid,
@@ -239,9 +245,9 @@ main(int argc, char *argv[])
 	usrsctp_close(sock);
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
-		Sleep(1000);
+		Sleep(SLEEP * 1000);
 #else
-		sleep(1);
+		sleep(SLEEP);
 #endif
 	}
 	return (0);

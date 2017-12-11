@@ -51,6 +51,7 @@ Makefile.in
 /libtool
 /ltmain.sh
 /m4
+/usrsctp.pc
 .dirstamp
 
 # binaries
@@ -71,3 +72,6 @@ programs/test_timer
 
 # callgrind
 callgrind.out*
+
+# cmake build
+/build

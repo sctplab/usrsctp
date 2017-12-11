@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2008, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -32,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 297662 2016-04-07 09:10:34Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 323657 2017-09-16 21:26:06Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_H_
@@ -569,7 +571,6 @@ struct sctp_error_auth_invalid_hmac {
 #define SCTP_PCB_FLAGS_INTERLEAVE_STRMS  0x0000000000000010
 #define SCTP_PCB_FLAGS_DO_ASCONF         0x0000000000000020
 #define SCTP_PCB_FLAGS_AUTO_ASCONF       0x0000000000000040
-#define SCTP_PCB_FLAGS_ZERO_COPY_ACTIVE  0x0000000000000080
 /* socket options */
 #define SCTP_PCB_FLAGS_NODELAY           0x0000000000000100
 #define SCTP_PCB_FLAGS_AUTOCLOSE         0x0000000000000200
@@ -609,7 +610,7 @@ struct sctp_error_auth_invalid_hmac {
 #define SCTP_SMALLEST_PMTU 512	 /* smallest pmtu allowed when disabling PMTU discovery */
 
 #if defined(__Userspace_os_Windows)
-#pragma pack()
+#pragma pack(pop)
 #endif
 #undef SCTP_PACKED
 

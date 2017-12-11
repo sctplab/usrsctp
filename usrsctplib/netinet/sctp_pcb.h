@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -32,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 325370 2017-11-03 20:46:12Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_PCB_H_
@@ -373,6 +375,7 @@ struct sctp_pcb {
 	sctp_auth_chklist_t *local_auth_chunks;
 	sctp_hmaclist_t *local_hmacs;
 	uint16_t default_keyid;
+	uint32_t default_mtu;
 
 	/* various thresholds */
 	/* Max times I will init at a guy */
@@ -400,10 +403,6 @@ struct sctp_pcb {
 	 */
 	struct sctp_timer signature_change;
 
-	/* Zero copy full buffer timer */
-	struct sctp_timer zero_copy_timer;
-        /* Zero copy app to transport (sendq) read repulse timer */
-	struct sctp_timer zero_copy_sendq_timer;
 	uint32_t def_cookie_life;
 	/* defaults to 0 */
 	int auto_close_time;

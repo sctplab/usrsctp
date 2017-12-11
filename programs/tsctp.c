@@ -31,8 +31,8 @@
 
 #include <sys/types.h>
 #ifdef _WIN32
-#include <WinSock2.h>
-#include <WS2tcpip.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <stdlib.h>
 #include <crtdbg.h>
 #include <sys/timeb.h>
@@ -67,7 +67,7 @@ struct socket *psock = NULL;
 static struct timeval start_time;
 unsigned int runtime = 0;
 static unsigned long messages = 0;
-static unsigned int first_length = 0;
+static unsigned long long first_length = 0;
 static unsigned long long sum = 0;
 static unsigned int use_cb = 0;
 
@@ -137,7 +137,6 @@ static void *
 handle_connection(void *arg)
 {
 	ssize_t n;
-	unsigned long long sum = 0, first_length = 0;
 	char *buf;
 #ifdef _WIN32
 	HANDLE tid;
@@ -145,9 +144,8 @@ handle_connection(void *arg)
 	pthread_t tid;
 #endif
 	struct socket *conn_sock;
-	struct timeval start_time, now, diff_time;
+	struct timeval time_start, time_now, time_diff;
 	double seconds;
-	unsigned long messages = 0;
 	unsigned long recv_calls = 0;
 	unsigned long notifications = 0;
 	int flags;
@@ -176,7 +174,7 @@ handle_connection(void *arg)
 	n = usrsctp_recvv(conn_sock, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn,
 	                 &infolen, &infotype, &flags);
 
-	gettimeofday(&start_time, NULL);
+	gettimeofday(&time_start, NULL);
 	while (n > 0) {
 		recv_calls++;
 		if (flags & MSG_NOTIFICATION) {
@@ -210,9 +208,9 @@ handle_connection(void *arg)
 	}
 	if (n < 0)
 		perror("sctp_recvv");
-	gettimeofday(&now, NULL);
-	timersub(&now, &start_time, &diff_time);
-	seconds = diff_time.tv_sec + (double)diff_time.tv_usec/1000000.0;
+	gettimeofday(&time_now, NULL);
+	timersub(&time_now, &time_start, &time_diff);
+	seconds = time_diff.tv_sec + (double)time_diff.tv_usec/1000000.0;
 	printf("%llu, %lu, %lu, %lu, %llu, %f, %f\n",
 	        first_length, messages, recv_calls, notifications, sum, seconds, (double)first_length * (double)messages / seconds);
 	fflush(stdout);
@@ -309,7 +307,7 @@ server_receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		gettimeofday(&now, NULL);
 		timersub(&now, &start_time, &diff_time);
 		seconds = diff_time.tv_sec + (double)diff_time.tv_usec/1000000.0;
-		printf("%u, %lu, %llu, %f, %f\n",
+		printf("%llu, %lu, %llu, %f, %f\n",
 			first_length, messages, sum, seconds, (double)first_length * (double)messages / seconds);
 		usrsctp_close(sock);
 		first_length = 0;
@@ -353,7 +351,7 @@ int main(int argc, char **argv)
 #endif
 	socklen_t addr_len;
 	struct sockaddr_in local_addr;
-	struct timeval start_time, now, diff_time;
+	struct timeval time_start, time_now, time_diff;
 	int client;
 	uint16_t local_port, remote_port, port, local_udp_port, remote_udp_port;
 	int rcvbufsize=0, sndbufsize=0, myrcvbufsize, mysndbufsize;
@@ -416,7 +414,9 @@ int main(int argc, char **argv)
 				fragpoint = atoi(optarg);
 				break;
 			case 'L':
-				inet_pton(AF_INET, optarg, &srcAddr);
+				if (inet_pton(AF_INET, optarg, &srcAddr) != 1) {
+					printf("Can't parse %s\n", optarg);
+				}
 				break;
 			case 'R':
 				rcvbufsize = atoi(optarg);
@@ -675,7 +675,7 @@ int main(int argc, char **argv)
 				printf("Connection accepted from %s:%d\n", inet_ntop(AF_INET, &(remote_addr.sin_addr), addrbuf, INET_ADDRSTRLEN), ntohs(remote_addr.sin_port));
 			}
 		}
-		usrsctp_close(psock);
+		//usrsctp_close(psock); // unreachable
 	} else {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET;
@@ -732,7 +732,7 @@ int main(int argc, char **argv)
 			exit(1);
 		}
 
-		gettimeofday(&start_time, NULL);
+		gettimeofday(&time_start, NULL);
 
 		done = 0;
 
@@ -807,9 +807,9 @@ int main(int argc, char **argv)
 		}
 
 		usrsctp_close(psock);
-		gettimeofday(&now, NULL);
-		timersub(&now, &start_time, &diff_time);
-		seconds = diff_time.tv_sec + (double)diff_time.tv_usec/1000000;
+		gettimeofday(&time_now, NULL);
+		timersub(&time_now, &time_start, &time_diff);
+		seconds = time_diff.tv_sec + (double)time_diff.tv_usec/1000000;
 		printf("%s of %ld messages of length %u took %f seconds.\n",
 		       "Sending", messages, length, seconds);
 		throughput = (double)messages * (double)length / seconds;

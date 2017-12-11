@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -80,7 +82,7 @@ static sctp_os_timer_t *sctp_os_timer_next = NULL;
 void
 sctp_os_timer_init(sctp_os_timer_t *c)
 {
-	bzero(c, sizeof(*c));
+	memset(c, 0, sizeof(*c));
 }
 
 void

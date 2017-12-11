@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -32,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 324615 2017-10-14 10:02:59Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UTIL_H_
@@ -144,7 +146,7 @@ sctp_timeout_handler(void *);
 
 uint32_t
 sctp_calculate_rto(struct sctp_tcb *, struct sctp_association *,
-    struct sctp_nets *, struct timeval *, int, int);
+    struct sctp_nets *, struct timeval *, int);
 
 uint32_t sctp_calculate_len(struct mbuf *);
 
@@ -418,6 +420,11 @@ sctp_auditing(int, struct sctp_inpcb *, struct sctp_tcb *,
     struct sctp_nets *);
 void sctp_audit_log(uint8_t, uint8_t);
 
+#endif
+uint32_t sctp_min_mtu(uint32_t, uint32_t, uint32_t);
+#if defined(__FreeBSD__)
+void sctp_hc_set_mtu(union sctp_sockstore *, uint16_t, uint32_t);
+uint32_t sctp_hc_get_mtu(union sctp_sockstore *, uint16_t);
 #endif
 #endif				/* _KERNEL */
 #endif

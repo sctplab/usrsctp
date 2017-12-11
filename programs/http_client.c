@@ -30,6 +30,9 @@
 
 /*
  * Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]
+ * 
+ * Example
+ * Client: $ ./http_client 212.201.121.100 80 0 9899 9899 /cgi-bin/he
  */
 
 #ifdef _WIN32

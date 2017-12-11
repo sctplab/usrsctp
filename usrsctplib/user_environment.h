@@ -94,17 +94,18 @@ terminate_non_graceful(void) {
 	abort();
 }
 
-#define panic(...)                       \
-	do {                             \
-		SCTP_PRINTF(__VA_ARGS__);\
-		SCTP_PRINTF("\n");       \
-		terminate_non_graceful();\
+#define panic(...)                                  \
+	do {                                        \
+		SCTP_PRINTF("%s(): ", __FUNCTION__);\
+		SCTP_PRINTF(__VA_ARGS__);           \
+		SCTP_PRINTF("\n");                  \
+		terminate_non_graceful();           \
 } while (0)
 
 #define KASSERT(cond, args)          \
 	do {                         \
 		if (!(cond)) {       \
-			panic args ;\
+			panic args ; \
 		}                    \
 	} while (0)
 #else

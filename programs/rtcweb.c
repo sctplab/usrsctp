@@ -38,8 +38,8 @@
 #include <sys/types.h>
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
-#include <WinSock2.h>
-#include <WS2tcpip.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <crtdbg.h>
 #else
 #include <sys/socket.h>
@@ -140,10 +140,16 @@ struct rtcweb_datachannel_ack {
 } SCTP_PACKED;
 
 #ifdef _WIN32
-#pragma pack()
+#pragma pack(pop)
 #endif
 
 #undef SCTP_PACKED
+
+static void
+lock_peer_connection(struct peer_connection *);
+
+static void
+unlock_peer_connection(struct peer_connection *);
 
 static void
 init_peer_connection(struct peer_connection *pc)
@@ -151,6 +157,12 @@ init_peer_connection(struct peer_connection *pc)
 	uint32_t i;
 	struct channel *channel;
 
+#ifdef _WIN32
+	InitializeCriticalSection(&(pc->mutex));
+#else
+	pthread_mutex_init(&pc->mutex, NULL);
+#endif
+	lock_peer_connection(pc);
 	for (i = 0; i < NUMBER_OF_CHANNELS; i++) {
 		channel = &(pc->channels[i]);
 		channel->id = i;
@@ -169,11 +181,7 @@ init_peer_connection(struct peer_connection *pc)
 	}
 	pc->o_stream_buffer_counter = 0;
 	pc->sock = NULL;
-#ifdef _WIN32
-	InitializeCriticalSection(&(pc->mutex));
-#else
-	pthread_mutex_init(&pc->mutex, NULL);
-#endif
+	unlock_peer_connection(pc);
 }
 
 static void
@@ -1103,7 +1111,7 @@ handle_send_failed_event(struct sctp_send_failed_event *ssfe)
 	if (ssfe->ssfe_flags & ~(SCTP_DATA_SENT | SCTP_DATA_UNSENT)) {
 		printf("(flags = %x) ", ssfe->ssfe_flags);
 	}
-	printf("message with PPID = %d, SID = %d, flags: 0x%04x due to error = 0x%08x",
+	printf("message with PPID = %u, SID = %u, flags: 0x%04x due to error = 0x%08x",
 	       ntohl(ssfe->ssfe_info.snd_ppid), ssfe->ssfe_info.snd_sid,
 	       ssfe->ssfe_info.snd_flags, ssfe->ssfe_error);
 	n = ssfe->ssfe_length - sizeof(struct sctp_send_failed_event);

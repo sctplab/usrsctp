@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -32,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 326672 2017-12-07 22:19:08Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -73,9 +75,7 @@ sctp_init_sysctls()
 	SCTP_BASE_SYSCTL(sctp_nrsack_enable) = SCTPCTL_NRSACK_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_pktdrop_enable) = SCTPCTL_PKTDROP_ENABLE_DEFAULT;
 #if !(defined(__FreeBSD__) && __FreeBSD_version >= 800000)
-#if !defined(SCTP_WITH_NO_CSUM)
 	SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) = SCTPCTL_LOOPBACK_NOCSUM_DEFAULT;
-#endif
 #endif
 	SCTP_BASE_SYSCTL(sctp_peer_chunk_oh) = SCTPCTL_PEER_CHKOH_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_max_burst_default) = SCTPCTL_MAXBURST_DEFAULT;
@@ -503,19 +503,38 @@ sctp_sysctl_handle_assoclist(SYSCTL_HANDLER_ARGS)
 #endif
 		so = inp->sctp_socket;
 		if ((so == NULL) ||
+		    (!SCTP_IS_LISTENING(inp)) ||
 		    (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
 			xinpcb.qlen = 0;
 			xinpcb.maxqlen = 0;
 		} else {
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1200034
+			xinpcb.qlen = so->sol_qlen;
+#else
 			xinpcb.qlen = so->so_qlen;
+#endif
 #if defined(__FreeBSD__) && __FreeBSD_version > 1100096
+#if __FreeBSD_version >= 1200034
+			xinpcb.qlen_old = so->sol_qlen > USHRT_MAX ?
+			    USHRT_MAX : (uint16_t) so->sol_qlen;
+#else
 			xinpcb.qlen_old = so->so_qlen > USHRT_MAX ?
 			    USHRT_MAX : (uint16_t) so->so_qlen;
 #endif
+#endif
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1200034
+			xinpcb.maxqlen = so->sol_qlimit;
+#else
 			xinpcb.maxqlen = so->so_qlimit;
+#endif
 #if defined(__FreeBSD__) && __FreeBSD_version > 1100096
+#if __FreeBSD_version >= 1200034
+			xinpcb.maxqlen_old = so->sol_qlimit > USHRT_MAX ?
+			    USHRT_MAX : (uint16_t) so->sol_qlimit;
+#else
 			xinpcb.maxqlen_old = so->so_qlimit > USHRT_MAX ?
 			    USHRT_MAX : (uint16_t) so->so_qlimit;
+#endif
 #endif
 		}
 		SCTP_INP_INCR_REF(inp);
@@ -610,11 +629,27 @@ sctp_sysctl_handle_assoclist(SYSCTL_HANDLER_ARGS)
 				xraddr.rtt = net->rtt / 1000;
 				xraddr.heartbeat_interval = net->heart_beat_delay;
 				xraddr.ssthresh = net->ssthresh;
+				xraddr.encaps_port = net->port;
+				if (net->dest_state & SCTP_ADDR_UNCONFIRMED) {
+					xraddr.state = SCTP_UNCONFIRMED;
+				} else if (net->dest_state & SCTP_ADDR_REACHABLE) {
+					xraddr.state = SCTP_ACTIVE;
+				} else {
+					xraddr.state = SCTP_INACTIVE;
+				}
 #endif
 #else
 				xraddr.rtt = net->rtt / 1000;
 				xraddr.heartbeat_interval = net->heart_beat_delay;
 				xraddr.ssthresh = net->ssthresh;
+				xraddr.encaps_port = net->port;
+				if (net->dest_state & SCTP_ADDR_UNCONFIRMED) {
+					xraddr.state = SCTP_UNCONFIRMED;
+				} else if (net->dest_state & SCTP_ADDR_REACHABLE) {
+					xraddr.state = SCTP_ACTIVE;
+				} else {
+					xraddr.state = SCTP_INACTIVE;
+				}
 #endif
 				xraddr.start_time.tv_sec = (uint32_t)net->start_time.tv_sec;
 				xraddr.start_time.tv_usec = (uint32_t)net->start_time.tv_usec;
@@ -925,7 +960,6 @@ sctp_sysctl_handle_stats(SYSCTL_HANDLER_ARGS)
 		sb.sctps_recvauthfailed += sarry->sctps_recvauthfailed;
 		sb.sctps_recvexpress += sarry->sctps_recvexpress;
 		sb.sctps_recvexpressm += sarry->sctps_recvexpressm;
-		sb.sctps_recvnocrc += sarry->sctps_recvnocrc;
 		sb.sctps_recvswcrc += sarry->sctps_recvswcrc;
 		sb.sctps_recvhwcrc += sarry->sctps_recvhwcrc;
 		sb.sctps_sendpackets += sarry->sctps_sendpackets;
@@ -938,7 +972,6 @@ sctp_sysctl_handle_stats(SYSCTL_HANDLER_ARGS)
 		sb.sctps_sendecne += sarry->sctps_sendecne;
 		sb.sctps_sendauth += sarry->sctps_sendauth;
 		sb.sctps_senderrors += sarry->sctps_senderrors;
-		sb.sctps_sendnocrc += sarry->sctps_sendnocrc;
 		sb.sctps_sendswcrc += sarry->sctps_sendswcrc;
 		sb.sctps_sendhwcrc += sarry->sctps_sendhwcrc;
 		sb.sctps_pdrpfmbox += sarry->sctps_pdrpfmbox;
@@ -1202,9 +1235,7 @@ SCTP_UINT_SYSCTL(reconfig_enable, sctp_reconfig_enable, SCTPCTL_RECONFIG_ENABLE)
 SCTP_UINT_SYSCTL(nrsack_enable, sctp_nrsack_enable, SCTPCTL_NRSACK_ENABLE)
 SCTP_UINT_SYSCTL(pktdrop_enable, sctp_pktdrop_enable, SCTPCTL_PKTDROP_ENABLE)
 #if defined(__APPLE__)
-#if !defined(SCTP_WITH_NO_CSUM)
 SCTP_UINT_SYSCTL(loopback_nocsum, sctp_no_csum_on_loopback, SCTPCTL_LOOPBACK_NOCSUM)
-#endif
 #endif
 SCTP_UINT_SYSCTL(peer_chkoh, sctp_peer_chunk_oh, SCTPCTL_PEER_CHKOH)
 SCTP_UINT_SYSCTL(maxburst, sctp_max_burst_default, SCTPCTL_MAXBURST)
@@ -1311,9 +1342,7 @@ sctp_sysctl_handle_int(SYSCTL_HANDLER_ARGS)
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_reconfig_enable), SCTPCTL_RECONFIG_ENABLE_MIN, SCTPCTL_RECONFIG_ENABLE_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_nrsack_enable), SCTPCTL_NRSACK_ENABLE_MIN, SCTPCTL_NRSACK_ENABLE_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_pktdrop_enable), SCTPCTL_PKTDROP_ENABLE_MIN, SCTPCTL_PKTDROP_ENABLE_MAX);
-#if !defined(SCTP_WITH_NO_CSUM)
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback), SCTPCTL_LOOPBACK_NOCSUM_MIN, SCTPCTL_LOOPBACK_NOCSUM_MAX);
-#endif
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_peer_chunk_oh), SCTPCTL_PEER_CHKOH_MIN, SCTPCTL_PEER_CHKOH_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_max_burst_default), SCTPCTL_MAXBURST_MIN, SCTPCTL_MAXBURST_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_fr_max_burst_default), SCTPCTL_FRMAXBURST_MIN, SCTPCTL_FRMAXBURST_MAX);
@@ -1421,11 +1450,9 @@ sysctl_setup_sctp(void)
             &SCTP_BASE_SYSCTL(sctp_pktdrop_enable), 0, sctp_sysctl_handle_int,
 	    SCTPCTL_PKTDROP_ENABLE_DESC);
 
-#if !defined(SCTP_WITH_NO_CSUM)
 	sysctl_add_oid(&sysctl_oid_top, "loopback_nocsum", CTLTYPE_INT|CTLFLAG_RW,
             &SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback), 0, sctp_sysctl_handle_int,
 	    SCTPCTL_LOOPBACK_NOCSUM_DESC);
-#endif
 
 	sysctl_add_oid(&sysctl_oid_top, "peer_chkoh", CTLTYPE_INT|CTLFLAG_RW,
             &SCTP_BASE_SYSCTL(sctp_peer_chunk_oh), 0, sctp_sysctl_handle_int,

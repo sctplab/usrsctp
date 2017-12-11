@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -32,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 317592 2017-04-29 09:57:27Z tuexen $");
 #endif
 
 #define _IP_VHL
@@ -674,6 +676,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 				stcb->asoc.peers_rwnd += SCTP_BASE_SYSCTL(sctp_peer_chunk_oh);
 			}
 			chk->sent = SCTP_DATAGRAM_RESEND;
+			chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 			SCTP_STAT_INCR(sctps_markedretrans);
 
 			/* reset the TSN for striking and other FR stuff */
@@ -726,13 +729,9 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 	if (num_mk) {
 		SCTPDBG(SCTP_DEBUG_TIMER1, "LAST TSN marked was %x\n",
 			tsnlast);
-		SCTPDBG(SCTP_DEBUG_TIMER1, "Num marked for retransmission was %d peer-rwd:%ld\n",
-			num_mk, (u_long)stcb->asoc.peers_rwnd);
-		SCTPDBG(SCTP_DEBUG_TIMER1, "LAST TSN marked was %x\n",
-			tsnlast);
-		SCTPDBG(SCTP_DEBUG_TIMER1, "Num marked for retransmission was %d peer-rwd:%d\n",
+		SCTPDBG(SCTP_DEBUG_TIMER1, "Num marked for retransmission was %d peer-rwd:%u\n",
 			num_mk,
-			(int)stcb->asoc.peers_rwnd);
+			stcb->asoc.peers_rwnd);
 	}
 #endif
 	*num_marked = num_mk;
@@ -751,6 +750,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 			chk->whoTo = alt;
 			if (chk->sent != SCTP_DATAGRAM_RESEND) {
 				chk->sent = SCTP_DATAGRAM_RESEND;
+				chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 				sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 				cnt_mk++;
 			}
@@ -1098,6 +1098,7 @@ sctp_cookie_timer(struct sctp_inpcb *inp,
 		sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 	}
 	cookie->sent = SCTP_DATAGRAM_RESEND;
+	cookie->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 	/*
 	 * Now call the output routine to kick out the cookie again, Note we
 	 * don't mark any chunks for retran so that FR will need to kick in
@@ -1144,6 +1145,7 @@ sctp_strreset_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			sctp_free_remote_addr(chk->whoTo);
 			if (chk->sent != SCTP_DATAGRAM_RESEND) {
 				chk->sent = SCTP_DATAGRAM_RESEND;
+				chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 				sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 			}
 			chk->whoTo = alt;
@@ -1161,6 +1163,7 @@ sctp_strreset_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	if (strrst->sent != SCTP_DATAGRAM_RESEND)
 		sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 	strrst->sent = SCTP_DATAGRAM_RESEND;
+	strrst->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 
 	/* restart the timer */
 	sctp_timer_start(SCTP_TIMER_TYPE_STRRESET, inp, stcb, strrst->whoTo);
@@ -1225,6 +1228,7 @@ sctp_asconf_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				chk->whoTo = alt;
 				if (chk->sent != SCTP_DATAGRAM_RESEND) {
 					chk->sent = SCTP_DATAGRAM_RESEND;
+					chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 					sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 				}
 				atomic_add_int(&alt->ref_count, 1);
@@ -1239,6 +1243,7 @@ sctp_asconf_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			if (asconf->sent != SCTP_DATAGRAM_RESEND && chk->sent != SCTP_DATAGRAM_UNSENT)
 				sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 			chk->sent = SCTP_DATAGRAM_RESEND;
+			chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 		}
 		if (!(net->dest_state & SCTP_ADDR_REACHABLE)) {
 			/*
@@ -1251,6 +1256,7 @@ sctp_asconf_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		if (asconf->sent != SCTP_DATAGRAM_RESEND)
 			sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 		asconf->sent = SCTP_DATAGRAM_RESEND;
+		asconf->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 
 		/* send another ASCONF if any and we can do */
 		sctp_send_asconf(stcb, alt, SCTP_ADDR_NOT_LOCKED);

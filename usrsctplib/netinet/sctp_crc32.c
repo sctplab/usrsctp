@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -32,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_crc32.c 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_crc32.c 326672 2017-12-07 22:19:08Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -41,7 +43,6 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_crc32.c 310590 2016-12-26 11:06:41Z tu
 #include <netinet/sctp_pcb.h>
 
 
-#if !defined(SCTP_WITH_NO_CSUM)
 #if defined(__FreeBSD__) && __FreeBSD_version >= 800000
 #else
 /**
@@ -789,18 +790,12 @@ sctp_calculate_cksum(struct mbuf *m, uint32_t offset)
 	base = sctp_finalize_crc32c(base);
 	return (base);
 }
-#endif				/* !defined(SCTP_WITH_NO_CSUM) */
 
 
 #if defined(__FreeBSD__)
 void
 sctp_delayed_cksum(struct mbuf *m, uint32_t offset)
 {
-#if defined(SCTP_WITH_NO_CSUM)
-#ifdef INVARIANTS
-	panic("sctp_delayed_cksum() called when using no SCTP CRC.");
-#endif
-#else
 	uint32_t checksum;
 
 	checksum = sctp_calculate_cksum(m, offset);
@@ -819,7 +814,6 @@ sctp_delayed_cksum(struct mbuf *m, uint32_t offset)
 		return;
 	}
 	*(uint32_t *) (m->m_data + offset) = checksum;
-#endif
 }
 #endif
 

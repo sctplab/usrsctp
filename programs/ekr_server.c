@@ -50,7 +50,9 @@
 #endif
 #include <usrsctp.h>
 
+#define PORT 5001
 #define MAX_PACKET_SIZE (1<<16)
+#define SLEEP 1
 
 #ifdef _WIN32
 static DWORD WINAPI
@@ -133,7 +135,7 @@ receive_cb(struct socket *s, union sctp_sockstore addr, void *data,
 		if (flags & MSG_NOTIFICATION) {
 			printf("Notification of length %d received.\n", (int)datalen);
 		} else {
-			printf("Msg of length %d received via %p:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u.\n",
+			printf("Msg of length %d received via %p:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u.\n",
 			       (int)datalen,
 			       addr.sconn.sconn_addr,
 			       ntohs(addr.sconn.sconn_port),
@@ -196,10 +198,12 @@ main(int argc, char *argv[])
 #ifdef _WIN32
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
 		printf("socket() failed with error: %d\n", WSAGetLastError());
+		exit(EXIT_FAILURE);
 	}
 #else
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 		perror("socket");
+		exit(EXIT_FAILURE);
 	}
 #endif
 	memset(&sin, 0, sizeof(struct sockaddr_in));
@@ -210,15 +214,17 @@ main(int argc, char *argv[])
 	sin.sin_port = htons(atoi(argv[2]));
 	if (!inet_pton(AF_INET, argv[1], &sin.sin_addr.s_addr)){
 		printf("error: invalid address\n");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 #ifdef _WIN32
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
 		printf("bind() failed with error: %d\n", WSAGetLastError());
+		exit(EXIT_FAILURE);
 	}
 #else
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
 		perror("bind");
+		exit(EXIT_FAILURE);
 	}
 #endif
 	memset(&sin, 0, sizeof(struct sockaddr_in));
@@ -229,15 +235,17 @@ main(int argc, char *argv[])
 	sin.sin_port = htons(atoi(argv[4]));
 	if (!inet_pton(AF_INET, argv[3], &sin.sin_addr.s_addr)){
 		printf("error: invalid address\n");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 #ifdef _WIN32
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
 		printf("connect() failed with error: %d\n", WSAGetLastError());
+		exit(EXIT_FAILURE);
 	}
 #else
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
 		perror("connect");
+		exit(EXIT_FAILURE);
 	}
 #endif
 #ifdef SCTP_DEBUG
@@ -258,7 +266,7 @@ main(int argc, char *argv[])
 #ifdef HAVE_SCONN_LEN
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif
-	sconn.sconn_port = htons(5001);
+	sconn.sconn_port = htons(PORT);
 	sconn.sconn_addr = (void *)&fd;
 	if (usrsctp_bind(s, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_bind");
@@ -275,9 +283,9 @@ main(int argc, char *argv[])
 	usrsctp_deregister_address((void *)&fd);
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
-		Sleep(1000);
+		Sleep(SLEEP * 1000);
 #else
-		sleep(1);
+		sleep(SLEEP);
 #endif
 	}
 #ifdef _WIN32
