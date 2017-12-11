@@ -7865,7 +7865,7 @@ sctp_recv_icmp_tunneled_packet(int cmd, struct sockaddr *sa, void *vip, void *ct
 		}
 		sctp_notify(inp, stcb, net, type, code,
 		            ntohs(inner_ip->ip_len),
-		            ntohs(icmp->icmp_nextmtu));
+		            (uint32_t)ntohs(icmp->icmp_nextmtu));
 #if defined(__Userspace__)
 			if (stcb && upcall_socket == NULL && !(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
 				if (stcb->sctp_socket != NULL) {
