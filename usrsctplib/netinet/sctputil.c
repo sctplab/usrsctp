@@ -1609,6 +1609,9 @@ sctp_timeout_handler(void *t)
 	int did_output;
 	int type;
 
+#if defined(__Userspace__)
+	struct socket *upcall_socket = NULL;
+#endif
 	tmr = (struct sctp_timer *)t;
 	inp = (struct sctp_inpcb *)tmr->ep;
 	stcb = (struct sctp_tcb *)tmr->tcb;
@@ -1744,6 +1747,16 @@ sctp_timeout_handler(void *t)
 	}
 	SCTP_OS_TIMER_DEACTIVATE(&tmr->timer);
 
+#if defined(__Userspace__)
+	if (stcb && !(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
+		if (stcb->sctp_socket != NULL) {
+			upcall_socket = stcb->sctp_socket;
+			SOCK_LOCK(upcall_socket);
+			soref(upcall_socket);
+			SOCK_UNLOCK(upcall_socket);
+		}
+	}
+#endif
 	/* call the handler for the appropriate timer type */
 	switch (type) {
 	case SCTP_TIMER_TYPE_ADDR_WQ:
@@ -2045,6 +2058,18 @@ get_out:
 	}
 
 out_decr:
+#if defined(__Userspace__)
+	if (upcall_socket != NULL) {
+		if (upcall_socket->so_upcall != NULL) {
+		    if (upcall_socket->so_error) {
+			    (*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
+			}
+		}
+		ACCEPT_LOCK();
+		SOCK_LOCK(upcall_socket);
+		sorele(upcall_socket);
+	}
+#endif
 	if (inp) {
 		SCTP_INP_DECR_REF(inp);
 	}
@@ -7753,6 +7778,9 @@ sctp_recv_icmp_tunneled_packet(int cmd, struct sockaddr *sa, void *vip, void *ct
 	struct sockaddr_in src, dst;
 	uint8_t type, code;
 
+#if defined(__Userspace__)
+	struct socket *upcall_socket = NULL;
+#endif
 	inner_ip = (struct ip *)vip;
 	icmp = (struct icmp *)((caddr_t)inner_ip -
 	    (sizeof(struct icmp) - sizeof(struct ip)));
@@ -7837,7 +7865,27 @@ sctp_recv_icmp_tunneled_packet(int cmd, struct sockaddr *sa, void *vip, void *ct
 		}
 		sctp_notify(inp, stcb, net, type, code,
 		            ntohs(inner_ip->ip_len),
-		            (uint32_t)ntohs(icmp->icmp_nextmtu));
+		            ntohs(icmp->icmp_nextmtu));
+#if defined(__Userspace__)
+			if (stcb && upcall_socket == NULL && !(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
+				if (stcb->sctp_socket != NULL) {
+					upcall_socket = stcb->sctp_socket;
+					SOCK_LOCK(upcall_socket);
+					soref(upcall_socket);
+					SOCK_UNLOCK(upcall_socket);
+				}
+			}
+			if (upcall_socket != NULL) {
+				if (upcall_socket->so_upcall != NULL) {
+					if (upcall_socket->so_error) {
+						(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
+					}
+				}
+				ACCEPT_LOCK();
+				SOCK_LOCK(upcall_socket);
+				sorele(upcall_socket);
+			}
+#endif
 	} else {
 #if defined(__FreeBSD__) && __FreeBSD_version < 500000
 		/*
@@ -7875,6 +7923,9 @@ sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa, void *d, void *ctx
 	struct udphdr udp;
 	struct sockaddr_in6 src, dst;
 	uint8_t type, code;
+#if defined(__Userspace__)
+	struct socket *upcall_socket = NULL;
+#endif
 
 	ip6cp = (struct ip6ctlparam *)d;
 	/*
@@ -8003,6 +8054,26 @@ sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa, void *d, void *ctx
 		}
 		sctp6_notify(inp, stcb, net, type, code,
 			     ntohl(ip6cp->ip6c_icmp6->icmp6_mtu));
+#if defined(__Userspace__)
+			if (stcb && upcall_socket == NULL && !(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
+				if (stcb->sctp_socket != NULL) {
+					upcall_socket = stcb->sctp_socket;
+					SOCK_LOCK(upcall_socket);
+					soref(upcall_socket);
+					SOCK_UNLOCK(upcall_socket);
+				}
+			}
+			if (upcall_socket != NULL) {
+				if (upcall_socket->so_upcall != NULL) {
+					if (upcall_socket->so_error) {
+						(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
+					}
+				}
+				ACCEPT_LOCK();
+				SOCK_LOCK(upcall_socket);
+				sorele(upcall_socket);
+			}
+#endif
 	} else {
 #if defined(__FreeBSD__) && __FreeBSD_version < 500000
 		if (PRC_IS_REDIRECT(cmd) && (inp != NULL)) {

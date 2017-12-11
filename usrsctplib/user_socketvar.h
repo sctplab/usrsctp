@@ -365,6 +365,13 @@ extern userland_cond_t accept_cond;
 #define	SQ_COMP			0x1000	/* unaccepted, complete connection */
 
 /*
+ * Socket event flags
+ */
+#define SCTP_EVENT_READ		0x0001	/* socket is readable */
+#define SCTP_EVENT_WRITE	0x0002	/* socket is writeable */
+#define SCTP_EVENT_ERROR	0x0004	/* socket has an error state */
+
+/*
  * Externalized form of struct socket used by the sysctl(3) interface.
  */
 struct xsocket {
@@ -719,6 +726,7 @@ void	soisconnected(struct socket *so);
 struct socket * sonewconn(struct socket *head, int connstatus);
 void	socantrcvmore(struct socket *so);
 void	socantsendmore(struct socket *so);
+void	sofree(struct socket *so);
 
 
 

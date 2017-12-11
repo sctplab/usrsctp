@@ -3500,6 +3500,57 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	return;
 }
 
+void usrsctp_handle_timers(unsigned int delta)
+{
+	sctp_handle_tick(MSEC_TO_TICKS(delta));
+}
+
+int
+usrsctp_get_events(struct socket *so)
+{
+	int events = 0;
+
+	if (so == NULL) {
+		errno = EBADF;
+		return -1;
+	}
+
+	if (soreadable(so)) {
+		events |= SCTP_EVENT_READ;
+	}
+	if (sowriteable(so)) {
+		events |= SCTP_EVENT_WRITE;
+	}
+	if (so->so_error) {
+		events |= SCTP_EVENT_ERROR;
+	}
+	return events;
+}
+
+int usrsctp_get_error(struct socket *so)
+{
+    if (so->so_error)
+        return so->so_error;
+    return -1;
+}
+
+int
+usrsctp_set_upcall(struct socket *so, void (*upcall)(struct socket *, void *, int), void *arg)
+{
+	if (so == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	SOCK_LOCK(so);
+	so->so_upcall = upcall;
+	so->so_upcallarg = arg;
+	so->so_snd.sb_flags |= SB_UPCALL;
+	so->so_rcv.sb_flags |= SB_UPCALL;
+	SOCK_UNLOCK(so);
+
+	return (0);
+}
 
 #define USRSCTP_SYSCTL_SET_DEF(__field) \
 void usrsctp_sysctl_set_ ## __field(uint32_t value) { \
