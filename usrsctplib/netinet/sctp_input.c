@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 326672 2017-12-07 22:19:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 326829 2017-12-13 17:11:57Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3396,9 +3396,9 @@ sctp_handle_ecn_cwr(struct sctp_cwr_chunk *cp, struct sctp_tcb *stcb, struct sct
 			stcb->asoc.ecn_echo_cnt_onq--;
 			TAILQ_REMOVE(&stcb->asoc.control_send_queue, chk,
 			    sctp_next);
+			stcb->asoc.ctrl_queue_cnt--;
 			sctp_m_freem(chk->data);
 			chk->data = NULL;
-			stcb->asoc.ctrl_queue_cnt--;
 			sctp_free_a_chunk(stcb, chk, SCTP_SO_NOT_LOCKED);
 			if (override == 0) {
 				break;
@@ -3827,26 +3827,23 @@ static void
 sctp_clean_up_stream_reset(struct sctp_tcb *stcb)
 {
 	struct sctp_association *asoc;
-	struct sctp_tmit_chunk *chk = stcb->asoc.str_reset;
+	struct sctp_tmit_chunk *chk;
 
-	if (stcb->asoc.str_reset == NULL) {
+	asoc = &stcb->asoc;
+	chk = asoc->str_reset;
+	if (chk == NULL) {
 		return;
 	}
-	asoc = &stcb->asoc;
-
+	asoc->str_reset = NULL;
 	sctp_timer_stop(SCTP_TIMER_TYPE_STRRESET, stcb->sctp_ep, stcb,
 	                chk->whoTo, SCTP_FROM_SCTP_INPUT + SCTP_LOC_28);
-	TAILQ_REMOVE(&asoc->control_send_queue,
-	    chk,
-	    sctp_next);
+	TAILQ_REMOVE(&asoc->control_send_queue, chk, sctp_next);
+	asoc->ctrl_queue_cnt--;
 	if (chk->data) {
 		sctp_m_freem(chk->data);
 		chk->data = NULL;
 	}
-	asoc->ctrl_queue_cnt--;
 	sctp_free_a_chunk(stcb, chk, SCTP_SO_NOT_LOCKED);
-	/*sa_ignore NO_NULL_CHK*/
-	stcb->asoc.str_reset = NULL;
 }
 
 
