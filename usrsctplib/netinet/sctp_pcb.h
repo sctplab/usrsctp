@@ -323,10 +323,13 @@ struct sctp_base_info {
 #if defined(__Userspace_os_Windows)
 	SOCKET userspace_rawsctp;
 	SOCKET userspace_udpsctp;
+	SOCKET userspace_icmp;
 #else
 	int userspace_rawsctp;
 	int userspace_udpsctp;
+	int userspace_icmp;
 #endif
+	userland_thread_t recvthreadicmp;
 	userland_thread_t recvthreadraw;
 	userland_thread_t recvthreadudp;
 #endif
@@ -334,12 +337,15 @@ struct sctp_base_info {
 #if defined(__Userspace_os_Windows)
 	SOCKET userspace_rawsctp6;
 	SOCKET userspace_udpsctp6;
+	SOCKET userspace_icmp6;
 #else
 	int userspace_rawsctp6;
 	int userspace_udpsctp6;
+	int userspace_icmp6;
 #endif
 	userland_thread_t recvthreadraw6;
 	userland_thread_t recvthreadudp6;
+	userland_thread_t recvthreadicmp6;
 #endif
 	int (*conn_output)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df);
 	void (*debug_printf)(const char *format, ...);

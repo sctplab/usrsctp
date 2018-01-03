@@ -58,7 +58,8 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 325370 2017-11-03 20:46:12Z t
 #include <netinet/sctp_bsd_addr.h>
 #if defined(__Userspace__)
 #include <netinet/sctp_callout.h>
-#else
+#endif
+#if !defined(__Userspace_os_Windows)
 #include <netinet/udp.h>
 #endif
 
@@ -141,10 +142,12 @@ sctp_init(void)
 #ifdef INET
 	SCTP_BASE_VAR(userspace_rawsctp) = -1;
 	SCTP_BASE_VAR(userspace_udpsctp) = -1;
+	SCTP_BASE_VAR(userspace_icmp) = -1;
 #endif
 #ifdef INET6
 	SCTP_BASE_VAR(userspace_rawsctp6) = -1;
 	SCTP_BASE_VAR(userspace_udpsctp6) = -1;
+	SCTP_BASE_VAR(userspace_icmp6) = -1;
 #endif
 	SCTP_BASE_VAR(timer_thread_should_exit) = 0;
 	SCTP_BASE_VAR(conn_output) = conn_output;
@@ -198,6 +201,16 @@ sctp_finish(void)
 #endif
 #endif
 #ifdef INET
+	if (SCTP_BASE_VAR(userspace_icmp) != -1) {
+#if defined(__Userspace_os_Windows)
+		WaitForSingleObject(SCTP_BASE_VAR(recvthreadicmp), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(recvthreadicmp));
+#else
+		pthread_join(SCTP_BASE_VAR(recvthreadicmp), NULL);
+#endif
+	}
+#endif
+#ifdef INET
 	if (SCTP_BASE_VAR(userspace_rawsctp) != -1) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadraw), INFINITE);
@@ -216,6 +229,14 @@ sctp_finish(void)
 	}
 #endif
 #ifdef INET6
+	if (SCTP_BASE_VAR(userspace_icmp6) != -1) {
+#if defined(__Userspace_os_Windows)
+		WaitForSingleObject(SCTP_BASE_VAR(recvthreadicmp6), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(recvthreadicmp6));
+#else
+		pthread_join(SCTP_BASE_VAR(recvthreadicmp6), NULL);
+#endif
+	}
 	if (SCTP_BASE_VAR(userspace_rawsctp6) != -1) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadraw6), INFINITE);
@@ -294,7 +315,6 @@ sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint16_t nxtsz)
 }
 
 #ifdef INET
-#if !defined(__Userspace__)
 void
 sctp_notify(struct sctp_inpcb *inp,
             struct sctp_tcb *stcb,
@@ -407,17 +427,16 @@ sctp_notify(struct sctp_inpcb *inp,
 		SCTP_TCB_UNLOCK(stcb);
 	}
 }
-#endif
 
-#if !defined(__Panda__) && !defined(__Userspace__)
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
+#if !defined(__Panda__)
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__)
 void
 #else
 void *
 #endif
 sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 {
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__Userspace__)
 	struct ip *outer_ip;
 #endif
 	struct ip *inner_ip;
@@ -426,33 +445,35 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 	struct sctp_inpcb *inp;
 	struct sctp_tcb *stcb;
 	struct sctp_nets *net;
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__Userspace__)
 	struct sctp_init_chunk *ch;
 #endif
 	struct sockaddr_in src, dst;
 
 	if (sa->sa_family != AF_INET ||
 	    ((struct sockaddr_in *)sa)->sin_addr.s_addr == INADDR_ANY) {
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__)
 		return;
 #else
 		return (NULL);
 #endif
 	}
+#if !defined(__Userspace__)
 	if (PRC_IS_REDIRECT(cmd)) {
 		vip = NULL;
 	} else if ((unsigned)cmd >= PRC_NCMDS || inetctlerrmap[cmd] == 0) {
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__)
 		return;
 #else
 		return (NULL);
 #endif
 	}
+#endif
 	if (vip != NULL) {
 		inner_ip = (struct ip *)vip;
 		icmp = (struct icmp *)((caddr_t)inner_ip -
 		    (sizeof(struct icmp) - sizeof(struct ip)));
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined (__Userspace__)
 		outer_ip = (struct ip *)((caddr_t)icmp - sizeof(struct ip));
 #endif
 		sh = (struct sctphdr *)((caddr_t)inner_ip + (inner_ip->ip_hl << 2));
@@ -496,7 +517,7 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 					return;
 				}
 			} else {
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__Userspace__)
 				if (ntohs(outer_ip->ip_len) >=
 				    sizeof(struct ip) +
 				    8 + (inner_ip->ip_hl << 2) + 20) {
@@ -551,7 +572,7 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 			}
 		}
 	}
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__)
 	return;
 #else
 	return (NULL);
