@@ -415,7 +415,11 @@ void
 #else
 void *
 #endif
+#if defined(__APPLE__) && !defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION) && !defined(APPLE_ELCAPITAN)
+sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip, struct ifnet *ifp SCTP_UNUSED)
+#else
 sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
+#endif
 {
 #if defined(__FreeBSD__)
 	struct ip *outer_ip;
