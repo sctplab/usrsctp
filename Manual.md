@@ -460,7 +460,7 @@ Transmissions and retransmissions of messages might fail. To protect the system 
 The default maximum number of retransmissions of an INIT chunks is 8, before an ABORT is sent.
 
 #### usrsctp_sysctl_set_sctp_assoc_rtx_max_default()
-This parameter sets the maximum number of failed retransmissions before the association is aborted. The default vaule is 10.
+This parameter sets the maximum number of failed retransmissions before the association is aborted. The default value is 10.
 
 #### usrsctp_sysctl_set_sctp_path_rtx_max_default()
 This parameter sets the maximum number of path failures before the association is aborted. The default value is 5. Notice that the number of paths multiplied by this value should be equal to `sctp_assoc_rtx_max_default`. That means that the default configuration is good for two paths.
