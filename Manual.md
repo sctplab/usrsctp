@@ -213,7 +213,7 @@ usrsctp_connect(struct socket *so,
 * name: Address of the peer to connect to (`struct sockaddr_in` for an IPv4 address or `struct sockaddr_in6` for an IPv6 address).
 * addrlen: Size of the peer's address.
 
-usrsctp_connect() returns 0 on success and -1 in case of an error.
+`usrsctp_connect()` returns 0 on success and -1 in case of an error.
 
 ### usrsctp_shutdown()
 
@@ -228,7 +228,7 @@ usrsctp_shutdown(struct socket *so, int how)
   * SHUT_WR:  Disables further send operations, and initiates the SCTP shutdown sequence.
   * SHUT_RDWR:  Disables further send and receive operations, and initiates the SCTP shutdown sequence.
 
-`usrsctp_listen()` returns 0 on success and -1 in case of an error.
+`usrsctp_shutdown()` returns 0 on success and -1 in case of an error.
 
 ## Sending and Receiving Data
 Since the publication of [RFC 6458](http://tools.ietf.org/html/rfc6458) there is only one function for sending and one for receiving
