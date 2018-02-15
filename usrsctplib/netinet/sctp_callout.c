@@ -46,6 +46,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <user_atomic.h>
 #include <netinet/sctp_sysctl.h>
 #include <netinet/sctp_pcb.h>
 #else
@@ -200,7 +201,7 @@ user_sctp_timer_iterate(void *arg)
 		timeout.tv_usec = 1000 * TIMEOUT_INTERVAL;
 		select(0, NULL, NULL, NULL, &timeout);
 #endif
-		if (SCTP_BASE_VAR(timer_thread_should_exit)) {
+		if (atomic_cmpset_int(&SCTP_BASE_VAR(timer_thread_should_exit), 1, 1)) {
 			break;
 		}
 		sctp_handle_tick(MSEC_TO_TICKS(TIMEOUT_INTERVAL));
