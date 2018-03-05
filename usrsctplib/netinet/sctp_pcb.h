@@ -311,7 +311,7 @@ struct sctp_base_info {
 #if defined(__Userspace__)
 	userland_mutex_t timer_mtx;
 	userland_thread_t timer_thread;
-	uint8_t timer_thread_should_exit;
+	int timer_thread_should_exit;
 #if !defined(__Userspace_os_Windows)
 	pthread_mutexattr_t mtx_attr;
 #if defined(INET) || defined(INET6)
