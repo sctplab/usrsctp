@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 325434 2017-11-05 11:59:33Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 328066 2018-01-16 21:58:38Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3351,7 +3351,8 @@ sctp_strike_gap_ack_chunks(struct sctp_tcb *stcb, struct sctp_association *asoc,
 			}
 
 		}
-		if (SCTP_TSN_GT(tp1->rec.data.tsn, asoc->this_sack_highest_gap)) {
+		if (SCTP_TSN_GT(tp1->rec.data.tsn, asoc->this_sack_highest_gap) &&
+		                !(accum_moved && asoc->fast_retran_loss_recovery)) {
 			/* we are beyond the tsn in the sack  */
 			break;
 		}
@@ -3375,8 +3376,10 @@ sctp_strike_gap_ack_chunks(struct sctp_tcb *stcb, struct sctp_association *asoc,
 			 * FR using this SACK.
 			 */
 			continue;
-		} else if (tp1->whoTo && SCTP_TSN_GT(tp1->rec.data.tsn,
-		                                     tp1->whoTo->this_sack_highest_newack)) {
+		} else if (tp1->whoTo &&
+		           SCTP_TSN_GT(tp1->rec.data.tsn,
+		                       tp1->whoTo->this_sack_highest_newack) &&
+		           !(accum_moved && asoc->fast_retran_loss_recovery)) {
 			/*
 			 * CMT: New acks were receieved for data sent to
 			 * this dest. But no new acks were seen for data
@@ -4597,6 +4600,14 @@ sctp_handle_sack(struct mbuf *m, int offset_seg, int offset_dup,
 		if (stcb->asoc.cc_functions.sctp_cwnd_prepare_net_for_sack) {
 			(*stcb->asoc.cc_functions.sctp_cwnd_prepare_net_for_sack)(stcb, net);
 		}
+
+		/*
+		 * CMT: SFR algo (and HTNA) - this_sack_highest_newack has
+		 * to be greater than the cumack. Also reset saw_newack to 0
+		 * for all dests.
+		 */
+		net->saw_newack = 0;
+		net->this_sack_highest_newack = last_tsn;
 	}
 	/* process the new consecutive TSN first */
 	TAILQ_FOREACH(tp1, &asoc->sent_queue, sctp_next) {
@@ -4722,16 +4733,6 @@ sctp_handle_sack(struct mbuf *m, int offset_seg, int offset_dup,
 	asoc->this_sack_highest_gap = last_tsn;
 
 	if ((num_seg > 0) || (num_nr_seg > 0)) {
-
-		/*
-		 * CMT: SFR algo (and HTNA) - this_sack_highest_newack has
-		 * to be greater than the cumack. Also reset saw_newack to 0
-		 * for all dests.
-		 */
-		TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
-			net->saw_newack = 0;
-			net->this_sack_highest_newack = last_tsn;
-		}
 
 		/*
 		 * thisSackHighestGap will increase while handling NEW

@@ -57,9 +57,7 @@ struct sctp_sysctl {
 	uint32_t sctp_pktdrop_enable;
 	uint32_t sctp_fr_max_burst_default;
 #if !(defined(__FreeBSD__) && __FreeBSD_version >= 800000)
-#if !defined(SCTP_WITH_NO_CSUM)
 	uint32_t sctp_no_csum_on_loopback;
-#endif
 #endif
 	uint32_t sctp_peer_chunk_oh;
 	uint32_t sctp_max_burst_default;

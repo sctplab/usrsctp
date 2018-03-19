@@ -3491,9 +3491,7 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	                             (struct sockaddr *)&src,
 	                             (struct sockaddr *)&dst,
 	                             sh, ch,
-#if !defined(SCTP_WITH_NO_CSUM)
 	                             SCTP_BASE_VAR(crc32c_offloaded) == 1 ? 0 : 1,
-#endif
 	                             ecn_bits,
 	                             SCTP_DEFAULT_VRFID, 0);
 	if (m) {
@@ -3519,9 +3517,7 @@ USRSCTP_SYSCTL_SET_DEF(sctp_asconf_enable)
 USRSCTP_SYSCTL_SET_DEF(sctp_reconfig_enable)
 USRSCTP_SYSCTL_SET_DEF(sctp_nrsack_enable)
 USRSCTP_SYSCTL_SET_DEF(sctp_pktdrop_enable)
-#if !defined(SCTP_WITH_NO_CSUM)
 USRSCTP_SYSCTL_SET_DEF(sctp_no_csum_on_loopback)
-#endif
 USRSCTP_SYSCTL_SET_DEF(sctp_peer_chunk_oh)
 USRSCTP_SYSCTL_SET_DEF(sctp_max_burst_default)
 USRSCTP_SYSCTL_SET_DEF(sctp_max_chunks_on_queue)
@@ -3600,9 +3596,7 @@ USRSCTP_SYSCTL_GET_DEF(sctp_asconf_enable)
 USRSCTP_SYSCTL_GET_DEF(sctp_reconfig_enable)
 USRSCTP_SYSCTL_GET_DEF(sctp_nrsack_enable)
 USRSCTP_SYSCTL_GET_DEF(sctp_pktdrop_enable)
-#if !defined(SCTP_WITH_NO_CSUM)
 USRSCTP_SYSCTL_GET_DEF(sctp_no_csum_on_loopback)
-#endif
 USRSCTP_SYSCTL_GET_DEF(sctp_peer_chunk_oh)
 USRSCTP_SYSCTL_GET_DEF(sctp_max_burst_default)
 USRSCTP_SYSCTL_GET_DEF(sctp_max_chunks_on_queue)

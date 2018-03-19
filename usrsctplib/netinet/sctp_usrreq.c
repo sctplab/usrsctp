@@ -233,7 +233,7 @@ sctp_finish(void)
 #endif
 	}
 #endif
-	SCTP_BASE_VAR(timer_thread_should_exit) = 1;
+	atomic_cmpset_int(&SCTP_BASE_VAR(timer_thread_should_exit), 0, 1);
 #if defined(__Userspace_os_Windows)
 	WaitForSingleObject(SCTP_BASE_VAR(timer_thread), INFINITE);
 	CloseHandle(SCTP_BASE_VAR(timer_thread));
@@ -415,7 +415,11 @@ void
 #else
 void *
 #endif
+#if defined(__APPLE__) && !defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION) && !defined(APPLE_ELCAPITAN)
+sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip, struct ifnet *ifp SCTP_UNUSED)
+#else
 sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
+#endif
 {
 #if defined(__FreeBSD__)
 	struct ip *outer_ip;
