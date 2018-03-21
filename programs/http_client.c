@@ -33,6 +33,7 @@
  * 
  * Example
  * Client: $ ./http_client 212.201.121.100 80 0 9899 9899 /cgi-bin/he
+ *           ./http_client 2a02:c6a0:4015:10::100 80 0 9899 9899 /cgi-bin/he
  */
 
 #ifdef _WIN32
@@ -101,6 +102,7 @@ main(int argc, char *argv[])
 	struct sockaddr_in addr4;
 	struct sockaddr_in6 addr6;
 	struct sctp_udpencaps encaps;
+	struct sctp_sndinfo sndinfo;
 	int result;
 
     if (argc < 3) {
@@ -205,8 +207,10 @@ main(int argc, char *argv[])
 		goto out;
 	}
 
+	memset(&sndinfo, 0, sizeof(struct sctp_sndinfo));
+	sndinfo.snd_ppid = htonl(63); /* PPID for HTTP/SCTP */
 	/* send GET request */
-	if (usrsctp_sendv(sock, request, strlen(request), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0) < 0) {
+	if (usrsctp_sendv(sock, request, strlen(request), NULL, 0, &sndinfo, sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("usrsctp_sendv");
 		usrsctp_close(sock);
 		result = 6;
