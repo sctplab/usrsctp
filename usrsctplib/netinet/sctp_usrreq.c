@@ -233,7 +233,7 @@ sctp_finish(void)
 #endif
 	}
 #endif
-	SCTP_BASE_VAR(timer_thread_should_exit) = 1;
+	atomic_cmpset_int(&SCTP_BASE_VAR(timer_thread_should_exit), 0, 1);
 #if defined(__Userspace_os_Windows)
 	WaitForSingleObject(SCTP_BASE_VAR(timer_thread), INFINITE);
 	CloseHandle(SCTP_BASE_VAR(timer_thread));
