@@ -216,6 +216,12 @@ if ("${CMAKE_C_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_C_COMPILER_ID}" MATCHES
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unreachable-code")
 	endif ()
 
+	check_c_compiler_flag(-Wstrict-prototypes has_wstrict_prototypes)
+	if (has_wstrict_prototypes)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wstrict-prototypes")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wstrict-prototypes")
+	endif ()
+
 	if (sctp_werror)
 		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Werror")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
