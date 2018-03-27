@@ -7056,7 +7056,7 @@ sctp_connectx_helper_add(struct sctp_tcb *stcb, struct sockaddr *addr,
 #endif
 #if defined(__Userspace__)
 		case AF_CONN:
-			incr = sizeof(struct sockaddr_in6);
+			incr = sizeof(struct sockaddr_conn);
 			if (sctp_add_remote_addr(stcb, sa, NULL, stcb->asoc.port,
 			                         SCTP_DONOT_SETSCOPE,
 			                         SCTP_ADDR_IS_CONFIRMED)) {
