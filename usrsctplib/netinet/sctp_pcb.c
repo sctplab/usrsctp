@@ -1487,7 +1487,7 @@ sctp_findassociation_ep_addr(struct sctp_inpcb **inp_p, struct sockaddr *remote,
 #endif
 #if defined(__Userspace__)
 	case AF_CONN:
-		rport = (((struct sockaddr_in6 *)remote)->sin6_port);
+		rport = (((struct sockaddr_conn *)remote)->sconn_port);
 		break;
 #endif
 	default:
