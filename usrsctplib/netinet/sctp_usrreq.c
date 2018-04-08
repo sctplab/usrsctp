@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 332271 2018-04-08 11:50:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 332273 2018-04-08 12:08:20Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -358,7 +358,7 @@ sctp_notify(struct sctp_inpcb *inp,
 #endif
 		/* no need to unlock here, since the TCB is gone */
 	} else if (icmp_code == ICMP_UNREACH_NEEDFRAG) {
-		if ((net->dest_state & SCTP_ADDR_NO_PMTUD) == 0) {
+		if (net->dest_state & SCTP_ADDR_NO_PMTUD) {
 			SCTP_TCB_UNLOCK(stcb);
 			return;
 		}
