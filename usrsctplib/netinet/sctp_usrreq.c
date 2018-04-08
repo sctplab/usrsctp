@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 325370 2017-11-03 20:46:12Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 332271 2018-04-08 11:50:06Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1141,22 +1141,10 @@ sctp_disconnect(struct socket *so)
 				if (SCTP_GET_STATE(asoc) !=
 				    SCTP_STATE_COOKIE_WAIT) {
 					/* Left with Data unread */
-					struct mbuf *err;
+					struct mbuf *op_err;
 
-					err = sctp_get_mbuf_for_msg(sizeof(struct sctp_paramhdr), 0, M_NOWAIT, 1, MT_DATA);
-					if (err) {
-						/*
-						 * Fill in the user
-						 * initiated abort
-						 */
-						struct sctp_paramhdr *ph;
-
-						ph = mtod(err, struct sctp_paramhdr *);
-						SCTP_BUF_LEN(err) = sizeof(struct sctp_paramhdr);
-						ph->param_type = htons(SCTP_CAUSE_USER_INITIATED_ABT);
-						ph->param_length = htons(SCTP_BUF_LEN(err));
-					}
-					sctp_send_abort_tcb(stcb, err, SCTP_SO_LOCKED);
+					op_err = sctp_generate_cause(SCTP_CAUSE_USER_INITIATED_ABT, "");
+					sctp_send_abort_tcb(stcb, op_err, SCTP_SO_LOCKED);
 					SCTP_STAT_INCR_COUNTER32(sctps_aborted);
 				}
 				SCTP_INP_RUNLOCK(inp);
