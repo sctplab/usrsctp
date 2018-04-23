@@ -78,15 +78,22 @@ option(sctp_sanitizer_address "Compile with address sanitizer" 0)
 option(sctp_sanitizer_memory "Compile with memory sanitizer" 0)
 
 option(sctp_fuzzer_clang "Compile in Clang fuzzing mode" 0)
-if (sctp_fuzzer_clang)
+
+option(sctp_fuzzer_honggfuzz "Compile in honggfuzz fuzzing mode" 0)
+
+if (sctp_fuzzer_clang OR sctp_fuzzer_honggfuzz)
 	add_definitions(-DFUZZING_MODE)
+endif ()
+
+if (sctp_fuzzer_clang AND sctp_fuzzer_honggfuzz)
+	message(FATAL_ERROR "Can not compile with both fuzzer options")
 endif ()
 
 if (sctp_sanitizer_address AND sctp_sanitizer_memory)
 	message(FATAL_ERROR "Can not compile with both sanitizer options")
 endif ()
 
-if (sctp_link_programs_static OR WIN32)
+if (sctp_link_programs_static OR WIN32 OR sctp_fuzzer_clang OR sctp_fuzzer_honggfuzz)
 	set(programs_link_library "usrsctp-static")
 else ()
 	set(programs_link_library "usrsctp")
