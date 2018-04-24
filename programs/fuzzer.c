@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Felix Weinrank
+ * Copyright (C) 2017-2018 Felix Weinrank
  *
  * All rights reserved.
  *

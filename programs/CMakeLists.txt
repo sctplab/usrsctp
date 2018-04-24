@@ -72,7 +72,6 @@ if (sctp_fuzzer_clang OR sctp_fuzzer_honggfuzz)
 	list(APPEND check_programs
 		fuzzer.c
 		fuzzer2.c
-		ekr_loop.c
 	)
 
 	configure_file(crashtest.py crashtest.py COPYONLY)
