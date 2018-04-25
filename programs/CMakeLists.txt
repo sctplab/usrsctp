@@ -70,13 +70,13 @@ find_package(Threads)
 # if in fuzzing mode, only build the fuzzer
 if (sctp_fuzzer_clang OR sctp_fuzzer_honggfuzz)
 	list(APPEND check_programs
-		fuzzer.c
-		fuzzer2.c
+		fuzzer_unconnected.c
+		fuzzer_connected.c
 	)
 
 	configure_file(crashtest.py crashtest.py COPYONLY)
-	configure_file(run-fuzzer.sh run-fuzzer.sh COPYONLY)
-	configure_file(run-fuzzer2.sh run-fuzzer2.sh COPYONLY)
+	configure_file(fuzzer_connected.sh fuzzer_connected.sh COPYONLY)
+	configure_file(fuzzer_unconnected.sh fuzzer_unconnected.sh COPYONLY)
 else ()
 	list(APPEND check_programs
 		client.c
@@ -88,8 +88,8 @@ else ()
 		ekr_loop.c
 		ekr_peer.c
 		ekr_server.c
-		fuzzer.c
-		fuzzer2.c
+		fuzzer_connected.c
+		fuzzer_unconnected.c
 		http_client.c
 		rtcweb.c
 		test_libmgmt.c
