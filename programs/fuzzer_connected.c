@@ -43,6 +43,8 @@
 
 #define MAX_PACKET_SIZE (1 << 16)
 
+//#define FUZZ_FAST 1
+
 static int fd_c, fd_s;
 static struct socket *s_c, *s_s, *s_l;
 static pthread_t tid_c, tid_s;
@@ -125,9 +127,11 @@ int init_fuzzer(void)
 	struct sockaddr_in sin_s, sin_c;
 	socklen_t name_len;
 
+#if defined(FUZZ_FAST)
 	if (initialized) {
 		return 0;
 	}
+#endif
 
 	usrsctp_init(0, conn_output, debug_printf);
 	usrsctp_enable_crc32c_offload();
@@ -344,6 +348,12 @@ int main(int argc, char *argv[])
 
 	usrsctp_close(s_c);
 	usrsctp_close(s_s);
+
+#if !defined(FUZZ_FAST)
+	while(usrsctp_finish());
+	close(fd_c);
+	close(fd_s);
+#endif
 
 	return (0);
 }
