@@ -43,7 +43,8 @@
 
 #define MAX_PACKET_SIZE (1 << 16)
 
-//#define FUZZ_FAST 1
+#define FUZZ_FAST 1
+#define FUZZ_INTERLEAVING 1
 
 static int fd_c, fd_s;
 static struct socket *s_c, *s_s, *s_l;
@@ -266,6 +267,41 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+#if defined(FUZZ_INTERLEAVING)
+	struct sctp_assoc_value assoc_val;
+	int enable;
+
+	#ifndef SCTP_INTERLEAVING_SUPPORTED
+	#define SCTP_INTERLEAVING_SUPPORTED 0x00001206
+	#endif /* SCTP_INTERLEAVING_SUPPORTED */
+
+	enable = 2;
+	if (usrsctp_setsockopt(s_c, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &enable, sizeof(enable)) < 0) {
+		perror("usrsctp_setsockopt 1");
+		exit(EXIT_FAILURE);
+	}
+
+	memset(&assoc_val, 0, sizeof(assoc_val));
+	assoc_val.assoc_value = 1;
+	if (usrsctp_setsockopt(s_c, IPPROTO_SCTP, SCTP_INTERLEAVING_SUPPORTED, &assoc_val, sizeof(assoc_val)) < 0) {
+		perror("usrsctp_setsockopt 2");
+		exit(EXIT_FAILURE);
+	}
+
+	enable = 2;
+	if (usrsctp_setsockopt(s_l, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &enable, sizeof(enable)) < 0) {
+		perror("usrsctp_setsockopt 3");
+		exit(EXIT_FAILURE);
+	}
+
+	memset(&assoc_val, 0, sizeof(assoc_val));
+	assoc_val.assoc_value = 1;
+	if (usrsctp_setsockopt(s_l, IPPROTO_SCTP, SCTP_INTERLEAVING_SUPPORTED, &assoc_val, sizeof(assoc_val)) < 0) {
+		perror("usrsctp_setsockopt 4");
+		exit(EXIT_FAILURE);
+	}
+#endif
+
 	/* Bind the client side. */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
@@ -334,6 +370,11 @@ int main(int argc, char *argv[])
 #if 1
 	usrsctp_conninput(&fd_s, pkt, data_size + 12, 0);
 #else
+
+	if (usrsctp_sendv(s_c, pkt, data_size, NULL, 0, 0, 0, 0, 0) < 0) {
+		perror("usrsctp_sendv");
+	}
+
 	if (send(fd_c, pkt, data_size + 12, 0) < 0) {
 		exit(EXIT_FAILURE);
 	}
