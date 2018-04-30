@@ -286,6 +286,13 @@ struct sctp_epinfo {
 #endif
 };
 
+enum sctp_base_thread {
+        SCTP_BASE_THREAD_RECV_ROUTE = 0,
+        SCTP_BASE_THREAD_RECV_RAW,
+        SCTP_BASE_THREAD_RECV_UDP,
+        SCTP_BASE_THREAD_RECV_RAW6,
+        SCTP_BASE_THREAD_RECV_UDP6,
+};
 
 struct sctp_base_info {
 	/* All static structures that
@@ -345,6 +352,7 @@ struct sctp_base_info {
 	void (*debug_printf)(const char *format, ...);
 	int crc32c_offloaded;
 #endif
+        int userland_thread_stats;
 };
 
 /*-

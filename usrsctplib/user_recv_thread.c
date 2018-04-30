@@ -1081,6 +1081,7 @@ recv_thread_init(void)
 #else
 	unsigned int timeout = SOCKET_TIMEOUT; /* Timeout in milliseconds */
 #endif
+	SCTP_BASE_VAR(userland_thread_stats) = 0;
 #if defined(__Userspace_os_Darwin) || defined(__Userspace_os_DragonFly) || defined(__Userspace_os_FreeBSD)
 	if (SCTP_BASE_VAR(userspace_route) == -1) {
 		if ((SCTP_BASE_VAR(userspace_route) = socket(AF_ROUTE, SOCK_RAW, 0)) == -1) {
@@ -1390,7 +1391,9 @@ recv_thread_init(void)
 			SCTPDBG(SCTP_DEBUG_USR, "Can't start routing thread (%d).\n", rc);
 			close(SCTP_BASE_VAR(userspace_route));
 			SCTP_BASE_VAR(userspace_route) = -1;
+			SCTP_BASE_VAR(userland_thread_stats) ^= (1 << SCTP_BASE_THREAD_RECV_ROUTE);
 		}
+	        SCTP_BASE_VAR(userland_thread_stats) |= (1 << SCTP_BASE_THREAD_RECV_ROUTE);
 	}
 #endif
 #endif
@@ -1406,7 +1409,9 @@ recv_thread_init(void)
 			close(SCTP_BASE_VAR(userspace_rawsctp));
 #endif
 			SCTP_BASE_VAR(userspace_rawsctp) = -1;
+			SCTP_BASE_VAR(userland_thread_stats) ^= (1 << SCTP_BASE_THREAD_RECV_RAW);
 		}
+		SCTP_BASE_VAR(userland_thread_stats) |= (1 << SCTP_BASE_THREAD_RECV_RAW);
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp) != -1) {
 		int rc;
@@ -1419,7 +1424,9 @@ recv_thread_init(void)
 			close(SCTP_BASE_VAR(userspace_udpsctp));
 #endif
 			SCTP_BASE_VAR(userspace_udpsctp) = -1;
+			SCTP_BASE_VAR(userland_thread_stats) ^= (1 << SCTP_BASE_THREAD_RECV_UDP);
 		}
+		SCTP_BASE_VAR(userland_thread_stats) |= (1 << SCTP_BASE_THREAD_RECV_UDP);
 	}
 #endif
 #if defined(INET6)
@@ -1434,7 +1441,9 @@ recv_thread_init(void)
 			close(SCTP_BASE_VAR(userspace_rawsctp6));
 #endif
 			SCTP_BASE_VAR(userspace_rawsctp6) = -1;
+			SCTP_BASE_VAR(userland_thread_stats) ^= (1 << SCTP_BASE_THREAD_RECV_RAW6);
 		}
+		SCTP_BASE_VAR(userland_thread_stats) |= (1 << SCTP_BASE_THREAD_RECV_RAW6);
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp6) != -1) {
 		int rc;
@@ -1447,7 +1456,9 @@ recv_thread_init(void)
 			close(SCTP_BASE_VAR(userspace_udpsctp6));
 #endif
 			SCTP_BASE_VAR(userspace_udpsctp6) = -1;
+			SCTP_BASE_VAR(userland_thread_stats) ^= (1 << SCTP_BASE_THREAD_RECV_UDP6);
 		}
+		SCTP_BASE_VAR(userland_thread_stats) |= (1 << SCTP_BASE_THREAD_RECV_UDP6);
 	}
 #endif
 }
