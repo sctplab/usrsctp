@@ -43,14 +43,18 @@
 
 #define MAX_PACKET_SIZE (1 << 16)
 
-#define FUZZ_FAST 1
-#define FUZZ_INTERLEAVING 1
+#define FUZZ_FAST
+#define FUZZ_INTERLEAVING
+//#define FUZZ_WITHOUT_UDP
 
 static int fd_c, fd_s;
 static struct socket *s_c, *s_s, *s_l;
 static pthread_t tid_c, tid_s;
+
+#ifdef FUZZ_WITHOUT_UDP
 static char *s_cheader[12];
 static char *c_cheader[12];
+#endif
 
 static int
 conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
@@ -58,13 +62,14 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 	int *fdp;
 
 	fdp = (int *)addr;
-
+#ifdef FUZZ_WITHOUT_UDP
 	// copy from client/server side
 	if (*fdp == fd_c) {
 		memcpy(c_cheader, buf, 12);
 	} else if (*fdp == fd_s) {
 		memcpy(s_cheader, buf, 12);
 	}
+#endif
 
 	if (send(*fdp, buf, length, 0) < 0) {
 		return (errno);
@@ -245,7 +250,10 @@ int main(int argc, char *argv[])
 	struct sockaddr_conn sconn;
 	static uint16_t port = 1;
 	struct linger so_linger;
+
+#ifdef FUZZ_WITHOUT_UDP
 	char *pkt;
+#endif
 
 	init_fuzzer();
 	port = (port % 1024) + 1;
@@ -271,9 +279,9 @@ int main(int argc, char *argv[])
 	struct sctp_assoc_value assoc_val;
 	int enable;
 
-	#ifndef SCTP_INTERLEAVING_SUPPORTED
-	#define SCTP_INTERLEAVING_SUPPORTED 0x00001206
-	#endif /* SCTP_INTERLEAVING_SUPPORTED */
+#ifndef SCTP_INTERLEAVING_SUPPORTED
+#define SCTP_INTERLEAVING_SUPPORTED 0x00001206
+#endif /* SCTP_INTERLEAVING_SUPPORTED */
 
 	enable = 2;
 	if (usrsctp_setsockopt(s_c, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &enable, sizeof(enable)) < 0) {
@@ -294,7 +302,6 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	memset(&assoc_val, 0, sizeof(assoc_val));
 	assoc_val.assoc_value = 1;
 	if (usrsctp_setsockopt(s_l, IPPROTO_SCTP, SCTP_INTERLEAVING_SUPPORTED, &assoc_val, sizeof(assoc_val)) < 0) {
 		perror("usrsctp_setsockopt 4");
@@ -362,25 +369,19 @@ int main(int argc, char *argv[])
 	usrsctp_close(s_l);
 
 
+#if FUZZ_WITHOUT_UDP
 	pkt = malloc(data_size + 12);
 	memcpy(pkt, c_cheader, 12);
 	memcpy(pkt + 12, data, data_size);
-
-	// magic happens here
-#if 1
 	usrsctp_conninput(&fd_s, pkt, data_size + 12, 0);
+	free(pkt);
 #else
-
-	if (usrsctp_sendv(s_c, pkt, data_size, NULL, 0, 0, 0, 0, 0) < 0) {
+	if (usrsctp_sendv(s_c, data, data_size, NULL, 0, 0, 0, 0, 0) < 0) {
 		perror("usrsctp_sendv");
-	}
-
-	if (send(fd_c, pkt, data_size + 12, 0) < 0) {
-		exit(EXIT_FAILURE);
 	}
 #endif
 
-	free(pkt);
+
 #if !defined(FUZZING_MODE)
 	if (data != data_sample) {
 		free(data);
