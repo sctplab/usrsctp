@@ -45,31 +45,26 @@
 
 #define FUZZ_FAST
 #define FUZZ_INTERLEAVING
-//#define FUZZ_WITHOUT_UDP
+#define FUZZ_EXPLICIT_EOR
 
 static int fd_c, fd_s;
 static struct socket *s_c, *s_s, *s_l;
 static pthread_t tid_c, tid_s;
 
-#ifdef FUZZ_WITHOUT_UDP
 static char *s_cheader[12];
 static char *c_cheader[12];
-#endif
 
 static int
 conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 {
-	int *fdp;
+	int *fdp = (int *)addr;
 
-	fdp = (int *)addr;
-#ifdef FUZZ_WITHOUT_UDP
-	// copy from client/server side
+	// copy header from client and server
 	if (*fdp == fd_c) {
 		memcpy(c_cheader, buf, 12);
 	} else if (*fdp == fd_s) {
 		memcpy(s_cheader, buf, 12);
 	}
-#endif
 
 	if (send(*fdp, buf, length, 0) < 0) {
 		return (errno);
@@ -96,6 +91,9 @@ receive_cb(struct socket* sock, union sctp_sockstore addr, void* data, size_t da
 				flags);
 		}
 		free(data);
+	} else {
+		//usrsctp_deregister_address(ulp_info);
+		usrsctp_close(sock);
 	}
 	return (1);
 }
@@ -250,15 +248,19 @@ int main(int argc, char *argv[])
 	struct sockaddr_conn sconn;
 	static uint16_t port = 1;
 	struct linger so_linger;
-
-#ifdef FUZZ_WITHOUT_UDP
+	int enable;
 	char *pkt;
-#endif
+	struct sctp_assoc_value assoc_val;
 
 	init_fuzzer();
-	port = (port % 1024) + 1;
+	port = (port % 32768) + 1;
 
 	if ((s_c = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_c)) == NULL) {
+		perror("usrsctp_socket");
+		exit(EXIT_FAILURE);
+	}
+
+	if ((s_l = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_s)) == NULL) {
 		perror("usrsctp_socket");
 		exit(EXIT_FAILURE);
 	}
@@ -270,18 +272,42 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if ((s_l = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_s)) == NULL) {
-		perror("usrsctp_socket");
+#if defined(FUZZ_EXPLICIT_EOR)
+	enable = 1;
+	if (usrsctp_setsockopt(s_c, IPPROTO_SCTP, SCTP_EXPLICIT_EOR, &enable, sizeof(enable)) < 0) {
+		perror("setsockopt SCTP_EXPLICIT_EOR");
 		exit(EXIT_FAILURE);
 	}
 
-#if defined(FUZZ_INTERLEAVING)
-	struct sctp_assoc_value assoc_val;
-	int enable;
+	enable = 1;
+	if (usrsctp_setsockopt(s_l, IPPROTO_SCTP, SCTP_EXPLICIT_EOR, &enable, sizeof(enable)) < 0) {
+		perror("setsockopt SCTP_EXPLICIT_EOR");
+		exit(EXIT_FAILURE);
+	}
+#endif // defined(FUZZ_EXPLICIT_EOR)
 
-#ifndef SCTP_INTERLEAVING_SUPPORTED
+#if defined(FUZZ_STREAM_RESET)
+	assoc_val.assoc_id = SCTP_ALL_ASSOC;
+	assoc_val.assoc_value = SCTP_ENABLE_RESET_STREAM_REQ | SCTP_ENABLE_CHANGE_ASSOC_REQ;
+	if (usrsctp_setsockopt(s_c, IPPROTO_SCTP, SCTP_ENABLE_STREAM_RESET, &assoc_val, sizeof(struct sctp_assoc_value)) < 0) {
+		perror("setsockopt SCTP_ENABLE_STREAM_RESET");
+		exit(EXIT_FAILURE);
+	}
+	/* Allow resetting streams. */
+	assoc_val.assoc_id = SCTP_ALL_ASSOC;
+	assoc_val.assoc_value = SCTP_ENABLE_RESET_STREAM_REQ | SCTP_ENABLE_CHANGE_ASSOC_REQ;
+	if (usrsctp_setsockopt(s_l, IPPROTO_SCTP, SCTP_ENABLE_STREAM_RESET, &assoc_val, sizeof(struct sctp_assoc_value)) < 0) {
+		perror("setsockopt SCTP_ENABLE_STREAM_RESET");
+		exit(EXIT_FAILURE);
+	}
+#endif //defined(FUZZ_STREAM_RESET)
+
+
+#if defined(FUZZ_INTERLEAVING)
+
+#if !defined(SCTP_INTERLEAVING_SUPPORTED)
 #define SCTP_INTERLEAVING_SUPPORTED 0x00001206
-#endif /* SCTP_INTERLEAVING_SUPPORTED */
+#endif // !defined(SCTP_INTERLEAVING_SUPPORTED)
 
 	enable = 2;
 	if (usrsctp_setsockopt(s_c, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &enable, sizeof(enable)) < 0) {
@@ -307,31 +333,31 @@ int main(int argc, char *argv[])
 		perror("usrsctp_setsockopt 4");
 		exit(EXIT_FAILURE);
 	}
-#endif
+#endif // defined(FUZZ_INTERLEAVING)
 
 	/* Bind the client side. */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
-#ifdef HAVE_SCONN_LEN
+#if defined(HAVE_SCONN_LEN)
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
-#endif
+#endif // defined(HAVE_SCONN_LEN)
 	sconn.sconn_port = htons(port);
 	sconn.sconn_addr = &fd_c;
 	if (usrsctp_bind(s_c, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
-		perror("usrsctp_bind");
+		perror("usrsctp_bind 1");
 		exit(EXIT_FAILURE);
 	}
 
 	/* Bind the server side. */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
-#ifdef HAVE_SCONN_LEN
+#if defined(HAVE_SCONN_LEN)
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
-#endif
+#endif // defined(HAVE_SCONN_LEN)
 	sconn.sconn_port = htons(port);
 	sconn.sconn_addr = &fd_s;
 	if (usrsctp_bind(s_l, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
-		perror("usrsctp_bind");
+		perror("usrsctp_bind 2");
 		exit(EXIT_FAILURE);
 	}
 
@@ -344,9 +370,9 @@ int main(int argc, char *argv[])
 	/* Initiate the handshake */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
-#ifdef HAVE_SCONN_LEN
+#if defined(HAVE_SCONN_LEN)
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
-#endif
+#endif // defined(HAVE_SCONN_LEN)
 	sconn.sconn_port = htons(port);
 	sconn.sconn_addr = &fd_c;
 
@@ -368,34 +394,40 @@ int main(int argc, char *argv[])
 	// close listening socket
 	usrsctp_close(s_l);
 
+#if defined(FUZZ_EXPLICIT_EOR)
+	struct sctp_sndinfo sndinfo;
+	memset(&sndinfo, 0, sizeof(struct sctp_sndinfo));
+	//sndinfo.snd_sid = 1207;
+	//sndinfo.snd_flags 	= SCTP_EOR;
+	sndinfo.snd_ppid 	= htonl(1207);
+	if (usrsctp_sendv(s_c, &sndinfo, sizeof(struct sctp_sndinfo), NULL, 0, &sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
+		perror("sctp_sendv");
+		exit(EXIT_FAILURE);
+	}
+#endif //defined(FUZZ_EXPLICIT_EOR)
 
-#if FUZZ_WITHOUT_UDP
+	// inject packet
 	pkt = malloc(data_size + 12);
 	memcpy(pkt, c_cheader, 12);
 	memcpy(pkt + 12, data, data_size);
 	usrsctp_conninput(&fd_s, pkt, data_size + 12, 0);
 	free(pkt);
-#else
-	if (usrsctp_sendv(s_c, data, data_size, NULL, 0, 0, 0, 0, 0) < 0) {
-		perror("usrsctp_sendv");
-	}
-#endif
+
 
 
 #if !defined(FUZZING_MODE)
 	if (data != data_sample) {
 		free(data);
 	}
-#endif
+#endif // !defined(FUZZING_MODE)
 
 	usrsctp_close(s_c);
-	usrsctp_close(s_s);
 
 #if !defined(FUZZ_FAST)
 	while(usrsctp_finish());
 	close(fd_c);
 	close(fd_s);
-#endif
+#endif // !defined(FUZZ_FAST)
 
 	return (0);
 }
