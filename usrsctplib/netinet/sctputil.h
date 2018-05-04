@@ -275,6 +275,9 @@ int sctp_cmpaddr(struct sockaddr *, struct sockaddr *);
 
 void sctp_print_address(struct sockaddr *);
 
+void
+sctp_send_a_probe(struct sctp_inpcb *inp, struct sctp_tcb *stcb, struct sctp_nets *net);
+
 int
 sctp_release_pr_sctp_chunk(struct sctp_tcb *, struct sctp_tmit_chunk *,
     uint8_t, int

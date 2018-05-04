@@ -447,6 +447,13 @@ struct sctp_nets {
 	uint32_t flowid;
 	uint8_t flowtype;
 #endif
+	uint32_t probe_mtu; /* actual mtu probing size */
+	uint32_t probed_mtu; /* mtu that has last been probed */
+	uint32_t max_mtu;
+	uint16_t probe_counts; /* Counter for the probing attempts */
+	uint16_t probing_state;
+	uint8_t mtu_probing; /* Flag to indicate whether mtu_probing should be processed */
+	uint8_t got_max;
 };
 
 
@@ -1250,6 +1257,7 @@ struct sctp_association {
 	uint8_t reconfig_supported;
 	uint8_t nrsack_supported;
 	uint8_t pktdrop_supported;
+	uint8_t plpmtud_supported;
 	uint8_t idata_supported;
 
 	/* Did the peer make the stream config (add out) request */

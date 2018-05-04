@@ -901,6 +901,8 @@ static inline void sctp_userspace_rtfree(sctp_rtentry_t *rt)
 /*************************/
 int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af);
 
+int sctp_get_mtu_from_addr(struct sockaddr *sa);
+
 #define SCTP_GATHER_MTU_FROM_IFN_INFO(ifn, ifn_index, af) sctp_userspace_get_mtu_from_ifn(ifn_index, af)
 
 #define SCTP_GATHER_MTU_FROM_ROUTE(sctp_ifa, sa, rt) ((rt != NULL) ? rt->rt_rmx.rmx_mtu : 0)

@@ -1616,7 +1616,7 @@ sctp_fill_hmac_digest_m(struct mbuf *m, uint32_t auth_offset,
 }
 
 
-static void
+void
 sctp_zero_m(struct mbuf *m, uint32_t m_offset, uint32_t size)
 {
 	struct mbuf *m_tmp;

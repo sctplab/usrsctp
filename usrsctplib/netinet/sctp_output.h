@@ -78,6 +78,13 @@ int
 sctp_v4src_match_nexthop(struct sctp_ifa *sifa, sctp_route_t *ro);
 #endif
 
+#if defined(INET) || defined(INET6)
+void
+sctp_handle_no_route(struct sctp_tcb *stcb,
+                     struct sctp_nets *net,
+                     int so_locked);
+#endif
+
 void sctp_send_initiate(struct sctp_inpcb *, struct sctp_tcb *, int
 #if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
@@ -229,6 +236,15 @@ sctp_send_abort(struct mbuf *, int, struct sockaddr *, struct sockaddr *,
                 uint8_t, uint32_t, uint16_t,
 #endif
                 uint32_t, uint16_t);
+
+void
+sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
+                   struct sctphdr *sh, uint32_t vtag,
+                   uint8_t type, struct mbuf *cause,
+#if defined(__FreeBSD__)
+                   uint8_t mflowtype, uint32_t mflowid, uint16_t fibnum,
+#endif
+                   uint32_t vrf_id, uint16_t port, struct sctp_tcb *stcb);
 
 void sctp_send_operr_to(struct sockaddr *, struct sockaddr *,
                         struct sctphdr *, uint32_t, struct mbuf *,

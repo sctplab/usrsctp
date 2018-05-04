@@ -2832,6 +2832,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	inp->reconfig_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_reconfig_enable);
 	inp->nrsack_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_nrsack_enable);
 	inp->pktdrop_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_pktdrop_enable);
+	inp->plpmtud_supported = (uint8_t) SCTP_BASE_SYSCTL(sctp_plpmtud_enable);
 	inp->idata_supported = 0;
 
 #if defined(__FreeBSD__)
@@ -4584,6 +4585,12 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 	net->RTO_measured = 0;
 	stcb->asoc.numnets++;
 	net->ref_count = 1;
+	if (stcb->asoc.plpmtud_supported) {
+		net->probe_mtu = 0;
+		net->mtu_probing = 0;
+		net->probing_state = SCTP_PROBE_NONE;
+		net->got_max = 0;
+	}
 	net->cwr_window_tsn = net->last_cwr_tsn = stcb->asoc.sending_seq - 1;
 	net->port = port;
 	net->dscp = stcb->asoc.default_dscp;
@@ -4692,6 +4699,12 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 				/* Start things off to match mtu of interface please. */
 				SCTP_SET_MTU_OF_ROUTE(&net->ro._l_addr.sa,
 				                      net->ro.ro_rt, net->mtu);
+			} else if (stcb->asoc.plpmtud_supported) {
+					net->mtu = min(rmtu, SCTP_DEFAULT_MTU);
+			}
+			if (stcb->asoc.plpmtud_supported) {
+				net->max_mtu = max(net->mtu, rmtu);
+				net->max_mtu -= net->max_mtu % 4;
 			}
 		}
 	}
@@ -4754,7 +4767,7 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 		stcb->asoc.smallest_mtu = net->mtu;
 	}
 	if (stcb->asoc.smallest_mtu > net->mtu) {
-		sctp_pathmtu_adjustment(stcb, net->mtu);
+		sctp_pathmtu_adjustment(stcb, net->mtu, net);
 	}
 #ifdef INET6
 #ifdef SCTP_EMBEDDED_V6_SCOPE
@@ -4871,6 +4884,28 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 			     stcb->asoc.primary_destination, sctp_next);
 		TAILQ_INSERT_HEAD(&stcb->asoc.nets,
 				  stcb->asoc.primary_destination, sctp_next);
+	}
+	if (stcb->asoc.plpmtud_supported) {
+		net->probing_state = SCTP_PROBE_NONE;
+		net->probe_mtu = 0;
+		if (from == SCTP_ADDR_DYNAMIC_ADDED) {
+			net->probing_state = SCTP_PROBE_BASE;
+#ifdef INET
+			if (newaddr->sa_family == AF_INET) {
+				net->probe_mtu = SCTP_PROBE_MTU_V4_BASE;
+			}
+#endif
+#ifdef INET6
+			if (newaddr->sa_family == AF_INET6) {
+				net->probe_mtu = SCTP_PROBE_MTU_V6_BASE;
+			}
+#endif
+			net->probed_mtu = SCTP_PROBE_MIN;
+			net->mtu_probing = 1;
+			net->probe_counts = 0;
+			net->mtu = net->probe_mtu;
+			sctp_send_a_probe(stcb->sctp_ep, stcb, net);
+		}
 	}
 	return (0);
 }
