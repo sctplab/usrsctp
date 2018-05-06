@@ -46,8 +46,8 @@ extern "C" {
 #define MAX_PACKET_SIZE (1 << 16)
 
 #define FUZZ_FAST
-#define FUZZ_INTERLEAVING
-#define FUZZ_EXPLICIT_EOR
+//#define FUZZ_INTERLEAVING
+//#define FUZZ_EXPLICIT_EOR
 
 static int fd_c, fd_s;
 static struct socket *s_c, *s_s, *s_l;
@@ -119,7 +119,6 @@ handle_packets(void* arg)
 
 void debug_printf(const char* format, ...)
 {
-	return;
 	va_list ap;
 
 	va_start(ap, format);
@@ -267,12 +266,14 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+#if 0
 	so_linger.l_onoff = 1;
 	so_linger.l_linger = 0;
 	if (usrsctp_setsockopt(s_c, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
 		perror("usrsctp_setsockopt 1");
 		exit(EXIT_FAILURE);
 	}
+#endif
 
 #if defined(FUZZ_EXPLICIT_EOR)
 	enable = 1;
@@ -388,10 +389,12 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+#if 0
 	if (usrsctp_setsockopt(s_s, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
 		perror("usrsctp_setsockopt 3");
 		exit(EXIT_FAILURE);
 	}
+#endif
 
 	// close listening socket
 	usrsctp_close(s_l);
@@ -416,7 +419,6 @@ int main(int argc, char *argv[])
 	free(pkt);
 
 
-
 #if !defined(FUZZING_MODE)
 	if (data != data_sample) {
 		free(data);
@@ -425,8 +427,19 @@ int main(int argc, char *argv[])
 
 	usrsctp_close(s_c);
 
-#if !defined(FUZZ_FAST)
-	while(usrsctp_finish());
+#if !defined(FUZZ_FAST) || !defined(FUZZING_MODE)
+
+	usrsctp_deregister_address((void*)&fd_c);
+	usrsctp_deregister_address((void*)&fd_s);
+
+	while(usrsctp_finish()) {
+		//sleep(1);
+		//printf("finishing....\n");
+	}
+
+	//pthread_join(tid_c, NULL);
+	//pthread_join(tid_s, NULL);
+
 	close(fd_c);
 	close(fd_s);
 #endif // !defined(FUZZ_FAST)
