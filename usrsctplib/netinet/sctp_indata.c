@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 328066 2018-01-16 21:58:38Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 333304 2018-05-06 14:19:50Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3599,7 +3599,9 @@ sctp_strike_gap_ack_chunks(struct sctp_tcb *stcb, struct sctp_association *asoc,
 										 SCTP_SO_NOT_LOCKED);
 					}
 					/* Make sure to flag we had a FR */
-					tp1->whoTo->net_ack++;
+					if (tp1->whoTo != NULL) {
+						tp1->whoTo->net_ack++;
+					}
 					continue;
 				}
 			}
