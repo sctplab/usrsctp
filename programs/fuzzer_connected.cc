@@ -39,7 +39,9 @@
 #include <errno.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <usrsctp.h>
+extern "C" {
+#include "usrsctp.h"
+}
 
 #define MAX_PACKET_SIZE (1 << 16)
 
@@ -218,7 +220,7 @@ int init_fuzzer(void)
 }
 
 #if defined(FUZZING_MODE)
-int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 #else // defined(FUZZING_MODE)
 int main(int argc, char *argv[])
@@ -239,7 +241,7 @@ int main(int argc, char *argv[])
 		fseek(file, 0, SEEK_END);
 		data_size = ftell(file);
 		fseek(file, 0, SEEK_SET);
-		data = malloc(data_size);
+		data = (char*)malloc(data_size);
 		fread(data, data_size, 1, file);
 		fclose(file);
 	}
@@ -407,7 +409,7 @@ int main(int argc, char *argv[])
 #endif //defined(FUZZ_EXPLICIT_EOR)
 
 	// inject packet
-	pkt = malloc(data_size + 12);
+	pkt = (char *) malloc(data_size + 12);
 	memcpy(pkt, c_cheader, 12);
 	memcpy(pkt + 12, data, data_size);
 	usrsctp_conninput(&fd_s, pkt, data_size + 12, 0);

@@ -71,7 +71,7 @@ find_package(Threads)
 if (sctp_fuzzer_clang OR sctp_fuzzer_honggfuzz)
 	list(APPEND check_programs
 		fuzzer_unconnected.c
-		fuzzer_connected.c
+		fuzzer_connected.cc
 	)
 
 	configure_file(crashtest.py crashtest.py COPYONLY)
@@ -88,7 +88,7 @@ else ()
 		ekr_loop.c
 		ekr_peer.c
 		ekr_server.c
-		fuzzer_connected.c
+		fuzzer_connected.cc
 		fuzzer_unconnected.c
 		http_client.c
 		rtcweb.c
