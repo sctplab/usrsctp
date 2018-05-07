@@ -48,24 +48,25 @@ extern "C" {
 #define FUZZ_FAST
 //#define FUZZ_INTERLEAVING
 //#define FUZZ_EXPLICIT_EOR
+//#define FUZZ_STREAM_RESET
 
-static int fd_c, fd_s;
-static struct socket *s_c, *s_s, *s_l;
+static int fd_udp_client, fd_udp_server;
+static struct socket *socket_client, *socket_server, *socket_server_listening;
 static pthread_t tid_c, tid_s;
 
-static char *s_cheader[12];
-static char *c_cheader[12];
+static char *common_header_client[12];
+static char *common_header_server[12];
 
 static int
 conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 {
 	int *fdp = (int *)addr;
 
-	// copy header from client and server
-	if (*fdp == fd_c) {
-		memcpy(c_cheader, buf, 12);
-	} else if (*fdp == fd_s) {
-		memcpy(s_cheader, buf, 12);
+	// we copy the common header of the client/server for building fuzzer packets
+	if (*fdp == fd_udp_client) {
+		memcpy(common_header_client, buf, 12);
+	} else if (*fdp == fd_udp_server) {
+		memcpy(common_header_server, buf, 12);
 	}
 
 	if (send(*fdp, buf, length, 0) < 0) {
@@ -142,14 +143,15 @@ int init_fuzzer(void)
 	usrsctp_enable_crc32c_offload();
 
 	/* set up a connected UDP socket */
-	if ((fd_c = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+	if ((fd_udp_client = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 		perror("socket");
 		exit(EXIT_FAILURE);
 	}
-	if ((fd_s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+	if ((fd_udp_server = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 		perror("socket");
 		exit(EXIT_FAILURE);
 	}
+
 	memset(&sin_c, 0, sizeof(struct sockaddr_in));
 	sin_c.sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
@@ -166,42 +168,42 @@ int init_fuzzer(void)
 	sin_s.sin_port = htons(0);
 	sin_s.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-	if (bind(fd_c, (struct sockaddr*)&sin_c, sizeof(struct sockaddr_in)) < 0) {
+	if (bind(fd_udp_client, (struct sockaddr*)&sin_c, sizeof(struct sockaddr_in)) < 0) {
+		perror("bind");
+		exit(EXIT_FAILURE);
+	}
+
+	if (bind(fd_udp_server, (struct sockaddr*)&sin_s, sizeof(struct sockaddr_in)) < 0) {
 		perror("bind");
 		exit(EXIT_FAILURE);
 	}
 
 	name_len = (socklen_t) sizeof(struct sockaddr_in);
-	if (getsockname(fd_c, (struct sockaddr*)&sin_c, &name_len)) {
+	if (getsockname(fd_udp_client, (struct sockaddr*)&sin_c, &name_len)) {
 		perror("getsockname");
-		exit(EXIT_FAILURE);
-	}
-
-	if (bind(fd_s, (struct sockaddr*)&sin_s, sizeof(struct sockaddr_in)) < 0) {
-		perror("bind");
 		exit(EXIT_FAILURE);
 	}
 
 	name_len = (socklen_t) sizeof(struct sockaddr_in);
-	if (getsockname(fd_s, (struct sockaddr*)&sin_s, &name_len)) {
+	if (getsockname(fd_udp_server, (struct sockaddr*)&sin_s, &name_len)) {
 		perror("getsockname");
 		exit(EXIT_FAILURE);
 	}
 
-	if (connect(fd_c, (struct sockaddr*)&sin_s, sizeof(struct sockaddr_in)) < 0) {
+	if (connect(fd_udp_client, (struct sockaddr*)&sin_s, sizeof(struct sockaddr_in)) < 0) {
 		perror("connect");
 		exit(EXIT_FAILURE);
 	}
-	if (connect(fd_s, (struct sockaddr*)&sin_c, sizeof(struct sockaddr_in)) < 0) {
+	if (connect(fd_udp_server, (struct sockaddr*)&sin_c, sizeof(struct sockaddr_in)) < 0) {
 		perror("connect");
 		exit(EXIT_FAILURE);
 	}
-	if (pthread_create(&tid_c, NULL, &handle_packets, (void*)&fd_c)) {
+	if (pthread_create(&tid_c, NULL, &handle_packets, (void*)&fd_udp_client)) {
 		perror("pthread_create tid_c");
 		exit(EXIT_FAILURE);
 	}
 
-	if (pthread_create(&tid_s, NULL, &handle_packets, (void*)&fd_s)) {
+	if (pthread_create(&tid_s, NULL, &handle_packets, (void*)&fd_udp_server)) {
 		perror("pthread_create tid_s");
 		exit(EXIT_FAILURE);
 	};
@@ -210,8 +212,8 @@ int init_fuzzer(void)
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 #endif
 
-	usrsctp_register_address((void*)&fd_c);
-	usrsctp_register_address((void*)&fd_s);
+	usrsctp_register_address((void*)&fd_udp_client);
+	usrsctp_register_address((void*)&fd_udp_server);
 
 	initialized = 1;
 
@@ -256,12 +258,12 @@ int main(int argc, char *argv[])
 	init_fuzzer();
 	port = (port % 32768) + 1;
 
-	if ((s_c = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_c)) == NULL) {
+	if ((socket_client = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_udp_client)) == NULL) {
 		perror("usrsctp_socket");
 		exit(EXIT_FAILURE);
 	}
 
-	if ((s_l = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_s)) == NULL) {
+	if ((socket_server_listening = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_udp_server)) == NULL) {
 		perror("usrsctp_socket");
 		exit(EXIT_FAILURE);
 	}
@@ -269,7 +271,7 @@ int main(int argc, char *argv[])
 #if 0
 	so_linger.l_onoff = 1;
 	so_linger.l_linger = 0;
-	if (usrsctp_setsockopt(s_c, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
+	if (usrsctp_setsockopt(socket_client, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(so_linger)) < 0) {
 		perror("usrsctp_setsockopt 1");
 		exit(EXIT_FAILURE);
 	}
@@ -277,13 +279,13 @@ int main(int argc, char *argv[])
 
 #if defined(FUZZ_EXPLICIT_EOR)
 	enable = 1;
-	if (usrsctp_setsockopt(s_c, IPPROTO_SCTP, SCTP_EXPLICIT_EOR, &enable, sizeof(enable)) < 0) {
+	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_EXPLICIT_EOR, &enable, sizeof(enable)) < 0) {
 		perror("setsockopt SCTP_EXPLICIT_EOR");
 		exit(EXIT_FAILURE);
 	}
 
 	enable = 1;
-	if (usrsctp_setsockopt(s_l, IPPROTO_SCTP, SCTP_EXPLICIT_EOR, &enable, sizeof(enable)) < 0) {
+	if (usrsctp_setsockopt(socket_server_listening, IPPROTO_SCTP, SCTP_EXPLICIT_EOR, &enable, sizeof(enable)) < 0) {
 		perror("setsockopt SCTP_EXPLICIT_EOR");
 		exit(EXIT_FAILURE);
 	}
@@ -292,14 +294,14 @@ int main(int argc, char *argv[])
 #if defined(FUZZ_STREAM_RESET)
 	assoc_val.assoc_id = SCTP_ALL_ASSOC;
 	assoc_val.assoc_value = SCTP_ENABLE_RESET_STREAM_REQ | SCTP_ENABLE_CHANGE_ASSOC_REQ;
-	if (usrsctp_setsockopt(s_c, IPPROTO_SCTP, SCTP_ENABLE_STREAM_RESET, &assoc_val, sizeof(struct sctp_assoc_value)) < 0) {
+	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_ENABLE_STREAM_RESET, &assoc_val, sizeof(struct sctp_assoc_value)) < 0) {
 		perror("setsockopt SCTP_ENABLE_STREAM_RESET");
 		exit(EXIT_FAILURE);
 	}
 	/* Allow resetting streams. */
 	assoc_val.assoc_id = SCTP_ALL_ASSOC;
 	assoc_val.assoc_value = SCTP_ENABLE_RESET_STREAM_REQ | SCTP_ENABLE_CHANGE_ASSOC_REQ;
-	if (usrsctp_setsockopt(s_l, IPPROTO_SCTP, SCTP_ENABLE_STREAM_RESET, &assoc_val, sizeof(struct sctp_assoc_value)) < 0) {
+	if (usrsctp_setsockopt(socket_server_listening, IPPROTO_SCTP, SCTP_ENABLE_STREAM_RESET, &assoc_val, sizeof(struct sctp_assoc_value)) < 0) {
 		perror("setsockopt SCTP_ENABLE_STREAM_RESET");
 		exit(EXIT_FAILURE);
 	}
@@ -313,26 +315,26 @@ int main(int argc, char *argv[])
 #endif // !defined(SCTP_INTERLEAVING_SUPPORTED)
 
 	enable = 2;
-	if (usrsctp_setsockopt(s_c, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &enable, sizeof(enable)) < 0) {
+	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &enable, sizeof(enable)) < 0) {
 		perror("usrsctp_setsockopt 1");
 		exit(EXIT_FAILURE);
 	}
 
 	memset(&assoc_val, 0, sizeof(assoc_val));
 	assoc_val.assoc_value = 1;
-	if (usrsctp_setsockopt(s_c, IPPROTO_SCTP, SCTP_INTERLEAVING_SUPPORTED, &assoc_val, sizeof(assoc_val)) < 0) {
+	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_INTERLEAVING_SUPPORTED, &assoc_val, sizeof(assoc_val)) < 0) {
 		perror("usrsctp_setsockopt 2");
 		exit(EXIT_FAILURE);
 	}
 
 	enable = 2;
-	if (usrsctp_setsockopt(s_l, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &enable, sizeof(enable)) < 0) {
+	if (usrsctp_setsockopt(socket_server_listening, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &enable, sizeof(enable)) < 0) {
 		perror("usrsctp_setsockopt 3");
 		exit(EXIT_FAILURE);
 	}
 
 	assoc_val.assoc_value = 1;
-	if (usrsctp_setsockopt(s_l, IPPROTO_SCTP, SCTP_INTERLEAVING_SUPPORTED, &assoc_val, sizeof(assoc_val)) < 0) {
+	if (usrsctp_setsockopt(socket_server_listening, IPPROTO_SCTP, SCTP_INTERLEAVING_SUPPORTED, &assoc_val, sizeof(assoc_val)) < 0) {
 		perror("usrsctp_setsockopt 4");
 		exit(EXIT_FAILURE);
 	}
@@ -345,8 +347,8 @@ int main(int argc, char *argv[])
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif // defined(HAVE_SCONN_LEN)
 	sconn.sconn_port = htons(port);
-	sconn.sconn_addr = &fd_c;
-	if (usrsctp_bind(s_c, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
+	sconn.sconn_addr = &fd_udp_client;
+	if (usrsctp_bind(socket_client, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_bind 1");
 		exit(EXIT_FAILURE);
 	}
@@ -358,14 +360,14 @@ int main(int argc, char *argv[])
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif // defined(HAVE_SCONN_LEN)
 	sconn.sconn_port = htons(port);
-	sconn.sconn_addr = &fd_s;
-	if (usrsctp_bind(s_l, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
+	sconn.sconn_addr = &fd_udp_server;
+	if (usrsctp_bind(socket_server_listening, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_bind 2");
 		exit(EXIT_FAILURE);
 	}
 
 	/* Make server side passive... */
-	if (usrsctp_listen(s_l, 1) < 0) {
+	if (usrsctp_listen(socket_server_listening, 1) < 0) {
 		perror("usrsctp_listen");
 		exit(EXIT_FAILURE);
 	}
@@ -377,27 +379,27 @@ int main(int argc, char *argv[])
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif // defined(HAVE_SCONN_LEN)
 	sconn.sconn_port = htons(port);
-	sconn.sconn_addr = &fd_c;
+	sconn.sconn_addr = &fd_udp_client;
 
-	if (usrsctp_connect(s_c, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
+	if (usrsctp_connect(socket_client, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_connect");
 		exit(EXIT_FAILURE);
 	}
 
-	if ((s_s = usrsctp_accept(s_l, NULL, NULL)) == NULL) {
+	if ((socket_server = usrsctp_accept(socket_server_listening, NULL, NULL)) == NULL) {
 		perror("usrsctp_accept");
 		exit(EXIT_FAILURE);
 	}
 
 #if 0
-	if (usrsctp_setsockopt(s_s, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
+	if (usrsctp_setsockopt(socket_server, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
 		perror("usrsctp_setsockopt 3");
 		exit(EXIT_FAILURE);
 	}
 #endif
 
 	// close listening socket
-	usrsctp_close(s_l);
+	usrsctp_close(socket_server_listening);
 
 #if defined(FUZZ_EXPLICIT_EOR)
 	struct sctp_sndinfo sndinfo;
@@ -405,43 +407,48 @@ int main(int argc, char *argv[])
 	//sndinfo.snd_sid = 1207;
 	//sndinfo.snd_flags 	= SCTP_EOR;
 	sndinfo.snd_ppid 	= htonl(1207);
-	if (usrsctp_sendv(s_c, &sndinfo, sizeof(struct sctp_sndinfo), NULL, 0, &sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
+	if (usrsctp_sendv(socket_client, &sndinfo, sizeof(struct sctp_sndinfo), NULL, 0, &sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("sctp_sendv");
 		exit(EXIT_FAILURE);
 	}
 #endif //defined(FUZZ_EXPLICIT_EOR)
 
-	// inject packet
+	// prepare and inject packet
+	// take input from fuzzer/commandline and prepend common client header
+	// delete packet after injecting
 	pkt = (char *) malloc(data_size + 12);
-	memcpy(pkt, c_cheader, 12);
+	memcpy(pkt, common_header_client, 12);
 	memcpy(pkt + 12, data, data_size);
-	usrsctp_conninput(&fd_s, pkt, data_size + 12, 0);
+	usrsctp_conninput(&fd_udp_server, pkt, data_size + 12, 0);
 	free(pkt);
 
-
 #if !defined(FUZZING_MODE)
+	// we have read a file, free allocated memory
 	if (data != data_sample) {
 		free(data);
 	}
 #endif // !defined(FUZZING_MODE)
 
-	usrsctp_close(s_c);
+	// we close the client side, server side is closed upon reading zero
+	usrsctp_close(socket_server);
 
 #if !defined(FUZZ_FAST) || !defined(FUZZING_MODE)
-
-	usrsctp_deregister_address((void*)&fd_c);
-	usrsctp_deregister_address((void*)&fd_s);
+	usrsctp_deregister_address((void*)&fd_udp_client);
+	usrsctp_deregister_address((void*)&fd_udp_server);
 
 	while(usrsctp_finish()) {
-		//sleep(1);
-		//printf("finishing....\n");
+		sleep(1);
+		printf("finishing....\n");
 	}
 
-	//pthread_join(tid_c, NULL);
-	//pthread_join(tid_s, NULL);
+	pthread_cancel(tid_c);
+	pthread_cancel(tid_s);
 
-	close(fd_c);
-	close(fd_s);
+	pthread_join(tid_c, NULL);
+	pthread_join(tid_s, NULL);
+
+	close(fd_udp_client);
+	close(fd_udp_server);
 #endif // !defined(FUZZ_FAST)
 
 	return (0);
