@@ -498,11 +498,8 @@
 #define SOCKBUF_LOCK_ASSERT(_so_buf) \
 	KASSERT(pthread_mutex_trylock(SOCKBUF_MTX(_so_buf)) == EBUSY, ("%s: socket buffer not locked", __func__))
 #ifdef INVARIANTS
-#define SOCKBUF_LOCK(_so_buf) do {																			\
-	KASSERT(pthread_mutex_lock(SOCKBUF_MTX(_so_buf)) == 0, ("%s: sockbuf_mtx already locked in %s:%d", __func__, (_so_buf)->filename, (_so_buf)->lineno));	\
-	strncpy((_so_buf)->filename, __FILE__, 200);																\
-	(_so_buf)->lineno = __LINE__;																			\
-} while (0)
+#define SOCKBUF_LOCK(_so_buf) \
+	KASSERT(pthread_mutex_lock(SOCKBUF_MTX(_so_buf)) == 0, ("%s: sockbuf_mtx already locked", __func__))
 #define SOCKBUF_UNLOCK(_so_buf) \
 	KASSERT(pthread_mutex_unlock(SOCKBUF_MTX(_so_buf)) == 0, ("%s: sockbuf_mtx not locked", __func__))
 #else
