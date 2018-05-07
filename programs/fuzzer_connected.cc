@@ -49,6 +49,7 @@ extern "C" {
 //#define FUZZ_INTERLEAVING
 //#define FUZZ_EXPLICIT_EOR
 //#define FUZZ_STREAM_RESET
+//#define FUZZ_DISABLE_LINGER
 
 static int fd_udp_client, fd_udp_server;
 static struct socket *socket_client, *socket_server, *socket_server_listening;
@@ -137,6 +138,26 @@ int init_fuzzer(void)
 	if (initialized) {
 		return 0;
 	}
+#endif
+
+#if defined(FUZZ_FAST)
+	printf("FUZZ_FAST\n");
+#endif
+
+#if defined(FUZZ_INTERLEAVING)
+	printf("FUZZ_INTERLEAVING\n");
+#endif
+
+#if defined(FUZZ_EXPLICIT_EOR)
+	printf("FUZZ_EXPLICIT_EOR\n");
+#endif
+
+#if defined(FUZZ_STREAM_RESET)
+	printf("FUZZ_STREAM_RESET\n");
+#endif
+
+#if defined(FUZZ_DISABLE_LINGER)
+	printf("FUZZ_DISABLE_LINGER\n");
 #endif
 
 	usrsctp_init(0, conn_output, debug_printf);
@@ -268,14 +289,14 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-#if 0
+#if defined(FUZZ_DISABLE_LINGER)
 	so_linger.l_onoff = 1;
 	so_linger.l_linger = 0;
 	if (usrsctp_setsockopt(socket_client, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(so_linger)) < 0) {
 		perror("usrsctp_setsockopt 1");
 		exit(EXIT_FAILURE);
 	}
-#endif
+#endif //defined(FUZZ_DISABLE_LINGER)
 
 #if defined(FUZZ_EXPLICIT_EOR)
 	enable = 1;
@@ -391,12 +412,14 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-#if 0
+#if defined(FUZZ_DISABLE_LINGER)
+	so_linger.l_onoff = 1;
+	so_linger.l_linger = 0;
 	if (usrsctp_setsockopt(socket_server, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
 		perror("usrsctp_setsockopt 3");
 		exit(EXIT_FAILURE);
 	}
-#endif
+#endif //defined(FUZZ_DISABLE_LINGER)
 
 	// close listening socket
 	usrsctp_close(socket_server_listening);
