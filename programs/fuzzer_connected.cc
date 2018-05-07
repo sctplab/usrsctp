@@ -47,12 +47,13 @@ extern "C" {
 
 #define FUZZ_FAST
 //#define FUZZ_INTERLEAVING
-//#define FUZZ_EXPLICIT_EOR
+#define FUZZ_EXPLICIT_EOR
 //#define FUZZ_STREAM_RESET
 //#define FUZZ_DISABLE_LINGER
 
 static int fd_udp_client, fd_udp_server;
 static struct socket *socket_client, *socket_server, *socket_server_listening;
+static uint8_t socket_server_open = 0;
 static pthread_t tid_c, tid_s;
 
 static char *common_header_client[12];
@@ -77,12 +78,138 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 	}
 }
 
+static void
+handle_association_change_event(struct sctp_assoc_change *sac)
+{
+	unsigned int i, n;
+
+	printf("Association change ");
+	switch (sac->sac_state) {
+	case SCTP_COMM_UP:
+		printf("SCTP_COMM_UP");
+		break;
+	case SCTP_COMM_LOST:
+		printf("SCTP_COMM_LOST");
+		break;
+	case SCTP_RESTART:
+		printf("SCTP_RESTART");
+		break;
+	case SCTP_SHUTDOWN_COMP:
+		printf("SCTP_SHUTDOWN_COMP");
+		break;
+	case SCTP_CANT_STR_ASSOC:
+		printf("SCTP_CANT_STR_ASSOC");
+		break;
+	default:
+		printf("UNKNOWN");
+		break;
+	}
+	printf(", streams (in/out) = (%u/%u)",
+	       sac->sac_inbound_streams, sac->sac_outbound_streams);
+	n = sac->sac_length - sizeof(struct sctp_assoc_change);
+	if (((sac->sac_state == SCTP_COMM_UP) ||
+	     (sac->sac_state == SCTP_RESTART)) && (n > 0)) {
+		printf(", supports");
+		for (i = 0; i < n; i++) {
+			switch (sac->sac_info[i]) {
+			case SCTP_ASSOC_SUPPORTS_PR:
+				printf(" PR");
+				break;
+			case SCTP_ASSOC_SUPPORTS_AUTH:
+				printf(" AUTH");
+				break;
+			case SCTP_ASSOC_SUPPORTS_ASCONF:
+				printf(" ASCONF");
+				break;
+			case SCTP_ASSOC_SUPPORTS_MULTIBUF:
+				printf(" MULTIBUF");
+				break;
+			case SCTP_ASSOC_SUPPORTS_RE_CONFIG:
+				printf(" RE-CONFIG");
+				break;
+			default:
+				printf(" UNKNOWN(0x%02x)", sac->sac_info[i]);
+				break;
+			}
+		}
+	} else if (((sac->sac_state == SCTP_COMM_LOST) ||
+	            (sac->sac_state == SCTP_CANT_STR_ASSOC)) && (n > 0)) {
+		printf(", ABORT =");
+		for (i = 0; i < n; i++) {
+			printf(" 0x%02x", sac->sac_info[i]);
+		}
+	}
+	printf(".\n");
+	if ((sac->sac_state == SCTP_CANT_STR_ASSOC) ||
+	    (sac->sac_state == SCTP_SHUTDOWN_COMP) ||
+	    (sac->sac_state == SCTP_COMM_LOST)) {
+		exit(0);
+	}
+	return;
+}
+
+static void
+handle_notification(union sctp_notification *notif, size_t n)
+{
+	if (notif->sn_header.sn_length != (uint32_t)n) {
+		return;
+	}
+	switch (notif->sn_header.sn_type) {
+	case SCTP_ASSOC_CHANGE:
+		printf("SCTP_ASSOC_CHANGE\n");
+		handle_association_change_event(&(notif->sn_assoc_change));
+		break;
+	case SCTP_PEER_ADDR_CHANGE:
+		printf("SCTP_PEER_ADDR_CHANGE\n");
+		//handle_peer_address_change_event(&(notif->sn_paddr_change));
+		break;
+	case SCTP_REMOTE_ERROR:
+		printf("SCTP_REMOTE_ERROR\n");
+		break;
+	case SCTP_SHUTDOWN_EVENT:
+		printf("SCTP_SHUTDOWN_EVENT\n");
+		break;
+	case SCTP_ADAPTATION_INDICATION:
+		printf("SCTP_ADAPTATION_INDICATION\n");
+		break;
+	case SCTP_PARTIAL_DELIVERY_EVENT:
+		printf("SCTP_PARTIAL_DELIVERY_EVENT\n");
+		break;
+	case SCTP_AUTHENTICATION_EVENT:
+		printf("SCTP_AUTHENTICATION_EVENT\n");
+		break;
+	case SCTP_SENDER_DRY_EVENT:
+		printf("SCTP_SENDER_DRY_EVENT\n");
+		break;
+	case SCTP_NOTIFICATIONS_STOPPED_EVENT:
+		printf("SCTP_NOTIFICATIONS_STOPPED_EVENT\n");
+		break;
+	case SCTP_SEND_FAILED_EVENT:
+		printf("SCTP_SEND_FAILED_EVENT\n");
+		//handle_send_failed_event(&(notif->sn_send_failed_event));
+		break;
+	case SCTP_STREAM_RESET_EVENT:
+		printf("SCTP_STREAM_RESET_EVENT\n");
+		break;
+	case SCTP_ASSOC_RESET_EVENT:
+		printf("SCTP_ASSOC_RESET_EVENT\n");
+		break;
+	case SCTP_STREAM_CHANGE_EVENT:
+		printf("SCTP_STREAM_CHANGE_EVENT\n");
+		break;
+	default:
+		break;
+	}
+}
+
 static int
 receive_cb(struct socket* sock, union sctp_sockstore addr, void* data, size_t datalen, struct sctp_rcvinfo rcv, int flags, void* ulp_info)
 {
-	//printf("Message %p received on sock = %p.\n", data, (void*)sock);
+	printf("\n\nMessage %p received on sock = %p.\n\n\n", data, (void*)sock);
 	if (data) {
-		if ((flags & MSG_NOTIFICATION) == 0 && 0) {
+		if (flags & MSG_NOTIFICATION) {
+			handle_notification((union sctp_notification *)data, datalen);
+		} else if ((flags & MSG_NOTIFICATION) == 0) {
 			printf("Messsage of length %d received via %p:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u, flags %x.\n",
 				(int)datalen,
 				addr.sconn.sconn_addr,
@@ -98,9 +225,17 @@ receive_cb(struct socket* sock, union sctp_sockstore addr, void* data, size_t da
 	} else {
 		//usrsctp_deregister_address(ulp_info);
 		usrsctp_close(sock);
+		if (sock == socket_server) {
+			printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> usrsctp server socket closed...\n");
+			socket_server_open = 0;
+		} else if (sock == socket_client) {
+			printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> usrsctp client socket closed...\n");
+		}
 	}
 	return (1);
 }
+
+
 
 static void*
 handle_packets(void* arg)
@@ -275,6 +410,9 @@ int main(int argc, char *argv[])
 	int enable;
 	char *pkt;
 	struct sctp_assoc_value assoc_val;
+	struct sctp_event event;
+	uint16_t event_types[] = {SCTP_ASSOC_CHANGE, SCTP_PEER_ADDR_CHANGE, SCTP_SEND_FAILED_EVENT};
+	unsigned long i;
 
 	init_fuzzer();
 	port = (port % 32768) + 1;
@@ -287,6 +425,26 @@ int main(int argc, char *argv[])
 	if ((socket_server_listening = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_udp_server)) == NULL) {
 		perror("usrsctp_socket");
 		exit(EXIT_FAILURE);
+	}
+
+	memset(&event, 0, sizeof(event));
+	event.se_assoc_id = SCTP_ALL_ASSOC;
+	event.se_on = 1;
+	for (i = 0; i < sizeof(event_types)/sizeof(uint16_t); i++) {
+		event.se_type = event_types[i];
+		if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
+			perror("setsockopt SCTP_EVENT");
+		}
+	}
+
+	memset(&event, 0, sizeof(event));
+	event.se_assoc_id = SCTP_ALL_ASSOC;
+	event.se_on = 1;
+	for (i = 0; i < sizeof(event_types)/sizeof(uint16_t); i++) {
+		event.se_type = event_types[i];
+		if (usrsctp_setsockopt(socket_server, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
+			perror("setsockopt SCTP_EVENT");
+		}
 	}
 
 #if defined(FUZZ_DISABLE_LINGER)
@@ -412,6 +570,8 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+	socket_server_open = 1;
+
 #if defined(FUZZ_DISABLE_LINGER)
 	so_linger.l_onoff = 1;
 	so_linger.l_linger = 0;
@@ -453,13 +613,19 @@ int main(int argc, char *argv[])
 #endif // !defined(FUZZING_MODE)
 
 	// we close the client side, server side is closed upon reading zero
-	usrsctp_close(socket_server);
+	usrsctp_close(socket_client);
+	//usrsctp_close(socket_server);
 
 #if !defined(FUZZ_FAST) || !defined(FUZZING_MODE)
+	while (socket_server_open) {
+		sleep(1);
+		printf("waiting for server close...\n");
+	}
+
 	usrsctp_deregister_address((void*)&fd_udp_client);
 	usrsctp_deregister_address((void*)&fd_udp_server);
 
-	while(usrsctp_finish()) {
+	while (usrsctp_finish()) {
 		sleep(1);
 		printf("finishing....\n");
 	}
