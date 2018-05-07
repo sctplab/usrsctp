@@ -191,7 +191,7 @@ The return code is 0 on success and -1 in case of an error.
 
 \subsubsection{usrsctp\_socket()}
 A representation of an SCTP endpoint is a socket. Is it created with \textit{usrsctp\_socket()}.
-The function prototype is 
+The function prototype is:
 \begin{verbatim}
 struct socket *
 usrsctp_socket(int domain, 
@@ -202,25 +202,28 @@ usrsctp_socket(int domain,
                                  void *data,
                                  size_t datalen, 
                                  struct sctp_rcvinfo, 
-                                 int flags),
+                                 int flags,
+                                 void *ulp_info),
                int (*send_cb)(struct socket *sock, 
                               uint32_t sb_free),
-               uint32_t sb_threshold).
+               uint32_t sb_threshold,
+               void *ulp_info).
 \end{verbatim}
-and the arguments taken from RFC~6458 are
+The arguments taken from RFC~6458 are:
 \begin{itemize}
-\item  domain: PF\_INET or PF\_INET6 can be used.
+\item domain: PF\_INET or PF\_INET6 can be used.
 \item type: In case of a one-to-many style socket it is SOCK\_SEQPACKET, in case of a one-to-one style 
 socket it is SOCK\_STREAM. For an explanation of the differences between the socket types please
 refer to RFC~6458.
 \item protocol: Set IPPROTO\_SCTP.
 \end{itemize}
 
-In usrsctp a callback API can be used. The function pointers of the receive and send callbacks
-are new arguments to the socket call. They are NULL, if no callback API is used. The sb\_threshold 
-specifies the amount of free space in the send socket buffer before the send function in the 
-application is called. If a send callback function is specified and sb\_threshold is 0, the function is
-called whenever there is room in the send socket buffer.
+In usrsctp, a callback API can be used.
+\begin{itemize}
+\item The function pointers of the receive and send callbacks are new arguments to the socket call. If no callback API is used, these must be \textit{NULL}.
+\item The \textit{sb\_threshold} specifies the amount of free space in the send socket buffer before the send function in the application is called. If a send callback function is specified and \textit{sb\_threshold} is 0, the function is called whenever there is room in the send socket buffer.
+\item Additional data may be passed along within the \textit{ulp\_info} parameter. This value will be passed to the \textit{receive\_cb} when it is invoked.
+\end{itemize}
 
 On success \textit{usrsctp\_socket()} returns the pointer to the new socket in the \texttt{struct socket} data type. 
 It will be needed in all other system calls. In case of a failure NULL is returned and
@@ -324,7 +327,7 @@ The arguments are
          initiates the SCTP shutdown sequence.
 \end{itemize}
 \end{itemize}
-\textit{usrsctp\_listen()} returns 0 on success and -1 in case of an error.
+\textit{usrsctp\_shutdown()} returns 0 on success and -1 in case of an error.
 
 \section{Sending and Receiving Data}
 Since the publication of RFC~6458 there is only one function for sending and one for receiving
@@ -602,7 +605,7 @@ The default maximum number of retransmissions of an INIT chunks is 8, before an 
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_assoc\_rtx\_max\_default()}
 This parameter sets the maximum number of failed retransmissions before the association is aborted.
-The default vaule is 10.
+The default value is 10.
 
 \subsubsection{usrsctp\_sysctl\_set\_sctp\_path\_rtx\_max\_default()}
 This parameter sets the maximum number of path failures before the association is aborted.

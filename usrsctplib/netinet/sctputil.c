@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 326163 2017-11-24 12:18:48Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 328028 2018-01-15 21:59:20Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -51,7 +51,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 326163 2017-11-24 12:18:48Z tuex
 #include <netinet/sctp_output.h>
 #include <netinet/sctp_uio.h>
 #include <netinet/sctp_timer.h>
-#include <netinet/sctp_indata.h>/* for sctp_deliver_data() */
+#include <netinet/sctp_indata.h>
 #include <netinet/sctp_auth.h>
 #include <netinet/sctp_asconf.h>
 #include <netinet/sctp_bsd_addr.h>
@@ -6718,7 +6718,8 @@ sctp_m_free(struct mbuf *m)
 	return (m_free(m));
 }
 
-void sctp_m_freem(struct mbuf *mb)
+void
+sctp_m_freem(struct mbuf *mb)
 {
 	while (mb != NULL)
 		mb = sctp_m_free(mb);
@@ -6789,6 +6790,7 @@ sctp_soreceive(	struct socket *so,
 	struct sockaddr *from;
 	struct sctp_extrcvinfo sinfo;
 	int filling_sinfo = 1;
+	int flags;
 	struct sctp_inpcb *inp;
 
 	inp = (struct sctp_inpcb *)so->so_pcb;
@@ -6821,15 +6823,24 @@ sctp_soreceive(	struct socket *so,
 	if (filling_sinfo) {
 		memset(&sinfo, 0, sizeof(struct sctp_extrcvinfo));
 	}
-	error = sctp_sorecvmsg(so, uio, mp0, from, fromlen, flagsp,
+	if (flagsp != NULL) {
+		flags = *flagsp;
+	} else {
+		flags = 0;
+	}
+	error = sctp_sorecvmsg(so, uio, mp0, from, fromlen, &flags,
 	    (struct sctp_sndrcvinfo *)&sinfo, filling_sinfo);
+	if (flagsp != NULL) {
+		*flagsp = flags;
+	}
 	if (controlp != NULL) {
 		/* copy back the sinfo in a CMSG format */
-		if (filling_sinfo)
+		if (filling_sinfo && ((flags & MSG_NOTIFICATION) == 0)) {
 			*controlp = sctp_build_ctl_nchunk(inp,
 			                                  (struct sctp_sndrcvinfo *)&sinfo);
-		else
+		} else {
 			*controlp = NULL;
+		}
 	}
 	if (psa) {
 		/* copy back the address info */
@@ -7070,7 +7081,7 @@ sctp_connectx_helper_add(struct sctp_tcb *stcb, struct sockaddr *addr,
 #endif
 #if defined(__Userspace__)
 		case AF_CONN:
-			incr = sizeof(struct sockaddr_in6);
+			incr = sizeof(struct sockaddr_conn);
 			if (sctp_add_remote_addr(stcb, sa, NULL, stcb->asoc.port,
 			                         SCTP_DONOT_SETSCOPE,
 			                         SCTP_ADDR_IS_CONFIRMED)) {

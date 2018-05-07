@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 325370 2017-11-03 20:46:12Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 332273 2018-04-08 12:08:20Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -233,7 +233,7 @@ sctp_finish(void)
 #endif
 	}
 #endif
-	SCTP_BASE_VAR(timer_thread_should_exit) = 1;
+	atomic_cmpset_int(&SCTP_BASE_VAR(timer_thread_should_exit), 0, 1);
 #if defined(__Userspace_os_Windows)
 	WaitForSingleObject(SCTP_BASE_VAR(timer_thread), INFINITE);
 	CloseHandle(SCTP_BASE_VAR(timer_thread));
@@ -358,7 +358,7 @@ sctp_notify(struct sctp_inpcb *inp,
 #endif
 		/* no need to unlock here, since the TCB is gone */
 	} else if (icmp_code == ICMP_UNREACH_NEEDFRAG) {
-		if ((net->dest_state & SCTP_ADDR_NO_PMTUD) == 0) {
+		if (net->dest_state & SCTP_ADDR_NO_PMTUD) {
 			SCTP_TCB_UNLOCK(stcb);
 			return;
 		}
@@ -415,7 +415,11 @@ void
 #else
 void *
 #endif
+#if defined(__APPLE__) && !defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION) && !defined(APPLE_ELCAPITAN)
+sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip, struct ifnet *ifp SCTP_UNUSED)
+#else
 sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
+#endif
 {
 #if defined(__FreeBSD__)
 	struct ip *outer_ip;
@@ -1164,22 +1168,10 @@ sctp_disconnect(struct socket *so)
 				if (SCTP_GET_STATE(asoc) !=
 				    SCTP_STATE_COOKIE_WAIT) {
 					/* Left with Data unread */
-					struct mbuf *err;
+					struct mbuf *op_err;
 
-					err = sctp_get_mbuf_for_msg(sizeof(struct sctp_paramhdr), 0, M_NOWAIT, 1, MT_DATA);
-					if (err) {
-						/*
-						 * Fill in the user
-						 * initiated abort
-						 */
-						struct sctp_paramhdr *ph;
-
-						ph = mtod(err, struct sctp_paramhdr *);
-						SCTP_BUF_LEN(err) = sizeof(struct sctp_paramhdr);
-						ph->param_type = htons(SCTP_CAUSE_USER_INITIATED_ABT);
-						ph->param_length = htons(SCTP_BUF_LEN(err));
-					}
-					sctp_send_abort_tcb(stcb, err, SCTP_SO_LOCKED);
+					op_err = sctp_generate_cause(SCTP_CAUSE_USER_INITIATED_ABT, "");
+					sctp_send_abort_tcb(stcb, op_err, SCTP_SO_LOCKED);
 					SCTP_STAT_INCR_COUNTER32(sctps_aborted);
 				}
 				SCTP_INP_RUNLOCK(inp);

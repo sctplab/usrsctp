@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 326672 2017-12-07 22:19:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 332273 2018-04-08 12:08:20Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -390,7 +390,7 @@ sctp6_notify(struct sctp_inpcb *inp,
 		}
 		break;
 	case ICMP6_PACKET_TOO_BIG:
-		if ((net->dest_state & SCTP_ADDR_NO_PMTUD) == 0) {
+		if (net->dest_state & SCTP_ADDR_NO_PMTUD) {
 			SCTP_TCB_UNLOCK(stcb);
 			break;
 		}
@@ -425,7 +425,11 @@ sctp6_notify(struct sctp_inpcb *inp,
 }
 
 void
+#if defined(__APPLE__) && !defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION) && !defined(APPLE_ELCAPITAN)
+sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d, struct ifnet *ifp SCTP_UNUSED)
+#else
 sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
+#endif
 {
 	struct ip6ctlparam *ip6cp;
 	struct sctp_inpcb *inp;

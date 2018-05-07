@@ -113,7 +113,7 @@ The return code is 0 on success and -1 in case of an error.
 
 ### usrsctp_socket()
 
-A representation of an SCTP endpoint is a socket. Is it created with `usrsctp_socket()`. The function prototype is
+A representation of an SCTP endpoint is a socket. Is it created with `usrsctp_socket()`. The function prototype is:
 
 ```c
 struct socket *
@@ -125,13 +125,15 @@ usrsctp_socket(int domain,
                                  void *data,
                                  size_t datalen,
                                  struct sctp_rcvinfo,
-                                 int flags),
+                                 int flags,
+                                 void *ulp_info),
                int (*send_cb)(struct socket *sock,
                               uint32_t sb_free),
-               uint32_t sb_threshold)
+               uint32_t sb_threshold,
+               void *ulp_info)
 ```
 
-and the arguments taken from [RFC 6458](http://tools.ietf.org/html/rfc6458) are
+The arguments taken from [RFC 6458](http://tools.ietf.org/html/rfc6458) are:
 
 * domain: PF_INET or PF_INET6 can be used.
 * type: In case of a one-to-many style socket it is SOCK_SEQPACKET, in case of a one-to-one style
@@ -139,7 +141,11 @@ socket it is SOCK_STREAM. For an explanation of the differences between the sock
 refer to [RFC 6458](http://tools.ietf.org/html/rfc6458).
 * protocol: Set IPPROTO_SCTP.
 
-In usrsctp a callback API can be used. The function pointers of the receive and send callbacks are new arguments to the socket call. They are NULL, if no callback API is used. The `sb_threshold` specifies the amount of free space in the send socket buffer before the send function in the application is called. If a send callback function is specified and `sb_threshold` is 0, the function is called whenever there is room in the send socket buffer.
+In usrsctp, a callback API can be used.
+
+* The function pointers of the receive and send callbacks are new arguments to the socket call. If no callback API is used, these must be `NULL`.
+* The `sb_threshold` specifies the amount of free space in the send socket buffer before the send function in the application is called. If a send callback function is specified and `sb_threshold` is 0, the function is called whenever there is room in the send socket buffer.
+* Additional data may be passed along within the `ulp_info` parameter. This value will be passed to the `receive_cb` when it is invoked.
 
 On success `usrsctp_socket()` returns the pointer to the new socket in the `struct socket` data type. It will be needed in all other system calls. In case of a failure NULL is returned and errno is set to the appropriate error code.
 
@@ -213,7 +219,7 @@ usrsctp_connect(struct socket *so,
 * name: Address of the peer to connect to (`struct sockaddr_in` for an IPv4 address or `struct sockaddr_in6` for an IPv6 address).
 * addrlen: Size of the peer's address.
 
-usrsctp_connect() returns 0 on success and -1 in case of an error.
+`usrsctp_connect()` returns 0 on success and -1 in case of an error.
 
 ### usrsctp_shutdown()
 
@@ -228,7 +234,7 @@ usrsctp_shutdown(struct socket *so, int how)
   * SHUT_WR:  Disables further send operations, and initiates the SCTP shutdown sequence.
   * SHUT_RDWR:  Disables further send and receive operations, and initiates the SCTP shutdown sequence.
 
-`usrsctp_listen()` returns 0 on success and -1 in case of an error.
+`usrsctp_shutdown()` returns 0 on success and -1 in case of an error.
 
 ## Sending and Receiving Data
 Since the publication of [RFC 6458](http://tools.ietf.org/html/rfc6458) there is only one function for sending and one for receiving
@@ -460,7 +466,7 @@ Transmissions and retransmissions of messages might fail. To protect the system 
 The default maximum number of retransmissions of an INIT chunks is 8, before an ABORT is sent.
 
 #### usrsctp_sysctl_set_sctp_assoc_rtx_max_default()
-This parameter sets the maximum number of failed retransmissions before the association is aborted. The default vaule is 10.
+This parameter sets the maximum number of failed retransmissions before the association is aborted. The default value is 10.
 
 #### usrsctp_sysctl_set_sctp_path_rtx_max_default()
 This parameter sets the maximum number of path failures before the association is aborted. The default value is 5. Notice that the number of paths multiplied by this value should be equal to `sctp_assoc_rtx_max_default`. That means that the default configuration is good for two paths.

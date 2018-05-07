@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_crc32.h 326672 2017-12-07 22:19:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_crc32.h 327200 2017-12-26 12:35:02Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_CRC32_H_
@@ -43,7 +43,9 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_crc32.h 326672 2017-12-07 22:19:08Z tu
 #if defined(_KERNEL)
 uint32_t sctp_calculate_cksum(struct mbuf *, uint32_t);
 #if defined(__FreeBSD__)
+#ifdef SCTP
 void sctp_delayed_cksum(struct mbuf *, uint32_t offset);
+#endif
 #endif
 #endif				/* _KERNEL */
 #if defined(__Userspace__)
