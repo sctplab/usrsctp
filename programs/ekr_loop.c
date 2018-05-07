@@ -52,6 +52,7 @@
 #define MAX_PACKET_SIZE (1<<16)
 #define LINE_LENGTH (1<<20)
 #define DISCARD_PPID 39
+#define DUMP_PKTS_TO_FILE 1
 
 #ifdef _WIN32
 static DWORD WINAPI
@@ -113,6 +114,17 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 		//fprintf(stderr, "%s", dump_buf);
 		usrsctp_freedumpbuffer(dump_buf);
 	}
+
+#ifdef	DUMP_PKTS_TO_FILE
+	FILE *fp;
+	char fname[128];
+	static int pktnum = 0;
+	snprintf(fname, sizeof(fname), "pkt-%d", pktnum++);
+	fp = fopen(fname, "wb");
+	fwrite((char *)buf + 12, 1, length - 12, fp);
+	fclose(fp);
+#endif
+
 #ifdef _WIN32
 	if (send(*fdp, buf, (int)length, 0) == SOCKET_ERROR) {
 		return (WSAGetLastError());

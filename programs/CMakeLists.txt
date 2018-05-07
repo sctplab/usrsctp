@@ -67,6 +67,12 @@ find_package(Threads)
 #################################################
 # PROGRAMS
 #################################################
+# if in fuzzing mode, only build the fuzzer
+if (sctp_fuzzer_clang OR sctp_fuzzer_honggfuzz)
+	list(APPEND check_programs
+		fuzzer_unconnected.c
+		fuzzer_connected.cc
+	)
 
 set(check_programs
 	client.c
@@ -84,11 +90,13 @@ set(check_programs
 	test_timer.c
 	tsctp.c
 	http_client_upcall.c
-        client_upcall.c
-        discard_server_upcall.c
-        echo_server_upcall.c
-        chargen_server_upcall.c
-        daytime_server_upcall.c
+	client_upcall.c
+	discard_server_upcall.c
+	echo_server_upcall.c
+	chargen_server_upcall.c
+	daytime_server_upcall.c
+	fuzzer_connected.cc
+	fuzzer_unconnected.c
 )
 
 foreach (source_file ${check_programs})

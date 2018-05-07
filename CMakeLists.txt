@@ -77,11 +77,23 @@ option(sctp_sanitizer_address "Compile with address sanitizer" 0)
 
 option(sctp_sanitizer_memory "Compile with memory sanitizer" 0)
 
+option(sctp_fuzzer_clang "Compile in Clang fuzzing mode" 0)
+
+option(sctp_fuzzer_honggfuzz "Compile in honggfuzz fuzzing mode" 0)
+
+if (sctp_fuzzer_clang OR sctp_fuzzer_honggfuzz)
+	add_definitions(-DFUZZING_MODE)
+endif ()
+
+if (sctp_fuzzer_clang AND sctp_fuzzer_honggfuzz)
+	message(FATAL_ERROR "Can not compile with both fuzzer options")
+endif ()
+
 if (sctp_sanitizer_address AND sctp_sanitizer_memory)
 	message(FATAL_ERROR "Can not compile with both sanitizer options")
 endif ()
 
-if (sctp_link_programs_static OR WIN32)
+if (sctp_link_programs_static OR WIN32 OR sctp_fuzzer_clang OR sctp_fuzzer_honggfuzz)
 	set(programs_link_library "usrsctp-static")
 else ()
 	set(programs_link_library "usrsctp")
@@ -161,7 +173,7 @@ endif ()
 # SETTINGS FOR UNIX COMPILER
 if ("${CMAKE_C_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_C_COMPILER_ID}" MATCHES "AppleClang" OR "${CMAKE_C_COMPILER_ID}" MATCHES "GNU")
 	set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c99 -pedantic -Wall -Wextra")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99 -pedantic -Wall -Wextra")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++98 -pedantic -Wall -Wextra")
 
 	check_c_compiler_flag(-Wfloat-equal has_wfloat_equal)
 	if (has_wfloat_equal)
@@ -230,6 +242,11 @@ if ("${CMAKE_C_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_C_COMPILER_ID}" MATCHES
 	if (sctp_sanitizer_memory)
 		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins")
+	endif ()
+
+	if (sctp_fuzzer_clang)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=fuzzer,address,undefined -g -fno-omit-frame-pointer -fsanitize-coverage=trace-cmp,trace-gep,trace-div")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=fuzzer,address,undefined -g -fno-omit-frame-pointer -fsanitize-coverage=trace-cmp,trace-gep,trace-div")
 	endif ()
 endif ()
 
