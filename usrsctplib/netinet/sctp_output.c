@@ -4036,7 +4036,7 @@ sctp_get_ect(struct sctp_tcb *stcb)
 }
 
 #if defined(INET) || defined(INET6)
-static void
+void
 sctp_handle_no_route(struct sctp_tcb *stcb,
                      struct sctp_nets *net,
                      int so_locked)
@@ -4234,7 +4234,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #else
 			ip->ip_off = IP_DF;
 #endif
-#elif defined(WITH_CONVERT_IP_OFF) || defined(__APPLE__) || defined(__Userspace__)
+#elif defined(WITH_CONVERT_IP_OFF) || defined(__APPLE__)
 			ip->ip_off = IP_DF;
 #else
 			ip->ip_off = htons(IP_DF);
@@ -4309,6 +4309,17 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 										ro, net, 0,
 										vrf_id);
 				net->src_addr_selected = 1;
+#if defined(__Userspace__)
+				if (!net->got_max) {
+					int mtu = sctp_get_mtu_from_addr((struct sockaddr *)&(net->ro._s_addr->address.sin));
+					net->got_max = 1;
+					net->max_mtu = mtu;
+					if (!stcb->sctp_ep->plpmtud_supported) {
+						net->mtu = mtu;
+						sctp_pathmtu_adjustment(stcb, net->mtu, net);
+					}
+				}
+#endif
 			}
 			if (net->ro._s_addr == NULL) {
 				/* No route to host */
@@ -4480,13 +4491,28 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 
 				mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._l_addr.sa, ro->ro_rt);
 				if (mtu > 0) {
+#if !defined(__Userspace__)
+					if (!stcb->sctp_ep->plpmtud_supported) {
+						if (net->port) {
+							mtu -= sizeof(struct udphdr);
+						}
+						if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
+							sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
+						}
+						net->mtu = mtu;
+					} else {
+						if (net->port) {
+							net->mtu -= sizeof(struct udphdr);
+						}
+					}
+#else
+					if (!stcb->sctp_ep->plpmtud_supported) {
+						net->mtu = mtu;
+					}
 					if (net->port) {
-						mtu -= sizeof(struct udphdr);
+						net->mtu -= sizeof(struct udphdr);
 					}
-					if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
-						sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
-					}
-					net->mtu = mtu;
+#endif
 				}
 			} else if (ro->ro_rt == NULL) {
 				/* route was freed */
@@ -4836,6 +4862,17 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			/* preserve the port and scope for link local send */
 			prev_scope = sin6->sin6_scope_id;
 			prev_port = sin6->sin6_port;
+#if defined(__Userspace__)
+			if (!net->got_max) {
+				int mtu = sctp_get_mtu_from_addr((struct sockaddr *)lsa6);
+				net->got_max = 1;
+				net->max_mtu = mtu;
+				if (!stcb->sctp_ep->plpmtud_supported) {
+					net->mtu = mtu;
+					sctp_pathmtu_adjustment(stcb, net->mtu, net);
+				}
+			}
+#endif
 		}
 
 		if (SCTP_GET_HEADER_FOR_OUTPUT(o_pak)) {
@@ -4942,13 +4979,28 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 
 				mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._l_addr.sa, ro->ro_rt);
 				if (mtu > 0) {
+#if !defined(__Userspace__)
+					if (!stcb->sctp_ep->plpmtud_supported) {
+						if (net->port) {
+							mtu -= sizeof(struct udphdr);
+						}
+						if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
+							sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
+						}
+						net->mtu = mtu;
+					} else {
+						if (net->port) {
+							net->mtu -= sizeof(struct udphdr);
+						}
+					}
+#else
+					if (!stcb->sctp_ep->plpmtud_supported) {
+						net->mtu = mtu;
+					}
 					if (net->port) {
-						mtu -= sizeof(struct udphdr);
+						net->mtu -= sizeof(struct udphdr);
 					}
-					if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
-						sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
-					}
-					net->mtu = mtu;
+#endif
 				}
 			}
 #if !defined(__Panda__) && !defined(__Userspace__)
@@ -7551,6 +7603,7 @@ sctp_clean_up_ctl(struct sctp_tcb *stcb, struct sctp_association *asoc, int so_l
 		    (chk->rec.chunk_id.id == SCTP_NR_SELECTIVE_ACK) ||	/* EY */
 		    (chk->rec.chunk_id.id == SCTP_HEARTBEAT_REQUEST) ||
 		    (chk->rec.chunk_id.id == SCTP_HEARTBEAT_ACK) ||
+		    (chk->rec.chunk_id.id == SCTP_PAD_CHUNK) ||
 		    (chk->rec.chunk_id.id == SCTP_FORWARD_CUM_TSN) ||
 		    (chk->rec.chunk_id.id == SCTP_SHUTDOWN) ||
 		    (chk->rec.chunk_id.id == SCTP_SHUTDOWN_ACK) ||
@@ -7654,10 +7707,10 @@ sctp_move_to_outqueue(struct sctp_tcb *stcb,
 	/* Move from the stream to the send_queue keeping track of the total */
 	struct sctp_association *asoc;
 	struct sctp_stream_queue_pending *sp;
-	struct sctp_tmit_chunk *chk;
-	struct sctp_data_chunk *dchkh=NULL;
-	struct sctp_idata_chunk *ndchkh=NULL;
-	uint32_t to_move, length;
+	struct sctp_tmit_chunk *chk = NULL;
+	struct sctp_data_chunk *dchkh = NULL;
+	struct sctp_idata_chunk *ndchkh = NULL;
+	uint32_t to_move = 0, length;
 	int leading;
 	uint8_t rcv_flags = 0;
 	uint8_t some_taken;
@@ -8890,6 +8943,7 @@ again_one_more_time:
 				    (chk->rec.chunk_id.id == SCTP_NR_SELECTIVE_ACK) || /* EY */
 				    (chk->rec.chunk_id.id == SCTP_HEARTBEAT_REQUEST) ||
 				    (chk->rec.chunk_id.id == SCTP_HEARTBEAT_ACK) ||
+				    (chk->rec.chunk_id.id == SCTP_PAD_CHUNK) ||
 				    (chk->rec.chunk_id.id == SCTP_SHUTDOWN) ||
 				    (chk->rec.chunk_id.id == SCTP_SHUTDOWN_ACK) ||
 				    (chk->rec.chunk_id.id == SCTP_OPERATION_ERROR) ||
@@ -10700,7 +10754,7 @@ do_it_again:
 			 */
 			un_sent = stcb->asoc.total_output_queue_size - stcb->asoc.total_flight;
 			if ((un_sent < (int)(stcb->asoc.smallest_mtu - SCTP_MIN_OVERHEAD)) &&
-			    (stcb->asoc.total_flight > 0)) { 
+			    (stcb->asoc.total_flight > 0)) {
 /*	&&		     sctp_is_feature_on(inp, SCTP_PCB_FLAGS_EXPLICIT_EOR))) {*/
 				break;
 			}
@@ -10837,7 +10891,7 @@ send_forward_tsn(struct sctp_tcb *stcb,
 	}
 	asoc->fwd_tsn_cnt++;
 	chk->copy_by_ref = 0;
-	/* 
+	/*
 	 * We don't do the old thing here since
 	 * this is used not for on-wire but to
 	 * tell if we are sending a fwd-tsn by
@@ -11580,18 +11634,18 @@ sctp_send_shutdown_complete(struct sctp_tcb *stcb,
 }
 
 #if defined(__FreeBSD__)
-static void
+void
 sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
                    struct sctphdr *sh, uint32_t vtag,
                    uint8_t type, struct mbuf *cause,
                    uint8_t mflowtype, uint32_t mflowid, uint16_t fibnum,
-                   uint32_t vrf_id, uint16_t port)
+                   uint32_t vrf_id, uint16_t port, struct sctp_tcb *stcb)
 #else
-static void
+void
 sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
                    struct sctphdr *sh, uint32_t vtag,
                    uint8_t type, struct mbuf *cause,
-                   uint32_t vrf_id SCTP_UNUSED, uint16_t port)
+                   uint32_t vrf_id SCTP_UNUSED, uint16_t port, struct sctp_tcb *stcb)
 #endif
 {
 #ifdef __Panda__
@@ -11643,7 +11697,11 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		padding_len = 0;
 	}
 	/* Get an mbuf for the header. */
-	len = sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr);
+	if (type == SCTP_PAD_CHUNK) {
+		len = sizeof(struct sctphdr);
+	} else {
+		len = sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr);
+	}
 	switch (dst->sa_family) {
 #ifdef INET
 	case AF_INET:
@@ -11715,7 +11773,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #else
 		ip->ip_off = IP_DF;
 #endif
-#elif defined(WITH_CONVERT_IP_OFF) || defined(__APPLE__) || defined(__Userspace__)
+#elif defined(WITH_CONVERT_IP_OFF) || defined(__APPLE__)
 		ip->ip_off = IP_DF;
 #else
 		ip->ip_off = htons(IP_DF);
@@ -11807,15 +11865,17 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		shout->v_tag = sh->v_tag;
 	}
 	len += sizeof(struct sctphdr);
-	ch = (struct sctp_chunkhdr *)((caddr_t)shout + sizeof(struct sctphdr));
-	ch->chunk_type = type;
-	if (vtag) {
-		ch->chunk_flags = 0;
-	} else {
-		ch->chunk_flags = SCTP_HAD_NO_TCB;
+	if (type != SCTP_PAD_CHUNK) {
+		ch = (struct sctp_chunkhdr *)((caddr_t)shout + sizeof(struct sctphdr));
+		ch->chunk_type = type;
+		if (vtag) {
+			ch->chunk_flags = 0;
+		} else {
+			ch->chunk_flags = SCTP_HAD_NO_TCB;
+		}
+		ch->chunk_length = htons((uint16_t)(sizeof(struct sctp_chunkhdr) + cause_len));
+		len += sizeof(struct sctp_chunkhdr);
 	}
-	ch->chunk_length = htons((uint16_t)(sizeof(struct sctp_chunkhdr) + cause_len));
-	len += sizeof(struct sctp_chunkhdr);
 	len += cause_len + padding_len;
 
 	if (SCTP_GET_HEADER_FOR_OUTPUT(o_pak)) {
@@ -11894,7 +11954,11 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 			ro.ro_rt = NULL;
 		}
 #else
-		SCTP_IP_OUTPUT(ret, o_pak, NULL, NULL, vrf_id);
+		if (type == SCTP_PAD_CHUNK) {
+			SCTP_IP_OUTPUT(ret, o_pak, NULL, stcb, vrf_id);
+		} else {
+			SCTP_IP_OUTPUT(ret, o_pak, NULL, NULL, vrf_id);
+		}
 #endif
 		break;
 #endif
@@ -11986,7 +12050,7 @@ sctp_send_shutdown_complete2(struct sockaddr *src, struct sockaddr *dst,
 #if defined(__FreeBSD__)
 	                   mflowtype, mflowid, fibnum,
 #endif
-	                   vrf_id, port);
+	                   vrf_id, port, NULL);
 }
 
 void
@@ -12123,7 +12187,11 @@ sctp_send_hb(struct sctp_tcb *stcb, struct sctp_nets *net,int so_locked
 		}
 		sctp_free_a_chunk(stcb, chk, so_locked);
 		return;
-		break;
+	}
+	if (stcb->sctp_ep->plpmtud_supported && net->mtu_probing) {
+		hb->heartbeat.hb_info.probe_mtu = net->probe_mtu;
+	} else {
+		hb->heartbeat.hb_info.probe_mtu = 0;
 	}
 	net->hb_responded = 0;
 	TAILQ_INSERT_TAIL(&stcb->asoc.control_send_queue, chk, sctp_next);
@@ -13018,7 +13086,7 @@ sctp_send_abort(struct mbuf *m, int iphlen, struct sockaddr *src, struct sockadd
 #if defined(__FreeBSD__)
 	                   mflowtype, mflowid, fibnum,
 #endif
-	                   vrf_id, port);
+	                   vrf_id, port, NULL);
 	return;
 }
 
@@ -13034,7 +13102,7 @@ sctp_send_operr_to(struct sockaddr *src, struct sockaddr *dst,
 #if defined(__FreeBSD__)
 	                   mflowtype, mflowid, fibnum,
 #endif
-	                   vrf_id, port);
+	                   vrf_id, port, NULL);
 	return;
 }
 
@@ -13144,7 +13212,7 @@ sctp_copy_one(struct sctp_stream_queue_pending *sp,
               struct uio *uio,
               int resv_upfront)
 {
-#if defined(__Panda__)
+#if defined(__Panda__) || defined(__Userspace__)
 	sp->data = m_uiotombuf(uio, M_WAITOK, sp->length,
 	                       resv_upfront, 0);
 	if (sp->data == NULL) {

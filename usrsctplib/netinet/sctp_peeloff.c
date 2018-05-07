@@ -134,6 +134,7 @@ sctp_do_peeloff(struct socket *head, struct socket *so, sctp_assoc_t assoc_id)
 	n_inp->reconfig_supported = inp->reconfig_supported;
 	n_inp->nrsack_supported = inp->nrsack_supported;
 	n_inp->pktdrop_supported = inp->pktdrop_supported;
+	n_inp->plpmtud_supported = inp->plpmtud_supported;
 	n_inp->partial_delivery_point = inp->partial_delivery_point;
 	n_inp->sctp_context = inp->sctp_context;
 	n_inp->max_cwnd = inp->max_cwnd;

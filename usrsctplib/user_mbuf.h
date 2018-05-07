@@ -55,7 +55,9 @@ struct mbuf * m_gethdr(int how, short type);
 struct mbuf * m_get(int how, short type);
 struct mbuf * m_free(struct mbuf *m);
 void m_clget(struct mbuf *m, int how);
-
+struct mbuf * m_getm2(struct mbuf *m, int len, int how, short type, int flags, int allonebuf);
+struct mbuf *m_uiotombuf(struct uio *uio, int how, int len, int align, int flags);
+struct mbuf *m_last(struct mbuf *m);
 
 /* mbuf initialization function */
 void mbuf_initialize(void *);
@@ -374,6 +376,23 @@ extern struct mbstat	mbstat;		/* General mbuf stats/infos */
 	    (M_WRITABLE(m) ? (m)->m_data - (m)->m_ext.ext_buf : 0):	\
 	    (m)->m_flags & M_PKTHDR ? (m)->m_data - (m)->m_pktdat :	\
 	    (m)->m_data - (m)->m_dat)
+
+ /*
+ * Return the size of the buffer associated with an mbuf, handling external
+ * storage, packet-header mbufs, and regular data mbufs.
+ */
+#define M_SIZE(m)										\
+	(((m)->m_flags & M_EXT) ? (m)->m_ext.ext_size :		\
+		((m)->m_flags & M_PKTHDR) ? MHLEN : MLEN)
+
+ /*
+ * Return the address of the start of the buffer associated with an mbuf,
+ * handling external storage, packet-header mbufs, and regular data mbufs.
+ */
+#define M_START(m)									\
+	(((m)->m_flags & M_EXT) ? (m)->m_ext.ext_buf :	\
+	((m)->m_flags & M_PKTHDR) ? &(m)->m_pktdat[0] :	\
+		&(m)->m_dat[0])
 
 /*
  * Compute the amount of space available after the end of data in an mbuf.

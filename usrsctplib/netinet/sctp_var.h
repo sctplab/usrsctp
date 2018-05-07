@@ -417,7 +417,7 @@ int sctp_ctloutput __P((struct socket *, struct sockopt *));
 void sctp_input_with_port __P((struct mbuf *, int, uint16_t));
 void sctp_input __P((struct mbuf *, int));
 #endif
-void sctp_pathmtu_adjustment __P((struct sctp_tcb *, uint16_t));
+void sctp_pathmtu_adjustment __P((struct sctp_tcb *, uint16_t), struct sctp_nets *);
 #else
 #if defined(__APPLE__) && !defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION) && !defined(APPLE_ELCAPITAN)
 void sctp_ctlinput(int, struct sockaddr *, void *, struct ifnet * SCTP_UNUSED);
@@ -433,13 +433,13 @@ int sctp_input(struct mbuf **, int *, int);
 void sctp_input(struct mbuf *, int);
 #endif
 #endif
-void sctp_pathmtu_adjustment(struct sctp_tcb *, uint16_t);
+void sctp_pathmtu_adjustment(struct sctp_tcb *, uint16_t, struct sctp_nets *);
 #endif
 #else
 #if defined(__Panda__)
 void sctp_input(pakhandle_type i_pak);
 #elif defined(__Userspace__)
-void sctp_pathmtu_adjustment(struct sctp_tcb *, uint16_t);
+void sctp_pathmtu_adjustment(struct sctp_tcb *, uint16_t, struct sctp_nets *);
 #else
 void sctp_input(struct mbuf *,...);
 #endif

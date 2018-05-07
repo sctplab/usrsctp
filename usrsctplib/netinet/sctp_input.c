@@ -775,6 +775,112 @@ sctp_handle_heartbeat_ack(struct sctp_heartbeat_chunk *cp,
 					stcb->asoc.deleted_primary);
 		}
 	}
+
+	if (stcb->sctp_ep->plpmtud_supported) {
+		if (r_net->probing_state < SCTP_PROBE_BASE && !r_net->mtu_probing)
+			r_net->mtu_probing = 1;
+		if (r_net->mtu_probing) {
+			if (r_net->probe_counts > 0)
+				r_net->probe_counts = 0;
+			switch (r_net->probing_state) {
+			case SCTP_PROBE_NONE:
+				r_net->probing_state = SCTP_PROBE_BASE;
+				r_net->probed_mtu = SCTP_PROBE_MIN;
+#ifdef INET6
+				if (cp->heartbeat.hb_info.addr_family == AF_INET6) {
+					r_net->probe_mtu = SCTP_PROBE_MTU_V6_BASE;
+				}
+#endif
+#ifdef INET
+				if (cp->heartbeat.hb_info.addr_family == AF_INET) {
+					r_net->probe_mtu = SCTP_PROBE_MTU_V4_BASE;
+				}
+#endif
+				sctp_send_a_probe(stcb->sctp_ep, stcb, r_net);
+				break;
+			case SCTP_PROBE_ERROR:
+				r_net->probed_mtu = SCTP_PROBE_MIN;
+				r_net->probe_mtu = sctp_get_next_mtu(SCTP_PROBE_MIN);
+				r_net->probing_state = SCTP_PROBE_SEARCH_UP;
+				sctp_send_a_probe(stcb->sctp_ep, stcb, r_net);
+				break;
+			case SCTP_PROBE_BASE:
+				r_net->probed_mtu = cp->heartbeat.hb_info.probe_mtu;
+				if (r_net->probed_mtu == r_net->max_mtu) {
+					sctp_pathmtu_adjustment(stcb, r_net->probed_mtu, r_net);
+					r_net->mtu_probing = 0;
+					r_net->probing_state = SCTP_PROBE_DONE;
+					r_net->mtu = r_net->max_mtu;
+					sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, r_net, SCTP_FROM_SCTP_INPUT + SCTP_LOC_7);
+					sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, r_net);
+					if (SCTP_OS_TIMER_PENDING(&r_net->pmtu_timer.timer)) {
+						sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, stcb->sctp_ep, stcb, r_net,
+							SCTP_FROM_SCTP_INPUT + SCTP_LOC_8);
+					}
+					sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, stcb->sctp_ep, stcb, r_net);
+					break;
+				}
+				if (SCTP_PROBE_UP == 1) {
+					r_net->probing_state = SCTP_PROBE_SEARCH_UP;
+					if (r_net->max_mtu == 0) {
+						r_net->probe_mtu = sctp_get_next_mtu(r_net->probed_mtu);
+					} else {
+						r_net->probe_mtu = min(r_net->max_mtu, sctp_get_next_mtu(r_net->probed_mtu));
+					}
+				} else {
+					r_net->probing_state = SCTP_PROBE_SEARCH_DOWN;
+					r_net->probe_mtu = r_net->max_mtu;
+				}
+				r_net->mtu = r_net->probed_mtu;
+
+				sctp_pathmtu_adjustment(stcb, r_net->probed_mtu, r_net);
+				sctp_send_a_probe(stcb->sctp_ep, stcb, r_net);
+				break;
+			case SCTP_PROBE_SEARCH_UP:
+				r_net->probed_mtu = cp->heartbeat.hb_info.probe_mtu;
+				if (r_net->probed_mtu == r_net->max_mtu) {
+					r_net->mtu = r_net->max_mtu;
+					sctp_pathmtu_adjustment(stcb, r_net->max_mtu, r_net);
+					r_net->mtu_probing = 0;
+					r_net->probing_state = SCTP_PROBE_DONE;
+					sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, r_net, SCTP_FROM_SCTP_INPUT + SCTP_LOC_9);
+					sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, r_net);
+					if (SCTP_OS_TIMER_PENDING(&r_net->pmtu_timer.timer)) {
+						sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, stcb->sctp_ep, stcb, r_net,
+							SCTP_FROM_SCTP_INPUT + SCTP_LOC_10);
+					}
+					sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, stcb->sctp_ep, stcb, r_net);
+					break;
+				}
+				uint32_t next_mtu = sctp_get_next_mtu(r_net->probed_mtu);
+				if (next_mtu > r_net->probe_mtu)
+					r_net->probe_mtu = next_mtu;
+				if (r_net->max_mtu > 0 && next_mtu > r_net->max_mtu) {
+					r_net->probe_mtu = r_net->max_mtu;
+				}
+				r_net->mtu = r_net->probed_mtu;
+				sctp_pathmtu_adjustment(stcb, r_net->probed_mtu, r_net);
+				sctp_send_a_probe(stcb->sctp_ep, stcb, r_net);
+				break;
+			case SCTP_PROBE_SEARCH_DOWN: /* Highest MTU reached. Stop Probing */
+				r_net->probed_mtu = cp->heartbeat.hb_info.probe_mtu;
+				r_net->mtu = r_net->probed_mtu;
+				sctp_pathmtu_adjustment(stcb, r_net->mtu, r_net);
+				r_net->mtu_probing = 0;
+				r_net->probing_state = SCTP_PROBE_DONE;
+				sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, r_net, SCTP_FROM_SCTP_INPUT + SCTP_LOC_11);
+				sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, r_net);
+				if (SCTP_OS_TIMER_PENDING(&r_net->pmtu_timer.timer)) {
+					sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, stcb->sctp_ep, stcb, r_net,
+						SCTP_FROM_SCTP_INPUT + SCTP_LOC_12);
+				}
+				sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, stcb->sctp_ep, stcb, r_net);
+				break;
+			case SCTP_PROBE_DONE:
+				break;
+			}
+		}
+	}
 }
 
 static int
@@ -935,8 +1041,28 @@ sctp_start_net_timers(struct sctp_tcb *stcb)
 		sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net);
 		if ((net->dest_state & SCTP_ADDR_UNCONFIRMED) &&
 		    (cnt_hb_sent < SCTP_BASE_SYSCTL(sctp_hb_maxburst))) {
+			if (stcb->asoc.plpmtud_supported) {
+				net->probing_state = SCTP_PROBE_NONE;
+				net->probe_mtu = 0;
+			}
 			sctp_send_hb(stcb, net, SCTP_SO_NOT_LOCKED);
 			cnt_hb_sent++;
+		} else if (stcb->asoc.plpmtud_supported) {
+			net->probing_state = SCTP_PROBE_BASE;
+#ifdef INET6
+			if (stcb->asoc.scope.ipv6_addr_legal) {
+				net->probe_mtu = SCTP_PROBE_MTU_V6_BASE;
+			}
+#endif
+#ifdef INET
+			if (stcb->asoc.scope.ipv4_addr_legal) {
+				net->probe_mtu = SCTP_PROBE_MTU_V4_BASE;
+			}
+#endif
+			net->probed_mtu = SCTP_PROBE_MIN;
+			net->mtu_probing = 1;
+			net->probe_counts = 0;
+			sctp_send_a_probe(stcb->sctp_ep, stcb, net);
 		}
 	}
 	if (cnt_hb_sent) {
@@ -3034,6 +3160,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 			inp->reconfig_supported = (*inp_p)->reconfig_supported;
 			inp->nrsack_supported = (*inp_p)->nrsack_supported;
 			inp->pktdrop_supported = (*inp_p)->pktdrop_supported;
+			inp->plpmtud_supported = (*inp_p)->plpmtud_supported;
 			inp->partial_delivery_point = (*inp_p)->partial_delivery_point;
 			inp->sctp_context = (*inp_p)->sctp_context;
 			inp->local_strreset_support = (*inp_p)->local_strreset_support;
@@ -5757,7 +5884,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 					/* UDP encapsulation turned on. */
 					net->mtu -= sizeof(struct udphdr);
 					if (stcb->asoc.smallest_mtu > net->mtu) {
-						sctp_pathmtu_adjustment(stcb, net->mtu);
+						sctp_pathmtu_adjustment(stcb, net->mtu, net);
 					}
 				} else if (port == 0) {
 					/* UDP encapsulation turned off. */
@@ -5798,7 +5925,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 			/* UDP encapsulation turned on. */
 			net->mtu -= sizeof(struct udphdr);
 			if (stcb->asoc.smallest_mtu > net->mtu) {
-				sctp_pathmtu_adjustment(stcb, net->mtu);
+				sctp_pathmtu_adjustment(stcb, net->mtu, net);
 			}
 		} else if (port == 0) {
 			/* UDP encapsulation turned off. */
@@ -5903,7 +6030,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 					/* UDP encapsulation turned on. */
 					net->mtu -= sizeof(struct udphdr);
 					if (stcb->asoc.smallest_mtu > net->mtu) {
-						sctp_pathmtu_adjustment(stcb, net->mtu);
+						sctp_pathmtu_adjustment(stcb, net->mtu, net);
 					}
 				} else if (port == 0) {
 					/* UDP encapsulation turned off. */

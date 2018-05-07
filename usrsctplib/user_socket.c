@@ -3060,7 +3060,7 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 #if defined(__Userspace_os_Linux) || defined (__Userspace_os_Windows) || (defined(__Userspace_os_FreeBSD) && (__FreeBSD_version >= 1100030))
 		/* need to put certain fields into network order for Linux */
 		ip->ip_len = htons(ip->ip_len);
-		ip->ip_off = 0;
+		//ip->ip_off = 0;
 #endif
 	}
 
@@ -3511,6 +3511,7 @@ USRSCTP_SYSCTL_SET_DEF(sctp_asconf_enable)
 USRSCTP_SYSCTL_SET_DEF(sctp_reconfig_enable)
 USRSCTP_SYSCTL_SET_DEF(sctp_nrsack_enable)
 USRSCTP_SYSCTL_SET_DEF(sctp_pktdrop_enable)
+USRSCTP_SYSCTL_SET_DEF(sctp_plpmtud_enable)
 USRSCTP_SYSCTL_SET_DEF(sctp_no_csum_on_loopback)
 USRSCTP_SYSCTL_SET_DEF(sctp_peer_chunk_oh)
 USRSCTP_SYSCTL_SET_DEF(sctp_max_burst_default)
@@ -3590,6 +3591,7 @@ USRSCTP_SYSCTL_GET_DEF(sctp_asconf_enable)
 USRSCTP_SYSCTL_GET_DEF(sctp_reconfig_enable)
 USRSCTP_SYSCTL_GET_DEF(sctp_nrsack_enable)
 USRSCTP_SYSCTL_GET_DEF(sctp_pktdrop_enable)
+USRSCTP_SYSCTL_GET_DEF(sctp_plpmtud_enable)
 USRSCTP_SYSCTL_GET_DEF(sctp_no_csum_on_loopback)
 USRSCTP_SYSCTL_GET_DEF(sctp_peer_chunk_oh)
 USRSCTP_SYSCTL_GET_DEF(sctp_max_burst_default)

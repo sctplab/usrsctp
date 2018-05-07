@@ -707,7 +707,7 @@ extern void getwintimeofday(struct timeval *tv);
 
 #define SCTP_INITIAL_CWND 4380
 
-#define SCTP_DEFAULT_MTU 1500 /* emergency default MTU */
+#define SCTP_DEFAULT_MTU 1200 /* emergency default MTU */
 /* amount peer is obligated to have in rwnd or I will abort */
 #define SCTP_MIN_RWND	1500
 
@@ -724,6 +724,21 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_NUMBER_OF_SECRETS	8	/* or 8 * 4 = 32 octets */
 #define SCTP_SECRET_SIZE	32	/* number of octets in a 256 bits */
 
+/* Probing states */
+#define SCTP_PROBE_NONE                          0
+#define SCTP_PROBE_ERROR                         1
+#define SCTP_PROBE_BASE                          2
+#define SCTP_PROBE_SEARCH_UP                     3
+#define SCTP_PROBE_SEARCH_DOWN                   4
+#define SCTP_PROBE_DONE                          5
+
+#define SCTP_PROBE_MTU_V4_BASE                1200
+#define SCTP_PROBE_MTU_V6_BASE                1280
+
+#define SCTP_PROBE_MAX_PROBES                    2
+#define SCTP_PROBE_MIN                          76 /* Size of a HEARTBEAT Chunk with HB Info */
+
+#define SCTP_PROBE_UP                            1
 
 /*
  * SCTP upper layer notifications
@@ -823,6 +838,10 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_LOC_33 0x00000021
 #define SCTP_LOC_34 0x00000022
 #define SCTP_LOC_35 0x00000023
+#define SCTP_LOC_36 0x00000024
+#define SCTP_LOC_37 0x00000025
+#define SCTP_LOC_38 0x00000026
+#define SCTP_LOC_39 0x00000027
 
 
 /* Free assoc codes */

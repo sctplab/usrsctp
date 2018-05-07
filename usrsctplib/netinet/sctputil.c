@@ -841,7 +841,7 @@ static uint32_t sctp_mtu_sizes[] = {
 	1492,
 	1500,
 	1536,
-	2002,
+	2000,
 	2048,
 	4352,
 	4464,
@@ -868,7 +868,7 @@ sctp_get_prev_mtu(uint32_t val)
 			break;
 		}
 	}
-	return (sctp_mtu_sizes[i - 1]);
+	return (sctp_mtu_sizes[i - 1] - sctp_mtu_sizes[i - 1] % 4);
 }
 
 /*
@@ -882,8 +882,8 @@ sctp_get_next_mtu(uint32_t val)
 	uint32_t i;
 
 	for (i = 0; i < (sizeof(sctp_mtu_sizes) / sizeof(uint32_t)); i++) {
-		if (val < sctp_mtu_sizes[i]) {
-			return (sctp_mtu_sizes[i]);
+		if (val < sctp_mtu_sizes[i] - sctp_mtu_sizes[i] % 4) {
+			return (sctp_mtu_sizes[i] - sctp_mtu_sizes[i] % 4);
 		}
 	}
 	return (val);
@@ -1048,6 +1048,7 @@ sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	asoc->reconfig_supported = inp->reconfig_supported;
 	asoc->nrsack_supported = inp->nrsack_supported;
 	asoc->pktdrop_supported = inp->pktdrop_supported;
+	asoc->plpmtud_supported = inp->plpmtud_supported;
 	asoc->idata_supported = inp->idata_supported;
 	asoc->sctp_cmt_pf = (uint8_t)0;
 	asoc->sctp_frag_point = inp->sctp_frag_point;
@@ -1838,7 +1839,7 @@ sctp_timeout_handler(void *t)
 #ifdef SCTP_AUDITING_ENABLED
 		sctp_auditing(4, inp, stcb, net);
 #endif
-		if (!(net->dest_state & SCTP_ADDR_NOHB)) {
+		if (!(net->dest_state & SCTP_ADDR_NOHB) && !(inp->plpmtud_supported && net->mtu_probing)) {
 			sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, inp, stcb, net);
 			sctp_chunk_output(inp, stcb, SCTP_OUTPUT_FROM_HB_TMR, SCTP_SO_NOT_LOCKED);
 		}
@@ -2160,7 +2161,8 @@ sctp_timer_start(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				to_ticks = to_ticks - jitter;
 			}
 			if (!(net->dest_state & SCTP_ADDR_UNCONFIRMED) &&
-			    !(net->dest_state & SCTP_ADDR_PF)) {
+			    !(net->dest_state & SCTP_ADDR_PF) &&
+			    !(net->mtu_probing)) {
 				to_ticks += net->heart_beat_delay;
 			}
 			/*
@@ -8235,3 +8237,290 @@ sctp_hc_get_mtu(union sctp_sockstore *addr, uint16_t fibnum)
 	return ((uint32_t)tcp_hc_getmtu(&inc));
 }
 #endif
+
+static struct mbuf *
+sctp_make_hb(struct sctp_tcb *stcb, struct sctp_nets *net,int so_locked
+#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+	SCTP_UNUSED
+#endif
+)
+{
+	struct sctp_heartbeat_chunk *hb;
+	struct timeval now;
+	struct mbuf *chk;
+	uint16_t send_size;
+
+	SCTP_TCB_LOCK_ASSERT(stcb);
+	if (net == NULL) {
+		return NULL;
+	}
+	(void)SCTP_GETTIME_TIMEVAL(&now);
+	switch (net->ro._l_addr.sa.sa_family) {
+#ifdef INET
+	case AF_INET:
+		break;
+#endif
+#ifdef INET6
+	case AF_INET6:
+		break;
+#endif
+#if defined(__Userspace__)
+	case AF_CONN:
+		break;
+#endif
+	default:
+		return NULL;
+	}
+	send_size = sizeof(struct sctp_heartbeat_chunk);
+
+	chk = sctp_get_mbuf_for_msg(send_size, 0, M_NOWAIT, 1, MT_HEADER);
+	if (chk == NULL) {
+		return NULL;
+	}
+	SCTP_BUF_RESV_UF(chk, SCTP_MIN_OVERHEAD);
+	SCTP_BUF_LEN(chk) = send_size;
+	/* Now we have a mbuf that we can fill in with the details */
+	hb = mtod(chk, struct sctp_heartbeat_chunk *);
+	memset(hb, 0, send_size);
+	/* fill out chunk header */
+	hb->ch.chunk_type = SCTP_HEARTBEAT_REQUEST;
+	hb->ch.chunk_flags = 0;
+	hb->ch.chunk_length = htons(send_size);
+	/* Fill out hb parameter */
+	hb->heartbeat.hb_info.ph.param_type = htons(SCTP_HEARTBEAT_INFO);
+	hb->heartbeat.hb_info.ph.param_length = htons(sizeof(struct sctp_heartbeat_info_param));
+	hb->heartbeat.hb_info.time_value_1 = now.tv_sec;
+	hb->heartbeat.hb_info.time_value_2 = now.tv_usec;
+	/* Did our user request this one, put it in */
+	hb->heartbeat.hb_info.addr_family = (uint8_t)net->ro._l_addr.sa.sa_family;
+#ifdef HAVE_SA_LEN
+	hb->heartbeat.hb_info.addr_len = net->ro._l_addr.sa.sa_len;
+#else
+	switch (net->ro._l_addr.sa.sa_family) {
+#ifdef INET
+	case AF_INET:
+		hb->heartbeat.hb_info.addr_len = sizeof(struct sockaddr_in);
+		break;
+#endif
+#ifdef INET6
+	case AF_INET6:
+		hb->heartbeat.hb_info.addr_len = sizeof(struct sockaddr_in6);
+		break;
+#endif
+#if defined(__Userspace__)
+	case AF_CONN:
+		hb->heartbeat.hb_info.addr_len = sizeof(struct sockaddr_conn);
+		break;
+#endif
+	default:
+		hb->heartbeat.hb_info.addr_len = 0;
+		break;
+	}
+#endif
+	if (net->dest_state & SCTP_ADDR_UNCONFIRMED) {
+		/*
+		 * we only take from the entropy pool if the address is not
+		 * confirmed.
+		 */
+		net->heartbeat_random1 = hb->heartbeat.hb_info.random_value1 = sctp_select_initial_TSN(&stcb->sctp_ep->sctp_ep);
+		net->heartbeat_random2 = hb->heartbeat.hb_info.random_value2 = sctp_select_initial_TSN(&stcb->sctp_ep->sctp_ep);
+	} else {
+		net->heartbeat_random1 = hb->heartbeat.hb_info.random_value1 = 0;
+		net->heartbeat_random2 = hb->heartbeat.hb_info.random_value2 = 0;
+	}
+	switch (net->ro._l_addr.sa.sa_family) {
+#ifdef INET
+	case AF_INET:
+		memcpy(hb->heartbeat.hb_info.address,
+		       &net->ro._l_addr.sin.sin_addr,
+		       sizeof(net->ro._l_addr.sin.sin_addr));
+		break;
+#endif
+#ifdef INET6
+	case AF_INET6:
+		memcpy(hb->heartbeat.hb_info.address,
+		       &net->ro._l_addr.sin6.sin6_addr,
+		       sizeof(net->ro._l_addr.sin6.sin6_addr));
+		break;
+#endif
+#if defined(__Userspace__)
+	case AF_CONN:
+		memcpy(hb->heartbeat.hb_info.address,
+		       &net->ro._l_addr.sconn.sconn_addr,
+		       sizeof(net->ro._l_addr.sconn.sconn_addr));
+		break;
+#endif
+	default:
+		if (chk) {
+			sctp_m_freem(chk);
+			chk = NULL;
+		}
+		return NULL;
+	}
+	if (stcb->sctp_ep->plpmtud_supported && net->mtu_probing) {
+		hb->heartbeat.hb_info.probe_mtu = net->probe_mtu;
+	} else {
+		hb->heartbeat.hb_info.probe_mtu = 0;
+	}
+	net->hb_responded = 0;
+	return chk;
+}
+
+static struct mbuf *
+sctp_make_pad(struct sctp_tcb *stcb, struct sctp_nets *net, uint16_t pad_size)
+{
+	struct sctp_pad_chunk *pad;
+	struct mbuf *chk;
+
+	SCTP_TCB_LOCK_ASSERT(stcb);
+	KASSERT(pad_size >= 4, ("%s: padsize %u too small", __FUNCTION__, pad_size));
+	KASSERT(pad_size % 4 == 0, ("%s: padsize %u not aligned", __FUNCTION__, pad_size));
+	KASSERT(net->mtu_probing != 0, ("%s: mtu_probing not enabled", __FUNCTION__));
+	if (net == NULL) {
+		return NULL;
+	}
+	chk = sctp_get_mbuf_for_msg(pad_size, 0, M_NOWAIT, (pad_size < 2048)?1:0, MT_DATA);
+	if (chk == NULL) {
+		/* no mbufs */
+		return NULL;
+	}
+	struct mbuf *tmp_chk = chk;
+	int size = pad_size;
+	while (tmp_chk != NULL && size > 0) {
+#if __FreeBSD_version > 1100052
+		if (size < SCTP_BUF_SIZE(tmp_chk)) {
+			SCTP_BUF_LEN(tmp_chk) = size;
+			size = 0;
+		} else {
+			SCTP_BUF_LEN(tmp_chk) = SCTP_BUF_SIZE(tmp_chk);
+			size -= SCTP_BUF_SIZE(tmp_chk);
+		}
+#else
+		if (SCTP_BUF_IS_EXTENDED(tmp_chk)) {
+			if (size < (uint16_t)SCTP_BUF_EXTEND_SIZE(tmp_chk)) {
+				SCTP_BUF_LEN(tmp_chk) = size;
+			} else {
+				SCTP_BUF_LEN(tmp_chk) = SCTP_BUF_EXTEND_SIZE(tmp_chk);
+			}
+			size -= SCTP_BUF_LEN(tmp_chk);
+		} else {
+			if (size > MLEN) {
+				SCTP_BUF_LEN(tmp_chk) = MLEN;
+				size -= MLEN;
+			} else {
+				SCTP_BUF_LEN(tmp_chk) = size;
+				size = 0;
+			}
+		}
+#endif
+		tmp_chk = SCTP_BUF_NEXT(tmp_chk);
+	}
+
+	sctp_zero_m(chk, 0, pad_size);
+	pad = mtod(chk, struct sctp_pad_chunk *);
+	pad->ch.chunk_type = SCTP_PAD_CHUNK;
+	pad->ch.chunk_flags = 0;
+	pad->ch.chunk_length = htons(pad_size);
+
+	net->hb_responded = 0;
+	return chk;
+}
+
+
+void
+sctp_send_a_probe(struct sctp_inpcb *inp,
+    struct sctp_tcb *stcb,
+    struct sctp_nets *net)
+{
+	int ovh, sum_probe_chunks;
+	uint16_t send_size;
+	struct mbuf *hb, *pad, *m;
+	uint32_t vrf_id;
+	struct sctphdr *sh;
+	sctp_route_t *ro;
+
+	if (!net->mtu_probing && net->probing_state > SCTP_PROBE_NONE) {
+		net->mtu_probing = 1;
+		net->probe_counts = 0;
+	}
+	if (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) {
+		ovh = SCTP_MIN_OVERHEAD;
+	} else {
+		ovh = SCTP_MIN_V4_OVERHEAD;
+	}
+#if defined(__FreeBSD__)
+#if defined(INET) || defined(INET6)
+	if (net->port) {
+		net->probe_mtu -= sizeof(struct udphdr);
+	}
+#endif
+#endif
+
+	hb = sctp_make_hb(stcb, net, SCTP_SO_NOT_LOCKED);
+	if (hb == NULL) {
+		return;
+	}
+	sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net, SCTP_FROM_SCTPUTIL + SCTP_LOC_11);
+	sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net);
+
+	sum_probe_chunks = net->probe_mtu - ovh - sizeof(struct sctp_heartbeat_info_param) - sizeof(struct sctp_chunkhdr);
+	send_size = sum_probe_chunks;
+	pad = sctp_make_pad(stcb, net, send_size);
+	if (pad == NULL) {
+		return;
+	}
+
+	SCTP_BUF_NEXT(hb) = pad;
+#if defined(INET) || defined(INET6)
+	if (stcb) {
+		vrf_id = stcb->asoc.vrf_id;
+	} else {
+		vrf_id = inp->def_vrf_id;
+	}
+#endif
+
+	m = sctp_get_mbuf_for_msg(sizeof(struct sctphdr), 1, M_NOWAIT, 1, MT_DATA);
+	sh = mtod(m, struct sctphdr *);
+	sh->src_port = stcb->rport;
+	sh->dest_port = inp->sctp_lport;
+	sh->v_tag = stcb->asoc.peer_vtag;
+	ro = (sctp_route_t *)&net->ro;
+	if (net->ro._s_addr && (net->ro._s_addr->localifa_flags & (SCTP_BEING_DELETED|SCTP_ADDR_IFA_UNUSEABLE))) {
+		sctp_free_ifa(net->ro._s_addr);
+		net->ro._s_addr = NULL;
+		net->src_addr_selected = 0;
+		if (ro->ro_rt) {
+			RTFREE(ro->ro_rt);
+			ro->ro_rt = NULL;
+		}
+	}
+	if (net->src_addr_selected == 0) {
+		/* Cache the source address */
+		net->ro._s_addr = sctp_source_address_selection(inp,stcb,
+							ro, net, 0, vrf_id);
+		net->src_addr_selected = 1;
+	}
+	if (net->ro._s_addr == NULL) {
+		/* No route to host */
+		net->src_addr_selected = 0;
+		sctp_handle_no_route(stcb, net, SCTP_SO_NOT_LOCKED);
+		SCTP_LTRACE_ERR_RET_PKT(m, inp, stcb, NULL, SCTP_FROM_SCTP_OUTPUT, EHOSTUNREACH);
+		sctp_m_freem(m);
+		return;
+	}
+	sctp_send_resp_msg((struct sockaddr *)&net->ro._l_addr,
+	                   (struct sockaddr *)&net->ro._s_addr->address,
+	                   sh, stcb->asoc.peer_vtag,
+	                   SCTP_PAD_CHUNK, hb,
+#if defined(__FreeBSD__)
+	                   net->flowtype, net->flowid, inp->fibnum,
+#endif
+	                   vrf_id, net->port, stcb);
+	sctp_m_freem(m);
+	if (SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
+		sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net,
+		    SCTP_FROM_SCTPUTIL + SCTP_LOC_12);
+	}
+	sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, stcb->sctp_ep, stcb, net);
+}
+
