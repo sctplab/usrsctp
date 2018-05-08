@@ -74,61 +74,61 @@ handle_association_change_event(struct sctp_assoc_change *sac)
 {
 	unsigned int i, n;
 
-	printf("Association change ");
+	//printf("Association change ");
 	switch (sac->sac_state) {
 	case SCTP_COMM_UP:
-		printf("SCTP_COMM_UP");
+		//printf("SCTP_COMM_UP");
 		break;
 	case SCTP_COMM_LOST:
-		printf("SCTP_COMM_LOST");
+		//printf("SCTP_COMM_LOST");
 		break;
 	case SCTP_RESTART:
-		printf("SCTP_RESTART");
+		//printf("SCTP_RESTART");
 		break;
 	case SCTP_SHUTDOWN_COMP:
-		printf("SCTP_SHUTDOWN_COMP");
+		//printf("SCTP_SHUTDOWN_COMP");
 		break;
 	case SCTP_CANT_STR_ASSOC:
-		printf("SCTP_CANT_STR_ASSOC");
+		//printf("SCTP_CANT_STR_ASSOC");
 		break;
 	default:
-		printf("UNKNOWN");
+		//printf("UNKNOWN");
 		break;
 	}
-	printf(", streams (in/out) = (%u/%u)", sac->sac_inbound_streams, sac->sac_outbound_streams);
+	//printf(", streams (in/out) = (%u/%u)", sac->sac_inbound_streams, sac->sac_outbound_streams);
 	n = sac->sac_length - sizeof(struct sctp_assoc_change);
 	if (((sac->sac_state == SCTP_COMM_UP) ||
 	     (sac->sac_state == SCTP_RESTART)) && (n > 0)) {
-		printf(", supports");
+		//printf(", supports");
 		for (i = 0; i < n; i++) {
 			switch (sac->sac_info[i]) {
 			case SCTP_ASSOC_SUPPORTS_PR:
-				printf(" PR");
+				//printf(" PR");
 				break;
 			case SCTP_ASSOC_SUPPORTS_AUTH:
-				printf(" AUTH");
+				//printf(" AUTH");
 				break;
 			case SCTP_ASSOC_SUPPORTS_ASCONF:
-				printf(" ASCONF");
+				//printf(" ASCONF");
 				break;
 			case SCTP_ASSOC_SUPPORTS_MULTIBUF:
-				printf(" MULTIBUF");
+				//printf(" MULTIBUF");
 				break;
 			case SCTP_ASSOC_SUPPORTS_RE_CONFIG:
-				printf(" RE-CONFIG");
+				//printf(" RE-CONFIG");
 				break;
 			default:
-				printf(" UNKNOWN(0x%02x)", sac->sac_info[i]);
+				//printf(" UNKNOWN(0x%02x)", sac->sac_info[i]);
 				break;
 			}
 		}
 	} else if (((sac->sac_state == SCTP_COMM_LOST) || (sac->sac_state == SCTP_CANT_STR_ASSOC)) && (n > 0)) {
-		printf(", ABORT =");
+		//printf(", ABORT =");
 		for (i = 0; i < n; i++) {
-			printf(" 0x%02x", sac->sac_info[i]);
+			//printf(" 0x%02x", sac->sac_info[i]);
 		}
 	}
-	printf(".\n");
+	//printf(".\n");
 	if ((sac->sac_state == SCTP_CANT_STR_ASSOC) || (sac->sac_state == SCTP_SHUTDOWN_COMP) || (sac->sac_state == SCTP_COMM_LOST)) {
 		//exit(0);
 	}
@@ -143,46 +143,46 @@ handle_notification(union sctp_notification *notif, size_t n)
 	}
 	switch (notif->sn_header.sn_type) {
 	case SCTP_ASSOC_CHANGE:
-		printf("SCTP_ASSOC_CHANGE\n");
+		//printf("SCTP_ASSOC_CHANGE\n");
 		handle_association_change_event(&(notif->sn_assoc_change));
 		break;
 	case SCTP_PEER_ADDR_CHANGE:
-		printf("SCTP_PEER_ADDR_CHANGE\n");
+		//printf("SCTP_PEER_ADDR_CHANGE\n");
 		//handle_peer_address_change_event(&(notif->sn_paddr_change));
 		break;
 	case SCTP_REMOTE_ERROR:
-		printf("SCTP_REMOTE_ERROR\n");
+		//printf("SCTP_REMOTE_ERROR\n");
 		break;
 	case SCTP_SHUTDOWN_EVENT:
-		printf("SCTP_SHUTDOWN_EVENT\n");
+		//printf("SCTP_SHUTDOWN_EVENT\n");
 		break;
 	case SCTP_ADAPTATION_INDICATION:
-		printf("SCTP_ADAPTATION_INDICATION\n");
+		//printf("SCTP_ADAPTATION_INDICATION\n");
 		break;
 	case SCTP_PARTIAL_DELIVERY_EVENT:
-		printf("SCTP_PARTIAL_DELIVERY_EVENT\n");
+		//printf("SCTP_PARTIAL_DELIVERY_EVENT\n");
 		break;
 	case SCTP_AUTHENTICATION_EVENT:
-		printf("SCTP_AUTHENTICATION_EVENT\n");
+		//printf("SCTP_AUTHENTICATION_EVENT\n");
 		break;
 	case SCTP_SENDER_DRY_EVENT:
-		printf("SCTP_SENDER_DRY_EVENT\n");
+		//printf("SCTP_SENDER_DRY_EVENT\n");
 		break;
 	case SCTP_NOTIFICATIONS_STOPPED_EVENT:
-		printf("SCTP_NOTIFICATIONS_STOPPED_EVENT\n");
+		//printf("SCTP_NOTIFICATIONS_STOPPED_EVENT\n");
 		break;
 	case SCTP_SEND_FAILED_EVENT:
-		printf("SCTP_SEND_FAILED_EVENT\n");
+		//printf("SCTP_SEND_FAILED_EVENT\n");
 		//handle_send_failed_event(&(notif->sn_send_failed_event));
 		break;
 	case SCTP_STREAM_RESET_EVENT:
-		printf("SCTP_STREAM_RESET_EVENT\n");
+		//printf("SCTP_STREAM_RESET_EVENT\n");
 		break;
 	case SCTP_ASSOC_RESET_EVENT:
-		printf("SCTP_ASSOC_RESET_EVENT\n");
+		//printf("SCTP_ASSOC_RESET_EVENT\n");
 		break;
 	case SCTP_STREAM_CHANGE_EVENT:
-		printf("SCTP_STREAM_CHANGE_EVENT\n");
+		//printf("SCTP_STREAM_CHANGE_EVENT\n");
 		break;
 	default:
 		break;
@@ -195,10 +195,10 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 	int events = usrsctp_get_events(sock);
 	struct connection_status *cs = (struct connection_status*) arg;
 
-	fprintf(stderr, ">>>>>>>>>>>>>>>>>>> %s - type: %d\n", __func__, cs->type);
+	//fprintf(stderr, ">>>>>>>>>>>>>>>>>>> %s - type: %d\n", __func__, cs->type);
 
 	if (arg == NULL) {
-		fprintf(stderr, "error: upcall - arg == NULL\n");
+		//fprintf(stderr, "error: upcall - arg == NULL\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -207,13 +207,13 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 		struct socket* conn_sock;
 		struct connection_status* cs_new;
 
-		fprintf(stderr, ">>>>>>>>>>>>>>>>>>> %s - new incoming socket\n", __func__);
+		//fprintf(stderr, ">>>>>>>>>>>>>>>>>>> %s - new incoming socket\n", __func__);
 
 		cs_new = (struct connection_status *) calloc(1, sizeof(struct connection_status));
 		cs_new->type = CS_SERVER_CONNECTED;
 
 		if (((conn_sock = usrsctp_accept(sock, NULL, NULL)) == NULL) && (errno != EINPROGRESS)) {
-			perror("usrsctp_accept");
+			//perror("usrsctp_accept");
 			exit(EXIT_FAILURE);
 		}
 		sockets_open++;
@@ -221,8 +221,8 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 		usrsctp_set_upcall(conn_sock, handle_upcall, cs_new);
 
 		// close listening socket, we do not need it anymore
-		fprintf(stderr, ">>>>>>>>>>>>>>>>>>> %s - closing listening socket\n", __func__);
-
+		//fprintf(stderr, ">>>>>>>>>>>>>>>>>>> %s - closing listening socket\n", __func__);
+		free(cs);
 		usrsctp_close(sock);
 		sockets_open--;
 		return;
@@ -232,13 +232,13 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 		if (events & SCTP_EVENT_WRITE) {
 
 			if (cs->type == CS_CLIENT && cs->data) {
-				fprintf(stderr, ">>>>>>>>>>>>>>>>>>> %s - writing (fuzzing) data on client socket\n", __func__);
+				//fprintf(stderr, ">>>>>>>>>>>>>>>>>>> %s - writing (fuzzing) data on client socket\n", __func__);
 
 #if 0
 				if (usrsctp_sendv(sock, cs->data, cs->data_size, NULL, 0, NULL, 0, 0, 0) < 0) {
 					if (errno != EAGAIN) {
 						usrsctp_close(sock);
-						printf("client socket %p closed\n", (void *)sock);
+						//printf("client socket %p closed\n", (void *)sock);
 						return;
 					}
 				}
@@ -259,7 +259,7 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 				//sndinfo.snd_flags 	= SCTP_EOR;
 				sndinfo.snd_ppid 	= htonl(1207);
 				if (usrsctp_sendv(socket_client, &sndinfo, sizeof(struct sctp_sndinfo), NULL, 0, &sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
-					perror("sctp_sendv");
+					//perror("sctp_sendv");
 					exit(EXIT_FAILURE);
 				}
 #endif //defined(FUZZ_EXPLICIT_EOR)
@@ -270,12 +270,12 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 				free(pkt);
 				cs->data = NULL;
 				cs->data_size = 0;
-
+				free(cs);
 				usrsctp_close(sock);
 				sockets_open--;
 				return;
 			} else {
-				fprintf(stderr, ">>>>>>>>>>>>>>>>>>> %s - socket type %d writable but nothing to do...\n", __func__, cs->type);
+				//fprintf(stderr, ">>>>>>>>>>>>>>>>>>> %s - socket type %d writable but nothing to do...\n", __func__, cs->type);
 			}
 		}
 
@@ -290,26 +290,27 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 			socklen_t infolen = sizeof(struct sctp_recvv_rn);
 			memset(&rn, 0, sizeof(struct sctp_recvv_rn));
 
-			fprintf(stderr, ">>>>>>>>>>>>>>>>>>> %s - socket type %d - readable\n", __func__, cs->type);
+			//fprintf(stderr, ">>>>>>>>>>>>>>>>>>> %s - socket type %d - readable\n", __func__, cs->type);
 
 			n = usrsctp_recvv(sock, buf, MAX_PACKET_SIZE, (struct sockaddr *) &addr, &len, (void *)&rn, &infolen, &infotype, &flags);
 
-			fprintf(stderr, ">>>>>>>>>>>>>>>>>>> %s - socket type %d - read %ld bytes\n", __func__, cs->type, n);
+			//fprintf(stderr, ">>>>>>>>>>>>>>>>>>> %s - socket type %d - read %ld bytes\n", __func__, cs->type, n);
 
 			if (n > 0) {
 				if (flags & MSG_NOTIFICATION) {
 					handle_notification((union sctp_notification *)buf, n);
 				} else {
 					if (write(fileno(stdout), buf, n) < 0) {
-						perror("write");
+						//perror("write");
 					}
 				}
 			} else if (n == 0) {
 				free(buf);
 				break;
 			} else {
-				perror("\nusrsctp_recvv");
+				//perror("\nusrsctp_recvv");
 				free (buf);
+				free(cs);
 				usrsctp_close(sock);
 				sockets_open--;
 				break;
@@ -319,7 +320,7 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 		}
 
 		if (events & SCTP_EVENT_ERROR) {
-			fprintf(stderr, ">>>>>>>>>>>>>>>>>>> %s - ERROR\n", __func__);
+			//fprintf(stderr, ">>>>>>>>>>>>>>>>>>> %s - ERROR\n", __func__);
 		}
 	}
 	return;
@@ -383,23 +384,23 @@ int init_fuzzer(void)
 #endif
 
 #if defined(FUZZ_FAST)
-	printf("FUZZ_FAST\n");
+	//printf("FUZZ_FAST\n");
 #endif
 
 #if defined(FUZZ_INTERLEAVING)
-	printf("FUZZ_INTERLEAVING\n");
+	//printf("FUZZ_INTERLEAVING\n");
 #endif
 
 #if defined(FUZZ_EXPLICIT_EOR)
-	printf("FUZZ_EXPLICIT_EOR\n");
+	//printf("FUZZ_EXPLICIT_EOR\n");
 #endif
 
 #if defined(FUZZ_STREAM_RESET)
-	printf("FUZZ_STREAM_RESET\n");
+	//printf("FUZZ_STREAM_RESET\n");
 #endif
 
 #if defined(FUZZ_DISABLE_LINGER)
-	printf("FUZZ_DISABLE_LINGER\n");
+	//printf("FUZZ_DISABLE_LINGER\n");
 #endif
 
 	usrsctp_init(0, conn_output, debug_printf);
@@ -407,11 +408,11 @@ int init_fuzzer(void)
 
 	/* set up a connected UDP socket */
 	if ((fd_udp_client = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
-		perror("socket");
+		//perror("socket");
 		exit(EXIT_FAILURE);
 	}
 	if ((fd_udp_server = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
-		perror("socket");
+		//perror("socket");
 		exit(EXIT_FAILURE);
 	}
 
@@ -432,42 +433,42 @@ int init_fuzzer(void)
 	sin_s.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	if (bind(fd_udp_client, (struct sockaddr*)&sin_c, sizeof(struct sockaddr_in)) < 0) {
-		perror("bind");
+		//perror("bind");
 		exit(EXIT_FAILURE);
 	}
 
 	if (bind(fd_udp_server, (struct sockaddr*)&sin_s, sizeof(struct sockaddr_in)) < 0) {
-		perror("bind");
+		//perror("bind");
 		exit(EXIT_FAILURE);
 	}
 
 	name_len = (socklen_t) sizeof(struct sockaddr_in);
 	if (getsockname(fd_udp_client, (struct sockaddr*)&sin_c, &name_len)) {
-		perror("getsockname");
+		//perror("getsockname");
 		exit(EXIT_FAILURE);
 	}
 
 	name_len = (socklen_t) sizeof(struct sockaddr_in);
 	if (getsockname(fd_udp_server, (struct sockaddr*)&sin_s, &name_len)) {
-		perror("getsockname");
+		//perror("getsockname");
 		exit(EXIT_FAILURE);
 	}
 
 	if (connect(fd_udp_client, (struct sockaddr*)&sin_s, sizeof(struct sockaddr_in)) < 0) {
-		perror("connect");
+		//perror("connect");
 		exit(EXIT_FAILURE);
 	}
 	if (connect(fd_udp_server, (struct sockaddr*)&sin_c, sizeof(struct sockaddr_in)) < 0) {
-		perror("connect");
+		//perror("connect");
 		exit(EXIT_FAILURE);
 	}
 	if (pthread_create(&tid_c, NULL, &handle_packets, (void*)&fd_udp_client)) {
-		perror("pthread_create tid_c");
+		//perror("pthread_create tid_c");
 		exit(EXIT_FAILURE);
 	}
 
 	if (pthread_create(&tid_s, NULL, &handle_packets, (void*)&fd_udp_server)) {
-		perror("pthread_create tid_s");
+		//perror("pthread_create tid_s");
 		exit(EXIT_FAILURE);
 	};
 
@@ -498,7 +499,7 @@ int main(int argc, char *argv[])
 		file = fopen(argv[1], "rb");
 
 		if (!file) {
-			perror("fopen");
+			//perror("fopen");
 			exit(EXIT_FAILURE);
 		}
 
@@ -525,13 +526,13 @@ int main(int argc, char *argv[])
 	port = (port % 32768) + 1;
 
 	if ((socket_client = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
-		perror("usrsctp_socket 1");
+		//perror("usrsctp_socket 1");
 		exit(EXIT_FAILURE);
 	}
 	sockets_open++;
 
 	if ((socket_server_listening = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
-		perror("usrsctp_socket 2");
+		//perror("usrsctp_socket 2");
 		exit(EXIT_FAILURE);
 	}
 	sockets_open++;
@@ -542,7 +543,7 @@ int main(int argc, char *argv[])
 	for (i = 0; i < sizeof(event_types)/sizeof(uint16_t); i++) {
 		event.se_type = event_types[i];
 		if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
-			perror("setsockopt SCTP_EVENT 1");
+			//perror("setsockopt SCTP_EVENT 1");
 		}
 	}
 
@@ -552,7 +553,7 @@ int main(int argc, char *argv[])
 	for (i = 0; i < sizeof(event_types)/sizeof(uint16_t); i++) {
 		event.se_type = event_types[i];
 		if (usrsctp_setsockopt(socket_server_listening, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
-			perror("setsockopt SCTP_EVENT 2");
+			//perror("setsockopt SCTP_EVENT 2");
 		}
 	}
 
@@ -560,7 +561,7 @@ int main(int argc, char *argv[])
 	so_linger.l_onoff = 1;
 	so_linger.l_linger = 0;
 	if (usrsctp_setsockopt(socket_client, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(so_linger)) < 0) {
-		perror("usrsctp_setsockopt 1");
+		//perror("usrsctp_setsockopt 1");
 		exit(EXIT_FAILURE);
 	}
 #endif //defined(FUZZ_DISABLE_LINGER)
@@ -568,13 +569,13 @@ int main(int argc, char *argv[])
 #if defined(FUZZ_EXPLICIT_EOR)
 	enable = 1;
 	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_EXPLICIT_EOR, &enable, sizeof(enable)) < 0) {
-		perror("setsockopt SCTP_EXPLICIT_EOR");
+		//perror("setsockopt SCTP_EXPLICIT_EOR");
 		exit(EXIT_FAILURE);
 	}
 
 	enable = 1;
 	if (usrsctp_setsockopt(socket_server_listening, IPPROTO_SCTP, SCTP_EXPLICIT_EOR, &enable, sizeof(enable)) < 0) {
-		perror("setsockopt SCTP_EXPLICIT_EOR");
+		//perror("setsockopt SCTP_EXPLICIT_EOR");
 		exit(EXIT_FAILURE);
 	}
 #endif // defined(FUZZ_EXPLICIT_EOR)
@@ -583,14 +584,14 @@ int main(int argc, char *argv[])
 	assoc_val.assoc_id = SCTP_ALL_ASSOC;
 	assoc_val.assoc_value = SCTP_ENABLE_RESET_STREAM_REQ | SCTP_ENABLE_CHANGE_ASSOC_REQ;
 	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_ENABLE_STREAM_RESET, &assoc_val, sizeof(struct sctp_assoc_value)) < 0) {
-		perror("setsockopt SCTP_ENABLE_STREAM_RESET");
+		//perror("setsockopt SCTP_ENABLE_STREAM_RESET");
 		exit(EXIT_FAILURE);
 	}
 	/* Allow resetting streams. */
 	assoc_val.assoc_id = SCTP_ALL_ASSOC;
 	assoc_val.assoc_value = SCTP_ENABLE_RESET_STREAM_REQ | SCTP_ENABLE_CHANGE_ASSOC_REQ;
 	if (usrsctp_setsockopt(socket_server_listening, IPPROTO_SCTP, SCTP_ENABLE_STREAM_RESET, &assoc_val, sizeof(struct sctp_assoc_value)) < 0) {
-		perror("setsockopt SCTP_ENABLE_STREAM_RESET");
+		//perror("setsockopt SCTP_ENABLE_STREAM_RESET");
 		exit(EXIT_FAILURE);
 	}
 #endif //defined(FUZZ_STREAM_RESET)
@@ -604,26 +605,26 @@ int main(int argc, char *argv[])
 
 	enable = 2;
 	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &enable, sizeof(enable)) < 0) {
-		perror("usrsctp_setsockopt 1");
+		//perror("usrsctp_setsockopt 1");
 		exit(EXIT_FAILURE);
 	}
 
 	memset(&assoc_val, 0, sizeof(assoc_val));
 	assoc_val.assoc_value = 1;
 	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_INTERLEAVING_SUPPORTED, &assoc_val, sizeof(assoc_val)) < 0) {
-		perror("usrsctp_setsockopt 2");
+		//perror("usrsctp_setsockopt 2");
 		exit(EXIT_FAILURE);
 	}
 
 	enable = 2;
 	if (usrsctp_setsockopt(socket_server_listening, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &enable, sizeof(enable)) < 0) {
-		perror("usrsctp_setsockopt 3");
+		//perror("usrsctp_setsockopt 3");
 		exit(EXIT_FAILURE);
 	}
 
 	assoc_val.assoc_value = 1;
 	if (usrsctp_setsockopt(socket_server_listening, IPPROTO_SCTP, SCTP_INTERLEAVING_SUPPORTED, &assoc_val, sizeof(assoc_val)) < 0) {
-		perror("usrsctp_setsockopt 4");
+		//perror("usrsctp_setsockopt 4");
 		exit(EXIT_FAILURE);
 	}
 #endif // defined(FUZZ_INTERLEAVING)
@@ -637,7 +638,7 @@ int main(int argc, char *argv[])
 	sconn.sconn_port = htons(port);
 	sconn.sconn_addr = &fd_udp_client;
 	if (usrsctp_bind(socket_client, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
-		perror("usrsctp_bind 1");
+		//perror("usrsctp_bind 1");
 		exit(EXIT_FAILURE);
 	}
 
@@ -650,13 +651,13 @@ int main(int argc, char *argv[])
 	sconn.sconn_port = htons(port);
 	sconn.sconn_addr = &fd_udp_server;
 	if (usrsctp_bind(socket_server_listening, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
-		perror("usrsctp_bind 2");
+		//perror("usrsctp_bind 2");
 		exit(EXIT_FAILURE);
 	}
 
 	/* Make server side passive... */
 	if (usrsctp_listen(socket_server_listening, 1) < 0) {
-		perror("usrsctp_listen");
+		//perror("usrsctp_listen");
 		exit(EXIT_FAILURE);
 	}
 
@@ -675,13 +676,13 @@ int main(int argc, char *argv[])
 
 	cs = (struct connection_status *) calloc(1, sizeof(struct connection_status));
 	cs->type = CS_CLIENT;
-	cs->data = data;
+	cs->data = (char *) data;
 	cs->data_size = data_size;
 
 	usrsctp_set_upcall(socket_client, handle_upcall, cs);
 
 	if (usrsctp_connect(socket_client, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
-		perror("usrsctp_connect");
+		//perror("usrsctp_connect");
 		exit(EXIT_FAILURE);
 	}
 
@@ -690,16 +691,15 @@ int main(int argc, char *argv[])
 	so_linger.l_onoff = 1;
 	so_linger.l_linger = 0;
 	if (usrsctp_setsockopt(socket_server, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
-		perror("usrsctp_setsockopt 3");
+		//perror("usrsctp_setsockopt 3");
 		exit(EXIT_FAILURE);
 	}
 #endif //defined(FUZZ_DISABLE_LINGER)
-
-#if !defined(FUZZ_FAST) || !defined(FUZZING_MODE)
 	while (sockets_open) {
 		//sleep(1);
 		//printf("waiting for server close...\n");
 	}
+
 
 #if !defined(FUZZING_MODE)
 	// we have read a file, free allocated memory
@@ -708,7 +708,8 @@ int main(int argc, char *argv[])
 	}
 #endif // !defined(FUZZING_MODE)
 
-	fprintf(stderr, "%s nearly am Ende...\n", __func__);
+#if !defined(FUZZING_MODE) || !defined(FUZZ_FAST)
+	//fprintf(stderr, "%s nearly am Ende...\n", __func__);
 
 	usrsctp_deregister_address((void*)&fd_udp_client);
 	usrsctp_deregister_address((void*)&fd_udp_server);
