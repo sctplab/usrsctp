@@ -421,7 +421,7 @@ int init_fuzzer(void)
 #ifdef HAVE_SIN_LEN
 	sin_c.sin_len = sizeof(struct sockaddr_in);
 #endif
-	sin_c.sin_port = htons(9899);
+	sin_c.sin_port = htons(0);
 	sin_c.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	memset(&sin_s, 0, sizeof(struct sockaddr_in));
@@ -429,7 +429,7 @@ int init_fuzzer(void)
 #ifdef HAVE_SIN_LEN
 	sin_s.sin_len = sizeof(struct sockaddr_in);
 #endif
-	sin_s.sin_port = htons(9810);
+	sin_s.sin_port = htons(0);
 	sin_s.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	if (bind(fd_udp_client, (struct sockaddr*)&sin_c, sizeof(struct sockaddr_in)) < 0) {
