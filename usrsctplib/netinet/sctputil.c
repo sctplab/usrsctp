@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 328028 2018-01-15 21:59:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 333386 2018-05-08 20:39:35Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2804,6 +2804,13 @@ sctp_notify_assoc_change(uint16_t state, struct sctp_tcb *stcb,
 		notif_len = (unsigned int)sizeof(struct sctp_assoc_change);
 		if (abort != NULL) {
 			abort_len = ntohs(abort->ch.chunk_length);
+			/*
+			 * Only SCTP_CHUNK_BUFFER_SIZE are guaranteed to be
+			 * contiguous.
+			 */
+			if (abort_len > SCTP_CHUNK_BUFFER_SIZE) {
+				abort_len = SCTP_CHUNK_BUFFER_SIZE;
+			}
 		} else {
 			abort_len = 0;
 		}
@@ -3728,6 +3735,13 @@ sctp_notify_remote_error(struct sctp_tcb *stcb, uint16_t error, struct sctp_erro
 	}
 	if (chunk != NULL) {
 		chunk_len = ntohs(chunk->ch.chunk_length);
+		/*
+		 * Only SCTP_CHUNK_BUFFER_SIZE are guaranteed to be
+		 * contiguous.
+		 */
+		if (chunk_len > SCTP_CHUNK_BUFFER_SIZE) {
+			chunk_len = SCTP_CHUNK_BUFFER_SIZE;
+		}
 	} else {
 		chunk_len = 0;
 	}
