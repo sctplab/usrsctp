@@ -1492,7 +1492,7 @@ recv_thread_destroy(void)
 #else
 		close(SCTP_BASE_VAR(userspace_udpsctp6));
 #endif
-=	}
+	}
 #endif
 }
 #else
