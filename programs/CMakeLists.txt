@@ -72,32 +72,36 @@ if (sctp_fuzzer_clang OR sctp_fuzzer_honggfuzz)
 	list(APPEND check_programs
 		fuzzer_unconnected.c
 		fuzzer_connected.cc
+		fuzzer_upcall.cc
 	)
+else ()
 
-set(check_programs
-	client.c
-	daytime_server.c
-	discard_server.c
-	echo_server.c
-	ekr_client.c
-	ekr_loop_offload.c
-	ekr_loop.c
-	ekr_peer.c
-	ekr_server.c
-	http_client.c
-	rtcweb.c
-	test_libmgmt.c
-	test_timer.c
-	tsctp.c
-	http_client_upcall.c
-	client_upcall.c
-	discard_server_upcall.c
-	echo_server_upcall.c
-	chargen_server_upcall.c
-	daytime_server_upcall.c
-	fuzzer_connected.cc
-	fuzzer_unconnected.c
-)
+	set(check_programs
+		client.c
+		daytime_server.c
+		discard_server.c
+		echo_server.c
+		ekr_client.c
+		ekr_loop_offload.c
+		ekr_loop.c
+		ekr_peer.c
+		ekr_server.c
+		http_client.c
+		rtcweb.c
+		test_libmgmt.c
+		test_timer.c
+		tsctp.c
+		http_client_upcall.c
+		client_upcall.c
+		discard_server_upcall.c
+		echo_server_upcall.c
+		chargen_server_upcall.c
+		daytime_server_upcall.c
+		fuzzer_connected.cc
+		fuzzer_unconnected.c
+		fuzzer_upcall.cc
+	)
+endif()
 
 foreach (source_file ${check_programs})
 	get_filename_component(source_file_we ${source_file} NAME_WE)
