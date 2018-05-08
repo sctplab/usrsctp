@@ -777,6 +777,7 @@ sctp_handle_heartbeat_ack(struct sctp_heartbeat_chunk *cp,
 	}
 
 	if (stcb->sctp_ep->plpmtud_supported) {
+		uint32_t next_mtu;
 		if (r_net->probing_state < SCTP_PROBE_BASE && !r_net->mtu_probing)
 			r_net->mtu_probing = 1;
 		if (r_net->mtu_probing) {
@@ -852,7 +853,7 @@ sctp_handle_heartbeat_ack(struct sctp_heartbeat_chunk *cp,
 					sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, stcb->sctp_ep, stcb, r_net);
 					break;
 				}
-				uint32_t next_mtu = sctp_get_next_mtu(r_net->probed_mtu);
+				next_mtu = sctp_get_next_mtu(r_net->probed_mtu);
 				if (next_mtu > r_net->probe_mtu)
 					r_net->probe_mtu = next_mtu;
 				if (r_net->max_mtu > 0 && next_mtu > r_net->max_mtu) {

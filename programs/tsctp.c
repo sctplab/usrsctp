@@ -257,10 +257,10 @@ printf("send_cb\n");
 	sndinfo.snd_assoc_id = 0;
 
 	while (!done && ((number_of_messages == 0) || (messages < (number_of_messages - 1)))) {
+		char temp[INET6_ADDRSTRLEN];
 		if (very_verbose) {
 			printf("Sending message number %lu.\n", messages + 1);
 		}
-				char temp[INET6_ADDRSTRLEN];
 				if (remote_addr.sa.sa_family == AF_INET) {
 					fprintf(stdout,"Send message to %s:%d\n", inet_ntop(AF_INET, &remote_addr.s4.sin_addr, temp, INET_ADDRSTRLEN), ntohs(remote_addr.s4.sin_port));
 				} else {
@@ -389,10 +389,10 @@ int main(int argc, char **argv)
 	char *opt;
 	int optind;
 #endif
-	unordered = 0;
 	int ipv4only = 0;
 	int ipv6only = 0;
 
+	unordered = 0;
 	length = DEFAULT_LENGTH;
 	number_of_messages = DEFAULT_NUMBER_OF_MESSAGES;
 	port = DEFAULT_PORT;
@@ -550,11 +550,16 @@ int main(int argc, char **argv)
 					fragpoint = atoi(opt);
 					break;
 				case 'L':
+					if (++optind >= argc) {
+						printf("%s", Usage);
+						exit(1);
+					}
+					opt = argv[optind];
 					if (nr_local_addr < MAX_LOCAL_ADDR) {
 						struct sockaddr_in *s4 = (struct sockaddr_in*) local_addr_ptr;
 						struct sockaddr_in6 *s6 = (struct sockaddr_in6*) local_addr_ptr;
 
-						if (inet_pton(AF_INET6, optarg, &s6->sin6_addr)) {
+						if (inet_pton(AF_INET6, opt, &s6->sin6_addr)) {
 							s6->sin6_family = AF_INET6;
 #ifdef HAVE_SIN6_LEN
 							s6->sin6_len = sizeof(struct sockaddr_in6);
@@ -562,7 +567,7 @@ int main(int argc, char **argv)
 							local_addr_ptr += sizeof(struct sockaddr_in6);
 							nr_local_addr++;
 						} else {
-							if (inet_pton(AF_INET, optarg, &s4->sin_addr)) {
+							if (inet_pton(AF_INET, opt, &s4->sin_addr)) {
 								s4->sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
 								s4->sin_len = sizeof(struct sockaddr_in);
@@ -948,11 +953,11 @@ int main(int argc, char **argv)
 				fflush(stdout);
 			}
 			while (!done && ((number_of_messages == 0) || (messages < (number_of_messages - 1)))) {
+				char temp[INET6_ADDRSTRLEN];
 				if (very_verbose) {
 					printf("Sending message number %lu.\n", messages + 1);
 				}
 
-				char temp[INET6_ADDRSTRLEN];
 				if (remote_addr.sa.sa_family == AF_INET) {
 					fprintf(stdout,"Send message to %s:%d\n", inet_ntop(AF_INET, &remote_addr.s4.sin_addr, temp, INET_ADDRSTRLEN), ntohs(remote_addr.s4.sin_port));
 				} else {

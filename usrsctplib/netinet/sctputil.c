@@ -8370,7 +8370,8 @@ static struct mbuf *
 sctp_make_pad(struct sctp_tcb *stcb, struct sctp_nets *net, uint16_t pad_size)
 {
 	struct sctp_pad_chunk *pad;
-	struct mbuf *chk;
+	struct mbuf *chk, *tmp_chk;
+	int size;
 
 	SCTP_TCB_LOCK_ASSERT(stcb);
 	KASSERT(pad_size >= 4, ("%s: padsize %u too small", __FUNCTION__, pad_size));
@@ -8384,8 +8385,8 @@ sctp_make_pad(struct sctp_tcb *stcb, struct sctp_nets *net, uint16_t pad_size)
 		/* no mbufs */
 		return NULL;
 	}
-	struct mbuf *tmp_chk = chk;
-	int size = pad_size;
+	tmp_chk = chk;
+	size = pad_size;
 	while (tmp_chk != NULL && size > 0) {
 #if __FreeBSD_version > 1100052
 		if (size < SCTP_BUF_SIZE(tmp_chk)) {
