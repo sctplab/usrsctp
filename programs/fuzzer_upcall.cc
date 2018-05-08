@@ -518,7 +518,8 @@ int main(int argc, char *argv[])
 	int enable;
 	struct sctp_assoc_value assoc_val;
 	struct sctp_event event;
-	uint16_t event_types[] = {SCTP_ASSOC_CHANGE, SCTP_PEER_ADDR_CHANGE, SCTP_SEND_FAILED_EVENT};
+	//uint16_t event_types[] = {SCTP_ASSOC_CHANGE, SCTP_PEER_ADDR_CHANGE, SCTP_SEND_FAILED_EVENT};
+	uint16_t event_types[] = {SCTP_ASSOC_CHANGE, SCTP_PEER_ADDR_CHANGE, SCTP_SEND_FAILED_EVENT, SCTP_REMOTE_ERROR, SCTP_SHUTDOWN_EVENT, SCTP_ADAPTATION_INDICATION, SCTP_PARTIAL_DELIVERY_EVENT};
 	unsigned long i;
 	struct connection_status* cs;
 
