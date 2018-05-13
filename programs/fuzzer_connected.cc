@@ -406,10 +406,14 @@ int main(int argc, char *argv[])
 
 	struct sockaddr_conn sconn;
 	static uint16_t port = 1;
+#if defined(FUZZ_DISABLE_LINGER)
 	struct linger so_linger;
+#endif
 	int enable;
 	char *pkt;
+#if defined(FUZZ_STREAM_RESET) || defined(FUZZ_INTERLEAVING)
 	struct sctp_assoc_value assoc_val;
+#endif
 	struct sctp_event event;
 	uint16_t event_types[] = {SCTP_ASSOC_CHANGE, SCTP_PEER_ADDR_CHANGE, SCTP_SEND_FAILED_EVENT};
 	unsigned long i;
