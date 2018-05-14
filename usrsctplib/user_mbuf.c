@@ -1400,14 +1400,6 @@ m_cat(struct mbuf *m, struct mbuf *n)
 	}
 }
 
-struct mbuf *
-m_last(struct mbuf *m)
-{
-
-	while (m->m_next)
-		m = m->m_next;
-	return (m);
-}
 
 void
 m_adj(struct mbuf *mp, int req_len)
