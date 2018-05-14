@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 333604 2018-05-14 15:16:51Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -815,7 +815,7 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header,
 			m_freem(m);
 			return (NULL);
 		}
-		KASSERT(!SCTP_BUF_NEXT(m), ("%s: no chain allowed", __FUNCTION__));
+		KASSERT(SCTP_BUF_NEXT(m) == NULL, ("%s: no chain allowed", __FUNCTION__));
 	}
 #endif
 #ifdef SCTP_MBUF_LOGGING
