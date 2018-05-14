@@ -74,8 +74,12 @@ if (sctp_fuzzer_clang OR sctp_fuzzer_honggfuzz)
 		fuzzer_connected.cc
 		fuzzer_upcall.cc
 	)
-else ()
+	configure_file(crashtest.py crashtest.py COPYONLY)
+	configure_file(fuzzer_connected.sh fuzzer_connected.sh COPYONLY)
+	configure_file(fuzzer_unconnected.sh fuzzer_unconnected.sh COPYONLY)
+	configure_file(fuzzer_upcall.sh fuzzer_upcall.sh COPYONLY)
 
+else ()
 	set(check_programs
 		client.c
 		daytime_server.c

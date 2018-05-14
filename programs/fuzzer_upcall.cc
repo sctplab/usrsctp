@@ -514,12 +514,23 @@ int main(int argc, char *argv[])
 
 	struct sockaddr_conn sconn;
 	static uint16_t port = 1;
+#if defined(FUZZ_DISABLE_LINGER)
 	struct linger so_linger;
+#endif
+#if defined(FUZZ_EXPLICIT_EOR) || defined(FUZZ_STREAM_RESET) || defined(FUZZ_INTERLEAVING)
 	int enable;
+#endif
+#if defined(FUZZ_STREAM_RESET) || defined(FUZZ_INTERLEAVING)
 	struct sctp_assoc_value assoc_val;
+#endif
 	struct sctp_event event;
-	//uint16_t event_types[] = {SCTP_ASSOC_CHANGE, SCTP_PEER_ADDR_CHANGE, SCTP_SEND_FAILED_EVENT};
-	uint16_t event_types[] = {SCTP_ASSOC_CHANGE, SCTP_PEER_ADDR_CHANGE, SCTP_SEND_FAILED_EVENT, SCTP_REMOTE_ERROR, SCTP_SHUTDOWN_EVENT, SCTP_ADAPTATION_INDICATION, SCTP_PARTIAL_DELIVERY_EVENT};
+	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
+		SCTP_PEER_ADDR_CHANGE,
+		SCTP_SEND_FAILED_EVENT,
+		SCTP_REMOTE_ERROR,
+		SCTP_SHUTDOWN_EVENT,
+		SCTP_ADAPTATION_INDICATION,
+		SCTP_PARTIAL_DELIVERY_EVENT};
 	unsigned long i;
 	struct connection_status* cs;
 
@@ -691,7 +702,7 @@ int main(int argc, char *argv[])
 #if defined(FUZZ_DISABLE_LINGER)
 	so_linger.l_onoff = 1;
 	so_linger.l_linger = 0;
-	if (usrsctp_setsockopt(socket_server, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
+	if (usrsctp_setsockopt(socket_server_listening, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
 		//perror("usrsctp_setsockopt 3");
 		exit(EXIT_FAILURE);
 	}
