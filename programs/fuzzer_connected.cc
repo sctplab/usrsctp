@@ -382,8 +382,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 #else // defined(FUZZING_MODE)
 int main(int argc, char *argv[])
 {
-	char *data_sample = "SCTPSCTPSCTPSCTPSCTPSCTPSCTP!!!!";
-	char *data = data_sample;
+	const char *data_sample = "SCTPSCTPSCTPSCTPSCTPSCTPSCTP!!!!";
+	char *data = (char *) data_sample;
 	size_t data_size = strlen(data);
 	FILE *file;
 

@@ -142,12 +142,13 @@ init_fuzzer(void) {
 	}
 
 	memset(&event, 0, sizeof(event));
-	event.se_assoc_id = SCTP_ALL_ASSOC;
+	event.se_assoc_id = SCTP_FUTURE_ASSOC;
 	event.se_on = 1;
 	for (i = 0; i < sizeof(event_types)/sizeof(uint16_t); i++) {
 		event.se_type = event_types[i];
 		if (usrsctp_setsockopt(s_l, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
-			//perror("setsockopt SCTP_EVENT 1");
+			perror("setsockopt SCTP_EVENT 1");
+			exit(EXIT_FAILURE);
 		}
 	}
 
