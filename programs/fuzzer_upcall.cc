@@ -312,13 +312,12 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 			free(buf);
 
 			if (n == -1 || notification_retval == -1) {
-				perror("usrsctp_recvv");
+				//perror("usrsctp_recvv");
 				free(cs);
 				usrsctp_close(sock);
 				sockets_open--;
 				break;
 			}
-
 
 			events = usrsctp_get_events(sock);
 		}
