@@ -841,7 +841,7 @@ static uint32_t sctp_mtu_sizes[] = {
 	1492,
 	1500,
 	1536,
-	2002,
+	2000,
 	2048,
 	4352,
 	4464,
@@ -868,7 +868,7 @@ sctp_get_prev_mtu(uint32_t val)
 			break;
 		}
 	}
-	return (sctp_mtu_sizes[i - 1]);
+	return (sctp_mtu_sizes[i - 1] - sctp_mtu_sizes[i - 1] % 4);
 }
 
 /*
@@ -882,8 +882,8 @@ sctp_get_next_mtu(uint32_t val)
 	uint32_t i;
 
 	for (i = 0; i < (sizeof(sctp_mtu_sizes) / sizeof(uint32_t)); i++) {
-		if (val < sctp_mtu_sizes[i]) {
-			return (sctp_mtu_sizes[i]);
+		if (val < sctp_mtu_sizes[i] - sctp_mtu_sizes[i] % 4) {
+			return (sctp_mtu_sizes[i] - sctp_mtu_sizes[i] % 4);
 		}
 	}
 	return (val);
