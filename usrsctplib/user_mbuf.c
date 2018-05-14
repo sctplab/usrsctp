@@ -286,6 +286,141 @@ m_clget(struct mbuf *m, int how)
 #endif
 }
 
+struct mbuf *
+m_getm2(struct mbuf *m, int len, int how, short type, int flags, int allonebuf)
+{
+	struct mbuf *mb, *nm = NULL, *mtail = NULL;
+	int size = 0, mbuf_threshold, space_needed = len;
+
+	KASSERT(len >= 0, ("%s: len is < 0", __func__));
+
+	/* Validate flags. */
+	flags &= (M_PKTHDR | M_EOR);
+
+	/* Packet header mbuf must be first in chain. */
+	if ((flags & M_PKTHDR) && m != NULL) {
+		flags &= ~M_PKTHDR;
+	}
+
+	if (allonebuf == 0)
+		mbuf_threshold = SCTP_BASE_SYSCTL(sctp_mbuf_threshold_count);
+	else
+		mbuf_threshold = 1;
+
+	/* Loop and append maximum sized mbufs to the chain tail. */
+	while (len > 0) {
+		if ((!allonebuf && len >= MCLBYTES) || (len > (int)(((mbuf_threshold - 1) * MLEN) + MHLEN))) {
+			mb = m_gethdr(how, type);
+			MCLGET(mb, how);
+			size = MCLBYTES;
+			//SCTP_BUF_LEN(mb) = MCLBYTES;
+		} else if (flags & M_PKTHDR) {
+			mb = m_gethdr(how, type);
+			if (len < MHLEN) {
+				size = len;
+			} else {
+				size = MHLEN;
+			}
+		} else {
+			mb = m_get(how, type);
+			if (len < MLEN) {
+				size = len;
+			} else {
+				size = MLEN;
+			}
+		}
+
+		/* Fail the whole operation if one mbuf can't be allocated. */
+		if (mb == NULL) {
+			if (nm != NULL)
+				m_freem(nm);
+			return (NULL);
+		}
+
+		if (allonebuf != 0 && size < space_needed) {
+			m_freem(m);
+			return (NULL);
+		}
+
+		/* Book keeping. */
+		len -= size;
+		if (mtail != NULL)
+			mtail->m_next = mb;
+		else
+			nm = mb;
+		mtail = mb;
+		flags &= ~M_PKTHDR;     /* Only valid on the first mbuf. */
+	}
+	if (flags & M_EOR) {
+		mtail->m_flags |= M_EOR;  /* Only valid on the last mbuf. */
+	}
+
+	/* If mbuf was supplied, append new chain to the end of it. */
+	if (m != NULL) {
+		for (mtail = m; mtail->m_next != NULL; mtail = mtail->m_next);
+		mtail->m_next = nm;
+		mtail->m_flags &= ~M_EOR;
+	} else {
+		m = nm;
+	}
+
+	return (m);
+}
+
+/*
+ * Copy the contents of uio into a properly sized mbuf chain.
+ */
+struct mbuf *
+m_uiotombuf(struct uio *uio, int how, int len, int align, int flags)
+{
+	struct mbuf *m, *mb;
+	int error, length;
+	ssize_t total;
+	int progress = 0;
+
+	/*
+	 * len can be zero or an arbitrary large value bound by
+	 * the total data supplied by the uio.
+	 */
+	if (len > 0)
+		total = min(uio->uio_resid, len);
+	else
+		total = uio->uio_resid;
+	/*
+	 * The smallest unit returned by m_getm2() is a single mbuf
+	 * with pkthdr.  We can't align past it.
+	 */
+	if (align >= MHLEN)
+		return (NULL);
+	/*
+	 * Give us the full allocation or nothing.
+	 * If len is zero return the smallest empty mbuf.
+	 */
+	m = m_getm2(NULL, (int)max(total + align, 1), how, MT_DATA, flags, 0);
+	if (m == NULL)
+		return (NULL);
+	m->m_data += align;
+
+	/* Fill all mbufs with uio data and update header information. */
+	for (mb = m; mb != NULL; mb = mb->m_next) {
+		length = (int)min(M_TRAILINGSPACE(mb), total - progress);
+		error = uiomove(mtod(mb, void *), length, uio);
+		if (error) {
+			m_freem(m);
+			return (NULL);
+		}
+
+		mb->m_len = length;
+		progress += length;
+		if (flags & M_PKTHDR)
+			m->m_pkthdr.len += length;
+	}
+	KASSERT(progress == total, ("%s: progress != total", __func__));
+
+	return (m);
+}
+
+
 /*
  * Unlink a tag from the list of tags associated with an mbuf.
  */
