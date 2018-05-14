@@ -101,6 +101,15 @@ debug_printf(const char *format, ...)
 int
 init_fuzzer(void) {
 	static uint8_t initialized = 0;
+	struct sctp_event event;
+	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
+		SCTP_PEER_ADDR_CHANGE,
+		SCTP_SEND_FAILED_EVENT,
+		SCTP_REMOTE_ERROR,
+		SCTP_SHUTDOWN_EVENT,
+		SCTP_ADAPTATION_INDICATION,
+		SCTP_PARTIAL_DELIVERY_EVENT};
+	unsigned long i;
 
 #if defined(FUZZ_FAST)
 	if (initialized) {
@@ -131,6 +140,17 @@ init_fuzzer(void) {
 		perror("usrsctp_bind");
 		exit(EXIT_FAILURE);
 	}
+
+	memset(&event, 0, sizeof(event));
+	event.se_assoc_id = SCTP_ALL_ASSOC;
+	event.se_on = 1;
+	for (i = 0; i < sizeof(event_types)/sizeof(uint16_t); i++) {
+		event.se_type = event_types[i];
+		if (usrsctp_setsockopt(s_l, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
+			//perror("setsockopt SCTP_EVENT 1");
+		}
+	}
+
 	/* Make server side passive... */
 	if (usrsctp_listen(s_l, 1) < 0) {
 		perror("usrsctp_listen");
