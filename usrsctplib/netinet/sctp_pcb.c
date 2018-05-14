@@ -4584,6 +4584,9 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 	net->RTO_measured = 0;
 	stcb->asoc.numnets++;
 	net->ref_count = 1;
+#if defined (__Userspace__)
+	net->got_max = 0;
+#endif
 	net->cwr_window_tsn = net->last_cwr_tsn = stcb->asoc.sending_seq - 1;
 	net->port = port;
 	net->dscp = stcb->asoc.default_dscp;

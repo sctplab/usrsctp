@@ -4309,6 +4309,14 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 										ro, net, 0,
 										vrf_id);
 				net->src_addr_selected = 1;
+#if defined(__Userspace__)
+				if (!net->got_max) {
+					int mtu = sctp_get_mtu_from_addr((struct sockaddr *)&(net->ro._s_addr->address.sin));
+					net->got_max = 1;
+					net->mtu = mtu;
+					sctp_pathmtu_adjustment(stcb, net->mtu);
+				}
+#endif
 			}
 			if (net->ro._s_addr == NULL) {
 				/* No route to host */
@@ -4836,6 +4844,14 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			/* preserve the port and scope for link local send */
 			prev_scope = sin6->sin6_scope_id;
 			prev_port = sin6->sin6_port;
+#if defined(__Userspace__)
+			if (!net->got_max) {
+				int mtu = sctp_get_mtu_from_addr((struct sockaddr *)lsa6);
+				net->got_max = 1;
+				net->mtu = mtu;
+				sctp_pathmtu_adjustment(stcb, net->mtu);
+			}
+#endif
 		}
 
 		if (SCTP_GET_HEADER_FOR_OUTPUT(o_pak)) {
