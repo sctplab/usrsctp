@@ -50,6 +50,7 @@ extern "C" {
 //#define FUZZ_EXPLICIT_EOR
 //#define FUZZ_STREAM_RESET
 //#define FUZZ_DISABLE_LINGER
+#define FUZZ_VERBOSE
 
 static int fd_udp_client, fd_udp_server;
 static struct socket *socket_client, *socket_server_listening;
@@ -72,7 +73,7 @@ struct connection_status {
 void
 printf_fuzzer(const char *format, ...)
 {
-#if !defined(FUZZING_MODE)
+#if !defined(FUZZING_MODE) || defined(FUZZ_VERBOSE)
 	va_list args;
 	va_start(args, format);
 	vprintf(format, args);
