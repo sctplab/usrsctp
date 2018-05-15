@@ -39,9 +39,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <unistd.h>
-extern "C" {
 #include "usrsctp.h"
-}
 
 #define MAX_PACKET_SIZE (1 << 16)
 
