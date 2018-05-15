@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 333604 2018-05-14 15:16:51Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -799,23 +799,25 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header,
 		      int how, int allonebuf, int type)
 {
 	struct mbuf *m = NULL;
-#if defined(__FreeBSD__) && __FreeBSD_version > 1100052
-
+#if defined(__FreeBSD__) && __FreeBSD_version > 1100052 || defined(__Userspace__)
+#if defined(__Userspace__)
+	m =  m_getm2(NULL, space_needed, how, type, want_header ? M_PKTHDR : 0, allonebuf);
+#else
 	m =  m_getm2(NULL, space_needed, how, type, want_header ? M_PKTHDR : 0);
+#endif
 	if (m == NULL) {
 		/* bad, no memory */
 		return (m);
 	}
+#if !defined(__Userspace__)
 	if (allonebuf) {
 		if (SCTP_BUF_SIZE(m) < space_needed) {
 			m_freem(m);
 			return (NULL);
 		}
+		KASSERT(SCTP_BUF_NEXT(m) == NULL, ("%s: no chain allowed", __FUNCTION__));
 	}
-	if (SCTP_BUF_NEXT(m)) {
-		sctp_m_freem(SCTP_BUF_NEXT(m));
-		SCTP_BUF_NEXT(m) = NULL;
-	}
+#endif
 #ifdef SCTP_MBUF_LOGGING
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_MBUF_LOGGING_ENABLE) {
 		sctp_log_mb(m, SCTP_MBUF_IALLOC);

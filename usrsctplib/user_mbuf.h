@@ -55,6 +55,8 @@ struct mbuf * m_gethdr(int how, short type);
 struct mbuf * m_get(int how, short type);
 struct mbuf * m_free(struct mbuf *m);
 void m_clget(struct mbuf *m, int how);
+struct mbuf * m_getm2(struct mbuf *m, int len, int how, short type, int flags, int allonebuf);
+struct mbuf *m_uiotombuf(struct uio *uio, int how, int len, int align, int flags);
 
 
 /* mbuf initialization function */

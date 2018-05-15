@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 326829 2017-12-13 17:11:57Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 333604 2018-05-14 15:16:51Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7948,7 +7948,7 @@ re_look:
 		/* Not enough room for a chunk header, get some */
 		struct mbuf *m;
 
-		m = sctp_get_mbuf_for_msg(1, 0, M_NOWAIT, 0, MT_DATA);
+		m = sctp_get_mbuf_for_msg(1, 0, M_NOWAIT, 1, MT_DATA);
 		if (m == NULL) {
 			/*
 			 * we're in trouble here. _PREPEND below will free
