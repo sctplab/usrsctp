@@ -48,7 +48,7 @@
 //#define FUZZ_EXPLICIT_EOR
 //#define FUZZ_STREAM_RESET
 //#define FUZZ_DISABLE_LINGER
-#define FUZZ_VERBOSE
+//#define FUZZ_VERBOSE
 
 static int fd_udp_client, fd_udp_server;
 static struct socket *socket_client, *socket_server_listening;
