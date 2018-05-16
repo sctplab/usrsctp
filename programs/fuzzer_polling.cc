@@ -43,35 +43,25 @@
 
 #define MAX_PACKET_SIZE (1 << 16)
 
-#define FUZZ_FAST
+//#define FUZZ_FAST
 //#define FUZZ_INTERLEAVING
 //#define FUZZ_EXPLICIT_EOR
 //#define FUZZ_STREAM_RESET
 //#define FUZZ_DISABLE_LINGER
-//#define FUZZ_VERBOSE
+#define FUZZ_VERBOSE
 
 static int fd_udp_client, fd_udp_server;
 static struct socket *socket_client, *socket_server_listening;
 static uint8_t sockets_open = 0;
-static pthread_t tid_c, tid_s;
+static pthread_t tid_c, tid_s, tid_listen;
 
 static char *common_header_client[12];
 static char *common_header_server[12];
 
-#define CS_CLIENT			1
-#define CS_SERVER_LISTENING	2
-#define CS_SERVER_CONNECTED 3
-
-struct connection_status {
-	uint8_t type;
-	char *data;
-	size_t data_size;
-};
-
 void
 printf_fuzzer(const char *format, ...)
 {
-#if !defined(FUZZING_MODE) || defined(FUZZ_VERBOSE)
+#if defined(FUZZ_VERBOSE)
 	va_list args;
 	va_start(args, format);
 	vfprintf(stderr, format, args);
@@ -204,130 +194,64 @@ handle_notification(union sctp_notification *notif, size_t n)
 	return(retval);
 }
 
-static void
-handle_upcall(struct socket *sock, void *arg, int flgs)
+static void *
+handle_connection(void *arg)
 {
-	int events = usrsctp_get_events(sock);
-	struct connection_status *cs = (struct connection_status*) arg;
+	ssize_t n;
+	char *buf;
+	struct socket *connected_socket, *listening_socket;
+	int flags;
+	struct sockaddr_in addr;
+	socklen_t len;
+	unsigned int infotype;
+	struct sctp_recvv_rn rn;
+	socklen_t infolen = sizeof(struct sctp_recvv_rn);
+	int notification_retval;
+	struct sockaddr_in remote_addr;
+	socklen_t addr_len;
 
-	if (arg == NULL) {
-		printf_fuzzer("error: upcall - arg == NULL\n");
+	listening_socket = (struct socket *)arg;
+
+	if ((connected_socket = usrsctp_accept(listening_socket, (struct sockaddr *) &remote_addr, &addr_len)) == NULL) {
+		perror("usrsctp_accept");
 		exit(EXIT_FAILURE);
 	}
 
-	if (cs->type == CS_SERVER_LISTENING) {
-		// upcall for listening socket -> call acceppt!
-		struct socket* conn_sock;
-		struct connection_status* cs_new;
+	usrsctp_close(listening_socket);
 
-		cs_new = (struct connection_status *) calloc(1, sizeof(struct connection_status));
-		cs_new->type = CS_SERVER_CONNECTED;
+	printf_fuzzer("########################### connection established\n");
 
-		if (((conn_sock = usrsctp_accept(sock, NULL, NULL)) == NULL) && (errno != EINPROGRESS)) {
-			perror("usrsctp_accept");
-			exit(EXIT_FAILURE);
+	buf = (char *) malloc(MAX_PACKET_SIZE);
+	flags = 0;
+	len = (socklen_t)sizeof(struct sockaddr_in);
+	infotype = 0;
+	memset(&rn, 0, sizeof(struct sctp_recvv_rn));
+	n = usrsctp_recvv(connected_socket, buf, MAX_PACKET_SIZE, (struct sockaddr *) &addr, &len, (void *)&rn, &infolen, &infotype, &flags);
+
+	while (n > 0) {
+
+
+		if (flags & MSG_NOTIFICATION) {
+			printf_fuzzer("########################### got notification\n");
+			notification_retval = handle_notification((union sctp_notification *)buf, n);
+		} else {
+			printf_fuzzer("########################### got data\n");
 		}
-		sockets_open++;
-
-		usrsctp_set_upcall(conn_sock, handle_upcall, cs_new);
-
-		// close listening socket, we do not need it anymore
-		free(cs);
-		usrsctp_close(sock);
-		sockets_open--;
-		return;
-
-	} else if (cs->type == CS_SERVER_CONNECTED || cs->type == CS_CLIENT) {
-		// upcall for connected socket -> read/write/whatever
-		if (events & SCTP_EVENT_WRITE) {
-
-			if (cs->type == CS_CLIENT && cs->data) {
-#if 0
-				if (usrsctp_sendv(sock, cs->data, cs->data_size, NULL, 0, NULL, 0, 0, 0) < 0) {
-					if (errno != EAGAIN) {
-						usrsctp_close(sock);
-						printf_fuzzer("client socket %p closed\n", (void *)sock);
-						return;
-					}
-				}
-#endif
-				// prepare and inject packet
-				// take input from fuzzer/commandline and prepend common client header
-				// delete packet after injecting
-
-
-#if defined(FUZZ_EXPLICIT_EOR)
-				struct sctp_sndinfo sndinfo;
-				memset(&sndinfo, 0, sizeof(struct sctp_sndinfo));
-				//sndinfo.snd_sid = 1207;
-				//sndinfo.snd_flags 	= SCTP_EOR;
-				sndinfo.snd_ppid 	= htonl(1207);
-				if (usrsctp_sendv(socket_client, &sndinfo, sizeof(struct sctp_sndinfo), NULL, 0, &sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
-					perror("sctp_sendv socket_client");
-					exit(EXIT_FAILURE);
-				}
-#endif //defined(FUZZ_EXPLICIT_EOR)
-
-				char* pkt = (char *) malloc(cs->data_size + 12);
-				memcpy(pkt, common_header_client, 12);
-				memcpy(pkt + 12, cs->data, cs->data_size);
-
-				if (send(fd_udp_client, pkt, cs->data_size + 12, 0) < 0) {
-					exit(EXIT_FAILURE);
-				}
-				free(pkt);
-				cs->data = NULL;
-				cs->data_size = 0;
-				free(cs);
-				usrsctp_close(sock);
-				sockets_open--;
-				return;
-			}
-		}
-
-		while (events & SCTP_EVENT_READ) {
-			struct sctp_recvv_rn rn;
-			ssize_t n;
-			struct sockaddr_in addr;
-			char *buf = (char*) calloc(1, MAX_PACKET_SIZE);
-			int flags = 0;
-			socklen_t len = (socklen_t) sizeof(struct sockaddr_in);
-			unsigned int infotype = 0;
-			socklen_t infolen = sizeof(struct sctp_recvv_rn);
-			memset(&rn, 0, sizeof(struct sctp_recvv_rn));
-			int notification_retval = 0;
-
-			n = usrsctp_recvv(sock, buf, MAX_PACKET_SIZE, (struct sockaddr *) &addr, &len, (void *)&rn, &infolen, &infotype, &flags);
-
-			if (n > 0) {
-				if (flags & MSG_NOTIFICATION) {
-					notification_retval = handle_notification((union sctp_notification *)buf, n);
-				} else {
-					if (write(fileno(stdout), buf, n) < 0) {
-						perror("write");
-						exit(EXIT_FAILURE);
-					}
-				}
-			}
-
-			free(buf);
-
-			if (n == -1 || notification_retval == -1) {
-				//perror("usrsctp_recvv");
-				free(cs);
-				usrsctp_close(sock);
-				sockets_open--;
-				break;
-			}
-
-			events = usrsctp_get_events(sock);
-		}
-
-		if (events & SCTP_EVENT_ERROR) {
-			printf_fuzzer("SCTP_EVENT_ERROR\n");
-		}
+		flags = 0;
+		len = (socklen_t) sizeof(struct sockaddr_in);
+		infolen = sizeof(struct sctp_recvv_rn);
+		infotype = 0;
+		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
+		n = usrsctp_recvv(connected_socket, (void *) buf, MAX_PACKET_SIZE, (struct sockaddr *) &addr, &len, (void *)&rn, &infolen, &infotype, &flags);
 	}
-	return;
+
+	if (n < 0) {
+		//perror("sctp_recvv");
+		//exit(EXIT_FAILURE);
+	}
+	usrsctp_close(connected_socket);
+	free(buf);
+	return (NULL);
 }
 
 static int
@@ -488,38 +412,13 @@ int init_fuzzer(void)
 	return 0;
 }
 
-#if defined(FUZZING_MODE)
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
+extern "C" int
+LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
-#else // defined(FUZZING_MODE)
-int main(int argc, char *argv[])
-{
-	const char *data_sample = "SCTPSCTPSCTPSCTPSCTPSCTPSCTP!!!!";
-	char *data = (char *) data_sample;
-	size_t data_size = strlen(data);
-	FILE *file;
-
-	if (argc > 1) {
-		file = fopen(argv[argc - 1], "rb");
-
-		if (!file) {
-			perror("fopen");
-			fprintf(stderr, "filename: %s\n", argv[argc - 1]);
-			exit(EXIT_FAILURE);
-		}
-
-		fseek(file, 0, SEEK_END);
-		data_size = ftell(file);
-		fseek(file, 0, SEEK_SET);
-		data = (char*)malloc(data_size);
-		fread(data, data_size, 1, file);
-		fclose(file);
-	}
-#endif // defined(FUZZING_MODE)
-
 	printf_fuzzer("\n\n\nLets go....................\n");
 
 	struct sockaddr_conn sconn;
+	char* pkt;
 	static uint16_t port = 1;
 #if defined(FUZZ_DISABLE_LINGER)
 	struct linger so_linger;
@@ -539,7 +438,6 @@ int main(int argc, char *argv[])
 		SCTP_ADAPTATION_INDICATION,
 		SCTP_PARTIAL_DELIVERY_EVENT};
 	unsigned long i;
-	struct connection_status* cs;
 
 	init_fuzzer();
 	port = (port % 32768) + 1;
@@ -682,9 +580,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	cs = (struct connection_status *) calloc(1, sizeof(struct connection_status));
-	cs->type = CS_SERVER_LISTENING;
-	usrsctp_set_upcall(socket_server_listening, handle_upcall, cs);
+	pthread_create(&tid_listen, NULL, &handle_connection, (void *)socket_server_listening);
 
 	/* Initiate the handshake */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
@@ -695,20 +591,12 @@ int main(int argc, char *argv[])
 	sconn.sconn_port = htons(port);
 	sconn.sconn_addr = &fd_udp_client;
 
-	cs = (struct connection_status *) calloc(1, sizeof(struct connection_status));
-	cs->type = CS_CLIENT;
-	cs->data = (char *) data;
-	cs->data_size = data_size;
-
-	usrsctp_set_upcall(socket_client, handle_upcall, cs);
-
 	printf_fuzzer("######################################usrsctp_connect before\n");
 	if (usrsctp_connect(socket_client, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_connect socket_client");
 		exit(EXIT_FAILURE);
 	}
 	printf_fuzzer("###################################### usrsctp_connect after\n");
-
 
 #if defined(FUZZ_DISABLE_LINGER)
 	so_linger.l_onoff = 1;
@@ -718,19 +606,20 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 #endif //defined(FUZZ_DISABLE_LINGER)
-	while (sockets_open) {
-		//printf_fuzzer("waiting for server close...\n");
+
+	pkt = (char *) malloc(data_size + 12);
+	memcpy(pkt, common_header_client, 12);
+	memcpy(pkt + 12, data, data_size);
+
+	if (send(fd_udp_client, pkt, data_size + 12, 0) < 0) {
+		exit(EXIT_FAILURE);
 	}
+	free(pkt);
 
+	usrsctp_close(socket_client);
+	pthread_join(tid_listen, NULL);
 
-#if !defined(FUZZING_MODE)
-	// we have read a file, free allocated memory
-	if (data != data_sample) {
-		free(data);
-	}
-#endif // !defined(FUZZING_MODE)
-
-#if !defined(FUZZING_MODE) || !defined(FUZZ_FAST)
+#if !defined(FUZZ_FAST)
 	//fprintf(stderr, "%s nearly am Ende...\n", __func__);
 
 	usrsctp_deregister_address((void*)&fd_udp_client);
