@@ -13061,11 +13061,14 @@ sctp_copy_resume(struct uio *uio,
 		*new_tail = m_last(m);
 	}
 	return (m);
-#elif defined(__FreeBSD__) && __FreeBSD_version > 602000
+#elif defined(__FreeBSD__) && __FreeBSD_version > 602000 || defined(__Userspace__)
 	struct mbuf *m;
-
+#if defined(__Userspace__)
+	m = m_uiotombuf(uio, M_WAITOK, max_send_len, 0, 0);
+#else
 	m = m_uiotombuf(uio, M_WAITOK, max_send_len, 0,
 		(M_PKTHDR | (user_marks_eor ? M_EOR : 0)));
+#endif
 	if (m == NULL) {
 		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOBUFS);
 		*error = ENOBUFS;
