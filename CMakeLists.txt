@@ -67,7 +67,7 @@ if (sctp_inet6)
 	add_definitions(-DINET6)
 endif ()
 
-option(sctp_werror "Thread warning as error" 1)
+option(sctp_werror "Treat warning as error" 1)
 
 option(sctp_link_programs_static "Link example programs static" 0)
 
