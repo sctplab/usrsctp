@@ -1526,22 +1526,22 @@ sctp_auth_get_cookie_params(struct sctp_tcb *stcb, struct mbuf *m,
 	}
 	new_key = sctp_alloc_key(keylen);
 	if (new_key != NULL) {
-	    /* copy in the RANDOM */
-	    if (p_random != NULL) {
-		keylen = sizeof(*p_random) + random_len;
-		memcpy(new_key->key, p_random, keylen);
-	    }
-	    /* append in the AUTH chunks */
-	    if (chunks != NULL) {
-		memcpy(new_key->key + keylen, chunks,
-		       sizeof(*chunks) + num_chunks);
-		keylen += sizeof(*chunks) + num_chunks;
-	    }
-	    /* append in the HMACs */
-	    if (hmacs != NULL) {
-		memcpy(new_key->key + keylen, hmacs,
-		       sizeof(*hmacs) + hmacs_len);
-	    }
+		/* copy in the RANDOM */
+		if (p_random != NULL) {
+			keylen = sizeof(*p_random) + random_len;
+			memcpy(new_key->key, p_random, keylen);
+		}
+		/* append in the AUTH chunks */
+		if (chunks != NULL) {
+			memcpy(new_key->key + keylen, chunks,
+			       sizeof(*chunks) + num_chunks);
+			keylen += sizeof(*chunks) + num_chunks;
+		}
+		/* append in the HMACs */
+		if (hmacs != NULL) {
+			memcpy(new_key->key + keylen, hmacs,
+			       sizeof(*hmacs) + hmacs_len);
+		}
 	}
 	if (stcb->asoc.authinfo.random != NULL)
 		sctp_free_key(stcb->asoc.authinfo.random);
