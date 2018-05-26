@@ -3493,6 +3493,22 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	return;
 }
 
+#define USRSCTP_TUNABLE_SET_DEF(__field, __prefix)   \
+int usrsctp_tunable_set_ ## __field(uint32_t value)  \
+{                                                    \
+	if ((value < __prefix##_MIN) ||              \
+	    (value > __prefix##_MAX)) {              \
+		errno = EINVAL;                      \
+		return (-1);                         \
+	} else {                                     \
+		SCTP_BASE_SYSCTL(__field) = value;   \
+		return (0);                          \
+	}                                            \
+}
+
+USRSCTP_TUNABLE_SET_DEF(sctp_hashtblsize, SCTPCTL_TCBHASHSIZE)
+USRSCTP_TUNABLE_SET_DEF(sctp_pcbtblsize, SCTPCTL_PCBHASHSIZE)
+USRSCTP_TUNABLE_SET_DEF(sctp_chunkscale, SCTPCTL_CHUNKSCALE)
 
 #define USRSCTP_SYSCTL_SET_DEF(__field, __prefix)    \
 int usrsctp_sysctl_set_ ## __field(uint32_t value)   \
@@ -3521,10 +3537,7 @@ USRSCTP_SYSCTL_SET_DEF(sctp_no_csum_on_loopback, SCTPCTL_LOOPBACK_NOCSUM)
 USRSCTP_SYSCTL_SET_DEF(sctp_peer_chunk_oh, SCTPCTL_PEER_CHKOH)
 USRSCTP_SYSCTL_SET_DEF(sctp_max_burst_default, SCTPCTL_MAXBURST)
 USRSCTP_SYSCTL_SET_DEF(sctp_max_chunks_on_queue, SCTPCTL_MAXCHUNKS)
-USRSCTP_SYSCTL_SET_DEF(sctp_hashtblsize, SCTPCTL_TCBHASHSIZE)
-USRSCTP_SYSCTL_SET_DEF(sctp_pcbtblsize, SCTPCTL_PCBHASHSIZE)
 USRSCTP_SYSCTL_SET_DEF(sctp_min_split_point, SCTPCTL_MIN_SPLIT_POINT)
-USRSCTP_SYSCTL_SET_DEF(sctp_chunkscale, SCTPCTL_CHUNKSCALE)
 USRSCTP_SYSCTL_SET_DEF(sctp_delayed_sack_time_default, SCTPCTL_DELAYED_SACK_TIME)
 USRSCTP_SYSCTL_SET_DEF(sctp_sack_freq_default, SCTPCTL_SACK_FREQ)
 USRSCTP_SYSCTL_SET_DEF(sctp_system_free_resc_limit, SCTPCTL_SYS_RESOURCE)
