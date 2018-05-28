@@ -1026,8 +1026,16 @@ usrsctp_disable_crc32c_offload(void);
 uint32_t
 usrsctp_crc32c(void *, size_t);
 
-#define USRSCTP_SYSCTL_DECL(__field)                \
-void usrsctp_sysctl_set_ ## __field(uint32_t value);\
+#define USRSCTP_TUNABLE_DECL(__field)               \
+int usrsctp_tunable_set_ ## __field(uint32_t value);\
+uint32_t usrsctp_sysctl_get_ ## __field(void);
+
+USRSCTP_TUNABLE_DECL(sctp_hashtblsize)
+USRSCTP_TUNABLE_DECL(sctp_pcbtblsize)
+USRSCTP_TUNABLE_DECL(sctp_chunkscale)
+
+#define USRSCTP_SYSCTL_DECL(__field)               \
+int usrsctp_sysctl_set_ ## __field(uint32_t value);\
 uint32_t usrsctp_sysctl_get_ ## __field(void);
 
 USRSCTP_SYSCTL_DECL(sctp_sendspace)
@@ -1045,10 +1053,7 @@ USRSCTP_SYSCTL_DECL(sctp_no_csum_on_loopback)
 USRSCTP_SYSCTL_DECL(sctp_peer_chunk_oh)
 USRSCTP_SYSCTL_DECL(sctp_max_burst_default)
 USRSCTP_SYSCTL_DECL(sctp_max_chunks_on_queue)
-USRSCTP_SYSCTL_DECL(sctp_hashtblsize)
-USRSCTP_SYSCTL_DECL(sctp_pcbtblsize)
 USRSCTP_SYSCTL_DECL(sctp_min_split_point)
-USRSCTP_SYSCTL_DECL(sctp_chunkscale)
 USRSCTP_SYSCTL_DECL(sctp_delayed_sack_time_default)
 USRSCTP_SYSCTL_DECL(sctp_sack_freq_default)
 USRSCTP_SYSCTL_DECL(sctp_system_free_resc_limit)
