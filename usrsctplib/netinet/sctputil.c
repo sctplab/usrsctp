@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 333981 2018-05-21 14:53:22Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 334286 2018-05-28 13:31:47Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -862,7 +862,7 @@ sctp_get_prev_mtu(uint32_t val)
 {
 	uint32_t i;
 
-	val &= 0x00000003;
+	val &= 0xfffffffc;
 	if (val <= sctp_mtu_sizes[0]) {
 		return (val);
 	}
@@ -888,7 +888,7 @@ sctp_get_next_mtu(uint32_t val)
 	/* select another MTU that is just bigger than this one */
 	uint32_t i;
 
-	val &= 0x00000003;
+	val &= 0xfffffffc;
 	for (i = 0; i < (sizeof(sctp_mtu_sizes) / sizeof(uint32_t)); i++) {
 		if (val < sctp_mtu_sizes[i]) {
 			KASSERT((sctp_mtu_sizes[i] & 0x00000003) == 0,
