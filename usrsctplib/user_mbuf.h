@@ -57,7 +57,8 @@ struct mbuf * m_free(struct mbuf *m);
 void m_clget(struct mbuf *m, int how);
 struct mbuf * m_getm2(struct mbuf *m, int len, int how, short type, int flags, int allonebuf);
 struct mbuf *m_uiotombuf(struct uio *uio, int how, int len, int align, int flags);
-
+u_int m_length(struct mbuf *m0, struct mbuf **last);
+struct mbuf *m_last(struct mbuf *m);
 
 /* mbuf initialization function */
 void mbuf_initialize(void *);

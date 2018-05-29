@@ -420,6 +420,31 @@ m_uiotombuf(struct uio *uio, int how, int len, int align, int flags)
 	return (m);
 }
 
+u_int
+m_length(struct mbuf *m0, struct mbuf **last)
+{
+	struct mbuf *m;
+	u_int len;
+
+	len = 0;
+	for (m = m0; m != NULL; m = m->m_next) {
+		len += m->m_len;
+		if (m->m_next == NULL)
+			break;
+	}
+	if (last != NULL)
+	*last = m;
+	return (len);
+}
+
+struct mbuf *
+m_last(struct mbuf *m)
+{
+	while (m->m_next) {
+		m = m->m_next;
+	}
+	return (m);
+}
 
 /*
  * Unlink a tag from the list of tags associated with an mbuf.
