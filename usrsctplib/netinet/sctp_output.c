@@ -4477,9 +4477,13 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			if ((ro->ro_rt != NULL) && (net->ro._s_addr) &&
 			    ((net->dest_state & SCTP_ADDR_NO_PMTUD) == 0)) {
 				uint32_t mtu;
-
+#if defined(__Userspace__)
+				mtu = sctp_get_mtu_from_addr(inp, (struct sockaddr *)&(net->ro._s_addr->address.sin));
+#else
 				mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._l_addr.sa, ro->ro_rt);
-				if (mtu > 0) {
+#endif
+
+				if (mtu > 0 && (mtu < net->mtu || !net->got_max)) {
 					if (net->port) {
 						mtu -= sizeof(struct udphdr);
 					}
@@ -4487,6 +4491,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 						sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
 					}
 					net->mtu = mtu;
+					net->got_max = 1;
 				}
 			} else if (ro->ro_rt == NULL) {
 				/* route was freed */
@@ -4939,9 +4944,12 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			if ((ro->ro_rt != NULL) && (net->ro._s_addr) &&
 			    ((net->dest_state & SCTP_ADDR_NO_PMTUD) == 0)) {
 				uint32_t mtu;
-
+#if defined(__Userspace__)
+				mtu = sctp_get_mtu_from_addr(inp, (struct sockaddr *)&(net->ro._s_addr->address.sin));
+#else
 				mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._l_addr.sa, ro->ro_rt);
-				if (mtu > 0) {
+#endif
+				if (mtu > 0 && (mtu < net->mtu || !net->got_max)) {
 					if (net->port) {
 						mtu -= sizeof(struct udphdr);
 					}
@@ -4949,6 +4957,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 						sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
 					}
 					net->mtu = mtu;
+					net->got_max = 1;
 				}
 			}
 #if !defined(__Panda__) && !defined(__Userspace__)
