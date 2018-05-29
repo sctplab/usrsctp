@@ -3523,8 +3523,10 @@ int usrsctp_sysctl_set_ ## __field(uint32_t value)   \
 	}                                            \
 }
 
+#if !defined(__Userspace_os_Windows)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
 USRSCTP_SYSCTL_SET_DEF(sctp_sendspace, SCTPCTL_MAXDGRAM)
 USRSCTP_SYSCTL_SET_DEF(sctp_recvspace, SCTPCTL_RECVSPACE)
 USRSCTP_SYSCTL_SET_DEF(sctp_auto_asconf, SCTPCTL_AUTOASCONF)
@@ -3594,7 +3596,9 @@ USRSCTP_SYSCTL_SET_DEF(sctp_initial_cwnd, SCTPCTL_INITIAL_CWND)
 #ifdef SCTP_DEBUG
 USRSCTP_SYSCTL_SET_DEF(sctp_debug_on, SCTPCTL_DEBUG)
 #endif
+#if !defined(__Userspace_os_Windows)
 #pragma GCC diagnostic push
+#endif
 
 #define USRSCTP_SYSCTL_GET_DEF(__field) \
 uint32_t usrsctp_sysctl_get_ ## __field(void) { \

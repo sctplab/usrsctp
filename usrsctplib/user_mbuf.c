@@ -440,8 +440,9 @@ m_length(struct mbuf *m0, struct mbuf **last)
 struct mbuf *
 m_last(struct mbuf *m)
 {
-	while (m->m_next)
+	while (m->m_next) {
 		m = m->m_next;
+	}
 	return (m);
 }
 

@@ -13077,7 +13077,7 @@ sctp_send_operr_to(struct sockaddr *src, struct sockaddr *dst,
 static struct mbuf *
 sctp_copy_resume(struct uio *uio,
 		 int max_send_len,
-#if defined(__FreeBSD__) && __FreeBSD_version > 602000 || defined(__Userspace__)
+#if (defined(__FreeBSD__) && __FreeBSD_version > 602000) || defined(__Userspace__)
 		 int user_marks_eor,
 #endif
 		 int *error,
@@ -14304,7 +14304,7 @@ skip_preblock:
 #if defined(__APPLE__)
 				SCTP_SOCKET_UNLOCK(so, 0);
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_version > 602000 || defined(__Userspace__)
+#if (defined(__FreeBSD__) && __FreeBSD_version > 602000) || defined(__Userspace__)
 				    mm = sctp_copy_resume(uio, max_len, user_marks_eor, &error, &sndout, &new_tail);
 #else
 				    mm = sctp_copy_resume(uio, max_len, &error, &sndout, &new_tail);
