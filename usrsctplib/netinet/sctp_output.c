@@ -4999,7 +4999,6 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		}
 		return (ret);
 	}
-
 #if defined(__Userspace__)
 	case AF_CONN:
 	{
@@ -13099,6 +13098,7 @@ sctp_copy_resume(struct uio *uio,
 	return (m);
 #elif defined(__FreeBSD__) && __FreeBSD_version > 602000 || defined(__Userspace__)
 	struct mbuf *m;
+
 	m = m_uiotombuf(uio, M_WAITOK, max_send_len, 0,
 		(M_PKTHDR | (user_marks_eor ? M_EOR : 0)));
 	if (m == NULL) {

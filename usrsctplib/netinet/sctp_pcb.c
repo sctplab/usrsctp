@@ -165,73 +165,7 @@ sctp_fill_pcbinfo(struct sctp_pcbinfo *spcb)
 	SCTP_INP_INFO_RUNLOCK();
 }
 
-#if 0
-#if defined (__Userspace_os_Windows)
-int
-sctp_get_mtu_from_addr(struct sockaddr *sa)
-{
-	int mtu = 0;
-#if defined(INET) || defined(INET6)
-	int ret;
-	unsigned int i = 0;
-	DWORD Err, AdapterAddrsSize;
-	PIP_ADAPTER_ADDRESSES pAdapterAddrs, pAdapt;
-	ret = 0;
-	AdapterAddrsSize = 0;
-	pAdapterAddrs = NULL;
-	if ((Err = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
-		if ((Err != ERROR_BUFFER_OVERFLOW) && (Err != ERROR_INSUFFICIENT_BUFFER)) {
-			SCTPDBG(SCTP_DEBUG_USR, "GetAdaptersV4Addresses() sizing failed with error code %d and AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
-			ret = -1;
-			goto cleanup;
-		}
-	}
-
-	/* Allocate memory from sizing information */
-	if ((pAdapterAddrs = (PIP_ADAPTER_ADDRESSES) GlobalAlloc(GPTR, AdapterAddrsSize)) == NULL) {
-		SCTPDBG(SCTP_DEBUG_USR, "Memory allocation error!\n");
-		return -1;
-	}
-	/* Get actual adapter information */
-	if ((Err = GetAdaptersAddresses(AF_INET, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
-		SCTPDBG(SCTP_DEBUG_USR, "GetAdaptersV4Addresses() failed with error code %d\n", Err);
-		ret = -1;
-		goto cleanup;
-	}
-	for (pAdapt = pAdapterAddrs; pAdapt; pAdapt = pAdapt->Next) {
-		struct sockaddr *addr = (struct sockaddr *)pAdapt->FirstUnicastAddress->Address.lpSockaddr;
-		if (sa->sa_family != addr->sa_family) {
-			continue;
-		}
-		SCTPDBG(SCTP_DEBUG_OUTPUT3, "Compare to address: ");
-		SCTPDBG_ADDR(SCTP_DEBUG_OUTPUT3, (struct sockaddr *)(addr));
-		switch (sa->sa_family) {
-			case AF_INET:
-				if (memcmp(((const void *)&((struct sockaddr_in *)addr)->sin_addr), ((void *)&((struct sockaddr_in *)sa)->sin_addr), sizeof(struct in_addr)) == 0) {
-					mtu = pAdapt->Mtu;
-					goto cleanup;
-				}
-				break;
-			case AF_INET6:
-				if (memcmp(((const void *)&((struct sockaddr_in6 *)addr)->sin6_addr), ((void *)&((struct sockaddr_in6 *)sa)->sin6_addr), sizeof(struct in_addr)) == 0) {
-					mtu = pAdapt->Mtu;
-					goto cleanup;
-				}
-				break;
-			default:
-				printf("Address family not supported\n");
-		}
-	}
-cleanup:
-	if (pAdapterAddrs != NULL) {
-		GlobalFree(pAdapterAddrs);
-	}
-#endif
-	return mtu;
-}
-#endif
-#endif
-//#if defined(__Userspace__) && !defined(__Userspace_os_NaCl)
+#if defined(__Userspace__)
 int
 sctp_get_mtu_from_addr(struct sctp_inpcb *inp, struct sockaddr *sa)
 {
@@ -258,7 +192,7 @@ sctp_get_mtu_from_addr(struct sctp_inpcb *inp, struct sockaddr *sa)
 #endif
 	return 0;
 }
-//#endif
+#endif
 
 /*-
  * Addresses are added to VRF's (Virtual Router's). For BSD we

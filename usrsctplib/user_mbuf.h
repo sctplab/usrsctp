@@ -60,7 +60,6 @@ struct mbuf *m_uiotombuf(struct uio *uio, int how, int len, int align, int flags
 u_int m_length(struct mbuf *m0, struct mbuf **last);
 struct mbuf *m_last(struct mbuf *m);
 
-
 /* mbuf initialization function */
 void mbuf_initialize(void *);
 
