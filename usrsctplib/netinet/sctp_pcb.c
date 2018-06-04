@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 325370 2017-11-03 20:46:12Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 334532 2018-06-02 16:28:10Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -166,73 +166,7 @@ sctp_fill_pcbinfo(struct sctp_pcbinfo *spcb)
 }
 
 
-#if 0
-#if defined (__Userspace_os_Windows)
-int
-sctp_get_mtu_from_addr(struct sockaddr *sa)
-{
-	int mtu = 0;
-#if defined(INET) || defined(INET6)
-	int ret;
-	unsigned int i = 0;
-	DWORD Err, AdapterAddrsSize;
-	PIP_ADAPTER_ADDRESSES pAdapterAddrs, pAdapt;
-	ret = 0;
-	AdapterAddrsSize = 0;
-	pAdapterAddrs = NULL;
-	if ((Err = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
-		if ((Err != ERROR_BUFFER_OVERFLOW) && (Err != ERROR_INSUFFICIENT_BUFFER)) {
-			SCTPDBG(SCTP_DEBUG_USR, "GetAdaptersV4Addresses() sizing failed with error code %d and AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
-			ret = -1;
-			goto cleanup;
-		}
-	}
-
-	/* Allocate memory from sizing information */
-	if ((pAdapterAddrs = (PIP_ADAPTER_ADDRESSES) GlobalAlloc(GPTR, AdapterAddrsSize)) == NULL) {
-		SCTPDBG(SCTP_DEBUG_USR, "Memory allocation error!\n");
-		return -1;
-	}
-	/* Get actual adapter information */
-	if ((Err = GetAdaptersAddresses(AF_INET, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
-		SCTPDBG(SCTP_DEBUG_USR, "GetAdaptersV4Addresses() failed with error code %d\n", Err);
-		ret = -1;
-		goto cleanup;
-	}
-	for (pAdapt = pAdapterAddrs; pAdapt; pAdapt = pAdapt->Next) {
-		struct sockaddr *addr = (struct sockaddr *)pAdapt->FirstUnicastAddress->Address.lpSockaddr;
-		if (sa->sa_family != addr->sa_family) {
-			continue;
-		}
-		SCTPDBG(SCTP_DEBUG_OUTPUT3, "Compare to address: ");
-		SCTPDBG_ADDR(SCTP_DEBUG_OUTPUT3, (struct sockaddr *)(addr));
-		switch (sa->sa_family) {
-			case AF_INET:
-				if (memcmp(((const void *)&((struct sockaddr_in *)addr)->sin_addr), ((void *)&((struct sockaddr_in *)sa)->sin_addr), sizeof(struct in_addr)) == 0) {
-					mtu = pAdapt->Mtu;
-					goto cleanup;
-				}
-				break;
-			case AF_INET6:
-				if (memcmp(((const void *)&((struct sockaddr_in6 *)addr)->sin6_addr), ((void *)&((struct sockaddr_in6 *)sa)->sin6_addr), sizeof(struct in_addr)) == 0) {
-					mtu = pAdapt->Mtu;
-					goto cleanup;
-				}
-				break;
-			default:
-				printf("Address family not supported\n");
-		}
-	}
-cleanup:
-	if (pAdapterAddrs != NULL) {
-		GlobalFree(pAdapterAddrs);
-	}
-#endif
-	return mtu;
-}
-#endif
-#endif
-//#if defined(__Userspace__) && !defined(__Userspace_os_NaCl)
+#if defined(__Userspace__)
 int
 sctp_get_mtu_from_addr(struct sctp_inpcb *inp, struct sockaddr *sa)
 {
@@ -259,7 +193,7 @@ sctp_get_mtu_from_addr(struct sctp_inpcb *inp, struct sockaddr *sa)
 #endif
 	return 0;
 }
-//#endif
+#endif
 
 /*-
  * Addresses are added to VRF's (Virtual Router's). For BSD we
@@ -720,6 +654,7 @@ sctp_add_addr_to_vrf(uint32_t vrf_id, void *ifn, uint32_t ifn_index,
 	if (sctp_ifap) {
 		sctp_ifap->ifa_mtu = sctp_ifnp->ifn_mtu;
 		/* Hmm, it already exists? */
+		sctp_ifap->ifa_mtu = sctp_ifnp->ifn_mtu;
 		if ((sctp_ifap->ifn_p) &&
 		    (sctp_ifap->ifn_p->ifn_index == ifn_index)) {
 			SCTPDBG(SCTP_DEBUG_PCB4, "Using existing ifn %s (0x%x) for ifa %p\n",
@@ -4795,6 +4730,8 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 			net->got_max = 1;
 		}
 	}
+#else
+	net->got_max = 0;
 #endif
 	if (net->mtu == 0) {
 		if (stcb->asoc.default_mtu > 0) {
@@ -4854,7 +4791,7 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 		stcb->asoc.smallest_mtu = net->mtu;
 	}
 	if (stcb->asoc.smallest_mtu > net->mtu) {
-		sctp_pathmtu_adjustment(stcb, net->mtu);
+		sctp_pathmtu_adjustment(stcb, net->mtu, net);
 	}
 #ifdef INET6
 #ifdef SCTP_EMBEDDED_V6_SCOPE
@@ -7847,6 +7784,8 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 		if (p_random != NULL) {
 			keylen = sizeof(*p_random) + random_len;
 			memcpy(new_key->key, p_random, keylen);
+		} else {
+			keylen = 0;
 		}
 		/* append in the AUTH chunks */
 		if (chunks != NULL) {
