@@ -337,6 +337,7 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto SCTP_UNUSED)
 	return (sctp6_input_with_port(i_pak, offp, 0));
 }
 #endif
+#endif
 
 void
 sctp6_notify(struct sctp_inpcb *inp,
@@ -350,7 +351,7 @@ sctp6_notify(struct sctp_inpcb *inp,
 	struct socket *so;
 #endif
 	int timer_stopped;
-
+printf("sctp6_notify\n");
 	switch (icmp6_type) {
 	case ICMP6_DST_UNREACH:
 		if ((icmp6_code == ICMP6_DST_UNREACH_NOROUTE) ||
@@ -390,6 +391,7 @@ sctp6_notify(struct sctp_inpcb *inp,
 		}
 		break;
 	case ICMP6_PACKET_TOO_BIG:
+	printf("ICMP6_PACKET_TOO_BIG\n");
 		if (net->dest_state & SCTP_ADDR_NO_PMTUD) {
 			SCTP_TCB_UNLOCK(stcb);
 			break;
@@ -437,7 +439,7 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 	struct sctp_nets *net;
 	struct sctphdr sh;
 	struct sockaddr_in6 src, dst;
-
+printf("sctp6_ctlinput\n");
 #ifdef HAVE_SA_LEN
 	if (pktdst->sa_family != AF_INET6 ||
 	    pktdst->sa_len != sizeof(struct sockaddr_in6)) {
@@ -447,6 +449,7 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 		return;
 	}
 
+#if !defined(__Userspace__)
 	if ((unsigned)cmd >= PRC_NCMDS) {
 		return;
 	}
@@ -455,6 +458,7 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 	} else if (inet6ctlerrmap[cmd] == 0) {
 		return;
 	}
+#endif
 	/* If the parameter is from icmp6, decode it. */
 	if (d != NULL) {
 		ip6cp = (struct ip6ctlparam *)d;
@@ -529,11 +533,11 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 					return;
 				}
 			} else {
-#if defined(__FreeBSD__)
-				if (ip6cp->ip6c_m->m_pkthdr.len >=
-				    ip6cp->ip6c_off + sizeof(struct sctphdr) +
-				                      sizeof(struct sctp_chunkhdr) +
-				                      offsetof(struct sctp_init, a_rwnd)) {
+#if defined(__FreeBSD__) || defined(__Userspace__)
+				if (ip6cp->ip6c_m->m_pkthdr.len >= (uint16_t)
+				    (ip6cp->ip6c_off + sizeof(struct sctphdr) +
+				    sizeof(struct sctp_chunkhdr) +
+				    offsetof(struct sctp_init, a_rwnd))) {
 					/*
 					 * In this case we can check if we
 					 * got an INIT chunk and if the
@@ -567,10 +571,11 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 				return;
 #endif
 			}
+			printf("call sctp6_notify\n");
 			sctp6_notify(inp, stcb, net,
 			             ip6cp->ip6c_icmp6->icmp6_type,
 			             ip6cp->ip6c_icmp6->icmp6_code,
-			             ntohl(ip6cp->ip6c_icmp6->icmp6_mtu));
+			             (uint16_t)ntohl(ip6cp->ip6c_icmp6->icmp6_mtu));
 		} else {
 #if defined(__FreeBSD__) && __FreeBSD_version < 500000
 			if (PRC_IS_REDIRECT(cmd) && (inp != NULL)) {
@@ -590,7 +595,6 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 		}
 	}
 }
-#endif
 
 /*
  * this routine can probably be collasped into the one in sctp_userreq.c

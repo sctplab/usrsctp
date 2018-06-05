@@ -147,6 +147,7 @@ sctp_init(void)
 #ifdef INET6
 	SCTP_BASE_VAR(userspace_rawsctp6) = -1;
 	SCTP_BASE_VAR(userspace_udpsctp6) = -1;
+	SCTP_BASE_VAR(userspace_icmp6) = -1;
 #endif
 	SCTP_BASE_VAR(timer_thread_should_exit) = 0;
 	SCTP_BASE_VAR(conn_output) = conn_output;
@@ -228,6 +229,14 @@ sctp_finish(void)
 	}
 #endif
 #ifdef INET6
+	if (SCTP_BASE_VAR(userspace_icmp6) != -1) {
+#if defined(__Userspace_os_Windows)
+		WaitForSingleObject(SCTP_BASE_VAR(recvthreadicmp6), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(recvthreadicmp6));
+#else
+		pthread_join(SCTP_BASE_VAR(recvthreadicmp6), NULL);
+#endif
+	}
 	if (SCTP_BASE_VAR(userspace_rawsctp6) != -1) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadraw6), INFINITE);

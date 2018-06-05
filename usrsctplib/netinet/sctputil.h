@@ -121,9 +121,16 @@ void sctp_invoke_recv_callback(struct sctp_inpcb *,
     struct sctp_tcb *,
     struct sctp_queued_to_read *,
     int);
+#ifdef INET
 void
 sctp_recv_icmp_tunneled_packet(int cmd, struct sockaddr *sa,
-	void *vip, void *ctx SCTP_UNUSED);
+    void *vip, void *ctx SCTP_UNUSED);
+#endif
+#ifdef INET6
+void
+sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa,
+    void *d, void *ctx SCTP_UNUSED);
+#endif
 #endif
 void
 sctp_add_to_readq(struct sctp_inpcb *inp,
