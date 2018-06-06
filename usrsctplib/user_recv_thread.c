@@ -40,6 +40,8 @@
 #else
 #include <user_ip6_var.h>
 #endif
+#else
+#include <user_ip6_var.h>
 #endif
 #include <netinet/sctp_os.h>
 #include <netinet/sctp_var.h>
