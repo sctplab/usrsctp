@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 332273 2018-04-08 12:08:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 334725 2018-06-06 19:27:06Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5079,6 +5079,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		if (sctp_auth_add_chunk(sauth->sauth_chunk, inp->sctp_ep.local_auth_chunks)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			error = EINVAL;
+		} else {
+			inp->auth_supported = 1;
 		}
 		SCTP_INP_WUNLOCK(inp);
 		break;
