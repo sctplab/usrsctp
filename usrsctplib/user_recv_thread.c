@@ -142,7 +142,7 @@ recv_function_route(void *arg)
 
 	sctp_userspace_set_threadname("SCTP addr mon");
 
-	while (1) {
+	while (!atomic_cmpset_int(&SCTP_BASE_VAR(recvthreadroute_should_exit), 1, 1)) {
 		memset(rt_buffer, 0, sizeof(rt_buffer));
 		ret = recv(SCTP_BASE_VAR(userspace_route), rt_buffer, sizeof(rt_buffer), 0);
 
@@ -298,7 +298,7 @@ recv_function_raw(void *arg)
 
 	recvmbuf = malloc(sizeof(struct mbuf *) * MAXLEN_MBUF_CHAIN);
 
-	while (1) {
+	while (!atomic_cmpset_int(&SCTP_BASE_VAR(recvthreadraw_should_exit), 1, 1)) {
 		for (i = 0; i < to_fill; i++) {
 			/* Not getting the packet header. Tests with chain of one run
 			   as usual without having the packet header.
@@ -478,7 +478,7 @@ recv_function_raw6(void *arg)
 
 	recvmbuf6 = malloc(sizeof(struct mbuf *) * MAXLEN_MBUF_CHAIN);
 
-	for (;;) {
+	while (!atomic_cmpset_int(&SCTP_BASE_VAR(recvthreadraw6_should_exit), 1, 1)) {
 		for (i = 0; i < to_fill; i++) {
 			/* Not getting the packet header. Tests with chain of one run
 			   as usual without having the packet header.
@@ -667,7 +667,7 @@ recv_function_udp(void *arg)
 
 	udprecvmbuf = malloc(sizeof(struct mbuf *) * MAXLEN_MBUF_CHAIN);
 
-	while (1) {
+	while (!atomic_cmpset_int(&SCTP_BASE_VAR(recvthreadudp_should_exit), 1, 1)) {
 		for (i = 0; i < to_fill; i++) {
 			/* Not getting the packet header. Tests with chain of one run
 			   as usual without having the packet header.
@@ -868,7 +868,7 @@ recv_function_udp6(void *arg)
 	sctp_userspace_set_threadname("SCTP/UDP/IP6 rcv");
 
 	udprecvmbuf6 = malloc(sizeof(struct mbuf *) * MAXLEN_MBUF_CHAIN);
-	while (1) {
+	while (!atomic_cmpset_int(&SCTP_BASE_VAR(recvthreadudp6_should_exit), 1, 1)) {
 		for (i = 0; i < to_fill; i++) {
 			/* Not getting the packet header. Tests with chain of one run
 			   as usual without having the packet header.
