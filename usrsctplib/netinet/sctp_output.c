@@ -4036,7 +4036,7 @@ sctp_get_ect(struct sctp_tcb *stcb)
 }
 
 #if defined(INET) || defined(INET6)
-static void
+void
 sctp_handle_no_route(struct sctp_tcb *stcb,
                      struct sctp_nets *net,
                      int so_locked)
@@ -11612,14 +11612,14 @@ sctp_send_shutdown_complete(struct sctp_tcb *stcb,
 }
 
 #if defined(__FreeBSD__)
-static void
+void
 sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
                    struct sctphdr *sh, uint32_t vtag,
                    uint8_t type, struct mbuf *cause,
                    uint8_t mflowtype, uint32_t mflowid, uint16_t fibnum,
                    uint32_t vrf_id, uint16_t port)
 #else
-static void
+void
 sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
                    struct sctphdr *sh, uint32_t vtag,
                    uint8_t type, struct mbuf *cause,

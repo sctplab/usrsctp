@@ -450,6 +450,12 @@ struct sctp_nets {
 #if defined(__Userspace__)
 	uint8_t got_max;
 #endif
+	uint32_t probe_mtu; /* actual mtu probing size */
+	uint32_t probed_mtu; /* mtu that has last been probed */
+	uint32_t max_mtu;
+	uint16_t probe_counts; /* Counter for the probing attempts */
+	uint16_t probing_state;
+	uint8_t mtu_probing; /* Flag to indicate whether mtu_probing should be processed */
 };
 
 
