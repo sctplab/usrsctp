@@ -2865,6 +2865,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	inp->reconfig_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_reconfig_enable);
 	inp->nrsack_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_nrsack_enable);
 	inp->pktdrop_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_pktdrop_enable);
+	inp->plpmtud_supported = (uint8_t) SCTP_BASE_SYSCTL(sctp_plpmtud_enable);
 	inp->idata_supported = 0;
 
 #if defined(__FreeBSD__)

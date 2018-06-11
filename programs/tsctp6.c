@@ -374,7 +374,7 @@ int main(int argc, char **argv)
 	socklen_t intlen;
 	double seconds;
 	double throughput;
-	int nodelay = 0;
+	int nodelay = 0, enable_pmtu = 0;;
 	struct sctp_assoc_value av;
 	struct sctp_udpencaps encaps;
 	struct sctp_sndinfo sndinfo;
@@ -404,7 +404,7 @@ int main(int argc, char **argv)
 	memset((void *) &remote_addr, 0, sizeof(remote_addr));
 
 #ifndef _WIN32
-	while ((c = getopt(argc, argv, "a:cp:l:E:f:L:n:R:S:T:uU:vVD46")) != -1)
+	while ((c = getopt(argc, argv, "a:cp:l:E:f:L:n:R:S:T:uU:vVDm46")) != -1)
 		switch(c) {
 			case 'a':
 				ind.ssb_adaptation_ind = atoi(optarg);
@@ -414,6 +414,9 @@ int main(int argc, char **argv)
 				break;
 			case 'l':
 				length = atoi(optarg);
+				break;
+			case 'm':
+				enable_pmtu = 1;
 				break;
 			case 'n':
 				number_of_messages = atoi(optarg);
@@ -633,6 +636,9 @@ int main(int argc, char **argv)
 				case 'D':
 					nodelay = 1;
 					break;
+				case 'm':
+					enable_pmtu = 1;
+					break;
 				case '4':
 					ipv4only = 1;
 					if (ipv6only) {
@@ -713,7 +719,9 @@ int main(int argc, char **argv)
 #endif
 	usrsctp_sysctl_set_sctp_blackhole(2);
 	usrsctp_sysctl_set_sctp_enable_sack_immediately(1);
-
+	if (enable_pmtu == 1) {
+		usrsctp_sysctl_set_sctp_plpmtud_enable(1);
+	}
 
 	if (client) {
 		if (use_cb) {

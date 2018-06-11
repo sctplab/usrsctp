@@ -55,6 +55,7 @@ struct sctp_sysctl {
 	uint32_t sctp_reconfig_enable;
 	uint32_t sctp_nrsack_enable;
 	uint32_t sctp_pktdrop_enable;
+	uint32_t sctp_plpmtud_enable;
 	uint32_t sctp_fr_max_burst_default;
 #if !(defined(__FreeBSD__) && __FreeBSD_version >= 800000)
 	uint32_t sctp_no_csum_on_loopback;
@@ -215,6 +216,12 @@ struct sctp_sysctl {
 #define SCTPCTL_PKTDROP_ENABLE_MIN	0
 #define SCTPCTL_PKTDROP_ENABLE_MAX	1
 #define SCTPCTL_PKTDROP_ENABLE_DEFAULT	0
+
+/* plpmtud_enable: Enable Packetization Layer Path MTU Discovery */
+#define SCTPCTL_PLPMTUD_ENABLE_DESC	"Enable Packetization Layer PMTU Discovery"
+#define SCTPCTL_PLPMTUD_ENABLE_MIN	0
+#define SCTPCTL_PLPMTUD_ENABLE_MAX	1
+#define SCTPCTL_PLPMTUD_ENABLE_DEFAULT	0
 
 /* loopback_nocsum: Enable NO Csum on packets sent on loopback */
 #define SCTPCTL_LOOPBACK_NOCSUM_DESC	"Enable NO Csum on packets sent on loopback"

@@ -1259,6 +1259,7 @@ struct sctp_association {
 	uint8_t reconfig_supported;
 	uint8_t nrsack_supported;
 	uint8_t pktdrop_supported;
+	uint8_t plpmtud_supported;
 	uint8_t idata_supported;
 
 	/* Did the peer make the stream config (add out) request */
