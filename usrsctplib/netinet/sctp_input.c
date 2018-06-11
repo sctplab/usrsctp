@@ -935,6 +935,10 @@ sctp_start_net_timers(struct sctp_tcb *stcb)
 		sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net);
 		if ((net->dest_state & SCTP_ADDR_UNCONFIRMED) &&
 		    (cnt_hb_sent < SCTP_BASE_SYSCTL(sctp_hb_maxburst))) {
+		    if (stcb->asoc.plpmtud_supported) {
+				net->probing_state = SCTP_PROBE_NONE;
+				net->probe_mtu = 0;
+			}
 			sctp_send_hb(stcb, net, SCTP_SO_NOT_LOCKED);
 			cnt_hb_sent++;
 		}

@@ -4487,9 +4487,11 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 					if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
 						sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
 					}
-					net->mtu = mtu;
 					net->got_max = 1;
-					sctp_pathmtu_adjustment(stcb, net->mtu, net);
+					if (!stcb->sctp_ep->plpmtud_supported) {
+						net->mtu = mtu;
+						sctp_pathmtu_adjustment(stcb, net->mtu, net);
+					}
 				}
 #else
 				mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._l_addr.sa, ro->ro_rt);
@@ -4958,27 +4960,39 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 
 #if defined(__Userspace__)
 				mtu = sctp_get_mtu_from_addr(inp, (struct sockaddr *)&(net->ro._s_addr->address.sin));
-				if (mtu > 0 && (mtu < net->mtu || !net->got_max)) {
+				if (!stcb->sctp_ep->plpmtud_supported) {
+					if (mtu > 0 && (mtu < net->mtu || !net->got_max)) {
+						if (net->port) {
+							mtu -= sizeof(struct udphdr);
+						}
+						if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
+							sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
+						}
+						net->mtu = mtu;
+						net->got_max = 1;
+						sctp_pathmtu_adjustment(stcb, net->mtu, net);
+					}
+				} else {
 					if (net->port) {
-						mtu -= sizeof(struct udphdr);
+						net->mtu -= sizeof(struct udphdr);
 					}
-					if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
-						sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
-					}
-					net->mtu = mtu;
-					net->got_max = 1;
-					sctp_pathmtu_adjustment(stcb, net->mtu, net);
 				}
 #else
 				mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._l_addr.sa, ro->ro_rt);
 				if (mtu > 0) {
-					if (net->port) {
-						mtu -= sizeof(struct udphdr);
+					if (!stcb->sctp_ep->plpmtud_supported) {
+						if (net->port) {
+							mtu -= sizeof(struct udphdr);
+						}
+						if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
+							sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
+						}
+						net->mtu = mtu;
+					} else {
+						if (net->port) {
+							net->mtu -= sizeof(struct udphdr);
+						}
 					}
-					if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
-						sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
-					}
-					net->mtu = mtu;
 					net->got_max = 1;
 				}
 #endif

@@ -4618,6 +4618,12 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 	net->RTO_measured = 0;
 	stcb->asoc.numnets++;
 	net->ref_count = 1;
+	if (stcb->asoc.plpmtud_supported) {
+		net->probe_mtu = 0;
+		net->mtu_probing = 0;
+		net->probing_state = SCTP_PROBE_NONE;
+		net->got_max = 0;
+	}
 	net->cwr_window_tsn = net->last_cwr_tsn = stcb->asoc.sending_seq - 1;
 	net->port = port;
 	net->dscp = stcb->asoc.default_dscp;
@@ -4727,6 +4733,12 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 				/* Start things off to match mtu of interface please. */
 				SCTP_SET_MTU_OF_ROUTE(&net->ro._l_addr.sa,
 				                      net->ro.ro_rt, net->mtu);
+			} else if (stcb->asoc.plpmtud_supported) {
+				net->mtu = min(rmtu, SCTP_DEFAULT_MTU);
+			}
+			if (stcb->asoc.plpmtud_supported) {
+				net->max_mtu = max(net->mtu, rmtu);
+				net->max_mtu -= net->max_mtu % 4;
 			}
 			net->got_max = 1;
 		}
