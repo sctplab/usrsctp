@@ -244,7 +244,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #if defined(__FreeBSD__)
                    uint8_t mflowtype, uint32_t mflowid, uint16_t fibnum,
 #endif
-                   uint32_t vrf_id, uint16_t port);
+                   uint32_t vrf_id, uint16_t port, struct sctp_tcb *stcb);
 
 void sctp_send_operr_to(struct sockaddr *, struct sockaddr *,
                         struct sctphdr *, uint32_t, struct mbuf *,

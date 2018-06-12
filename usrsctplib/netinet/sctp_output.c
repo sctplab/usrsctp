@@ -11631,13 +11631,13 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
                    struct sctphdr *sh, uint32_t vtag,
                    uint8_t type, struct mbuf *cause,
                    uint8_t mflowtype, uint32_t mflowid, uint16_t fibnum,
-                   uint32_t vrf_id, uint16_t port)
+                   uint32_t vrf_id, uint16_t port, struct sctp_tcb *stcb)
 #else
 void
 sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
                    struct sctphdr *sh, uint32_t vtag,
                    uint8_t type, struct mbuf *cause,
-                   uint32_t vrf_id SCTP_UNUSED, uint16_t port)
+                   uint32_t vrf_id SCTP_UNUSED, uint16_t port, struct sctp_tcb *stcb)
 #endif
 {
 #ifdef __Panda__
@@ -11688,7 +11688,11 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		padding_len = 0;
 	}
 	/* Get an mbuf for the header. */
-	len = sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr);
+	if (type == SCTP_PAD_CHUNK) {
+		len = sizeof(struct sctphdr);
+	} else {
+		len = sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr);
+	}
 	switch (dst->sa_family) {
 #ifdef INET
 	case AF_INET:
@@ -11852,15 +11856,17 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		shout->v_tag = sh->v_tag;
 	}
 	len += sizeof(struct sctphdr);
-	ch = (struct sctp_chunkhdr *)((caddr_t)shout + sizeof(struct sctphdr));
-	ch->chunk_type = type;
-	if (vtag) {
-		ch->chunk_flags = 0;
-	} else {
-		ch->chunk_flags = SCTP_HAD_NO_TCB;
+	if (type != SCTP_PAD_CHUNK) {
+		ch = (struct sctp_chunkhdr *)((caddr_t)shout + sizeof(struct sctphdr));
+		ch->chunk_type = type;
+		if (vtag) {
+			ch->chunk_flags = 0;
+		} else {
+			ch->chunk_flags = SCTP_HAD_NO_TCB;
+		}
+		ch->chunk_length = htons((uint16_t)(sizeof(struct sctp_chunkhdr) + cause_len));
+		len += sizeof(struct sctp_chunkhdr);
 	}
-	ch->chunk_length = htons((uint16_t)(sizeof(struct sctp_chunkhdr) + cause_len));
-	len += sizeof(struct sctp_chunkhdr);
 	len += cause_len + padding_len;
 
 	if (SCTP_GET_HEADER_FOR_OUTPUT(o_pak)) {
@@ -11939,7 +11945,11 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 			ro.ro_rt = NULL;
 		}
 #else
-		SCTP_IP_OUTPUT(ret, o_pak, NULL, NULL, vrf_id);
+		if (type == SCTP_PAD_CHUNK) {
+			SCTP_IP_OUTPUT(ret, o_pak, NULL, stcb, vrf_id);
+		} else {
+			SCTP_IP_OUTPUT(ret, o_pak, NULL, NULL, vrf_id);
+		}
 #endif
 		break;
 #endif
@@ -12037,7 +12047,7 @@ sctp_send_shutdown_complete2(struct sockaddr *src, struct sockaddr *dst,
 #if defined(__FreeBSD__)
 	                   mflowtype, mflowid, fibnum,
 #endif
-	                   vrf_id, port);
+	                   vrf_id, port, NULL);
 }
 
 void
@@ -12174,7 +12184,11 @@ sctp_send_hb(struct sctp_tcb *stcb, struct sctp_nets *net,int so_locked
 		}
 		sctp_free_a_chunk(stcb, chk, so_locked);
 		return;
-		break;
+	}
+	if (stcb->sctp_ep->plpmtud_supported && net->mtu_probing) {
+		hb->heartbeat.hb_info.probe_mtu = net->probe_mtu;
+	} else {
+		hb->heartbeat.hb_info.probe_mtu = 0;
 	}
 	net->hb_responded = 0;
 	TAILQ_INSERT_TAIL(&stcb->asoc.control_send_queue, chk, sctp_next);
@@ -13069,7 +13083,7 @@ sctp_send_abort(struct mbuf *m, int iphlen, struct sockaddr *src, struct sockadd
 #if defined(__FreeBSD__)
 	                   mflowtype, mflowid, fibnum,
 #endif
-	                   vrf_id, port);
+	                   vrf_id, port, NULL);
 	return;
 }
 
@@ -13085,7 +13099,7 @@ sctp_send_operr_to(struct sockaddr *src, struct sockaddr *dst,
 #if defined(__FreeBSD__)
 	                   mflowtype, mflowid, fibnum,
 #endif
-	                   vrf_id, port);
+	                   vrf_id, port, NULL);
 	return;
 }
 

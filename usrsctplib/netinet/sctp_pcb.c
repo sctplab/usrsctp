@@ -4922,6 +4922,28 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 		TAILQ_INSERT_HEAD(&stcb->asoc.nets,
 				  stcb->asoc.primary_destination, sctp_next);
 	}
+	if (stcb->asoc.plpmtud_supported) {
+		net->probing_state = SCTP_PROBE_NONE;
+		net->probe_mtu = 0;
+		if (from == SCTP_ADDR_DYNAMIC_ADDED) {
+			net->probing_state = SCTP_PROBE_BASE;
+#ifdef INET
+			if (newaddr->sa_family == AF_INET) {
+				net->probe_mtu = SCTP_PROBE_MTU_V4_BASE;
+			}
+#endif
+#ifdef INET6
+			if (newaddr->sa_family == AF_INET6) {
+				net->probe_mtu = SCTP_PROBE_MTU_V6_BASE;
+			}
+#endif
+			net->probed_mtu = SCTP_PROBE_MIN;
+			net->mtu_probing = 1;
+			net->probe_counts = 0;
+			net->mtu = net->probe_mtu;
+			sctp_send_a_probe(stcb->sctp_ep, stcb, net);
+		}
+	}
 	return (0);
 }
 

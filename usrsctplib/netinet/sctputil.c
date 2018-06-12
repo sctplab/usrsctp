@@ -2175,7 +2175,8 @@ sctp_timer_start(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				to_ticks = to_ticks - jitter;
 			}
 			if (!(net->dest_state & SCTP_ADDR_UNCONFIRMED) &&
-			    !(net->dest_state & SCTP_ADDR_PF)) {
+			    !(net->dest_state & SCTP_ADDR_PF) &&
+			    !(net->mtu_probing)) {
 				to_ticks += net->heart_beat_delay;
 			}
 			/*
@@ -8288,22 +8289,7 @@ sctp_make_hb(struct sctp_tcb *stcb, struct sctp_nets *net,int so_locked
 		return NULL;
 	}
 	(void)SCTP_GETTIME_TIMEVAL(&now);
-	switch (net->ro._l_addr.sa.sa_family) {
-#ifdef INET
-	case AF_INET:
-		break;
-#endif
-#ifdef INET6
-	case AF_INET6:
-		break;
-#endif
-#if defined(__Userspace__)
-	case AF_CONN:
-		break;
-#endif
-	default:
-		return NULL;
-	}
+
 	send_size = sizeof(struct sctp_heartbeat_chunk);
 
 	chk = sctp_get_mbuf_for_msg(send_size, 0, M_NOWAIT, 1, MT_HEADER);
@@ -8549,7 +8535,7 @@ sctp_send_a_probe(struct sctp_inpcb *inp,
 #if defined(__FreeBSD__)
 	                   net->flowtype, net->flowid, inp->fibnum,
 #endif
-	                   vrf_id, net->port);
+	                   vrf_id, net->port, stcb);
 	sctp_m_freem(m);
 	if (SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
 		sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net,
