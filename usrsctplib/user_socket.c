@@ -3213,10 +3213,6 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 			SCTP_PRINTF("Why did the SCTP implementation did not choose a source address?\n");
 		}
 		/* TODO need to worry about ro->ro_dst as in ip_output? */
-#if defined(__Userspace_os_Linux) || defined (__Userspace_os_Windows)
-		/* need to put certain fields into network order for Linux */
-		ip6->ip6_plen = htons(ip6->ip6_plen);
-#endif
 	}
 
 	memset((void *)&dst, 0, sizeof(struct sockaddr_in6));
