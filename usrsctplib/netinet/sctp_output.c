@@ -4491,6 +4491,8 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 					if (!stcb->sctp_ep->plpmtud_supported) {
 						net->mtu = mtu;
 						sctp_pathmtu_adjustment(stcb, net->mtu, net);
+					} else {
+						net->max_mtu = mtu;
 					}
 				}
 #else
@@ -4973,6 +4975,10 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 						sctp_pathmtu_adjustment(stcb, net->mtu, net);
 					}
 				} else {
+					if (!net->got_max) {
+						net->max_mtu = mtu;
+						net->got_max = 1;
+					}
 					if (net->port) {
 						net->mtu -= sizeof(struct udphdr);
 					}
