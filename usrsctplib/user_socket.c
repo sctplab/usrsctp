@@ -3593,7 +3593,7 @@ USRSCTP_SYSCTL_SET_DEF(sctp_initial_cwnd, SCTPCTL_INITIAL_CWND)
 USRSCTP_SYSCTL_SET_DEF(sctp_debug_on, SCTPCTL_DEBUG)
 #endif
 #if !defined(__Userspace_os_Windows)
-#pragma GCC diagnostic push
+#pragma GCC diagnostic pop
 #endif
 
 #define USRSCTP_SYSCTL_GET_DEF(__field) \
