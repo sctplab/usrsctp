@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 333304 2018-05-06 14:19:50Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 333979 2018-05-21 14:51:20Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1661,9 +1661,7 @@ sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,
 			  struct sctp_nets *net, uint32_t *high_tsn, int *abort_flag,
 			  int *break_flag, int last_chunk, uint8_t chk_type)
 {
-	/* Process a data chunk */
-	/* struct sctp_tmit_chunk *chk; */
-	struct sctp_tmit_chunk *chk;
+	struct sctp_tmit_chunk *chk = NULL; /* make gcc happy */
 	uint32_t tsn, fsn, gap, mid;
 	struct mbuf *dmbuf;
 	int the_len;
