@@ -564,7 +564,7 @@ struct sctp_event_subscribe {
 #define SCTP_TIMEOUTS                   0x00000106
 #define SCTP_PR_STREAM_STATUS           0x00000107
 #define SCTP_PR_ASSOC_STATUS            0x00000108
-
+#define SCTP_GET_SNDBUF_USE				0x00001101
 /*
  * write-only options
  */
@@ -619,6 +619,12 @@ struct sctp_paddrparams {
 	uint32_t spp_ipv6_flowlabel;
 	uint16_t spp_pathmaxrxt;
 	uint8_t spp_dscp;
+};
+
+struct sctp_sockstat {
+	sctp_assoc_t ss_assoc_id;
+	uint32_t ss_total_sndbuf;
+	uint32_t ss_total_recv_buf;
 };
 
 #define SPP_HB_ENABLE       0x00000001
