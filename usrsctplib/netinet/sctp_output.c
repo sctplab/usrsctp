@@ -4036,7 +4036,7 @@ sctp_get_ect(struct sctp_tcb *stcb)
 }
 
 #if defined(INET) || defined(INET6)
-static void
+void
 sctp_handle_no_route(struct sctp_tcb *stcb,
                      struct sctp_nets *net,
                      int so_locked)
@@ -4478,6 +4478,22 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			    ((net->dest_state & SCTP_ADDR_NO_PMTUD) == 0)) {
 				uint32_t mtu;
 
+#if defined(__Userspace__)
+				mtu = sctp_get_mtu_from_addr(inp, (struct sockaddr *)&(net->ro._s_addr->address.sin));
+				if (mtu > 0 && (mtu < net->mtu || !net->got_max)) {
+					if (net->port) {
+						mtu -= sizeof(struct udphdr);
+					}
+					if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
+						sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
+					}
+					net->got_max = 1;
+					if (!stcb->sctp_ep->plpmtud_supported) {
+						net->mtu = mtu;
+						sctp_pathmtu_adjustment(stcb, net->mtu, net);
+					}
+				}
+#else
 				mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._l_addr.sa, ro->ro_rt);
 				if (mtu > 0) {
 					if (net->port) {
@@ -4487,7 +4503,9 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 						sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
 					}
 					net->mtu = mtu;
+					net->got_max = 1;
 				}
+#endif
 			} else if (ro->ro_rt == NULL) {
 				/* route was freed */
 				if (net->ro._s_addr &&
@@ -4940,16 +4958,44 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			    ((net->dest_state & SCTP_ADDR_NO_PMTUD) == 0)) {
 				uint32_t mtu;
 
+#if defined(__Userspace__)
+				mtu = sctp_get_mtu_from_addr(inp, (struct sockaddr *)&(net->ro._s_addr->address.sin));
+				if (!stcb->sctp_ep->plpmtud_supported) {
+					if (mtu > 0 && (mtu < net->mtu || !net->got_max)) {
+						if (net->port) {
+							mtu -= sizeof(struct udphdr);
+						}
+						if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
+							sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
+						}
+						net->mtu = mtu;
+						net->got_max = 1;
+						sctp_pathmtu_adjustment(stcb, net->mtu, net);
+					}
+				} else {
+					if (net->port) {
+						net->mtu -= sizeof(struct udphdr);
+					}
+				}
+#else
 				mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._l_addr.sa, ro->ro_rt);
 				if (mtu > 0) {
-					if (net->port) {
-						mtu -= sizeof(struct udphdr);
+					if (!stcb->sctp_ep->plpmtud_supported) {
+						if (net->port) {
+							mtu -= sizeof(struct udphdr);
+						}
+						if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
+							sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
+						}
+						net->mtu = mtu;
+					} else {
+						if (net->port) {
+							net->mtu -= sizeof(struct udphdr);
+						}
 					}
-					if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
-						sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
-					}
-					net->mtu = mtu;
+					net->got_max = 1;
 				}
+#endif
 			}
 #if !defined(__Panda__) && !defined(__Userspace__)
 			else if (ifp) {
@@ -4968,7 +5014,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		}
 		return (ret);
 	}
-#endif
+#endif /* INET6 */
 #if defined(__Userspace__)
 	case AF_CONN:
 	{
@@ -11580,14 +11626,14 @@ sctp_send_shutdown_complete(struct sctp_tcb *stcb,
 }
 
 #if defined(__FreeBSD__)
-static void
+void
 sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
                    struct sctphdr *sh, uint32_t vtag,
                    uint8_t type, struct mbuf *cause,
                    uint8_t mflowtype, uint32_t mflowid, uint16_t fibnum,
                    uint32_t vrf_id, uint16_t port)
 #else
-static void
+void
 sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
                    struct sctphdr *sh, uint32_t vtag,
                    uint8_t type, struct mbuf *cause,
