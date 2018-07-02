@@ -60,6 +60,23 @@
 #ifndef _USER_IP6_VAR_H_
 #define _USER_IP6_VAR_H_
 
+#include <netinet/sctp_os_userspace.h>
+
+#if !defined(__Userspace_os_FreeBSD)
+/* from netinet6/ip6protosw.h */
+struct ip6ctlparam {
+	struct mbuf *ip6c_m;            /* start of mbuf chain */
+	struct icmp6_hdr *ip6c_icmp6;   /* icmp6 header of target packet */
+	struct ip6_hdr *ip6c_ip6;       /* ip6 header of target packet */
+	int ip6c_off;                   /* offset of the target proto header */
+	struct sockaddr_in6 *ip6c_src;  /* srcaddr w/ additional info */
+	struct sockaddr_in6 *ip6c_dst;  /* (final) dstaddr w/ additional info */
+	struct in6_addr *ip6c_finaldst; /* final destination address */
+	void *ip6c_cmdarg;              /* control command dependent data */
+	u_int8_t ip6c_nxt;              /* final next header field */
+};
+#endif
+
 #if defined(__Userspace_os_Windows)
 struct ip6_hdr {
 	union {
