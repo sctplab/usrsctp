@@ -578,7 +578,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 #endif
 
 	IFNET_RLOCK();
-	TAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_link) {
+	CK_STAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_link) {
 		if (sctp_is_desired_interface_type(ifn) == 0) {
 			/* non desired type */
 			continue;
@@ -747,7 +747,7 @@ sctp_add_or_del_interfaces(int (*pred)(struct ifnet *), int add)
 	struct ifaddr *ifa;
 
 	IFNET_RLOCK();
-	TAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_link) {
+	CK_STAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_link) {
 		if (!(*pred)(ifn)) {
 			continue;
 		}
