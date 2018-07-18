@@ -537,7 +537,7 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 #else
 			            inner_ip->ip_len,
 #endif
-			            ntohs(icmp->icmp_nextmtu));
+			            (uint32_t)ntohs(icmp->icmp_nextmtu));
 
 #if defined(__Userspace__)
 			if (stcb && upcall_socket == NULL && !(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
