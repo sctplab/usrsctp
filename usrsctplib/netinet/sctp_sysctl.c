@@ -74,6 +74,7 @@ sctp_init_sysctls()
 	SCTP_BASE_SYSCTL(sctp_reconfig_enable) = SCTPCTL_RECONFIG_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_nrsack_enable) = SCTPCTL_NRSACK_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_pktdrop_enable) = SCTPCTL_PKTDROP_ENABLE_DEFAULT;
+	SCTP_BASE_SYSCTL(sctp_plpmtud_enable) = SCTPCTL_PLPMTUD_ENABLE_DEFAULT;
 #if !(defined(__FreeBSD__) && __FreeBSD_version >= 800000)
 	SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) = SCTPCTL_LOOPBACK_NOCSUM_DEFAULT;
 #endif
@@ -1252,6 +1253,7 @@ SYSCTL_PROC(_net_inet_sctp, OID_AUTO, asconf_enable, CTLFLAG_VNET|CTLTYPE_UINT|C
 SCTP_UINT_SYSCTL(reconfig_enable, sctp_reconfig_enable, SCTPCTL_RECONFIG_ENABLE)
 SCTP_UINT_SYSCTL(nrsack_enable, sctp_nrsack_enable, SCTPCTL_NRSACK_ENABLE)
 SCTP_UINT_SYSCTL(pktdrop_enable, sctp_pktdrop_enable, SCTPCTL_PKTDROP_ENABLE)
+SCTP_UINT_SYSCTL(plpmtud_enable, sctp_plpmtud_enable, SCTPCTL_PLPMTUD_ENABLE)
 #if defined(__APPLE__)
 SCTP_UINT_SYSCTL(loopback_nocsum, sctp_no_csum_on_loopback, SCTPCTL_LOOPBACK_NOCSUM)
 #endif
@@ -1360,6 +1362,7 @@ sctp_sysctl_handle_int(SYSCTL_HANDLER_ARGS)
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_reconfig_enable), SCTPCTL_RECONFIG_ENABLE_MIN, SCTPCTL_RECONFIG_ENABLE_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_nrsack_enable), SCTPCTL_NRSACK_ENABLE_MIN, SCTPCTL_NRSACK_ENABLE_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_pktdrop_enable), SCTPCTL_PKTDROP_ENABLE_MIN, SCTPCTL_PKTDROP_ENABLE_MAX);
+		RANGECHK(SCTP_BASE_SYSCTL(sctp_pktdrop_enable), SCTPCTL_PLPMTUD_ENABLE_MIN, SCTPCTL_PLPMTUD_ENABLE_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback), SCTPCTL_LOOPBACK_NOCSUM_MIN, SCTPCTL_LOOPBACK_NOCSUM_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_peer_chunk_oh), SCTPCTL_PEER_CHKOH_MIN, SCTPCTL_PEER_CHKOH_MAX);
 		RANGECHK(SCTP_BASE_SYSCTL(sctp_max_burst_default), SCTPCTL_MAXBURST_MIN, SCTPCTL_MAXBURST_MAX);
@@ -1467,6 +1470,10 @@ sysctl_setup_sctp(void)
 	sysctl_add_oid(&sysctl_oid_top, "pktdrop_enable", CTLTYPE_INT|CTLFLAG_RW,
             &SCTP_BASE_SYSCTL(sctp_pktdrop_enable), 0, sctp_sysctl_handle_int,
 	    SCTPCTL_PKTDROP_ENABLE_DESC);
+
+	sysctl_add_oid(&sysctl_oid_top, "plpmtud_enable", CTLTYPE_INT|CTLFLAG_RW,
+            &SCTP_BASE_SYSCTL(sctp_plpmtud_enable), 0, sctp_sysctl_handle_int,
+	    SCTPCTL_PLPMTUD_ENABLE_DESC);
 
 	sysctl_add_oid(&sysctl_oid_top, "loopback_nocsum", CTLTYPE_INT|CTLFLAG_RW,
             &SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback), 0, sctp_sysctl_handle_int,
