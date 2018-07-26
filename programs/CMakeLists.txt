@@ -88,6 +88,7 @@ list(APPEND check_programs
 	echo_server_upcall.c
 	chargen_server_upcall.c
 	daytime_server_upcall.c
+	ekr_loop_upcall.c
 )
 
 # if in fuzzing mode, only build the fuzzer
