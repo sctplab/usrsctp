@@ -84,11 +84,12 @@ set(check_programs
 	test_timer.c
 	tsctp.c
 	http_client_upcall.c
-        client_upcall.c
-        discard_server_upcall.c
-        echo_server_upcall.c
-        chargen_server_upcall.c
-        daytime_server_upcall.c
+	client_upcall.c
+	discard_server_upcall.c
+	echo_server_upcall.c
+	chargen_server_upcall.c
+	daytime_server_upcall.c
+	ekr_loop_upcall.c
 )
 
 foreach (source_file ${check_programs})
