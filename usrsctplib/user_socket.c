@@ -3353,12 +3353,11 @@ usrsctp_dumppacket(const void *buf, size_t len, int outbound)
 {
 	size_t i, pos;
 	char *dump_buf, *packet;
+	struct tm t;
 #ifdef _WIN32
 	struct timeb tb;
-	struct tm t;
 #else
 	struct timeval tv;
-	struct tm *t;
 	time_t sec;
 #endif
 
@@ -3378,10 +3377,10 @@ usrsctp_dumppacket(const void *buf, size_t len, int outbound)
 #else
 	gettimeofday(&tv, NULL);
 	sec = (time_t)tv.tv_sec;
-	t = localtime((const time_t *)&sec);
+	localtime_r((const time_t *)&sec, &t);
 	snprintf(dump_buf, PREAMBLE_LENGTH + 1, PREAMBLE_FORMAT,
 	         outbound ? 'O' : 'I',
-	         t->tm_hour, t->tm_min, t->tm_sec, (long)tv.tv_usec);
+	         t.tm_hour, t.tm_min, t.tm_sec, (long)tv.tv_usec);
 #endif
 	pos += PREAMBLE_LENGTH;
 #ifdef _WIN32
