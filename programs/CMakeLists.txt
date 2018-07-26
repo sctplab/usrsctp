@@ -67,7 +67,8 @@ find_package(Threads)
 #################################################
 # PROGRAMS
 #################################################
-list(APPEND check_programs
+
+set(check_programs
 	client.c
 	daytime_server.c
 	discard_server.c
@@ -90,20 +91,6 @@ list(APPEND check_programs
 	daytime_server_upcall.c
 	ekr_loop_upcall.c
 )
-
-# if in fuzzing mode, only build the fuzzer
-if (sctp_fuzzer_clang OR sctp_fuzzer_honggfuzz)
-	list(APPEND check_programs
-		fuzzer_unconnected.c
-		fuzzer_connected.cc
-		fuzzer_upcall.cc
-		fuzzer_polling.cc
-	)
-	configure_file(crashtest.py crashtest.py COPYONLY)
-	configure_file(fuzzer_connected.sh fuzzer_connected.sh COPYONLY)
-	configure_file(fuzzer_unconnected.sh fuzzer_unconnected.sh COPYONLY)
-	configure_file(fuzzer_upcall.sh fuzzer_upcall.sh COPYONLY)
-endif ()
 
 foreach (source_file ${check_programs})
 	get_filename_component(source_file_we ${source_file} NAME_WE)

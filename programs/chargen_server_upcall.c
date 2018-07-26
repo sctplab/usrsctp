@@ -74,7 +74,8 @@ handle_accept(struct socket *sock, void *data, int flags)
 {
 	struct socket *conn_sock;
 
-	if (((conn_sock = usrsctp_accept(sock, NULL, NULL)) == NULL) && (errno != EINPROGRESS)) {
+	if (((conn_sock = usrsctp_accept(sock, NULL, NULL)) == NULL)
+	    && (errno != EINPROGRESS)) {
 		perror("usrsctp_accept");
 		return;
 	}
