@@ -300,7 +300,7 @@ usrsctp_recvv(struct socket *so,
   * SCTP_RECVV_RN (A detailed description is given in [RFC 6458](http://tools.ietf.org/html/rfc6458))
 * flags: A pointer to an integer to be filled with any message flags (e.g., `MSG_NOTIFICATION`).  Note that this field is an in/out parameter.  Options for the receive may also be passed into the value (e.g., `MSG_EOR`).  Returning from the call, the flags' value will differ from its original value.
 
-`usrsctp_recvv()` returns the number of bytes sent, or -1 if an error occurred.  The variable errno is then set appropriately.
+`usrsctp_recvv()` returns the number of bytes received, or -1 if an error occurred.  The variable errno is then set appropriately.
 
 ## Socket Options
 Socket options are used to change the default behavior of socket calls.
