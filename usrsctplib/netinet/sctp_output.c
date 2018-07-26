@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 326829 2017-12-13 17:11:57Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 335179 2018-06-14 21:30:52Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4234,7 +4234,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #else
 			ip->ip_off = IP_DF;
 #endif
-#elif defined(WITH_CONVERT_IP_OFF) || defined(__APPLE__) || defined(__Userspace__)
+#elif defined(WITH_CONVERT_IP_OFF) || defined(__APPLE__) || defined(__Userspace_os_Darwin)
 			ip->ip_off = IP_DF;
 #else
 			ip->ip_off = htons(IP_DF);
@@ -4630,7 +4630,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		} else {
 			ip6h->ip6_nxt = IPPROTO_SCTP;
 		}
-		ip6h->ip6_plen = (uint16_t)(packet_length - sizeof(struct ip6_hdr));
+		ip6h->ip6_plen = htons(packet_length - sizeof(struct ip6_hdr));
 		ip6h->ip6_dst = sin6->sin6_addr;
 
 		/*
@@ -7948,7 +7948,7 @@ re_look:
 		/* Not enough room for a chunk header, get some */
 		struct mbuf *m;
 
-		m = sctp_get_mbuf_for_msg(1, 0, M_NOWAIT, 0, MT_DATA);
+		m = sctp_get_mbuf_for_msg(1, 0, M_NOWAIT, 1, MT_DATA);
 		if (m == NULL) {
 			/*
 			 * we're in trouble here. _PREPEND below will free
@@ -10700,7 +10700,7 @@ do_it_again:
 			 */
 			un_sent = stcb->asoc.total_output_queue_size - stcb->asoc.total_flight;
 			if ((un_sent < (int)(stcb->asoc.smallest_mtu - SCTP_MIN_OVERHEAD)) &&
-			    (stcb->asoc.total_flight > 0)) { 
+			    (stcb->asoc.total_flight > 0)) {
 /*	&&		     sctp_is_feature_on(inp, SCTP_PCB_FLAGS_EXPLICIT_EOR))) {*/
 				break;
 			}
@@ -10837,7 +10837,7 @@ send_forward_tsn(struct sctp_tcb *stcb,
 	}
 	asoc->fwd_tsn_cnt++;
 	chk->copy_by_ref = 0;
-	/* 
+	/*
 	 * We don't do the old thing here since
 	 * this is used not for on-wire but to
 	 * tell if we are sending a fwd-tsn by
@@ -11604,9 +11604,8 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 	struct sctp_chunkhdr *ch;
 #if defined(INET) || defined(INET6)
 	struct udphdr *udp;
-	int ret;
 #endif
-	int len, cause_len, padding_len;
+	int ret, len, cause_len, padding_len;
 #ifdef INET
 #if defined(__APPLE__) || defined(__Panda__)
 	sctp_route_t ro;
@@ -11715,7 +11714,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #else
 		ip->ip_off = IP_DF;
 #endif
-#elif defined(WITH_CONVERT_IP_OFF) || defined(__APPLE__) || defined(__Userspace__)
+#elif defined(WITH_CONVERT_IP_OFF) || defined(__APPLE__) || defined(__Userspace_os_Darwin)
 		ip->ip_off = IP_DF;
 #else
 		ip->ip_off = htons(IP_DF);
@@ -11900,7 +11899,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #endif
 #ifdef INET6
 	case AF_INET6:
-		ip6->ip6_plen = (uint16_t)(len - sizeof(struct ip6_hdr));
+		ip6->ip6_plen = htons(len - sizeof(struct ip6_hdr));
 		if (port) {
 			shout->checksum = sctp_calculate_cksum(mout, sizeof(struct ip6_hdr) + sizeof(struct udphdr));
 			SCTP_STAT_INCR(sctps_sendswcrc);
@@ -11954,8 +11953,10 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		/* Don't alloc/free for each packet */
 		if ((buffer = malloc(len)) != NULL) {
 			m_copydata(mout, 0, len, buffer);
-			SCTP_BASE_VAR(conn_output)(sconn->sconn_addr, buffer, len, 0, 0);
+			ret = SCTP_BASE_VAR(conn_output)(sconn->sconn_addr, buffer, len, 0, 0);
 			free(buffer);
+		} else {
+			ret = ENOMEM;
 		}
 		sctp_m_freem(mout);
 		break;
@@ -11968,9 +11969,13 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		SCTP_LTRACE_ERR_RET_PKT(mout, NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, EFAULT);
 		return;
 	}
+	SCTPDBG(SCTP_DEBUG_OUTPUT3, "return from send is %d\n", ret);
 	SCTP_STAT_INCR(sctps_sendpackets);
 	SCTP_STAT_INCR_COUNTER64(sctps_outpackets);
 	SCTP_STAT_INCR_COUNTER64(sctps_outcontrolchunks);
+	if (ret) {
+		SCTP_STAT_INCR(sctps_senderrors);
+	}
 	return;
 }
 
@@ -13041,7 +13046,7 @@ sctp_send_operr_to(struct sockaddr *src, struct sockaddr *dst,
 static struct mbuf *
 sctp_copy_resume(struct uio *uio,
 		 int max_send_len,
-#if defined(__FreeBSD__) && __FreeBSD_version > 602000
+#if (defined(__FreeBSD__) && __FreeBSD_version > 602000) || defined(__Userspace__)
 		 int user_marks_eor,
 #endif
 		 int *error,
@@ -13061,7 +13066,7 @@ sctp_copy_resume(struct uio *uio,
 		*new_tail = m_last(m);
 	}
 	return (m);
-#elif defined(__FreeBSD__) && __FreeBSD_version > 602000
+#elif defined(__FreeBSD__) && __FreeBSD_version > 602000 || defined(__Userspace__)
 	struct mbuf *m;
 
 	m = m_uiotombuf(uio, M_WAITOK, max_send_len, 0,
@@ -13154,7 +13159,7 @@ sctp_copy_one(struct sctp_stream_queue_pending *sp,
 
 	sp->tail_mbuf = m_last(sp->data);
 	return (0);
-#elif defined(__FreeBSD__) && __FreeBSD_version > 602000
+#elif defined(__FreeBSD__) && __FreeBSD_version > 602000 || defined(__Userspace__)
 	sp->data = m_uiotombuf(uio, M_WAITOK, sp->length,
 	                       resv_upfront, 0);
 	if (sp->data == NULL) {
@@ -14269,7 +14274,7 @@ skip_preblock:
 #if defined(__APPLE__)
 				SCTP_SOCKET_UNLOCK(so, 0);
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_version > 602000
+#if (defined(__FreeBSD__) && __FreeBSD_version > 602000) || defined(__Userspace__)
 				    mm = sctp_copy_resume(uio, max_len, user_marks_eor, &error, &sndout, &new_tail);
 #else
 				    mm = sctp_copy_resume(uio, max_len, &error, &sndout, &new_tail);

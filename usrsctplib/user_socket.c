@@ -3060,7 +3060,6 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 #if defined(__Userspace_os_Linux) || defined (__Userspace_os_Windows) || (defined(__Userspace_os_FreeBSD) && (__FreeBSD_version >= 1100030))
 		/* need to put certain fields into network order for Linux */
 		ip->ip_len = htons(ip->ip_len);
-		ip->ip_off = 0;
 #endif
 	}
 
@@ -3214,10 +3213,6 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 			SCTP_PRINTF("Why did the SCTP implementation did not choose a source address?\n");
 		}
 		/* TODO need to worry about ro->ro_dst as in ip_output? */
-#if defined(__Userspace_os_Linux) || defined (__Userspace_os_Windows)
-		/* need to put certain fields into network order for Linux */
-		ip6->ip6_plen = htons(ip6->ip6_plen);
-#endif
 	}
 
 	memset((void *)&dst, 0, sizeof(struct sockaddr_in6));
@@ -3358,12 +3353,11 @@ usrsctp_dumppacket(const void *buf, size_t len, int outbound)
 {
 	size_t i, pos;
 	char *dump_buf, *packet;
+	struct tm t;
 #ifdef _WIN32
 	struct timeb tb;
-	struct tm t;
 #else
 	struct timeval tv;
-	struct tm *t;
 	time_t sec;
 #endif
 
@@ -3383,10 +3377,10 @@ usrsctp_dumppacket(const void *buf, size_t len, int outbound)
 #else
 	gettimeofday(&tv, NULL);
 	sec = (time_t)tv.tv_sec;
-	t = localtime((const time_t *)&sec);
+	localtime_r((const time_t *)&sec, &t);
 	snprintf(dump_buf, PREAMBLE_LENGTH + 1, PREAMBLE_FORMAT,
 	         outbound ? 'O' : 'I',
-	         t->tm_hour, t->tm_min, t->tm_sec, (long)tv.tv_usec);
+	         t.tm_hour, t.tm_min, t.tm_sec, (long)tv.tv_usec);
 #endif
 	pos += PREAMBLE_LENGTH;
 #ifdef _WIN32
@@ -3518,9 +3512,10 @@ usrsctp_get_events(struct socket *so)
 
 int usrsctp_get_error(struct socket *so)
 {
-    if (so->so_error)
-        return so->so_error;
-    return -1;
+	if (so->so_error) {
+		return so->so_error;
+	}
+	return -1;
 }
 
 int
@@ -3541,83 +3536,111 @@ usrsctp_set_upcall(struct socket *so, void (*upcall)(struct socket *, void *, in
 	return (0);
 }
 
-#define USRSCTP_SYSCTL_SET_DEF(__field) \
-void usrsctp_sysctl_set_ ## __field(uint32_t value) { \
-	SCTP_BASE_SYSCTL(__field) = value; \
+#define USRSCTP_TUNABLE_SET_DEF(__field, __prefix)   \
+int usrsctp_tunable_set_ ## __field(uint32_t value)  \
+{                                                    \
+	if ((value < __prefix##_MIN) ||              \
+	    (value > __prefix##_MAX)) {              \
+		errno = EINVAL;                      \
+		return (-1);                         \
+	} else {                                     \
+		SCTP_BASE_SYSCTL(__field) = value;   \
+		return (0);                          \
+	}                                            \
 }
 
-USRSCTP_SYSCTL_SET_DEF(sctp_sendspace)
-USRSCTP_SYSCTL_SET_DEF(sctp_recvspace)
-USRSCTP_SYSCTL_SET_DEF(sctp_auto_asconf)
-USRSCTP_SYSCTL_SET_DEF(sctp_multiple_asconfs)
-USRSCTP_SYSCTL_SET_DEF(sctp_ecn_enable)
-USRSCTP_SYSCTL_SET_DEF(sctp_pr_enable)
-USRSCTP_SYSCTL_SET_DEF(sctp_auth_enable)
-USRSCTP_SYSCTL_SET_DEF(sctp_asconf_enable)
-USRSCTP_SYSCTL_SET_DEF(sctp_reconfig_enable)
-USRSCTP_SYSCTL_SET_DEF(sctp_nrsack_enable)
-USRSCTP_SYSCTL_SET_DEF(sctp_pktdrop_enable)
-USRSCTP_SYSCTL_SET_DEF(sctp_no_csum_on_loopback)
-USRSCTP_SYSCTL_SET_DEF(sctp_peer_chunk_oh)
-USRSCTP_SYSCTL_SET_DEF(sctp_max_burst_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_max_chunks_on_queue)
-USRSCTP_SYSCTL_SET_DEF(sctp_hashtblsize)
-USRSCTP_SYSCTL_SET_DEF(sctp_pcbtblsize)
-USRSCTP_SYSCTL_SET_DEF(sctp_min_split_point)
-USRSCTP_SYSCTL_SET_DEF(sctp_chunkscale)
-USRSCTP_SYSCTL_SET_DEF(sctp_delayed_sack_time_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_sack_freq_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_system_free_resc_limit)
-USRSCTP_SYSCTL_SET_DEF(sctp_asoc_free_resc_limit)
-USRSCTP_SYSCTL_SET_DEF(sctp_heartbeat_interval_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_pmtu_raise_time_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_shutdown_guard_time_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_secret_lifetime_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_rto_max_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_rto_min_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_rto_initial_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_init_rto_max_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_valid_cookie_life_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_init_rtx_max_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_assoc_rtx_max_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_path_rtx_max_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_add_more_threshold)
-USRSCTP_SYSCTL_SET_DEF(sctp_nr_incoming_streams_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_nr_outgoing_streams_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_cmt_on_off)
-USRSCTP_SYSCTL_SET_DEF(sctp_cmt_use_dac)
-USRSCTP_SYSCTL_SET_DEF(sctp_use_cwnd_based_maxburst)
-USRSCTP_SYSCTL_SET_DEF(sctp_nat_friendly)
-USRSCTP_SYSCTL_SET_DEF(sctp_L2_abc_variable)
-USRSCTP_SYSCTL_SET_DEF(sctp_mbuf_threshold_count)
-USRSCTP_SYSCTL_SET_DEF(sctp_do_drain)
-USRSCTP_SYSCTL_SET_DEF(sctp_hb_maxburst)
-USRSCTP_SYSCTL_SET_DEF(sctp_abort_if_one_2_one_hits_limit)
-USRSCTP_SYSCTL_SET_DEF(sctp_min_residual)
-USRSCTP_SYSCTL_SET_DEF(sctp_max_retran_chunk)
-USRSCTP_SYSCTL_SET_DEF(sctp_logging_level)
-USRSCTP_SYSCTL_SET_DEF(sctp_default_cc_module)
-USRSCTP_SYSCTL_SET_DEF(sctp_default_frag_interleave)
-USRSCTP_SYSCTL_SET_DEF(sctp_mobility_base)
-USRSCTP_SYSCTL_SET_DEF(sctp_mobility_fasthandoff)
-USRSCTP_SYSCTL_SET_DEF(sctp_inits_include_nat_friendly)
-USRSCTP_SYSCTL_SET_DEF(sctp_udp_tunneling_port)
-USRSCTP_SYSCTL_SET_DEF(sctp_enable_sack_immediately)
-USRSCTP_SYSCTL_SET_DEF(sctp_vtag_time_wait)
-USRSCTP_SYSCTL_SET_DEF(sctp_blackhole)
-USRSCTP_SYSCTL_SET_DEF(sctp_diag_info_code)
-USRSCTP_SYSCTL_SET_DEF(sctp_fr_max_burst_default)
-USRSCTP_SYSCTL_SET_DEF(sctp_path_pf_threshold)
-USRSCTP_SYSCTL_SET_DEF(sctp_default_ss_module)
-USRSCTP_SYSCTL_SET_DEF(sctp_rttvar_bw)
-USRSCTP_SYSCTL_SET_DEF(sctp_rttvar_rtt)
-USRSCTP_SYSCTL_SET_DEF(sctp_rttvar_eqret)
-USRSCTP_SYSCTL_SET_DEF(sctp_steady_step)
-USRSCTP_SYSCTL_SET_DEF(sctp_use_dccc_ecn)
-USRSCTP_SYSCTL_SET_DEF(sctp_buffer_splitting)
-USRSCTP_SYSCTL_SET_DEF(sctp_initial_cwnd)
+USRSCTP_TUNABLE_SET_DEF(sctp_hashtblsize, SCTPCTL_TCBHASHSIZE)
+USRSCTP_TUNABLE_SET_DEF(sctp_pcbtblsize, SCTPCTL_PCBHASHSIZE)
+USRSCTP_TUNABLE_SET_DEF(sctp_chunkscale, SCTPCTL_CHUNKSCALE)
+
+#define USRSCTP_SYSCTL_SET_DEF(__field, __prefix)    \
+int usrsctp_sysctl_set_ ## __field(uint32_t value)   \
+{                                                    \
+	if ((value < __prefix##_MIN) ||              \
+	    (value > __prefix##_MAX)) {              \
+		errno = EINVAL;                      \
+		return (-1);                         \
+	} else {                                     \
+		SCTP_BASE_SYSCTL(__field) = value;   \
+		return (0);                          \
+	}                                            \
+}
+
+#if !defined(__Userspace_os_Windows)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+USRSCTP_SYSCTL_SET_DEF(sctp_sendspace, SCTPCTL_MAXDGRAM)
+USRSCTP_SYSCTL_SET_DEF(sctp_recvspace, SCTPCTL_RECVSPACE)
+USRSCTP_SYSCTL_SET_DEF(sctp_auto_asconf, SCTPCTL_AUTOASCONF)
+USRSCTP_SYSCTL_SET_DEF(sctp_ecn_enable, SCTPCTL_ECN_ENABLE)
+USRSCTP_SYSCTL_SET_DEF(sctp_pr_enable, SCTPCTL_PR_ENABLE)
+USRSCTP_SYSCTL_SET_DEF(sctp_auth_enable, SCTPCTL_AUTH_ENABLE)
+USRSCTP_SYSCTL_SET_DEF(sctp_asconf_enable, SCTPCTL_ASCONF_ENABLE)
+USRSCTP_SYSCTL_SET_DEF(sctp_reconfig_enable, SCTPCTL_RECONFIG_ENABLE)
+USRSCTP_SYSCTL_SET_DEF(sctp_nrsack_enable, SCTPCTL_NRSACK_ENABLE)
+USRSCTP_SYSCTL_SET_DEF(sctp_pktdrop_enable, SCTPCTL_PKTDROP_ENABLE)
+USRSCTP_SYSCTL_SET_DEF(sctp_no_csum_on_loopback, SCTPCTL_LOOPBACK_NOCSUM)
+USRSCTP_SYSCTL_SET_DEF(sctp_peer_chunk_oh, SCTPCTL_PEER_CHKOH)
+USRSCTP_SYSCTL_SET_DEF(sctp_max_burst_default, SCTPCTL_MAXBURST)
+USRSCTP_SYSCTL_SET_DEF(sctp_max_chunks_on_queue, SCTPCTL_MAXCHUNKS)
+USRSCTP_SYSCTL_SET_DEF(sctp_min_split_point, SCTPCTL_MIN_SPLIT_POINT)
+USRSCTP_SYSCTL_SET_DEF(sctp_delayed_sack_time_default, SCTPCTL_DELAYED_SACK_TIME)
+USRSCTP_SYSCTL_SET_DEF(sctp_sack_freq_default, SCTPCTL_SACK_FREQ)
+USRSCTP_SYSCTL_SET_DEF(sctp_system_free_resc_limit, SCTPCTL_SYS_RESOURCE)
+USRSCTP_SYSCTL_SET_DEF(sctp_asoc_free_resc_limit, SCTPCTL_ASOC_RESOURCE)
+USRSCTP_SYSCTL_SET_DEF(sctp_heartbeat_interval_default, SCTPCTL_HEARTBEAT_INTERVAL)
+USRSCTP_SYSCTL_SET_DEF(sctp_pmtu_raise_time_default, SCTPCTL_PMTU_RAISE_TIME)
+USRSCTP_SYSCTL_SET_DEF(sctp_shutdown_guard_time_default, SCTPCTL_SHUTDOWN_GUARD_TIME)
+USRSCTP_SYSCTL_SET_DEF(sctp_secret_lifetime_default, SCTPCTL_SECRET_LIFETIME)
+USRSCTP_SYSCTL_SET_DEF(sctp_rto_max_default, SCTPCTL_RTO_MAX)
+USRSCTP_SYSCTL_SET_DEF(sctp_rto_min_default, SCTPCTL_RTO_MIN)
+USRSCTP_SYSCTL_SET_DEF(sctp_rto_initial_default, SCTPCTL_RTO_INITIAL)
+USRSCTP_SYSCTL_SET_DEF(sctp_init_rto_max_default, SCTPCTL_INIT_RTO_MAX)
+USRSCTP_SYSCTL_SET_DEF(sctp_valid_cookie_life_default, SCTPCTL_VALID_COOKIE_LIFE)
+USRSCTP_SYSCTL_SET_DEF(sctp_init_rtx_max_default, SCTPCTL_INIT_RTX_MAX)
+USRSCTP_SYSCTL_SET_DEF(sctp_assoc_rtx_max_default, SCTPCTL_ASSOC_RTX_MAX)
+USRSCTP_SYSCTL_SET_DEF(sctp_path_rtx_max_default, SCTPCTL_PATH_RTX_MAX)
+USRSCTP_SYSCTL_SET_DEF(sctp_add_more_threshold, SCTPCTL_ADD_MORE_ON_OUTPUT)
+USRSCTP_SYSCTL_SET_DEF(sctp_nr_incoming_streams_default, SCTPCTL_INCOMING_STREAMS)
+USRSCTP_SYSCTL_SET_DEF(sctp_nr_outgoing_streams_default, SCTPCTL_OUTGOING_STREAMS)
+USRSCTP_SYSCTL_SET_DEF(sctp_cmt_on_off, SCTPCTL_CMT_ON_OFF)
+USRSCTP_SYSCTL_SET_DEF(sctp_cmt_use_dac, SCTPCTL_CMT_USE_DAC)
+USRSCTP_SYSCTL_SET_DEF(sctp_use_cwnd_based_maxburst, SCTPCTL_CWND_MAXBURST)
+USRSCTP_SYSCTL_SET_DEF(sctp_nat_friendly, SCTPCTL_NAT_FRIENDLY)
+USRSCTP_SYSCTL_SET_DEF(sctp_L2_abc_variable, SCTPCTL_ABC_L_VAR)
+USRSCTP_SYSCTL_SET_DEF(sctp_mbuf_threshold_count, SCTPCTL_MAX_CHAINED_MBUFS)
+USRSCTP_SYSCTL_SET_DEF(sctp_do_drain, SCTPCTL_DO_SCTP_DRAIN)
+USRSCTP_SYSCTL_SET_DEF(sctp_hb_maxburst, SCTPCTL_HB_MAX_BURST)
+USRSCTP_SYSCTL_SET_DEF(sctp_abort_if_one_2_one_hits_limit, SCTPCTL_ABORT_AT_LIMIT)
+USRSCTP_SYSCTL_SET_DEF(sctp_min_residual, SCTPCTL_MIN_RESIDUAL)
+USRSCTP_SYSCTL_SET_DEF(sctp_max_retran_chunk, SCTPCTL_MAX_RETRAN_CHUNK)
+USRSCTP_SYSCTL_SET_DEF(sctp_logging_level, SCTPCTL_LOGGING_LEVEL)
+USRSCTP_SYSCTL_SET_DEF(sctp_default_cc_module, SCTPCTL_DEFAULT_CC_MODULE)
+USRSCTP_SYSCTL_SET_DEF(sctp_default_frag_interleave, SCTPCTL_DEFAULT_FRAG_INTERLEAVE)
+USRSCTP_SYSCTL_SET_DEF(sctp_mobility_base, SCTPCTL_MOBILITY_BASE)
+USRSCTP_SYSCTL_SET_DEF(sctp_mobility_fasthandoff, SCTPCTL_MOBILITY_FASTHANDOFF)
+USRSCTP_SYSCTL_SET_DEF(sctp_inits_include_nat_friendly, SCTPCTL_NAT_FRIENDLY_INITS)
+USRSCTP_SYSCTL_SET_DEF(sctp_udp_tunneling_port, SCTPCTL_UDP_TUNNELING_PORT)
+USRSCTP_SYSCTL_SET_DEF(sctp_enable_sack_immediately, SCTPCTL_SACK_IMMEDIATELY_ENABLE)
+USRSCTP_SYSCTL_SET_DEF(sctp_vtag_time_wait, SCTPCTL_TIME_WAIT)
+USRSCTP_SYSCTL_SET_DEF(sctp_blackhole, SCTPCTL_BLACKHOLE)
+USRSCTP_SYSCTL_SET_DEF(sctp_diag_info_code, SCTPCTL_DIAG_INFO_CODE)
+USRSCTP_SYSCTL_SET_DEF(sctp_fr_max_burst_default, SCTPCTL_FRMAXBURST)
+USRSCTP_SYSCTL_SET_DEF(sctp_path_pf_threshold, SCTPCTL_PATH_PF_THRESHOLD)
+USRSCTP_SYSCTL_SET_DEF(sctp_default_ss_module, SCTPCTL_DEFAULT_SS_MODULE)
+USRSCTP_SYSCTL_SET_DEF(sctp_rttvar_bw, SCTPCTL_RTTVAR_BW)
+USRSCTP_SYSCTL_SET_DEF(sctp_rttvar_rtt, SCTPCTL_RTTVAR_RTT)
+USRSCTP_SYSCTL_SET_DEF(sctp_rttvar_eqret, SCTPCTL_RTTVAR_EQRET)
+USRSCTP_SYSCTL_SET_DEF(sctp_steady_step, SCTPCTL_RTTVAR_STEADYS)
+USRSCTP_SYSCTL_SET_DEF(sctp_use_dccc_ecn, SCTPCTL_RTTVAR_DCCCECN)
+USRSCTP_SYSCTL_SET_DEF(sctp_buffer_splitting, SCTPCTL_BUFFER_SPLITTING)
+USRSCTP_SYSCTL_SET_DEF(sctp_initial_cwnd, SCTPCTL_INITIAL_CWND)
 #ifdef SCTP_DEBUG
-USRSCTP_SYSCTL_SET_DEF(sctp_debug_on)
+USRSCTP_SYSCTL_SET_DEF(sctp_debug_on, SCTPCTL_DEBUG)
+#endif
+#if !defined(__Userspace_os_Windows)
+#pragma GCC diagnostic push
 #endif
 
 #define USRSCTP_SYSCTL_GET_DEF(__field) \

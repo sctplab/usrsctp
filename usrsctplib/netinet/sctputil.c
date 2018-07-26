@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 328028 2018-01-15 21:59:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 334286 2018-05-28 13:31:47Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -91,7 +91,7 @@ extern const struct sctp_ss_functions sctp_ss_functions[];
 void
 sctp_sblog(struct sockbuf *sb, struct sctp_tcb *stcb, int from, int incr)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	sctp_clog.x.sb.stcb = stcb;
@@ -114,7 +114,7 @@ sctp_sblog(struct sockbuf *sb, struct sctp_tcb *stcb, int from, int incr)
 void
 sctp_log_closing(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int16_t loc)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	sctp_clog.x.close.inp = (void *)inp;
@@ -140,7 +140,7 @@ sctp_log_closing(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int16_t loc)
 void
 rto_logging(struct sctp_nets *net, int from)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	memset(&sctp_clog, 0, sizeof(sctp_clog));
@@ -159,7 +159,7 @@ rto_logging(struct sctp_nets *net, int from)
 void
 sctp_log_strm_del_alt(struct sctp_tcb *stcb, uint32_t tsn, uint16_t sseq, uint16_t stream, int from)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	sctp_clog.x.strlog.stcb = stcb;
@@ -181,7 +181,7 @@ sctp_log_strm_del_alt(struct sctp_tcb *stcb, uint32_t tsn, uint16_t sseq, uint16
 void
 sctp_log_nagle_event(struct sctp_tcb *stcb, int action)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	sctp_clog.x.nagle.stcb = (void *)stcb;
@@ -202,7 +202,7 @@ sctp_log_nagle_event(struct sctp_tcb *stcb, int action)
 void
 sctp_log_sack(uint32_t old_cumack, uint32_t cumack, uint32_t tsn, uint16_t gaps, uint16_t dups, int from)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	sctp_clog.x.sack.cumack = cumack;
@@ -223,7 +223,7 @@ sctp_log_sack(uint32_t old_cumack, uint32_t cumack, uint32_t tsn, uint16_t gaps,
 void
 sctp_log_map(uint32_t map, uint32_t cum, uint32_t high, int from)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	memset(&sctp_clog, 0, sizeof(sctp_clog));
@@ -243,7 +243,7 @@ sctp_log_map(uint32_t map, uint32_t cum, uint32_t high, int from)
 void
 sctp_log_fr(uint32_t biggest_tsn, uint32_t biggest_new_tsn, uint32_t tsn, int from)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	memset(&sctp_clog, 0, sizeof(sctp_clog));
@@ -264,7 +264,7 @@ sctp_log_fr(uint32_t biggest_tsn, uint32_t biggest_new_tsn, uint32_t tsn, int fr
 void
 sctp_log_mb(struct mbuf *m, int from)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	sctp_clog.x.mb.mp = m;
@@ -306,7 +306,7 @@ sctp_log_mbc(struct mbuf *m, int from)
 void
 sctp_log_strm_del(struct sctp_queued_to_read *control, struct sctp_queued_to_read *poschk, int from)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	if (control == NULL) {
@@ -337,7 +337,7 @@ sctp_log_strm_del(struct sctp_queued_to_read *control, struct sctp_queued_to_rea
 void
 sctp_log_cwnd(struct sctp_tcb *stcb, struct sctp_nets *net, int augment, uint8_t from)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	sctp_clog.x.cwnd.net = net;
@@ -375,7 +375,7 @@ sctp_log_cwnd(struct sctp_tcb *stcb, struct sctp_nets *net, int augment, uint8_t
 void
 sctp_log_lock(struct sctp_inpcb *inp, struct sctp_tcb *stcb, uint8_t from)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	memset(&sctp_clog, 0, sizeof(sctp_clog));
@@ -428,7 +428,7 @@ sctp_log_lock(struct sctp_inpcb *inp, struct sctp_tcb *stcb, uint8_t from)
 void
 sctp_log_maxburst(struct sctp_tcb *stcb, struct sctp_nets *net, int error, int burst, uint8_t from)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	memset(&sctp_clog, 0, sizeof(sctp_clog));
@@ -457,7 +457,7 @@ sctp_log_maxburst(struct sctp_tcb *stcb, struct sctp_nets *net, int error, int b
 void
 sctp_log_rwnd(uint8_t from, uint32_t peers_rwnd, uint32_t snd_size, uint32_t overhead)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	sctp_clog.x.rwnd.rwnd = peers_rwnd;
@@ -477,7 +477,7 @@ sctp_log_rwnd(uint8_t from, uint32_t peers_rwnd, uint32_t snd_size, uint32_t ove
 void
 sctp_log_rwnd_set(uint8_t from, uint32_t peers_rwnd, uint32_t flight_size, uint32_t overhead, uint32_t a_rwndval)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	sctp_clog.x.rwnd.rwnd = peers_rwnd;
@@ -498,7 +498,7 @@ sctp_log_rwnd_set(uint8_t from, uint32_t peers_rwnd, uint32_t flight_size, uint3
 static void
 sctp_log_mbcnt(uint8_t from, uint32_t total_oq, uint32_t book, uint32_t total_mbcnt_q, uint32_t mbcnt)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	sctp_clog.x.mbcnt.total_queue_size = total_oq;
@@ -519,7 +519,7 @@ sctp_log_mbcnt(uint8_t from, uint32_t total_oq, uint32_t book, uint32_t total_mb
 void
 sctp_misc_ints(uint8_t from, uint32_t a, uint32_t b, uint32_t c, uint32_t d)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	SCTP_CTR6(KTR_SCTP, "SCTP:%d[%d]:%x-%x-%x-%x",
 	     SCTP_LOG_MISC_EVENT,
 	     from,
@@ -530,7 +530,7 @@ sctp_misc_ints(uint8_t from, uint32_t a, uint32_t b, uint32_t c, uint32_t d)
 void
 sctp_wakeup_log(struct sctp_tcb *stcb, uint32_t wake_cnt, int from)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	sctp_clog.x.wake.stcb = (void *)stcb;
@@ -578,7 +578,7 @@ sctp_wakeup_log(struct sctp_tcb *stcb, uint32_t wake_cnt, int from)
 void
 sctp_log_block(uint8_t from, struct sctp_association *asoc, size_t sendlen)
 {
-#if defined(__FreeBSD__) || defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
 
 	sctp_clog.x.blk.onsb = asoc->total_output_queue_size;
@@ -827,8 +827,8 @@ sctp_stop_timers_for_shutdown(struct sctp_tcb *stcb)
 }
 
 /*
- * a list of sizes based on typical mtu's, used only if next hop size not
- * returned.
+ * A list of sizes based on typical mtu's, used only if next hop size not
+ * returned. These values MUST be multiples of 4 and MUST be ordered.
  */
 static uint32_t sctp_mtu_sizes[] = {
 	68,
@@ -837,29 +837,32 @@ static uint32_t sctp_mtu_sizes[] = {
 	512,
 	544,
 	576,
-	1006,
+	1004,
 	1492,
 	1500,
 	1536,
-	2002,
+	2000,
 	2048,
 	4352,
 	4464,
 	8166,
-	17914,
+	17912,
 	32000,
-	65535
+	65532
 };
 
 /*
- * Return the largest MTU smaller than val. If there is no
- * entry, just return val.
+ * Return the largest MTU in sctp_mtu_sizes smaller than val.
+ * If val is smaller than the minimum, just return the largest
+ * multiple of 4 smaller or equal to val.
+ * Ensure that the result is a multiple of 4.
  */
 uint32_t
 sctp_get_prev_mtu(uint32_t val)
 {
 	uint32_t i;
 
+	val &= 0xfffffffc;
 	if (val <= sctp_mtu_sizes[0]) {
 		return (val);
 	}
@@ -868,12 +871,16 @@ sctp_get_prev_mtu(uint32_t val)
 			break;
 		}
 	}
+	KASSERT((sctp_mtu_sizes[i - 1] & 0x00000003) == 0,
+	        ("sctp_mtu_sizes[%u] not a multiple of 4", i - 1));
 	return (sctp_mtu_sizes[i - 1]);
 }
 
 /*
- * Return the smallest MTU larger than val. If there is no
- * entry, just return val.
+ * Return the smallest MTU in sctp_mtu_sizes larger than val.
+ * If val is larger than the maximum, just return the largest multiple of 4 smaller
+ * or equal to val.
+ * Ensure that the result is a multiple of 4.
  */
 uint32_t
 sctp_get_next_mtu(uint32_t val)
@@ -881,8 +888,11 @@ sctp_get_next_mtu(uint32_t val)
 	/* select another MTU that is just bigger than this one */
 	uint32_t i;
 
+	val &= 0xfffffffc;
 	for (i = 0; i < (sizeof(sctp_mtu_sizes) / sizeof(uint32_t)); i++) {
 		if (val < sctp_mtu_sizes[i]) {
+			KASSERT((sctp_mtu_sizes[i] & 0x00000003) == 0,
+				("sctp_mtu_sizes[%u] not a multiple of 4", i));
 			return (sctp_mtu_sizes[i]);
 		}
 	}
@@ -2804,6 +2814,13 @@ sctp_notify_assoc_change(uint16_t state, struct sctp_tcb *stcb,
 		notif_len = (unsigned int)sizeof(struct sctp_assoc_change);
 		if (abort != NULL) {
 			abort_len = ntohs(abort->ch.chunk_length);
+			/*
+			 * Only SCTP_CHUNK_BUFFER_SIZE are guaranteed to be
+			 * contiguous.
+			 */
+			if (abort_len > SCTP_CHUNK_BUFFER_SIZE) {
+				abort_len = SCTP_CHUNK_BUFFER_SIZE;
+			}
 		} else {
 			abort_len = 0;
 		}
@@ -3728,6 +3745,13 @@ sctp_notify_remote_error(struct sctp_tcb *stcb, uint16_t error, struct sctp_erro
 	}
 	if (chunk != NULL) {
 		chunk_len = ntohs(chunk->ch.chunk_length);
+		/*
+		 * Only SCTP_CHUNK_BUFFER_SIZE are guaranteed to be
+		 * contiguous.
+		 */
+		if (chunk_len > SCTP_CHUNK_BUFFER_SIZE) {
+			chunk_len = SCTP_CHUNK_BUFFER_SIZE;
+		}
 	} else {
 		chunk_len = 0;
 	}
