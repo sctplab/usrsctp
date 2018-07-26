@@ -1213,7 +1213,7 @@ struct xsctp_inpcb {
 #if defined(__Windows__)
 	uint16_t padding;
 #endif
-#if !(defined(__FreeBSD__) && (__FreeBSD_version < 1001517))
+#if defined(__FreeBSD__)
 	uint16_t __spare16;
 	kvaddr_t socket;
 #endif
