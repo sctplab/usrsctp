@@ -105,10 +105,10 @@ main(int argc, char *argv[])
 	struct sctp_sndinfo sndinfo;
 	int result;
 
-    if (argc < 3) {
-        printf("Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
-        return(EXIT_FAILURE);
-    }
+	if (argc < 3) {
+		printf("Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
+		return(EXIT_FAILURE);
+	}
 
 	result = 0;
 	if (argc > 4) {
