@@ -30,7 +30,7 @@
 
 /*
  * Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]
- * 
+ *
  * Example
  * Client: $ ./http_client 212.201.121.100 80 0 9899 9899 /cgi-bin/he
  *           ./http_client 2a02:c6a0:4015:10::100 80 0 9899 9899 /cgi-bin/he
@@ -106,8 +106,8 @@ main(int argc, char *argv[])
 	int result;
 
     if (argc < 3) {
-        printf("Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
-        return(EXIT_FAILURE);
+    printf("Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
+    return(EXIT_FAILURE);
     }
 
 	result = 0;
