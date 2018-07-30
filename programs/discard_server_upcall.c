@@ -114,11 +114,11 @@ handle_upcall(struct socket *sock, void *data, int flgs)
 					break;
 				}
 
-                if (name == NULL) {
-                    printf("inet_ntop failed\n");
-                    free(buf);
-                    return;
-                }
+				if (name == NULL) {
+					printf("inet_ntop failed\n");
+					free(buf);
+					return;
+				}
 
 				printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u.\n",
 				       (int)n,

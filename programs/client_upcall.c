@@ -58,7 +58,7 @@ int done = 0, input_done = 0, connected = 0;
 typedef char* caddr_t;
 #endif
 
-int inputAvailable()
+int inputAvailable(void)
 {
   struct timeval tv;
   fd_set fds;

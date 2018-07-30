@@ -58,7 +58,7 @@ int done = 0;
 int send_done = 0;
 
 static void
-initBuffer() {
+initBuffer(void) {
 	int i, j;
 	for (i = 32, j = 0; i < 126; i++, j++) {
 		buffer[j] = i;
