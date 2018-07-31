@@ -34,13 +34,13 @@
 
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
+#include <io.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
 #include <sys/types.h>
-#include <io.h>
 #ifndef _WIN32
 #include <unistd.h>
 #include <sys/socket.h>
