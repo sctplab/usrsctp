@@ -29,7 +29,7 @@
  */
 
 /*
- * Usage: client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port]
+ * Usage: client_upcall remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port]
  */
 
 #include <stdio.h>

@@ -29,7 +29,7 @@
  */
 
 /*
- * Usage: daytime_server [local_encaps_port] [remote_encaps_port]
+ * Usage: chargen_server_upcall [local_encaps_port] [remote_encaps_port]
  */
 
 #ifdef _WIN32
