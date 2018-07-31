@@ -5802,11 +5802,13 @@ sctp_sorecvmsg(struct socket *so,
 			error = so->so_error;
 			if ((in_flags & MSG_PEEK) == 0)
 				so->so_error = 0;
+			fprintf(stderr, " GOTO OUT AT : %d\n", __LINE__);
 			goto out;
 		} else {
 			if (so->so_rcv.sb_cc == 0) {
 				/* indicate EOF */
 				error = 0;
+				fprintf(stderr, " GOTO OUT AT : %d\n", __LINE__);
 				goto out;
 			}
 		}
@@ -5817,6 +5819,7 @@ sctp_sorecvmsg(struct socket *so,
 			if ((in_flags & MSG_PEEK) == 0) {
 				so->so_error = 0;
 			}
+			fprintf(stderr, " GOTO OUT AT : %d\n", __LINE__);
 			goto out;
 		}
 		if ((so->so_rcv.sb_cc == 0) &&
