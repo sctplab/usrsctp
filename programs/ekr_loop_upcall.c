@@ -316,7 +316,7 @@ main(void)
 #else
 	pthread_t tid_c, tid_s;
 #endif
-	int cur_buf_size, snd_buf_size, rcv_buf_size;
+	int cur_buf_size, snd_buf_size, rcv_buf_size, on;
 	socklen_t opt_len;
 	struct sctp_sndinfo sndinfo;
 	char *line;
@@ -473,6 +473,12 @@ main(void)
 		exit(EXIT_FAILURE);
 	}
 	printf("to %d.\n", cur_buf_size);
+
+	on = 1;
+	if (usrsctp_setsockopt(s_l, IPPROTO_SCTP, SCTP_RECVRCVINFO, &on, sizeof(int)) < 0) {
+		perror("usrsctp_setsockopt");
+		exit(EXIT_FAILURE);
+	}
 	/* Bind the client side. */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
@@ -519,6 +525,7 @@ main(void)
 		perror("usrsctp_accept");
 		exit(EXIT_FAILURE);
 	}
+	
 	usrsctp_set_upcall(s_s, handle_upcall, &fd_s);
 
 	usrsctp_close(s_l);
@@ -527,7 +534,7 @@ main(void)
 	}
 	memset(line, 'A', LINE_LENGTH);
 	sndinfo.snd_sid = 1;
-	sndinfo.snd_flags = 0;
+	sndinfo.snd_flags = SCTP_UNORDERED;
 	sndinfo.snd_ppid = htonl(DISCARD_PPID);
 	sndinfo.snd_context = 0;
 	sndinfo.snd_assoc_id = 0;
