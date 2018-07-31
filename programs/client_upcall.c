@@ -65,8 +65,13 @@ int inputAvailable(void)
   tv.tv_sec = 0;
   tv.tv_usec = 0;
   FD_ZERO(&fds);
+#ifndef _WIN32
   FD_SET(STDIN_FILENO, &fds);
   select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
+#else
+  FD_SET(_fileno(stdin), &fds);
+  select(_fileno(stdin) + 1, &fds, NULL, NULL, &tv);
+#endif
   return (FD_ISSET(0, &fds));
 }
 
@@ -315,7 +320,11 @@ main(int argc, char *argv[])
 			}
 		}
 	}
+#ifdef _WIN32
+	Sleep(1000);
+#else
 	sleep(1);
+#endif
 	usrsctp_close(sock);
 
 	usrsctp_get_stat(&stat);

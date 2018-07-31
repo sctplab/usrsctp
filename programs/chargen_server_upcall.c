@@ -120,9 +120,9 @@ handle_upcall(struct socket *sock, void *data, int flgs)
 		}
 		if (n > 0) {
 			if (flags & MSG_NOTIFICATION) {
-				printf("Notification of length %d received.\n", (int)n);
+				printf("Notification of length %zd received.\n", (int)n);
 			} else {
-				printf("data of size %zd received\n", n);
+				printf("data of size %zd received\n", (int)n);
 			}
 		}
 		free(buf);
