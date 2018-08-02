@@ -1457,7 +1457,68 @@ sctp_heartbeat_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		} else {
 			ms_gone_by = 0xffffffff;
 		}
-		if ((ms_gone_by >= net->heart_beat_delay) ||
+		if (inp->plpmtud_supported && net->mtu_probing) {
+			uint32_t base;
+#ifdef INET6
+			if (stcb->asoc.scope.ipv6_addr_legal) {
+				base = SCTP_PROBE_MTU_V6_BASE;
+			}
+#endif
+#ifdef INET
+			if (stcb->asoc.scope.ipv4_addr_legal) {
+				base = SCTP_PROBE_MTU_V4_BASE;
+			}
+#endif
+			if ((++net->probe_counts < SCTP_PROBE_MAX_PROBES)
+			    && net->probing_state > SCTP_PROBE_ERROR
+			    && net->probing_state < SCTP_PROBE_DONE) {
+				SCTPDBG(SCTP_DEBUG_TIMER1, "Retransmit the probe of %d bytes\n", net->probe_mtu);
+				sctp_send_a_probe(inp, stcb, net);
+			} else {
+				switch (net->probing_state) {
+				case SCTP_PROBE_BASE:
+					net->probe_counts = 0;
+					net->probed_mtu = SCTP_PROBE_MIN;
+					net->mtu_probing = 0;
+					net->probing_state = SCTP_PROBE_ERROR;
+					net->mtu = SCTP_PROBE_MIN;
+					sctp_pathmtu_adjustment(stcb, net->mtu, net);
+					sctp_send_hb(stcb, net, SCTP_SO_NOT_LOCKED);
+					break;
+				case SCTP_PROBE_SEARCH_UP:
+					net->probe_counts = 0;
+					net->mtu_probing = 0;
+					net->mtu = net->probed_mtu;
+					net->probing_state = SCTP_PROBE_DONE;
+					sctp_pathmtu_adjustment(stcb, net->mtu, net);
+					break;
+				case SCTP_PROBE_SEARCH_DOWN:
+					net->max_mtu = sctp_get_prev_mtu(net->max_mtu);
+					if ((net->max_mtu > base) && (sctp_get_next_mtu(base) != net->max_mtu)) {
+						net->probe_mtu = sctp_get_next_mtu(base);
+						net->probe_counts = 0;
+						net->probing_state = SCTP_PROBE_SEARCH_UP;
+						net->mtu = net->probe_mtu;
+						sctp_pathmtu_adjustment(stcb, net->probed_mtu, net);
+						sctp_send_a_probe(inp, stcb, net);
+					} else if (net->max_mtu == base) {
+						net->probe_mtu = base;
+						net->probe_counts = 0;
+						net->probing_state = SCTP_PROBE_BASE;
+						sctp_send_a_probe(inp, stcb, net);
+					} else if (net->max_mtu < base) {
+						net->probe_counts = 0;
+						net->probed_mtu = SCTP_PROBE_MIN;
+						net->mtu_probing = 0;
+						net->probing_state = SCTP_PROBE_ERROR;
+						net->mtu = SCTP_PROBE_MIN;
+						sctp_pathmtu_adjustment(stcb, net->mtu, net);
+						sctp_send_hb(stcb, net, SCTP_SO_NOT_LOCKED);
+					}
+					break;
+				}
+			}
+		} else if ((ms_gone_by >= net->heart_beat_delay) ||
 		    (net->dest_state & SCTP_ADDR_PF)) {
 			sctp_send_hb(stcb, net, SCTP_SO_NOT_LOCKED);
 		}
@@ -1472,69 +1533,135 @@ sctp_pathmtu_timer(struct sctp_inpcb *inp,
 {
 	uint32_t next_mtu, mtu;
 
-	next_mtu = sctp_get_next_mtu(net->mtu);
-
-	if ((next_mtu > net->mtu) && (net->port == 0)) {
-		if ((net->src_addr_selected == 0) ||
-		    (net->ro._s_addr == NULL) ||
-		    (net->ro._s_addr->localifa_flags & SCTP_BEING_DELETED)) {
-			if ((net->ro._s_addr != NULL) && (net->ro._s_addr->localifa_flags & SCTP_BEING_DELETED)) {
-				sctp_free_ifa(net->ro._s_addr);
-				net->ro._s_addr = NULL;
-				net->src_addr_selected = 0;
-			} else  if (net->ro._s_addr == NULL) {
+	if (inp->plpmtud_supported) {
+		if (net->probing_state == SCTP_PROBE_DONE) {
+			net->mtu_probing = 1;
+			net->probe_mtu = net->mtu;
+			net->probing_state = SCTP_PROBE_BASE;
+			net->probe_counts = 0;
+			if ((net->src_addr_selected == 0) ||
+				(net->ro._s_addr == NULL) ||
+				(net->ro._s_addr->localifa_flags & SCTP_BEING_DELETED)) {
+				if ((net->ro._s_addr != NULL) && (net->ro._s_addr->localifa_flags & SCTP_BEING_DELETED)) {
+					sctp_free_ifa(net->ro._s_addr);
+					net->ro._s_addr = NULL;
+					net->src_addr_selected = 0;
+				} else if (net->ro._s_addr == NULL) {
 #if defined(INET6) && defined(SCTP_EMBEDDED_V6_SCOPE)
-				if (net->ro._l_addr.sa.sa_family == AF_INET6) {
-					struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&net->ro._l_addr;
-					/* KAME hack: embed scopeid */
+					if (net->ro._l_addr.sa.sa_family == AF_INET6) {
+						struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&net->ro._l_addr;
 #if defined(__APPLE__)
 #if defined(APPLE_LEOPARD) || defined(APPLE_SNOWLEOPARD)
-					(void)in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL);
+						(void)in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL);
 #else
-					(void)in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL, NULL);
+						(void)in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL, NULL);
 #endif
 #elif defined(SCTP_KAME)
-					(void)sa6_embedscope(sin6, MODULE_GLOBAL(ip6_use_defzone));
+						(void)sa6_embedscope(sin6, MODULE_GLOBAL(ip6_use_defzone));
 #else
-					(void)in6_embedscope(&sin6->sin6_addr, sin6);
+						(void)in6_embedscope(&sin6->sin6_addr, sin6);
 #endif
-				}
+					}
 #endif
 
-				net->ro._s_addr = sctp_source_address_selection(inp,
-										stcb,
-										(sctp_route_t *)&net->ro,
-										net, 0, stcb->asoc.vrf_id);
+					net->ro._s_addr = sctp_source_address_selection(inp,
+					                                                stcb,
+					                                                (sctp_route_t *)&net->ro,
+					                                                net, 0, stcb->asoc.vrf_id);
 #if defined(INET6) && defined(SCTP_EMBEDDED_V6_SCOPE)
-				if (net->ro._l_addr.sa.sa_family == AF_INET6) {
-					struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&net->ro._l_addr;
+					if (net->ro._l_addr.sa.sa_family == AF_INET6) {
+						struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&net->ro._l_addr;
 #ifdef SCTP_KAME
-					(void)sa6_recoverscope(sin6);
+						(void)sa6_recoverscope(sin6);
 #else
-					(void)in6_recoverscope(sin6, &sin6->sin6_addr, NULL);
+						(void)in6_recoverscope(sin6, &sin6->sin6_addr, NULL);
 #endif	/* SCTP_KAME */
-				}
+					}
 #endif	/* INET6 */
+				}
+				if (net->ro._s_addr)
+					net->src_addr_selected = 1;
 			}
-			if (net->ro._s_addr)
-				net->src_addr_selected = 1;
-		}
-		if (net->ro._s_addr) {
-			mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._s_addr.sa, net->ro.ro_rt);
+			if (net->ro._s_addr) {
+				mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._s_addr.sa, net->ro.ro_rt);
 #if defined(INET) || defined(INET6)
-			if (net->port) {
-				mtu -= sizeof(struct udphdr);
-			}
+				if (net->port) {
+					mtu -= sizeof(struct udphdr);
+				}
 #endif
-			if (mtu > next_mtu) {
-				net->mtu = next_mtu;
-			} else {
-				net->mtu = mtu;
+				net->max_mtu = max(mtu, net->max_mtu);
+				net->max_mtu -= net->max_mtu % 4;
+			}
+			sctp_send_a_probe(inp, stcb, net);
+		} else {
+			/* restart the timer */
+			sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net);
+		}
+	} else {
+		next_mtu = sctp_get_next_mtu(net->mtu);
+
+		if ((next_mtu > net->mtu) && (net->port == 0)) {
+			if ((net->src_addr_selected == 0) ||
+				(net->ro._s_addr == NULL) ||
+				(net->ro._s_addr->localifa_flags & SCTP_BEING_DELETED)) {
+				if ((net->ro._s_addr != NULL) && (net->ro._s_addr->localifa_flags & SCTP_BEING_DELETED)) {
+					sctp_free_ifa(net->ro._s_addr);
+					net->ro._s_addr = NULL;
+					net->src_addr_selected = 0;
+				} else  if (net->ro._s_addr == NULL) {
+	#if defined(INET6) && defined(SCTP_EMBEDDED_V6_SCOPE)
+					if (net->ro._l_addr.sa.sa_family == AF_INET6) {
+						struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&net->ro._l_addr;
+						/* KAME hack: embed scopeid */
+	#if defined(__APPLE__)
+	#if defined(APPLE_LEOPARD) || defined(APPLE_SNOWLEOPARD)
+						(void)in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL);
+	#else
+						(void)in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL, NULL);
+	#endif
+	#elif defined(SCTP_KAME)
+						(void)sa6_embedscope(sin6, MODULE_GLOBAL(ip6_use_defzone));
+	#else
+						(void)in6_embedscope(&sin6->sin6_addr, sin6);
+	#endif
+					}
+	#endif
+
+					net->ro._s_addr = sctp_source_address_selection(inp,
+											stcb,
+											(sctp_route_t *)&net->ro,
+											net, 0, stcb->asoc.vrf_id);
+	#if defined(INET6) && defined(SCTP_EMBEDDED_V6_SCOPE)
+					if (net->ro._l_addr.sa.sa_family == AF_INET6) {
+						struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&net->ro._l_addr;
+	#ifdef SCTP_KAME
+						(void)sa6_recoverscope(sin6);
+	#else
+						(void)in6_recoverscope(sin6, &sin6->sin6_addr, NULL);
+	#endif	/* SCTP_KAME */
+					}
+	#endif	/* INET6 */
+				}
+				if (net->ro._s_addr)
+					net->src_addr_selected = 1;
+			}
+			if (net->ro._s_addr) {
+				mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._s_addr.sa, net->ro.ro_rt);
+	#if defined(INET) || defined(INET6)
+				if (net->port) {
+					mtu -= sizeof(struct udphdr);
+				}
+	#endif
+				if (mtu > next_mtu) {
+					net->mtu = next_mtu;
+				} else {
+					net->mtu = mtu;
+				}
 			}
 		}
+		/* restart the timer */
+		sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net);
 	}
-	/* restart the timer */
-	sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net);
 }
 
 void

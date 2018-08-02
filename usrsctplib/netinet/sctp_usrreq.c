@@ -58,7 +58,8 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 334725 2018-06-06 19:27:06Z t
 #include <netinet/sctp_bsd_addr.h>
 #if defined(__Userspace__)
 #include <netinet/sctp_callout.h>
-#else
+#endif
+#if !defined(__Userspace_os_Windows)
 #include <netinet/udp.h>
 #endif
 
@@ -141,10 +142,12 @@ sctp_init(void)
 #ifdef INET
 	SCTP_BASE_VAR(userspace_rawsctp) = -1;
 	SCTP_BASE_VAR(userspace_udpsctp) = -1;
+	SCTP_BASE_VAR(userspace_icmp) = -1;
 #endif
 #ifdef INET6
 	SCTP_BASE_VAR(userspace_rawsctp6) = -1;
 	SCTP_BASE_VAR(userspace_udpsctp6) = -1;
+	SCTP_BASE_VAR(userspace_icmp6) = -1;
 #endif
 	SCTP_BASE_VAR(timer_thread_should_exit) = 0;
 	SCTP_BASE_VAR(conn_output) = conn_output;
@@ -198,6 +201,16 @@ sctp_finish(void)
 #endif
 #endif
 #ifdef INET
+	if (SCTP_BASE_VAR(userspace_icmp) != -1) {
+#if defined(__Userspace_os_Windows)
+		WaitForSingleObject(SCTP_BASE_VAR(recvthreadicmp), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(recvthreadicmp));
+#else
+		pthread_join(SCTP_BASE_VAR(recvthreadicmp), NULL);
+#endif
+	}
+#endif
+#ifdef INET
 	if (SCTP_BASE_VAR(userspace_rawsctp) != -1) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadraw), INFINITE);
@@ -216,6 +229,14 @@ sctp_finish(void)
 	}
 #endif
 #ifdef INET6
+	if (SCTP_BASE_VAR(userspace_icmp6) != -1) {
+#if defined(__Userspace_os_Windows)
+		WaitForSingleObject(SCTP_BASE_VAR(recvthreadicmp6), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(recvthreadicmp6));
+#else
+		pthread_join(SCTP_BASE_VAR(recvthreadicmp6), NULL);
+#endif
+	}
 	if (SCTP_BASE_VAR(userspace_rawsctp6) != -1) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadraw6), INFINITE);
@@ -249,13 +270,32 @@ sctp_finish(void)
 #endif
 
 void
-sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint16_t nxtsz)
+sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint16_t nxtsz, struct sctp_nets * net)
 {
 	struct sctp_tmit_chunk *chk;
-	uint16_t overhead;
+	uint16_t overhead, allow = 0;
+	struct sctp_nets *mnet;
 
-	/* Adjust that too */
-	stcb->asoc.smallest_mtu = nxtsz;
+	if (stcb->asoc.smallest_mtu >= nxtsz) {
+		stcb->asoc.smallest_mtu = nxtsz;
+	} else {
+		if (stcb->asoc.numnets == 1) {
+			stcb->asoc.smallest_mtu = nxtsz;
+		} else {
+			TAILQ_FOREACH(mnet, &stcb->asoc.nets, sctp_next) {
+				if (mnet->mtu > stcb->asoc.smallest_mtu) {
+					allow++;
+				} else {
+					if (mnet == net) {
+						allow++;
+					}
+				}
+			}
+			if (stcb->asoc.numnets == allow) {
+				stcb->asoc.smallest_mtu = nxtsz;
+			}
+		}
+	}
 	/* now off to subtract IP_DF flag if needed */
 	overhead = IP_HDR_SIZE + sizeof(struct sctphdr);
 	if (sctp_auth_is_required_chunk(SCTP_DATA, stcb->asoc.peer_auth_chunks)) {
@@ -294,7 +334,6 @@ sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint16_t nxtsz)
 }
 
 #ifdef INET
-#if !defined(__Userspace__)
 void
 sctp_notify(struct sctp_inpcb *inp,
             struct sctp_tcb *stcb,
@@ -358,59 +397,197 @@ sctp_notify(struct sctp_inpcb *inp,
 #endif
 		/* no need to unlock here, since the TCB is gone */
 	} else if (icmp_code == ICMP_UNREACH_NEEDFRAG) {
-		if (net->dest_state & SCTP_ADDR_NO_PMTUD) {
-			SCTP_TCB_UNLOCK(stcb);
-			return;
-		}
-		/* Find the next (smaller) MTU */
-		if (next_mtu == 0) {
-			/*
-			 * Old type router that does not tell us what the next
-			 * MTU is.
-			 * Rats we will have to guess (in a educated fashion
-			 * of course).
-			 */
-			next_mtu = sctp_get_prev_mtu(ip_len);
-		}
-		/* Stop the PMTU timer. */
-		if (SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
-			timer_stopped = 1;
-			sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net,
-			                SCTP_FROM_SCTP_USRREQ + SCTP_LOC_1);
-		} else {
-			timer_stopped = 0;
-		}
-		/* Update the path MTU. */
-		if (net->port) {
-			next_mtu -= sizeof(struct udphdr);
-		}
-		if (net->mtu > next_mtu) {
-			net->mtu = next_mtu;
-#if defined(__FreeBSD__)
-			if (net->port) {
-				sctp_hc_set_mtu(&net->ro._l_addr, inp->fibnum, next_mtu + sizeof(struct udphdr));
-			} else {
-				sctp_hc_set_mtu(&net->ro._l_addr, inp->fibnum, next_mtu);
+		if (inp->plpmtud_supported) {
+			uint32_t base;
+#ifdef INET
+			if (stcb->asoc.scope.ipv4_addr_legal) {
+				base = SCTP_PROBE_MTU_V4_BASE;
 			}
 #endif
-		}
-		/* Update the association MTU */
-		if (stcb->asoc.smallest_mtu > next_mtu) {
-			sctp_pathmtu_adjustment(stcb, next_mtu);
-		}
-		/* Finally, start the PMTU timer if it was running before. */
-		if (timer_stopped) {
-			sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net);
+			net->probe_counts = 0;
+			if (net->probing_state == SCTP_PROBE_DONE) {
+				sctp_pathmtu_timer(inp, stcb, net);
+			}
+			if (net->probing_state > SCTP_PROBE_NONE && net->probing_state < SCTP_PROBE_DONE) {
+				if (next_mtu == 0) {
+					switch (net->probing_state) {
+					case SCTP_PROBE_BASE:
+						net->probed_mtu = SCTP_PROBE_MIN;
+						net->mtu_probing = 0;
+						net->probing_state = SCTP_PROBE_ERROR;
+						sctp_send_hb(stcb, net, SCTP_SO_NOT_LOCKED);
+						break;
+					case SCTP_PROBE_SEARCH_UP:
+						net->mtu_probing = 0;
+						net->mtu = net->probed_mtu;
+						net->probing_state = SCTP_PROBE_DONE;
+						sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net, SCTP_FROM_SCTP_USRREQ + SCTP_LOC_3);
+						sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net);
+						if (SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
+							sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, stcb->sctp_ep, stcb, net,
+							SCTP_FROM_SCTP_USRREQ + SCTP_LOC_4);
+						}
+						sctp_pathmtu_adjustment(stcb, net->mtu, net);
+						sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, stcb->sctp_ep, stcb, net);
+						break;
+					case SCTP_PROBE_SEARCH_DOWN:
+						net->max_mtu = sctp_get_prev_mtu(net->max_mtu);
+						net->probe_mtu = net->max_mtu;
+						net->probe_counts = 0;
+						sctp_send_a_probe(stcb->sctp_ep, stcb, net);
+						break;
+					}
+				} else if (net->probed_mtu <= next_mtu && next_mtu < net->probe_mtu) {
+					switch (net->probing_state) {
+					case SCTP_PROBE_BASE:
+						net->probed_mtu = SCTP_PROBE_MIN;
+						net->mtu_probing = 0;
+						net->max_mtu = min(net->max_mtu, next_mtu);
+						net->probing_state = SCTP_PROBE_ERROR;
+						sctp_send_hb(stcb, net, SCTP_SO_NOT_LOCKED);
+						break;
+					case SCTP_PROBE_SEARCH_UP:
+						net->mtu_probing = 0;
+						//net->mtu = net->probed_mtu;
+						net->max_mtu = min(net->max_mtu, next_mtu);
+						net->probe_mtu = net->max_mtu;
+						net->probe_counts = 0;
+						sctp_send_a_probe(stcb->sctp_ep, stcb, net);
+						break;
+					case SCTP_PROBE_SEARCH_DOWN:
+						net->max_mtu = min(net->max_mtu, next_mtu);
+						net->probe_mtu = net->max_mtu;
+						net->probe_counts = 0;
+						sctp_send_a_probe(stcb->sctp_ep, stcb, net);
+						break;
+					}
+				} else if (next_mtu < net->probed_mtu) {
+					switch (net->probing_state) {
+					case SCTP_PROBE_BASE:
+					case SCTP_PROBE_SEARCH_DOWN:
+						net->probed_mtu = SCTP_PROBE_MIN;
+						net->mtu_probing = 0;
+						net->max_mtu = min(net->max_mtu, next_mtu);
+						net->probing_state = SCTP_PROBE_ERROR;
+						sctp_send_hb(stcb, net, SCTP_SO_NOT_LOCKED);
+						break;
+					case SCTP_PROBE_SEARCH_UP:
+						if (next_mtu < base) {
+							net->probed_mtu = SCTP_PROBE_MIN;
+							net->mtu_probing = 0;
+							net->max_mtu = min(net->max_mtu, next_mtu);
+							net->probing_state = SCTP_PROBE_ERROR;
+							sctp_send_hb(stcb, net, SCTP_SO_NOT_LOCKED);
+						} else {
+							net->probe_mtu = base;
+							net->probed_mtu = base;
+							net->mtu = min(net->probed_mtu, next_mtu);
+							net->max_mtu = min(net->max_mtu, next_mtu);
+							net->probing_state = SCTP_PROBE_BASE;
+							net->probe_counts = 0;
+							sctp_send_a_probe(stcb->sctp_ep, stcb, net);
+						}
+						break;
+					}
+				} else if (next_mtu == base) {
+					switch (net->probing_state) {
+					case SCTP_PROBE_BASE:
+						net->probed_mtu = SCTP_PROBE_MIN;
+						net->mtu_probing = 0;
+						net->max_mtu = min(net->max_mtu, next_mtu);
+						net->probing_state = SCTP_PROBE_ERROR;
+						sctp_send_hb(stcb, net, SCTP_SO_NOT_LOCKED);
+						break;
+					case SCTP_PROBE_SEARCH_DOWN:
+						net->mtu_probing = 0;
+						net->mtu = next_mtu;
+						net->probed_mtu = next_mtu;
+						net->max_mtu = next_mtu;
+						net->probing_state = SCTP_PROBE_DONE;
+						sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net, SCTP_FROM_SCTP_USRREQ + SCTP_LOC_7);
+						sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net);
+						if (SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
+							sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, stcb->sctp_ep, stcb, net,
+							SCTP_FROM_SCTP_USRREQ + SCTP_LOC_8);
+						}
+						sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, stcb->sctp_ep, stcb, net);
+						break;
+					case SCTP_PROBE_SEARCH_UP:
+						net->mtu = min(net->probed_mtu, next_mtu);
+						net->max_mtu = min(net->max_mtu, next_mtu);
+						if (net->probed_mtu > base) {
+							net->probe_mtu = base;
+							net->probing_state = SCTP_PROBE_BASE;
+							net->probe_counts = 0;
+							sctp_send_a_probe(stcb->sctp_ep, stcb, net);
+						} else {
+							net->probing_state = SCTP_PROBE_DONE;
+							sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net, SCTP_FROM_SCTP_USRREQ + SCTP_LOC_7);
+							sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep, stcb, net);
+							if (SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
+								sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, stcb->sctp_ep, stcb, net,
+								SCTP_FROM_SCTP_USRREQ + SCTP_LOC_8);
+							}
+							sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, stcb->sctp_ep, stcb, net);
+						}
+						break;
+					}
+				}
+			}
+		} else {
+			if (net->dest_state & SCTP_ADDR_NO_PMTUD) {
+				SCTP_TCB_UNLOCK(stcb);
+				return;
+			}
+			/* Find the next (smaller) MTU */
+			if (next_mtu == 0) {
+				/*
+				 * Old type router that does not tell us what the next
+				 * MTU is.
+				 * Rats we will have to guess (in a educated fashion
+				 * of course).
+				 */
+				next_mtu = sctp_get_prev_mtu(ip_len);
+			}
+			/* Stop the PMTU timer. */
+			if (SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
+				timer_stopped = 1;
+				sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net,
+								SCTP_FROM_SCTP_USRREQ + SCTP_LOC_1);
+			} else {
+				timer_stopped = 0;
+			}
+			/* Update the path MTU. */
+			if (net->port) {
+				next_mtu -= sizeof(struct udphdr);
+			}
+			if (net->mtu > next_mtu) {
+				net->mtu = next_mtu;
+	#if defined(__FreeBSD__)
+				if (net->port) {
+					sctp_hc_set_mtu(&net->ro._l_addr, inp->fibnum, next_mtu + sizeof(struct udphdr));
+				} else {
+					sctp_hc_set_mtu(&net->ro._l_addr, inp->fibnum, next_mtu);
+				}
+	#endif
+			}
+			/* Update the association MTU */
+			if (stcb->asoc.smallest_mtu > next_mtu) {
+				sctp_pathmtu_adjustment(stcb, next_mtu, net);
+			}
+			/* Finally, start the PMTU timer if it was running before. */
+			if (timer_stopped) {
+				sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net);
+			}
 		}
 		SCTP_TCB_UNLOCK(stcb);
 	} else {
 		SCTP_TCB_UNLOCK(stcb);
 	}
 }
-#endif
 
-#if !defined(__Panda__) && !defined(__Userspace__)
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
+#if !defined(__Panda__)
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__)
 void
 #else
 void *
@@ -421,7 +598,7 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip, struct ifnet *ifp SCTP_UN
 sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 #endif
 {
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__Userspace__)
 	struct ip *outer_ip;
 #endif
 	struct ip *inner_ip;
@@ -430,33 +607,35 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 	struct sctp_inpcb *inp;
 	struct sctp_tcb *stcb;
 	struct sctp_nets *net;
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__Userspace__)
 	struct sctp_init_chunk *ch;
 #endif
 	struct sockaddr_in src, dst;
 
 	if (sa->sa_family != AF_INET ||
 	    ((struct sockaddr_in *)sa)->sin_addr.s_addr == INADDR_ANY) {
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__)
 		return;
 #else
 		return (NULL);
 #endif
 	}
+#if !defined(__Userspace__)
 	if (PRC_IS_REDIRECT(cmd)) {
 		vip = NULL;
 	} else if ((unsigned)cmd >= PRC_NCMDS || inetctlerrmap[cmd] == 0) {
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__)
 		return;
 #else
 		return (NULL);
 #endif
 	}
+#endif
 	if (vip != NULL) {
 		inner_ip = (struct ip *)vip;
 		icmp = (struct icmp *)((caddr_t)inner_ip -
 		    (sizeof(struct icmp) - sizeof(struct ip)));
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined (__Userspace__)
 		outer_ip = (struct ip *)((caddr_t)icmp - sizeof(struct ip));
 #endif
 		sh = (struct sctphdr *)((caddr_t)inner_ip + (inner_ip->ip_hl << 2));
@@ -500,7 +679,7 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 					return;
 				}
 			} else {
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__Userspace__)
 				if (ntohs(outer_ip->ip_len) >=
 				    sizeof(struct ip) +
 				    8 + (inner_ip->ip_hl << 2) + 20) {
@@ -555,7 +734,7 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 			}
 		}
 	}
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__)
 	return;
 #else
 	return (NULL);
@@ -6166,7 +6345,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 						break;
 					}
 					if (net->mtu < stcb->asoc.smallest_mtu) {
-						sctp_pathmtu_adjustment(stcb, net->mtu);
+						sctp_pathmtu_adjustment(stcb, net->mtu, net);
 					}
 				}
 				if (paddrp->spp_flags & SPP_PMTUD_ENABLE) {
@@ -6314,7 +6493,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 							break;
 						}
 						if (net->mtu < stcb->asoc.smallest_mtu) {
-							sctp_pathmtu_adjustment(stcb, net->mtu);
+							sctp_pathmtu_adjustment(stcb, net->mtu, net);
 						}
 					}
 					stcb->asoc.default_mtu = paddrp->spp_pathmtu;
