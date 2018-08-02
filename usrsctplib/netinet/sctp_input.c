@@ -3034,6 +3034,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 			inp->reconfig_supported = (*inp_p)->reconfig_supported;
 			inp->nrsack_supported = (*inp_p)->nrsack_supported;
 			inp->pktdrop_supported = (*inp_p)->pktdrop_supported;
+			inp->plpmtud_supported = (*inp_p)->plpmtud_supported;
 			inp->partial_delivery_point = (*inp_p)->partial_delivery_point;
 			inp->sctp_context = (*inp_p)->sctp_context;
 			inp->local_strreset_support = (*inp_p)->local_strreset_support;
@@ -5756,7 +5757,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 					/* UDP encapsulation turned on. */
 					net->mtu -= sizeof(struct udphdr);
 					if (stcb->asoc.smallest_mtu > net->mtu) {
-						sctp_pathmtu_adjustment(stcb, net->mtu);
+						sctp_pathmtu_adjustment(stcb, net->mtu, net);
 					}
 				} else if (port == 0) {
 					/* UDP encapsulation turned off. */
@@ -5797,7 +5798,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 			/* UDP encapsulation turned on. */
 			net->mtu -= sizeof(struct udphdr);
 			if (stcb->asoc.smallest_mtu > net->mtu) {
-				sctp_pathmtu_adjustment(stcb, net->mtu);
+				sctp_pathmtu_adjustment(stcb, net->mtu, net);
 			}
 		} else if (port == 0) {
 			/* UDP encapsulation turned off. */
@@ -5902,7 +5903,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 					/* UDP encapsulation turned on. */
 					net->mtu -= sizeof(struct udphdr);
 					if (stcb->asoc.smallest_mtu > net->mtu) {
-						sctp_pathmtu_adjustment(stcb, net->mtu);
+						sctp_pathmtu_adjustment(stcb, net->mtu, net);
 					}
 				} else if (port == 0) {
 					/* UDP encapsulation turned off. */

@@ -83,6 +83,7 @@ set(check_programs
 	test_libmgmt.c
 	test_timer.c
 	tsctp.c
+	tsctp6.c
 )
 
 foreach (source_file ${check_programs})

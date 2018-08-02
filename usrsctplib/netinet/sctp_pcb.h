@@ -115,6 +115,7 @@ struct sctp_ifa {
 	uint32_t flags;
 	uint32_t localifa_flags;
 	uint32_t vrf_id;	/* vrf_id of this addr (for deleting) */
+	uint32_t ifa_mtu;
 	uint8_t src_is_loop;
 	uint8_t src_is_priv;
 	uint8_t src_is_glob;
@@ -323,10 +324,13 @@ struct sctp_base_info {
 #if defined(__Userspace_os_Windows)
 	SOCKET userspace_rawsctp;
 	SOCKET userspace_udpsctp;
+	SOCKET userspace_icmp;
 #else
 	int userspace_rawsctp;
 	int userspace_udpsctp;
+	int userspace_icmp;
 #endif
+	userland_thread_t recvthreadicmp;
 	userland_thread_t recvthreadraw;
 	userland_thread_t recvthreadudp;
 #endif
@@ -334,12 +338,15 @@ struct sctp_base_info {
 #if defined(__Userspace_os_Windows)
 	SOCKET userspace_rawsctp6;
 	SOCKET userspace_udpsctp6;
+	SOCKET userspace_icmp6;
 #else
 	int userspace_rawsctp6;
 	int userspace_udpsctp6;
+	int userspace_icmp6;
 #endif
 	userland_thread_t recvthreadraw6;
 	userland_thread_t recvthreadudp6;
+	userland_thread_t recvthreadicmp6;
 #endif
 	int (*conn_output)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df);
 	void (*debug_printf)(const char *format, ...);
@@ -500,6 +507,7 @@ struct sctp_inpcb {
 	uint8_t reconfig_supported;
 	uint8_t nrsack_supported;
 	uint8_t pktdrop_supported;
+	uint8_t plpmtud_supported;
 	struct sctp_nonpad_sndrcvinfo def_send;
 	/*-
 	 * These three are here for the sosend_dgram
@@ -609,6 +617,7 @@ int register_recv_cb (struct socket *,
                               struct sctp_rcvinfo, int, void *));
 int register_send_cb (struct socket *, uint32_t, int (*)(struct socket *, uint32_t));
 int register_ulp_info (struct socket *, void *);
+int sctp_get_mtu_from_addr(struct sctp_inpcb *inp, struct sockaddr *sa);
 
 #endif
 struct sctp_tcb {
