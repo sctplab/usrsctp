@@ -48,11 +48,11 @@ include_directories(${CMAKE_SOURCE_DIR}/usrsctplib)
 # OS DEPENDENT
 #################################################
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 	add_definitions(-D_GNU_SOURCE)
 endif ()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
 	add_definitions(-D__APPLE_USE_RFC_2292)
 endif ()
 
@@ -99,7 +99,8 @@ foreach (source_file ${check_programs})
 		${source_file}
 	)
 
-	target_link_libraries(${source_file_we}
+	target_link_libraries(
+		${source_file_we}
 		${programs_link_library}
 		${CMAKE_THREAD_LIBS_INIT}
 	)

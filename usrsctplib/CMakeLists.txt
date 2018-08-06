@@ -53,32 +53,32 @@ add_definitions(-DSCTP_PROCESS_LEVEL_LOCKS)
 # OS DEPENDENT
 #################################################
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 	add_definitions(-D_GNU_SOURCE)
 endif ()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+if (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
 	add_definitions(-U__FreeBSD__)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -Wno-address-of-packed-member")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member")
 endif ()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
 	add_definitions(-U__APPLE__)
 	add_definitions(-D__APPLE_USE_RFC_2292)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -Wno-address-of-packed-member -Wno-deprecated-declarations")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member -Wno-deprecated-declarations")
 endif ()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "DragonFly")
+if (CMAKE_SYSTEM_NAME MATCHES "DragonFly")
 	add_definitions(-U__DragonFly__)
 endif ()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
+if (CMAKE_SYSTEM_NAME MATCHES "NetBSD")
 	add_definitions(-U__NetBSD__)
 endif ()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
+if (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 	add_definitions(-U__OpenBSD__)
 endif ()
 

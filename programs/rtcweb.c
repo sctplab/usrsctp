@@ -119,6 +119,8 @@ struct peer_connection {
 #define SCTP_PACKED
 #endif
 
+#pragma warning( push )
+#pragma warning( disable : 4200 )
 struct rtcweb_datachannel_open_request {
 	uint8_t msg_type; /* DATA_CHANNEL_OPEN_REQUEST */
 	uint8_t channel_type;
@@ -127,6 +129,7 @@ struct rtcweb_datachannel_open_request {
 	int16_t priority;
 	char label[];
 } SCTP_PACKED;
+#pragma warning( pop )
 
 struct rtcweb_datachannel_open_response {
 	uint8_t  msg_type; /* DATA_CHANNEL_OPEN_RESPONSE */
