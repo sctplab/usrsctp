@@ -36,17 +36,22 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#ifndef _WIN32
+
+#if !defined(_WIN32)
 #include <unistd.h>
-#endif
+#include <sys/time.h>
+#endif // !defined(_WIN32)
+
 #include <sys/types.h>
-#ifndef _WIN32
+
+#if !defined(_WIN32)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#else
+#else // !defined(_WIN32)
 #include <io.h>
 #endif
+
 #include <usrsctp.h>
 #include <fcntl.h>
 
