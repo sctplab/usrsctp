@@ -109,7 +109,7 @@ in6_sin6_2_sin_in_sock(struct sockaddr *nam)
 }
 
 void
-in6_sin_2_v4mapsin6(struct sockaddr_in *sin, struct sockaddr_in6 *sin6)
+in6_sin_2_v4mapsin6(const struct sockaddr_in *sin, struct sockaddr_in6 *sin6)
 {
 	memset(sin6, 0, sizeof(struct sockaddr_in6));
  	sin6->sin6_family = AF_INET6;
