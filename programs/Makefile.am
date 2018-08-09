@@ -29,9 +29,45 @@
 #
 
 AM_CPPFLAGS = -I$(srcdir)/../usrsctplib
-EXTRA_DIST = Makefile.nmake tsctp.c daytime_server.c discard_server.c echo_server.c client.c rtcweb.c ekr_client.c ekr_server.c ekr_loop.c ekr_loop_offload.c test_libmgmt.c http_client.c
+EXTRA_DIST = Makefile.nmake \
+    tsctp.c \
+    daytime_server.c \
+    daytime_server_upcall.c \
+    discard_server.c \
+    discard_server_upcall.c \
+    echo_server.c \
+    echo_server_upcall.c \
+    client.c \
+    client_upcall.c \
+    rtcweb.c \
+    ekr_client.c \
+    ekr_server.c \
+    ekr_loop.c \
+    ekr_loop_offload.c \
+    ekr_loop_upcall.c \
+    test_libmgmt.c \
+    http_client.c \
+    http_client_upcall.c
 
-noinst_PROGRAMS = tsctp daytime_server discard_server echo_server client rtcweb ekr_client ekr_server ekr_peer ekr_loop ekr_loop_offload test_libmgmt test_timer http_client
+noinst_PROGRAMS = tsctp \
+    daytime_server \
+    daytime_server_upcall \
+    discard_server \
+    discard_server_upcall \
+    echo_server \
+    echo_server_upcall \
+    client \
+    client_upcall \
+    rtcweb \
+    ekr_client \
+    ekr_server \
+    ekr_loop \
+    ekr_loop_offload \
+    ekr_loop_upcall \
+    test_libmgmt \
+    http_client \
+    http_client_upcall
+
 test_libmgmt_SOURCES = test_libmgmt.c
 test_libmgmt_LDADD = ../usrsctplib/libusrsctp.la
 test_timer_SOURCES = test_timer.c
@@ -40,12 +76,20 @@ tsctp_SOURCES = tsctp.c
 tsctp_LDADD = ../usrsctplib/libusrsctp.la
 daytime_server_SOURCES = daytime_server.c
 daytime_server_LDADD = ../usrsctplib/libusrsctp.la
+daytime_server_upcall_SOURCES = daytime_server_upcall.c
+daytime_server_upcall_LDADD = ../usrsctplib/libusrsctp.la
 discard_server_SOURCES = discard_server.c
 discard_server_LDADD = ../usrsctplib/libusrsctp.la
+discard_server_upcall_SOURCES = discard_server_upcall.c
+discard_server_upcall_LDADD = ../usrsctplib/libusrsctp.la
 echo_server_SOURCES = echo_server.c
 echo_server_LDADD = ../usrsctplib/libusrsctp.la
+echo_server_upcall_SOURCES = echo_server_upcall.c
+echo_server_upcall_LDADD = ../usrsctplib/libusrsctp.la
 client_SOURCES = client.c
 client_LDADD = ../usrsctplib/libusrsctp.la
+client_upcall_SOURCES = client_upcall.c
+client_upcall_LDADD = ../usrsctplib/libusrsctp.la
 rtcweb_SOURCES = rtcweb.c
 rtcweb_LDADD = ../usrsctplib/libusrsctp.la
 ekr_server_SOURCES = ekr_server.c
@@ -58,5 +102,9 @@ ekr_loop_SOURCES = ekr_loop.c
 ekr_loop_LDADD = ../usrsctplib/libusrsctp.la
 ekr_loop_offload_SOURCES = ekr_loop_offload.c
 ekr_loop_offload_LDADD = ../usrsctplib/libusrsctp.la
+ekr_loop_upcall_SOURCES = ekr_loop_upcall.c
+ekr_loop_upcall_LDADD = ../usrsctplib/libusrsctp.la
 http_client_SOURCES = http_client.c
 http_client_LDADD = ../usrsctplib/libusrsctp.la
+http_client_upcall_SOURCES = http_client_upcall.c
+http_client_upcall_LDADD = ../usrsctplib/libusrsctp.la
