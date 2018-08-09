@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Felix Weinrank
+ * Copyright (C) 2016-2018 Felix Weinrank
  *
  * All rights reserved.
  *
@@ -29,11 +29,7 @@
  */
 
 /*
- * Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]
- *
- * Example
- * Client: $ ./http_client 212.201.121.100 80 0 9899 9899 /cgi-bin/he
- *           ./http_client 2a02:c6a0:4015:10::100 80 0 9899 9899 /cgi-bin/he
+ * Usage: http_client_upcall remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]
  */
 
 #ifdef _WIN32
@@ -57,6 +53,8 @@
 #include <usrsctp.h>
 
 int done = 0;
+int writePending = 1;
+
 static const char *request_prefix = "GET";
 static const char *request_postfix = "HTTP/1.0\r\nUser-agent: libusrsctp\r\nConnection: close\r\n\r\n";
 char request[512];
@@ -65,24 +63,53 @@ char request[512];
 typedef char* caddr_t;
 #endif
 
-static int
-receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
-           size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
+#define BUFFERSIZE                 (1<<16)
+
+
+static void handle_upcall(struct socket *sock, void *arg, int flgs)
 {
-	if (data == NULL) {
+	int events = usrsctp_get_events(sock);
+	ssize_t bytesSent = 0;
+	char *buf;
+
+	if ((events & SCTP_EVENT_WRITE) && writePending) {
+		writePending = 0;
+		printf("\nHTTP request:\n%s\n", request);
+		printf("\nHTTP response:\n");
+
+		/* send GET request */
+		bytesSent = usrsctp_sendv(sock, request, strlen(request), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
+		if (bytesSent < 0) {
+			perror("usrsctp_sendv");
+			usrsctp_close(sock);
+		} else {
+			printf("%d bytes sent\n", (int)bytesSent);
+		}
+	}
+
+	if ((events & SCTP_EVENT_READ) && !done) {
+		struct sctp_recvv_rn rn;
+		ssize_t n;
+		struct sockaddr_in addr;
+		buf = malloc(BUFFERSIZE);
+		int flags = 0;
+		socklen_t len = (socklen_t)sizeof(struct sockaddr_in);
+		unsigned int infotype = 0;
+		socklen_t infolen = sizeof(struct sctp_recvv_rn);
+		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
+		n = usrsctp_recvv(sock, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn,
+	                 &infolen, &infotype, &flags);
+		if (n > 0)
+#ifdef _WIN32
+			_write(_fileno(stdout), buf, (unsigned int)n);
+#else
+			write(1, buf, n);
+#endif
 		done = 1;
 		usrsctp_close(sock);
-	} else {
-#ifdef _WIN32
-		_write(_fileno(stdout), data, (unsigned int)datalen);
-#else
-		if (write(fileno(stdout), data, datalen) < 0) {
-			perror("write");
-		}
-#endif
-		free(data);
+		free(buf);
+		return;
 	}
-	return (1);
 }
 
 void
@@ -102,11 +129,10 @@ main(int argc, char *argv[])
 	struct sockaddr_in addr4;
 	struct sockaddr_in6 addr6;
 	struct sctp_udpencaps encaps;
-	struct sctp_sndinfo sndinfo;
 	int result;
 
 	if (argc < 3) {
-		printf("Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
+		printf("Usage: http_client_upcall remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
 		return(EXIT_FAILURE);
 	}
 
@@ -123,11 +149,13 @@ main(int argc, char *argv[])
 
 	usrsctp_sysctl_set_sctp_blackhole(2);
 
-	if ((sock = usrsctp_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
+	if ((sock = usrsctp_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 		result = 1;
 		goto out;
 	}
+
+	usrsctp_set_non_blocking(sock, 1);
 
 	if (argc > 3) {
 		memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
@@ -171,8 +199,7 @@ main(int argc, char *argv[])
 #endif
 	}
 
-	printf("\nHTTP request:\n%s\n", request);
-	printf("\nHTTP response:\n");
+	usrsctp_set_upcall(sock, handle_upcall, NULL);
 
 	memset((void *)&addr4, 0, sizeof(struct sockaddr_in));
 	memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
@@ -188,17 +215,21 @@ main(int argc, char *argv[])
 	addr6.sin6_port = htons(atoi(argv[2]));
 	if (inet_pton(AF_INET6, argv[1], &addr6.sin6_addr) == 1) {
 		if (usrsctp_connect(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
-			perror("usrsctp_connect");
-			usrsctp_close(sock);
-			result = 4;
-			goto out;
+			if (errno != EINPROGRESS) {
+				perror("usrsctp_connect");
+				usrsctp_close(sock);
+				result = 4;
+				goto out;
+			}
 		}
 	} else if (inet_pton(AF_INET, argv[1], &addr4.sin_addr) == 1) {
 		if (usrsctp_connect(sock, (struct sockaddr *)&addr4, sizeof(struct sockaddr_in)) < 0) {
-			perror("usrsctp_connect");
-			usrsctp_close(sock);
-			result = 5;
-			goto out;
+			if (errno != EINPROGRESS) {
+				perror("usrsctp_connect");
+				usrsctp_close(sock);
+				result = 5;
+				goto out;
+			}
 		}
 	} else {
 		printf("Illegal destination address\n");
@@ -206,17 +237,6 @@ main(int argc, char *argv[])
 		result = 6;
 		goto out;
 	}
-
-	memset(&sndinfo, 0, sizeof(struct sctp_sndinfo));
-	sndinfo.snd_ppid = htonl(63); /* PPID for HTTP/SCTP */
-	/* send GET request */
-	if (usrsctp_sendv(sock, request, strlen(request), NULL, 0, &sndinfo, sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
-		perror("usrsctp_sendv");
-		usrsctp_close(sock);
-		result = 6;
-		goto out;
-	}
-
 	while (!done) {
 #ifdef _WIN32
 		Sleep(1*1000);

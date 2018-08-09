@@ -5731,7 +5731,9 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 	struct sctp_inpcb *inp = NULL, *inp_decr = NULL;
 	struct sctp_tcb *stcb = NULL;
 	struct sctp_nets *net = NULL;
-
+#if defined(__Userspace__)
+	struct socket *upcall_socket = NULL;
+#endif
 	SCTP_STAT_INCR(sctps_recvdatagrams);
 #ifdef SCTP_AUDITING_ENABLED
 	sctp_audit_log(0xE0, 1);
@@ -5880,6 +5882,20 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 		}
 
 	}
+#if defined(__Userspace__)
+	if (stcb && !(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
+		if (stcb->sctp_socket != NULL) {
+			if (stcb->sctp_socket->so_head != NULL) {
+				upcall_socket = stcb->sctp_socket->so_head;
+			} else {
+				upcall_socket = stcb->sctp_socket;
+			}
+			SOCK_LOCK(upcall_socket);
+			soref(upcall_socket);
+			SOCK_UNLOCK(upcall_socket);
+		}
+	}
+#endif
 	if (IS_SCTP_CONTROL(ch)) {
 		/* process the control portion of the SCTP packet */
 		/* sa_ignore NO_NULL_CHK */
@@ -5957,7 +5973,20 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 		 */
 		goto out;
 	}
-
+#if defined(__Userspace__)
+	if (stcb && upcall_socket == NULL && !(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
+		if (stcb->sctp_socket != NULL) {
+			if (stcb->sctp_socket->so_head != NULL) {
+				upcall_socket = stcb->sctp_socket->so_head;
+			} else {
+				upcall_socket = stcb->sctp_socket;
+			}
+			SOCK_LOCK(upcall_socket);
+			soref(upcall_socket);
+			SOCK_UNLOCK(upcall_socket);
+		}
+	}
+#endif
 	/*
 	 * DATA chunk processing
 	 */
@@ -6095,6 +6124,18 @@ trigger_send:
 	if (stcb != NULL) {
 		SCTP_TCB_UNLOCK(stcb);
 	}
+#if defined(__Userspace__)
+	if (upcall_socket != NULL) {
+		if (upcall_socket->so_upcall != NULL) {
+		    if (soreadable(upcall_socket) || sowriteable(upcall_socket) || upcall_socket->so_error) {
+			    (*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
+			}
+		}
+		ACCEPT_LOCK();
+		SOCK_LOCK(upcall_socket);
+		sorele(upcall_socket);
+	}
+#endif
 	if (inp_decr != NULL) {
 		/* reduce ref-count */
 		SCTP_INP_WLOCK(inp_decr);

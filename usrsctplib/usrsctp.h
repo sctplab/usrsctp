@@ -141,6 +141,10 @@ union sctp_sockstore {
 #define SCTP_CURRENT_ASSOC 1
 #define SCTP_ALL_ASSOC     2
 
+#define SCTP_EVENT_READ    0x0001
+#define SCTP_EVENT_WRITE   0x0002
+#define SCTP_EVENT_ERROR   0x0004
+
 /***  Structures and definitions to use the socket API  ***/
 
 #define SCTP_ALIGN_RESV_PAD 92
@@ -1007,6 +1011,15 @@ usrsctp_deregister_address(void *);
 
 int
 usrsctp_set_ulpinfo(struct socket *, void *);
+
+int
+usrsctp_set_upcall(struct socket *so,
+                   void (*upcall)(struct socket *, void *, int),
+                   void *arg);
+
+int
+usrsctp_get_events(struct socket *so);
+
 
 #define SCTP_DUMP_OUTBOUND 1
 #define SCTP_DUMP_INBOUND  0

@@ -3495,6 +3495,49 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	return;
 }
 
+int
+usrsctp_get_events(struct socket *so)
+{
+	int events = 0;
+
+	if (so == NULL) {
+		errno = EBADF;
+		return -1;
+	}
+
+	SOCK_LOCK(so);
+	if (soreadable(so)) {
+		events |= SCTP_EVENT_READ;
+	}
+	if (sowriteable(so)) {
+		events |= SCTP_EVENT_WRITE;
+	}
+	if (so->so_error) {
+		events |= SCTP_EVENT_ERROR;
+	}
+	SOCK_UNLOCK(so);
+
+	return events;
+}
+
+int
+usrsctp_set_upcall(struct socket *so, void (*upcall)(struct socket *, void *, int), void *arg)
+{
+	if (so == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	SOCK_LOCK(so);
+	so->so_upcall = upcall;
+	so->so_upcallarg = arg;
+	so->so_snd.sb_flags |= SB_UPCALL;
+	so->so_rcv.sb_flags |= SB_UPCALL;
+	SOCK_UNLOCK(so);
+
+	return (0);
+}
+
 #define USRSCTP_TUNABLE_SET_DEF(__field, __prefix)   \
 int usrsctp_tunable_set_ ## __field(uint32_t value)  \
 {                                                    \

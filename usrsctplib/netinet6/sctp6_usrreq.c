@@ -438,6 +438,9 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 	struct sctphdr sh;
 	struct sockaddr_in6 src, dst;
 
+#if defined(__Userspace__)
+	struct socket *upcall_socket = NULL;
+#endif
 #ifdef HAVE_SA_LEN
 	if (pktdst->sa_family != AF_INET6 ||
 	    pktdst->sa_len != sizeof(struct sockaddr_in6)) {
@@ -571,6 +574,26 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 			             ip6cp->ip6c_icmp6->icmp6_type,
 			             ip6cp->ip6c_icmp6->icmp6_code,
 			             ntohl(ip6cp->ip6c_icmp6->icmp6_mtu));
+#if defined(__Userspace__)
+			if (stcb && upcall_socket == NULL && !(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
+				if (stcb->sctp_socket != NULL) {
+					upcall_socket = stcb->sctp_socket;
+					SOCK_LOCK(upcall_socket);
+					soref(upcall_socket);
+					SOCK_UNLOCK(upcall_socket);
+				}
+			}
+			if (upcall_socket != NULL) {
+				if (upcall_socket->so_upcall != NULL) {
+					if (upcall_socket->so_error) {
+						(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
+					}
+				}
+				ACCEPT_LOCK();
+				SOCK_LOCK(upcall_socket);
+				sorele(upcall_socket);
+			}
+#endif
 		} else {
 #if defined(__FreeBSD__) && __FreeBSD_version < 500000
 			if (PRC_IS_REDIRECT(cmd) && (inp != NULL)) {

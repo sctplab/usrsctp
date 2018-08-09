@@ -159,7 +159,7 @@ endif ()
 #################################################
 
 # SETTINGS FOR UNIX COMPILER
-if ("${CMAKE_C_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_C_COMPILER_ID}" MATCHES "AppleClang" OR "${CMAKE_C_COMPILER_ID}" MATCHES "GNU")
+if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "AppleClang" OR CMAKE_C_COMPILER_ID MATCHES "GNU")
 	set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c99 -pedantic -Wall -Wextra")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99 -pedantic -Wall -Wextra")
 
@@ -234,7 +234,7 @@ if ("${CMAKE_C_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_C_COMPILER_ID}" MATCHES
 endif ()
 
 # SETTINGS FOR VISUAL STUDIO COMPILER
-if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC")
+if (CMAKE_C_COMPILER_ID MATCHES "MSVC")
 	if (CMAKE_C_FLAGS MATCHES "/W[0-4]")
 		string(REGEX REPLACE "/W[0-4]" "/W3" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 	else ()
@@ -245,6 +245,8 @@ if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC")
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
 	endif ()
 endif ()
+
+message(STATUS "Compiler flags (CMAKE_C_FLAGS): ${CMAKE_C_FLAGS}")
 
 
 #################################################

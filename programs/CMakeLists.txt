@@ -69,16 +69,23 @@ find_package(Threads)
 #################################################
 
 set(check_programs
+	chargen_server_upcall.c
 	client.c
+	client_upcall.c
 	daytime_server.c
+	daytime_server_upcall.c
 	discard_server.c
+	discard_server_upcall.c
 	echo_server.c
+	echo_server_upcall.c
 	ekr_client.c
-	ekr_loop_offload.c
 	ekr_loop.c
+	ekr_loop_offload.c
+	ekr_loop_upcall.c
 	ekr_peer.c
 	ekr_server.c
 	http_client.c
+	http_client_upcall.c
 	rtcweb.c
 	test_libmgmt.c
 	test_timer.c
