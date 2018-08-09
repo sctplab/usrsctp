@@ -2071,8 +2071,8 @@ out_decr:
 #if defined(__Userspace__)
 	if (upcall_socket != NULL) {
 		if (upcall_socket->so_upcall != NULL) {
-		    if (upcall_socket->so_error) {
-			    (*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
+			if (upcall_socket->so_error) {
+				(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
 			}
 		}
 		ACCEPT_LOCK();

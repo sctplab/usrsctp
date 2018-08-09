@@ -3505,6 +3505,7 @@ usrsctp_get_events(struct socket *so)
 		return -1;
 	}
 
+	SOCK_LOCK(so);
 	if (soreadable(so)) {
 		events |= SCTP_EVENT_READ;
 	}
@@ -3514,15 +3515,9 @@ usrsctp_get_events(struct socket *so)
 	if (so->so_error) {
 		events |= SCTP_EVENT_ERROR;
 	}
-	return events;
-}
+	SOCK_UNLOCK(so);
 
-int usrsctp_get_error(struct socket *so)
-{
-	if (so->so_error) {
-		return so->so_error;
-	}
-	return -1;
+	return events;
 }
 
 int
