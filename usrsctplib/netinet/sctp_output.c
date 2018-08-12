@@ -7694,7 +7694,7 @@ one_more_time:
 	}
 	if ((sp->msg_is_complete) && (sp->length == 0)) {
 		if (sp->sender_all_done) {
-			/* We are doing differed cleanup. Last
+			/* We are doing defered cleanup. Last
 			 * time through when we took all the data
 			 * the sender_all_done was not set.
 			 */
