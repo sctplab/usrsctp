@@ -5734,6 +5734,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 #if defined(__Userspace__)
 	struct socket *upcall_socket = NULL;
 #endif
+
 	SCTP_STAT_INCR(sctps_recvdatagrams);
 #ifdef SCTP_AUDITING_ENABLED
 	sctp_audit_log(0xE0, 1);
@@ -5880,20 +5881,19 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 			                 vrf_id, port);
 			goto out;
 		}
-
 	}
 #if defined(__Userspace__)
-	if (stcb && !(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
-		if (stcb->sctp_socket != NULL) {
-			if (stcb->sctp_socket->so_head != NULL) {
-				upcall_socket = stcb->sctp_socket->so_head;
-			} else {
-				upcall_socket = stcb->sctp_socket;
-			}
-			SOCK_LOCK(upcall_socket);
-			soref(upcall_socket);
-			SOCK_UNLOCK(upcall_socket);
+	if ((stcb != NULL) &&
+	    !(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) &&
+	    (stcb->sctp_socket != NULL)) {
+		if (stcb->sctp_socket->so_head != NULL) {
+			upcall_socket = stcb->sctp_socket->so_head;
+		} else {
+			upcall_socket = stcb->sctp_socket;
 		}
+		SOCK_LOCK(upcall_socket);
+		soref(upcall_socket);
+		SOCK_UNLOCK(upcall_socket);
 	}
 #endif
 	if (IS_SCTP_CONTROL(ch)) {
@@ -5974,19 +5974,20 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 		goto out;
 	}
 #if defined(__Userspace__)
-	if (stcb && upcall_socket == NULL && !(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
-		if (stcb->sctp_socket != NULL) {
-			if (stcb->sctp_socket->so_head != NULL) {
-				upcall_socket = stcb->sctp_socket->so_head;
-			} else {
-				upcall_socket = stcb->sctp_socket;
-			}
-			SOCK_LOCK(upcall_socket);
-			soref(upcall_socket);
-			SOCK_UNLOCK(upcall_socket);
+	if ((upcall_socket == NULL) &&
+	    !(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) &&
+	    (stcb->sctp_socket != NULL)) {
+		if (stcb->sctp_socket->so_head != NULL) {
+			upcall_socket = stcb->sctp_socket->so_head;
+		} else {
+			upcall_socket = stcb->sctp_socket;
 		}
+		SOCK_LOCK(upcall_socket);
+		soref(upcall_socket);
+		SOCK_UNLOCK(upcall_socket);
 	}
 #endif
+
 	/*
 	 * DATA chunk processing
 	 */
@@ -6127,8 +6128,10 @@ trigger_send:
 #if defined(__Userspace__)
 	if (upcall_socket != NULL) {
 		if (upcall_socket->so_upcall != NULL) {
-		    if (soreadable(upcall_socket) || sowriteable(upcall_socket) || upcall_socket->so_error) {
-			    (*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
+			if (soreadable(upcall_socket) ||
+			    sowriteable(upcall_socket) ||
+			    upcall_socket->so_error) {
+				(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
 			}
 		}
 		ACCEPT_LOCK();

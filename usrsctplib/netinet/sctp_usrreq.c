@@ -424,11 +424,6 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 #if defined(__FreeBSD__)
 	struct ip *outer_ip;
 #endif
-
-#if defined(__Userspace__)
-	struct socket *upcall_socket = NULL;
-#endif
-
 	struct ip *inner_ip;
 	struct sctphdr *sh;
 	struct icmp *icmp;
@@ -540,19 +535,17 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 			            (uint32_t)ntohs(icmp->icmp_nextmtu));
 
 #if defined(__Userspace__)
-			if (stcb && upcall_socket == NULL && !(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
-				if (stcb->sctp_socket != NULL) {
-					upcall_socket = stcb->sctp_socket;
-					SOCK_LOCK(upcall_socket);
-					soref(upcall_socket);
-					SOCK_UNLOCK(upcall_socket);
-				}
-			}
-			if (upcall_socket != NULL) {
-				if (upcall_socket->so_upcall != NULL) {
-					if (upcall_socket->so_error) {
-						(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
-					}
+			if (!(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) &&
+			    (stcb->sctp_socket != NULL)) {
+				struct socket *upcall_socket;
+
+				upcall_socket = stcb->sctp_socket;
+				SOCK_LOCK(upcall_socket);
+				soref(upcall_socket);
+				SOCK_UNLOCK(upcall_socket);
+				if ((upcall_socket->so_upcall != NULL) &&
+				    (upcall_socket->so_error != 0)) {
+					(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
 				}
 				ACCEPT_LOCK();
 				SOCK_LOCK(upcall_socket);
