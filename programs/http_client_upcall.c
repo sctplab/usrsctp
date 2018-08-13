@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Felix Weinrank
+ * Copyright (C) 2016-2018 Felix Weinrank
  *
  * All rights reserved.
  *
@@ -69,7 +69,7 @@ typedef char* caddr_t;
 static void handle_upcall(struct socket *sock, void *arg, int flgs)
 {
 	int events = usrsctp_get_events(sock);
-	int bytesSent = 0;
+	ssize_t bytesSent = 0;
 	char *buf;
 
 	if ((events & SCTP_EVENT_WRITE) && writePending) {
@@ -83,7 +83,7 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 			perror("usrsctp_sendv");
 			usrsctp_close(sock);
 		} else {
-			printf("%d bytes sent\n", bytesSent);
+			printf("%d bytes sent\n", (int)bytesSent);
 		}
 	}
 
@@ -100,7 +100,11 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 		n = usrsctp_recvv(sock, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn,
 	                 &infolen, &infotype, &flags);
 		if (n > 0)
+#ifdef _WIN32
+			_write(_fileno(stdout), buf, (unsigned int)n);
+#else
 			write(1, buf, n);
+#endif
 		done = 1;
 		usrsctp_close(sock);
 		free(buf);
@@ -127,10 +131,10 @@ main(int argc, char *argv[])
 	struct sctp_udpencaps encaps;
 	int result;
 
-    if (argc < 3) {
-        printf("Usage: http_client_upcall remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
-        return(EXIT_FAILURE);
-    }
+	if (argc < 3) {
+		printf("Usage: http_client_upcall remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
+		return(EXIT_FAILURE);
+	}
 
 	result = 0;
 	if (argc > 4) {

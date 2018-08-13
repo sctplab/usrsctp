@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 334532 2018-06-02 16:28:10Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 337706 2018-08-13 11:56:21Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3961,7 +3961,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 					 * timer on the asoc due to it was not
 					 * closed. So go ahead and start it now.
 					 */
-					asoc->asoc.state &= ~SCTP_STATE_IN_ACCEPT_QUEUE;
+					SCTP_CLEAR_SUBSTATE(&asoc->asoc, SCTP_STATE_IN_ACCEPT_QUEUE);
 					sctp_timer_start(SCTP_TIMER_TYPE_ASOCKILL, inp, asoc, NULL);
 				}
 				SCTP_TCB_UNLOCK(asoc);
@@ -3984,7 +3984,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 			}
 			/* Disconnect the socket please */
 			asoc->sctp_socket = NULL;
-			asoc->asoc.state |= SCTP_STATE_CLOSED_SOCKET;
+			SCTP_ADD_SUBSTATE(&asoc->asoc, SCTP_STATE_CLOSED_SOCKET);
 			if ((asoc->asoc.size_on_reasm_queue > 0) ||
 			    (asoc->asoc.control_pdapi) ||
 			    (asoc->asoc.size_on_all_streams > 0) ||
@@ -4040,11 +4040,11 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 				}
 			} else {
 				/* mark into shutdown pending */
-				asoc->asoc.state |= SCTP_STATE_SHUTDOWN_PENDING;
+				SCTP_ADD_SUBSTATE(&asoc->asoc, SCTP_STATE_SHUTDOWN_PENDING);
 				sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD, asoc->sctp_ep, asoc,
 						 asoc->asoc.primary_destination);
 				if ((*asoc->asoc.ss_functions.sctp_ss_is_user_msgs_incomplete)(asoc, &asoc->asoc)) {
-					asoc->asoc.state |= SCTP_STATE_PARTIAL_MSG_LEFT;
+					SCTP_ADD_SUBSTATE(&asoc->asoc, SCTP_STATE_PARTIAL_MSG_LEFT);
 				}
 				if (TAILQ_EMPTY(&asoc->asoc.send_queue) &&
 				    TAILQ_EMPTY(&asoc->asoc.sent_queue) &&
@@ -4106,7 +4106,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 		SCTP_TCB_LOCK(asoc);
 		if (asoc->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED) {
 			if (asoc->asoc.state & SCTP_STATE_IN_ACCEPT_QUEUE) {
-				asoc->asoc.state &= ~SCTP_STATE_IN_ACCEPT_QUEUE;
+				SCTP_CLEAR_SUBSTATE(&asoc->asoc, SCTP_STATE_IN_ACCEPT_QUEUE);
 				sctp_timer_start(SCTP_TIMER_TYPE_ASOCKILL, inp, asoc, NULL);
 			}
 		        cnt++;
@@ -5574,7 +5574,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 	}
 	/* Now the read queue needs to be cleaned up (only once) */
 	if ((stcb->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED) == 0) {
-		stcb->asoc.state |= SCTP_STATE_ABOUT_TO_BE_FREED;
+		SCTP_ADD_SUBSTATE(&stcb->asoc, SCTP_STATE_ABOUT_TO_BE_FREED);
 		SCTP_INP_READ_LOCK(inp);
 		TAILQ_FOREACH(sq, &inp->read_queue, next) {
 			if (sq->stcb == stcb) {
@@ -5621,7 +5621,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		if ((stcb->asoc.refcnt)  ||
 		    (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) ||
 		    (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
-			stcb->asoc.state &= ~SCTP_STATE_IN_ACCEPT_QUEUE;
+			SCTP_CLEAR_SUBSTATE(&stcb->asoc, SCTP_STATE_IN_ACCEPT_QUEUE);
 			sctp_timer_start(SCTP_TIMER_TYPE_ASOCKILL, inp, stcb, NULL);
 		}
 		SCTP_TCB_UNLOCK(stcb);
@@ -5711,7 +5711,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		atomic_add_int(&stcb->asoc.refcnt, -1);
 	}
 	if (stcb->asoc.refcnt) {
-		stcb->asoc.state &= ~SCTP_STATE_IN_ACCEPT_QUEUE;
+		SCTP_CLEAR_SUBSTATE(&stcb->asoc, SCTP_STATE_IN_ACCEPT_QUEUE);
 		sctp_timer_start(SCTP_TIMER_TYPE_ASOCKILL, inp, stcb, NULL);
 		if (from_inpcbfree == SCTP_NORMAL_PROC) {
 			SCTP_INP_INFO_WUNLOCK();
@@ -7315,7 +7315,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 					 * assoc? straighten out locks.
 					 */
 					if (stcb_tmp) {
-						if (SCTP_GET_STATE(&stcb_tmp->asoc) & SCTP_STATE_COOKIE_WAIT) {
+						if (SCTP_GET_STATE(&stcb_tmp->asoc) == SCTP_STATE_COOKIE_WAIT) {
 							struct mbuf *op_err;
 							char msg[SCTP_DIAG_INFO_LEN];
 
@@ -7409,7 +7409,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 					 * assoc? straighten out locks.
 					 */
 					if (stcb_tmp) {
-						if (SCTP_GET_STATE(&stcb_tmp->asoc) & SCTP_STATE_COOKIE_WAIT) {
+						if (SCTP_GET_STATE(&stcb_tmp->asoc) == SCTP_STATE_COOKIE_WAIT) {
 							struct mbuf *op_err;
 							char msg[SCTP_DIAG_INFO_LEN];
 

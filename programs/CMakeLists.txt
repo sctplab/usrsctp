@@ -48,11 +48,11 @@ include_directories(${CMAKE_SOURCE_DIR}/usrsctplib)
 # OS DEPENDENT
 #################################################
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 	add_definitions(-D_GNU_SOURCE)
 endif ()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
 	add_definitions(-D__APPLE_USE_RFC_2292)
 endif ()
 
@@ -68,27 +68,27 @@ find_package(Threads)
 # PROGRAMS
 #################################################
 list(APPEND check_programs
+    chargen_server_upcall.c
 	client.c
+	client_upcall.c
 	daytime_server.c
+	daytime_server_upcall.c
 	discard_server.c
+	discard_server_upcall.c
 	echo_server.c
+	echo_server_upcall.c
 	ekr_client.c
-	ekr_loop_offload.c
 	ekr_loop.c
+	ekr_loop_offload.c
+	ekr_loop_upcall.c
 	ekr_peer.c
 	ekr_server.c
 	http_client.c
+	http_client_upcall.c
 	rtcweb.c
 	test_libmgmt.c
 	test_timer.c
 	tsctp.c
-	http_client_upcall.c
-	client_upcall.c
-	discard_server_upcall.c
-	echo_server_upcall.c
-	chargen_server_upcall.c
-	daytime_server_upcall.c
-	ekr_loop_upcall.c
 )
 
 # if in fuzzing mode, only build the fuzzer
@@ -112,7 +112,8 @@ foreach (source_file ${check_programs})
 		${source_file}
 	)
 
-	target_link_libraries(${source_file_we}
+	target_link_libraries(
+		${source_file_we}
 		${programs_link_library}
 		${CMAKE_THREAD_LIBS_INIT}
 	)

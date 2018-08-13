@@ -1154,6 +1154,9 @@ usrsctp_recvv(struct socket *so,
 			errno = 0;
 		}
 	}
+	if (errno != 0) {
+		goto out;
+	}
 	if ((*msg_flags & MSG_NOTIFICATION) == 0) {
 		struct sctp_inpcb *inp;
 
@@ -1205,7 +1208,10 @@ usrsctp_recvv(struct socket *so,
 			*infolen = 0;
 		}
 	}
-	if ((fromlenp != NULL) && (fromlen > 0) && (from != NULL)) {
+	if ((fromlenp != NULL) &&
+	    (fromlen > 0) &&
+	    (from != NULL) &&
+	    (ulen > auio.uio_resid)) {
 		switch (from->sa_family) {
 #if defined(INET)
 		case AF_INET:
@@ -1228,6 +1234,7 @@ usrsctp_recvv(struct socket *so,
 			*fromlenp = fromlen;
 		}
 	}
+out:
 	if (errno == 0) {
 		/* ready return value */
 		return (ulen - auio.uio_resid);
@@ -3498,6 +3505,7 @@ usrsctp_get_events(struct socket *so)
 		return -1;
 	}
 
+	SOCK_LOCK(so);
 	if (soreadable(so)) {
 		events |= SCTP_EVENT_READ;
 	}
@@ -3507,15 +3515,9 @@ usrsctp_get_events(struct socket *so)
 	if (so->so_error) {
 		events |= SCTP_EVENT_ERROR;
 	}
-	return events;
-}
+	SOCK_UNLOCK(so);
 
-int usrsctp_get_error(struct socket *so)
-{
-	if (so->so_error) {
-		return so->so_error;
-	}
-	return -1;
+	return events;
 }
 
 int
@@ -3566,7 +3568,7 @@ int usrsctp_sysctl_set_ ## __field(uint32_t value)   \
 	}                                            \
 }
 
-#if !defined(__Userspace_os_Windows)
+#if __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6) || defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wtype-limits"
 #endif
@@ -3639,8 +3641,8 @@ USRSCTP_SYSCTL_SET_DEF(sctp_initial_cwnd, SCTPCTL_INITIAL_CWND)
 #ifdef SCTP_DEBUG
 USRSCTP_SYSCTL_SET_DEF(sctp_debug_on, SCTPCTL_DEBUG)
 #endif
-#if !defined(__Userspace_os_Windows)
-#pragma GCC diagnostic push
+#if __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6) || defined(__clang__)
+#pragma GCC diagnostic pop
 #endif
 
 #define USRSCTP_SYSCTL_GET_DEF(__field) \

@@ -29,7 +29,7 @@
  */
 
 /*
- * Usage: daytime_server [local_encaps_port] [remote_encaps_port]
+ * Usage: chargen_server_upcall [local_encaps_port] [remote_encaps_port]
  */
 
 #ifdef _WIN32
@@ -122,7 +122,7 @@ handle_upcall(struct socket *sock, void *data, int flgs)
 			if (flags & MSG_NOTIFICATION) {
 				printf("Notification of length %d received.\n", (int)n);
 			} else {
-				printf("data of size %zd received\n", n);
+				printf("data of size %d received\n", (int)n);
 			}
 		}
 		free(buf);

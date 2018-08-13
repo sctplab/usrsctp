@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 335179 2018-06-14 21:30:52Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 337706 2018-08-13 11:56:21Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4630,7 +4630,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		} else {
 			ip6h->ip6_nxt = IPPROTO_SCTP;
 		}
-		ip6h->ip6_plen = htons(packet_length - sizeof(struct ip6_hdr));
+		ip6h->ip6_plen = htons((uint16_t)(packet_length - sizeof(struct ip6_hdr)));
 		ip6h->ip6_dst = sin6->sin6_addr;
 
 		/*
@@ -7209,9 +7209,9 @@ sctp_sendall_iterator(struct sctp_inpcb *inp, struct sctp_tcb *stcb, void *ptr,
 				    (SCTP_GET_STATE(asoc) != SCTP_STATE_SHUTDOWN_RECEIVED) &&
 				    (SCTP_GET_STATE(asoc) != SCTP_STATE_SHUTDOWN_ACK_SENT)) {
 					if ((*asoc->ss_functions.sctp_ss_is_user_msgs_incomplete)(stcb, asoc)) {
-						asoc->state |= SCTP_STATE_PARTIAL_MSG_LEFT;
+						SCTP_ADD_SUBSTATE(asoc, SCTP_STATE_PARTIAL_MSG_LEFT);
 					}
-					asoc->state |= SCTP_STATE_SHUTDOWN_PENDING;
+					SCTP_ADD_SUBSTATE(asoc, SCTP_STATE_SHUTDOWN_PENDING);
 					if (TAILQ_EMPTY(&asoc->send_queue) &&
 					    TAILQ_EMPTY(&asoc->sent_queue) &&
 					    (asoc->state & SCTP_STATE_PARTIAL_MSG_LEFT)) {
@@ -7694,7 +7694,7 @@ one_more_time:
 	}
 	if ((sp->msg_is_complete) && (sp->length == 0)) {
 		if (sp->sender_all_done) {
-			/* We are doing differed cleanup. Last
+			/* We are doing defered cleanup. Last
 			 * time through when we took all the data
 			 * the sender_all_done was not set.
 			 */
@@ -8347,7 +8347,7 @@ sctp_med_chunk_output(struct sctp_inpcb *inp,
 	*reason_code = 0;
 	auth_keyid = stcb->asoc.authinfo.active_keyid;
 	if ((asoc->state & SCTP_STATE_SHUTDOWN_PENDING) ||
-	    (asoc->state & SCTP_STATE_SHUTDOWN_RECEIVED) ||
+	    (SCTP_GET_STATE(asoc) == SCTP_STATE_SHUTDOWN_RECEIVED) ||
 	    (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_EXPLICIT_EOR))) {
 		eeor_mode = 1;
 	} else {
@@ -9167,7 +9167,7 @@ again_one_more_time:
 					chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 				}
 				if (SCTP_BASE_SYSCTL(sctp_enable_sack_immediately) &&
-				    ((asoc->state & SCTP_STATE_SHUTDOWN_PENDING) == SCTP_STATE_SHUTDOWN_PENDING)) {
+				    (asoc->state & SCTP_STATE_SHUTDOWN_PENDING)) {
 					struct sctp_data_chunk *dchkh;
 
 					dchkh = mtod(chk->data, struct sctp_data_chunk *);
@@ -11899,7 +11899,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #endif
 #ifdef INET6
 	case AF_INET6:
-		ip6->ip6_plen = htons(len - sizeof(struct ip6_hdr));
+		ip6->ip6_plen = htons((uint16_t)(len - sizeof(struct ip6_hdr)));
 		if (port) {
 			shout->checksum = sctp_calculate_cksum(mout, sizeof(struct ip6_hdr) + sizeof(struct udphdr));
 			SCTP_STAT_INCR(sctps_sendswcrc);
@@ -14635,9 +14635,9 @@ dataless_eof:
 					hold_tcblock = 1;
 				}
 				if ((*asoc->ss_functions.sctp_ss_is_user_msgs_incomplete)(stcb, asoc)) {
-					asoc->state |= SCTP_STATE_PARTIAL_MSG_LEFT;
+					SCTP_ADD_SUBSTATE(asoc, SCTP_STATE_PARTIAL_MSG_LEFT);
 				}
-				asoc->state |= SCTP_STATE_SHUTDOWN_PENDING;
+				SCTP_ADD_SUBSTATE(asoc, SCTP_STATE_SHUTDOWN_PENDING);
 				if (TAILQ_EMPTY(&asoc->send_queue) &&
 				    TAILQ_EMPTY(&asoc->sent_queue) &&
 				    (asoc->state & SCTP_STATE_PARTIAL_MSG_LEFT)) {

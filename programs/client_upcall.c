@@ -29,24 +29,29 @@
  */
 
 /*
- * Usage: client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port]
+ * Usage: client_upcall remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port]
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#ifndef _WIN32
+
+#if !defined(_WIN32)
 #include <unistd.h>
-#endif
+#include <sys/time.h>
+#endif // !defined(_WIN32)
+
 #include <sys/types.h>
-#ifndef _WIN32
+
+#if !defined(_WIN32)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#else
+#else // !defined(_WIN32)
 #include <io.h>
 #endif
+
 #include <usrsctp.h>
 #include <fcntl.h>
 
@@ -65,8 +70,13 @@ int inputAvailable(void)
   tv.tv_sec = 0;
   tv.tv_usec = 0;
   FD_ZERO(&fds);
+#ifndef _WIN32
   FD_SET(STDIN_FILENO, &fds);
   select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
+#else
+  FD_SET(_fileno(stdin), &fds);
+  select(_fileno(stdin) + 1, &fds, NULL, NULL, &tv);
+#endif
   return (FD_ISSET(0, &fds));
 }
 
@@ -315,7 +325,11 @@ main(int argc, char *argv[])
 			}
 		}
 	}
+#ifdef _WIN32
+	Sleep(1000);
+#else
 	sleep(1);
+#endif
 	usrsctp_close(sock);
 
 	usrsctp_get_stat(&stat);

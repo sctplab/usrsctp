@@ -39,33 +39,56 @@ LINKFLAGS=/LIBPATH:..\usrsctplib usrsctp.lib
 
 all: \
 	client \
+	client_upcall \
 	daytime_server \
+	daytime_server_upcall \
 	discard_server \
+	discard_server_upcall \
 	echo_server \
+	echo_server_upcall \
 	tsctp \
 	rtcweb \
 	ekr_client \
 	ekr_server \
 	ekr_peer \
 	ekr_loop \
+	ekr_loop_offload \
+	ekr_loop_upcall \
 	test_libmgmt \
-	http_client
+	http_client \
+	http_client_upcall
 
 client:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c client.c
 	link -out:client.exe client.obj $(LINKFLAGS)
 
+client_upcall:
+	$(CC) $(CFLAGS) $(CVARSDLL) -c client_upcall.c
+	link -out:client_upcall.exe client_upcall.obj $(LINKFLAGS)
+
 daytime_server:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c daytime_server.c
 	link -out:daytime_server.exe daytime_server.obj $(LINKFLAGS)
+
+daytime_server_upcall:
+	$(CC) $(CFLAGS) $(CVARSDLL) -c daytime_server_upcall.c
+	link -out:daytime_server_upcall.exe daytime_server_upcall.obj $(LINKFLAGS)
 
 discard_server:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c discard_server.c
 	link -out:discard_server.exe discard_server.obj $(LINKFLAGS)
 
+discard_server_upcall:
+	$(CC) $(CFLAGS) $(CVARSDLL) -c discard_server_upcall.c
+	link -out:discard_server_upcall.exe discard_server_upcall.obj $(LINKFLAGS)
+
 echo_server:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c echo_server.c
 	link -out:echo_server.exe echo_server.obj $(LINKFLAGS)
+
+echo_server_upcall:
+	$(CC) $(CFLAGS) $(CVARSDLL) -c echo_server_upcall.c
+	link -out:echo_server_upcall.exe echo_server_upcall.obj $(LINKFLAGS)
 
 tsctp:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c tsctp.c
@@ -91,6 +114,14 @@ ekr_loop:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c ekr_loop.c
 	link -out:ekr_loop.exe ekr_loop.obj $(LINKFLAGS)
 
+ekr_loop_offload:
+	$(CC) $(CFLAGS) $(CVARSDLL) -c ekr_loop_offload.c
+	link -out:ekr_loop_offload.exe ekr_loop_offload.obj $(LINKFLAGS)
+
+ekr_loop_upcall:
+	$(CC) $(CFLAGS) $(CVARSDLL) -c ekr_loop_upcall.c
+	link -out:ekr_loop_upcall.exe ekr_loop_upcall.obj $(LINKFLAGS)
+
 test_libmgmt:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c test_libmgmt.c
 	link -out:test_libmgmt.exe test_libmgmt.obj $(LINKFLAGS)
@@ -99,15 +130,27 @@ http_client:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c http_client.c
 	link -out:http_client.exe http_client.obj $(LINKFLAGS)
 
+http_client_upcall:
+	$(CC) $(CFLAGS) $(CVARSDLL) -c http_client_upcall.c
+	link -out:http_client_upcall.exe http_client_upcall.obj $(LINKFLAGS)
+
 clean:
 	del /F client.exe
 	del /F client.obj
+	del /F client_upcall.exe
+	del /F client_upcall.obj
 	del /F daytime_server.exe
 	del /F daytime_server.obj
+	del /F daytime_server_upcall.exe
+	del /F daytime_server_upcall.obj
 	del /F discard_server.exe
 	del /F discard_server.obj
+	del /F discard_server_upcall.exe
+	del /F discard_server_upcall.obj
 	del /F echo_server.exe
 	del /F echo_server.obj
+	del /F echo_server_upcall.exe
+	del /F echo_server_upcall.obj
 	del /F tsctp.exe
 	del /F tsctp.obj
 	del /F rtcweb.exe
@@ -120,7 +163,13 @@ clean:
 	del /F ekr_peer.obj
 	del /F ekr_loop.exe
 	del /F ekr_loop.obj
+	del /F ekr_loop_offload.exe
+	del /F ekr_loop_offload.obj
+	del /F ekr_loop_upcall.exe
+	del /F ekr_loop_upcall.obj
 	del /F test_libmgmt.exe
 	del /F test_libmgmt.obj
 	del /F http_client.exe
 	del /F http_client.obj
+	del /F http_client_upcall.exe
+	del /F http_client_upcall.obj

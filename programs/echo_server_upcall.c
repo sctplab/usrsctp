@@ -29,11 +29,12 @@
  */
 
 /*
- * Usage: discard_server [local_encaps_port] [remote_encaps_port]
+ * Usage: discard_server_upcall [local_encaps_port] [remote_encaps_port]
  */
 
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
+#include <io.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -141,7 +142,7 @@ handle_upcall(struct socket *sock, void *data, int flgs)
 					snd_info.snd_ppid = rn.recvv_rcvinfo.rcv_ppid;
 					snd_info.snd_context = 0;
 					snd_info.snd_assoc_id = rn.recvv_rcvinfo.rcv_assoc_id;
-					if (usrsctp_sendv(sock, buf, n, NULL, 0, &snd_info, sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
+					if (usrsctp_sendv(sock, buf, (size_t) n, NULL, 0, &snd_info, sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 						perror("sctp_sendv");
 					}
 				}

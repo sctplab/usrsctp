@@ -44,7 +44,7 @@ __FBSDID("$FreeBSD: head/sys/netinet6/sctp6_var.h 317457 2017-04-26 19:26:40Z tu
 #ifdef INET
 extern void in6_sin6_2_sin(struct sockaddr_in *, struct sockaddr_in6 *);
 extern void in6_sin6_2_sin_in_sock(struct sockaddr *);
-extern void in6_sin_2_v4mapsin6(struct sockaddr_in *, struct sockaddr_in6 *);
+extern void in6_sin_2_v4mapsin6(const struct sockaddr_in *, struct sockaddr_in6 *);
 #endif
 #endif
 #if defined(_KERNEL)

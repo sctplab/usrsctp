@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2015-2015 Oleg Alexeenkov
-# Copyright (C) 2015-2017 Felix Weinrank
+# Copyright (C) 2015-2018 Felix Weinrank
 #
 # All rights reserved.
 #
@@ -171,7 +171,7 @@ endif ()
 #################################################
 
 # SETTINGS FOR UNIX COMPILER
-if ("${CMAKE_C_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_C_COMPILER_ID}" MATCHES "AppleClang" OR "${CMAKE_C_COMPILER_ID}" MATCHES "GNU")
+if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "AppleClang" OR CMAKE_C_COMPILER_ID MATCHES "GNU")
 	set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c99 -pedantic -Wall -Wextra")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pedantic -Wall -Wextra -Wno-c99-extensions")
 
@@ -251,17 +251,32 @@ if ("${CMAKE_C_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_C_COMPILER_ID}" MATCHES
 endif ()
 
 # SETTINGS FOR VISUAL STUDIO COMPILER
-if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC")
+if (CMAKE_C_COMPILER_ID MATCHES "MSVC")
 	if (CMAKE_C_FLAGS MATCHES "/W[0-4]")
-		string(REGEX REPLACE "/W[0-4]" "/W3" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+		string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 	else ()
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
 	endif ()
 
-	if (WERROR)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4100") # 'identifier' : unreferenced formal parameter
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4127") # conditional expression is constant
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4200") # nonstandard extension used : zero-sized array in struct/union
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4214") # bit field types other than int
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4706") # assignment within conditional expression
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4245") # 'conversion' : conversion from 'type1' to 'type2', signed/unsigned mismatch
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4389") # 'operator' : signed/unsigned mismatch
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4702") # unreachable code
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4701") # Potentially uninitialized local variable 'name' used
+
+	# ToDo
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4244") # 'conversion' conversion from 'type1' to 'type2', possible loss of data
+
+	if (sctp_werror)
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
 	endif ()
 endif ()
+
+message(STATUS "Compiler flags (CMAKE_C_FLAGS): ${CMAKE_C_FLAGS}")
 
 
 #################################################

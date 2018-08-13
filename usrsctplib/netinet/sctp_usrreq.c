@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 334725 2018-06-06 19:27:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 337706 2018-08-13 11:56:21Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -424,11 +424,6 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 #if defined(__FreeBSD__)
 	struct ip *outer_ip;
 #endif
-
-#if defined(__Userspace__)
-	struct socket *upcall_socket = NULL;
-#endif
-
 	struct ip *inner_ip;
 	struct sctphdr *sh;
 	struct icmp *icmp;
@@ -540,19 +535,17 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 			            (uint32_t)ntohs(icmp->icmp_nextmtu));
 
 #if defined(__Userspace__)
-			if (stcb && upcall_socket == NULL && !(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
-				if (stcb->sctp_socket != NULL) {
-					upcall_socket = stcb->sctp_socket;
-					SOCK_LOCK(upcall_socket);
-					soref(upcall_socket);
-					SOCK_UNLOCK(upcall_socket);
-				}
-			}
-			if (upcall_socket != NULL) {
-				if (upcall_socket->so_upcall != NULL) {
-					if (upcall_socket->so_error) {
-						(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
-					}
+			if (!(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) &&
+			    (stcb->sctp_socket != NULL)) {
+				struct socket *upcall_socket;
+
+				upcall_socket = stcb->sctp_socket;
+				SOCK_LOCK(upcall_socket);
+				soref(upcall_socket);
+				SOCK_UNLOCK(upcall_socket);
+				if ((upcall_socket->so_upcall != NULL) &&
+				    (upcall_socket->so_error != 0)) {
+					(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
 				}
 				ACCEPT_LOCK();
 				SOCK_LOCK(upcall_socket);
@@ -1233,11 +1226,11 @@ sctp_disconnect(struct socket *so)
 					netp = stcb->asoc.primary_destination;
 				}
 
-				asoc->state |= SCTP_STATE_SHUTDOWN_PENDING;
+				SCTP_ADD_SUBSTATE(asoc, SCTP_STATE_SHUTDOWN_PENDING);
 				sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD, stcb->sctp_ep, stcb,
 						 netp);
 				if ((*asoc->ss_functions.sctp_ss_is_user_msgs_incomplete)(stcb, asoc)) {
-					asoc->state |= SCTP_STATE_PARTIAL_MSG_LEFT;
+					SCTP_ADD_SUBSTATE(asoc, SCTP_STATE_PARTIAL_MSG_LEFT);
 				}
 				if (TAILQ_EMPTY(&asoc->send_queue) &&
 				    TAILQ_EMPTY(&asoc->sent_queue) &&
@@ -8457,7 +8450,7 @@ sctp_accept(struct socket *so, struct mbuf *nam)
 	SCTP_TCB_LOCK(stcb);
 	SCTP_INP_RUNLOCK(inp);
 	store = stcb->asoc.primary_destination->ro._l_addr;
-	stcb->asoc.state &= ~SCTP_STATE_IN_ACCEPT_QUEUE;
+	SCTP_CLEAR_SUBSTATE(&stcb->asoc, SCTP_STATE_IN_ACCEPT_QUEUE);
 	SCTP_TCB_UNLOCK(stcb);
 	switch (store.sa.sa_family) {
 #ifdef INET
