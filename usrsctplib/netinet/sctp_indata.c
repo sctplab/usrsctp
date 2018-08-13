@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 333979 2018-05-21 14:51:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 337706 2018-08-13 11:56:21Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4311,12 +4311,12 @@ again:
 		/* clean up */
 		if ((asoc->stream_queue_cnt == 1) &&
 		    ((asoc->state & SCTP_STATE_SHUTDOWN_PENDING) ||
-		     (asoc->state & SCTP_STATE_SHUTDOWN_RECEIVED)) &&
+		     (SCTP_GET_STATE(asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) &&
 		    ((*asoc->ss_functions.sctp_ss_is_user_msgs_incomplete)(stcb, asoc))) {
-			asoc->state |= SCTP_STATE_PARTIAL_MSG_LEFT;
+			SCTP_ADD_SUBSTATE(asoc, SCTP_STATE_PARTIAL_MSG_LEFT);
 		}
 		if (((asoc->state & SCTP_STATE_SHUTDOWN_PENDING) ||
-		      (SCTP_GET_STATE(asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) &&
+		     (SCTP_GET_STATE(asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) &&
 		    (asoc->stream_queue_cnt == 1) &&
 		    (asoc->state & SCTP_STATE_PARTIAL_MSG_LEFT)) {
 			struct mbuf *op_err;
@@ -5029,12 +5029,12 @@ sctp_handle_sack(struct mbuf *m, int offset_seg, int offset_dup,
 		/* clean up */
 		if ((asoc->stream_queue_cnt == 1) &&
 		    ((asoc->state & SCTP_STATE_SHUTDOWN_PENDING) ||
-		     (asoc->state & SCTP_STATE_SHUTDOWN_RECEIVED)) &&
+		     (SCTP_GET_STATE(asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) &&
 		    ((*asoc->ss_functions.sctp_ss_is_user_msgs_incomplete)(stcb, asoc))) {
-			asoc->state |= SCTP_STATE_PARTIAL_MSG_LEFT;
+			SCTP_ADD_SUBSTATE(asoc, SCTP_STATE_PARTIAL_MSG_LEFT);
 		}
 		if (((asoc->state & SCTP_STATE_SHUTDOWN_PENDING) ||
-		      (SCTP_GET_STATE(asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) &&
+		     (SCTP_GET_STATE(asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) &&
 		    (asoc->stream_queue_cnt == 1) &&
 		    (asoc->state & SCTP_STATE_PARTIAL_MSG_LEFT)) {
 			struct mbuf *op_err;

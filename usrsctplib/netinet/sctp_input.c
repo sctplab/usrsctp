@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 334725 2018-06-06 19:27:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 337706 2018-08-13 11:56:21Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -812,8 +812,7 @@ sctp_handle_nat_colliding_state(struct sctp_tcb *stcb)
 		*/
 		/* generate a new vtag and send init */
 		LIST_REMOVE(stcb, sctp_asocs);
-		stcb->asoc.state &= ~SCTP_STATE_COOKIE_ECHOED;
-		stcb->asoc.state |= SCTP_STATE_COOKIE_WAIT;
+		SCTP_SET_STATE(&stcb->asoc, SCTP_STATE_COOKIE_WAIT);
 		sctp_stop_all_cookie_timers(stcb);
 		sctp_toss_old_cookies(stcb, &stcb->asoc);
 		stcb->asoc.my_vtag = sctp_select_a_tag(stcb->sctp_ep, stcb->sctp_ep->sctp_lport, stcb->rport,  1);
@@ -906,7 +905,7 @@ sctp_handle_abort(struct sctp_abort_chunk *abort,
 	SCTP_TCB_LOCK(stcb);
 	atomic_subtract_int(&stcb->asoc.refcnt, 1);
 #endif
-	stcb->asoc.state |= SCTP_STATE_WAS_ABORTED;
+	SCTP_ADD_SUBSTATE(&stcb->asoc, SCTP_STATE_WAS_ABORTED);
 	(void)sctp_free_assoc(stcb->sctp_ep, stcb, SCTP_NORMAL_PROC,
 			      SCTP_FROM_SCTP_INPUT + SCTP_LOC_8);
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
@@ -1331,8 +1330,7 @@ sctp_handle_error(struct sctp_chunkhdr *ch,
 				}
 				/* blast back to INIT state */
 				sctp_toss_old_cookies(stcb, &stcb->asoc);
-				asoc->state &= ~SCTP_STATE_COOKIE_ECHOED;
-				asoc->state |= SCTP_STATE_COOKIE_WAIT;
+				SCTP_SET_STATE(&stcb->asoc, SCTP_STATE_COOKIE_WAIT);
 				sctp_stop_all_cookie_timers(stcb);
 				sctp_send_initiate(stcb->sctp_ep, stcb, SCTP_SO_NOT_LOCKED);
 			}
@@ -1495,7 +1493,7 @@ sctp_handle_init_ack(struct mbuf *m, int iphlen, int offset,
 		return (-1);
 	}
 	/* process according to association state... */
-	switch (stcb->asoc.state & SCTP_STATE_MASK) {
+	switch (SCTP_GET_STATE(&stcb->asoc)) {
 	case SCTP_STATE_COOKIE_WAIT:
 		/* this is the expected state for this chunk */
 		/* process the INIT-ACK parameters */
@@ -1923,8 +1921,8 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 				asoc->cookie_how[how_indx] = 10;
 			return (NULL);
 		}
-		if ((asoc->state & SCTP_STATE_COOKIE_WAIT) ||
-		    (asoc->state & SCTP_STATE_COOKIE_ECHOED)) {
+		if ((SCTP_GET_STATE(asoc) == SCTP_STATE_COOKIE_WAIT) ||
+		    (SCTP_GET_STATE(asoc) == SCTP_STATE_COOKIE_ECHOED)) {
 			*notification = SCTP_NOTIFY_ASSOC_UP;
 
 			if (((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
@@ -2038,7 +2036,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD,
 					 stcb->sctp_ep, stcb, asoc->primary_destination);
 
-		} else if (!(asoc->state & SCTP_STATE_SHUTDOWN_SENT)) {
+		} else if (SCTP_GET_STATE(asoc) != SCTP_STATE_SHUTDOWN_SENT) {
 			/* move to OPEN state, if not in SHUTDOWN_SENT */
 			SCTP_SET_STATE(asoc, SCTP_STATE_OPEN);
 		}
@@ -3067,7 +3065,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 			 * the accept state waiting for the accept!
 			 */
 			if (*stcb) {
-				(*stcb)->asoc.state |= SCTP_STATE_IN_ACCEPT_QUEUE;
+				SCTP_ADD_SUBSTATE(&(*stcb)->asoc, SCTP_STATE_IN_ACCEPT_QUEUE);
 			}
 			sctp_move_pcb_and_assoc(*inp_p, inp, *stcb);
 

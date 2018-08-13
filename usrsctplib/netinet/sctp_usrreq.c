@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 334725 2018-06-06 19:27:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 337706 2018-08-13 11:56:21Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1226,11 +1226,11 @@ sctp_disconnect(struct socket *so)
 					netp = stcb->asoc.primary_destination;
 				}
 
-				asoc->state |= SCTP_STATE_SHUTDOWN_PENDING;
+				SCTP_ADD_SUBSTATE(asoc, SCTP_STATE_SHUTDOWN_PENDING);
 				sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD, stcb->sctp_ep, stcb,
 						 netp);
 				if ((*asoc->ss_functions.sctp_ss_is_user_msgs_incomplete)(stcb, asoc)) {
-					asoc->state |= SCTP_STATE_PARTIAL_MSG_LEFT;
+					SCTP_ADD_SUBSTATE(asoc, SCTP_STATE_PARTIAL_MSG_LEFT);
 				}
 				if (TAILQ_EMPTY(&asoc->send_queue) &&
 				    TAILQ_EMPTY(&asoc->sent_queue) &&
@@ -8450,7 +8450,7 @@ sctp_accept(struct socket *so, struct mbuf *nam)
 	SCTP_TCB_LOCK(stcb);
 	SCTP_INP_RUNLOCK(inp);
 	store = stcb->asoc.primary_destination->ro._l_addr;
-	stcb->asoc.state &= ~SCTP_STATE_IN_ACCEPT_QUEUE;
+	SCTP_CLEAR_SUBSTATE(&stcb->asoc, SCTP_STATE_IN_ACCEPT_QUEUE);
 	SCTP_TCB_UNLOCK(stcb);
 	switch (store.sa.sa_family) {
 #ifdef INET
