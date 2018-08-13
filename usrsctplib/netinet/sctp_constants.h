@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 328478 2018-01-27 13:46:55Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 337708 2018-08-13 13:58:45Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_CONSTANTS_H_
@@ -478,10 +478,14 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_STATE_IN_ACCEPT_QUEUE      0x1000
 #define SCTP_STATE_MASK			0x007f
 
-#define SCTP_GET_STATE(asoc)	((asoc)->state & SCTP_STATE_MASK)
-#define SCTP_SET_STATE(asoc, newstate)  ((asoc)->state = ((asoc)->state & ~SCTP_STATE_MASK) |  newstate)
-#define SCTP_CLEAR_SUBSTATE(asoc, substate) ((asoc)->state &= ~substate)
-#define SCTP_ADD_SUBSTATE(asoc, substate) ((asoc)->state |= substate)
+#define SCTP_GET_STATE(_stcb) \
+	((_stcb)->asoc.state & SCTP_STATE_MASK)
+#define SCTP_SET_STATE(_stcb, _state) \
+	(_stcb)->asoc.state = ((_stcb)->asoc.state & ~SCTP_STATE_MASK) | (_state)
+#define SCTP_CLEAR_SUBSTATE(_stcb, _substate) \
+	(_stcb)->asoc.state &= ~(_substate)
+#define SCTP_ADD_SUBSTATE(_stcb, _substate) \
+	(_stcb)->asoc.state |= (_substate)
 
 /* SCTP reachability state for each address */
 #define SCTP_ADDR_REACHABLE		0x001
