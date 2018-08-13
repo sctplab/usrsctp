@@ -102,6 +102,7 @@ int sctp_os_timer_stop(sctp_os_timer_t *);
 
 #if defined(__Userspace__)
 void sctp_start_timer(void);
+void sctp_stop_timer(void);
 #endif
 #if defined(__APPLE__)
 void sctp_timeout(void *);
