@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 332273 2018-04-08 12:08:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 337738 2018-08-14 08:33:47Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1305,7 +1305,7 @@ sctp6_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 		/* Set the connected flag so we can queue data */
 		soisconnecting(so);
 	}
-	stcb->asoc.state = SCTP_STATE_COOKIE_WAIT;
+	SCTP_SET_STATE(stcb, SCTP_STATE_COOKIE_WAIT);
 	(void)SCTP_GETTIME_TIMEVAL(&stcb->asoc.time_entered);
 
 	/* initialize authentication parameters for the assoc */
