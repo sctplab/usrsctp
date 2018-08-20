@@ -34,8 +34,8 @@ cmake_minimum_required(VERSION 3.0)
 
 # Debug build type as default
 if (NOT CMAKE_BUILD_TYPE)
-	message(STATUS "No build type selected, using DEBUG")
-	set(CMAKE_BUILD_TYPE "DEBUG")
+	message(STATUS "No build type selected, using RelWithDebInfo")
+	set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif ()
 
 include(CheckStructHasMember)
@@ -78,22 +78,15 @@ option(sctp_sanitizer_address "Compile with address sanitizer" 0)
 option(sctp_sanitizer_memory "Compile with memory sanitizer" 0)
 
 option(sctp_fuzzer_clang "Compile in Clang fuzzing mode" 0)
-
-option(sctp_fuzzer_honggfuzz "Compile in honggfuzz fuzzing mode" 0)
-
-if (sctp_fuzzer_clang OR sctp_fuzzer_honggfuzz)
+if (sctp_fuzzer_clang)
 	add_definitions(-DFUZZING_MODE)
-endif ()
-
-if (sctp_fuzzer_clang AND sctp_fuzzer_honggfuzz)
-	message(FATAL_ERROR "Can not compile with both fuzzer options")
 endif ()
 
 if (sctp_sanitizer_address AND sctp_sanitizer_memory)
 	message(FATAL_ERROR "Can not compile with both sanitizer options")
 endif ()
 
-if (sctp_link_programs_static OR WIN32 OR sctp_fuzzer_clang OR sctp_fuzzer_honggfuzz)
+if (sctp_link_programs_static OR WIN32 OR sctp_fuzzer_clang)
 	set(programs_link_library "usrsctp-static")
 else ()
 	set(programs_link_library "usrsctp")
@@ -235,18 +228,18 @@ if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "AppleCla
 	endif ()
 
 	if (sctp_sanitizer_address)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=address -fno-omit-frame-pointer -g")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g")
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=address -fno-omit-frame-pointer")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
 	endif ()
 
 	if (sctp_sanitizer_memory)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins")
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=memory -fno-omit-frame-pointer -fsanitize-memory-track-origins")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -fsanitize-memory-track-origins")
 	endif ()
 
 	if (sctp_fuzzer_clang)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=fuzzer,address,undefined -g -fno-omit-frame-pointer -fsanitize-coverage=trace-cmp,trace-gep,trace-div")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=fuzzer,address,undefined -g -fno-omit-frame-pointer -fsanitize-coverage=trace-cmp,trace-gep,trace-div")
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=fuzzer,address,undefined -fno-omit-frame-pointer -fsanitize-coverage=trace-cmp,trace-gep,trace-div")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=fuzzer,address,undefined -fno-omit-frame-pointer -fsanitize-coverage=trace-cmp,trace-gep,trace-div")
 	endif ()
 endif ()
 

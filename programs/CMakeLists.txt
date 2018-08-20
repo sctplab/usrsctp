@@ -67,33 +67,10 @@ find_package(Threads)
 #################################################
 # PROGRAMS
 #################################################
-list(APPEND check_programs
-    chargen_server_upcall.c
-	client.c
-	client_upcall.c
-	daytime_server.c
-	daytime_server_upcall.c
-	discard_server.c
-	discard_server_upcall.c
-	echo_server.c
-	echo_server_upcall.c
-	ekr_client.c
-	ekr_loop.c
-	ekr_loop_offload.c
-	ekr_loop_upcall.c
-	ekr_peer.c
-	ekr_server.c
-	http_client.c
-	http_client_upcall.c
-	rtcweb.c
-	test_libmgmt.c
-	test_timer.c
-	tsctp.c
-)
 
-# if in fuzzing mode, only build the fuzzer
-if (sctp_fuzzer_clang OR sctp_fuzzer_honggfuzz)
-	list(APPEND check_programs
+if (sctp_fuzzer_clang)
+	# if in fuzzing mode, only build the fuzzer
+	set(check_programs
 		fuzzer_unconnected.c
 		fuzzer_connected.cc
 		fuzzer_upcall.cc
@@ -103,6 +80,30 @@ if (sctp_fuzzer_clang OR sctp_fuzzer_honggfuzz)
 	configure_file(fuzzer_connected.sh fuzzer_connected.sh COPYONLY)
 	configure_file(fuzzer_unconnected.sh fuzzer_unconnected.sh COPYONLY)
 	configure_file(fuzzer_upcall.sh fuzzer_upcall.sh COPYONLY)
+else ()
+	set(check_programs
+		chargen_server_upcall.c
+		client.c
+		client_upcall.c
+		daytime_server.c
+		daytime_server_upcall.c
+		discard_server.c
+		discard_server_upcall.c
+		echo_server.c
+		echo_server_upcall.c
+		ekr_client.c
+		ekr_loop.c
+		ekr_loop_offload.c
+		ekr_loop_upcall.c
+		ekr_peer.c
+		ekr_server.c
+		http_client.c
+		http_client_upcall.c
+		rtcweb.c
+		test_libmgmt.c
+		test_timer.c
+		tsctp.c
+	)
 endif ()
 
 foreach (source_file ${check_programs})
