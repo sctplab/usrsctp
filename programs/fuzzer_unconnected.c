@@ -42,6 +42,7 @@
 #include <usrsctp.h>
 
 #define FUZZ_FAST 1
+#define FUZZ_CALLBACK_API 1
 
 struct sockaddr_conn sconn;
 struct socket *s_l;
@@ -86,6 +87,28 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 	return (1);
 }
 
+static void
+handle_upcall(struct socket *sock, void *arg, int flgs)
+{
+	fprintf(stderr, "Listening socket established, implement logic!\n");
+	exit(EXIT_FAILURE);
+
+#if 0
+	//int events = usrsctp_get_events(sock);
+
+	// upcall for listening socket -> call acceppt!
+	struct socket* conn_sock;
+
+	if (((conn_sock = usrsctp_accept(sock, NULL, NULL)) == NULL) && (errno != EINPROGRESS)) {
+		perror("usrsctp_accept");
+		exit(EXIT_FAILURE);
+	}
+
+
+	return;
+#endif
+}
+
 void
 debug_printf(const char *format, ...)
 {
@@ -102,7 +125,8 @@ int
 init_fuzzer(void) {
 	static uint8_t initialized = 0;
 	struct sctp_event event;
-	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
+	uint16_t event_types[] = {
+		SCTP_ASSOC_CHANGE,
 		SCTP_PEER_ADDR_CHANGE,
 		SCTP_SEND_FAILED_EVENT,
 		SCTP_REMOTE_ERROR,
@@ -124,10 +148,19 @@ init_fuzzer(void) {
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 #endif
 	usrsctp_register_address((void *)1);
+
+#if defined(FUZZ_CALLBACK_API)
+	if ((s_l = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, 0)) == NULL) {
+		perror("usrsctp_socket");
+		exit(EXIT_FAILURE);
+	}
+#else
 	if ((s_l = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, (void *)1)) == NULL) {
 		perror("usrsctp_socket");
 		exit(EXIT_FAILURE);
 	}
+#endif
+
 	/* Bind the server side. */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
@@ -147,7 +180,7 @@ init_fuzzer(void) {
 	for (i = 0; i < sizeof(event_types)/sizeof(uint16_t); i++) {
 		event.se_type = event_types[i];
 		if (usrsctp_setsockopt(s_l, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
-			perror("setsockopt SCTP_EVENT 1");
+			perror("setsockopt SCTP_EVENT s_l");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -157,6 +190,8 @@ init_fuzzer(void) {
 		perror("usrsctp_listen");
 		exit(EXIT_FAILURE);
 	}
+
+	usrsctp_set_upcall(s_l, handle_upcall, NULL);
 
 	initialized = 1;
 
