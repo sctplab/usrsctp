@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 337708 2018-08-13 13:58:45Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 338134 2018-08-21 13:25:32Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4024,7 +4024,6 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 						SCTP_STAT_DECR_GAUGE32(sctps_currestab);
 					}
 					SCTP_SET_STATE(asoc, SCTP_STATE_SHUTDOWN_SENT);
-					SCTP_CLEAR_SUBSTATE(asoc, SCTP_STATE_SHUTDOWN_PENDING);
 					sctp_stop_timers_for_shutdown(asoc);
 					if (asoc->asoc.alternate) {
 						netp = asoc->asoc.alternate;
