@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 337708 2018-08-13 13:58:45Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 338134 2018-08-21 13:25:32Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_CONSTANTS_H_
@@ -481,11 +481,11 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_GET_STATE(_stcb) \
 	((_stcb)->asoc.state & SCTP_STATE_MASK)
 #define SCTP_SET_STATE(_stcb, _state) \
-	(_stcb)->asoc.state = ((_stcb)->asoc.state & ~SCTP_STATE_MASK) | (_state)
+	sctp_set_state(_stcb, _state)
 #define SCTP_CLEAR_SUBSTATE(_stcb, _substate) \
 	(_stcb)->asoc.state &= ~(_substate)
 #define SCTP_ADD_SUBSTATE(_stcb, _substate) \
-	(_stcb)->asoc.state |= (_substate)
+	sctp_add_substate(_stcb, _substate)
 
 /* SCTP reachability state for each address */
 #define SCTP_ADDR_REACHABLE		0x001
