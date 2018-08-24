@@ -45,9 +45,9 @@
 
 #define FUZZ_FAST
 //#define FUZZ_INTERLEAVING
-//#define FUZZ_EXPLICIT_EOR
-//#define FUZZ_STREAM_RESET
-//#define FUZZ_DISABLE_LINGER
+#define FUZZ_EXPLICIT_EOR
+#define FUZZ_STREAM_RESET
+#define FUZZ_DISABLE_LINGER
 //#define FUZZ_VERBOSE
 
 static int fd_udp_client, fd_udp_server;
@@ -442,7 +442,7 @@ int init_fuzzer(void)
 	printf_fuzzer("FUZZ_DISABLE_LINGER");
 #endif
 
-	usrsctp_init(0, conn_output, debug_printf);
+	usrsctp_init(0, conn_output, NULL);
 	usrsctp_enable_crc32c_offload();
 
 	/* set up a connected UDP socket */
