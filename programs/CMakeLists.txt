@@ -73,7 +73,7 @@ if (sctp_fuzzer_clang)
 	set(check_programs
 		fuzzer_unconnected.c
 		fuzzer_connected.cc
-		fuzzer_upcall.cc
+		fuzzer_upcall.c
 		fuzzer_polling.cc
 	)
 	configure_file(crashtest.py crashtest.py COPYONLY)

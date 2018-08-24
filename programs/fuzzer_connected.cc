@@ -205,12 +205,13 @@ handle_notification(union sctp_notification *notif, size_t n)
 static int
 receive_cb(struct socket* sock, union sctp_sockstore addr, void* data, size_t datalen, struct sctp_rcvinfo rcv, int flags, void* ulp_info)
 {
-	printf("\n\nMessage %p received on sock = %p.\n\n\n", data, (void*)sock);
+	//printf("\n\nMessage %p received on sock = %p.\n\n\n", data, (void*)sock);
 	if (data) {
 		if (flags & MSG_NOTIFICATION) {
-			handle_notification((union sctp_notification *)data, datalen);
+			//handle_notification((union sctp_notification *)data, datalen);
 		} else if ((flags & MSG_NOTIFICATION) == 0) {
-			printf("Messsage of length %d received via %p:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u, flags %x.\n",
+#if 0
+				printf("Messsage of length %d received via %p:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u, flags %x.\n",
 				(int)datalen,
 				addr.sconn.sconn_addr,
 				ntohs(addr.sconn.sconn_port),
@@ -220,6 +221,7 @@ receive_cb(struct socket* sock, union sctp_sockstore addr, void* data, size_t da
 				ntohl(rcv.rcv_ppid),
 				rcv.rcv_context,
 				flags);
+#endif
 		}
 		free(data);
 	} else {

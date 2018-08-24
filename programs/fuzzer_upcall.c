@@ -58,26 +58,40 @@ static pthread_t tid_c, tid_s;
 static char *common_header_client[12];
 static char *common_header_server[12];
 
-#define CS_CLIENT			1
-#define CS_SERVER_LISTENING	2
-#define CS_SERVER_CONNECTED 3
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+
+#define CS_CLIENT            1
+#define CS_SERVER_LISTENING  2
+#define CS_SERVER_CONNECTED  3
+
+#define CS_STATE_OPEN        1
+#define CS_STATE_CLOSED      2
+
 
 struct connection_status {
 	uint8_t type;
+	uint8_t state;
 	char *data;
 	size_t data_size;
 };
 
-void
-printf_fuzzer(const char *format, ...)
-{
+
 #if !defined(FUZZING_MODE) || defined(FUZZ_VERBOSE)
-	va_list args;
-	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
-#endif
+#define printf_fuzzer(format, ...) { \
+	printf("[%5d][%15.15s] ", __LINE__, __FUNCTION__); \
+	printf(format, ##__VA_ARGS__); \
+	printf("\n"); \
 }
+
+#define printf_fuzzer_raw(format, ...) { \
+	printf(format, ##__VA_ARGS__); \
+}
+#else // !defined(FUZZING_MODE) || defined(FUZZ_VERBOSE)
+#define printf_fuzzer(format, ...)
+#define printf_fuzzer_raw(format, ...)
+#endif //!defined(FUZZING_MODE) || defined(FUZZ_VERBOSE)
+
 
 static int
 handle_association_change_event(struct sctp_assoc_change *sac)
@@ -85,61 +99,63 @@ handle_association_change_event(struct sctp_assoc_change *sac)
 	unsigned int i, n;
 	int retval = 0;
 
-	printf_fuzzer("Association change ");
+	printf_fuzzer("handling event");
+
+	printf_fuzzer_raw("Association change : ");
 	switch (sac->sac_state) {
 		case SCTP_COMM_UP:
-			printf_fuzzer("SCTP_COMM_UP");
+			printf_fuzzer_raw("SCTP_COMM_UP");
 			break;
 		case SCTP_COMM_LOST:
-			printf_fuzzer("SCTP_COMM_LOST");
+			printf_fuzzer_raw("SCTP_COMM_LOST");
 			break;
 		case SCTP_RESTART:
-			printf_fuzzer("SCTP_RESTART");
+			printf_fuzzer_raw("SCTP_RESTART");
 			break;
 		case SCTP_SHUTDOWN_COMP:
-			printf_fuzzer("SCTP_SHUTDOWN_COMP");
+			printf_fuzzer_raw("SCTP_SHUTDOWN_COMP");
 			break;
 		case SCTP_CANT_STR_ASSOC:
-			printf_fuzzer("SCTP_CANT_STR_ASSOC");
+			printf_fuzzer_raw("SCTP_CANT_STR_ASSOC");
 			break;
 		default:
-			printf_fuzzer("UNKNOWN");
+			printf_fuzzer_raw("UNKNOWN");
 			break;
 	}
-	printf_fuzzer(", streams (in/out) = (%u/%u)", sac->sac_inbound_streams, sac->sac_outbound_streams);
+	printf_fuzzer_raw(", streams (in/out) = (%u/%u)", sac->sac_inbound_streams, sac->sac_outbound_streams);
 	n = sac->sac_length - sizeof(struct sctp_assoc_change);
 	if (((sac->sac_state == SCTP_COMM_UP) ||
 	     (sac->sac_state == SCTP_RESTART)) && (n > 0)) {
-		printf_fuzzer(", supports");
+		printf_fuzzer_raw(", supports");
 		for (i = 0; i < n; i++) {
 			switch (sac->sac_info[i]) {
 			case SCTP_ASSOC_SUPPORTS_PR:
-				printf_fuzzer(" PR");
+				printf_fuzzer_raw(" PR");
 				break;
 			case SCTP_ASSOC_SUPPORTS_AUTH:
-				printf_fuzzer(" AUTH");
+				printf_fuzzer_raw(" AUTH");
 				break;
 			case SCTP_ASSOC_SUPPORTS_ASCONF:
-				printf_fuzzer(" ASCONF");
+				printf_fuzzer_raw(" ASCONF");
 				break;
 			case SCTP_ASSOC_SUPPORTS_MULTIBUF:
-				printf_fuzzer(" MULTIBUF");
+				printf_fuzzer_raw(" MULTIBUF");
 				break;
 			case SCTP_ASSOC_SUPPORTS_RE_CONFIG:
-				printf_fuzzer(" RE-CONFIG");
+				printf_fuzzer_raw(" RE-CONFIG");
 				break;
 			default:
-				printf_fuzzer(" UNKNOWN(0x%02x)", sac->sac_info[i]);
+				printf_fuzzer_raw(" UNKNOWN(0x%02x)", sac->sac_info[i]);
 				break;
 			}
 		}
 	} else if (((sac->sac_state == SCTP_COMM_LOST) || (sac->sac_state == SCTP_CANT_STR_ASSOC)) && (n > 0)) {
-		printf_fuzzer(", ABORT =");
+		printf_fuzzer_raw(", ABORT =");
 		for (i = 0; i < n; i++) {
-			printf_fuzzer(" 0x%02x", sac->sac_info[i]);
+			printf_fuzzer_raw(" 0x%02x", sac->sac_info[i]);
 		}
 	}
-	printf_fuzzer(".\n");
+	printf_fuzzer_raw(".\n");
 	if ((sac->sac_state == SCTP_CANT_STR_ASSOC) || (sac->sac_state == SCTP_SHUTDOWN_COMP) || (sac->sac_state == SCTP_COMM_LOST)) {
 		retval = -1;
 	}
@@ -156,46 +172,46 @@ handle_notification(union sctp_notification *notif, size_t n)
 
 	switch (notif->sn_header.sn_type) {
 		case SCTP_ASSOC_CHANGE:
-			printf_fuzzer("SCTP_ASSOC_CHANGE\n");
+			printf_fuzzer("SCTP_ASSOC_CHANGE");
 			retval = handle_association_change_event(&(notif->sn_assoc_change));
 			break;
 		case SCTP_PEER_ADDR_CHANGE:
-			printf_fuzzer("SCTP_PEER_ADDR_CHANGE\n");
+			printf_fuzzer("SCTP_PEER_ADDR_CHANGE");
 			//handle_peer_address_change_event(&(notif->sn_paddr_change));
 			break;
 		case SCTP_REMOTE_ERROR:
-			printf_fuzzer("SCTP_REMOTE_ERROR\n");
+			printf_fuzzer("SCTP_REMOTE_ERROR");
 			break;
 		case SCTP_SHUTDOWN_EVENT:
-			printf_fuzzer("SCTP_SHUTDOWN_EVENT\n");
+			printf_fuzzer("SCTP_SHUTDOWN_EVENT");
 			break;
 		case SCTP_ADAPTATION_INDICATION:
-			printf_fuzzer("SCTP_ADAPTATION_INDICATION\n");
+			printf_fuzzer("SCTP_ADAPTATION_INDICATION");
 			break;
 		case SCTP_PARTIAL_DELIVERY_EVENT:
-			printf_fuzzer("SCTP_PARTIAL_DELIVERY_EVENT\n");
+			printf_fuzzer("SCTP_PARTIAL_DELIVERY_EVENT");
 			break;
 		case SCTP_AUTHENTICATION_EVENT:
-			printf_fuzzer("SCTP_AUTHENTICATION_EVENT\n");
+			printf_fuzzer("SCTP_AUTHENTICATION_EVENT");
 			break;
 		case SCTP_SENDER_DRY_EVENT:
-			printf_fuzzer("SCTP_SENDER_DRY_EVENT\n");
+			printf_fuzzer("SCTP_SENDER_DRY_EVENT");
 			break;
 		case SCTP_NOTIFICATIONS_STOPPED_EVENT:
-			printf_fuzzer("SCTP_NOTIFICATIONS_STOPPED_EVENT\n");
+			printf_fuzzer("SCTP_NOTIFICATIONS_STOPPED_EVENT");
 			break;
 		case SCTP_SEND_FAILED_EVENT:
-			printf_fuzzer("SCTP_SEND_FAILED_EVENT\n");
+			printf_fuzzer("SCTP_SEND_FAILED_EVENT");
 			//handle_send_failed_event(&(notif->sn_send_failed_event));
 			break;
 		case SCTP_STREAM_RESET_EVENT:
-			printf_fuzzer("SCTP_STREAM_RESET_EVENT\n");
+			printf_fuzzer("SCTP_STREAM_RESET_EVENT");
 			break;
 		case SCTP_ASSOC_RESET_EVENT:
-			printf_fuzzer("SCTP_ASSOC_RESET_EVENT\n");
+			printf_fuzzer("SCTP_ASSOC_RESET_EVENT");
 			break;
 		case SCTP_STREAM_CHANGE_EVENT:
-			printf_fuzzer("SCTP_STREAM_CHANGE_EVENT\n");
+			printf_fuzzer("SCTP_STREAM_CHANGE_EVENT");
 			break;
 		default:
 			break;
@@ -211,9 +227,13 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 	struct connection_status *cs = (struct connection_status*) arg;
 
 	if (arg == NULL) {
-		printf_fuzzer("error: upcall - arg == NULL\n");
+		printf_fuzzer("error: upcall - arg == NULL");
 		exit(EXIT_FAILURE);
 	}
+
+	pthread_t tid;
+	tid = pthread_self();
+	printf_fuzzer("Thread: %u", (uint32_t)tid);
 
 	if (cs->type == CS_SERVER_LISTENING) {
 		// upcall for listening socket -> call acceppt!
@@ -227,14 +247,20 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 			perror("usrsctp_accept");
 			exit(EXIT_FAILURE);
 		}
+		pthread_mutex_lock(&mutex);
 		sockets_open++;
+		pthread_cond_signal(&cond);
+		pthread_mutex_unlock(&mutex);
 
 		usrsctp_set_upcall(conn_sock, handle_upcall, cs_new);
 
 		// close listening socket, we do not need it anymore
 		free(cs);
 		usrsctp_close(sock);
+		pthread_mutex_lock(&mutex);
 		sockets_open--;
+		pthread_cond_signal(&cond);
+		pthread_mutex_unlock(&mutex);
 		return;
 
 	} else if (cs->type == CS_SERVER_CONNECTED || cs->type == CS_CLIENT) {
@@ -280,7 +306,10 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 				cs->data_size = 0;
 				free(cs);
 				usrsctp_close(sock);
+				pthread_mutex_lock(&mutex);
 				sockets_open--;
+				pthread_cond_signal(&cond);
+				pthread_mutex_unlock(&mutex);
 				return;
 			}
 		}
@@ -299,6 +328,8 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 
 			n = usrsctp_recvv(sock, buf, MAX_PACKET_SIZE, (struct sockaddr *) &addr, &len, (void *)&rn, &infolen, &infotype, &flags);
 
+			printf_fuzzer("usrsctp_recvv() for %d", (int)sock);
+
 			if (n > 0) {
 				if (flags & MSG_NOTIFICATION) {
 					notification_retval = handle_notification((union sctp_notification *)buf, n);
@@ -313,10 +344,13 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 			free(buf);
 
 			if (n == -1 || notification_retval == -1) {
-				//perror("usrsctp_recvv");
+				printf_fuzzer("n : %zd || notification_retval : %d", n, notification_retval);
 				free(cs);
 				usrsctp_close(sock);
+				pthread_mutex_lock(&mutex);
 				sockets_open--;
+				pthread_cond_signal(&cond);
+				pthread_mutex_unlock(&mutex);
 				break;
 			}
 
@@ -324,9 +358,10 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 		}
 
 		if (events & SCTP_EVENT_ERROR) {
-			printf_fuzzer("SCTP_EVENT_ERROR\n");
+			printf_fuzzer("SCTP_EVENT_ERROR for %d", (int)sock);
 		}
 	}
+	printf_fuzzer("exit");
 	return;
 }
 
@@ -388,23 +423,23 @@ int init_fuzzer(void)
 #endif
 
 #if defined(FUZZ_FAST)
-	printf_fuzzer("FUZZ_FAST\n");
+	printf_fuzzer("FUZZ_FAST");
 #endif
 
 #if defined(FUZZ_INTERLEAVING)
-	printf_fuzzer("FUZZ_INTERLEAVING\n");
+	printf_fuzzer("FUZZ_INTERLEAVING");
 #endif
 
 #if defined(FUZZ_EXPLICIT_EOR)
-	printf_fuzzer("FUZZ_EXPLICIT_EOR\n");
+	printf_fuzzer("FUZZ_EXPLICIT_EOR");
 #endif
 
 #if defined(FUZZ_STREAM_RESET)
-	printf_fuzzer("FUZZ_STREAM_RESET\n");
+	printf_fuzzer("FUZZ_STREAM_RESET");
 #endif
 
 #if defined(FUZZ_DISABLE_LINGER)
-	printf_fuzzer("FUZZ_DISABLE_LINGER\n");
+	printf_fuzzer("FUZZ_DISABLE_LINGER");
 #endif
 
 	usrsctp_init(0, conn_output, debug_printf);
@@ -462,10 +497,12 @@ int init_fuzzer(void)
 		perror("connect fd_udp_client");
 		exit(EXIT_FAILURE);
 	}
+
 	if (connect(fd_udp_server, (struct sockaddr*)&sin_c, sizeof(struct sockaddr_in)) < 0) {
 		perror("connect fd_udp_server");
 		exit(EXIT_FAILURE);
 	}
+
 	if (pthread_create(&tid_c, NULL, &handle_packets, (void*)&fd_udp_client)) {
 		perror("pthread_create tid_c");
 		exit(EXIT_FAILURE);
@@ -489,7 +526,7 @@ int init_fuzzer(void)
 }
 
 #if defined(FUZZING_MODE)
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 #else // defined(FUZZING_MODE)
 int main(int argc, char *argv[])
@@ -504,7 +541,7 @@ int main(int argc, char *argv[])
 
 		if (!file) {
 			perror("fopen");
-			fprintf(stderr, "filename: %s\n", argv[argc - 1]);
+			printf_fuzzer("filename: %s\n", argv[argc - 1]);
 			exit(EXIT_FAILURE);
 		}
 
@@ -517,7 +554,8 @@ int main(int argc, char *argv[])
 	}
 #endif // defined(FUZZING_MODE)
 
-	printf_fuzzer("\n\n\nLets go....................\n");
+	printf_fuzzer_raw("\n\n\n\n\n");
+	printf_fuzzer("Lets go....................");
 
 	struct sockaddr_conn sconn;
 	static uint16_t port = 1;
@@ -545,13 +583,13 @@ int main(int argc, char *argv[])
 	port = (port % 32768) + 1;
 
 	if ((socket_client = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
-		perror("usrsctp_socket 1");
+		perror("usrsctp_socket - socket_client");
 		exit(EXIT_FAILURE);
 	}
 	sockets_open++;
 
 	if ((socket_server_listening = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
-		perror("usrsctp_socket 2");
+		perror("usrsctp_socket - socket_server_listening");
 		exit(EXIT_FAILURE);
 	}
 	sockets_open++;
@@ -643,6 +681,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+	memset(&assoc_val, 0, sizeof(assoc_val));
 	assoc_val.assoc_value = 1;
 	if (usrsctp_setsockopt(socket_server_listening, IPPROTO_SCTP, SCTP_INTERLEAVING_SUPPORTED, &assoc_val, sizeof(assoc_val)) < 0) {
 		perror("usrsctp_setsockopt SCTP_INTERLEAVING_SUPPORTED socket_server_listening");
@@ -702,12 +741,12 @@ int main(int argc, char *argv[])
 
 	usrsctp_set_upcall(socket_client, handle_upcall, cs);
 
-	printf_fuzzer("######################################usrsctp_connect before\n");
+	printf_fuzzer("######################################usrsctp_connect before");
 	if (usrsctp_connect(socket_client, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_connect socket_client");
 		exit(EXIT_FAILURE);
 	}
-	printf_fuzzer("###################################### usrsctp_connect after\n");
+	printf_fuzzer("###################################### usrsctp_connect after");
 
 
 #if defined(FUZZ_DISABLE_LINGER)
@@ -718,8 +757,14 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 #endif //defined(FUZZ_DISABLE_LINGER)
+
+	pthread_t tid;
+	tid = pthread_self();
+	printf_fuzzer("Thread: %u", (uint32_t)tid);
+
 	while (sockets_open) {
-		//printf_fuzzer("waiting for server close...\n");
+		printf_fuzzer("waiting for sockets %d...", sockets_open);
+		pthread_cond_wait(&cond, &mutex);
 	}
 
 
@@ -738,7 +783,7 @@ int main(int argc, char *argv[])
 
 	while (usrsctp_finish()) {
 		//sleep(1);
-		//printf_fuzzer("finishing....\n");
+		//printf_fuzzer("finishing....");
 	}
 
 	pthread_cancel(tid_c);
@@ -751,7 +796,7 @@ int main(int argc, char *argv[])
 	close(fd_udp_server);
 #endif // !defined(FUZZ_FAST)
 
-	printf_fuzzer("finished...\n");
+	printf_fuzzer("finished...");
 
 	return (0);
 }

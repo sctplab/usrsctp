@@ -238,8 +238,8 @@ if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "AppleCla
 	endif ()
 
 	if (sctp_fuzzer_clang)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=fuzzer")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=fuzzer")
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=fuzzer -Wno-gnu-zero-variadic-macro-arguments")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=fuzzer -Wno-gnu-zero-variadic-macro-arguments")
 	endif ()
 endif ()
 
