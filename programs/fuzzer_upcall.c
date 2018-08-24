@@ -723,6 +723,16 @@ int main(int argc, char *argv[])
 
 	cs = (struct connection_status *) calloc(1, sizeof(struct connection_status));
 	cs->type = CS_SERVER_LISTENING;
+
+#if defined(FUZZ_DISABLE_LINGER)
+	so_linger.l_onoff = 1;
+	so_linger.l_linger = 0;
+	if (usrsctp_setsockopt(socket_server_listening, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
+		perror("usrsctp_setsockopt socket_server_listening");
+		exit(EXIT_FAILURE);
+	}
+#endif //defined(FUZZ_DISABLE_LINGER)
+
 	usrsctp_set_upcall(socket_server_listening, handle_upcall, cs);
 
 	/* Initiate the handshake */
@@ -747,16 +757,6 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	printf_fuzzer("###################################### usrsctp_connect after");
-
-
-#if defined(FUZZ_DISABLE_LINGER)
-	so_linger.l_onoff = 1;
-	so_linger.l_linger = 0;
-	if (usrsctp_setsockopt(socket_server_listening, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
-		perror("usrsctp_setsockopt socket_server_listening");
-		exit(EXIT_FAILURE);
-	}
-#endif //defined(FUZZ_DISABLE_LINGER)
 
 	pthread_t tid;
 	tid = pthread_self();
