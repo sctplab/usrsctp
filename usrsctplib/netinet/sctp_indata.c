@@ -476,7 +476,7 @@ sctp_abort_in_reasm(struct sctp_tcb *stcb,
 static void
 sctp_clean_up_control(struct sctp_tcb *stcb, struct sctp_queued_to_read *control)
 {
-	/*
+	/* 
 	 * The control could not be placed and must be cleaned.
 	 */
 	struct sctp_tmit_chunk *chk, *nchk;
@@ -487,7 +487,7 @@ sctp_clean_up_control(struct sctp_tcb *stcb, struct sctp_queued_to_read *control
 		chk->data = NULL;
 		sctp_free_a_chunk(stcb, chk, SCTP_SO_NOT_LOCKED);
 	}
-	sctp_free_a_readq(stcb, control);
+	sctp_free_a_readq(stcb, control);	
 }
 
 /*
@@ -764,7 +764,7 @@ sctp_add_to_tail_pointer(struct sctp_queued_to_read *control, struct mbuf *m, ui
 	}
 }
 
-static void
+static void 
 sctp_build_readq_entry_from_ctl(struct sctp_queued_to_read *nc, struct sctp_queued_to_read *control)
 {
 	memset(nc, 0, sizeof(struct sctp_queued_to_read));
@@ -786,13 +786,13 @@ sctp_build_readq_entry_from_ctl(struct sctp_queued_to_read *nc, struct sctp_queu
 	nc->port_from = control->port_from;
 }
 
-static void
+static void 
 sctp_reset_a_control(struct sctp_queued_to_read *control,
                      struct sctp_inpcb *inp, uint32_t tsn)
 {
 	control->fsn_included = tsn;
 	if (control->on_read_q) {
-		/*
+		/* 
 		 * We have to purge it from there,
 		 * hopefully this will work :-)
 		 */
@@ -848,7 +848,7 @@ restart:
 			if (control->end_added) {
 				/* We are done */
 				if (!TAILQ_EMPTY(&control->reasm)) {
-					/*
+					/* 
 					 * Ok we have to move anything left on
 					 * the control queue to a new control.
 					 */
@@ -975,7 +975,7 @@ sctp_inject_old_unordered_data(struct sctp_tcb *stcb,
 			}
 			if ((chk->rec.data.fsn == control->fsn_included) ||
 			    (control->pdapi_started)) {
-				/*
+				/* 
 				 * Ok this should not happen, if it does
 				 * we started the pd-api on the higher TSN (since
 				 * the equals part is a TSN failure it must be that).
@@ -1044,7 +1044,7 @@ place_chunk:
 			TAILQ_INSERT_BEFORE(at, chk, sctp_next);
 			break;
 		} else if (at->rec.data.fsn == chk->rec.data.fsn) {
-			/*
+			/* 
 			 * They sent a duplicate fsn number. This
 			 * really should not happen since the FSN is
 			 * a TSN and it should have been dropped earlier.
@@ -1465,7 +1465,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 				control->last_frag_seen = 1;
 			}
 			if (asoc->idata_supported || control->first_frag_seen) {
-				/*
+				/* 
 				 * For IDATA we always check since we know that
 				 * the first fragment is 0. For old DATA we have
 				 * to receive the first before we know the first FSN
@@ -1491,7 +1491,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 				return;
 			}
 			if (asoc->idata_supported || control->first_frag_seen) {
-				/*
+				/* 
 				 * For IDATA we always check since we know that
 				 * the first fragment is 0. For old DATA we have
 				 * to receive the first before we know the first FSN
@@ -1523,7 +1523,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		}
 		/*
 		 * If we reach here, we need to place the
-		 * new chunk in the reassembly for this
+		 * new chunk in the reassembly for this 
 		 * control.
 		 */
 		SCTPDBG(SCTP_DEBUG_XXX,
@@ -1831,8 +1831,8 @@ sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	if ((chk_type == SCTP_IDATA) &&
 	    ((chk_flags & SCTP_DATA_FIRST_FRAG) == 0) &&
 	    (fsn == 0)) {
-		/*
-		 *  The first *must* be fsn 0, and other
+		/* 
+		 *  The first *must* be fsn 0, and other 
 		 *  (middle/end) pieces can *not* be fsn 0.
 		 * XXX: This can happen in case of a wrap around.
 		 *      Ignore is for now.
@@ -2766,7 +2766,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 			} else {
 				last_chunk = 0;
 			}
-			if (sctp_process_a_data_chunk(stcb, asoc, mm, *offset,
+			if (sctp_process_a_data_chunk(stcb, asoc, mm, *offset, 
 						      chk_length, net, high_tsn, &abort_flag, &break_flag,
 						      last_chunk, ch->chunk_type)) {
 				num_chunks++;
@@ -5536,10 +5536,10 @@ sctp_handle_forward_tsn(struct sctp_tcb *stcb,
 	 *
 	 * Assume we get FwdTSN(x):
 	 *
-	 * 1) update local cumTSN to x
-	 * 2) try to further advance cumTSN to x + others we have
-	 * 3) examine and update re-ordering queue on pr-in-streams
-	 * 4) clean up re-assembly queue
+	 * 1) update local cumTSN to x 
+	 * 2) try to further advance cumTSN to x + others we have 
+	 * 3) examine and update re-ordering queue on pr-in-streams 
+	 * 4) clean up re-assembly queue 
 	 * 5) Send a sack to report where we are.
 	 */
 	struct sctp_association *asoc;
