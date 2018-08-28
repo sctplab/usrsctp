@@ -1,0 +1,5 @@
+# This document describes the way to disable or alter the behavior of sanitizer tools for certain source-level entities by providing a special file at compile-time.
+
+fun:getifaddrs
+fun:sctp_find_ifa_by_addr
+fun:sctp_add_addr_to_vrf
