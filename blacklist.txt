@@ -3,3 +3,4 @@
 fun:getifaddrs
 fun:sctp_find_ifa_by_addr
 fun:sctp_add_addr_to_vrf
+fun:sctp_init_ifns_for_vrf

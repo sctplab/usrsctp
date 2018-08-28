@@ -412,7 +412,7 @@ int init_fuzzer(void)
 	return 0;
 }
 
-extern "C" int
+int
 LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 	printf_fuzzer("\n\n\nLets go....................\n");

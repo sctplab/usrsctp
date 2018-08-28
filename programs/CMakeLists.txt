@@ -72,9 +72,9 @@ if (sctp_fuzzer_clang)
 	# if in fuzzing mode, only build the fuzzer
 	set(check_programs
 		fuzzer_unconnected.c
-		fuzzer_connected.cc
+		fuzzer_connected.c
 		fuzzer_upcall.c
-		fuzzer_polling.cc
+		fuzzer_polling.c
 	)
 	configure_file(crashtest.py crashtest.py COPYONLY)
 	configure_file(fuzzer_connected.sh fuzzer_connected.sh COPYONLY)

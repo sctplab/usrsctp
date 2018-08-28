@@ -39,9 +39,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <unistd.h>
-extern "C" {
 #include "usrsctp.h"
-}
 
 #define MAX_PACKET_SIZE (1 << 16)
 
@@ -379,7 +377,7 @@ int init_fuzzer(void)
 }
 
 #if defined(FUZZING_MODE)
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 #else // defined(FUZZING_MODE)
 int main(int argc, char *argv[])
