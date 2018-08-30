@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-#if !defined(FUZZ_FAST)
+#if !defined(FUZZ_FAST) || !defined(FUZZING_MODE)
 	usrsctp_close(s_l);
 	while (usrsctp_finish() != 0) {
 		//sleep(1);
