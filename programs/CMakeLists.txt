@@ -63,25 +63,34 @@ endif ()
 
 find_package(Threads)
 
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-gnu-zero-variadic-macro-arguments")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-gnu-zero-variadic-macro-arguments")
+
 
 #################################################
 # PROGRAMS
 #################################################
 
+list(APPEND check_programs
+	fuzzer_unconnected.c
+	fuzzer_connected.c
+	fuzzer_upcall.c
+
+)
+
 if (sctp_fuzzer_clang)
 	# if in fuzzing mode, only build the fuzzer
-	set(check_programs
-		fuzzer_unconnected.c
-		fuzzer_connected.c
-		fuzzer_upcall.c
+
+	list(APPEND check_programs
 		fuzzer_polling.c
 	)
+
 	configure_file(crashtest.py crashtest.py COPYONLY)
 	configure_file(fuzzer_connected.sh fuzzer_connected.sh COPYONLY)
 	configure_file(fuzzer_unconnected.sh fuzzer_unconnected.sh COPYONLY)
 	configure_file(fuzzer_upcall.sh fuzzer_upcall.sh COPYONLY)
 else ()
-	set(check_programs
+	list(APPEND check_programs
 		chargen_server_upcall.c
 		client.c
 		client_upcall.c
