@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
 		data_size = ftell(file);
 		fseek(file, 0, SEEK_SET);
 		data = malloc(data_size);
-		if (fread(data, data_size, 1, file) != data_size) {
+		if (fread(data, 1, data_size, file) != data_size) {
 			fprintf(stderr, "fread failed!\n");
 			exit(EXIT_FAILURE);
 		}

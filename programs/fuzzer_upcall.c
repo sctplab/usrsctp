@@ -550,7 +550,7 @@ int main(int argc, char *argv[])
 		data_size = ftell(file);
 		fseek(file, 0, SEEK_SET);
 		data = (char*)malloc(data_size);
-		fread(data, data_size, 1, file);
+		fread(data, 1, data_size, file);
 		fclose(file);
 	}
 #endif // defined(FUZZING_MODE)
