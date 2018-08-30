@@ -79,14 +79,14 @@ struct connection_status {
 
 
 #if !defined(FUZZING_MODE) || defined(FUZZ_VERBOSE)
-#define printf_fuzzer(format, ...) { \
-	printf("[%5d][%15.15s] ", __LINE__, __FUNCTION__); \
-	printf(format, ##__VA_ARGS__); \
+#define printf_fuzzer(...) { \
+	printf("[%5d][%15.15s] ", __LINE__, __func__); \
+	printf(__VA_ARGS__); \
 	printf("\n"); \
 }
 
-#define printf_fuzzer_raw(format, ...) { \
-	printf(format, ##__VA_ARGS__); \
+#define printf_fuzzer_raw(...) { \
+	printf(__VA_ARGS__); \
 }
 #else // !defined(FUZZING_MODE) || defined(FUZZ_VERBOSE)
 #define printf_fuzzer(format, ...)
@@ -329,7 +329,7 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 
 			n = usrsctp_recvv(sock, buf, MAX_PACKET_SIZE, (struct sockaddr *) &addr, &len, (void *)&rn, &infolen, &infotype, &flags);
 
-			printf_fuzzer("usrsctp_recvv() for %d", (int)sock);
+			printf_fuzzer("usrsctp_recvv() for %p", (void *)sock);
 
 			if (n > 0) {
 				if (flags & MSG_NOTIFICATION) {
@@ -359,7 +359,7 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 		}
 
 		if (events & SCTP_EVENT_ERROR) {
-			printf_fuzzer("SCTP_EVENT_ERROR for %d", (int)sock);
+			printf_fuzzer("SCTP_EVENT_ERROR for %p", (void *)sock);
 		}
 	}
 	printf_fuzzer("exit");
@@ -550,7 +550,10 @@ int main(int argc, char *argv[])
 		data_size = ftell(file);
 		fseek(file, 0, SEEK_SET);
 		data = (char*)malloc(data_size);
-		fread(data, 1, data_size, file);
+		if (fread(data, 1, data_size, file) != data_size) {
+			perror("fread");
+			exit(EXIT_FAILURE);
+		}
 		fclose(file);
 	}
 #endif // defined(FUZZING_MODE)
