@@ -34,6 +34,7 @@
 #include <stdarg.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <errno.h>
@@ -559,6 +560,10 @@ int main(int argc, char *argv[])
 
 	struct sockaddr_conn sconn;
 	static uint16_t port = 1;
+	struct timespec time_to_wait;
+	struct timeval tv;
+	int timedwait_retval = 0;
+
 #if defined(FUZZ_DISABLE_LINGER)
 	struct linger so_linger;
 #endif
@@ -758,14 +763,23 @@ int main(int argc, char *argv[])
 	}
 	printf_fuzzer("###################################### usrsctp_connect after");
 
-	pthread_t tid;
-	tid = pthread_self();
-	printf_fuzzer("Thread: %u", (uint32_t)tid);
+	gettimeofday(&tv, NULL);
+	time_to_wait.tv_sec = tv.tv_sec + 5;
+	time_to_wait.tv_nsec = 0;
 
+	pthread_mutex_lock(&mutex);
 	while (sockets_open) {
 		printf_fuzzer("waiting for sockets %d...", sockets_open);
-		pthread_cond_wait(&cond, &mutex);
+		timedwait_retval = pthread_cond_timedwait(&cond, &mutex, &time_to_wait);
+
+		if (timedwait_retval == ETIMEDOUT) {
+			printf("Tor 3 - der Zonk!\n");
+			usrsctp_close(socket_client);
+			usrsctp_close(socket_server_listening);
+			break;
+		}
 	}
+	pthread_mutex_unlock(&mutex);
 
 
 #if !defined(FUZZING_MODE)
