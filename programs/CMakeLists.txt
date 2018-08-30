@@ -63,8 +63,11 @@ endif ()
 
 find_package(Threads)
 
-set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-gnu-zero-variadic-macro-arguments")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-gnu-zero-variadic-macro-arguments")
+check_c_compiler_flag(-Wno-gnu-zero-variadic-macro-arguments has_no-gnu-zero-variadic-macro-arguments)
+if (has_no-gnu-zero-variadic-macro-arguments)
+	set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-gnu-zero-variadic-macro-arguments")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-gnu-zero-variadic-macro-arguments")
+endif ()
 
 
 #################################################
