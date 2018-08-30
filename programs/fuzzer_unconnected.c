@@ -221,7 +221,10 @@ int main(int argc, char *argv[])
 		data_size = ftell(file);
 		fseek(file, 0, SEEK_SET);
 		data = malloc(data_size);
-		fread(data, data_size, 1, file);
+		if (fread(data, data_size, 1, file) != data_size) {
+			fprintf(stderr, "fread failed!\n");
+			exit(EXIT_FAILURE);
+		}
 		fclose(file);
 		//printf("read file - %zu bytes\n", data_size);
 	}
