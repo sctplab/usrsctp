@@ -29,7 +29,7 @@ dnl SUCH DAMAGE.
 dnl
 
 AC_INIT([libusrsctp], [0.9.3.0])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign])
 
 AC_PROG_CC
 AC_PROG_LIBTOOL
