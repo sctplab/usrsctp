@@ -595,12 +595,15 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	sockets_open++;
+	usrsctp_set_non_blocking(socket_client, 1);
+
 
 	if ((socket_server_listening = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket - socket_server_listening");
 		exit(EXIT_FAILURE);
 	}
 	sockets_open++;
+	usrsctp_set_non_blocking(socket_server_listening, 1);
 
 	memset(&event, 0, sizeof(event));
 	event.se_assoc_id = SCTP_ALL_ASSOC;
@@ -761,8 +764,10 @@ int main(int argc, char *argv[])
 
 	printf_fuzzer("######################################usrsctp_connect before");
 	if (usrsctp_connect(socket_client, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
-		perror("usrsctp_connect socket_client");
-		exit(EXIT_FAILURE);
+		if (errno != EINPROGRESS) {
+			perror("usrsctp_connect socket_client");
+			exit(EXIT_FAILURE);
+		}
 	}
 	printf_fuzzer("###################################### usrsctp_connect after");
 
