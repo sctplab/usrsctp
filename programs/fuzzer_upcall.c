@@ -237,7 +237,7 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 	printf_fuzzer("Thread: %u", (uint32_t)tid);
 
 	if (cs->type == CS_SERVER_LISTENING) {
-		// upcall for listening socket -> call acceppt!
+		// upcall for listening socket -> call accept!
 		struct socket* conn_sock;
 		struct connection_status* cs_new;
 
@@ -577,13 +577,15 @@ int main(int argc, char *argv[])
 	struct sctp_assoc_value assoc_val;
 #endif
 	struct sctp_event event;
-	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
+	uint16_t event_types[] = {
+		SCTP_ASSOC_CHANGE,
 		SCTP_PEER_ADDR_CHANGE,
 		SCTP_SEND_FAILED_EVENT,
 		SCTP_REMOTE_ERROR,
 		SCTP_SHUTDOWN_EVENT,
 		SCTP_ADAPTATION_INDICATION,
-		SCTP_PARTIAL_DELIVERY_EVENT};
+		SCTP_PARTIAL_DELIVERY_EVENT
+	};
 	unsigned long i;
 	struct connection_status* cs;
 
@@ -608,7 +610,7 @@ int main(int argc, char *argv[])
 	memset(&event, 0, sizeof(event));
 	event.se_assoc_id = SCTP_ALL_ASSOC;
 	event.se_on = 1;
-	for (i = 0; i < sizeof(event_types)/sizeof(uint16_t); i++) {
+	for (i = 0; i < sizeof(event_types) / sizeof(uint16_t); i++) {
 		event.se_type = event_types[i];
 		if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
 			perror("setsockopt SCTP_EVENT socket_client");
@@ -619,7 +621,7 @@ int main(int argc, char *argv[])
 	memset(&event, 0, sizeof(event));
 	event.se_assoc_id = SCTP_ALL_ASSOC;
 	event.se_on = 1;
-	for (i = 0; i < sizeof(event_types)/sizeof(uint16_t); i++) {
+	for (i = 0; i < sizeof(event_types) / sizeof(uint16_t); i++) {
 		event.se_type = event_types[i];
 		if (usrsctp_setsockopt(socket_server_listening, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
 			perror("setsockopt SCTP_EVENT socket_server_listening");
@@ -762,14 +764,12 @@ int main(int argc, char *argv[])
 
 	usrsctp_set_upcall(socket_client, handle_upcall, cs);
 
-	printf_fuzzer("######################################usrsctp_connect before");
 	if (usrsctp_connect(socket_client, (struct sockaddr*)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		if (errno != EINPROGRESS) {
 			perror("usrsctp_connect socket_client");
 			exit(EXIT_FAILURE);
 		}
 	}
-	printf_fuzzer("###################################### usrsctp_connect after");
 
 	gettimeofday(&tv, NULL);
 	time_to_wait.tv_sec = tv.tv_sec + 5;

@@ -175,6 +175,7 @@ extern struct pr_usrreqs sctp_usrreqs;
 			SCTP_INCR_CHK_COUNT(); \
 			(_chk)->whoTo = NULL; \
 			(_chk)->holds_key_ref = 0; \
+			(_chk)->flags = 0; \
 		} \
 	} else { \
 		(_chk) = TAILQ_FIRST(&(_stcb)->asoc.free_chunks); \

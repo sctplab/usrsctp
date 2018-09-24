@@ -42,7 +42,6 @@
 #include <usrsctp.h>
 
 #define FUZZ_FAST 1
-#define FUZZ_CALLBACK_API 1
 
 struct sockaddr_conn sconn;
 struct socket *s_l;
@@ -61,52 +60,11 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 	return (0);
 }
 
-static int
-receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
-           size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
-{
-	printf("Message %p received on sock = %p.\n", data, (void *)sock);
-	if (data) {
-		if ((flags & MSG_NOTIFICATION) == 0) {
-			printf("Messsage of length %d received via %p:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u, flags %x.\n",
-			       (int)datalen,
-			       addr.sconn.sconn_addr,
-			       ntohs(addr.sconn.sconn_port),
-			       rcv.rcv_sid,
-			       rcv.rcv_ssn,
-			       rcv.rcv_tsn,
-			       ntohl(rcv.rcv_ppid),
-			       rcv.rcv_context,
-			       flags);
-		}
-		free(data);
-	} else {
-		usrsctp_deregister_address(ulp_info);
-		usrsctp_close(sock);
-	}
-	return (1);
-}
-
 static void
 handle_upcall(struct socket *sock, void *arg, int flgs)
 {
 	fprintf(stderr, "Listening socket established, implement logic!\n");
 	exit(EXIT_FAILURE);
-
-#if 0
-	//int events = usrsctp_get_events(sock);
-
-	// upcall for listening socket -> call acceppt!
-	struct socket* conn_sock;
-
-	if (((conn_sock = usrsctp_accept(sock, NULL, NULL)) == NULL) && (errno != EINPROGRESS)) {
-		perror("usrsctp_accept");
-		exit(EXIT_FAILURE);
-	}
-
-
-	return;
-#endif
 }
 
 void
@@ -118,8 +76,6 @@ debug_printf(const char *format, ...)
 	vprintf(format, ap);
 	va_end(ap);
 }
-
-
 
 int
 init_fuzzer(void) {
@@ -149,17 +105,11 @@ init_fuzzer(void) {
 #endif
 	usrsctp_register_address((void *)1);
 
-#if defined(FUZZ_CALLBACK_API)
 	if ((s_l = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, 0)) == NULL) {
 		perror("usrsctp_socket");
 		exit(EXIT_FAILURE);
 	}
-#else
-	if ((s_l = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, (void *)1)) == NULL) {
-		perror("usrsctp_socket");
-		exit(EXIT_FAILURE);
-	}
-#endif
+	usrsctp_set_non_blocking(s_l, 1);
 
 	/* Bind the server side. */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
@@ -228,7 +178,6 @@ int main(int argc, char *argv[])
 		fclose(file);
 		//printf("read file - %zu bytes\n", data_size);
 	}
-
 #endif
 
 	init_fuzzer();
