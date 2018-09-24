@@ -119,15 +119,17 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 	FILE *fp;
 	char fname[128];
 	static int pktnum = 0;
-	snprintf(fname, sizeof(fname), "pkt-%d", pktnum++);
+	snprintf(fname, sizeof(fname), "pkt-%d", pktnum);
 	fp = fopen(fname, "wb");
 	fwrite((char *)buf + 12, 1, length - 12, fp);
 	fclose(fp);
 
-	snprintf(fname, sizeof(fname), "chk-%d", pktnum++);
+	snprintf(fname, sizeof(fname), "chk-%d", pktnum);
 	fp = fopen(fname, "wb");
 	fwrite((char *)buf + 12 + 16, 1, length - 12 - 16, fp);
 	fclose(fp);
+
+	pktnum++;
 #endif
 
 #ifdef _WIN32
