@@ -43,6 +43,8 @@
 #include <dirent.h>
 #include <usrsctp.h>
 
+
+#define FILENAME_BUFFER 512
 #define FUZZ_FAST 1
 
 struct sockaddr_conn sconn;
@@ -195,7 +197,7 @@ int main(int argc, char *argv[])
 	struct stat stat_buf;
 	DIR *d;
 	struct dirent *dp;
-	char file_path[255];
+	char file_path[FILENAME_BUFFER];
 
 
 	if (argc != 2) {
@@ -217,7 +219,7 @@ int main(int argc, char *argv[])
 		}
 
 		while ((dp = readdir(d)) != NULL) {
-			sprintf(file_path, "%s/%s", argv[1], dp->d_name);
+			snprintf(file_path, FILENAME_BUFFER, "%s/%s", argv[1], dp->d_name);
 			printf("%s \n", file_path);
 
 			if (dp->d_type == DT_DIR) {
