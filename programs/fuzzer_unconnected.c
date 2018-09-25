@@ -156,64 +156,38 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 #else // defined(FUZZING_MODE)
 int main(int argc, char *argv[])
 {
-
 	char *data;
 	size_t data_size;
 	FILE *file;
-	DIR *d;
-	struct dirent *dir;
-	char file_path[255];
 
 	if (argc != 2) {
-		printf("[DIR] missing\n");
+		printf("[FILE] missing\n");
 		exit(EXIT_FAILURE);
 	}
 
-
-	d = opendir(argv[1]);
-	if (!d) {
-		printf("error opening %s\n", argv[1]);
+	file = fopen(argv[1], "rb");
+	if (!file) {
+		perror("fopen");
 		exit(EXIT_FAILURE);
 	}
+
+	fseek(file, 0, SEEK_END);
+	data_size = ftell(file);
+	fseek(file, 0, SEEK_SET);
+	data = malloc(data_size);
+	if (fread(data, 1, data_size, file) != data_size) {
+		fprintf(stderr, "fread failed!\n");
+		exit(EXIT_FAILURE);
+	}
+	fclose(file);
 #endif
 
 	init_fuzzer();
+	usrsctp_conninput((void *)1, data, data_size, 0);
 	// magic happens here
 
-#if defined(FUZZING_MODE)
-	usrsctp_conninput((void *)1, data, data_size, 0);
-#else
-	while ((dir = readdir(d)) != NULL) {
-		sprintf(file_path, "%s/%s", argv[1], dir->d_name);
-		printf("%s \n", file_path);
-
-		if (dir-> d_type == DT_DIR) {
-			printf("skip!\n");
-			continue;
-		}
-
-		file = fopen(file_path, "rb");
-
-
-		if (!file) {
-			perror("fopen");
-		}
-
-		fseek(file, 0, SEEK_END);
-		data_size = ftell(file);
-		fseek(file, 0, SEEK_SET);
-		data = malloc(data_size);
-		if (fread(data, 1, data_size, file) != data_size) {
-			fprintf(stderr, "fread failed!\n");
-			exit(EXIT_FAILURE);
-		}
-		fclose(file);
-
-		usrsctp_conninput((void *)1, data, data_size, 0);
-
-		free(data);
-	}
-	closedir(d);
+#if !defined(FUZZING_MODE)
+	free(data);
 #endif
 
 #if !defined(FUZZ_FAST) || !defined(FUZZING_MODE)
