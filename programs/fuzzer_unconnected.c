@@ -150,6 +150,20 @@ init_fuzzer(void) {
 	return 0;
 }
 
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
+{
+	init_fuzzer();
+	usrsctp_conninput((void *)1, data, data_size, 0);
+
+#if !defined(FUZZ_FAST)
+	usrsctp_close(s_l);
+	while (usrsctp_finish() != 0) {
+		//sleep(1);
+	}
+#endif
+	return (0);
+}
+#if !defined(FUZZING_MODE)
 void test_input_file(char *file_path) {
 	char *data;
 	size_t data_size;
@@ -171,27 +185,11 @@ void test_input_file(char *file_path) {
 	}
 	fclose(file);
 
-	usrsctp_conninput((void *)1, data, data_size, 0);
+	LLVMFuzzerTestOneInput((const uint8_t *)data, data_size);
 
 	free(data);
 }
 
-
-#if defined(FUZZING_MODE)
-int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
-{
-	init_fuzzer();
-	usrsctp_conninput((void *)1, data, data_size, 0);
-
-#if !defined(FUZZ_FAST)
-	usrsctp_close(s_l);
-	while (usrsctp_finish() != 0) {
-		//sleep(1);
-	}
-#endif
-	return (0);
-}
-#else // defined(FUZZING_MODE)
 int main(int argc, char *argv[])
 {
 	struct stat stat_buf;
@@ -204,8 +202,6 @@ int main(int argc, char *argv[])
 		printf("[FILE/DIR] argument missing\n");
 		exit(EXIT_FAILURE);
 	}
-
-	init_fuzzer();
 
 	if (stat(argv[1], &stat_buf)) {
 		perror("stat");
@@ -244,10 +240,12 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+#if defined(FUZZ_FAST)
 	usrsctp_close(s_l);
 	while (usrsctp_finish() != 0) {
-		//sleep(1);
+		usleep(1000 * 10);
 	}
+#endif
 
 	return (0);
 }

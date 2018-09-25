@@ -35,11 +35,13 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <errno.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <dirent.h>
 #include "usrsctp.h"
 
 #define MAX_PACKET_SIZE (1 << 16)
@@ -78,7 +80,7 @@ struct connection_status {
 };
 
 
-#if !defined(FUZZING_MODE) || defined(FUZZ_VERBOSE)
+#if defined(FUZZ_VERBOSE)
 #define printf_fuzzer(...) { \
 	printf("[%5d][%15.15s] ", __LINE__, __func__); \
 	printf(__VA_ARGS__); \
@@ -526,38 +528,9 @@ int init_fuzzer(void)
 	return 0;
 }
 
-#if defined(FUZZING_MODE)
+
 int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
-#else // defined(FUZZING_MODE)
-int main(int argc, char *argv[])
-{
-	const char *data_sample = "SCTPSCTPSCTPSCTPSCTPSCTPSCTP!!!!";
-	char *data = (char *) data_sample;
-	size_t data_size = strlen(data);
-	FILE *file;
-
-	if (argc > 1) {
-		file = fopen(argv[argc - 1], "rb");
-
-		if (!file) {
-			perror("fopen");
-			printf_fuzzer("filename: %s\n", argv[argc - 1]);
-			exit(EXIT_FAILURE);
-		}
-
-		fseek(file, 0, SEEK_END);
-		data_size = ftell(file);
-		fseek(file, 0, SEEK_SET);
-		data = (char*)malloc(data_size);
-		if (fread(data, 1, data_size, file) != data_size) {
-			perror("fread");
-			exit(EXIT_FAILURE);
-		}
-		fclose(file);
-	}
-#endif // defined(FUZZING_MODE)
-
 	printf_fuzzer_raw("\n\n\n\n\n");
 	printf_fuzzer("Lets go....................");
 
@@ -789,15 +762,7 @@ int main(int argc, char *argv[])
 	}
 	pthread_mutex_unlock(&mutex);
 
-
-#if !defined(FUZZING_MODE)
-	// we have read a file, free allocated memory
-	if (data != data_sample) {
-		free(data);
-	}
-#endif // !defined(FUZZING_MODE)
-
-#if !defined(FUZZING_MODE) || !defined(FUZZ_FAST)
+#if !defined(FUZZ_FAST)
 	//fprintf(stderr, "%s nearly am Ende...\n", __func__);
 
 	usrsctp_deregister_address((void*)&fd_udp_client);
@@ -822,3 +787,102 @@ int main(int argc, char *argv[])
 
 	return (0);
 }
+
+#if !defined(FUZZING_MODE)
+void test_input_file(char *file_path) {
+	char *data;
+	size_t data_size;
+	FILE *file;
+
+	file = fopen(file_path, "rb");
+	if (!file) {
+		perror("fopen");
+		exit(EXIT_FAILURE);
+	}
+
+	fseek(file, 0, SEEK_END);
+	data_size = ftell(file);
+	fseek(file, 0, SEEK_SET);
+	data = malloc(data_size);
+	if (fread(data, 1, data_size, file) != data_size) {
+		fprintf(stderr, "fread failed!\n");
+		exit(EXIT_FAILURE);
+	}
+	fclose(file);
+
+	LLVMFuzzerTestOneInput((const uint8_t *)data, data_size);
+
+	free(data);
+}
+
+int main(int argc, char *argv[])
+{
+	struct stat stat_buf;
+	DIR *d;
+	struct dirent *dp;
+	char file_path[255];
+
+
+	if (argc != 2) {
+		printf("[FILE/DIR] argument missing\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if (stat(argv[1], &stat_buf)) {
+		perror("stat");
+		exit(EXIT_FAILURE);
+	}
+
+	if (stat_buf.st_mode & S_IFDIR) {
+		printf("testing directory: %s\n", argv[1]);
+
+		if (!(d = opendir(argv[1]))) {
+			perror("opendir");
+			exit(EXIT_FAILURE);
+		}
+
+		while ((dp = readdir(d)) != NULL) {
+			sprintf(file_path, "%s/%s", argv[1], dp->d_name);
+			printf("%s \n", file_path);
+
+			if (dp->d_type == DT_DIR) {
+				printf("skip!\n");
+				continue;
+			}
+
+			test_input_file(file_path);
+		}
+
+		closedir(d);
+
+		// directory
+	} else if (stat_buf.st_mode & S_IFREG) {
+		printf("testing file: %s\n", argv[1]);
+		test_input_file(argv[1]);
+	} else {
+		printf("somethig's odd...\n");
+		exit(EXIT_FAILURE);
+	}
+
+#if defined(FUZZ_FAST)
+	usrsctp_deregister_address((void*)&fd_udp_client);
+	usrsctp_deregister_address((void*)&fd_udp_server);
+
+	while (usrsctp_finish()) {
+		usleep(100 * 1000);
+	}
+
+	pthread_cancel(tid_c);
+	pthread_cancel(tid_s);
+
+	pthread_join(tid_c, NULL);
+	pthread_join(tid_s, NULL);
+
+	close(fd_udp_client);
+	close(fd_udp_server);
+#endif // !defined(FUZZ_FAST)
+
+
+	return (0);
+}
+#endif
