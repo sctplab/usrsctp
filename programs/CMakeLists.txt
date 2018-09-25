@@ -74,7 +74,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-gnu-zero-variadic-macro-arguments")
 list(APPEND check_programs
 	fuzzer_unconnected.c
 	fuzzer_upcall.c
-
 )
 
 if (sctp_fuzzer_clang)

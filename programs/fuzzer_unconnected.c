@@ -39,6 +39,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <dirent.h>
 #include <usrsctp.h>
 
 #define FUZZ_FAST 1
@@ -155,13 +156,44 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 #else // defined(FUZZING_MODE)
 int main(int argc, char *argv[])
 {
-	char *data_sample = "SCTPSCTPSCTPSCTPSCTPSCTPSCTP!!!!";
-	char *data = data_sample;
-	size_t data_size = strlen(data);
-	FILE *file;
 
-	if (argc > 1) {
-		file = fopen(argv[1], "rb");
+	char *data;
+	size_t data_size;
+	FILE *file;
+	DIR *d;
+	struct dirent *dir;
+	char file_path[255];
+
+	if (argc != 2) {
+		printf("[DIR] missing\n");
+		exit(EXIT_FAILURE);
+	}
+
+
+	d = opendir(argv[1]);
+	if (!d) {
+		printf("error opening %s\n", argv[1]);
+		exit(EXIT_FAILURE);
+	}
+#endif
+
+	init_fuzzer();
+	// magic happens here
+
+#if defined(FUZZING_MODE)
+	usrsctp_conninput((void *)1, data, data_size, 0);
+#else
+	while ((dir = readdir(d)) != NULL) {
+		sprintf(file_path, "%s/%s", argv[1], dir->d_name);
+		printf("%s \n", file_path);
+
+		if (dir-> d_type == DT_DIR) {
+			printf("skip!\n");
+			continue;
+		}
+
+		file = fopen(file_path, "rb");
+
 
 		if (!file) {
 			perror("fopen");
@@ -176,18 +208,12 @@ int main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 		fclose(file);
-		//printf("read file - %zu bytes\n", data_size);
-	}
-#endif
 
-	init_fuzzer();
-	// magic happens here
-	usrsctp_conninput((void *)1, data, data_size, 0);
+		usrsctp_conninput((void *)1, data, data_size, 0);
 
-#if !defined(FUZZING_MODE)
-	if (data != data_sample) {
 		free(data);
 	}
+	closedir(d);
 #endif
 
 #if !defined(FUZZ_FAST) || !defined(FUZZING_MODE)
