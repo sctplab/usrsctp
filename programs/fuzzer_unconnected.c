@@ -34,6 +34,7 @@
 #include <stdarg.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <errno.h>
@@ -149,23 +150,12 @@ init_fuzzer(void) {
 	return 0;
 }
 
-
-#if defined(FUZZING_MODE)
-int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
-{
-#else // defined(FUZZING_MODE)
-int main(int argc, char *argv[])
-{
+void test_input_file(char *file_path) {
 	char *data;
 	size_t data_size;
 	FILE *file;
 
-	if (argc != 2) {
-		printf("[FILE] missing\n");
-		exit(EXIT_FAILURE);
-	}
-
-	file = fopen(argv[1], "rb");
+	file = fopen(file_path, "rb");
 	if (!file) {
 		perror("fopen");
 		exit(EXIT_FAILURE);
@@ -180,22 +170,84 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	fclose(file);
-#endif
 
+	usrsctp_conninput((void *)1, data, data_size, 0);
+
+	free(data);
+}
+
+
+#if defined(FUZZING_MODE)
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
+{
 	init_fuzzer();
 	usrsctp_conninput((void *)1, data, data_size, 0);
-	// magic happens here
 
-#if !defined(FUZZING_MODE)
-	free(data);
-#endif
-
-#if !defined(FUZZ_FAST) || !defined(FUZZING_MODE)
+#if !defined(FUZZ_FAST)
 	usrsctp_close(s_l);
 	while (usrsctp_finish() != 0) {
 		//sleep(1);
 	}
 #endif
+	return (0);
+}
+#else // defined(FUZZING_MODE)
+int main(int argc, char *argv[])
+{
+	struct stat stat_buf;
+	DIR *d;
+	struct dirent *dp;
+	char file_path[255];
+
+
+	if (argc != 2) {
+		printf("[FILE/DIR] argument missing\n");
+		exit(EXIT_FAILURE);
+	}
+
+	init_fuzzer();
+
+	if (stat(argv[1], &stat_buf)) {
+		perror("stat");
+		exit(EXIT_FAILURE);
+	}
+
+	if (stat_buf.st_mode & S_IFDIR) {
+		printf("testing directory: %s\n", argv[1]);
+
+		if (!(d = opendir(argv[1]))) {
+			perror("opendir");
+			exit(EXIT_FAILURE);
+		}
+
+		while ((dp = readdir(d)) != NULL) {
+			sprintf(file_path, "%s/%s", argv[1], dp->d_name);
+			printf("%s \n", file_path);
+
+			if (dp->d_type == DT_DIR) {
+				printf("skip!\n");
+				continue;
+			}
+
+			test_input_file(file_path);
+		}
+
+
+		// directory
+	} else if (stat_buf.st_mode & S_IFREG) {
+		printf("testing file: %s\n", argv[1]);
+		test_input_file(argv[1]);
+	} else {
+		printf("somethig's odd...\n");
+		exit(EXIT_FAILURE);
+	}
+
+	usrsctp_close(s_l);
+	while (usrsctp_finish() != 0) {
+		//sleep(1);
+	}
 
 	return (0);
 }
+#endif
+
