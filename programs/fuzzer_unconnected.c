@@ -232,6 +232,8 @@ int main(int argc, char *argv[])
 			test_input_file(file_path);
 		}
 
+		closedir(d);
+
 
 		// directory
 	} else if (stat_buf.st_mode & S_IFREG) {
