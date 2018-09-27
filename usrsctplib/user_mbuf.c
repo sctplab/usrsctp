@@ -338,7 +338,7 @@ m_getm2(struct mbuf *m, int len, int how, short type, int flags, int allonebuf)
 		}
 
 		if (allonebuf != 0 && size < space_needed) {
-			m_freem(m);
+			m_freem(mb);
 			return (NULL);
 		}
 

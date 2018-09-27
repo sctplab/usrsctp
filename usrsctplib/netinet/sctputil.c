@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 338135 2018-08-21 13:37:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 338941 2018-09-26 10:24:50Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -64,6 +64,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 338135 2018-08-21 13:37:06Z tuex
 #endif
 #include <netinet/udp.h>
 #include <netinet/udp_var.h>
+#include <netinet/in_kdtrace.h>
 #include <sys/proc.h>
 #ifdef INET6
 #include <netinet/icmp6.h>
@@ -3825,7 +3826,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 	}
 #endif
 	if ((SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_WAIT) ||
-	    (SCTP_GET_STATE(stcb) ==  SCTP_STATE_COOKIE_ECHOED)) {
+	    (SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_ECHOED)) {
 		if ((notification == SCTP_NOTIFY_INTERFACE_DOWN) ||
 		    (notification == SCTP_NOTIFY_INTERFACE_UP) ||
 		    (notification == SCTP_NOTIFY_INTERFACE_CONFIRMED)) {
@@ -8322,6 +8323,10 @@ sctp_hc_get_mtu(union sctp_sockstore *addr, uint16_t fibnum)
 void
 sctp_set_state(struct sctp_tcb *stcb, int new_state)
 {
+#if defined(KDTRACE_HOOKS)
+	int old_state = stcb->asoc.state;
+#endif
+
 	KASSERT((new_state & ~SCTP_STATE_MASK) == 0,
 	        ("sctp_set_state: Can't set substate (new_state = %x)",
 	        new_state));
@@ -8331,14 +8336,33 @@ sctp_set_state(struct sctp_tcb *stcb, int new_state)
 	    (new_state == SCTP_STATE_SHUTDOWN_ACK_SENT)) {
 		SCTP_CLEAR_SUBSTATE(stcb, SCTP_STATE_SHUTDOWN_PENDING);
 	}
+#if defined(KDTRACE_HOOKS)
+	if (((old_state & SCTP_STATE_MASK) != new_state) &&
+	    !(((old_state & SCTP_STATE_MASK) == SCTP_STATE_EMPTY) &&
+	      (new_state == SCTP_STATE_INUSE))) {
+		SCTP_PROBE6(state__change, NULL, stcb, NULL, stcb, NULL, old_state);
+	}
+#endif
 }
 
 void
 sctp_add_substate(struct sctp_tcb *stcb, int substate)
 {
+#if defined(KDTRACE_HOOKS)
+	int old_state = stcb->asoc.state;
+#endif
+
 	KASSERT((substate & SCTP_STATE_MASK) == 0,
 	        ("sctp_add_substate: Can't set state (substate = %x)",
 	        substate));
 	stcb->asoc.state |= substate;
+#if defined(KDTRACE_HOOKS)
+	if (((substate & SCTP_STATE_ABOUT_TO_BE_FREED) &&
+	     ((old_state & SCTP_STATE_ABOUT_TO_BE_FREED) == 0)) ||
+	    ((substate & SCTP_STATE_SHUTDOWN_PENDING) &&
+	     ((old_state & SCTP_STATE_SHUTDOWN_PENDING) == 0))) {
+		SCTP_PROBE6(state__change, NULL, stcb, NULL, stcb, NULL, old_state);
+	}
+#endif
 }
 

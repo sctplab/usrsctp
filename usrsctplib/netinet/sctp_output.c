@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 338134 2018-08-21 13:25:32Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 338941 2018-09-26 10:24:50Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -72,6 +72,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 338134 2018-08-21 13:25:32Z t
 #include <netinet/udp_var.h>
 #endif
 #include <machine/in_cksum.h>
+#include <netinet/in_kdtrace.h>
 #endif
 #if defined(__Userspace__) && defined(INET6)
 #include <netinet6/sctp6_var.h>
@@ -4447,6 +4448,9 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			SCTP_SOCKET_UNLOCK(so, 0);
 		}
 #endif
+#if defined(__FreeBSD__)
+		SCTP_PROBE5(send, NULL, stcb, ip, stcb, sctphdr);
+#endif
 		SCTP_IP_OUTPUT(ret, o_pak, ro, stcb, vrf_id);
 #if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
 		if ((SCTP_BASE_SYSCTL(sctp_output_unlocked)) && (so_locked)) {
@@ -4891,6 +4895,9 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			sctp_packet_log(o_pak);
 #endif
 #if !(defined(__Panda__) || defined(__Userspace__))
+#if defined(__FreeBSD__)
+		SCTP_PROBE5(send, NULL, stcb, ip6h, stcb, sctphdr);
+#endif
 		SCTP_IP6_OUTPUT(ret, o_pak, (struct route_in6 *)ro, &ifp, stcb, vrf_id);
 #else
 		SCTP_IP6_OUTPUT(ret, o_pak, (struct route_in6 *)ro, NULL, stcb, vrf_id);
@@ -11892,6 +11899,9 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 			ro.ro_rt = NULL;
 		}
 #else
+#if defined(__FreeBSD__)
+		SCTP_PROBE5(send, NULL, NULL, ip, NULL, shout);
+#endif
 		SCTP_IP_OUTPUT(ret, o_pak, NULL, NULL, vrf_id);
 #endif
 		break;
@@ -11927,6 +11937,9 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING) {
 			sctp_packet_log(o_pak);
 		}
+#endif
+#if defined(__FreeBSD__)
+		SCTP_PROBE5(send, NULL, NULL, ip6, NULL, shout);
 #endif
 		SCTP_IP6_OUTPUT(ret, o_pak, NULL, NULL, NULL, vrf_id);
 		break;

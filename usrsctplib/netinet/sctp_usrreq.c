@@ -533,7 +533,6 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 			            inner_ip->ip_len,
 #endif
 			            (uint32_t)ntohs(icmp->icmp_nextmtu));
-
 #if defined(__Userspace__)
 			if (!(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) &&
 			    (stcb->sctp_socket != NULL)) {
@@ -552,7 +551,6 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 				sorele(upcall_socket);
 			}
 #endif
-
 		} else {
 #if defined(__FreeBSD__) && __FreeBSD_version < 500000
 			/*
