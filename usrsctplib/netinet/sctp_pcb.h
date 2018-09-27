@@ -115,6 +115,7 @@ struct sctp_ifa {
 	uint32_t flags;
 	uint32_t localifa_flags;
 	uint32_t vrf_id;	/* vrf_id of this addr (for deleting) */
+	uint32_t ifa_mtu;
 	uint8_t src_is_loop;
 	uint8_t src_is_priv;
 	uint8_t src_is_glob;
@@ -609,6 +610,7 @@ int register_recv_cb (struct socket *,
                               struct sctp_rcvinfo, int, void *));
 int register_send_cb (struct socket *, uint32_t, int (*)(struct socket *, uint32_t));
 int register_ulp_info (struct socket *, void *);
+int sctp_get_mtu_from_addr(struct sctp_inpcb *inp, struct sockaddr *sa);
 
 #endif
 struct sctp_tcb {
