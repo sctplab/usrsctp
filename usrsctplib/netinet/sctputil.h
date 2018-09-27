@@ -121,7 +121,9 @@ void sctp_invoke_recv_callback(struct sctp_inpcb *,
     struct sctp_tcb *,
     struct sctp_queued_to_read *,
     int);
-
+void
+sctp_recv_icmp_tunneled_packet(int cmd, struct sockaddr *sa,
+	void *vip, void *ctx SCTP_UNUSED);
 #endif
 void
 sctp_add_to_readq(struct sctp_inpcb *inp,

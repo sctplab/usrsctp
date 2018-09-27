@@ -433,7 +433,7 @@ m_length(struct mbuf *m0, struct mbuf **last)
 			break;
 	}
 	if (last != NULL)
-	*last = m;
+		*last = m;
 	return (len);
 }
 

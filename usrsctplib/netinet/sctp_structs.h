@@ -447,6 +447,9 @@ struct sctp_nets {
 	uint32_t flowid;
 	uint8_t flowtype;
 #endif
+#if defined(__Userspace__)
+	uint8_t got_max;
+#endif
 };
 
 
