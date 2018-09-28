@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 338941 2018-09-26 10:24:50Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 339004 2018-09-28 19:47:32Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7700,7 +7700,7 @@ one_more_time:
 	}
 	if ((sp->msg_is_complete) && (sp->length == 0)) {
 		if (sp->sender_all_done) {
-			/* We are doing defered cleanup. Last
+			/* We are doing deferred cleanup. Last
 			 * time through when we took all the data
 			 * the sender_all_done was not set.
 			 */
