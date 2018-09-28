@@ -45,7 +45,7 @@ APPCFLAGS=""
 
 case $host_os in
 darwin*)
-  CFLAGS="$CFLAGS -std=c99 -Wno-deprecated-declarations -D__APPLE_USE_RFC_2292"
+  CFLAGS="$CFLAGS -std=c99 -Wno-deprecated-declarations -D__APPLE_USE_RFC_2292 -Wno-address-of-packed-member"
   LIBCFLAGS="$LIBCFLAGS -U__APPLE__ -D__Userspace_os_Darwin"
   ;;
 dragonfly*)
