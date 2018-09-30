@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 337708 2018-08-13 13:58:45Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 339028 2018-09-30 21:54:02Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -687,6 +687,7 @@ sctp_handle_asconf(struct mbuf *m, unsigned int offset,
 		SCTPDBG(SCTP_DEBUG_ASCONF1,
 			"handle_asconf: couldn't get lookup addr!\n");
 		/* respond with a missing/invalid mandatory parameter error */
+		sctp_m_freem(m_ack);
 		return;
 	}
 	/* param_length is already validated in process_control... */

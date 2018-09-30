@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 339024 2018-09-30 16:21:31Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 339027 2018-09-30 21:31:33Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4595,6 +4595,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #endif
 		{
 			SCTP_LTRACE_ERR_RET_PKT(m, inp, stcb, net, SCTP_FROM_SCTP_OUTPUT, EINVAL);
+			sctp_m_freem(m);
 			return (EINVAL);
 		}
 #endif /* SCTP_EMBEDDED_V6_SCOPE */
@@ -4682,6 +4683,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #endif
 				{
 					SCTP_LTRACE_ERR_RET_PKT(m, inp, stcb, net, SCTP_FROM_SCTP_OUTPUT, EINVAL);
+					sctp_m_freem(m);
 					return (EINVAL);
 				}
 #endif /* SCTP_EMBEDDED_V6_SCOPE */
@@ -4727,6 +4729,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #endif
 			  {
 				SCTP_LTRACE_ERR_RET_PKT(m, inp, stcb, net, SCTP_FROM_SCTP_OUTPUT, EINVAL);
+				sctp_m_freem(m);
 				return (EINVAL);
 			  }
 #endif /* SCTP_EMBEDDED_V6_SCOPE */
