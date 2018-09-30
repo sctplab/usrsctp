@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 339004 2018-09-28 19:47:32Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 339022 2018-09-30 12:16:06Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4461,6 +4461,11 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			atomic_subtract_int(&stcb->asoc.refcnt, 1);
 		}
 #endif
+#if defined(__FreeBSD__)
+		if (port) {
+			UDPSTAT_INC(udps_opackets);
+		}
+#endif
 		SCTP_STAT_INCR(sctps_sendpackets);
 		SCTP_STAT_INCR_COUNTER64(sctps_outpackets);
 		if (ret)
@@ -4917,6 +4922,11 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			sin6->sin6_port = prev_port;
 		}
 		SCTPDBG(SCTP_DEBUG_OUTPUT3, "return from send is %d\n", ret);
+#if defined(__FreeBSD__)
+		if (port) {
+			UDPSTAT_INC(udps_opackets);
+		}
+#endif
 		SCTP_STAT_INCR(sctps_sendpackets);
 		SCTP_STAT_INCR_COUNTER64(sctps_outpackets);
 		if (ret) {
@@ -11982,6 +11992,11 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		return;
 	}
 	SCTPDBG(SCTP_DEBUG_OUTPUT3, "return from send is %d\n", ret);
+#if defined(__FreeBSD__)
+	if (port) {
+		UDPSTAT_INC(udps_opackets);
+	}
+#endif
 	SCTP_STAT_INCR(sctps_sendpackets);
 	SCTP_STAT_INCR_COUNTER64(sctps_outpackets);
 	SCTP_STAT_INCR_COUNTER64(sctps_outcontrolchunks);
