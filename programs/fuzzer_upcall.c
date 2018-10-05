@@ -49,7 +49,7 @@
 
 #define FUZZ_FAST
 //#define FUZZ_INTERLEAVING
-#define FUZZ_EXPLICIT_EOR
+//#define FUZZ_EXPLICIT_EOR
 #define FUZZ_STREAM_RESET
 #define FUZZ_DISABLE_LINGER
 //#define FUZZ_VERBOSE
@@ -544,7 +544,7 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 #if defined(FUZZ_DISABLE_LINGER)
 	struct linger so_linger;
 #endif
-#if defined(FUZZ_EXPLICIT_EOR) || defined(FUZZ_STREAM_RESET) || defined(FUZZ_INTERLEAVING)
+#if defined(FUZZ_EXPLICIT_EOR) || defined(FUZZ_INTERLEAVING)
 	int enable;
 #endif
 #if defined(FUZZ_STREAM_RESET) || defined(FUZZ_INTERLEAVING)
