@@ -818,7 +818,7 @@ void test_input_file(char *file_path) {
 
 int main(int argc, char *argv[])
 {
-	struct stat stat_buf;
+	struct stat stat_buf, stat_buf_iterator;
 	DIR *d;
 	struct dirent *dp;
 	char file_path[FILENAME_BUFFER];
@@ -846,12 +846,16 @@ int main(int argc, char *argv[])
 			snprintf(file_path, FILENAME_BUFFER, "%s/%s", argv[1], dp->d_name);
 			printf("%s \n", file_path);
 
-			if (dp->d_type == DT_DIR) {
-				printf("skip!\n");
-				continue;
+			if (stat(file_path, &stat_buf_iterator)) {
+				perror("stat");
+				exit(EXIT_FAILURE);
 			}
 
-			test_input_file(file_path);
+			if (stat_buf_iterator.st_mode & S_IFREG) {
+				test_input_file(file_path);
+			} else {
+				printf("skipping\n");
+			}
 		}
 
 		closedir(d);
