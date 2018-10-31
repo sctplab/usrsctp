@@ -167,28 +167,178 @@ list(APPEND usrsctp_sources
 	user_recv_thread.c
 	user_socket.c
 )
+add_library(usrsctp-lib OBJECT "")
+#################################################
+# CHECK FOR TYPES AND FUNCTIONS
+#################################################
 
-add_library(usrsctp SHARED ${usrsctp_sources} ${usrsctp_headers})
-add_library(usrsctp-static STATIC ${usrsctp_sources} ${usrsctp_headers})
+option(sctp_invariants "Add runtime checks" 0)
+if (sctp_invariants)
+	target_compile_definitions(usrsctp-lib PUBLIC INVARIANTS)
+	target_compile_definitions(usrsctp-static PUBLIC INVARIANTS)
+endif ()
+
+check_include_files("sys/queue.h" have_sys_queue_h)
+if (have_sys_queue_h)
+	target_compile_definitions(usrsctp-lib PRIVATE HAVE_SYS_QUEUE_H)
+endif ()
+
+check_include_files("sys/socket.h;linux/if_addr.h" have_linux_if_addr_h)
+if (have_linux_if_addr_h)
+	target_compile_definitions(usrsctp-lib PRIVATE HAVE_LINUX_IF_ADDR_H)
+endif ()
+
+check_include_files("sys/socket.h;linux/rtnetlink.h" have_linux_rtnetlink_h)
+if (have_linux_rtnetlink_h)
+	target_compile_definitions(usrsctp-lib 	  PRIVATE HAVE_LINUX_RTNETLINK_H)
+endif ()
+
+check_include_files("sys/types.h;netinet/in.h;netinet/ip.h;netinet/ip_icmp.h" have_netinet_ip_icmp_h)
+if (have_netinet_ip_icmp_h)
+	target_compile_definitions(usrsctp-lib 	  PRIVATE HAVE_NETINET_IP_ICMP_H)
+endif ()
+
+check_include_files("stdatomic.h" have_stdatomic_h)
+if (have_stdatomic_h)
+	target_compile_definitions(usrsctp-lib 	  PRIVATE HAVE_STDATOMIC_H)
+endif ()
+
+#################################################
+# CHECK STRUCT MEMBERS
+#################################################
+
+
+check_struct_has_member("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" have_sa_len)
+if (have_sa_len)
+	message(STATUS "have_sa_len")
+	target_compile_definitions(usrsctp-lib PUBLIC HAVE_SA_LEN)
+endif ()
+
+check_struct_has_member("struct sockaddr_in" "sin_len" "sys/types.h;netinet/in.h" have_sin_len)
+if (have_sin_len)
+	message(STATUS "have_sin_len")
+	target_compile_definitions(usrsctp-lib PUBLIC HAVE_SIN_LEN)
+endif ()
+
+check_struct_has_member("struct sockaddr_in6" "sin6_len" "sys/types.h;netinet/in.h" have_sin6_len)
+if (have_sin6_len)
+	message(STATUS "have_sin6_len")
+	target_compile_definitions(usrsctp-lib PUBLIC HAVE_SIN6_LEN)
+endif ()
+
+check_struct_has_member("struct sockaddr_conn" "sconn_len" "usrsctp.h" have_sconn_len)
+if (have_sconn_len)
+	message(STATUS "HAVE_SCONN_LEN")
+	target_compile_definitions(usrsctp-lib PUBLIC HAVE_SCONN_LEN)
+endif ()
+
+
+#################################################
+# COMPILER SETTINGS
+#################################################
+
+# SETTINGS FOR UNIX COMPILER
+if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "AppleClang" OR CMAKE_C_COMPILER_ID MATCHES "GNU")
+	target_compile_features(usrsctp-lib PUBLIC c_std_99)
+	target_compile_options(usrsctp-lib PRIVATE -pedantic -Wall -Wextra)
+
+	check_c_compiler_flag(-Wfloat-equal has_wfloat_equal)
+	if (has_wfloat_equal)
+		target_compile_options(usrsctp-lib PRIVATE -Wfloat-equal)
+	endif ()
+
+	check_c_compiler_flag(-Wshadow has_wshadow)
+	if (has_wshadow)
+		target_compile_options(usrsctp-lib PRIVATE -Wshadow)
+	endif ()
+
+	check_c_compiler_flag(-Wpointer-arith has_wpointer_aritih)
+	if (has_wpointer_aritih)
+		target_compile_options(usrsctp-lib PRIVATE -Wpointer-arith)
+	endif ()
+
+	check_c_compiler_flag(-Wunreachable-code has_wunreachable_code)
+	if (has_wunreachable_code)
+		target_compile_options(usrsctp-lib PRIVATE -Wunreachable-code)
+	endif ()
+
+	check_c_compiler_flag(-Winit-self has_winit_self)
+	if (has_winit_self)
+		target_compile_options(usrsctp-lib PRIVATE -Winit-self)
+	endif ()
+
+	check_c_compiler_flag(-Wno-unused-function has_wno_unused_function)
+	if (has_wno_unused_function)
+		target_compile_options(usrsctp-lib PRIVATE -Wno-unused-function)
+	endif ()
+
+	check_c_compiler_flag(-Wno-unused-parameter has_wno_unused_parameter)
+	if (has_wno_unused_parameter)
+		target_compile_options(usrsctp-lib PRIVATE -Wno-unused-parameter)
+	endif ()
+
+	check_c_compiler_flag(-Wno-unreachable-code has_wno_unreachable_code)
+	if (has_wno_unreachable_code)
+		target_compile_options(usrsctp-lib PRIVATE -Wno-unreachable-code)
+	endif ()
+
+	check_c_compiler_flag(-Wstrict-prototypes has_wstrict_prototypes)
+	if (has_wstrict_prototypes)
+		target_compile_options(usrsctp-lib PRIVATE -Wstrict-prototypes)
+	endif ()
+
+	if (sctp_werror)
+		target_compile_options(usrsctp-lib PRIVATE -Werror)
+	endif ()
+
+	if (sctp_sanitizer_address)
+		target_compile_options(usrsctp-lib PRIVATE  -fsanitize=address -fno-omit-frame-pointer -g)
+	endif ()
+
+	if (sctp_sanitizer_memory)
+		target_compile_options(usrsctp-lib PRIVATE -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins)
+	endif ()
+endif ()
+
 
 if (WIN32)
 	message(STATUS "link library: ws2_32")
-	target_link_libraries(usrsctp ws2_32)
-	target_link_libraries(usrsctp-static ws2_32)
+	target_link_libraries(usrsctp-lib ws2_32)
 endif ()
 
+# shared libraries need PIC
+set_property(TARGET usrsctp-lib PROPERTY POSITION_INDEPENDENT_CODE 1)
+
+# shared and static libraries built from the same object files
+add_library(usrsctp-shared SHARED $<TARGET_OBJECTS:usrsctp-lib> ${usrsctp_sources})
+add_library(usrsctp-static STATIC $<TARGET_OBJECTS:usrsctp-lib> ${usrsctp_sources})
+
+#add_library(usrsctp-shared SHARED usrsctp-lib)
+#add_library(usrsctp-static STATIC usrsctp-lib)
 set_target_properties(usrsctp-static PROPERTIES OUTPUT_NAME "usrsctp")
-set_target_properties(usrsctp PROPERTIES IMPORT_SUFFIX "_import.lib")
-set_target_properties(usrsctp PROPERTIES SOVERSION 1 VERSION 1.0.0)
+set_target_properties(usrsctp-shared PROPERTIES IMPORT_SUFFIX "_import.lib")
+set_target_properties(usrsctp-shared PROPERTIES SOVERSION 1 VERSION 1.0.0)
 
 if (NOT DEFINED CMAKE_INSTALL_LIBDIR)
 	SET(CMAKE_INSTALL_LIBDIR lib)
 endif ()
+if (sctp_link_programs_static OR WIN32)
+	add_library(usrsctp ALIAS usrsctp-static)
+else ()
+	add_library(usrsctp ALIAS usrsctp-shared)
+endif ()
+
 
 
 #################################################
 # INSTALL LIBRARY AND HEADER
 #################################################
+install(TARGETS usrsctp-shared EXPORT usrsctpTargets 
+	LIBRARY DESTINATION lib)
 
-install(TARGETS usrsctp usrsctp-static DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(EXPORT usrsctpTargets
+	FILE usrsctpTargets.cmake
+	DESTINATION lib/cmake/usrsctp)
+
+install(TARGETS usrsctp-static DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(FILES usrsctp.h DESTINATION include)
