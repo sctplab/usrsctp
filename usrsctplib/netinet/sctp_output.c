@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 339221 2018-10-07 15:13:47Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 340179 2018-11-06 12:55:03Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3839,6 +3839,7 @@ sctp_process_cmsgs_for_init(struct sctp_tcb *stcb, struct mbuf *control, int *er
 	return (0);
 }
 
+#if defined(INET) || defined(INET6)
 static struct sctp_tcb *
 sctp_findassociation_cmsgs(struct sctp_inpcb **inp_p,
                            uint16_t port,
@@ -3936,6 +3937,7 @@ sctp_findassociation_cmsgs(struct sctp_inpcb **inp_p,
 	}
 	return (NULL);
 }
+#endif
 
 static struct mbuf *
 sctp_add_cookie(struct mbuf *init, int init_offset,
@@ -13724,9 +13726,11 @@ sctp_lower_sosend(struct socket *so,
 		SCTP_INP_WUNLOCK(inp);
 		/* With the lock applied look again */
 		stcb = sctp_findassociation_ep_addr(&t_inp, addr, &net, NULL, NULL);
+#if defined(INET) || defined(INET6)
 		if ((stcb == NULL) && (control != NULL) && (port > 0)) {
 			stcb = sctp_findassociation_cmsgs(&t_inp, port, control, &net, &error);
 		}
+#endif
 		if (stcb == NULL) {
 			SCTP_INP_WLOCK(inp);
 			SCTP_INP_DECR_REF(inp);
