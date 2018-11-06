@@ -3859,7 +3859,10 @@ sctp_findassociation_cmsgs(struct sctp_inpcb **inp_p,
 #ifdef INET6
 	struct sockaddr_in6 sin6;
 #endif
-	int tot_len, rem_len, cmsg_data_len, cmsg_data_off, off;
+	int tot_len, rem_len, off;
+#if defined(INET) || defined(INET6)
+    int cmsg_data_len, cmsg_data_off;
+#endif
 
 	tot_len = SCTP_BUF_LEN(control);
 	for (off = 0; off < tot_len; off += CMSG_ALIGN(cmh.cmsg_len)) {
@@ -3880,8 +3883,10 @@ sctp_findassociation_cmsgs(struct sctp_inpcb **inp_p,
 			*error = EINVAL;
 			return (NULL);
 		}
+#if defined(INET) || defined(INET6)
 		cmsg_data_len = (int)cmh.cmsg_len - CMSG_ALIGN(sizeof(cmh));
 		cmsg_data_off = off + CMSG_ALIGN(sizeof(cmh));
+#endif
 		if (cmh.cmsg_level == IPPROTO_SCTP) {
 			switch (cmh.cmsg_type) {
 #ifdef INET
