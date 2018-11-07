@@ -43,31 +43,6 @@ include(CheckIncludeFile)
 include(CheckIncludeFiles)
 include(CheckCCompilerFlag)
 
-#################################################
-# SET TARGETS
-#################################################
-
-#################################################
-# CHECK OPTIONS
-#################################################
-
-
-
-option(sctp_debug "Provide debug information" 1)
-if (sctp_debug)
-	add_definitions(-DSCTP_DEBUG)
-endif ()
-
-option(sctp_inet "Support IPv4" 1)
-if (sctp_inet)
-	add_definitions(-DINET)
-endif ()
-
-option(sctp_inet6 "Support IPv6" 1)
-if (sctp_inet6)
-	add_definitions(-DINET6)
-endif ()
-
 option(sctp_werror "Treat warning as error" 1)
 
 option(sctp_link_programs_static "Link example programs static" 0)
@@ -89,9 +64,9 @@ endif ()
 # CHECK STRUCT MEMBERS
 #################################################
 
-set(CMAKE_REQUIRED_INCLUDES "${CMAKE_SOURCE_DIR}/usrsctplib")
+#set(CMAKE_REQUIRED_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/usrsctplib")
 
-check_include_file(usrsctp.h have_usrsctp_h)
+check_include_file(${CMAKE_CURRENT_LIST_DIR}/usrsctplib/usrsctp.h have_usrsctp_h)
 if (NOT have_usrsctp_h)
 	message(FATAL_ERROR "usrsctp.h not found")
 endif ()
@@ -125,7 +100,6 @@ if (CMAKE_C_COMPILER_ID MATCHES "MSVC")
 	endif ()
 endif ()
 
-message(STATUS "Compiler flags (CMAKE_C_FLAGS): ${CMAKE_C_FLAGS}")
 
 
 #################################################

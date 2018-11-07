@@ -87,59 +87,9 @@ endif ()
 # LIBRARY FILES
 #################################################
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
-list(APPEND usrsctp_root_headers
-	user_atomic.h
-	user_environment.h
-	user_inpcb.h
-	user_ip_icmp.h
-	user_ip6_var.h
-	user_malloc.h
-	user_mbuf.h
-	user_queue.h
-	user_recv_thread.h
-	user_route.h
-	user_socketvar.h
-	user_uma.h
-	usrsctp.h
-)
-
-list(APPEND usrsctp_netinet_headers
-	netinet/sctp_asconf.h
-	netinet/sctp_auth.h
-	netinet/sctp_bsd_addr.h
-	netinet/sctp_callout.h
-	netinet/sctp_constants.h
-	netinet/sctp_crc32.h
-	netinet/sctp_header.h
-	netinet/sctp_indata.h
-	netinet/sctp_input.h
-	netinet/sctp_lock_userspace.h
-	netinet/sctp_os_userspace.h
-	netinet/sctp_os.h
-	netinet/sctp_output.h
-	netinet/sctp_pcb.h
-	netinet/sctp_peeloff.h
-	netinet/sctp_process_lock.h
-	netinet/sctp_sha1.h
-	netinet/sctp_structs.h
-	netinet/sctp_sysctl.h
-	netinet/sctp_timer.h
-	netinet/sctp_uio.h
-	netinet/sctp_var.h
-	netinet/sctputil.h
-	netinet/sctp.h
-)
-
-list(APPEND usrsctp_netinet6_headers
-	netinet6/sctp6_var.h
-)
-
-list(APPEND usrsctp_headers
-	${usrsctp_root_headers}
-	${usrsctp_netinet_headers}
-	${usrsctp_netinet6_headers}
+list(APPEND usrsctp_include_dirs
+	${CMAKE_CURRENT_LIST_DIR}/netinet6/
+	${CMAKE_CURRENT_LIST_DIR}/netinet/
 )
 
 list(APPEND usrsctp_sources
@@ -167,40 +117,56 @@ list(APPEND usrsctp_sources
 	user_recv_thread.c
 	user_socket.c
 )
-add_library(usrsctp-lib OBJECT "")
+#################################################
+# CHECK OPTIONAL DEFINITONS 
+################################################
+option(sctp_debug "Provide debug information" 1)
+if (sctp_debug)
+	list(APPEND public_defines SCTP_DEBUG)
+endif ()
+
+option(sctp_inet "Support IPv4" 1)
+if (sctp_inet)
+	list(APPEND public_defines INET)
+endif ()
+
+option(sctp_inet6 "Support IPv6" 1)
+if (sctp_inet6)
+	list(APPEND public_defines INET6)
+endif ()
+
 #################################################
 # CHECK FOR TYPES AND FUNCTIONS
 #################################################
 
 option(sctp_invariants "Add runtime checks" 0)
 if (sctp_invariants)
-	target_compile_definitions(usrsctp-lib PUBLIC INVARIANTS)
-	target_compile_definitions(usrsctp-static PUBLIC INVARIANTS)
+	list(APPEND public_defines INVARIANTS)
 endif ()
 
 check_include_files("sys/queue.h" have_sys_queue_h)
 if (have_sys_queue_h)
-	target_compile_definitions(usrsctp-lib PRIVATE HAVE_SYS_QUEUE_H)
+	list(APPEND private_defines HAVE_SYS_QUEUE_H)
 endif ()
 
 check_include_files("sys/socket.h;linux/if_addr.h" have_linux_if_addr_h)
 if (have_linux_if_addr_h)
-	target_compile_definitions(usrsctp-lib PRIVATE HAVE_LINUX_IF_ADDR_H)
+	list(APPEND private_defines HAVE_LINUX_IF_ADDR_H)
 endif ()
 
 check_include_files("sys/socket.h;linux/rtnetlink.h" have_linux_rtnetlink_h)
 if (have_linux_rtnetlink_h)
-	target_compile_definitions(usrsctp-lib 	  PRIVATE HAVE_LINUX_RTNETLINK_H)
+	list(APPEND private_defines HAVE_LINUX_RTNETLINK_H)
 endif ()
 
 check_include_files("sys/types.h;netinet/in.h;netinet/ip.h;netinet/ip_icmp.h" have_netinet_ip_icmp_h)
 if (have_netinet_ip_icmp_h)
-	target_compile_definitions(usrsctp-lib 	  PRIVATE HAVE_NETINET_IP_ICMP_H)
+	list(APPEND private_defines HAVE_NETINET_IP_ICMP_H)
 endif ()
 
 check_include_files("stdatomic.h" have_stdatomic_h)
 if (have_stdatomic_h)
-	target_compile_definitions(usrsctp-lib 	  PRIVATE HAVE_STDATOMIC_H)
+	list(APPEND private_defines HAVE_STDATOMIC_H)
 endif ()
 
 #################################################
@@ -211,25 +177,25 @@ endif ()
 check_struct_has_member("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" have_sa_len)
 if (have_sa_len)
 	message(STATUS "have_sa_len")
-	target_compile_definitions(usrsctp-lib PUBLIC HAVE_SA_LEN)
+	list(APPEND public_defines HAVE_SA_LEN)
 endif ()
 
 check_struct_has_member("struct sockaddr_in" "sin_len" "sys/types.h;netinet/in.h" have_sin_len)
 if (have_sin_len)
 	message(STATUS "have_sin_len")
-	target_compile_definitions(usrsctp-lib PUBLIC HAVE_SIN_LEN)
+	list(APPEND public_defines HAVE_SIN_LEN)
 endif ()
 
 check_struct_has_member("struct sockaddr_in6" "sin6_len" "sys/types.h;netinet/in.h" have_sin6_len)
 if (have_sin6_len)
 	message(STATUS "have_sin6_len")
-	target_compile_definitions(usrsctp-lib PUBLIC HAVE_SIN6_LEN)
+	list(APPEND public_defines HAVE_SIN6_LEN)
 endif ()
 
 check_struct_has_member("struct sockaddr_conn" "sconn_len" "usrsctp.h" have_sconn_len)
 if (have_sconn_len)
 	message(STATUS "HAVE_SCONN_LEN")
-	target_compile_definitions(usrsctp-lib PUBLIC HAVE_SCONN_LEN)
+	list(APPEND public_defines HAVE_SCONN_LEN)
 endif ()
 
 
@@ -239,86 +205,103 @@ endif ()
 
 # SETTINGS FOR UNIX COMPILER
 if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "AppleClang" OR CMAKE_C_COMPILER_ID MATCHES "GNU")
-	target_compile_features(usrsctp-lib PUBLIC c_std_99)
-	target_compile_options(usrsctp-lib PRIVATE -pedantic -Wall -Wextra)
+	#target_compile_features(usrsctp-lib PUBLIC c_std_99)
+	list(APPEND private_options -pedantic -Wall -Wextra)
 
 	check_c_compiler_flag(-Wfloat-equal has_wfloat_equal)
 	if (has_wfloat_equal)
-		target_compile_options(usrsctp-lib PRIVATE -Wfloat-equal)
+		list(APPEND private_options -Wfloat-equal)
 	endif ()
 
 	check_c_compiler_flag(-Wshadow has_wshadow)
 	if (has_wshadow)
-		target_compile_options(usrsctp-lib PRIVATE -Wshadow)
+		list(APPEND private_options -Wshadow)
 	endif ()
 
 	check_c_compiler_flag(-Wpointer-arith has_wpointer_aritih)
 	if (has_wpointer_aritih)
-		target_compile_options(usrsctp-lib PRIVATE -Wpointer-arith)
+		list(APPEND private_options -Wpointer-arith)
 	endif ()
 
 	check_c_compiler_flag(-Wunreachable-code has_wunreachable_code)
 	if (has_wunreachable_code)
-		target_compile_options(usrsctp-lib PRIVATE -Wunreachable-code)
+		list(APPEND private_options -Wunreachable-code)
 	endif ()
 
 	check_c_compiler_flag(-Winit-self has_winit_self)
 	if (has_winit_self)
-		target_compile_options(usrsctp-lib PRIVATE -Winit-self)
+		list(APPEND private_options -Winit-self)
 	endif ()
 
 	check_c_compiler_flag(-Wno-unused-function has_wno_unused_function)
 	if (has_wno_unused_function)
-		target_compile_options(usrsctp-lib PRIVATE -Wno-unused-function)
+		list(APPEND private_options -Wno-unused-function)
 	endif ()
 
 	check_c_compiler_flag(-Wno-unused-parameter has_wno_unused_parameter)
 	if (has_wno_unused_parameter)
-		target_compile_options(usrsctp-lib PRIVATE -Wno-unused-parameter)
+		list(APPEND private_options -Wno-unused-parameter)
 	endif ()
 
 	check_c_compiler_flag(-Wno-unreachable-code has_wno_unreachable_code)
 	if (has_wno_unreachable_code)
-		target_compile_options(usrsctp-lib PRIVATE -Wno-unreachable-code)
+		list(APPEND private_options -Wno-unreachable-code)
 	endif ()
 
 	check_c_compiler_flag(-Wstrict-prototypes has_wstrict_prototypes)
 	if (has_wstrict_prototypes)
-		target_compile_options(usrsctp-lib PRIVATE -Wstrict-prototypes)
+		list(APPEND private_options -Wstrict-prototypes)
 	endif ()
 
 	if (sctp_werror)
-		target_compile_options(usrsctp-lib PRIVATE -Werror)
+		list(APPEND private_options -Werror)
 	endif ()
 
 	if (sctp_sanitizer_address)
-		target_compile_options(usrsctp-lib PRIVATE  -fsanitize=address -fno-omit-frame-pointer -g)
+		list(APPEND private_options  -fsanitize=address -fno-omit-frame-pointer -g)
 	endif ()
 
 	if (sctp_sanitizer_memory)
-		target_compile_options(usrsctp-lib PRIVATE -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins)
+		list(APPEND private_options -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins)
 	endif ()
 endif ()
 
 
-if (WIN32)
-	message(STATUS "link library: ws2_32")
-	target_link_libraries(usrsctp-lib ws2_32)
-endif ()
 
-# shared libraries need PIC
-set_property(TARGET usrsctp-lib PROPERTY POSITION_INDEPENDENT_CODE 1)
 
 # shared and static libraries built from the same object files
-add_library(usrsctp-shared SHARED $<TARGET_OBJECTS:usrsctp-lib> ${usrsctp_sources})
-add_library(usrsctp-static STATIC $<TARGET_OBJECTS:usrsctp-lib> ${usrsctp_sources})
+add_library(usrsctp-shared SHARED ${usrsctp_sources} )
+target_compile_options(usrsctp-shared PRIVATE ${private_options})
+target_compile_definitions(usrsctp-shared PUBLIC ${public_defines} ${private_defines})
+target_include_directories(usrsctp-shared PRIVATE ${CMAKE_CURRENT_LIST_DIR}/)
+target_include_directories(usrsctp-shared
+        INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/>
+        $<INSTALL_INTERFACE:include/>
+        PRIVATE ${CMAKE_CURRENT_LIST_DIR}/)
 
+add_library(usrsctp-static STATIC ${usrsctp_sources} )
+target_compile_options(usrsctp-static PRIVATE ${private_options})
+target_compile_definitions(usrsctp-static PUBLIC ${public_defines} ${private_defines})
+target_include_directories(usrsctp-static 
+	INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/>
+              $<INSTALL_INTERFACE:include/>
+	PRIVATE ${CMAKE_CURRENT_LIST_DIR}/)
+
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/include/")
+configure_file(usrsctp.h ${CMAKE_CURRENT_BINARY_DIR}/include/usrsctp.h COPYONLY)
+# shared libraries need PIC
+set_target_properties(usrsctp-shared PROPERTIES POSITION_INDEPENDENT_CODE 1)
 #add_library(usrsctp-shared SHARED usrsctp-lib)
 #add_library(usrsctp-static STATIC usrsctp-lib)
 set_target_properties(usrsctp-static PROPERTIES OUTPUT_NAME "usrsctp")
 set_target_properties(usrsctp-shared PROPERTIES IMPORT_SUFFIX "_import.lib")
 set_target_properties(usrsctp-shared PROPERTIES SOVERSION 1 VERSION 1.0.0)
 
+if (WIN32)
+	message(STATUS "link library: ws2_32")
+	target_link_libraries(usrsctp-shared PUBLIC ws2_32)
+	target_link_libraries(usrsctp-static PUBLIC ws2_32)
+endif ()
 if (NOT DEFINED CMAKE_INSTALL_LIBDIR)
 	SET(CMAKE_INSTALL_LIBDIR lib)
 endif ()
