@@ -1136,21 +1136,14 @@ struct sctpstat {
 #define SCTP_STAT_DECR_COUNTER64(_x) SCTP_STAT_DECR(_x)
 #define SCTP_STAT_DECR_GAUGE32(_x) SCTP_STAT_DECR(_x)
 
+union sctp_sockstore {
+	struct sockaddr_in sin;
+	struct sockaddr_in6 sin6;
 #if defined(__Userspace__)
-union sctp_sockstore {
-	struct sockaddr_in sin;
-	struct sockaddr_in6 sin6;
 	struct sockaddr_conn sconn;
-	struct sockaddr sa;
-};
-#else
-union sctp_sockstore {
-	struct sockaddr_in sin;
-	struct sockaddr_in6 sin6;
-	struct sockaddr sa;
-};
 #endif
-
+	struct sockaddr sa;
+};
 
 /***********************************/
 /* And something for us old timers */
