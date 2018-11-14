@@ -1138,12 +1138,8 @@ struct sctpstat {
 
 #if defined(__Userspace__)
 union sctp_sockstore {
-#if defined(INET)
 	struct sockaddr_in sin;
-#endif
-#if defined(INET6)
 	struct sockaddr_in6 sin6;
-#endif
 	struct sockaddr_conn sconn;
 	struct sockaddr sa;
 };
