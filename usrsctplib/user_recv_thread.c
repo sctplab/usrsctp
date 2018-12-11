@@ -341,7 +341,7 @@ recv_function_raw(void *arg)
 		msg.msg_controllen = 0;
 		ncounter = n = recvmsg(SCTP_BASE_VAR(userspace_rawsctp), &msg, 0);
 		if (n < 0) {
-			if (errno == EAGAIN) {
+			if (errno == EAGAIN || errno == EINTR) {
 				continue;
 			} else {
 				break;
@@ -536,7 +536,7 @@ recv_function_raw6(void *arg)
 
 		ncounter = n = recvmsg(SCTP_BASE_VAR(userspace_rawsctp6), &msg, 0);
 		if (n < 0) {
-			if (errno == EAGAIN) {
+			if (errno == EAGAIN || errno == EINTR) {
 				continue;
 			} else {
 				break;
@@ -703,7 +703,7 @@ recv_function_udp(void *arg)
 
 		ncounter = n = recvmsg(SCTP_BASE_VAR(userspace_udpsctp), &msg, 0);
 		if (n < 0) {
-			if (errno == EAGAIN) {
+			if (errno == EAGAIN || errno == EINTR) {
 				continue;
 			} else {
 				break;
@@ -905,7 +905,7 @@ recv_function_udp6(void *arg)
 
 		ncounter = n = recvmsg(SCTP_BASE_VAR(userspace_udpsctp6), &msg, 0);
 		if (n < 0) {
-			if (errno == EAGAIN) {
+			if (errno == EAGAIN || errno == EINTR) {
 				continue;
 			} else {
 				break;
