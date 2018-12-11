@@ -164,7 +164,7 @@ recv_function_route(void *arg)
 			}
 		}
 		if (ret < 0) {
-			if (errno == EAGAIN) {
+			if (errno == EAGAIN || errno == EINTR) {
 				continue;
 			} else {
 				break;
@@ -211,7 +211,7 @@ recv_function_route(void *arg)
 		len = recvmsg(SCTP_BASE_VAR(userspace_route), &msg, 0);
 
 		if (len < 0) {
-			if (errno == EAGAIN) {
+			if (errno == EAGAIN || errno == EINTR) {
 				continue;
 			} else {
 				break;
