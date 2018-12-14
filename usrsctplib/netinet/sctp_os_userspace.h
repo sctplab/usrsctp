@@ -80,7 +80,7 @@ typedef HANDLE userland_thread_t;
 #define IPVERSION  4
 #define MAXTTL     255
 /* VS2010 comes with stdint.h */
-#if _MSC_VER >= 1600
+#if !defined(_MSC_VER) || (_MSC_VER >= 1600)
 #include <stdint.h>
 #else
 #define uint64_t   unsigned __int64
@@ -220,7 +220,7 @@ typedef char* caddr_t;
 
 #define bzero(buf, len) memset(buf, 0, len)
 #define bcopy(srcKey, dstKey, len) memcpy(dstKey, srcKey, len)
-#if _MSC_VER < 1900
+#if defined(_MSC_VER) && (_MSC_VER < 1900)
 #define snprintf(data, size, format, ...) _snprintf_s(data, size, _TRUNCATE, format, __VA_ARGS__)
 #endif
 #define inline __inline
