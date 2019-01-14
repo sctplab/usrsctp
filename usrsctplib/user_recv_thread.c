@@ -531,7 +531,7 @@ recv_function_raw6(void *arg)
 		msg.msg_iov = recv_iovec;
 		msg.msg_iovlen = MAXLEN_MBUF_CHAIN;
 		msg.msg_control = (void *)cmsgbuf;
-		msg.msg_controllen = (socklen_t)CMSG_LEN(sizeof (struct in6_pktinfo));
+		msg.msg_controllen = (socklen_t)CMSG_SPACE(sizeof (struct in6_pktinfo));
 		msg.msg_flags = 0;
 
 		ncounter = n = recvmsg(SCTP_BASE_VAR(userspace_rawsctp6), &msg, 0);
@@ -900,7 +900,7 @@ recv_function_udp6(void *arg)
 		msg.msg_iov = iov;
 		msg.msg_iovlen = MAXLEN_MBUF_CHAIN;
 		msg.msg_control = (void *)cmsgbuf;
-		msg.msg_controllen = (socklen_t)CMSG_LEN(sizeof (struct in6_pktinfo));
+		msg.msg_controllen = (socklen_t)CMSG_SPACE(sizeof (struct in6_pktinfo));
 		msg.msg_flags = 0;
 
 		ncounter = n = recvmsg(SCTP_BASE_VAR(userspace_udpsctp6), &msg, 0);
