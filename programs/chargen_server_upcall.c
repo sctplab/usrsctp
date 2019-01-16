@@ -136,7 +136,7 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 		snd_info.snd_context = 0;
 		snd_info.snd_assoc_id = 0;
 		if (usrsctp_sendv(upcall_socket, buffer, strlen(buffer), NULL, 0, &snd_info, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
-			if (errno != EAGAIN) {
+			if (errno != EAGAIN && errno != EWOULDBLOCK) {
 				send_done = 1;
 				usrsctp_close(upcall_socket);
 				printf("client socket %p closed\n", (void *)upcall_socket);
