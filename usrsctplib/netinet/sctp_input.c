@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 338941 2018-09-26 10:24:50Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 339042 2018-10-01 14:05:31Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2675,7 +2675,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 		return (NULL);
 	}
 	/* compare the received digest with the computed digest */
-	if (memcmp(calc_sig, sig, SCTP_SIGNATURE_SIZE) != 0) {
+	if (timingsafe_bcmp(calc_sig, sig, SCTP_SIGNATURE_SIZE) != 0) {
 		/* try the old cookie? */
 		if ((cookie->time_entered.tv_sec == (long)ep->time_of_secret_change) &&
 		    (ep->current_secret_number != ep->last_secret_number)) {
@@ -2684,7 +2684,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 			    (uint8_t *)ep->secret_key[(int)ep->last_secret_number],
 			    SCTP_SECRET_SIZE, m, cookie_offset, calc_sig, 0);
 			/* compare */
-			if (memcmp(calc_sig, sig, SCTP_SIGNATURE_SIZE) == 0)
+			if (timingsafe_bcmp(calc_sig, sig, SCTP_SIGNATURE_SIZE) == 0)
 				cookie_ok = 1;
 		}
 	} else {

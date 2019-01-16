@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 338749 2018-09-18 10:53:07Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 339042 2018-10-01 14:05:31Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1730,7 +1730,7 @@ sctp_handle_auth(struct sctp_tcb *stcb, struct sctp_auth_chunk *auth,
 	    m, offset, computed_digest);
 
 	/* compare the computed digest with the one in the AUTH chunk */
-	if (memcmp(digest, computed_digest, digestlen) != 0) {
+	if (timingsafe_bcmp(digest, computed_digest, digestlen) != 0) {
 		SCTP_STAT_INCR(sctps_recvauthfailed);
 		SCTPDBG(SCTP_DEBUG_AUTH1,
 			"SCTP Auth: HMAC digest check failed\n");

@@ -62,7 +62,7 @@ extern int ipport_firstauto, ipport_lastauto;
  */
 extern int nmbclusters;
 
-#if !defined (__Userspace_os_Windows)
+#if !defined(_MSC_VER)
 #define min(a,b) ((a)>(b)?(b):(a))
 #define max(a,b) ((a)>(b)?(a):(b))
 #endif
