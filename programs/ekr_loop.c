@@ -485,7 +485,7 @@ main(void)
 	}
 	memset(line, 'A', LINE_LENGTH);
 	sndinfo.snd_sid = 1;
-	sndinfo.snd_flags = 0;
+	sndinfo.snd_flags = 0; //SCTP_UNORDERED;
 	sndinfo.snd_ppid = htonl(DISCARD_PPID);
 	sndinfo.snd_context = 0;
 	sndinfo.snd_assoc_id = 0;
