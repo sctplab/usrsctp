@@ -242,11 +242,7 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 			} else {
 				if (par_very_verbose) {
 					if (infotype == SCTP_RECVV_RCVINFO) {
-#ifdef _WIN32
-						printf("Message received - %" PRIu64 " bytes - %s - sid %u - tsn %u %s\n",
-#else					
-						printf("Message received - %zd bytes - %s - sid %u - tsn %u %s\n",
-#endif
+						printf("Message received - %zd bytes - %s - sid %u - tsn %u %s\n",				
 							n,
 							(rcvinfo->rcv_flags & SCTP_UNORDERED) ? "unordered" : "ordered",
 							rcvinfo->rcv_sid,
@@ -255,11 +251,7 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 						);
 
 					} else {
-#ifdef _WIN32
-						printf("Message received - %" PRIu64 " bytes %s\n", n, (recv_flags & MSG_EOR) ? "- EOR" : "");
-#else
 						printf("Message received - %zd bytes %s\n", n, (recv_flags & MSG_EOR) ? "- EOR" : "");
-#endif
 					}
 				}
 				tsctp_meta->stat_fragment_sum += n;
