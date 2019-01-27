@@ -72,7 +72,16 @@ extern "C" {
 #define int32_t   __int32
 #endif
 
-#define ssize_t   __int64
+#ifndef ssize_t
+#ifdef _WIN64
+#define ssize_t __int64
+#elif defined _WIN32
+#define ssize_t int
+#else
+#error "Unknown platform!"
+#endif
+#endif
+
 #define MSG_EOR   0x8
 #ifndef EWOULDBLOCK
 #define EWOULDBLOCK  WSAEWOULDBLOCK
