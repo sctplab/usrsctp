@@ -1245,6 +1245,7 @@ sctp_sysctl_handle_trace_log_clear(SYSCTL_HANDLER_ARGS)
 SCTP_UINT_SYSCTL(sendspace, sctp_sendspace, SCTPCTL_MAXDGRAM)
 SCTP_UINT_SYSCTL(recvspace, sctp_recvspace, SCTPCTL_RECVSPACE)
 SCTP_UINT_SYSCTL(auto_asconf, sctp_auto_asconf, SCTPCTL_AUTOASCONF)
+SCTP_UINT_SYSCTL(multiple_asconfs, sctp_multiple_asconfs, SCTPCTL_MULTIPLEASCONFS)
 SCTP_UINT_SYSCTL(ecn_enable, sctp_ecn_enable, SCTPCTL_ECN_ENABLE)
 SCTP_UINT_SYSCTL(pr_enable, sctp_pr_enable, SCTPCTL_PR_ENABLE)
 SYSCTL_PROC(_net_inet_sctp, OID_AUTO, auth_enable, CTLFLAG_VNET|CTLTYPE_UINT|CTLFLAG_RW,
