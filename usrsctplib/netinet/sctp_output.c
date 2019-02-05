@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 340179 2018-11-06 12:55:03Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 343770 2019-02-05 10:29:31Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4496,10 +4496,12 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 					if (net->port) {
 						mtu -= sizeof(struct udphdr);
 					}
-					if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
-						sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
+					if (mtu < net->mtu) {
+						if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
+							sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
+						}
+						net->mtu = mtu;
 					}
-					net->mtu = mtu;
 				}
 			} else if (ro->ro_rt == NULL) {
 				/* route was freed */
@@ -4969,10 +4971,12 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 					if (net->port) {
 						mtu -= sizeof(struct udphdr);
 					}
-					if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
-						sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
+					if (mtu < net->mtu) {
+						if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
+							sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
+						}
+						net->mtu = mtu;
 					}
-					net->mtu = mtu;
 				}
 			}
 #if !defined(__Panda__) && !defined(__Userspace__)
@@ -13865,7 +13869,7 @@ sctp_lower_sosend(struct socket *so,
 #endif
 	if (SCTP_SO_IS_NBIO(so)
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
-	     || (flags & MSG_NBIO)
+	     || (flags & (MSG_NBIO | MSG_DONTWAIT)) != 0
 #endif
 	    ) {
 		non_blocking = 1;
