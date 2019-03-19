@@ -29,8 +29,12 @@
 #
 
 AM_CPPFLAGS = -I$(srcdir)/../usrsctplib
-EXTRA_DIST = Makefile.nmake \
+EXTRA_DIST = \
+    Makefile.nmake \
+    test_libmgmt.c \
+    test_timer.c \
     tsctp.c \
+    chargen_server_upcall.c \
     daytime_server.c \
     daytime_server_upcall.c \
     discard_server.c \
@@ -45,11 +49,16 @@ EXTRA_DIST = Makefile.nmake \
     ekr_loop.c \
     ekr_loop_offload.c \
     ekr_loop_upcall.c \
+    ekr_peer.c \
     test_libmgmt.c \
     http_client.c \
     http_client_upcall.c
 
-noinst_PROGRAMS = tsctp \
+noinst_PROGRAMS = \
+    test_libmgmt \
+    test_timer \
+    tsctp \
+    chargen_server_upcall \
     daytime_server \
     daytime_server_upcall \
     discard_server \
@@ -64,6 +73,7 @@ noinst_PROGRAMS = tsctp \
     ekr_loop \
     ekr_loop_offload \
     ekr_loop_upcall \
+    ekr_peer \
     test_libmgmt \
     http_client \
     http_client_upcall
@@ -74,6 +84,8 @@ test_timer_SOURCES = test_timer.c
 test_timer_LDADD = ../usrsctplib/libusrsctp.la
 tsctp_SOURCES = tsctp.c
 tsctp_LDADD = ../usrsctplib/libusrsctp.la
+chargen_server_upcall_SOURCES = chargen_server_upcall.c
+chargen_server_upcall_LDADD = ../usrsctplib/libusrsctp.la
 daytime_server_SOURCES = daytime_server.c
 daytime_server_LDADD = ../usrsctplib/libusrsctp.la
 daytime_server_upcall_SOURCES = daytime_server_upcall.c
