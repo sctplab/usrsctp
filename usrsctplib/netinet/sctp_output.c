@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 345461 2019-03-23 22:56:03Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 345466 2019-03-24 10:40:20Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7381,7 +7381,7 @@ sctp_sendall(struct sctp_inpcb *inp, struct uio *uio, struct mbuf *m,
 		ca->sndlen = uio_resid(uio);
 #endif
 #else
-		ca->sndlen = (int)uio->uio_resid;
+		ca->sndlen = uio->uio_resid;
 #endif
 #if defined(__APPLE__)
 		SCTP_SOCKET_UNLOCK(SCTP_INP_SO(inp), 0);
@@ -13493,7 +13493,7 @@ sctp_lower_sosend(struct socket *so,
 #endif
 	)
 {
-	unsigned int sndlen = 0, max_len;
+	size_t sndlen = 0, max_len;
 	int error, len;
 	struct mbuf *top = NULL;
 #ifdef __Panda__
@@ -13561,12 +13561,12 @@ sctp_lower_sosend(struct socket *so,
 		}
 #if defined(__APPLE__)
 #if defined(APPLE_LEOPARD)
-		sndlen = (unsigned int)uio->uio_resid;
+		sndlen = uio->uio_resid;
 #else
-		sndlen = (unsigned int)uio_resid(uio);
+		sndlen = uio_resid(uio);
 #endif
 #else
-		sndlen = (unsigned int)uio->uio_resid;
+		sndlen = uio->uio_resid;
 #endif
 	} else {
 		top = SCTP_HEADER_TO_CHAIN(i_pak);
@@ -13595,7 +13595,7 @@ sctp_lower_sosend(struct socket *so,
 		sndlen = SCTP_HEADER_LEN(i_pak);
 #endif
 	}
-	SCTPDBG(SCTP_DEBUG_OUTPUT1, "Send called addr:%p send length %d\n",
+	SCTPDBG(SCTP_DEBUG_OUTPUT1, "Send called addr:%p send length %zu\n",
 		(void *)addr,
 	        sndlen);
 #ifdef __Panda__
@@ -13982,7 +13982,7 @@ sctp_lower_sosend(struct socket *so,
 	/* Are we aborting? */
 	if (srcv->sinfo_flags & SCTP_ABORT) {
 		struct mbuf *mm;
-		int tot_demand, tot_out = 0, max_out;
+		size_t tot_demand, tot_out = 0, max_out;
 
 		SCTP_STAT_INCR(sctps_sends_with_abort);
 		if ((SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_WAIT) ||
@@ -14041,7 +14041,7 @@ sctp_lower_sosend(struct socket *so,
 #if defined(__APPLE__)
 				SCTP_SOCKET_UNLOCK(so, 0);
 #endif
-				error = uiomove((caddr_t)ph, (int)tot_out, uio);
+				error = uiomove((caddr_t)ph, tot_out, uio);
 #if defined(__APPLE__)
 				SCTP_SOCKET_LOCK(so, 0);
 #endif
@@ -14287,12 +14287,12 @@ skip_preblock:
 			    (max_len && (SCTP_SB_LIMIT_SND(so) < SCTP_BASE_SYSCTL(sctp_add_more_threshold))) ||
 #if defined(__APPLE__)
 #if defined(APPLE_LEOPARD)
-			    (uio->uio_resid && (uio->uio_resid <= (int)max_len))) {
+			    (uio->uio_resid && (uio->uio_resid <= max_len))) {
 #else
-			    (uio_resid(uio) && (uio_resid(uio) <= (int)max_len))) {
+			    (uio_resid(uio) && (uio_resid(uio) <= max_len))) {
 #endif
 #else
-			    (uio->uio_resid && (uio->uio_resid <= (int)max_len))) {
+			    (uio->uio_resid && (uio->uio_resid <= max_len))) {
 #endif
 				sndout = 0;
 				new_tail = NULL;

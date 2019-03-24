@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 343961 2019-02-10 14:02:14Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 345465 2019-03-24 09:46:16Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5650,8 +5650,9 @@ sctp_sorecvmsg(struct socket *so,
 	 *
 	 */
 	struct sctp_inpcb *inp = NULL;
-	int my_len = 0;
-	int cp_len = 0, error = 0;
+	size_t my_len = 0;
+	size_t cp_len = 0;
+	int error = 0;
 	struct sctp_queued_to_read *control = NULL, *ctl = NULL, *nxt = NULL;
 	struct mbuf *m = NULL;
 	struct sctp_tcb *stcb = NULL;
@@ -6219,14 +6220,14 @@ sctp_sorecvmsg(struct socket *so,
 			/* Move out all we can */
 #if defined(__APPLE__)
 #if defined(APPLE_LEOPARD)
-			cp_len = (int)uio->uio_resid;
+			cp_len = uio->uio_resid;
 #else
-			cp_len = (int)uio_resid(uio);
+			cp_len = uio_resid(uio);
 #endif
 #else
-			cp_len = (int)uio->uio_resid;
+			cp_len = uio->uio_resid;
 #endif
-			my_len = (int)SCTP_BUF_LEN(m);
+			my_len = SCTP_BUF_LEN(m);
 			if (cp_len > my_len) {
 				/* not enough in this buf */
 				cp_len = my_len;
