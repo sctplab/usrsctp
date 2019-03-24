@@ -577,7 +577,7 @@ sctp_wakeup_log(struct sctp_tcb *stcb, uint32_t wake_cnt, int from)
 }
 
 void
-sctp_log_block(uint8_t from, struct sctp_association *asoc, size_t sendlen)
+sctp_log_block(uint8_t from, struct sctp_association *asoc, ssize_t sendlen)
 {
 #if defined(SCTP_LOCAL_TRACE_BUF)
 	struct sctp_cwnd_log sctp_clog;
