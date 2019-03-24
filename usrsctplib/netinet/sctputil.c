@@ -5661,7 +5661,7 @@ sctp_sorecvmsg(struct socket *so,
 	int out_flags = 0, in_flags = 0;
 	int block_allowed = 1;
 	uint32_t freed_so_far = 0;
-	uint32_t copied_so_far = 0;
+	ssize_t copied_so_far = 0;
 	int in_eeor_mode = 0;
 	int no_rcv_needed = 0;
 	uint32_t rwnd_req = 0;
@@ -6240,7 +6240,7 @@ sctp_sorecvmsg(struct socket *so,
 			SCTP_SOCKET_UNLOCK(so, 0);
 #endif
 			if (cp_len > 0)
-				error = uiomove(mtod(m, char *), cp_len, uio);
+				error = uiomove(mtod(m, char *), (int)cp_len, uio);
 #if defined(__APPLE__)
 			SCTP_SOCKET_LOCK(so, 0);
 #endif
@@ -6323,9 +6323,9 @@ sctp_sorecvmsg(struct socket *so,
 				}
 				if ((in_flags & MSG_PEEK) == 0) {
 					SCTP_BUF_RESV_UF(m, cp_len);
-					SCTP_BUF_LEN(m) -= cp_len;
+					SCTP_BUF_LEN(m) -= (int)cp_len;
 					if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_SB_LOGGING_ENABLE) {
-						sctp_sblog(&so->so_rcv, control->do_not_ref_stcb?NULL:stcb, SCTP_LOG_SBFREE, cp_len);
+						sctp_sblog(&so->so_rcv, control->do_not_ref_stcb?NULL:stcb, SCTP_LOG_SBFREE, (int)cp_len);
 					}
 					atomic_subtract_int(&so->so_rcv.sb_cc, cp_len);
 					if ((control->do_not_ref_stcb == 0) &&
