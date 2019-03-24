@@ -7298,7 +7298,7 @@ sctp_sendall_completes(void *ptr, uint32_t val SCTP_UNUSED)
 }
 
 static struct mbuf *
-sctp_copy_out_all(struct uio *uio, int len)
+sctp_copy_out_all(struct uio *uio, ssize_t len)
 {
 	struct mbuf *ret, *at;
 	int left, willcpy, cancpy, error;
@@ -13518,7 +13518,8 @@ sctp_lower_sosend(struct socket *so,
 	int got_all_of_the_send = 0;
 	int hold_tcblock = 0;
 	int non_blocking = 0;
-	uint32_t local_add_more, local_soresv = 0;
+	uint32_t local_add_more;
+	ssize_t local_soresv = 0;
 	uint16_t port;
 	uint16_t sinfo_flags;
 	sctp_assoc_t sinfo_assoc_id;
@@ -13889,7 +13890,7 @@ sctp_lower_sosend(struct socket *so,
 	}
 	/* would we block? */
 	if (non_blocking) {
-		uint32_t amount;
+		ssize_t amount;
 
 		if (hold_tcblock == 0) {
 			SCTP_TCB_LOCK(stcb);
