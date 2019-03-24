@@ -5650,8 +5650,8 @@ sctp_sorecvmsg(struct socket *so,
 	 *
 	 */
 	struct sctp_inpcb *inp = NULL;
-	size_t my_len = 0;
-	size_t cp_len = 0;
+	ssize_t my_len = 0;
+	ssize_t cp_len = 0;
 	int error = 0;
 	struct sctp_queued_to_read *control = NULL, *ctl = NULL, *nxt = NULL;
 	struct mbuf *m = NULL;
