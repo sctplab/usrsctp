@@ -5660,7 +5660,7 @@ sctp_sorecvmsg(struct socket *so,
 	int freecnt_applied = 0;
 	int out_flags = 0, in_flags = 0;
 	int block_allowed = 1;
-	uint32_t freed_so_far = 0;
+	ssize_t freed_so_far = 0;
 	ssize_t copied_so_far = 0;
 	int in_eeor_mode = 0;
 	int no_rcv_needed = 0;
