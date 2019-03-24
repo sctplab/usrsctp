@@ -7316,17 +7316,17 @@ sctp_copy_out_all(struct uio *uio, ssize_t len)
 	at = ret;
 	while (left > 0) {
 		/* Align data to the end */
-		error = uiomove(mtod(at, caddr_t), willcpy, uio);
+		error = uiomove(mtod(at, caddr_t), (int)willcpy, uio);
 		if (error) {
 	err_out_now:
 			sctp_m_freem(at);
 			return (NULL);
 		}
-		SCTP_BUF_LEN(at) = willcpy;
+		SCTP_BUF_LEN(at) = (int)willcpy;
 		SCTP_BUF_NEXT_PKT(at) = SCTP_BUF_NEXT(at) = 0;
 		left -= willcpy;
 		if (left > 0) {
-			SCTP_BUF_NEXT(at) = sctp_get_mbuf_for_msg(left, 0, M_WAITOK, 1, MT_DATA);
+			SCTP_BUF_NEXT(at) = sctp_get_mbuf_for_msg((unsigned int)left, 0, M_WAITOK, 1, MT_DATA);
 			if (SCTP_BUF_NEXT(at) == NULL) {
 				goto err_out_now;
 			}
@@ -14017,7 +14017,7 @@ sctp_lower_sosend(struct socket *so,
 				error = EMSGSIZE;
 				goto out;
 			}
-			mm = sctp_get_mbuf_for_msg(tot_demand, 0, M_WAITOK, 1, MT_DATA);
+			mm = sctp_get_mbuf_for_msg((unsigned int)tot_demand, 0, M_WAITOK, 1, MT_DATA);
 		}
 		if (mm == NULL) {
 			SCTP_LTRACE_ERR_RET(NULL, stcb, net, SCTP_FROM_SCTP_OUTPUT, ENOMEM);
@@ -14305,9 +14305,9 @@ skip_preblock:
 				SCTP_SOCKET_UNLOCK(so, 0);
 #endif
 #if (defined(__FreeBSD__) && __FreeBSD_version > 602000) || defined(__Userspace__)
-				    mm = sctp_copy_resume(uio, max_len, user_marks_eor, &error, &sndout, &new_tail);
+				mm = sctp_copy_resume(uio, (int)max_len, user_marks_eor, &error, &sndout, &new_tail);
 #else
-				    mm = sctp_copy_resume(uio, max_len, &error, &sndout, &new_tail);
+				mm = sctp_copy_resume(uio, (int)max_len, &error, &sndout, &new_tail);
 #endif
 #if defined(__APPLE__)
 				SCTP_SOCKET_LOCK(so, 0);
@@ -14386,7 +14386,7 @@ skip_preblock:
 					SCTP_TCB_LOCK(stcb);
 					hold_tcblock = 1;
 				}
-				sctp_prune_prsctp(stcb, asoc, srcv, sndlen);
+				sctp_prune_prsctp(stcb, asoc, srcv, (int)sndlen);
 				inqueue_bytes = stcb->asoc.total_output_queue_size - (stcb->asoc.chunks_on_out_queue * SCTP_DATA_CHUNK_OVERHEAD(stcb));
 				if (SCTP_SB_LIMIT_SND(so) > inqueue_bytes)
 					max_len = SCTP_SB_LIMIT_SND(so) - inqueue_bytes;
