@@ -13493,7 +13493,7 @@ sctp_lower_sosend(struct socket *so,
 #endif
 	)
 {
-	size_t sndlen = 0, max_len;
+	ssize_t sndlen = 0, max_len;
 	int error, len;
 	struct mbuf *top = NULL;
 #ifdef __Panda__
@@ -13982,7 +13982,7 @@ sctp_lower_sosend(struct socket *so,
 	/* Are we aborting? */
 	if (srcv->sinfo_flags & SCTP_ABORT) {
 		struct mbuf *mm;
-		size_t tot_demand, tot_out = 0, max_out;
+		ssize_t tot_demand, tot_out = 0, max_out;
 
 		SCTP_STAT_INCR(sctps_sends_with_abort);
 		if ((SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_WAIT) ||
@@ -14516,7 +14516,7 @@ skip_preblock:
 #endif
 #else
 					sctp_log_block(SCTP_BLOCK_LOG_INTO_BLK,
-						       asoc, (size_t)uio->uio_resid);
+						       asoc, uio->uio_resid);
 #endif
 				}
 				be.error = 0;
