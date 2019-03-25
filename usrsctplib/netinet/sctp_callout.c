@@ -77,8 +77,14 @@ int sctp_get_tick_count(void) {
  * SCTP_TIMERQ_LOCK protects:
  * - SCTP_BASE_INFO(callqueue)
  * - sctp_os_timer_next: next timer to check
+ * - sctp_os_timer_current: current callout callback in progress
+ * - sctp_os_timer_waiting: waiting for callout to complete
  */
 static sctp_os_timer_t *sctp_os_timer_next = NULL;
+static sctp_os_timer_t *sctp_os_timer_current = NULL;
+static int sctp_os_timer_waiting = 0;
+
+static pthread_cond_t sctp_os_timer_wait_cond;
 
 void
 sctp_os_timer_init(sctp_os_timer_t *c)
@@ -133,8 +139,21 @@ sctp_os_timer_stop(sctp_os_timer_t *c)
 	 */
 	if (!(c->c_flags & SCTP_CALLOUT_PENDING)) {
 		c->c_flags &= ~SCTP_CALLOUT_ACTIVE;
-		SCTP_TIMERQ_UNLOCK();
-		return (0);
+		if (sctp_os_timer_current != c) {
+			SCTP_TIMERQ_UNLOCK();
+			return (0);
+		} else {
+			/* need to wait until the callout is finished */
+			sctp_os_timer_waiting = 1;
+#if defined (__Userspace_os_Windows)
+			SleepConditionVariableCS(&sctp_os_timer_wait_cond,
+						 &SCTP_BASE_VAR(timer_mtx),
+						 INFINITE);
+#else
+			pthread_cond_wait(&sctp_os_timer_wait_cond,
+					  &SCTP_BASE_VAR(timer_mtx));
+#endif
+		}
 	}
 	c->c_flags &= ~(SCTP_CALLOUT_ACTIVE | SCTP_CALLOUT_PENDING);
 	if (c == sctp_os_timer_next) {
@@ -163,9 +182,19 @@ sctp_handle_tick(int delta)
 			c_func = c->c_func;
 			c_arg = c->c_arg;
 			c->c_flags &= ~SCTP_CALLOUT_PENDING;
+			sctp_os_timer_current = c;
 			SCTP_TIMERQ_UNLOCK();
 			c_func(c_arg);
 			SCTP_TIMERQ_LOCK();
+			sctp_os_timer_current = NULL;
+			if (sctp_os_timer_waiting) {
+#if defined (__Userspace_os_Windows)
+				WakeAllConditionVariable(&sctp_os_timer_wait_cond);
+#else
+				pthread_cond_broadcast(&sctp_os_timer_wait_cond);
+#endif
+				sctp_os_timer_waiting = 0;
+			}
 			c = sctp_os_timer_next;
 		} else {
 			c = TAILQ_NEXT(c, tqe);
@@ -217,6 +246,14 @@ sctp_start_timer(void)
 	 * here, it is being done in sctp_pcb_init()
 	 */
 	int rc;
+
+#if defined(__Userspace_os_Windows)
+        InitializeConditionVariable(&sctp_os_timer_wait_cond);
+#else
+	rc = pthread_cond_init(&sctp_os_timer_wait_cond, NULL);
+	if (rc)
+		SCTP_PRINTF("ERROR; return code from pthread_cond_init is %d\n", rc);
+#endif
 
 	rc = sctp_userspace_thread_create(&SCTP_BASE_VAR(timer_thread), user_sctp_timer_iterate);
 	if (rc) {
