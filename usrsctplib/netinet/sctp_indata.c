@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 338134 2018-08-21 13:25:32Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 345494 2019-03-25 09:47:22Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -959,6 +959,16 @@ sctp_inject_old_unordered_data(struct sctp_tcb *stcb,
 		SCTPDBG(SCTP_DEBUG_XXX,
 			"chunk is a first fsn: %u becomes fsn_included\n",
 			chk->rec.data.fsn);
+		at = TAILQ_FIRST(&control->reasm);
+		if (at && SCTP_TSN_GT(chk->rec.data.fsn, at->rec.data.fsn)) {
+			/* 
+			 * The first chunk in the reassembly is
+			 * a smaller TSN than this one, even though
+			 * this has a first, it must be from a subsequent
+			 * msg.
+			 */
+			goto place_chunk;
+		}
 		if (control->first_frag_seen) {
 			/*
 			 * In old un-ordered we can reassembly on
