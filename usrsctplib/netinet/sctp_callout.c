@@ -84,7 +84,11 @@ static sctp_os_timer_t *sctp_os_timer_next = NULL;
 static sctp_os_timer_t *sctp_os_timer_current = NULL;
 static int sctp_os_timer_waiting = 0;
 
+#if defined (__Userspace_os_Windows)
+static CONDITION_VARIABLE sctp_os_timer_wait_cond;
+#else
 static pthread_cond_t sctp_os_timer_wait_cond;
+#endif
 
 void
 sctp_os_timer_init(sctp_os_timer_t *c)
