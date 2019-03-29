@@ -78,6 +78,7 @@ int sctp_get_tick_count(void) {
  * - SCTP_BASE_INFO(callqueue)
  * - sctp_os_timer_next: next timer to check
  * - sctp_os_timer_current: current callout callback in progress
+ * - sctp_os_timer_current_tid: current callout thread id in progress
  * - sctp_os_timer_waiting: some thread is waiting for callout to complete
  * - sctp_os_timer_wait_ctr: incremented every time a thread wants to wait
  *                           for a callout to complete.
@@ -86,6 +87,7 @@ static sctp_os_timer_t *sctp_os_timer_next = NULL;
 static sctp_os_timer_t *sctp_os_timer_current = NULL;
 static int sctp_os_timer_waiting = 0;
 static int sctp_os_timer_wait_ctr = 0;
+static userland_thread_id_t sctp_os_timer_current_tid;
 
 /*
  * SCTP_TIMERWAIT_LOCK (sctp_os_timerwait_mtx) protects:
@@ -171,6 +173,18 @@ sctp_os_timer_stop(sctp_os_timer_t *c)
 			SCTP_TIMERQ_UNLOCK();
 			return (0);
 		} else {
+			/*
+			 * Deleting the callout from the currently running
+			 * callout from the same thread, so just return
+			 */
+			userland_thread_id_t tid;
+			sctp_userspace_thread_id(&tid);
+			if (sctp_userspace_thread_equal(tid,
+						sctp_os_timer_current_tid)) {
+				SCTP_TIMERQ_UNLOCK();
+				return (0);
+			}
+
 			/* need to wait until the callout is finished */
 			sctp_os_timer_waiting = 1;
 			wakeup_cookie = ++sctp_os_timer_wait_ctr;
@@ -223,6 +237,7 @@ sctp_handle_tick(int delta)
 			c_arg = c->c_arg;
 			c->c_flags &= ~SCTP_CALLOUT_PENDING;
 			sctp_os_timer_current = c;
+			sctp_userspace_thread_id(&sctp_os_timer_current_tid);
 			SCTP_TIMERQ_UNLOCK();
 			c_func(c_arg);
 			SCTP_TIMERQ_LOCK();
