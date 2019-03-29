@@ -70,7 +70,7 @@ extern userland_mutex_t sctp_os_timerwait_mtx;
 #define SCTP_TIMERQ_LOCK()          KASSERT(pthread_mutex_lock(&SCTP_BASE_VAR(timer_mtx)) == 0, ("%s: timer_mtx already locked", __func__))
 #define SCTP_TIMERQ_UNLOCK()        KASSERT(pthread_mutex_unlock(&SCTP_BASE_VAR(timer_mtx)) == 0, ("%s: timer_mtx not locked", __func__))
 #define SCTP_TIMERWAIT_LOCK()       KASSERT(pthread_mutex_lock(&sctp_os_timerwait_mtx) == 0, ("%s: sctp_os_timerwait_mtx already locked", __func__))
-#define SCTP_TIMERWIT_UNLOCK()	    KASSERT(pthread_mutex_unlock(&sctp_os_timerwait_mtx) == 0, ("%s: sctp_os_timerwait_mtx not locked", __func__))
+#define SCTP_TIMERWAIT_UNLOCK()	    KASSERT(pthread_mutex_unlock(&sctp_os_timerwait_mtx) == 0, ("%s: sctp_os_timerwait_mtx not locked", __func__))
 #else
 #define SCTP_TIMERQ_LOCK()          (void)pthread_mutex_lock(&SCTP_BASE_VAR(timer_mtx))
 #define SCTP_TIMERQ_UNLOCK()        (void)pthread_mutex_unlock(&SCTP_BASE_VAR(timer_mtx))
