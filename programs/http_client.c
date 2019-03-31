@@ -103,6 +103,8 @@ main(int argc, char *argv[])
 	struct sockaddr_in6 addr6;
 	struct sctp_udpencaps encaps;
 	struct sctp_sndinfo sndinfo;
+	struct sctp_rtoinfo rtoinfo;
+	struct sctp_initmsg initmsg;
 	int result;
 
 	if (argc < 3) {
@@ -126,6 +128,27 @@ main(int argc, char *argv[])
 	if ((sock = usrsctp_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 		result = 1;
+		goto out;
+	}
+
+	rtoinfo.srto_assoc_id = 0;
+	rtoinfo.srto_initial = 1000;
+	rtoinfo.srto_min = 1000;
+	rtoinfo.srto_max = 8000;
+	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_RTOINFO, (const void *)&rtoinfo, (socklen_t)sizeof(struct sctp_rtoinfo)) < 0) {
+		perror("setsockopt");
+		usrsctp_close(sock);
+		result = 3;
+		goto out;
+	}
+	initmsg.sinit_num_ostreams = 1;
+	initmsg.sinit_max_instreams = 1;
+	initmsg.sinit_max_attempts = 5;
+	initmsg.sinit_max_init_timeo = 4000;
+	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_INITMSG, (const void *)&initmsg, (socklen_t)sizeof(struct sctp_initmsg)) < 0) {
+		perror("setsockopt");
+		usrsctp_close(sock);
+		result = 3;
 		goto out;
 	}
 
