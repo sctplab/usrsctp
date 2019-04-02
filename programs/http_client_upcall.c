@@ -92,14 +92,17 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 	                 &infolen, &infotype, &flags);
 
 		if (n < 0) {
-			perror("usrsctp_recvv");
-			if (errno == ECONNREFUSED) {
+			int errno_safer = errno;
+			if (errno_safer == ECONNREFUSED) {
 				result = RETVAL_ECONNREFUSED;
-			} else if (errno == ETIMEDOUT) {
+			} else if (errno_safer == ETIMEDOUT) {
 				result = RETVAL_TIMEOUT;
 			} else {
 				result = RETVAL_CATCHALL;
 			}
+			perror("usrsctp_connect");
+			printf("result %d - errno %d - ECONNREFUSED %d - errror %d\n", result, errno, ECONNREFUSED, errno_safer);
+			fprintf(stderr, "%s\n", strerror(errno));
 		}
 
 		if (n <= 0){
