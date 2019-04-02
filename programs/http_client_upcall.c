@@ -312,6 +312,8 @@ main(int argc, char *argv[])
 			} else {
 				result = RETVAL_CATCHALL;
 			}
+
+			printf("result = %d\n", result);
 			goto out;
 		}
 	}
