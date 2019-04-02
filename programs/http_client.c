@@ -262,9 +262,6 @@ main(int argc, char *argv[])
 			result = RETVAL_CATCHALL;
 		}
 		perror("usrsctp_connect");
-		printf("result %d - errno %d - ECONNREFUSED %d - errror %d\n", result, errno, ECONNREFUSED, errno_safer);
-		fprintf(stderr, "%s\n", strerror(errno));
-
 		usrsctp_close(sock);
 
 		goto out;

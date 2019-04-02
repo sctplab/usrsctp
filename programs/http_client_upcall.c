@@ -76,8 +76,6 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 	ssize_t bytesSent = 0;
 	char *buf;
 
-	//printf("EWRITE : %d - EREAD : %d - EERR : %d\n", events & SCTP_EVENT_WRITE, events & SCTP_EVENT_READ, events & SCTP_EVENT_ERROR);
-
 	if ((events & SCTP_EVENT_READ) && !done) {
 		struct sctp_recvv_rn rn;
 		ssize_t n;
@@ -88,11 +86,12 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 		unsigned int infotype = 0;
 		socklen_t infolen = sizeof(struct sctp_recvv_rn);
 		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
+		int errno_safer;
 		n = usrsctp_recvv(sock, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn,
 	                 &infolen, &infotype, &flags);
 
 		if (n < 0) {
-			int errno_safer = errno;
+			errno_safer = errno;
 			if (errno_safer == ECONNREFUSED) {
 				result = RETVAL_ECONNREFUSED;
 			} else if (errno_safer == ETIMEDOUT) {
@@ -101,8 +100,6 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 				result = RETVAL_CATCHALL;
 			}
 			perror("usrsctp_connect");
-			printf("result %d - errno %d - ECONNREFUSED %d - errror %d\n", result, errno, ECONNREFUSED, errno_safer);
-			fprintf(stderr, "%s\n", strerror(errno));
 		}
 
 		if (n <= 0){
@@ -160,6 +157,7 @@ main(int argc, char *argv[])
 	struct sctp_rtoinfo rtoinfo;
 	struct sctp_initmsg initmsg;
 	uint8_t address_family = 0;
+	int errno_safer;
 
 	if (argc < 3) {
 		printf("Usage: http_client_upcall remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
@@ -305,7 +303,7 @@ main(int argc, char *argv[])
 
 	if (usrsctp_connect(sock, addr, addr_len) < 0) {
 		if (errno != EINPROGRESS) {
-			int errno_safer = errno;
+			errno_safer = errno;
 			if (errno_safer == ECONNREFUSED) {
 				result = RETVAL_ECONNREFUSED;
 			} else if (errno_safer == ETIMEDOUT) {
@@ -314,9 +312,6 @@ main(int argc, char *argv[])
 				result = RETVAL_CATCHALL;
 			}
 			perror("usrsctp_connect");
-			printf("result %d - errno %d - ECONNREFUSED %d - errror %d\n", result, errno, ECONNREFUSED, errno_safer);
-			fprintf(stderr, "%s\n", strerror(errno));
-
 			usrsctp_close(sock);
 
 			goto out;
