@@ -264,7 +264,7 @@ main(int argc, char *argv[])
 			result = RETVAL_CATCHALL;
 		}
 
-		printf("result = %d\n", result);
+		printf("errno = %d\n", errno);
 
 		goto out;
 	}
