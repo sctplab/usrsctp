@@ -261,8 +261,9 @@ main(int argc, char *argv[])
 		} else {
 			result = RETVAL_CATCHALL;
 		}
+		printf("result %d - errno %d\n", result, errno);
+
 		usrsctp_close(sock);
-		printf("errno = %d\n", errno);
 
 		goto out;
 	}
