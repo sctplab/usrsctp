@@ -253,7 +253,7 @@ main(int argc, char *argv[])
 	printf("\nHTTP response:\n");
 
 	if (usrsctp_connect(sock, addr, addr_len) < 0) {
-		perror("usrsctp_connect");
+		int errrorr = errno;
 		if (errno == ECONNREFUSED) {
 			result = RETVAL_ECONNREFUSED;
 		} else if (errno == ETIMEDOUT) {
@@ -261,7 +261,9 @@ main(int argc, char *argv[])
 		} else {
 			result = RETVAL_CATCHALL;
 		}
-		printf("result %d - errno %d - ECONNREFUSED %d\n", result, errno, ECONNREFUSED);
+
+		printf("result %d - errno %d - ECONNREFUSED %d - errror %d\n", result, errno, ECONNREFUSED, errrorr);
+		perror("usrsctp_connect");
 		fprintf(stderr, "%s\n", strerror(errno));
 
 		usrsctp_close(sock);
