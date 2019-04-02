@@ -332,6 +332,6 @@ out:
 #endif
 	}
 
-	printf("returning: %d\n", result);
+	printf("Finished, returning with %d\n", result);
 	return (result);
 }

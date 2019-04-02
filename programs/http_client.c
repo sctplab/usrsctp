@@ -292,5 +292,6 @@ out:
 		sleep(1);
 #endif
 	}
+	printf("Finished, returning with %d\n", result);
 	return (result);
 }
