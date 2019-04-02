@@ -258,6 +258,8 @@ main(int argc, char *argv[])
 
 		if (errno == ECONNREFUSED) {
 			result = RETVAL_ECONNREFUSED;
+		} else if (errno == ETIMEDOUT) {
+			result = RETVAL_TIMEOUT;
 		} else {
 			result = RETVAL_CATCHALL;
 		}

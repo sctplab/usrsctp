@@ -53,8 +53,8 @@
 #include <usrsctp.h>
 
 #define RETVAL_CATCHALL     50
-#define RETVAL_ECONNREFUSED 60
-#define RETVAL_TIMEOUT      61
+#define RETVAL_TIMEOUT      60
+#define RETVAL_ECONNREFUSED 61
 
 int done = 0;
 int writePending = 1;
@@ -93,7 +93,13 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 
 		if (n < 0) {
 			perror("usrsctp_recvv");
-			result = errno;
+			if (errno == ECONNREFUSED) {
+				result = RETVAL_ECONNREFUSED;
+			} else if (errno == ETIMEDOUT) {
+				result = RETVAL_TIMEOUT;
+			} else {
+				result = RETVAL_CATCHALL;
+			}
 		}
 
 		if (n <= 0){
@@ -301,6 +307,8 @@ main(int argc, char *argv[])
 
 			if (errno == ECONNREFUSED) {
 				result = RETVAL_ECONNREFUSED;
+			} else if (errno == ETIMEDOUT) {
+				result = RETVAL_TIMEOUT;
 			} else {
 				result = RETVAL_CATCHALL;
 			}
@@ -323,5 +331,7 @@ out:
 		sleep(1);
 #endif
 	}
+
+	printf("returning: %d\n", result);
 	return (result);
 }
