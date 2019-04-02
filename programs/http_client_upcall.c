@@ -58,6 +58,7 @@
 
 int done = 0;
 int writePending = 1;
+int result = 0;
 
 static const char *request_prefix = "GET";
 static const char *request_postfix = "HTTP/1.0\r\nUser-agent: libusrsctp\r\nConnection: close\r\n\r\n";
@@ -75,20 +76,7 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 	ssize_t bytesSent = 0;
 	char *buf;
 
-	if ((events & SCTP_EVENT_WRITE) && writePending) {
-		writePending = 0;
-		printf("\nHTTP request:\n%s\n", request);
-		printf("\nHTTP response:\n");
-
-		/* send GET request */
-		bytesSent = usrsctp_sendv(sock, request, strlen(request), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
-		if (bytesSent < 0) {
-			perror("usrsctp_sendv");
-			usrsctp_close(sock);
-		} else {
-			printf("%d bytes sent\n", (int)bytesSent);
-		}
-	}
+	//printf("EWRITE : %d - EREAD : %d - EERR : %d\n", events & SCTP_EVENT_WRITE, events & SCTP_EVENT_READ, events & SCTP_EVENT_ERROR);
 
 	if ((events & SCTP_EVENT_READ) && !done) {
 		struct sctp_recvv_rn rn;
@@ -102,7 +90,16 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
 		n = usrsctp_recvv(sock, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn,
 	                 &infolen, &infotype, &flags);
-		if (n > 0)
+
+		if (n < 0) {
+			perror("usrsctp_recvv");
+			result = errno;
+		}
+
+		if (n <= 0){
+			done = 1;
+			usrsctp_close(sock);
+		} else {
 #ifdef _WIN32
 			_write(_fileno(stdout), buf, (unsigned int)n);
 #else
@@ -110,10 +107,23 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 				perror("write");
 			}
 #endif
-		done = 1;
-		usrsctp_close(sock);
+		}
 		free(buf);
-		return;
+	}
+
+	if ((events & SCTP_EVENT_WRITE) && writePending && !done) {
+		writePending = 0;
+		printf("\nHTTP request:\n%s\n", request);
+		printf("\nHTTP response:\n");
+
+		/* send GET request */
+		bytesSent = usrsctp_sendv(sock, request, strlen(request), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
+		if (bytesSent < 0) {
+			perror("usrsctp_sendv");
+			usrsctp_close(sock);
+		} else {
+			printf("%d bytes sent\n", (int)bytesSent);
+		}
 	}
 }
 
@@ -138,10 +148,8 @@ main(int argc, char *argv[])
 	struct sockaddr_in bind4;
 	struct sockaddr_in6 bind6;
 	struct sctp_udpencaps encaps;
-	struct sctp_sndinfo sndinfo;
 	struct sctp_rtoinfo rtoinfo;
 	struct sctp_initmsg initmsg;
-	int result = 0;
 	uint8_t address_family = 0;
 
 	if (argc < 3) {
@@ -196,7 +204,7 @@ main(int argc, char *argv[])
 		goto out;
 	}
 
-	usrsctp_set_non_blocking(sock, 1);
+	//usrsctp_set_non_blocking(sock, 1);
 
 	rtoinfo.srto_assoc_id = 0;
 	rtoinfo.srto_initial = 1000;
@@ -282,7 +290,9 @@ main(int argc, char *argv[])
 	printf("\nHTTP request:\n%s\n", request);
 	printf("\nHTTP response:\n");
 
+
 	usrsctp_set_upcall(sock, handle_upcall, NULL);
+	usrsctp_set_non_blocking(sock, 1);
 
 	if (usrsctp_connect(sock, addr, addr_len) < 0) {
 		if (errno != EINPROGRESS) {
@@ -296,16 +306,6 @@ main(int argc, char *argv[])
 			}
 			goto out;
 		}
-	}
-
-	memset(&sndinfo, 0, sizeof(struct sctp_sndinfo));
-	sndinfo.snd_ppid = htonl(63); /* PPID for HTTP/SCTP */
-	/* send GET request */
-	if (usrsctp_sendv(sock, request, strlen(request), NULL, 0, &sndinfo, sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
-		perror("usrsctp_sendv");
-		usrsctp_close(sock);
-		result = RETVAL_CATCHALL;
-		goto out;
 	}
 
 	while (!done) {
