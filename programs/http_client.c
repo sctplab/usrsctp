@@ -56,6 +56,10 @@
 #endif
 #include <usrsctp.h>
 
+#define RETVAL_CATCHALL     50
+#define RETVAL_ECONNREFUSED 60
+#define RETVAL_TIMEOUT      61
+
 int done = 0;
 static const char *request_prefix = "GET";
 static const char *request_postfix = "HTTP/1.0\r\nUser-agent: libusrsctp\r\nConnection: close\r\n\r\n";
@@ -142,7 +146,7 @@ main(int argc, char *argv[])
 		addr6.sin6_port = htons(atoi(argv[2]));
 	} else {
 		printf("Unsupported destination address - use IPv4 or IPv6 address\n");
-		result = 1;
+		result = RETVAL_CATCHALL;
 		goto out;
 	}
 
@@ -160,7 +164,7 @@ main(int argc, char *argv[])
 
 	if ((sock = usrsctp_socket(address_family, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
-		result = 2;
+		result = RETVAL_CATCHALL;
 		goto out;
 	}
 
@@ -171,7 +175,7 @@ main(int argc, char *argv[])
 	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_RTOINFO, (const void *)&rtoinfo, (socklen_t)sizeof(struct sctp_rtoinfo)) < 0) {
 		perror("setsockopt");
 		usrsctp_close(sock);
-		result = 3;
+		result = RETVAL_CATCHALL;
 		goto out;
 	}
 	initmsg.sinit_num_ostreams = 1;
@@ -181,7 +185,7 @@ main(int argc, char *argv[])
 	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_INITMSG, (const void *)&initmsg, (socklen_t)sizeof(struct sctp_initmsg)) < 0) {
 		perror("setsockopt");
 		usrsctp_close(sock);
-		result = 4;
+		result = RETVAL_CATCHALL;
 		goto out;
 	}
 
@@ -199,7 +203,7 @@ main(int argc, char *argv[])
 			if (usrsctp_bind(sock, (struct sockaddr *)&bind4, sizeof(bind4)) < 0) {
 				perror("bind");
 				usrsctp_close(sock);
-				result = 5;
+				result = RETVAL_CATCHALL;
 				goto out;
 			}
 		} else {
@@ -213,7 +217,7 @@ main(int argc, char *argv[])
 			if (usrsctp_bind(sock, (struct sockaddr *)&bind6, sizeof(bind6)) < 0) {
 				perror("bind");
 				usrsctp_close(sock);
-				result = 6;
+				result = RETVAL_CATCHALL;
 				goto out;
 			}
 		}
@@ -226,7 +230,7 @@ main(int argc, char *argv[])
 		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void *)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
 			perror("setsockopt");
 			usrsctp_close(sock);
-			result = 7;
+			result = RETVAL_CATCHALL;
 			goto out;
 		}
 	}
@@ -253,15 +257,13 @@ main(int argc, char *argv[])
 		usrsctp_close(sock);
 
 		if (errno == ECONNREFUSED) {
-			result = 8;
+			result = RETVAL_ECONNREFUSED;
 		} else {
-			result = 9;
+			result = RETVAL_CATCHALL;
 		}
 
 		goto out;
 	}
-
-	// WAS HERE!!!
 
 	memset(&sndinfo, 0, sizeof(struct sctp_sndinfo));
 	sndinfo.snd_ppid = htonl(63); /* PPID for HTTP/SCTP */
@@ -269,7 +271,7 @@ main(int argc, char *argv[])
 	if (usrsctp_sendv(sock, request, strlen(request), NULL, 0, &sndinfo, sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("usrsctp_sendv");
 		usrsctp_close(sock);
-		result = 11;
+		result = RETVAL_CATCHALL;
 		goto out;
 	}
 
