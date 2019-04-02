@@ -57,8 +57,8 @@
 #include <usrsctp.h>
 
 #define RETVAL_CATCHALL     50
-#define RETVAL_ECONNREFUSED 60
-#define RETVAL_TIMEOUT      61
+#define RETVAL_TIMEOUT      60
+#define RETVAL_ECONNREFUSED 61
 
 int done = 0;
 static const char *request_prefix = "GET";
