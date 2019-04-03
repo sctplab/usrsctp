@@ -85,8 +85,9 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 		socklen_t len = (socklen_t)sizeof(struct sockaddr_in);
 		unsigned int infotype = 0;
 		socklen_t infolen = sizeof(struct sctp_recvv_rn);
-		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
 		int errno_safer;
+
+		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
 		n = usrsctp_recvv(sock, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn,
 	                 &infolen, &infotype, &flags);
 
@@ -238,7 +239,7 @@ main(int argc, char *argv[])
 
 		if (address_family == AF_INET) {
 			memset((void *)&bind4, 0, sizeof(struct sockaddr_in));
-#ifdef HAVE_SIN6_LEN
+#ifdef HAVE_SIN_LEN
 			bind4.sin_len = sizeof(struct sockaddr_in6);
 #endif
 			bind4.sin_family = AF_INET;
