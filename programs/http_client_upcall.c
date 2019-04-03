@@ -68,7 +68,7 @@ char request[512];
 typedef char* caddr_t;
 #endif
 
-#define BUFFERSIZE                 (1<<16)
+#define BUFFERSIZE (1<<16)
 
 static void handle_upcall(struct socket *sock, void *arg, int flgs)
 {
