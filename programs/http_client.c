@@ -115,6 +115,7 @@ main(int argc, char *argv[])
 	struct sctp_initmsg initmsg;
 	int result = 0;
 	uint8_t address_family = 0;
+	int errno_safer;
 
 	if (argc < 3) {
 		printf("Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
@@ -193,7 +194,7 @@ main(int argc, char *argv[])
 
 		if (address_family == AF_INET) {
 			memset((void *)&bind4, 0, sizeof(struct sockaddr_in));
-#ifdef HAVE_SIN6_LEN
+#ifdef HAVE_SIN_LEN
 			bind4.sin_len = sizeof(struct sockaddr_in6);
 #endif
 			bind4.sin_family = AF_INET;
@@ -253,7 +254,7 @@ main(int argc, char *argv[])
 	printf("\nHTTP response:\n");
 
 	if (usrsctp_connect(sock, addr, addr_len) < 0) {
-		int errno_safer = errno;
+		errno_safer = errno;
 		if (errno_safer == ECONNREFUSED) {
 			result = RETVAL_ECONNREFUSED;
 		} else if (errno_safer == ETIMEDOUT) {
