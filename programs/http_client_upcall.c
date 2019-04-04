@@ -162,6 +162,8 @@ main(int argc, char *argv[])
 		return(EXIT_FAILURE);
 	}
 
+	printf("starting...\n");
+
 	memset((void *)&addr4, 0, sizeof(struct sockaddr_in));
 	memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
 
@@ -190,12 +192,13 @@ main(int argc, char *argv[])
 		result = RETVAL_CATCHALL;
 		goto out;
 	}
-
+	printf("starting 2...\n");
 	if (argc > 4) {
 		usrsctp_init(atoi(argv[4]), NULL, debug_printf);
 	} else {
 		usrsctp_init(9899, NULL, debug_printf);
 	}
+	printf("starting 3...\n");
 
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
@@ -208,7 +211,7 @@ main(int argc, char *argv[])
 		result = RETVAL_CATCHALL;
 		goto out;
 	}
-
+	printf("starting 4...\n");
 	//usrsctp_set_non_blocking(sock, 1);
 
 	rtoinfo.srto_assoc_id = 0;
@@ -231,6 +234,8 @@ main(int argc, char *argv[])
 		result = RETVAL_CATCHALL;
 		goto out;
 	}
+
+	printf("starting 5...\n");
 
 	if (argc > 3) {
 
@@ -265,6 +270,8 @@ main(int argc, char *argv[])
 			}
 		}
 	}
+
+	printf("starting 6...\n");
 
 	if (argc > 5) {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
