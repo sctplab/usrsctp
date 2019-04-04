@@ -85,17 +85,15 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 		socklen_t len = (socklen_t)sizeof(struct sockaddr_in);
 		unsigned int infotype = 0;
 		socklen_t infolen = sizeof(struct sctp_recvv_rn);
-		int errno_safer;
 
 		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
 		n = usrsctp_recvv(sock, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn,
 	                 &infolen, &infotype, &flags);
 
 		if (n < 0) {
-			errno_safer = errno;
-			if (errno_safer == ECONNREFUSED) {
+			if (errno == ECONNREFUSED) {
 				result = RETVAL_ECONNREFUSED;
-			} else if (errno_safer == ETIMEDOUT) {
+			} else if (errno == ETIMEDOUT) {
 				result = RETVAL_TIMEOUT;
 			} else {
 				result = RETVAL_CATCHALL;
@@ -158,7 +156,6 @@ main(int argc, char *argv[])
 	struct sctp_rtoinfo rtoinfo;
 	struct sctp_initmsg initmsg;
 	uint8_t address_family = 0;
-	int errno_safer;
 
 	if (argc < 3) {
 		printf("Usage: http_client_upcall remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
@@ -304,10 +301,9 @@ main(int argc, char *argv[])
 
 	if (usrsctp_connect(sock, addr, addr_len) < 0) {
 		if (errno != EINPROGRESS) {
-			errno_safer = errno;
-			if (errno_safer == ECONNREFUSED) {
+			if (errno == ECONNREFUSED) {
 				result = RETVAL_ECONNREFUSED;
-			} else if (errno_safer == ETIMEDOUT) {
+			} else if (errno == ETIMEDOUT) {
 				result = RETVAL_TIMEOUT;
 			} else {
 				result = RETVAL_CATCHALL;

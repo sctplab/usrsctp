@@ -115,7 +115,6 @@ main(int argc, char *argv[])
 	struct sctp_initmsg initmsg;
 	int result = 0;
 	uint8_t address_family = 0;
-	int errno_safer;
 
 	if (argc < 3) {
 		printf("Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
@@ -254,10 +253,9 @@ main(int argc, char *argv[])
 	printf("\nHTTP response:\n");
 
 	if (usrsctp_connect(sock, addr, addr_len) < 0) {
-		errno_safer = errno;
-		if (errno_safer == ECONNREFUSED) {
+		if (errno == ECONNREFUSED) {
 			result = RETVAL_ECONNREFUSED;
-		} else if (errno_safer == ETIMEDOUT) {
+		} else if (errno == ETIMEDOUT) {
 			result = RETVAL_TIMEOUT;
 		} else {
 			result = RETVAL_CATCHALL;
