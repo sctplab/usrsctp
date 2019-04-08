@@ -51,6 +51,7 @@
 #include <io.h>
 #endif
 #include <usrsctp.h>
+#include <sys/time.h>
 
 #define RETVAL_CATCHALL     50
 #define RETVAL_TIMEOUT      60
@@ -59,6 +60,7 @@
 int done = 0;
 int writePending = 1;
 int result = 0;
+struct timeval time_main;
 
 static const char *request_prefix = "GET";
 static const char *request_postfix = "HTTP/1.0\r\nUser-agent: libusrsctp\r\nConnection: close\r\n\r\n";
@@ -66,6 +68,18 @@ char request[512];
 
 #ifdef _WIN32
 typedef char* caddr_t;
+#endif
+
+#ifndef timersub
+#define timersub(tvp, uvp, vvp)                                   \
+	do {                                                      \
+		(vvp)->tv_sec = (tvp)->tv_sec - (uvp)->tv_sec;    \
+		(vvp)->tv_usec = (tvp)->tv_usec - (uvp)->tv_usec; \
+		if ((vvp)->tv_usec < 0) {                         \
+			(vvp)->tv_sec--;                          \
+			(vvp)->tv_usec += 1000000;                \
+		}                                                 \
+	} while (0)
 #endif
 
 #define BUFFERSIZE (1<<16)
@@ -136,6 +150,12 @@ void
 debug_printf(const char *format, ...)
 {
 	va_list ap;
+	struct timeval time_now;
+	struct timeval time_delta;
+	gettimeofday(&time_now, NULL);
+	timersub(&time_now, &time_main, &time_delta);
+	double time_in_mill = (time_delta.tv_sec) * 1000 + (time_delta.tv_usec) / 1000 ; // convert tv_sec & tv_usec to millisecond
+	printf("[%6.0f] ", time_in_mill);
 
 	va_start(ap, format);
 	vprintf(format, ap);
@@ -157,12 +177,12 @@ main(int argc, char *argv[])
 	struct sctp_initmsg initmsg;
 	uint8_t address_family = 0;
 
+	gettimeofday(&time_main, NULL);
+
 	if (argc < 3) {
 		printf("Usage: http_client_upcall remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
 		return(EXIT_FAILURE);
 	}
-
-	printf("starting...\n");
 
 	memset((void *)&addr4, 0, sizeof(struct sockaddr_in));
 	memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
@@ -192,13 +212,12 @@ main(int argc, char *argv[])
 		result = RETVAL_CATCHALL;
 		goto out;
 	}
-	printf("starting 2...\n");
+
 	if (argc > 4) {
 		usrsctp_init(atoi(argv[4]), NULL, debug_printf);
 	} else {
 		usrsctp_init(9899, NULL, debug_printf);
 	}
-	printf("starting 3...\n");
 
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
@@ -211,7 +230,7 @@ main(int argc, char *argv[])
 		result = RETVAL_CATCHALL;
 		goto out;
 	}
-	printf("starting 4...\n");
+
 	//usrsctp_set_non_blocking(sock, 1);
 
 	rtoinfo.srto_assoc_id = 0;
@@ -234,8 +253,6 @@ main(int argc, char *argv[])
 		result = RETVAL_CATCHALL;
 		goto out;
 	}
-
-	printf("starting 5...\n");
 
 	if (argc > 3) {
 
@@ -270,8 +287,6 @@ main(int argc, char *argv[])
 			}
 		}
 	}
-
-	printf("starting 6...\n");
 
 	if (argc > 5) {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
