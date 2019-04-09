@@ -47,11 +47,12 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 #else
 #include <io.h>
 #endif
 #include <usrsctp.h>
-#include <sys/time.h>
+
 
 #define RETVAL_CATCHALL     50
 #define RETVAL_TIMEOUT      60
@@ -79,6 +80,18 @@ typedef char* caddr_t;
 			(vvp)->tv_usec += 1000000;                \
 		}                                                 \
 	} while (0)
+#endif
+
+#ifdef _WIN32
+static void
+gettimeofday(struct timeval *tv, void *ignore)
+{
+	struct timeb tb;
+
+	ftime(&tb);
+	tv->tv_sec = (long)tb.time;
+	tv->tv_usec = (long)(tb.millitm) * 1000L;
+}
 #endif
 
 #define BUFFERSIZE (1<<16)
@@ -158,12 +171,10 @@ debug_printf(const char *format, ...)
 		gettimeofday(&time_main, NULL);
 	}
 
-	//printf("%ld.%06ld\n", usage.ru_stime.tv_sec, usage.ru_stime.tv_usec);
-
 	gettimeofday(&time_now, NULL);
 	timersub(&time_now, &time_main, &time_delta);
-	//double time_in_mill = (time_delta.tv_sec) * 1000 + (time_delta.tv_usec) / 1000 ; // convert tv_sec & tv_usec to millisecond
-	printf("[%ld.%06d] ", time_delta.tv_sec, time_delta.tv_usec);
+
+	printf("[%u.%03u] ", (unsigned int) time_delta.tv_sec, (unsigned int) time_delta.tv_usec / 1000);
 
 	va_start(ap, format);
 	vprintf(format, ap);
