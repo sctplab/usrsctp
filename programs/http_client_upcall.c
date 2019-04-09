@@ -60,7 +60,6 @@
 int done = 0;
 int writePending = 1;
 int result = 0;
-struct timeval time_main;
 
 static const char *request_prefix = "GET";
 static const char *request_postfix = "HTTP/1.0\r\nUser-agent: libusrsctp\r\nConnection: close\r\n\r\n";
@@ -149,13 +148,22 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 void
 debug_printf(const char *format, ...)
 {
+	static struct timeval time_main;
+
 	va_list ap;
 	struct timeval time_now;
 	struct timeval time_delta;
+
+	if (time_main.tv_sec == 0  && time_main.tv_usec == 0) {
+		gettimeofday(&time_main, NULL);
+	}
+
+	//printf("%ld.%06ld\n", usage.ru_stime.tv_sec, usage.ru_stime.tv_usec);
+
 	gettimeofday(&time_now, NULL);
 	timersub(&time_now, &time_main, &time_delta);
-	double time_in_mill = (time_delta.tv_sec) * 1000 + (time_delta.tv_usec) / 1000 ; // convert tv_sec & tv_usec to millisecond
-	printf("[%6.0f] ", time_in_mill);
+	//double time_in_mill = (time_delta.tv_sec) * 1000 + (time_delta.tv_usec) / 1000 ; // convert tv_sec & tv_usec to millisecond
+	printf("[%ld.%3d] ", time_delta.tv_sec, time_delta.tv_usec);
 
 	va_start(ap, format);
 	vprintf(format, ap);
@@ -176,8 +184,6 @@ main(int argc, char *argv[])
 	struct sctp_rtoinfo rtoinfo;
 	struct sctp_initmsg initmsg;
 	uint8_t address_family = 0;
-
-	gettimeofday(&time_main, NULL);
 
 	if (argc < 3) {
 		printf("Usage: http_client_upcall remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
