@@ -1769,7 +1769,6 @@ sctp_timeout_handler(void *t)
 	}
 #endif
 	/* call the handler for the appropriate timer type */
-	SCTPDBG(SCTP_DEBUG_TIMER1, "HANDLING TIMER TYPE %d\n", type);
 	switch (type) {
 	case SCTP_TIMER_TYPE_ADDR_WQ:
 		sctp_handle_addr_wq();
@@ -2099,8 +2098,6 @@ sctp_timer_start(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	uint32_t to_ticks;
 	struct sctp_timer *tmr;
 
-
-
 	if ((t_type != SCTP_TIMER_TYPE_ADDR_WQ) && (inp == NULL))
 		return;
 
@@ -2348,7 +2345,7 @@ sctp_timer_start(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		break;
 	}
 
-	SCTPDBG(SCTP_DEBUG_TIMER1, "STARTING TIMER TYPE %d\n FOR %d TICKS", t_type, to_ticks);
+	SCTPDBG(SCTP_DEBUG_TIMER1, "STARTING TIMER TYPE %d FOR %d TICKS\n", t_type, to_ticks);
 
 	if ((to_ticks <= 0) || (tmr == NULL)) {
 		SCTPDBG(SCTP_DEBUG_TIMER1, "%s: %d:software error to_ticks:%d tmr:%p not set ??\n",

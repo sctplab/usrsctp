@@ -225,8 +225,6 @@ sctp_handle_tick(int delta)
 	void *c_arg;
 	int wakeup_cookie;
 
-	SCTPDBG(SCTP_DEBUG_TIMER1, "ENTERING SCTP_HANDLE_TICK!!!!\n");
-
 	SCTP_TIMERQ_LOCK();
 	/* update our tick count */
 	ticks += delta;
@@ -265,8 +263,6 @@ sctp_handle_tick(int delta)
 	}
 	sctp_os_timer_next = NULL;
 	SCTP_TIMERQ_UNLOCK();
-
-	SCTPDBG(SCTP_DEBUG_TIMER1, "EXITING SCTP_HANDLE_TICK!!!!\n");
 }
 
 #if defined(__APPLE__)
@@ -293,8 +289,8 @@ user_sctp_timer_iterate(void *arg)
 
 		timeout.tv_sec  = 0;
 		timeout.tv_usec = 1000 * TIMEOUT_INTERVAL;
-		SCTPDBG(SCTP_DEBUG_TIMER1, "TICK!!!!\n");
-		select(0, NULL, NULL, NULL, &timeout);
+		//select(0, NULL, NULL, NULL, &timeout);
+		usleep(timeout.tv_usec);
 #endif
 		if (atomic_cmpset_int(&SCTP_BASE_VAR(timer_thread_should_exit), 1, 1)) {
 			break;
