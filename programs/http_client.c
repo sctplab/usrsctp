@@ -72,6 +72,30 @@ char request[512];
 typedef char* caddr_t;
 #endif
 
+#ifndef timersub
+#define timersub(tvp, uvp, vvp)                                   \
+	do {                                                      \
+		(vvp)->tv_sec = (tvp)->tv_sec - (uvp)->tv_sec;    \
+		(vvp)->tv_usec = (tvp)->tv_usec - (uvp)->tv_usec; \
+		if ((vvp)->tv_usec < 0) {                         \
+			(vvp)->tv_sec--;                          \
+			(vvp)->tv_usec += 1000000;                \
+		}                                                 \
+	} while (0)
+#endif
+
+#ifdef _WIN32
+static void
+gettimeofday(struct timeval *tv, void *ignore)
+{
+	struct timeb tb;
+
+	ftime(&tb);
+	tv->tv_sec = (long)tb.time;
+	tv->tv_usec = (long)(tb.millitm) * 1000L;
+}
+#endif
+
 static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
            size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
@@ -92,17 +116,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 	return (1);
 }
 
-#ifdef _WIN32
-static void
-gettimeofday(struct timeval *tv, void *ignore)
-{
-	struct timeb tb;
 
-	ftime(&tb);
-	tv->tv_sec = (long)tb.time;
-	tv->tv_usec = (long)(tb.millitm) * 1000L;
-}
-#endif
 
 static void
 debug_printf(const char *format, ...)

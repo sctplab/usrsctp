@@ -2344,9 +2344,6 @@ sctp_timer_start(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		return;
 		break;
 	}
-
-	SCTPDBG(SCTP_DEBUG_TIMER1, "STARTING TIMER TYPE %d FOR %d TICKS\n", t_type, to_ticks);
-
 	if ((to_ticks <= 0) || (tmr == NULL)) {
 		SCTPDBG(SCTP_DEBUG_TIMER1, "%s: %d:software error to_ticks:%d tmr:%p not set ??\n",
 			__func__, t_type, to_ticks, (void *)tmr);

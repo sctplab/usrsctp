@@ -289,8 +289,7 @@ user_sctp_timer_iterate(void *arg)
 
 		timeout.tv_sec  = 0;
 		timeout.tv_usec = 1000 * TIMEOUT_INTERVAL;
-		//select(0, NULL, NULL, NULL, &timeout);
-		usleep(timeout.tv_usec);
+		select(0, NULL, NULL, NULL, &timeout);
 #endif
 		if (atomic_cmpset_int(&SCTP_BASE_VAR(timer_thread_should_exit), 1, 1)) {
 			break;
