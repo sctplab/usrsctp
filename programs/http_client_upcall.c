@@ -163,7 +163,7 @@ debug_printf(const char *format, ...)
 	gettimeofday(&time_now, NULL);
 	timersub(&time_now, &time_main, &time_delta);
 	//double time_in_mill = (time_delta.tv_sec) * 1000 + (time_delta.tv_usec) / 1000 ; // convert tv_sec & tv_usec to millisecond
-	printf("[%ld.%3d] ", time_delta.tv_sec, time_delta.tv_usec);
+	printf("[%ld.%06d] ", time_delta.tv_sec, time_delta.tv_usec);
 
 	va_start(ap, format);
 	vprintf(format, ap);

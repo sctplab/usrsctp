@@ -279,7 +279,7 @@ sctp_timeout(void *arg SCTP_UNUSED)
 #endif
 
 #if defined(__Userspace__)
-#define TIMEOUT_INTERVAL 100
+#define TIMEOUT_INTERVAL 10
 
 void *
 user_sctp_timer_iterate(void *arg)
