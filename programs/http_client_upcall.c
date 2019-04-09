@@ -49,6 +49,8 @@
 #include <arpa/inet.h>
 #include <sys/time.h>
 #else
+#include <sys/types.h>
+#include <sys/timeb.h>
 #include <io.h>
 #endif
 #include <usrsctp.h>

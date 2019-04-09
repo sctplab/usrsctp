@@ -54,6 +54,8 @@
 #include <sys/time.h>
 #else
 #include <io.h>
+#include <sys/types.h>
+#include <sys/timeb.h>
 #endif
 #include <usrsctp.h>
 
