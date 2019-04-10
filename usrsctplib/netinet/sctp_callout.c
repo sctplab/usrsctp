@@ -285,11 +285,13 @@ user_sctp_timer_iterate(void *arg)
 #if defined (__Userspace_os_Windows)
 		Sleep(TIMEOUT_INTERVAL);
 #else
-		struct timeval timeout;
+		struct timespec amount, remaining;
 
-		timeout.tv_sec  = 0;
-		timeout.tv_usec = 1000 * TIMEOUT_INTERVAL;
-		select(0, NULL, NULL, NULL, &timeout);
+		remaining.tv_sec = 0;
+		remaining.tv_nsec = TIMEOUT_INTERVAL * 1000 * 1000;
+		do {
+			amount = remaining;
+		} while (nanosleep(&amount, &remaining) == -1);
 #endif
 		if (atomic_cmpset_int(&SCTP_BASE_VAR(timer_thread_should_exit), 1, 1)) {
 			break;
@@ -309,7 +311,7 @@ sctp_start_timer(void)
 	int rc;
 
 #if defined(__Userspace_os_Windows)
-        InitializeConditionVariable(&sctp_os_timer_wait_cond);
+	InitializeConditionVariable(&sctp_os_timer_wait_cond);
 #else
 	rc = pthread_cond_init(&sctp_os_timer_wait_cond, NULL);
 	if (rc)
