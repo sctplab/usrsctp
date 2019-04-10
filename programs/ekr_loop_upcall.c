@@ -53,7 +53,7 @@
 #define MAX_PACKET_SIZE (1<<16)
 #define LINE_LENGTH (1<<20)
 #define DISCARD_PPID 39
-#define DUMP_PKTS_TO_FILE 1
+//#define DUMP_PKTS_TO_FILE
 
 #ifdef _WIN32
 static DWORD WINAPI

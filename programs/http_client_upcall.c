@@ -47,10 +47,14 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 #else
+#include <sys/types.h>
+#include <sys/timeb.h>
 #include <io.h>
 #endif
 #include <usrsctp.h>
+
 
 #define RETVAL_CATCHALL     50
 #define RETVAL_TIMEOUT      60
@@ -68,7 +72,31 @@ char request[512];
 typedef char* caddr_t;
 #endif
 
-#define BUFFERSIZE                 (1<<16)
+#ifndef timersub
+#define timersub(tvp, uvp, vvp)                                   \
+	do {                                                      \
+		(vvp)->tv_sec = (tvp)->tv_sec - (uvp)->tv_sec;    \
+		(vvp)->tv_usec = (tvp)->tv_usec - (uvp)->tv_usec; \
+		if ((vvp)->tv_usec < 0) {                         \
+			(vvp)->tv_sec--;                          \
+			(vvp)->tv_usec += 1000000;                \
+		}                                                 \
+	} while (0)
+#endif
+
+#ifdef _WIN32
+static void
+gettimeofday(struct timeval *tv, void *ignore)
+{
+	struct timeb tb;
+
+	ftime(&tb);
+	tv->tv_sec = (long)tb.time;
+	tv->tv_usec = (long)(tb.millitm) * 1000L;
+}
+#endif
+
+#define BUFFERSIZE (1<<16)
 
 static void handle_upcall(struct socket *sock, void *arg, int flgs)
 {
@@ -85,17 +113,15 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 		socklen_t len = (socklen_t)sizeof(struct sockaddr_in);
 		unsigned int infotype = 0;
 		socklen_t infolen = sizeof(struct sctp_recvv_rn);
-		int errno_safer;
 
 		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
 		n = usrsctp_recvv(sock, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn,
 	                 &infolen, &infotype, &flags);
 
 		if (n < 0) {
-			errno_safer = errno;
-			if (errno_safer == ECONNREFUSED) {
+			if (errno == ECONNREFUSED) {
 				result = RETVAL_ECONNREFUSED;
-			} else if (errno_safer == ETIMEDOUT) {
+			} else if (errno == ETIMEDOUT) {
 				result = RETVAL_TIMEOUT;
 			} else {
 				result = RETVAL_CATCHALL;
@@ -137,7 +163,20 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 void
 debug_printf(const char *format, ...)
 {
+	static struct timeval time_main;
+
 	va_list ap;
+	struct timeval time_now;
+	struct timeval time_delta;
+
+	if (time_main.tv_sec == 0  && time_main.tv_usec == 0) {
+		gettimeofday(&time_main, NULL);
+	}
+
+	gettimeofday(&time_now, NULL);
+	timersub(&time_now, &time_main, &time_delta);
+
+	printf("[%u.%03u] ", (unsigned int) time_delta.tv_sec, (unsigned int) time_delta.tv_usec / 1000);
 
 	va_start(ap, format);
 	vprintf(format, ap);
@@ -158,7 +197,6 @@ main(int argc, char *argv[])
 	struct sctp_rtoinfo rtoinfo;
 	struct sctp_initmsg initmsg;
 	uint8_t address_family = 0;
-	int errno_safer;
 
 	if (argc < 3) {
 		printf("Usage: http_client_upcall remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
@@ -304,10 +342,9 @@ main(int argc, char *argv[])
 
 	if (usrsctp_connect(sock, addr, addr_len) < 0) {
 		if (errno != EINPROGRESS) {
-			errno_safer = errno;
-			if (errno_safer == ECONNREFUSED) {
+			if (errno == ECONNREFUSED) {
 				result = RETVAL_ECONNREFUSED;
-			} else if (errno_safer == ETIMEDOUT) {
+			} else if (errno == ETIMEDOUT) {
 				result = RETVAL_TIMEOUT;
 			} else {
 				result = RETVAL_CATCHALL;
