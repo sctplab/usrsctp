@@ -7350,7 +7350,15 @@ sctp_sendall(struct sctp_inpcb *inp, struct uio *uio, struct mbuf *m,
 		/* There is another. */
 		return (EBUSY);
 	}
+#if defined(__APPLE__)
+#if defined(APPLE_LEOPARD)
 	if (uio->uio_resid > SCTP_MAX_SENDALL_LIMIT) {
+#else
+	if (uio_resid(uio) > SCTP_MAX_SENDALL_LIMIT) {
+#endif
+#else
+	if (uio->uio_resid > SCTP_MAX_SENDALL_LIMIT) {
+#endif
 		/* You must be less than the max! */
 		return (EMSGSIZE);
 	}
