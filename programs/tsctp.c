@@ -111,7 +111,7 @@ char Usage[] =
 #define BUFFERSIZE                 (1<<16)
 
 static int verbose, very_verbose;
-static unsigned int done;
+static unsigned int done; 
 
 void stop_sender(int sig)
 {

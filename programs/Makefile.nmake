@@ -38,6 +38,7 @@ LINKFLAGS=/LIBPATH:..\usrsctplib usrsctp.lib
 	$(CC) $(CVARSDLL) $(CFLAGS) -Fd.\ -c $<
 
 all: \
+	programs_helper.obj \
 	client \
 	client_upcall \
 	daytime_server \
@@ -59,7 +60,7 @@ all: \
 	http_client_upcall
 	
 programs_helper.obj : programs_helper.c programs_helper.h
-	cl $(CVARSDLL) $(CFLAGS) -c
+	cl $(CVARSDLL) $(CFLAGS) -c programs_helper.c
 
 client:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c client.c
