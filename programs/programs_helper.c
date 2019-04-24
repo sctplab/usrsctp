@@ -283,20 +283,28 @@ handle_notification(union sctp_notification *notif, size_t n)
 	if (notif->sn_header.sn_length != (uint32_t)n) {
 		return;
 	}
+
+	printf("handle_notification : ");
+
 	switch (notif->sn_header.sn_type) {
 	case SCTP_ASSOC_CHANGE:
+		printf("SCTP_ASSOC_CHANGE\n");
 		handle_association_change_event(&(notif->sn_assoc_change));
 		break;
 	case SCTP_PEER_ADDR_CHANGE:
+		printf("SCTP_PEER_ADDR_CHANGE\n");
 		handle_peer_address_change_event(&(notif->sn_paddr_change));
 		break;
 	case SCTP_REMOTE_ERROR:
+		printf("SCTP_REMOTE_ERROR\n");
 		handle_remote_error_event(&(notif->sn_remote_error));
 		break;
 	case SCTP_SHUTDOWN_EVENT:
+		printf("SCTP_SHUTDOWN_EVENT\n");
 		handle_shutdown_event(&(notif->sn_shutdown_event));
 		break;
 	case SCTP_ADAPTATION_INDICATION:
+		printf("SCTP_ADAPTATION_INDICATION\n");
 		handle_adaptation_indication(&(notif->sn_adaptation_event));
 		break;
 	case SCTP_PARTIAL_DELIVERY_EVENT:
@@ -312,15 +320,18 @@ handle_notification(union sctp_notification *notif, size_t n)
 		printf("SCTP_NOTIFICATIONS_STOPPED_EVENT\n");
 		break;
 	case SCTP_SEND_FAILED_EVENT:
+		printf("SCTP_SEND_FAILED_EVENT\n");
 		handle_send_failed_event(&(notif->sn_send_failed_event));
 		break;
 	case SCTP_STREAM_RESET_EVENT:
+		printf("SCTP_STREAM_RESET_EVENT\n");
 		handle_stream_reset_event(&(notif->sn_strreset_event));
 		break;
 	case SCTP_ASSOC_RESET_EVENT:
 		printf("SCTP_ASSOC_RESET_EVENT\n");
 		break;
 	case SCTP_STREAM_CHANGE_EVENT:
+		printf("SCTP_STREAM_CHANGE_EVENT\n");
 		handle_stream_change_event(&(notif->sn_strchange_event));
 		break;
 	default:

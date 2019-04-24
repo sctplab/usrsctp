@@ -80,7 +80,7 @@ gettimeofday(struct timeval *tv, void *ignore)
 
 	ftime(&tb);
 	tv->tv_sec = (long)tb.time;
- 	tv->tv_usec = tb.millitm * 1000;
+	tv->tv_usec = tb.millitm * 1000;
 }
 #endif
 

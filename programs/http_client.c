@@ -81,6 +81,9 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		done = 1;
 		usrsctp_close(sock);
 	} else {
+		if (flags & MSG_NOTIFICATION) {
+			handle_notification((union sctp_notification *)data, datalen);
+		} else {
 #ifdef _WIN32
 		_write(_fileno(stdout), data, (unsigned int)datalen);
 #else
@@ -88,6 +91,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 			perror("write");
 		}
 #endif
+		}
 		free(data);
 	}
 	return (1);
@@ -107,8 +111,18 @@ main(int argc, char *argv[])
 	struct sctp_sndinfo sndinfo;
 	struct sctp_rtoinfo rtoinfo;
 	struct sctp_initmsg initmsg;
+	struct sctp_event event;
 	int result = 0;
+	unsigned int i;
 	uint8_t address_family = 0;
+	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
+	                          SCTP_PEER_ADDR_CHANGE,
+	                          SCTP_SEND_FAILED_EVENT,
+ 	                          SCTP_REMOTE_ERROR,
+	                          SCTP_SHUTDOWN_EVENT,
+	                          SCTP_ADAPTATION_INDICATION,
+	                          SCTP_PARTIAL_DELIVERY_EVENT
+	                        };
 
 	if (argc < 3) {
 		printf("Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
@@ -160,6 +174,16 @@ main(int argc, char *argv[])
 		perror("usrsctp_socket");
 		result = RETVAL_CATCHALL;
 		goto out;
+	}
+
+	memset(&event, 0, sizeof(event));
+	event.se_assoc_id = SCTP_ALL_ASSOC;
+	event.se_on = 1;
+	for (i = 0; i < sizeof(event_types) / sizeof(uint16_t); i++) {
+		event.se_type = event_types[i];
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
+			perror("setsockopt SCTP_EVENT");
+		}
 	}
 
 	rtoinfo.srto_assoc_id = 0;
