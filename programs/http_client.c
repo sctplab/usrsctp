@@ -58,6 +58,7 @@
 #include <sys/timeb.h>
 #endif
 #include <usrsctp.h>
+#include "programs_helper.h"
 
 #define RETVAL_CATCHALL     50
 #define RETVAL_TIMEOUT      60
@@ -70,30 +71,6 @@ char request[512];
 
 #ifdef _WIN32
 typedef char* caddr_t;
-#endif
-
-#ifndef timersub
-#define timersub(tvp, uvp, vvp)                                   \
-	do {                                                      \
-		(vvp)->tv_sec = (tvp)->tv_sec - (uvp)->tv_sec;    \
-		(vvp)->tv_usec = (tvp)->tv_usec - (uvp)->tv_usec; \
-		if ((vvp)->tv_usec < 0) {                         \
-			(vvp)->tv_sec--;                          \
-			(vvp)->tv_usec += 1000000;                \
-		}                                                 \
-	} while (0)
-#endif
-
-#ifdef _WIN32
-static void
-gettimeofday(struct timeval *tv, void *ignore)
-{
-	struct timeb tb;
-
-	ftime(&tb);
-	tv->tv_sec = (long)tb.time;
-	tv->tv_usec = (long)(tb.millitm) * 1000L;
-}
 #endif
 
 static int
@@ -114,31 +91,6 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		free(data);
 	}
 	return (1);
-}
-
-
-
-static void
-debug_printf(const char *format, ...)
-{
-	static struct timeval time_main;
-
-	va_list ap;
-	struct timeval time_now;
-	struct timeval time_delta;
-
-	if (time_main.tv_sec == 0  && time_main.tv_usec == 0) {
-		gettimeofday(&time_main, NULL);
-	}
-
-	gettimeofday(&time_now, NULL);
-	timersub(&time_now, &time_main, &time_delta);
-
-	printf("[%u.%03u] ", (unsigned int) time_delta.tv_sec, (unsigned int) time_delta.tv_usec / 1000);
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
 }
 
 int

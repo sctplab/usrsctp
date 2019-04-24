@@ -54,6 +54,7 @@
 #include <getopt.h>
 #endif
 #include <usrsctp.h>
+#include "programs_helper.h"
 
 /* global for the send callback, but used in kernel version as well */
 static unsigned long number_of_messages;
@@ -70,18 +71,6 @@ static unsigned long cb_messages = 0;
 static unsigned long long cb_first_length = 0;
 static unsigned long long cb_sum = 0;
 static unsigned int use_cb = 0;
-
-#ifndef timersub
-#define timersub(tvp, uvp, vvp)                                   \
-	do {                                                      \
-		(vvp)->tv_sec = (tvp)->tv_sec - (uvp)->tv_sec;    \
-		(vvp)->tv_usec = (tvp)->tv_usec - (uvp)->tv_usec; \
-		if ((vvp)->tv_usec < 0) {                         \
-			(vvp)->tv_sec--;                          \
-			(vvp)->tv_usec += 1000000;                \
-		}                                                 \
-	} while (0)
-#endif
 
 
 char Usage[] =
@@ -116,18 +105,6 @@ void stop_sender(int sig)
 {
 	done = 1;
 }
-
-#ifdef _WIN32
-static void
-gettimeofday(struct timeval *tv, void *ignore)
-{
-	struct timeb tb;
-
-	ftime(&tb);
-	tv->tv_sec = (long)tb.time;
- 	tv->tv_usec = tb.millitm * 1000;
-}
-#endif
 
 #ifdef _WIN32
 static DWORD WINAPI
@@ -337,16 +314,6 @@ client_receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 {
 	free(data);
 	return (1);
-}
-
-void
-debug_printf(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
 }
 
 int main(int argc, char **argv)

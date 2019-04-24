@@ -51,6 +51,7 @@
 #include <arpa/inet.h>
 #endif
 #include <usrsctp.h>
+#include "programs_helper.h"
 
 #define PORT 9
 #define BUFFER_SIZE 10240
@@ -110,16 +111,6 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		free(data);
 	}
 	return (1);
-}
-
-void
-debug_printf(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
 }
 
 int
