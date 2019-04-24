@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 345467 2019-03-24 12:13:05Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 346134 2019-04-11 20:39:12Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4150,7 +4150,7 @@ sctp_abort_notification(struct sctp_tcb *stcb, uint8_t from_peer, uint16_t error
 		return;
 	}
 	/* Tell them we lost the asoc */
-	sctp_report_all_outbound(stcb, error, 1, so_locked);
+	sctp_report_all_outbound(stcb, error, 0, so_locked);
 	if (from_peer) {
 		sctp_ulp_notify(SCTP_NOTIFY_ASSOC_REM_ABORTED, stcb, error, abort, so_locked);
 	} else {
