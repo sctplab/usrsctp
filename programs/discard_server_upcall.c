@@ -47,6 +47,7 @@
 #include <arpa/inet.h>
 #endif
 #include <usrsctp.h>
+#include "programs_helper.h"
 
 #define BUFFERSIZE 10240
 #define PORT 9
@@ -134,16 +135,6 @@ handle_upcall(struct socket *sock, void *data, int flgs)
 		free(buf);
 	}
 	return;
-}
-
-void
-debug_printf(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
 }
 
 int

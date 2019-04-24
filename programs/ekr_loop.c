@@ -48,6 +48,7 @@
 #include <ws2tcpip.h>
 #endif
 #include <usrsctp.h>
+#include "programs_helper.h"
 
 #define MAX_PACKET_SIZE (1<<16)
 #define LINE_LENGTH (1<<20)
@@ -254,16 +255,6 @@ print_addresses(struct socket *sock)
 	printf("\n");
 }
 #endif
-
-void
-debug_printf(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
-}
 
 int
 main(void)

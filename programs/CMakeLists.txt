@@ -98,6 +98,7 @@ foreach (source_file ${check_programs})
 	add_executable(
 		${source_file_we}
 		${source_file}
+		programs_helper.c
 	)
 
 	target_link_libraries(

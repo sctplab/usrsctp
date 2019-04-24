@@ -53,6 +53,7 @@
 #endif
 
 #include <usrsctp.h>
+#include "programs_helper.h"
 #include <fcntl.h>
 
 #define BUFFERSIZE                 (1<<16)
@@ -126,16 +127,6 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 		events = usrsctp_get_events(sock);
 	}
 	return;
-}
-
-void
-debug_printf(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
 }
 
 int

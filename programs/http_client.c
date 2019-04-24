@@ -58,6 +58,7 @@
 #include <sys/timeb.h>
 #endif
 #include <usrsctp.h>
+#include "programs_helper.h"
 
 #define RETVAL_CATCHALL     50
 #define RETVAL_TIMEOUT      60
@@ -72,30 +73,6 @@ char request[512];
 typedef char* caddr_t;
 #endif
 
-#ifndef timersub
-#define timersub(tvp, uvp, vvp)                                   \
-	do {                                                      \
-		(vvp)->tv_sec = (tvp)->tv_sec - (uvp)->tv_sec;    \
-		(vvp)->tv_usec = (tvp)->tv_usec - (uvp)->tv_usec; \
-		if ((vvp)->tv_usec < 0) {                         \
-			(vvp)->tv_sec--;                          \
-			(vvp)->tv_usec += 1000000;                \
-		}                                                 \
-	} while (0)
-#endif
-
-#ifdef _WIN32
-static void
-gettimeofday(struct timeval *tv, void *ignore)
-{
-	struct timeb tb;
-
-	ftime(&tb);
-	tv->tv_sec = (long)tb.time;
-	tv->tv_usec = (long)(tb.millitm) * 1000L;
-}
-#endif
-
 static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
            size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
@@ -104,6 +81,9 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		done = 1;
 		usrsctp_close(sock);
 	} else {
+		if (flags & MSG_NOTIFICATION) {
+			handle_notification((union sctp_notification *)data, datalen);
+		} else {
 #ifdef _WIN32
 		_write(_fileno(stdout), data, (unsigned int)datalen);
 #else
@@ -111,34 +91,10 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 			perror("write");
 		}
 #endif
+		}
 		free(data);
 	}
 	return (1);
-}
-
-
-
-static void
-debug_printf(const char *format, ...)
-{
-	static struct timeval time_main;
-
-	va_list ap;
-	struct timeval time_now;
-	struct timeval time_delta;
-
-	if (time_main.tv_sec == 0  && time_main.tv_usec == 0) {
-		gettimeofday(&time_main, NULL);
-	}
-
-	gettimeofday(&time_now, NULL);
-	timersub(&time_now, &time_main, &time_delta);
-
-	printf("[%u.%03u] ", (unsigned int) time_delta.tv_sec, (unsigned int) time_delta.tv_usec / 1000);
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
 }
 
 int
@@ -155,8 +111,18 @@ main(int argc, char *argv[])
 	struct sctp_sndinfo sndinfo;
 	struct sctp_rtoinfo rtoinfo;
 	struct sctp_initmsg initmsg;
+	struct sctp_event event;
 	int result = 0;
+	unsigned int i;
 	uint8_t address_family = 0;
+	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
+	                          SCTP_PEER_ADDR_CHANGE,
+	                          SCTP_SEND_FAILED_EVENT,
+ 	                          SCTP_REMOTE_ERROR,
+	                          SCTP_SHUTDOWN_EVENT,
+	                          SCTP_ADAPTATION_INDICATION,
+	                          SCTP_PARTIAL_DELIVERY_EVENT
+	                        };
 
 	if (argc < 3) {
 		printf("Usage: http_client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port] [uri]\n");
@@ -208,6 +174,16 @@ main(int argc, char *argv[])
 		perror("usrsctp_socket");
 		result = RETVAL_CATCHALL;
 		goto out;
+	}
+
+	memset(&event, 0, sizeof(event));
+	event.se_assoc_id = SCTP_ALL_ASSOC;
+	event.se_on = 1;
+	for (i = 0; i < sizeof(event_types) / sizeof(uint16_t); i++) {
+		event.se_type = event_types[i];
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
+			perror("setsockopt SCTP_EVENT");
+		}
 	}
 
 	rtoinfo.srto_assoc_id = 0;
