@@ -72,6 +72,18 @@ static unsigned long long cb_first_length = 0;
 static unsigned long long cb_sum = 0;
 static unsigned int use_cb = 0;
 
+#ifdef _WIN32
+static void
+gettimeofday(struct timeval *tv, void *ignore)
+{
+	struct timeb tb;
+
+	ftime(&tb);
+	tv->tv_sec = (long)tb.time;
+ 	tv->tv_usec = tb.millitm * 1000;
+}
+#endif
+
 
 char Usage[] =
 "Usage: tsctp [options] [address]\n"

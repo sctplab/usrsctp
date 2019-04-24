@@ -30,7 +30,6 @@
 
 void debug_printf(const char *format, ...);
 void handle_notification(union sctp_notification *notif, size_t n);
-
 #ifndef timersub
 #define timersub(tvp, uvp, vvp)                                   \
 	do {                                                      \

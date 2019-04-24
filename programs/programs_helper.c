@@ -1,9 +1,35 @@
-#include <sys/time.h>
+
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <usrsctp.h>
+
+#ifndef _WIN32
+#include <sys/time.h>
 #include <arpa/inet.h>
+#else
+#include <sys/types.h>
+#include <sys/timeb.h>
+#include <io.h>
+#endif
+
+#include "programs_helper.h"
+
+#ifdef _WIN32
+static void
+gettimeofday(struct timeval *tv, void *ignore)
+{
+	struct timeb tb;
+
+	ftime(&tb);
+	tv->tv_sec = (long)tb.time;
+	tv->tv_usec = (long)(tb.millitm) * 1000L;
+}
+#endif
 
 void
 debug_printf(const char *format, ...)
@@ -301,15 +327,3 @@ handle_notification(union sctp_notification *notif, size_t n)
 		break;
 	}
 }
-
-#ifdef _WIN32
-static void
-gettimeofday(struct timeval *tv, void *ignore)
-{
-	struct timeb tb;
-
-	ftime(&tb);
-	tv->tv_sec = (long)tb.time;
-	tv->tv_usec = (long)(tb.millitm) * 1000L;
-}
-#endif
