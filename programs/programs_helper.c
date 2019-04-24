@@ -116,11 +116,6 @@ handle_association_change_event(struct sctp_assoc_change *sac)
 		}
 	}
 	printf(".\n");
-	if ((sac->sac_state == SCTP_CANT_STR_ASSOC) ||
-	    (sac->sac_state == SCTP_SHUTDOWN_COMP) ||
-	    (sac->sac_state == SCTP_COMM_LOST)) {
-		exit(0);
-	}
 	return;
 }
 
