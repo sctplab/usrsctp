@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 346134 2019-04-11 20:39:12Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 347975 2019-05-19 17:28:00Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7128,31 +7128,34 @@ sctp_connectx_helper_add(struct sctp_tcb *stcb, struct sockaddr *addr,
 	return (added);
 }
 
-struct sctp_tcb *
+int
 sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
-			  unsigned int *totaddr,
-			  unsigned int *num_v4, unsigned int *num_v6, int *error,
-			  unsigned int limit, int *bad_addr)
+			  unsigned int totaddr,
+			  unsigned int *num_v4, unsigned int *num_v6,
+			  unsigned int limit)
 {
 	struct sockaddr *sa;
-	struct sctp_tcb *stcb = NULL;
+	struct sctp_tcb *stcb;
 	unsigned int incr, at, i;
 
 	at = 0;
 	sa = addr;
-	*error = *num_v6 = *num_v4 = 0;
+	*num_v6 = *num_v4 = 0;
 	/* account and validate addresses */
-	for (i = 0; i < *totaddr; i++) {
+	if (totaddr == 0) {
+		return (EINVAL);
+	}
+	for (i = 0; i < totaddr; i++) {
+		if (at + sizeof(struct sockaddr) > limit) {
+			return (EINVAL);
+		}
 		switch (sa->sa_family) {
 #ifdef INET
 		case AF_INET:
 			incr = (unsigned int)sizeof(struct sockaddr_in);
 #ifdef HAVE_SA_LEN
 			if (sa->sa_len != incr) {
-				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
-				*error = EINVAL;
-				*bad_addr = 1;
-				return (NULL);
+				return (EINVAL);
 			}
 #endif
 			(*num_v4) += 1;
@@ -7166,18 +7169,12 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 			sin6 = (struct sockaddr_in6 *)sa;
 			if (IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr)) {
 				/* Must be non-mapped for connectx */
-				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
-				*error = EINVAL;
-				*bad_addr = 1;
-				return (NULL);
+				return (EINVAL);
 			}
 			incr = (unsigned int)sizeof(struct sockaddr_in6);
 #ifdef HAVE_SA_LEN
 			if (sa->sa_len != incr) {
-				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
-				*error = EINVAL;
-				*bad_addr = 1;
-				return (NULL);
+				return (EINVAL);
 			}
 #endif
 			(*num_v6) += 1;
@@ -7185,29 +7182,23 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 		}
 #endif
 		default:
-			*totaddr = i;
-			incr = 0;
-			/* we are done */
-			break;
+			return (EINVAL);
 		}
-		if (i == *totaddr) {
-			break;
+		if ((at + incr) > limit) {
+			return (EINVAL);
 		}
 		SCTP_INP_INCR_REF(inp);
 		stcb = sctp_findassociation_ep_addr(&inp, sa, NULL, NULL, NULL);
 		if (stcb != NULL) {
-			/* Already have or am bring up an association */
-			return (stcb);
+			SCTP_TCB_UNLOCK(stcb);
+			return (EALREADY);
 		} else {
 			SCTP_INP_DECR_REF(inp);
 		}
-		if ((at + incr) > limit) {
-			*totaddr = i;
-			break;
-		}
+		at += incr;
 		sa = (struct sockaddr *)((caddr_t)sa + incr);
 	}
-	return ((struct sctp_tcb *)NULL);
+	return (0);
 }
 
 /*

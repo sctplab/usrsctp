@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 345467 2019-03-24 12:13:05Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 347975 2019-05-19 17:28:00Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UTIL_H_
@@ -223,10 +223,9 @@ void sctp_handle_ootb(struct mbuf *, int, int,
 int sctp_connectx_helper_add(struct sctp_tcb *stcb, struct sockaddr *addr,
     int totaddr, int *error);
 
-struct sctp_tcb *
-sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
-    unsigned int *totaddr, unsigned int *num_v4, unsigned int *num_v6,
-    int *error, unsigned int limit, int *bad_addr);
+int
+sctp_connectx_helper_find(struct sctp_inpcb *, struct sockaddr *,
+    unsigned int, unsigned int *, unsigned int *, unsigned int);
 
 int sctp_is_there_an_abort_here(struct mbuf *, int, uint32_t *);
 #ifdef INET6
