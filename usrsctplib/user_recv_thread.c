@@ -445,7 +445,6 @@ recv_function_raw6(void *arg)
 	struct iovec recv_iovec[MAXLEN_MBUF_CHAIN];
 	struct msghdr msg;
 	struct cmsghdr *cmsgptr;
-	int ncounter = 0;
 	char cmsgbuf[CMSG_SPACE(sizeof (struct in6_pktinfo))];
 #else
 	WSABUF recv_iovec[MAXLEN_MBUF_CHAIN];
@@ -653,7 +652,6 @@ recv_function_udp(void *arg)
 	struct iovec iov[MAXLEN_MBUF_CHAIN];
 	struct msghdr msg;
 	struct cmsghdr *cmsgptr;
-	int ncounter;
 #else
 	GUID WSARecvMsg_GUID = WSAID_WSARECVMSG;
 	LPFN_WSARECVMSG WSARecvMsg;
@@ -851,11 +849,10 @@ recv_function_udp6(void *arg)
 	char cmsgbuf[CMSG_SPACE(sizeof (struct in6_pktinfo))];
 	int compute_crc = 1;
 #if !defined(__Userspace_os_Windows)
-	unsigned int ncounter;
 	struct iovec iov[MAXLEN_MBUF_CHAIN];
 	struct msghdr msg;
 	struct cmsghdr *cmsgptr;
-	int ncounter;
+	unsigned int ncounter;
 #else
 	GUID WSARecvMsg_GUID = WSAID_WSARECVMSG;
 	LPFN_WSARECVMSG WSARecvMsg;
@@ -863,7 +860,6 @@ recv_function_udp6(void *arg)
 	WSABUF iov[MAXLEN_MBUF_CHAIN];
 	WSAMSG msg;
 	int nResult, m_ErrorCode;
-	DWORD ncounter;
 	WSACMSGHDR *cmsgptr;
 	DWORD ncounter;
 #endif
