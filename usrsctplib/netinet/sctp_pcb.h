@@ -843,7 +843,7 @@ void sctp_remove_net(struct sctp_tcb *, struct sctp_nets *);
 
 int sctp_del_remote_addr(struct sctp_tcb *, struct sockaddr *);
 
-void sctp_pcb_init(void);
+void sctp_pcb_init(int);
 
 void sctp_pcb_finish(void);
 

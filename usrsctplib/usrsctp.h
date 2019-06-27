@@ -892,6 +892,11 @@ usrsctp_init(uint16_t,
              int (*)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df),
              void (*)(const char *format, ...));
 
+void
+usrsctp_init_nothreads(uint16_t,
+		       int (*)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df),
+		       void (*)(const char *format, ...));
+
 struct socket *
 usrsctp_socket(int domain, int type, int protocol,
                int (*receive_cb)(struct socket *sock, union sctp_sockstore addr, void *data,
@@ -1016,6 +1021,13 @@ usrsctp_set_non_blocking(struct socket *, int);
 int
 usrsctp_get_non_blocking(struct socket *);
 
+int
+usrsctp_get_events(struct socket *so);
+
+int
+usrsctp_set_upcall(struct socket *so,
+		   void (*upcall)(struct socket *, void *, int), void *arg);
+
 void
 usrsctp_register_address(void *);
 
@@ -1033,6 +1045,9 @@ usrsctp_set_upcall(struct socket *so,
 int
 usrsctp_get_events(struct socket *so);
 
+
+void
+usrsctp_fire_timer(int delta);
 
 #define SCTP_DUMP_OUTBOUND 1
 #define SCTP_DUMP_INBOUND  0

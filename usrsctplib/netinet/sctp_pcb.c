@@ -6635,7 +6635,7 @@ sctp_netisr_hdlr(struct mbuf *m, uintptr_t source)
 #endif
 
 void
-sctp_pcb_init()
+sctp_pcb_init(int start_threads)
 {
 	/*
 	 * SCTP initialization for the PCB structures should be called by
@@ -6851,7 +6851,8 @@ sctp_pcb_init()
 	mbuf_initialize(NULL);
 	atomic_init();
 #if defined(INET) || defined(INET6)
-	recv_thread_init();
+	if (start_threads)
+		recv_thread_init();
 #endif
 #endif
 }

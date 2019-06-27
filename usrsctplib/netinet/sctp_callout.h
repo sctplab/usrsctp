@@ -103,6 +103,7 @@ typedef struct sctp_callout sctp_os_timer_t;
 void sctp_os_timer_init(sctp_os_timer_t *tmr);
 void sctp_os_timer_start(sctp_os_timer_t *, int, void (*)(void *), void *);
 int sctp_os_timer_stop(sctp_os_timer_t *);
+void sctp_handle_tick(int delta);
 
 #define SCTP_OS_TIMER_INIT	sctp_os_timer_init
 #define SCTP_OS_TIMER_START	sctp_os_timer_start
