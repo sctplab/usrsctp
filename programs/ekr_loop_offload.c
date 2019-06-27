@@ -36,6 +36,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <sys/types.h>
+#include <inttypes.h>
 #ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -100,7 +101,7 @@ handle_packets(void *arg)
 					        (unsigned int)ntohl(computed_crc32c), (unsigned int)ntohl(received_crc32c));
 				}
 			} else {
-				fprintf(stderr, "Packet too short: length %zu", (size_t)length);
+				fprintf(stderr, "Packet too short: length %"PRId64"\n", length);
 			}
 		}
 	}

@@ -209,7 +209,7 @@ main(int argc, char *argv[])
 			                  &infolen, &infotype, &flags);
 			if (n > 0) {
 				if (flags & MSG_NOTIFICATION) {
-					printf("Notification of length %llu received.\n", (unsigned long long)n);
+					printf("Notification of length %"PRId64" received.\n", (unsigned long long)n);
 				} else {
 					if (infotype == SCTP_RECVV_RCVINFO) {
 						printf("Msg of length %llu received from %s:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u, complete %d.\n",

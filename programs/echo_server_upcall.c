@@ -123,7 +123,7 @@ handle_upcall(struct socket *sock, void *data, int flgs)
 						return;
 					}
 
-				printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u.\n",
+				printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %lu, context %u.\n",
 				       (int)n,
 				       namebuf,
 				       port,
