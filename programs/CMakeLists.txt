@@ -92,7 +92,6 @@ set(check_programs
 	tsctp.c
 	tsctp_upcall.c
 )
-
 foreach (source_file ${check_programs})
 	get_filename_component(source_file_we ${source_file} NAME_WE)
 	add_executable(
@@ -103,7 +102,7 @@ foreach (source_file ${check_programs})
 
 	target_link_libraries(
 		${source_file_we}
-		${programs_link_library}
-		${CMAKE_THREAD_LIBS_INIT}
+		usrsctp
+		Threads::Threads
 	)
 endforeach ()
