@@ -3292,14 +3292,14 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	if ((!use_udp_tunneling) && (SCTP_BASE_VAR(userspace_rawsctp6) != -1)) {
 		if (WSASendTo(SCTP_BASE_VAR(userspace_rawsctp6), (LPWSABUF) send_iovec, iovcnt, &win_sent_len, win_msg_hdr.dwFlags, win_msg_hdr.name, (int) win_msg_hdr.namelen, NULL, NULL) != 0) {
 			*result = WSAGetLastError();
-		} else if ((int) win_sent_len != send_len) {
+		} else if ((int)win_sent_len != send_len) {
 			*result = WSAGetLastError();
 		}
 	}
 	if ((use_udp_tunneling) && (SCTP_BASE_VAR(userspace_udpsctp6) != -1)) {
 		if (WSASendTo(SCTP_BASE_VAR(userspace_udpsctp6), (LPWSABUF) send_iovec, iovcnt, &win_sent_len, win_msg_hdr.dwFlags, win_msg_hdr.name, (int) win_msg_hdr.namelen, NULL, NULL) != 0) {
 			*result = WSAGetLastError();
-		} else if ((int) win_sent_len != send_len) {
+		} else if ((int)win_sent_len != send_len) {
 			*result = WSAGetLastError();
 		}
 	}
