@@ -6849,7 +6849,9 @@ sctp_pcb_init()
 #endif
 #if defined(__Userspace__)
 	mbuf_initialize(NULL);
+#if !defined(__MINGW32__)
 	atomic_init();
+#endif
 #if defined(INET) || defined(INET6)
 	recv_thread_init();
 #endif
