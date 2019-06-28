@@ -66,17 +66,17 @@ typedef char* caddr_t;
 
 int inputAvailable(void)
 {
-  struct timeval tv;
-  fd_set fds;
-  tv.tv_sec = 0;
-  tv.tv_usec = 0;
-  FD_ZERO(&fds);
-#ifndef _WIN32
-  FD_SET(STDIN_FILENO, &fds);
-  select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
+	struct timeval tv;
+	fd_set fds;
+	tv.tv_sec = 0;
+	tv.tv_usec = 0;
+	FD_ZERO(&fds);
+#if defined(_WIN32) && !defined(__MINGW32__)
+	FD_SET(_fileno(stdin), &fds);
+  	select(_fileno(stdin) + 1, &fds, NULL, NULL, &tv);
 #else
-  FD_SET(_fileno(stdin), &fds);
-  select(_fileno(stdin) + 1, &fds, NULL, NULL, &tv);
+	FD_SET(STDIN_FILENO, &fds);
+	select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
 #endif
   return (FD_ISSET(0, &fds));
 }
