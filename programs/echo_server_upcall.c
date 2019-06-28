@@ -130,7 +130,7 @@ handle_upcall(struct socket *sock, void *data, int flgs)
 				       rn.recvv_rcvinfo.rcv_sid,
 				       rn.recvv_rcvinfo.rcv_ssn,
 				       rn.recvv_rcvinfo.rcv_tsn,
-				       (uint32_t)ntohl(rn.recvv_rcvinfo.rcv_ppid),
+				       ntohl(rn.recvv_rcvinfo.rcv_ppid),
 				       rn.recvv_rcvinfo.rcv_context);
 				if (flags & MSG_EOR) {
 					struct sctp_sndinfo snd_info;

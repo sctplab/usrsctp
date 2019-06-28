@@ -198,7 +198,7 @@ handle_send_failed_event(struct sctp_send_failed_event *ssfe)
 		printf("(flags = %x) ", ssfe->ssfe_flags);
 	}
 	printf("message with PPID = %u, SID = %u, flags: 0x%04x due to error = 0x%08x",
-	       (uint32_t) ntohl(ssfe->ssfe_info.snd_ppid), ssfe->ssfe_info.snd_sid,
+	       ntohl(ssfe->ssfe_info.snd_ppid), ssfe->ssfe_info.snd_sid,
 	       ssfe->ssfe_info.snd_flags, ssfe->ssfe_error);
 	n = ssfe->ssfe_length - sizeof(struct sctp_send_failed_event);
 	for (i = 0; i < n; i++) {
