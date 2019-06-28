@@ -36,7 +36,6 @@
 #include <string.h>
 #include <stdarg.h>
 #include <sys/types.h>
-#include <inttypes.h>
 #ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -98,10 +97,10 @@ handle_packets(void *arg)
 					usrsctp_conninput(fdp, buffer, (size_t)length, 0);
 				} else {
 					fprintf(stderr, "Wrong CRC32c: expected %08x received %08x\n",
-					        (unsigned int)ntohl(computed_crc32c), (unsigned int)ntohl(received_crc32c));
+					        (uint32_t) ntohl(computed_crc32c), (uint32_t) ntohl(received_crc32c));
 				}
 			} else {
-				fprintf(stderr, "Packet too short: length %"PRId64"\n", length);
+				fprintf(stderr, "Packet too short: length %zu", (size_t)length);
 			}
 		}
 	}
@@ -162,7 +161,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 			       rcv.rcv_sid,
 			       rcv.rcv_ssn,
 			       rcv.rcv_tsn,
-			       (unsigned int)ntohl(rcv.rcv_ppid),
+			       (uint32_t) ntohl(rcv.rcv_ppid),
 			       rcv.rcv_context,
 			       flags);
 		}

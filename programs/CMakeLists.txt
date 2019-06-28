@@ -56,6 +56,11 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
 	add_definitions(-D__APPLE_USE_RFC_2292)
 endif ()
 
+if (MSYS)
+	message(STATUS "MSYS")
+	add_definitions(-D__USE_MINGW_ANSI_STDIO)
+endif ()
+
 
 #################################################
 # MISC

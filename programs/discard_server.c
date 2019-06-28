@@ -105,7 +105,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 			       rcv.rcv_sid,
 			       rcv.rcv_ssn,
 			       rcv.rcv_tsn,
-			       (unsigned int)ntohl(rcv.rcv_ppid),
+			       (uint32_t) ntohl(rcv.rcv_ppid),
 			       rcv.rcv_context);
 		}
 		free(data);
@@ -209,7 +209,7 @@ main(int argc, char *argv[])
 			                  &infolen, &infotype, &flags);
 			if (n > 0) {
 				if (flags & MSG_NOTIFICATION) {
-					printf("Notification of length %"PRId64" received.\n", (unsigned long long)n);
+					printf("Notification of length %llu received.\n", (unsigned long long)n);
 				} else {
 					if (infotype == SCTP_RECVV_RCVINFO) {
 						printf("Msg of length %llu received from %s:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u, complete %d.\n",
@@ -218,7 +218,7 @@ main(int argc, char *argv[])
 						        rcv_info.rcv_sid,
 						        rcv_info.rcv_ssn,
 						        rcv_info.rcv_tsn,
-						        (unsigned int)ntohl(rcv_info.rcv_ppid),
+						        (uint32_t) ntohl(rcv_info.rcv_ppid),
 						        rcv_info.rcv_context,
 						        (flags & MSG_EOR) ? 1 : 0);
 					} else {

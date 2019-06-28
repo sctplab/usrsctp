@@ -28,6 +28,16 @@
 #ifndef __PROGRAMS_HELPER_H__
 #define __PROGRAMS_HELPER_H__
 
+#ifdef _WIN32
+#  ifdef _WIN64
+#    define PRI_SIZET PRIu64
+#  else
+#    define PRI_SIZET PRIu32
+#  endif
+#else
+#  define PRI_SIZET "zu"
+#endif
+
 void debug_printf(const char *format, ...);
 void handle_notification(union sctp_notification *notif, size_t n);
 #ifndef timersub

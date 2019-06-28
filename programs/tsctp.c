@@ -127,9 +127,8 @@ handle_connection(void *arg)
 {
 	ssize_t n;
 	char *buf;
-#ifdef _WIN32
-	HANDLE tid;
-#else
+
+#if !defined(_WIN32)
 	pthread_t tid;
 #endif
 	struct socket *conn_sock;
@@ -151,9 +150,8 @@ handle_connection(void *arg)
 	unsigned long long sum = 0;
 
 	conn_sock = *(struct socket **)arg;
-#ifdef _WIN32
-	tid = GetCurrentThread();
-#else
+
+#if !defined(_WIN32)
 	tid = pthread_self();
 	pthread_detach(tid);
 #endif
@@ -349,7 +347,6 @@ int main(int argc, char **argv)
 	unsigned long messages = 0;
 #ifdef _WIN32
 	unsigned long srcAddr;
-	HANDLE tid;
 #else
 	in_addr_t srcAddr;
 	pthread_t tid;
@@ -648,7 +645,7 @@ int main(int argc, char **argv)
 					continue;
 				}
 #ifdef _WIN32
-				tid = CreateThread(NULL, 0, &handle_connection, (void *)conn_sock, 0, NULL);
+				CreateThread(NULL, 0, &handle_connection, (void *)conn_sock, 0, NULL);
 #else
 				pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock);
 #endif
