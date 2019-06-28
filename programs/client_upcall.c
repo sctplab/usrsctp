@@ -40,7 +40,7 @@
 #if !defined(_WIN32)
 #include <unistd.h>
 #include <sys/time.h>
-#endif // !defined(_WIN32)
+#endif /* !defined(_WIN32) */
 
 #include <sys/types.h>
 
@@ -48,7 +48,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#else // !defined(_WIN32)
+#else /* !defined(_WIN32) */
 #include <io.h>
 #endif
 

@@ -651,13 +651,13 @@ int main(int argc, char **argv)
 #endif
 			}
 			if (verbose) {
-				// const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
-				//inet_ntoa(remote_addr.sin_addr)
+				/* const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
+				inet_ntoa(remote_addr.sin_addr) */
 				char addrbuf[INET_ADDRSTRLEN];
 				printf("Connection accepted from %s:%d\n", inet_ntop(AF_INET, &(remote_addr.sin_addr), addrbuf, INET_ADDRSTRLEN), ntohs(remote_addr.sin_port));
 			}
 		}
-		//usrsctp_close(psock); // unreachable
+		/* usrsctp_close(psock);  unreachable */
 	} else {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET;

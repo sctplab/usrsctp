@@ -123,7 +123,7 @@ struct peer_connection {
 #if defined(_WIN32) && !defined(__MINGW32__)
 #pragma warning( push )
 #pragma warning( disable : 4200 )
-#endif // defined(_WIN32) && !defined(__MINGW32__)
+#endif /* defined(_WIN32) && !defined(__MINGW32__) */
 struct rtcweb_datachannel_open_request {
 	uint8_t msg_type; /* DATA_CHANNEL_OPEN_REQUEST */
 	uint8_t channel_type;
@@ -134,7 +134,7 @@ struct rtcweb_datachannel_open_request {
 } SCTP_PACKED;
 #if defined(_WIN32) && !defined(__MINGW32__)
 #pragma warning( pop )
-#endif // defined(_WIN32) && !defined(__MINGW32__)
+#endif /* defined(_WIN32) && !defined(__MINGW32__) */
 
 struct rtcweb_datachannel_open_response {
 	uint8_t  msg_type; /* DATA_CHANNEL_OPEN_RESPONSE */
