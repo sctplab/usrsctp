@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 345467 2019-03-24 12:13:05Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 349986 2019-07-14 12:04:39Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -13803,10 +13803,11 @@ sctp_lower_sosend(struct socket *so,
 			                       inp->sctp_ep.pre_open_stream_count,
 			                       inp->sctp_ep.port,
 #if !(defined( __Panda__) || defined(__Userspace__))
-			                       p);
+			                       p,
 #else
-			                       (struct proc *)NULL);
+			                       (struct proc *)NULL,
 #endif
+			                       SCTP_INITIALIZE_AUTH_PARAMS);
 			if (stcb == NULL) {
 				/* Error is setup for us in the call */
 				goto out_unlocked;
@@ -13828,9 +13829,6 @@ sctp_lower_sosend(struct socket *so,
 			asoc = &stcb->asoc;
 			SCTP_SET_STATE(stcb, SCTP_STATE_COOKIE_WAIT);
 			(void)SCTP_GETTIME_TIMEVAL(&asoc->time_entered);
-
-			/* initialize authentication params for the assoc */
-			sctp_initialize_auth_params(inp, stcb);
 
 			if (control) {
 				if (sctp_process_cmsgs_for_init(stcb, control, &error)) {
