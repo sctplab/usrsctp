@@ -13868,8 +13868,8 @@ sctp_lower_sosend(struct socket *so,
 		if (flags & MSG_EOF) {
 			sinfo_flags |= SCTP_EOF;
 		}
-	}
 #endif
+	}
 	if (sinfo_flags & SCTP_ADDR_OVER) {
 		if (addr)
 			net = sctp_findnet(stcb, addr);
