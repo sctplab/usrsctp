@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 349986 2019-07-14 12:04:39Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 349998 2019-07-15 14:52:52Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5681,12 +5681,11 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 			inp->sctp_flags |= SCTP_PCB_FLAGS_WAS_CONNECTED;
 			if (so) {
 				SOCKBUF_LOCK(&so->so_rcv);
-				if (so->so_rcv.sb_cc == 0) {
-					so->so_state &= ~(SS_ISCONNECTING |
-							  SS_ISDISCONNECTING |
-							  SS_ISCONFIRMING |
-							  SS_ISCONNECTED);
-				}
+				so->so_state &= ~(SS_ISCONNECTING |
+				    SS_ISDISCONNECTING |
+				    SS_ISCONFIRMING |
+				    SS_ISCONNECTED);
+				so->so_state |= SS_ISDISCONNECTED;
 #if defined(__APPLE__)
 				socantrcvmore(so);
 #else
