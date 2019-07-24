@@ -183,11 +183,32 @@ endif
 subdir('usrsctplib')
 
 # Build library
-usrsctp = library('usrsctp', sources,
-    dependencies: dependencies,
-    include_directories: include_dirs,
-    install: true,
-    version: meson.project_version())
+if compiler.get_id() == 'msvc' and get_option('default_library') == 'shared'
+    # Needed by usrsctp_def
+    find_program('dumpbin')
+
+    usrsctp_static = static_library('usrsctp-static', sources,
+        dependencies: dependencies,
+        include_directories: include_dirs)
+
+   usrsctp_def = custom_target('usrsctp.def',
+        command: [find_program('gen-def.py'), '@INPUT@'],
+        input: usrsctp_static,
+        output: 'usrsctp.def',
+        capture: true)
+
+    usrsctp = shared_library('usrsctp',
+        link_whole: usrsctp_static,
+        vs_module_defs: usrsctp_def,
+        install: true,
+        version: meson.project_version())
+else
+    usrsctp = library('usrsctp', sources,
+        dependencies: dependencies,
+        include_directories: include_dirs,
+        install: true,
+        version: meson.project_version())
+endif
 
 # Declare dependency
 usrsctp_dep = declare_dependency(
