@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 345504 2019-03-25 15:23:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 349998 2019-07-15 14:52:52Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4916,16 +4916,16 @@ sctp_aloc_assoc(struct sctp_inpcb *inp, struct sockaddr *firstaddr,
                 int *error, uint32_t override_tag, uint32_t vrf_id,
                 uint16_t o_streams, uint16_t port,
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
-		struct thread *p
+                struct thread *p,
 #elif defined(__Windows__)
-		PKTHREAD p
+                PKTHREAD p,
 #else
 #if defined(__Userspace__)
                 /*  __Userspace__ NULL proc is going to be passed here. See sctp_lower_sosend */
 #endif
-		struct proc *p
+                struct proc *p,
 #endif
-)
+                int initialize_auth_params)
 {
 	/* note the p argument is only valid in unbound sockets */
 
@@ -5182,6 +5182,9 @@ sctp_aloc_assoc(struct sctp_inpcb *inp, struct sockaddr *firstaddr,
 		head = &inp->sctp_tcbhash[SCTP_PCBHASH_ALLADDR(stcb->rport,
 		    inp->sctp_hashmark)];
 		LIST_INSERT_HEAD(head, stcb, sctp_tcbhash);
+	}
+	if (initialize_auth_params == SCTP_INITIALIZE_AUTH_PARAMS) {
+		sctp_initialize_auth_params(inp, stcb);
 	}
 	SCTP_INP_WUNLOCK(inp);
 	SCTPDBG(SCTP_DEBUG_PCB1, "Association %p now allocated\n", (void *)stcb);
@@ -5678,12 +5681,11 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 			inp->sctp_flags |= SCTP_PCB_FLAGS_WAS_CONNECTED;
 			if (so) {
 				SOCKBUF_LOCK(&so->so_rcv);
-				if (so->so_rcv.sb_cc == 0) {
-					so->so_state &= ~(SS_ISCONNECTING |
-							  SS_ISDISCONNECTING |
-							  SS_ISCONFIRMING |
-							  SS_ISCONNECTED);
-				}
+				so->so_state &= ~(SS_ISCONNECTING |
+				    SS_ISDISCONNECTING |
+				    SS_ISCONFIRMING |
+				    SS_ISCONNECTED);
+				so->so_state |= SS_ISDISCONNECTED;
 #if defined(__APPLE__)
 				socantrcvmore(so);
 #else
