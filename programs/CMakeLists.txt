@@ -82,19 +82,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-gnu-zero-variadic-macro-arguments")
 # PROGRAMS
 #################################################
 if (sctp_fuzzer_clang)
-
-set(check_programs
-	fuzzer_unconnected.c
-	fuzzer_upcall.c
-)
-
 	# if in fuzzing mode, only build the fuzzer
 	configure_file(crashtest.py crashtest.py COPYONLY)
 	configure_file(fuzzer_unconnected.sh fuzzer_unconnected.sh COPYONLY)
 	configure_file(fuzzer_upcall.sh fuzzer_upcall.sh COPYONLY)
 
 else ()
-	set(check_programs
+	list(APPEND check_programs
 		chargen_server_upcall.c
 		client.c
 		client_upcall.c
@@ -118,8 +112,12 @@ else ()
 		tsctp.c
 		tsctp_upcall.c
 	)
-
 endif()
+
+list(APPEND check_programs
+	fuzzer_unconnected.c
+	fuzzer_upcall.c
+)
 
 
 foreach (source_file ${check_programs})
