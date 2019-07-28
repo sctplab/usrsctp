@@ -81,50 +81,59 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-gnu-zero-variadic-macro-arguments")
 #################################################
 # PROGRAMS
 #################################################
+if (sctp_fuzzer_clang)
 
 set(check_programs
-	chargen_server_upcall.c
-	client.c
-	client_upcall.c
-	daytime_server.c
-	daytime_server_upcall.c
-	discard_server.c
-	discard_server_upcall.c
-	echo_server.c
-	echo_server_upcall.c
-	ekr_client.c
-	ekr_loop.c
-	ekr_loop_offload.c
-	ekr_loop_upcall.c
-	ekr_peer.c
-	ekr_server.c
-	http_client.c
-	http_client_upcall.c
-	rtcweb.c
-	test_libmgmt.c
-	test_timer.c
-	tsctp.c
-	tsctp_upcall.c
+	fuzzer_unconnected.c
+	fuzzer_upcall.c
 )
 
-if (sctp_fuzzer_clang)
 	# if in fuzzing mode, only build the fuzzer
 	configure_file(crashtest.py crashtest.py COPYONLY)
 	configure_file(fuzzer_unconnected.sh fuzzer_unconnected.sh COPYONLY)
 	configure_file(fuzzer_upcall.sh fuzzer_upcall.sh COPYONLY)
-else ()
-	foreach (source_file ${check_programs})
-		get_filename_component(source_file_we ${source_file} NAME_WE)
-		add_executable(
-			${source_file_we}
-			${source_file}
-			programs_helper.c
-		)
 
-		target_link_libraries(
-			${source_file_we}
-			${programs_link_library}
-			${CMAKE_THREAD_LIBS_INIT}
-		)
-	endforeach ()
-endif ()
+else ()
+	set(check_programs
+		chargen_server_upcall.c
+		client.c
+		client_upcall.c
+		daytime_server.c
+		daytime_server_upcall.c
+		discard_server.c
+		discard_server_upcall.c
+		echo_server.c
+		echo_server_upcall.c
+		ekr_client.c
+		ekr_loop.c
+		ekr_loop_offload.c
+		ekr_loop_upcall.c
+		ekr_peer.c
+		ekr_server.c
+		http_client.c
+		http_client_upcall.c
+		rtcweb.c
+		test_libmgmt.c
+		test_timer.c
+		tsctp.c
+		tsctp_upcall.c
+	)
+
+endif()
+
+
+foreach (source_file ${check_programs})
+	get_filename_component(source_file_we ${source_file} NAME_WE)
+	add_executable(
+		${source_file_we}
+		${source_file}
+		programs_helper.c
+	)
+
+	target_link_libraries(
+		${source_file_we}
+		${programs_link_library}
+		${CMAKE_THREAD_LIBS_INIT}
+	)
+endforeach ()
+
