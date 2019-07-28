@@ -42,6 +42,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <usrsctp.h>
+#include "programs_helper.h"
 
 
 #define FILENAME_BUFFER 512

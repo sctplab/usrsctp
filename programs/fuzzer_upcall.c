@@ -167,7 +167,7 @@ handle_association_change_event(struct sctp_assoc_change *sac)
 }
 
 static int
-handle_notification(union sctp_notification *notif, size_t n)
+handle_notification_fuzzer(union sctp_notification *notif, size_t n)
 {
 	int retval = 0;
 	if (notif->sn_header.sn_length != (uint32_t)n) {
@@ -336,7 +336,7 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 
 			if (n > 0) {
 				if (flags & MSG_NOTIFICATION) {
-					notification_retval = handle_notification((union sctp_notification *)buf, n);
+					notification_retval = handle_notification_fuzzer((union sctp_notification *)buf, n);
 				} else {
 					if (write(fileno(stdout), buf, n) < 0) {
 						perror("write");
