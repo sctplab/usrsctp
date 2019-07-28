@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 338134 2018-08-21 13:25:32Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 350216 2019-07-22 18:11:35Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -928,6 +928,12 @@ restart:
 			break;
 		}
 	}
+	if (cnt_added && strm->pd_api_started) {
+#if defined(__Userspace__)
+		sctp_invoke_recv_callback(stcb->sctp_ep, stcb, control, SCTP_READ_LOCK_NOT_HELD);
+#endif
+		sctp_wakeup_the_read_socket(stcb->sctp_ep, stcb, SCTP_SO_NOT_LOCKED);
+	}
 	if ((control->length > pd_point) && (strm->pd_api_started == 0)) {
 		strm->pd_api_started = 1;
 		control->pdapi_started = 1;
@@ -959,6 +965,16 @@ sctp_inject_old_unordered_data(struct sctp_tcb *stcb,
 		SCTPDBG(SCTP_DEBUG_XXX,
 			"chunk is a first fsn: %u becomes fsn_included\n",
 			chk->rec.data.fsn);
+		at = TAILQ_FIRST(&control->reasm);
+		if (at && SCTP_TSN_GT(chk->rec.data.fsn, at->rec.data.fsn)) {
+			/* 
+			 * The first chunk in the reassembly is
+			 * a smaller TSN than this one, even though
+			 * this has a first, it must be from a subsequent
+			 * msg.
+			 */
+			goto place_chunk;
+		}
 		if (control->first_frag_seen) {
 			/*
 			 * In old un-ordered we can reassembly on

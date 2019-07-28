@@ -47,8 +47,8 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
-#include <Mswsock.h>
-#include <Windows.h>
+#include <mswsock.h>
+#include <windows.h>
 #include "user_environment.h"
 typedef CRITICAL_SECTION userland_mutex_t;
 #if WINVER < 0x0600
@@ -76,6 +76,7 @@ void WakeAllXPConditionVariable(userland_cond_t *);
 typedef CONDITION_VARIABLE userland_cond_t;
 #endif
 typedef HANDLE userland_thread_t;
+typedef DWORD userland_thread_id_t;
 #define ADDRESS_FAMILY	unsigned __int8
 #define IPVERSION  4
 #define MAXTTL     255
@@ -105,8 +106,9 @@ typedef HANDLE userland_thread_t;
 #define n_time     unsigned __int32
 #define sa_family_t unsigned __int8
 #define ssize_t    __int64
+#if !defined(__MINGW32__)
 #define __func__	__FUNCTION__
-
+#endif
 #ifndef EWOULDBLOCK
 #define EWOULDBLOCK             WSAEWOULDBLOCK
 #endif
@@ -220,7 +222,7 @@ typedef char* caddr_t;
 
 #define bzero(buf, len) memset(buf, 0, len)
 #define bcopy(srcKey, dstKey, len) memcpy(dstKey, srcKey, len)
-#if defined(_MSC_VER) && (_MSC_VER < 1900)
+#if defined(_MSC_VER) && (_MSC_VER < 1900) && !defined(__MINGW32__)
 #define snprintf(data, size, format, ...) _snprintf_s(data, size, _TRUNCATE, format, __VA_ARGS__)
 #endif
 #define inline __inline
@@ -282,6 +284,7 @@ typedef char* caddr_t;
 typedef pthread_mutex_t userland_mutex_t;
 typedef pthread_cond_t userland_cond_t;
 typedef pthread_t userland_thread_t;
+typedef pthread_t userland_thread_id_t;
 #endif
 
 #if defined(__Userspace_os_Windows) || defined(__Userspace_os_NaCl)
@@ -1038,6 +1041,9 @@ sctp_userspace_thread_create(userland_thread_t *thread, start_routine_t start_ro
 
 void
 sctp_userspace_set_threadname(const char *name);
+
+int sctp_userspace_thread_id(userland_thread_id_t *thread);
+int sctp_userspace_thread_equal(userland_thread_id_t t1, userland_thread_id_t t2);
 
 /*
  * SCTP protocol specific mbuf flags.

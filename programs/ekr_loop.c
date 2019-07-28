@@ -48,11 +48,13 @@
 #include <ws2tcpip.h>
 #endif
 #include <usrsctp.h>
+#include "programs_helper.h"
 
 #define MAX_PACKET_SIZE (1<<12)
 #define LINE_LENGTH (1<<14)
 #define DISCARD_PPID 39
 #define DUMP_PKTS_TO_FILE 1
+#define NUMBER_OF_STEPS 10
 
 #ifdef _WIN32
 static DWORD WINAPI
@@ -82,7 +84,7 @@ handle_packets(void *arg)
 		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
 			if ((dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
-				//fprintf(stderr, "%s", dump_buf);
+				/* fprintf(stderr, "%s", dump_buf); */
 				usrsctp_freedumpbuffer(dump_buf);
 			}
 			usrsctp_conninput(fdp, buf, (size_t)length, 0);
@@ -111,7 +113,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 	fdp = (int *)addr;
 #endif
 	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
-		//fprintf(stderr, "%s", dump_buf);
+		/* fprintf(stderr, "%s", dump_buf); */
 		usrsctp_freedumpbuffer(dump_buf);
 	}
 
@@ -274,16 +276,6 @@ print_addresses(struct socket *sock)
 }
 #endif
 
-void
-debug_printf(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
-}
-
 int
 main(void)
 {
@@ -300,7 +292,7 @@ main(void)
 #else
 	pthread_t tid_c, tid_s;
 #endif
-	int cur_buf_size, snd_buf_size, rcv_buf_size;
+	int i, cur_buf_size, snd_buf_size, rcv_buf_size;
 	socklen_t opt_len;
 	struct sctp_sndinfo sndinfo;
 	char *line;
@@ -504,21 +496,32 @@ main(void)
 	}
 	memset(line, 'A', LINE_LENGTH);
 	sndinfo.snd_sid = 1;
-	sndinfo.snd_flags = 0; //SCTP_UNORDERED;
 	sndinfo.snd_ppid = htonl(DISCARD_PPID);
 	sndinfo.snd_context = 0;
 	sndinfo.snd_assoc_id = 0;
-	/* Send a 1 MB ordered message */
-	if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
-	                 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
-		perror("usrsctp_sendv");
-		exit(EXIT_FAILURE);
-	}
-	/* Send a 1 MB ordered message */
-	if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
-	                 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
-		perror("usrsctp_sendv");
-		exit(EXIT_FAILURE);
+	for (i = 1; i < NUMBER_OF_STEPS; i++) {
+		if (i % 2) {
+			sndinfo.snd_flags = SCTP_UNORDERED;
+		} else {
+			sndinfo.snd_flags = 0;
+		}
+		/* Send a 1 MB ordered message */
+		if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
+				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
+			perror("usrsctp_sendv");
+			exit(EXIT_FAILURE);
+		}
+		/* Send a 1 MB ordered message */
+		if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
+				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
+			perror("usrsctp_sendv");
+			exit(EXIT_FAILURE);
+		}
+#ifdef _WIN32
+		Sleep(1000);
+#else
+		sleep(1);
+#endif
 	}
 	free(line);
 	usrsctp_shutdown(s_c, SHUT_WR);

@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 338134 2018-08-21 13:25:32Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 347975 2019-05-19 17:28:00Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UTIL_H_
@@ -223,10 +223,9 @@ void sctp_handle_ootb(struct mbuf *, int, int,
 int sctp_connectx_helper_add(struct sctp_tcb *stcb, struct sockaddr *addr,
     int totaddr, int *error);
 
-struct sctp_tcb *
-sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
-    unsigned int *totaddr, unsigned int *num_v4, unsigned int *num_v6,
-    int *error, unsigned int limit, int *bad_addr);
+int
+sctp_connectx_helper_find(struct sctp_inpcb *, struct sockaddr *,
+    unsigned int, unsigned int *, unsigned int *, unsigned int);
 
 int sctp_is_there_an_abort_here(struct mbuf *, int, uint32_t *);
 #ifdef INET6
@@ -403,7 +402,7 @@ void sctp_log_closing(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int16_t loc
 
 void sctp_log_lock(struct sctp_inpcb *inp, struct sctp_tcb *stcb, uint8_t from);
 void sctp_log_maxburst(struct sctp_tcb *stcb, struct sctp_nets *, int, int, uint8_t);
-void sctp_log_block(uint8_t, struct sctp_association *, size_t);
+void sctp_log_block(uint8_t, struct sctp_association *, ssize_t);
 void sctp_log_rwnd(uint8_t, uint32_t, uint32_t, uint32_t);
 void sctp_log_rwnd_set(uint8_t, uint32_t, uint32_t, uint32_t, uint32_t);
 int sctp_fill_stat_log(void *, size_t *);

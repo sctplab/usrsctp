@@ -31,7 +31,9 @@
 #include <netinet/sctp_pcb.h>
 #include <sys/timeb.h>
 #include <iphlpapi.h>
+#if !defined(__MINGW32__)
 #pragma comment(lib, "IPHLPAPI.lib")
+#endif
 #endif
 #include <netinet/sctp_os_userspace.h>
 #if defined(__Userspace_os_FreeBSD)
@@ -46,6 +48,10 @@
 /* Adapter to translate Unix thread start routines to Windows thread start
  * routines.
  */
+#if defined(__MINGW32__)
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 static DWORD WINAPI
 sctp_create_thread_adapter(void *arg) {
 	start_routine_t start_routine = (start_routine_t)arg;
@@ -61,11 +67,42 @@ sctp_userspace_thread_create(userland_thread_t *thread, start_routine_t start_ro
 		return GetLastError();
 	return 0;
 }
+
+int
+sctp_userspace_thread_id(userland_thread_id_t *thread)
+{
+	*thread = GetCurrentThreadId();
+	return 0;
+}
+
+int
+sctp_userspace_thread_equal(userland_thread_id_t t1, userland_thread_id_t t2)
+{
+	return (t1 == t2);
+}
+
+#if defined(__MINGW32__)
+#pragma GCC diagnostic pop
+#endif
+
 #else
 int
 sctp_userspace_thread_create(userland_thread_t *thread, start_routine_t start_routine)
 {
 	return pthread_create(thread, NULL, start_routine, NULL);
+}
+
+int
+sctp_userspace_thread_id(userland_thread_id_t *thread)
+{
+	*thread = pthread_self();
+	return 0;
+}
+
+int
+sctp_userspace_thread_equal(userland_thread_id_t t1, userland_thread_id_t t2)
+{
+	return pthread_equal(t1, t2);
 }
 #endif
 

@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 325370 2017-11-03 20:46:12Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 345467 2019-03-24 12:13:05Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_STRUCTS_H_
@@ -173,7 +173,7 @@ struct sctp_copy_all {
 	struct sctp_inpcb *inp;	/* ep */
 	struct mbuf *m;
 	struct sctp_sndrcvinfo sndrcv;
-	int sndlen;
+	ssize_t sndlen;
 	int cnt_sent;
 	int cnt_failed;
 };

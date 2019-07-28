@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 340179 2018-11-06 12:55:03Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 350254 2019-07-23 18:31:07Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4496,10 +4496,12 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 					if (net->port) {
 						mtu -= sizeof(struct udphdr);
 					}
-					if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
-						sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
+					if (mtu < net->mtu) {
+						if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
+							sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
+						}
+						net->mtu = mtu;
 					}
-					net->mtu = mtu;
 				}
 			} else if (ro->ro_rt == NULL) {
 				/* route was freed */
@@ -4969,10 +4971,12 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 					if (net->port) {
 						mtu -= sizeof(struct udphdr);
 					}
-					if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
-						sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
+					if (mtu < net->mtu) {
+						if ((stcb != NULL) && (stcb->asoc.smallest_mtu > mtu)) {
+							sctp_mtu_size_reset(inp, &stcb->asoc, mtu);
+						}
+						net->mtu = mtu;
 					}
-					net->mtu = mtu;
 				}
 			}
 #if !defined(__Panda__) && !defined(__Userspace__)
@@ -7285,15 +7289,19 @@ sctp_sendall_completes(void *ptr, uint32_t val SCTP_UNUSED)
 	 */
 
 	/* now free everything */
+	if (ca->inp) {
+		/* Lets clear the flag to allow others to run. */
+		ca->inp->sctp_flags &= ~SCTP_PCB_FLAGS_SND_ITERATOR_UP;
+	}
 	sctp_m_freem(ca->m);
 	SCTP_FREE(ca, SCTP_M_COPYAL);
 }
 
 static struct mbuf *
-sctp_copy_out_all(struct uio *uio, int len)
+sctp_copy_out_all(struct uio *uio, ssize_t len)
 {
 	struct mbuf *ret, *at;
-	int left, willcpy, cancpy, error;
+	ssize_t left, willcpy, cancpy, error;
 
 	ret = sctp_get_mbuf_for_msg(MCLBYTES, 0, M_WAITOK, 1, MT_DATA);
 	if (ret == NULL) {
@@ -7308,17 +7316,17 @@ sctp_copy_out_all(struct uio *uio, int len)
 	at = ret;
 	while (left > 0) {
 		/* Align data to the end */
-		error = uiomove(mtod(at, caddr_t), willcpy, uio);
+		error = uiomove(mtod(at, caddr_t), (int)willcpy, uio);
 		if (error) {
 	err_out_now:
 			sctp_m_freem(at);
 			return (NULL);
 		}
-		SCTP_BUF_LEN(at) = willcpy;
+		SCTP_BUF_LEN(at) = (int)willcpy;
 		SCTP_BUF_NEXT_PKT(at) = SCTP_BUF_NEXT(at) = 0;
 		left -= willcpy;
 		if (left > 0) {
-			SCTP_BUF_NEXT(at) = sctp_get_mbuf_for_msg(left, 0, M_WAITOK, 1, MT_DATA);
+			SCTP_BUF_NEXT(at) = sctp_get_mbuf_for_msg((unsigned int)left, 0, M_WAITOK, 1, MT_DATA);
 			if (SCTP_BUF_NEXT(at) == NULL) {
 				goto err_out_now;
 			}
@@ -7338,6 +7346,22 @@ sctp_sendall(struct sctp_inpcb *inp, struct uio *uio, struct mbuf *m,
 	int ret;
 	struct sctp_copy_all *ca;
 
+	if (inp->sctp_flags & SCTP_PCB_FLAGS_SND_ITERATOR_UP) {
+		/* There is another. */
+		return (EBUSY);
+	}
+#if defined(__APPLE__)
+#if defined(APPLE_LEOPARD)
+	if (uio->uio_resid > SCTP_MAX_SENDALL_LIMIT) {
+#else
+	if (uio_resid(uio) > SCTP_MAX_SENDALL_LIMIT) {
+#endif
+#else
+	if (uio->uio_resid > SCTP_MAX_SENDALL_LIMIT) {
+#endif
+		/* You must be less than the max! */
+		return (EMSGSIZE);
+	}
 	SCTP_MALLOC(ca, struct sctp_copy_all *, sizeof(struct sctp_copy_all),
 		    SCTP_M_COPYAL);
 	if (ca == NULL) {
@@ -7365,7 +7389,7 @@ sctp_sendall(struct sctp_inpcb *inp, struct uio *uio, struct mbuf *m,
 		ca->sndlen = uio_resid(uio);
 #endif
 #else
-		ca->sndlen = (int)uio->uio_resid;
+		ca->sndlen = uio->uio_resid;
 #endif
 #if defined(__APPLE__)
 		SCTP_SOCKET_UNLOCK(SCTP_INP_SO(inp), 0);
@@ -7388,6 +7412,7 @@ sctp_sendall(struct sctp_inpcb *inp, struct uio *uio, struct mbuf *m,
 			ca->sndlen += SCTP_BUF_LEN(mat);
 		}
 	}
+	inp->sctp_flags |= SCTP_PCB_FLAGS_SND_ITERATOR_UP;
 	ret = sctp_initiate_iterator(NULL, sctp_sendall_iterator, NULL,
 				     SCTP_PCB_ANY_FLAGS, SCTP_PCB_ANY_FEATURES,
 				     SCTP_ASOC_ANY_STATE,
@@ -13247,7 +13272,7 @@ sctp_copy_it_in(struct sctp_tcb *stcb,
     struct sctp_sndrcvinfo *srcv,
     struct uio *uio,
     struct sctp_nets *net,
-    int max_send_len,
+    ssize_t max_send_len,
     int user_marks_eor,
     int *error)
 
@@ -13476,7 +13501,7 @@ sctp_lower_sosend(struct socket *so,
 #endif
 	)
 {
-	unsigned int sndlen = 0, max_len;
+	ssize_t sndlen = 0, max_len;
 	int error, len;
 	struct mbuf *top = NULL;
 #ifdef __Panda__
@@ -13501,7 +13526,8 @@ sctp_lower_sosend(struct socket *so,
 	int got_all_of_the_send = 0;
 	int hold_tcblock = 0;
 	int non_blocking = 0;
-	uint32_t local_add_more, local_soresv = 0;
+	uint32_t local_add_more;
+	ssize_t local_soresv = 0;
 	uint16_t port;
 	uint16_t sinfo_flags;
 	sctp_assoc_t sinfo_assoc_id;
@@ -13544,12 +13570,12 @@ sctp_lower_sosend(struct socket *so,
 		}
 #if defined(__APPLE__)
 #if defined(APPLE_LEOPARD)
-		sndlen = (unsigned int)uio->uio_resid;
+		sndlen = uio->uio_resid;
 #else
-		sndlen = (unsigned int)uio_resid(uio);
+		sndlen = uio_resid(uio);
 #endif
 #else
-		sndlen = (unsigned int)uio->uio_resid;
+		sndlen = uio->uio_resid;
 #endif
 	} else {
 		top = SCTP_HEADER_TO_CHAIN(i_pak);
@@ -13578,7 +13604,7 @@ sctp_lower_sosend(struct socket *so,
 		sndlen = SCTP_HEADER_LEN(i_pak);
 #endif
 	}
-	SCTPDBG(SCTP_DEBUG_OUTPUT1, "Send called addr:%p send length %d\n",
+	SCTPDBG(SCTP_DEBUG_OUTPUT1, "Send called addr:%p send length %zu\n",
 		(void *)addr,
 	        sndlen);
 #ifdef __Panda__
@@ -13659,6 +13685,14 @@ sctp_lower_sosend(struct socket *so,
 		sinfo_flags = inp->def_send.sinfo_flags;
 		sinfo_assoc_id = inp->def_send.sinfo_assoc_id;
 	}
+#if defined(__FreeBSD__)
+	if (flags & MSG_EOR) {
+		sinfo_flags |= SCTP_EOR;
+	}
+	if (flags & MSG_EOF) {
+		sinfo_flags |= SCTP_EOF;
+	}
+#endif
 	if (sinfo_flags & SCTP_SENDALL) {
 		/* its a sendall */
 		error = sctp_sendall(inp, uio, top, srcv);
@@ -13777,10 +13811,11 @@ sctp_lower_sosend(struct socket *so,
 			                       inp->sctp_ep.pre_open_stream_count,
 			                       inp->sctp_ep.port,
 #if !(defined( __Panda__) || defined(__Userspace__))
-			                       p);
+			                       p,
 #else
-			                       (struct proc *)NULL);
+			                       (struct proc *)NULL,
 #endif
+			                       SCTP_INITIALIZE_AUTH_PARAMS);
 			if (stcb == NULL) {
 				/* Error is setup for us in the call */
 				goto out_unlocked;
@@ -13803,9 +13838,6 @@ sctp_lower_sosend(struct socket *so,
 			SCTP_SET_STATE(stcb, SCTP_STATE_COOKIE_WAIT);
 			(void)SCTP_GETTIME_TIMEVAL(&asoc->time_entered);
 
-			/* initialize authentication params for the assoc */
-			sctp_initialize_auth_params(inp, stcb);
-
 			if (control) {
 				if (sctp_process_cmsgs_for_init(stcb, control, &error)) {
 					sctp_free_assoc(inp, stcb, SCTP_PCBFREE_FORCE,
@@ -13826,9 +13858,19 @@ sctp_lower_sosend(struct socket *so,
 		}
 	} else
 		asoc = &stcb->asoc;
-	if (srcv == NULL)
+	if (srcv == NULL) {
 		srcv = (struct sctp_sndrcvinfo *)&asoc->def_send;
-	if (srcv->sinfo_flags & SCTP_ADDR_OVER) {
+		sinfo_flags = srcv->sinfo_flags;
+#if defined(__FreeBSD__)
+		if (flags & MSG_EOR) {
+			sinfo_flags |= SCTP_EOR;
+		}
+		if (flags & MSG_EOF) {
+			sinfo_flags |= SCTP_EOF;
+		}
+#endif
+	}
+	if (sinfo_flags & SCTP_ADDR_OVER) {
 		if (addr)
 			net = sctp_findnet(stcb, addr);
 		else
@@ -13865,14 +13907,14 @@ sctp_lower_sosend(struct socket *so,
 #endif
 	if (SCTP_SO_IS_NBIO(so)
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
-	     || (flags & MSG_NBIO)
+	     || (flags & (MSG_NBIO | MSG_DONTWAIT)) != 0
 #endif
 	    ) {
 		non_blocking = 1;
 	}
 	/* would we block? */
 	if (non_blocking) {
-		uint32_t amount;
+		ssize_t amount;
 
 		if (hold_tcblock == 0) {
 			SCTP_TCB_LOCK(stcb);
@@ -13893,7 +13935,7 @@ sctp_lower_sosend(struct socket *so,
 				error = EWOULDBLOCK;
 			goto out_unlocked;
 		}
-		stcb->asoc.sb_send_resv += sndlen;
+		stcb->asoc.sb_send_resv += (uint32_t)sndlen;
 		SCTP_TCB_UNLOCK(stcb);
 		hold_tcblock = 0;
 	} else {
@@ -13942,7 +13984,7 @@ sctp_lower_sosend(struct socket *so,
 	    (SCTP_GET_STATE(stcb) == SCTP_STATE_SHUTDOWN_RECEIVED) ||
 	    (SCTP_GET_STATE(stcb) == SCTP_STATE_SHUTDOWN_ACK_SENT) ||
 	    (asoc->state & SCTP_STATE_SHUTDOWN_PENDING)) {
-		if (srcv->sinfo_flags & SCTP_ABORT) {
+		if (sinfo_flags & SCTP_ABORT) {
 			;
 		} else {
 			SCTP_LTRACE_ERR_RET(NULL, stcb, NULL, SCTP_FROM_SCTP_OUTPUT, ECONNRESET);
@@ -13963,9 +14005,9 @@ sctp_lower_sosend(struct socket *so,
 	}
 #endif
 	/* Are we aborting? */
-	if (srcv->sinfo_flags & SCTP_ABORT) {
+	if (sinfo_flags & SCTP_ABORT) {
 		struct mbuf *mm;
-		int tot_demand, tot_out = 0, max_out;
+		ssize_t tot_demand, tot_out = 0, max_out;
 
 		SCTP_STAT_INCR(sctps_sends_with_abort);
 		if ((SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_WAIT) ||
@@ -13999,7 +14041,7 @@ sctp_lower_sosend(struct socket *so,
 				error = EMSGSIZE;
 				goto out;
 			}
-			mm = sctp_get_mbuf_for_msg(tot_demand, 0, M_WAITOK, 1, MT_DATA);
+			mm = sctp_get_mbuf_for_msg((unsigned int)tot_demand, 0, M_WAITOK, 1, MT_DATA);
 		}
 		if (mm == NULL) {
 			SCTP_LTRACE_ERR_RET(NULL, stcb, net, SCTP_FROM_SCTP_OUTPUT, ENOMEM);
@@ -14019,7 +14061,7 @@ sctp_lower_sosend(struct socket *so,
 			ph->param_type = htons(SCTP_CAUSE_USER_INITIATED_ABT);
 			ph->param_length = htons((uint16_t)(sizeof(struct sctp_paramhdr) + tot_out));
 			ph++;
-			SCTP_BUF_LEN(mm) = tot_out + sizeof(struct sctp_paramhdr);
+			SCTP_BUF_LEN(mm) = (int)(tot_out + sizeof(struct sctp_paramhdr));
 			if (top == NULL) {
 #if defined(__APPLE__)
 				SCTP_SOCKET_UNLOCK(so, 0);
@@ -14066,12 +14108,7 @@ sctp_lower_sosend(struct socket *so,
 	/* Calculate the maximum we can send */
 	inqueue_bytes = stcb->asoc.total_output_queue_size - (stcb->asoc.chunks_on_out_queue * SCTP_DATA_CHUNK_OVERHEAD(stcb));
 	if (SCTP_SB_LIMIT_SND(so) > inqueue_bytes) {
-		if (non_blocking) {
-			/* we already checked for non-blocking above. */
-			max_len = sndlen;
-		} else {
-			max_len = SCTP_SB_LIMIT_SND(so) - inqueue_bytes;
-		}
+		max_len = SCTP_SB_LIMIT_SND(so) - inqueue_bytes;
 	} else {
 		max_len = 0;
 	}
@@ -14111,7 +14148,7 @@ sctp_lower_sosend(struct socket *so,
 		 * For non-eeor the whole message must fit in
 		 * the socket send buffer.
 		 */
-		local_add_more = sndlen;
+		local_add_more = (uint32_t)sndlen;
 	}
 	len = 0;
 	if (non_blocking) {
@@ -14183,7 +14220,7 @@ skip_preblock:
 	 * NOTE: uio will be null when top/mbuf is passed
 	 */
 	if (sndlen == 0) {
-		if (srcv->sinfo_flags & SCTP_EOF) {
+		if (sinfo_flags & SCTP_EOF) {
 			got_all_of_the_send = 1;
 			goto dataless_eof;
 		} else {
@@ -14231,7 +14268,7 @@ skip_preblock:
 			}
 			sctp_snd_sb_alloc(stcb, sp->length);
 			atomic_add_int(&asoc->stream_queue_cnt, 1);
-			if (srcv->sinfo_flags & SCTP_UNORDERED) {
+			if (sinfo_flags & SCTP_UNORDERED) {
 				SCTP_STAT_INCR(sctps_sends_with_unord);
 			}
 			TAILQ_INSERT_TAIL(&strm->outqueue, sp, next);
@@ -14275,12 +14312,12 @@ skip_preblock:
 			    (max_len && (SCTP_SB_LIMIT_SND(so) < SCTP_BASE_SYSCTL(sctp_add_more_threshold))) ||
 #if defined(__APPLE__)
 #if defined(APPLE_LEOPARD)
-			    (uio->uio_resid && (uio->uio_resid <= (int)max_len))) {
+			    (uio->uio_resid && (uio->uio_resid <= max_len))) {
 #else
-			    (uio_resid(uio) && (uio_resid(uio) <= (int)max_len))) {
+			    (uio_resid(uio) && (uio_resid(uio) <= max_len))) {
 #endif
 #else
-			    (uio->uio_resid && (uio->uio_resid <= (int)max_len))) {
+			    (uio->uio_resid && (uio->uio_resid <= max_len))) {
 #endif
 				sndout = 0;
 				new_tail = NULL;
@@ -14292,9 +14329,9 @@ skip_preblock:
 				SCTP_SOCKET_UNLOCK(so, 0);
 #endif
 #if (defined(__FreeBSD__) && __FreeBSD_version > 602000) || defined(__Userspace__)
-				    mm = sctp_copy_resume(uio, max_len, user_marks_eor, &error, &sndout, &new_tail);
+				mm = sctp_copy_resume(uio, (int)max_len, user_marks_eor, &error, &sndout, &new_tail);
 #else
-				    mm = sctp_copy_resume(uio, max_len, &error, &sndout, &new_tail);
+				mm = sctp_copy_resume(uio, (int)max_len, &error, &sndout, &new_tail);
 #endif
 #if defined(__APPLE__)
 				SCTP_SOCKET_LOCK(so, 0);
@@ -14331,7 +14368,7 @@ skip_preblock:
 				sctp_snd_sb_alloc(stcb, sndout);
 				atomic_add_int(&sp->length, sndout);
 				len += sndout;
-				if (srcv->sinfo_flags & SCTP_SACK_IMMEDIATELY) {
+				if (sinfo_flags & SCTP_SACK_IMMEDIATELY) {
 					sp->sinfo_flags |= SCTP_SACK_IMMEDIATELY;
 				}
 
@@ -14346,8 +14383,8 @@ skip_preblock:
 				if ((uio->uio_resid == 0) &&
 #endif
 				    ((user_marks_eor == 0) ||
-				     (srcv->sinfo_flags & SCTP_EOF) ||
-				     (user_marks_eor && (srcv->sinfo_flags & SCTP_EOR)))) {
+				     (sinfo_flags & SCTP_EOF) ||
+				     (user_marks_eor && (sinfo_flags & SCTP_EOR)))) {
 					sp->msg_is_complete = 1;
 				} else {
 					sp->msg_is_complete = 0;
@@ -14373,7 +14410,7 @@ skip_preblock:
 					SCTP_TCB_LOCK(stcb);
 					hold_tcblock = 1;
 				}
-				sctp_prune_prsctp(stcb, asoc, srcv, sndlen);
+				sctp_prune_prsctp(stcb, asoc, srcv, (int)sndlen);
 				inqueue_bytes = stcb->asoc.total_output_queue_size - (stcb->asoc.chunks_on_out_queue * SCTP_DATA_CHUNK_OVERHEAD(stcb));
 				if (SCTP_SB_LIMIT_SND(so) > inqueue_bytes)
 					max_len = SCTP_SB_LIMIT_SND(so) - inqueue_bytes;
@@ -14470,10 +14507,10 @@ skip_preblock:
 							  stcb,
 							  SCTP_OUTPUT_FROM_USR_SEND, SCTP_SO_LOCKED);
 				}
-				if (hold_tcblock == 1) {
-					SCTP_TCB_UNLOCK(stcb);
-					hold_tcblock = 0;
-				}
+			}
+			if (hold_tcblock == 1) {
+				SCTP_TCB_UNLOCK(stcb);
+				hold_tcblock = 0;
 			}
 			SOCKBUF_LOCK(&so->so_snd);
 			/*-
@@ -14504,7 +14541,7 @@ skip_preblock:
 #endif
 #else
 					sctp_log_block(SCTP_BLOCK_LOG_INTO_BLK,
-						       asoc, (size_t)uio->uio_resid);
+						       asoc, uio->uio_resid);
 #endif
 				}
 				be.error = 0;
@@ -14580,7 +14617,7 @@ skip_preblock:
 		/* We send in a 0, since we do NOT have any locks */
 		error = sctp_msg_append(stcb, net, top, srcv, 0);
 		top = NULL;
-		if (srcv->sinfo_flags & SCTP_EOF) {
+		if (sinfo_flags & SCTP_EOF) {
 			/*
 			 * This should only happen for Panda for the mbuf
 			 * send case, which does NOT yet support EEOR mode.
@@ -14595,7 +14632,7 @@ skip_preblock:
 	}
 dataless_eof:
 	/* EOF thing ? */
-	if ((srcv->sinfo_flags & SCTP_EOF) &&
+	if ((sinfo_flags & SCTP_EOF) &&
 	    (got_all_of_the_send == 1)) {
 		SCTP_STAT_INCR(sctps_sends_with_eof);
 		error = 0;

@@ -56,6 +56,7 @@
 #include <getopt.h>
 #endif
 #include <usrsctp.h>
+#include "programs_helper.h"
 
 #define TSCTP_CLIENT 1
 #define TSCTP_SERVER 2
@@ -242,11 +243,7 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 			} else {
 				if (par_very_verbose) {
 					if (infotype == SCTP_RECVV_RCVINFO) {
-#ifdef _WIN32
-						printf("Message received - %" PRIu64 " bytes - %s - sid %u - tsn %u %s\n",
-#else					
-						printf("Message received - %zd bytes - %s - sid %u - tsn %u %s\n",
-#endif
+						printf("Message received - %zd bytes - %s - sid %u - tsn %u %s\n",				
 							n,
 							(rcvinfo->rcv_flags & SCTP_UNORDERED) ? "unordered" : "ordered",
 							rcvinfo->rcv_sid,
@@ -255,11 +252,7 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 						);
 
 					} else {
-#ifdef _WIN32
-						printf("Message received - %" PRIu64 " bytes %s\n", n, (recv_flags & MSG_EOR) ? "- EOR" : "");
-#else
 						printf("Message received - %zd bytes %s\n", n, (recv_flags & MSG_EOR) ? "- EOR" : "");
-#endif
 					}
 				}
 				tsctp_meta->stat_fragment_sum += n;
@@ -365,16 +358,6 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 	}
 
 	return;
-}
-
-void
-debug_printf(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
 }
 
 int main(int argc, char **argv)
@@ -644,6 +627,7 @@ int main(int argc, char **argv)
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 #endif
 	usrsctp_sysctl_set_sctp_blackhole(2);
+	usrsctp_sysctl_set_sctp_no_csum_on_loopback(0);
 	usrsctp_sysctl_set_sctp_enable_sack_immediately(1);
 
 	if (!(psock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL))) {

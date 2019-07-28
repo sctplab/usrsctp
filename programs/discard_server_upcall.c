@@ -47,6 +47,7 @@
 #include <arpa/inet.h>
 #endif
 #include <usrsctp.h>
+#include "programs_helper.h"
 
 #define BUFFERSIZE 10240
 #define PORT 9
@@ -136,16 +137,6 @@ handle_upcall(struct socket *sock, void *data, int flgs)
 	return;
 }
 
-void
-debug_printf(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
-}
-
 int
 main(int argc, char *argv[])
 {
@@ -172,6 +163,7 @@ main(int argc, char *argv[])
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
 #endif
 	usrsctp_sysctl_set_sctp_blackhole(2);
+	usrsctp_sysctl_set_sctp_no_csum_on_loopback(0);
 
 	if ((sock = usrsctp_socket(AF_INET6, SOCK_SEQPACKET, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");

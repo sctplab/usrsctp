@@ -54,6 +54,7 @@
 #include <getopt.h>
 #endif
 #include <usrsctp.h>
+#include "programs_helper.h"
 
 /* global for the send callback, but used in kernel version as well */
 static unsigned long number_of_messages;
@@ -71,16 +72,16 @@ static unsigned long long cb_first_length = 0;
 static unsigned long long cb_sum = 0;
 static unsigned int use_cb = 0;
 
-#ifndef timersub
-#define timersub(tvp, uvp, vvp)                                   \
-	do {                                                      \
-		(vvp)->tv_sec = (tvp)->tv_sec - (uvp)->tv_sec;    \
-		(vvp)->tv_usec = (tvp)->tv_usec - (uvp)->tv_usec; \
-		if ((vvp)->tv_usec < 0) {                         \
-			(vvp)->tv_sec--;                          \
-			(vvp)->tv_usec += 1000000;                \
-		}                                                 \
-	} while (0)
+#ifdef _WIN32
+static void
+gettimeofday(struct timeval *tv, void *ignore)
+{
+	struct timeb tb;
+
+	ftime(&tb);
+	tv->tv_sec = (long)tb.time;
+	tv->tv_usec = tb.millitm * 1000;
+}
 #endif
 
 
@@ -110,24 +111,12 @@ char Usage[] =
 #define BUFFERSIZE                 (1<<16)
 
 static int verbose, very_verbose;
-static unsigned int done;
+static unsigned int done; 
 
 void stop_sender(int sig)
 {
 	done = 1;
 }
-
-#ifdef _WIN32
-static void
-gettimeofday(struct timeval *tv, void *ignore)
-{
-	struct timeb tb;
-
-	ftime(&tb);
-	tv->tv_sec = (long)tb.time;
- 	tv->tv_usec = tb.millitm * 1000;
-}
-#endif
 
 #ifdef _WIN32
 static DWORD WINAPI
@@ -138,9 +127,8 @@ handle_connection(void *arg)
 {
 	ssize_t n;
 	char *buf;
-#ifdef _WIN32
-	HANDLE tid;
-#else
+
+#if !defined(_WIN32)
 	pthread_t tid;
 #endif
 	struct socket *conn_sock;
@@ -162,9 +150,8 @@ handle_connection(void *arg)
 	unsigned long long sum = 0;
 
 	conn_sock = *(struct socket **)arg;
-#ifdef _WIN32
-	tid = GetCurrentThread();
-#else
+
+#if !defined(_WIN32)
 	tid = pthread_self();
 	pthread_detach(tid);
 #endif
@@ -339,16 +326,6 @@ client_receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 	return (1);
 }
 
-void
-debug_printf(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
-}
-
 int main(int argc, char **argv)
 {
 #ifndef _WIN32
@@ -370,7 +347,6 @@ int main(int argc, char **argv)
 	unsigned long messages = 0;
 #ifdef _WIN32
 	unsigned long srcAddr;
-	HANDLE tid;
 #else
 	in_addr_t srcAddr;
 	pthread_t tid;
@@ -593,6 +569,7 @@ int main(int argc, char **argv)
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 #endif
 	usrsctp_sysctl_set_sctp_blackhole(2);
+	usrsctp_sysctl_set_sctp_no_csum_on_loopback(0);
 	usrsctp_sysctl_set_sctp_enable_sack_immediately(1);
 
 	if (client) {
@@ -669,19 +646,19 @@ int main(int argc, char **argv)
 					continue;
 				}
 #ifdef _WIN32
-				tid = CreateThread(NULL, 0, &handle_connection, (void *)conn_sock, 0, NULL);
+				CreateThread(NULL, 0, &handle_connection, (void *)conn_sock, 0, NULL);
 #else
 				pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock);
 #endif
 			}
 			if (verbose) {
-				// const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
-				//inet_ntoa(remote_addr.sin_addr)
+				/* const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
+				inet_ntoa(remote_addr.sin_addr) */
 				char addrbuf[INET_ADDRSTRLEN];
 				printf("Connection accepted from %s:%d\n", inet_ntop(AF_INET, &(remote_addr.sin_addr), addrbuf, INET_ADDRSTRLEN), ntohs(remote_addr.sin_port));
 			}
 		}
-		//usrsctp_close(psock); // unreachable
+		/* usrsctp_close(psock);  unreachable */
 	} else {
 		memset(&encaps, 0, sizeof(struct sctp_udpencaps));
 		encaps.sue_address.ss_family = AF_INET;

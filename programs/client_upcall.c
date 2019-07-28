@@ -40,7 +40,7 @@
 #if !defined(_WIN32)
 #include <unistd.h>
 #include <sys/time.h>
-#endif // !defined(_WIN32)
+#endif /* !defined(_WIN32) */
 
 #include <sys/types.h>
 
@@ -48,11 +48,12 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#else // !defined(_WIN32)
+#else /* !defined(_WIN32) */
 #include <io.h>
 #endif
 
 #include <usrsctp.h>
+#include "programs_helper.h"
 #include <fcntl.h>
 
 #define BUFFERSIZE                 (1<<16)
@@ -65,17 +66,17 @@ typedef char* caddr_t;
 
 int inputAvailable(void)
 {
-  struct timeval tv;
-  fd_set fds;
-  tv.tv_sec = 0;
-  tv.tv_usec = 0;
-  FD_ZERO(&fds);
-#ifndef _WIN32
-  FD_SET(STDIN_FILENO, &fds);
-  select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
+	struct timeval tv;
+	fd_set fds;
+	tv.tv_sec = 0;
+	tv.tv_usec = 0;
+	FD_ZERO(&fds);
+#if defined(_WIN32) && !defined(__MINGW32__)
+	FD_SET(_fileno(stdin), &fds);
+  	select(_fileno(stdin) + 1, &fds, NULL, NULL, &tv);
 #else
-  FD_SET(_fileno(stdin), &fds);
-  select(_fileno(stdin) + 1, &fds, NULL, NULL, &tv);
+	FD_SET(STDIN_FILENO, &fds);
+	select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
 #endif
   return (FD_ISSET(0, &fds));
 }
@@ -128,16 +129,6 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 	return;
 }
 
-void
-debug_printf(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
-}
-
 int
 main(int argc, char *argv[])
 {
@@ -159,6 +150,8 @@ main(int argc, char *argv[])
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
 #endif
 	usrsctp_sysctl_set_sctp_blackhole(2);
+	usrsctp_sysctl_set_sctp_no_csum_on_loopback(0);
+
 	if ((sock = usrsctp_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 		exit(1);
