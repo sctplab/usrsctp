@@ -71,16 +71,6 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 	exit(EXIT_FAILURE);
 }
 
-void
-debug_printf(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
-}
-
 int
 init_fuzzer(void) {
 	static uint8_t initialized = 0;
