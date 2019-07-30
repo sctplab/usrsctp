@@ -487,7 +487,8 @@ main(int argc, char *argv[])
 	sndinfo.snd_ppid = htonl(DISCARD_PPID);
 	sndinfo.snd_context = 0;
 	sndinfo.snd_assoc_id = 0;
-	for (i = 1; i < NUMBER_OF_STEPS; i++) {
+	i = 0;
+	while (i < NUMBER_OF_STEPS) {
 		if (i % 2) {
 			sndinfo.snd_flags = SCTP_UNORDERED;
 		} else {
@@ -496,17 +497,28 @@ main(int argc, char *argv[])
 		/* Send a 1 MB ordered message */
 		if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
 				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
-			perror("usrsctp_sendv");
-			fprintf(stderr, "usrsctp_sendv() failed - errno : %d\n", errno);
-			exit(EXIT_FAILURE);
+			if (errno == EWOULDBLOCK) {
+				fprintf(stderr, "usrsctp_sendv() failed with EWOULDBLOCK - retry");
+				continue;
+			} else {
+				perror("usrsctp_sendv");
+				fprintf(stderr, "usrsctp_sendv() failed - errno : %d\n", errno);
+				exit(EXIT_FAILURE);
+			}
 		}
 		/* Send a 1 MB ordered message */
 		if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
 				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
-			perror("usrsctp_sendv");
-			fprintf(stderr, "usrsctp_sendv() failed - errno : %d\n", errno);
-			exit(EXIT_FAILURE);
+			if (errno == EWOULDBLOCK) {
+				fprintf(stderr, "usrsctp_sendv() failed with EWOULDBLOCK - retry");
+				continue;
+			} else {
+				perror("usrsctp_sendv");
+				fprintf(stderr, "usrsctp_sendv() failed - errno : %d\n", errno);
+				exit(EXIT_FAILURE);
+			}
 		}
+		i++;
 #ifdef _WIN32
 		Sleep(1000);
 #else
