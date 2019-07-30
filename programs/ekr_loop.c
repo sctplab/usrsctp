@@ -273,7 +273,7 @@ main(int argc, char *argv[])
 #else
 	pthread_t tid_c, tid_s;
 #endif
-	int i, cur_buf_size, snd_buf_size, rcv_buf_size, retval;
+	int i, cur_buf_size, snd_buf_size, rcv_buf_size;
 	socklen_t opt_len;
 	struct sctp_sndinfo sndinfo;
 	char *line;
@@ -494,17 +494,17 @@ main(int argc, char *argv[])
 			sndinfo.snd_flags = 0;
 		}
 		/* Send a 1 MB ordered message */
-		if ((retval = usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
-				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0)) < 0) {
+		if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
+				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 			perror("usrsctp_sendv");
-			fprintf(stderr, "usrsctp_sendv() failed - retval : %d\n", retval);
+			fprintf(stderr, "usrsctp_sendv() failed - errno : %d\n", errno);
 			exit(EXIT_FAILURE);
 		}
 		/* Send a 1 MB ordered message */
-		if ((retval = usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
-				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0)) < 0) {
+		if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
+				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 			perror("usrsctp_sendv");
-			fprintf(stderr, "usrsctp_sendv() failed - retval : %d\n", retval);
+			fprintf(stderr, "usrsctp_sendv() failed - errno : %d\n", errno);
 			exit(EXIT_FAILURE);
 		}
 #ifdef _WIN32
