@@ -506,9 +506,9 @@ main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 #ifdef _WIN32
-		Sleep(1000);
+		Sleep(2000);
 #else
-		sleep(1);
+		sleep(2);
 #endif
 	}
 	free(line);
