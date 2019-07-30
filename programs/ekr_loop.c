@@ -498,7 +498,12 @@ main(int argc, char *argv[])
 		if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
 				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 			if (errno == EWOULDBLOCK) {
-				fprintf(stderr, "usrsctp_sendv() failed with EWOULDBLOCK - retry");
+				fprintf(stderr, "usrsctp_sendv() failed with EWOULDBLOCK - retry\n");
+#ifdef _WIN32
+				Sleep(1000);
+#else
+				sleep(1);
+#endif
 				continue;
 			} else {
 				perror("usrsctp_sendv");
@@ -510,7 +515,12 @@ main(int argc, char *argv[])
 		if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
 				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 			if (errno == EWOULDBLOCK) {
-				fprintf(stderr, "usrsctp_sendv() failed with EWOULDBLOCK - retry");
+				fprintf(stderr, "usrsctp_sendv() failed with EWOULDBLOCK - retry\n");
+#ifdef _WIN32
+				Sleep(1000);
+#else
+				sleep(1);
+#endif
 				continue;
 			} else {
 				perror("usrsctp_sendv");
