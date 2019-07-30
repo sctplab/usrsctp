@@ -317,7 +317,7 @@ main(int argc, char *argv[])
 	uint16_t server_port = 9900;
 
 	if (argc == 3) {
-		server_port = atoi(argv[1]);
+		client_port = atoi(argv[1]);
 		server_port = atoi(argv[2]);
 	}
 
