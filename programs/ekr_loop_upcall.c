@@ -313,8 +313,8 @@ main(int argc, char *argv[])
 #ifdef _WIN32
 	WSADATA wsaData;
 #endif
-	uint16_t client_port = 9901;
-	uint16_t server_port = 9900;
+	uint16_t client_port = 9900;
+	uint16_t server_port = 9901;
 
 	if (argc == 3) {
 		client_port = atoi(argv[1]);

@@ -280,8 +280,8 @@ main(int argc, char *argv[])
 #ifdef _WIN32
 	WSADATA wsaData;
 #endif
-	uint16_t client_port = 9901;
-	uint16_t server_port = 9900;
+	uint16_t client_port = 9900;
+	uint16_t server_port = 9901;
 
 	if (argc == 3) {
 		client_port = atoi(argv[1]);
@@ -506,9 +506,9 @@ main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 #ifdef _WIN32
-		Sleep(2000);
+		Sleep(1000);
 #else
-		sleep(2);
+		sleep(1);
 #endif
 	}
 	free(line);
