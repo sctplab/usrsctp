@@ -498,14 +498,14 @@ main(int argc, char *argv[])
 			sndinfo.snd_flags = 0;
 		}
 		/* Send a 1 MB message */
-		debug_printf("usrscp_sendv - step %d - flags %x\n", i, sndinfo.snd_flags);
+		debug_printf("usrscp_sendv - step %d - call %d flags %x\n", i, ++j, sndinfo.snd_flags);
 		if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
 				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 			perror("usrsctp_sendv");
 			exit(EXIT_FAILURE);
 		}
 		/* Send a 1 MB message */
-		debug_printf("Second usrscp_sendv - step %d - flags %x\n", i, sndinfo.snd_flags);
+		debug_printf("usrscp_sendv - step %d - call %d flags %x\n", i, ++j, sndinfo.snd_flags);
 		if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
 				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 			perror("usrsctp_sendv");
