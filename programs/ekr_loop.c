@@ -491,7 +491,7 @@ main(int argc, char *argv[])
 	sndinfo.snd_context = 0;
 	sndinfo.snd_assoc_id = 0;
 
-	for (i = 1; i < NUMBER_OF_STEPS; i++) {
+	for (i = 0; i < NUMBER_OF_STEPS; i++) {
 		j = 0;
 		if (i % 2) {
 			sndinfo.snd_flags = SCTP_UNORDERED;
