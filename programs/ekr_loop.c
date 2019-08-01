@@ -131,10 +131,10 @@ static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
            size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
 {
-	debug_printf("Message %p received on sock = %p.\n", data, (void *)sock);
+	debug_printf("MSG RCV: %p received on sock = %p.\n", data, (void *)sock);
 	if (data) {
 		if ((flags & MSG_NOTIFICATION) == 0) {
-			debug_printf("Messsage of length %d received via %p:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u, rcv_flags %x, flags %x.\n",
+			debug_printf("MSG RCV: length %d, addr %p:%u, stream %u, SSN %u, TSN %u, PPID %u, context %u, %s%s.\n",
 			       (int)datalen,
 			       addr.sconn.sconn_addr,
 			       ntohs(addr.sconn.sconn_port),
@@ -143,8 +143,8 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 			       rcv.rcv_tsn,
 			       ntohl(rcv.rcv_ppid),
 			       rcv.rcv_context,
-			       rcv.rcv_flags,
-				   flags);
+			       (rcv.rcv_flags & SCTP_UNORDERED) ? "unordered" : "ordered",
+				   (flags & MSG_EOR) ? ", EOR" : "");
 		}
 		free(data);
 	} else {
@@ -274,7 +274,7 @@ main(int argc, char *argv[])
 #else
 	pthread_t tid_c, tid_s;
 #endif
-	int i, cur_buf_size, snd_buf_size, rcv_buf_size;
+	int i, j, cur_buf_size, snd_buf_size, rcv_buf_size;
 	socklen_t opt_len;
 	struct sctp_sndinfo sndinfo;
 	char *line;
@@ -491,14 +491,14 @@ main(int argc, char *argv[])
 	sndinfo.snd_context = 0;
 	sndinfo.snd_assoc_id = 0;
 
-	for (i = 1; i < NUMBER_OF_STEPS; i++) {
+	for (i = 1; i < NUMBER_OF_STEPS; i++, j = 0) {
 		if (i % 2) {
 			sndinfo.snd_flags = SCTP_UNORDERED;
 		} else {
 			sndinfo.snd_flags = 0;
 		}
 		/* Send a 1 MB message */
-		debug_printf("First usrscp_sendv - step %d - flags %x\n", i, sndinfo.snd_flags);
+		debug_printf("usrscp_sendv - step %d - flags %x\n", i, sndinfo.snd_flags);
 		if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
 				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 			perror("usrsctp_sendv");
