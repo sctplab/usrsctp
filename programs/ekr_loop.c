@@ -134,7 +134,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 	debug_printf("Message %p received on sock = %p.\n", data, (void *)sock);
 	if (data) {
 		if ((flags & MSG_NOTIFICATION) == 0) {
-			debug_printf("Messsage of length %d received via %p:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u, flags %x.\n",
+			debug_printf("Messsage of length %d received via %p:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u, rcv_flags %x, flags %x.\n",
 			       (int)datalen,
 			       addr.sconn.sconn_addr,
 			       ntohs(addr.sconn.sconn_port),
@@ -143,7 +143,8 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 			       rcv.rcv_tsn,
 			       ntohl(rcv.rcv_ppid),
 			       rcv.rcv_context,
-			       flags);
+			       rcv.rcv_flags,
+				   flags);
 		}
 		free(data);
 	} else {
@@ -497,14 +498,14 @@ main(int argc, char *argv[])
 			sndinfo.snd_flags = 0;
 		}
 		/* Send a 1 MB message */
-		debug_printf("First usrscp_sendv - step %d - flags %d\n", sndinfo.snd_flags);
+		debug_printf("First usrscp_sendv - step %d - flags %x\n", sndinfo.snd_flags);
 		if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
 				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 			perror("usrsctp_sendv");
 			exit(EXIT_FAILURE);
 		}
 		/* Send a 1 MB message */
-		debug_printf("Second usrscp_sendv - step %d - flags %d\n", sndinfo.snd_flags);
+		debug_printf("Second usrscp_sendv - step %d - flags %x\n", sndinfo.snd_flags);
 		if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
 				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 			perror("usrsctp_sendv");
