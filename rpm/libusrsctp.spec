@@ -4,7 +4,7 @@ Release: 1
 Summary: Portable SCTP Userland Stack
 License: BSD
 Group: Applications/Internet
-URL: https://github.com/sctplib/usrsctp
+URL: https://github.com/sctplab/usrsctp
 Source: %{name}-%{version}.tar.gz
 
 AutoReqProv: on
@@ -56,18 +56,28 @@ make install DESTDIR=%{buildroot}
 %{_libdir}/libusrsctp*.so
 
 %files examples
-${_bindir}/libusrsctp/client
-${_bindir}/libusrsctp/daytime_server
-${_bindir}/libusrsctp/discard_server
-${_bindir}/libusrsctp/echo_server
-${_bindir}/libusrsctp/ekr_client
-${_bindir}/libusrsctp/ekr_loop
-${_bindir}/libusrsctp/ekr_peer
-${_bindir}/libusrsctp/ekr_server
-${_bindir}/libusrsctp/http_client
-${_bindir}/libusrsctp/rtcweb
-${_bindir}/libusrsctp/test_libmgmt
-${_bindir}/libusrsctp/tsctp
+${_bindir}/chargen_server_upcall
+${_bindir}/client
+${_bindir}/client_upcall
+${_bindir}/daytime_server
+${_bindir}/daytime_server_upcall
+${_bindir}/discard_server
+${_bindir}/discard_server_upcall
+${_bindir}/echo_server
+${_bindir}/echo_server_upcall
+${_bindir}/ekr_client
+${_bindir}/ekr_loop
+${_bindir}/ekr_loop_offload
+${_bindir}/ekr_loop_upcall
+${_bindir}/ekr_peer
+${_bindir}/ekr_server
+${_bindir}/http_client
+${_bindir}/http_client_upcall
+${_bindir}/rtcweb
+${_bindir}/test_libmgmt
+${_bindir}/test_timer
+${_bindir}/tsctp
+${_bindir}/tsctp_upcall
 
 
 %changelog
