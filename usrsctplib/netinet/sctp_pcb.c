@@ -3269,7 +3269,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 	/* bind a ep to a socket address */
 	struct sctppcbhead *head;
 	struct sctp_inpcb *inp, *inp_tmp;
-#if defined(INET) || (defined(INET6) && defined(__APPLE__)) || defined(__FreeBSD__) || defined(__APPLE__)
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	struct inpcb *ip_inp;
 #endif
 	int port_reuse_active = 0;
@@ -3284,7 +3284,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 	lport = 0;
 	bindall = 1;
 	inp = (struct sctp_inpcb *)so->so_pcb;
-#if defined(INET) || (defined(INET6) && defined(__APPLE__)) || defined(__FreeBSD__) || defined(__APPLE__)
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	ip_inp = (struct inpcb *)so->so_pcb;
 #endif
 #ifdef SCTP_DEBUG
