@@ -1,1 +1,1 @@
-usr/lib/libusrsctp.so.*
+/usr/lib/*/libusrsctp.so.*

@@ -45,32 +45,30 @@ make %{?_smp_mflags}
 %install
 make install DESTDIR=%{buildroot}
 
-#%clean
-#rm -rf "$RPM_BUILD_ROOT"
 
 %files
 %defattr(-,root,root,-)
-/usr/lib/libusrsctp.so*
+%{_libdir}/libusrsctp.so*
 
 %files devel
-/usr/include/usrsctp.h
-/usr/lib//libusrsctp*.a
-/usr/lib/libusrsctp*.so
+%{_includedir}/usrsctp.h
+%{_libdir}/libusrsctp*.a
+%{_libdir}/libusrsctp*.so
 
 %files examples
-/usr/lib/libusrsctp/client
-/usr/lib/libusrsctp/datachan_serv
-/usr/lib/libusrsctp/daytime_server
-/usr/lib/libusrsctp/discard_server
-/usr/lib/libusrsctp/echo_server
-/usr/lib/libusrsctp/ekr_client
-/usr/lib/libusrsctp/ekr_loop
-/usr/lib/libusrsctp/ekr_peer
-/usr/lib/libusrsctp/ekr_server
-/usr/lib/libusrsctp/http_client
-/usr/lib/libusrsctp/rtcweb
-/usr/lib/libusrsctp/test_libmgmt
-/usr/lib/libusrsctp/tsctp
+${_bindir}/libusrsctp/client
+${_bindir}/libusrsctp/daytime_server
+${_bindir}/libusrsctp/discard_server
+${_bindir}/libusrsctp/echo_server
+${_bindir}/libusrsctp/ekr_client
+${_bindir}/libusrsctp/ekr_loop
+${_bindir}/libusrsctp/ekr_peer
+${_bindir}/libusrsctp/ekr_server
+${_bindir}/libusrsctp/http_client
+${_bindir}/libusrsctp/rtcweb
+${_bindir}/libusrsctp/test_libmgmt
+${_bindir}/libusrsctp/tsctp
+
 
 %changelog
 * Fri Dec 02 2016 Thomas Dreibholz <dreibh@simula.no> 1.0.0
