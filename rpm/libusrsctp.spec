@@ -48,7 +48,6 @@ make install DESTDIR=%{buildroot}
 
 
 %files
-%defattr(-,root,root,-)
 %{_libdir}/libusrsctp.so*
 
 %files devel
@@ -57,28 +56,28 @@ make install DESTDIR=%{buildroot}
 %{_libdir}/libusrsctp*.so
 
 %files examples
-${_bindir}/chargen_server_upcall
-${_bindir}/client
-${_bindir}/client_upcall
-${_bindir}/daytime_server
-${_bindir}/daytime_server_upcall
-${_bindir}/discard_server
-${_bindir}/discard_server_upcall
-${_bindir}/echo_server
-${_bindir}/echo_server_upcall
-${_bindir}/ekr_client
-${_bindir}/ekr_loop
-${_bindir}/ekr_loop_offload
-${_bindir}/ekr_loop_upcall
-${_bindir}/ekr_peer
-${_bindir}/ekr_server
-${_bindir}/http_client
-${_bindir}/http_client_upcall
-${_bindir}/rtcweb
-${_bindir}/test_libmgmt
-${_bindir}/test_timer
-${_bindir}/tsctp
-${_bindir}/tsctp_upcall
+%{_bindir}/chargen_server_upcall
+%{_bindir}/client
+%{_bindir}/client_upcall
+%{_bindir}/daytime_server
+%{_bindir}/daytime_server_upcall
+%{_bindir}/discard_server
+%{_bindir}/discard_server_upcall
+%{_bindir}/echo_server
+%{_bindir}/echo_server_upcall
+%{_bindir}/ekr_client
+%{_bindir}/ekr_loop
+%{_bindir}/ekr_loop_offload
+%{_bindir}/ekr_loop_upcall
+%{_bindir}/ekr_peer
+%{_bindir}/ekr_server
+%{_bindir}/http_client
+%{_bindir}/http_client_upcall
+%{_bindir}/rtcweb
+%{_bindir}/test_libmgmt
+%{_bindir}/test_timer
+%{_bindir}/tsctp
+%{_bindir}/tsctp_upcall
 
 
 %changelog
