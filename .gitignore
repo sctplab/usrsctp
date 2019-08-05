@@ -55,6 +55,7 @@ Makefile.in
 .dirstamp
 
 # binaries
+programs/chargen_server_upcall
 programs/client
 programs/client_upcall
 programs/daytime_server
