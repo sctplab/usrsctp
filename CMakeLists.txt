@@ -189,6 +189,10 @@ if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "AppleCla
 	set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c99 -pedantic -Wall -Wextra")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99 -pedantic -Wall -Wextra")
 
+	# Necessary for Fedora >= 30 and Ubuntu >= 19.10 builds:
+	set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-address-of-packed-member")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member")
+
 	check_c_compiler_flag(-Wfloat-equal has_wfloat_equal)
 	if (has_wfloat_equal)
 		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wfloat-equal")

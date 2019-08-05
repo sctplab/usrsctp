@@ -1,5 +1,5 @@
 Name: libusrsctp
-Version: 1.0.0~td109
+Version: 1.0.0~td121
 Release: 1
 Summary: Portable SCTP Userland Stack
 License: BSD
@@ -9,6 +9,7 @@ Source: %{name}-%{version}.tar.gz
 
 AutoReqProv: on
 BuildRequires: cmake
+BuildRequires: gcc-c++
 BuildRoot: %{_tmppath}/%{name}-%{version}-build
 
 %description
