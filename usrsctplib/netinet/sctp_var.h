@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2008, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -32,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_var.h 309682 2016-12-07 19:30:59Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_var.h 317457 2017-04-26 19:26:40Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_VAR_H_
@@ -417,7 +419,11 @@ void sctp_input __P((struct mbuf *, int));
 #endif
 void sctp_pathmtu_adjustment __P((struct sctp_tcb *, uint16_t));
 #else
+#if defined(__APPLE__) && !defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION) && !defined(APPLE_ELCAPITAN)
+void sctp_ctlinput(int, struct sockaddr *, void *, struct ifnet * SCTP_UNUSED);
+#else
 void sctp_ctlinput(int, struct sockaddr *, void *);
+#endif
 int sctp_ctloutput(struct socket *, struct sockopt *);
 #ifdef INET
 void sctp_input_with_port(struct mbuf *, int, uint16_t);
@@ -456,7 +462,7 @@ void sctp_init(struct protosw *pp, struct domain *dp);
 #else
 void sctp_init(void);
 void sctp_notify(struct sctp_inpcb *, struct sctp_tcb *, struct sctp_nets *,
-    uint8_t, uint8_t, uint16_t, uint16_t);
+    uint8_t, uint8_t, uint16_t, uint32_t);
 #endif
 #if !defined(__FreeBSD__)
 void sctp_finish(void);

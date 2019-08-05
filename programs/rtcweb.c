@@ -38,8 +38,8 @@
 #include <sys/types.h>
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
-#include <WinSock2.h>
-#include <WS2tcpip.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <crtdbg.h>
 #else
 #include <sys/socket.h>
@@ -56,6 +56,7 @@
 #include <string.h>
 #include <errno.h>
 #include <usrsctp.h>
+#include "programs_helper.h"
 
 #define LINE_LENGTH (1024)
 #define BUFFER_SIZE (1<<16)
@@ -119,6 +120,10 @@ struct peer_connection {
 #define SCTP_PACKED
 #endif
 
+#if defined(_WIN32) && !defined(__MINGW32__)
+#pragma warning( push )
+#pragma warning( disable : 4200 )
+#endif /* defined(_WIN32) && !defined(__MINGW32__) */
 struct rtcweb_datachannel_open_request {
 	uint8_t msg_type; /* DATA_CHANNEL_OPEN_REQUEST */
 	uint8_t channel_type;
@@ -127,6 +132,9 @@ struct rtcweb_datachannel_open_request {
 	int16_t priority;
 	char label[];
 } SCTP_PACKED;
+#if defined(_WIN32) && !defined(__MINGW32__)
+#pragma warning( pop )
+#endif /* defined(_WIN32) && !defined(__MINGW32__) */
 
 struct rtcweb_datachannel_open_response {
 	uint8_t  msg_type; /* DATA_CHANNEL_OPEN_RESPONSE */
@@ -140,10 +148,16 @@ struct rtcweb_datachannel_ack {
 } SCTP_PACKED;
 
 #ifdef _WIN32
-#pragma pack()
+#pragma pack(pop)
 #endif
 
 #undef SCTP_PACKED
+
+static void
+lock_peer_connection(struct peer_connection *);
+
+static void
+unlock_peer_connection(struct peer_connection *);
 
 static void
 init_peer_connection(struct peer_connection *pc)
@@ -151,6 +165,12 @@ init_peer_connection(struct peer_connection *pc)
 	uint32_t i;
 	struct channel *channel;
 
+#ifdef _WIN32
+	InitializeCriticalSection(&(pc->mutex));
+#else
+	pthread_mutex_init(&pc->mutex, NULL);
+#endif
+	lock_peer_connection(pc);
 	for (i = 0; i < NUMBER_OF_CHANNELS; i++) {
 		channel = &(pc->channels[i]);
 		channel->id = i;
@@ -169,11 +189,7 @@ init_peer_connection(struct peer_connection *pc)
 	}
 	pc->o_stream_buffer_counter = 0;
 	pc->sock = NULL;
-#ifdef _WIN32
-	InitializeCriticalSection(&(pc->mutex));
-#else
-	pthread_mutex_init(&pc->mutex, NULL);
-#endif
+	unlock_peer_connection(pc);
 }
 
 static void
@@ -1103,7 +1119,7 @@ handle_send_failed_event(struct sctp_send_failed_event *ssfe)
 	if (ssfe->ssfe_flags & ~(SCTP_DATA_SENT | SCTP_DATA_UNSENT)) {
 		printf("(flags = %x) ", ssfe->ssfe_flags);
 	}
-	printf("message with PPID = %d, SID = %d, flags: 0x%04x due to error = 0x%08x",
+	printf("message with PPID = %u, SID = %u, flags: 0x%04x due to error = 0x%08x",
 	       ntohl(ssfe->ssfe_info.snd_ppid), ssfe->ssfe_info.snd_sid,
 	       ssfe->ssfe_info.snd_flags, ssfe->ssfe_error);
 	n = ssfe->ssfe_length - sizeof(struct sctp_send_failed_event);
@@ -1115,7 +1131,7 @@ handle_send_failed_event(struct sctp_send_failed_event *ssfe)
 }
 
 static void
-handle_notification(struct peer_connection *pc, union sctp_notification *notif, size_t n)
+handle_notification_rtcweb(struct peer_connection *pc, union sctp_notification *notif, size_t n)
 {
 	if (notif->sn_header.sn_length != (uint32_t)n) {
 		return;
@@ -1277,23 +1293,13 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 	if (data) {
 		lock_peer_connection(pc);
 		if (flags & MSG_NOTIFICATION) {
-			handle_notification(pc, (union sctp_notification *)data, datalen);
+			handle_notification_rtcweb(pc, (union sctp_notification *)data, datalen);
 		} else {
 			handle_message(pc, data, datalen, ntohl(rcv.rcv_ppid), rcv.rcv_sid);
 		}
 		unlock_peer_connection(pc);
 	}
 	return (1);
-}
-
-void
-debug_printf(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
 }
 
 int
@@ -1330,6 +1336,7 @@ main(int argc, char *argv[])
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
 #endif
 	usrsctp_sysctl_set_sctp_blackhole(2);
+	usrsctp_sysctl_set_sctp_no_csum_on_loopback(0);
 
 	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &peer_connection)) == NULL) {
 		perror("socket");
@@ -1426,7 +1433,7 @@ main(int argc, char *argv[])
 	unlock_peer_connection(&peer_connection);
 
 	for (;;) {
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
 		if (gets_s(line, LINE_LENGTH) == NULL) {
 #else
 		if (fgets(line, LINE_LENGTH, stdin) == NULL) {

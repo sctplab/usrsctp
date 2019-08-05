@@ -41,7 +41,7 @@
 #include <strings.h>
 #include <stdint.h>
 #else
-#if defined(_MSC_VER) && _MSC_VER >= 1600
+#if (defined(_MSC_VER) && _MSC_VER >= 1600) || (defined(__MSVCRT_VERSION__) && __MSVCRT_VERSION__ >= 1400)
 #include <stdint.h>
 #elif defined(SCTP_STDINT_INCLUDE)
 #include SCTP_STDINT_INCLUDE

@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2008, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -32,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 297662 2016-04-07 09:10:34Z rrs $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 345461 2019-03-23 22:56:03Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_H_
@@ -503,6 +505,7 @@ struct sctp_error_auth_invalid_hmac {
 					 * time */
 #define SCTP_SAT_NETWORK_BURST_INCR  2	/* how many times to multiply maxburst
 					 * in sat */
+#define SCTP_MAX_SENDALL_LIMIT 1024
 
 /* Data Chuck Specific Flags */
 #define SCTP_DATA_FRAG_MASK        0x03
@@ -528,6 +531,7 @@ struct sctp_error_auth_invalid_hmac {
 #define SCTP_PCB_FLAGS_BOUNDALL		0x00000004
 #define SCTP_PCB_FLAGS_ACCEPTING	0x00000008
 #define SCTP_PCB_FLAGS_UNBOUND		0x00000010
+#define SCTP_PCB_FLAGS_SND_ITERATOR_UP  0x00000020
 #define SCTP_PCB_FLAGS_CLOSE_IP         0x00040000
 #define SCTP_PCB_FLAGS_WAS_CONNECTED    0x00080000
 #define SCTP_PCB_FLAGS_WAS_ABORTED      0x00100000
@@ -569,7 +573,6 @@ struct sctp_error_auth_invalid_hmac {
 #define SCTP_PCB_FLAGS_INTERLEAVE_STRMS  0x0000000000000010
 #define SCTP_PCB_FLAGS_DO_ASCONF         0x0000000000000020
 #define SCTP_PCB_FLAGS_AUTO_ASCONF       0x0000000000000040
-#define SCTP_PCB_FLAGS_ZERO_COPY_ACTIVE  0x0000000000000080
 /* socket options */
 #define SCTP_PCB_FLAGS_NODELAY           0x0000000000000100
 #define SCTP_PCB_FLAGS_AUTOCLOSE         0x0000000000000200
@@ -609,7 +612,7 @@ struct sctp_error_auth_invalid_hmac {
 #define SCTP_SMALLEST_PMTU 512	 /* smallest pmtu allowed when disabling PMTU discovery */
 
 #if defined(__Userspace_os_Windows)
-#pragma pack()
+#pragma pack(pop)
 #endif
 #undef SCTP_PACKED
 

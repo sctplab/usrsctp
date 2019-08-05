@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -32,25 +34,23 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_crc32.h 309607 2016-12-06 10:21:25Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_crc32.h 327200 2017-12-26 12:35:02Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_CRC32_H_
 #define _NETINET_SCTP_CRC32_H_
 
 #if defined(_KERNEL)
-#if !defined(SCTP_WITH_NO_CSUM)
 uint32_t sctp_calculate_cksum(struct mbuf *, uint32_t);
-#endif
 #if defined(__FreeBSD__)
+#ifdef SCTP
 void sctp_delayed_cksum(struct mbuf *, uint32_t offset);
+#endif
 #endif
 #endif				/* _KERNEL */
 #if defined(__Userspace__)
-#if !defined(SCTP_WITH_NO_CSUM)
 uint32_t calculate_crc32c(uint32_t, const unsigned char *, unsigned int);
 uint32_t sctp_finalize_crc32c(uint32_t);
 uint32_t sctp_calculate_cksum(struct mbuf *, uint32_t);
-#endif
 #endif
 #endif				/* __crc32c_h__ */

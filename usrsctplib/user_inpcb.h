@@ -35,8 +35,6 @@
 
 #include <user_route.h> /* was <net/route.h> */
 
-#define	in6pcb		inpcb	/* for KAME src sync over BSD*'s */
-#define	in6p_sp		inp_sp	/* for KAME src sync over BSD*'s */
 struct inpcbpolicy;
 
 /*
@@ -95,7 +93,7 @@ struct in_conninfo {
 	/* protocol dependent part */
 	struct	in_endpoints inc_ie;
 };
-#define inc_isipv6	inc_flags	/* temp compatability */
+#define inc_isipv6	inc_flags	/* temp compatibility */
 #define	inc_fport	inc_ie.ie_fport
 #define	inc_lport	inc_ie.ie_lport
 #define	inc_faddr	inc_ie.ie_faddr
@@ -326,7 +324,6 @@ struct inpcbinfo {
 
 #define	INPLOOKUP_WILDCARD	1
 #define	sotoinpcb(so)	((struct inpcb *)(so)->so_pcb)
-#define	sotoin6pcb(so)	sotoinpcb(so) /* for KAME src sync over BSD*'s */
 
 #define	INP_SOCKAF(so) so->so_proto->pr_domain->dom_family
 

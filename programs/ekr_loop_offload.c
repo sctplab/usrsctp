@@ -48,6 +48,7 @@
 #include <ws2tcpip.h>
 #endif
 #include <usrsctp.h>
+#include "programs_helper.h"
 
 #define MAX_PACKET_SIZE (1<<16)
 #define LINE_LENGTH (1<<20)
@@ -83,7 +84,7 @@ handle_packets(void *arg)
 		length = recv(*fdp, buffer, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
 			if ((dump_buffer = usrsctp_dumppacket(buffer, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
-				//fprintf(stderr, "%s", dump_buffer);
+				/* fprintf(stderr, "%s", dump_buffer); */
 				usrsctp_freedumpbuffer(dump_buffer);
 			}
 			if ((size_t)length >= sizeof(struct sctp_common_header)) {
@@ -131,7 +132,7 @@ conn_output(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df
 		hdr->crc32c = usrsctp_crc32c(buffer, (size_t)length);
 	}
 	if ((dump_buffer = usrsctp_dumppacket(buffer, length, SCTP_DUMP_OUTBOUND)) != NULL) {
-		//fprintf(stderr, "%s", dump_buffer);
+		/* fprintf(stderr, "%s", dump_buffer); */
 		usrsctp_freedumpbuffer(dump_buffer);
 	}
 #ifdef _WIN32
@@ -153,7 +154,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 	printf("Message %p received on sock = %p.\n", data, (void *)sock);
 	if (data) {
 		if ((flags & MSG_NOTIFICATION) == 0) {
-			printf("Messsage of length %d received via %p:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u, flags %x.\n",
+			printf("Messsage of length %d received via %p:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u, flags %x.\n",
 			       (int)datalen,
 			       addr.sconn.sconn_addr,
 			       ntohs(addr.sconn.sconn_port),
@@ -276,18 +277,8 @@ print_addresses(struct socket *sock)
 }
 #endif
 
-void
-debug_printf(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
-}
-
 int
-main(void)
+main(int argc, char *argv[])
 {
 	struct sockaddr_in sin_s, sin_c;
 	struct sockaddr_conn sconn;
@@ -309,6 +300,13 @@ main(void)
 #ifdef _WIN32
 	WSADATA wsaData;
 #endif
+	uint16_t client_port = 9900;
+	uint16_t server_port = 9901;
+
+	if (argc == 3) {
+		client_port = atoi(argv[1]);
+		server_port = atoi(argv[2]);
+	}
 
 #ifdef _WIN32
 	if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
@@ -343,14 +341,14 @@ main(void)
 #ifdef HAVE_SIN_LEN
 	sin_c.sin_len = sizeof(struct sockaddr_in);
 #endif
-	sin_c.sin_port = htons(9899);
+	sin_c.sin_port = htons(client_port);
 	sin_c.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	memset(&sin_s, 0, sizeof(struct sockaddr_in));
 	sin_s.sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
 	sin_s.sin_len = sizeof(struct sockaddr_in);
 #endif
-	sin_s.sin_port = htons(9901);
+	sin_s.sin_port = htons(server_port);
 	sin_s.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 #ifdef _WIN32
 	if (bind(fd_c, (struct sockaddr *)&sin_c, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {

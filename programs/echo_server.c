@@ -29,7 +29,11 @@
  */
 
 /*
- * Usage: discard_server [local_encaps_port] [remote_encaps_port]
+ * Usage: echo_server [local_encaps_port] [remote_encaps_port]
+ *
+ * Example
+ * Server: $ ./echo_server 11111 22222
+ * Client: $ ./client 127.0.0.1 7 0 22222 11111
  */
 
 #ifdef _WIN32
@@ -47,8 +51,11 @@
 #include <arpa/inet.h>
 #endif
 #include <usrsctp.h>
+#include "programs_helper.h"
 
+#define PORT 7
 #define BUFFER_SIZE 10240
+#define SLEEP 1
 
 const int use_cb = 0;
 
@@ -91,7 +98,7 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 				port = 0;
 				break;
 			}
-			printf("Msg of length %d received from %s:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u.\n",
+			printf("Msg of length %d received from %s:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u.\n",
 			       (int)datalen,
 			       name,
 			       port,
@@ -119,16 +126,6 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		free(data);
 	}
 	return (1);
-}
-
-void
-debug_printf(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
 }
 
 int
@@ -165,6 +162,7 @@ main(int argc, char *argv[])
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
 #endif
 	usrsctp_sysctl_set_sctp_blackhole(2);
+	usrsctp_sysctl_set_sctp_no_csum_on_loopback(0);
 
 	if ((sock = usrsctp_socket(AF_INET6, SOCK_SEQPACKET, IPPROTO_SCTP, use_cb?receive_cb:NULL, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
@@ -204,7 +202,7 @@ main(int argc, char *argv[])
 	addr.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 	addr.sin6_family = AF_INET6;
-	addr.sin6_port = htons(7);
+	addr.sin6_port = htons(PORT);
 	addr.sin6_addr = in6addr_any;
 	if (usrsctp_bind(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in6)) < 0) {
 		perror("usrsctp_bind");
@@ -215,9 +213,9 @@ main(int argc, char *argv[])
 	while (1) {
 		if (use_cb) {
 #ifdef _WIN32
-			Sleep(1*1000);
+		Sleep(SLEEP * 1000);
 #else
-			sleep(1);
+		sleep(SLEEP);
 #endif
 		} else {
 			from_len = (socklen_t)sizeof(struct sockaddr_in6);
@@ -230,7 +228,7 @@ main(int argc, char *argv[])
 					printf("Notification of length %llu received.\n", (unsigned long long)n);
 				} else {
 					if (infotype == SCTP_RECVV_RCVINFO) {
-						printf("Msg of length %llu received from %s:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u, complete %d.\n",
+						printf("Msg of length %llu received from %s:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u, complete %d.\n",
 						        (unsigned long long)n,
 						        inet_ntop(AF_INET6, &addr.sin6_addr, name, INET6_ADDRSTRLEN), ntohs(addr.sin6_port),
 						        rcv_info.rcv_sid,
@@ -269,9 +267,9 @@ main(int argc, char *argv[])
 	usrsctp_close(sock);
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
-		Sleep(1000);
+		Sleep(SLEEP * 1000);
 #else
-		sleep(1);
+		sleep(SLEEP);
 #endif
 	}
 	return (0);

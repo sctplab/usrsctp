@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -32,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_peeloff.c 279859 2015-03-10 19:49:25Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_peeloff.c 337708 2018-08-13 13:58:45Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -77,7 +79,7 @@ sctp_can_peel_off(struct socket *head, sctp_assoc_t assoc_id)
 		SCTP_LTRACE_ERR_RET(inp, stcb, NULL, SCTP_FROM_SCTP_PEELOFF, ENOENT);
 		return (ENOENT);
 	}
-	state = SCTP_GET_STATE((&stcb->asoc));
+	state = SCTP_GET_STATE(stcb);
 	if ((state == SCTP_STATE_EMPTY) ||
 	    (state == SCTP_STATE_INUSE)) {
 		SCTP_TCB_UNLOCK(stcb);
@@ -107,7 +109,7 @@ sctp_do_peeloff(struct socket *head, struct socket *so, sctp_assoc_t assoc_id)
 		return (ENOTCONN);
 	}
 
-	state = SCTP_GET_STATE((&stcb->asoc));
+	state = SCTP_GET_STATE(stcb);
 	if ((state == SCTP_STATE_EMPTY) ||
 	    (state == SCTP_STATE_INUSE)) {
 		SCTP_TCB_UNLOCK(stcb);
@@ -280,8 +282,10 @@ sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
 				SCTP_FROM_SCTP_PEELOFF + SCTP_LOC_1);
 	}
 	/* Turn off any non-blocking semantic. */
+	SOCK_LOCK(newso);
 	SCTP_CLEAR_SO_NBIO(newso);
-        newso->so_state |= SS_ISCONNECTED;
+	newso->so_state |= SS_ISCONNECTED;
+	SOCK_UNLOCK(newso);
 	/* We remove it right away */
 
 #if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__)
@@ -294,7 +298,7 @@ sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
 	head->so_qlen--;
 	SOCK_UNLOCK(head);
 #else
-        newso = TAILQ_FIRST(&head->so_q);
+	newso = TAILQ_FIRST(&head->so_q);
 	if (soqremque(newso, 1) == 0) {
 		SCTP_PRINTF("soremque failed, peeloff-fails (invarients would panic)\n");
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PEELOFF, ENOTCONN);
@@ -307,7 +311,7 @@ sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
 	 * Now we must move it from one hash table to another and get the
 	 * stcb in the right place.
 	 */
-        sctp_move_pcb_and_assoc(inp, n_inp, stcb);
+	sctp_move_pcb_and_assoc(inp, n_inp, stcb);
 	atomic_add_int(&stcb->asoc.refcnt, 1);
 	SCTP_TCB_UNLOCK(stcb);
 	/*

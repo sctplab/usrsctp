@@ -78,9 +78,9 @@
 }
 #endif
 #if defined(__Userspace_os_Windows)
-static void atomic_init() {} /* empty when we are not using atomic_mtx */
+static void atomic_init(void) {} /* empty when we are not using atomic_mtx */
 #else
-static inline void atomic_init() {} /* empty when we are not using atomic_mtx */
+static inline void atomic_init(void) {} /* empty when we are not using atomic_mtx */
 #endif
 
 #else
@@ -132,7 +132,7 @@ static inline void atomic_init() {} /* empty when we are not using atomic_mtx */
 	} \
 }
 #endif
-static inline void atomic_init() {} /* empty when we are not using atomic_mtx */
+static inline void atomic_init(void) {} /* empty when we are not using atomic_mtx */
 #endif
 
 #if 0 /* using libatomic_ops */

@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -32,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 349986 2019-07-14 12:04:39Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_PCB_H_
@@ -309,7 +311,7 @@ struct sctp_base_info {
 #if defined(__Userspace__)
 	userland_mutex_t timer_mtx;
 	userland_thread_t timer_thread;
-	uint8_t timer_thread_should_exit;
+	int timer_thread_should_exit;
 #if !defined(__Userspace_os_Windows)
 	pthread_mutexattr_t mtx_attr;
 #if defined(INET) || defined(INET6)
@@ -318,7 +320,7 @@ struct sctp_base_info {
 #endif
 #endif
 #ifdef INET
-#if defined(__Userspace_os_Windows)
+#if defined(__Userspace_os_Windows) && !defined(__MINGW32__)
 	SOCKET userspace_rawsctp;
 	SOCKET userspace_udpsctp;
 #else
@@ -329,7 +331,7 @@ struct sctp_base_info {
 	userland_thread_t recvthreadudp;
 #endif
 #ifdef INET6
-#if defined(__Userspace_os_Windows)
+#if defined(__Userspace_os_Windows) && !defined(__MINGW32__)
 	SOCKET userspace_rawsctp6;
 	SOCKET userspace_udpsctp6;
 #else
@@ -373,6 +375,7 @@ struct sctp_pcb {
 	sctp_auth_chklist_t *local_auth_chunks;
 	sctp_hmaclist_t *local_hmacs;
 	uint16_t default_keyid;
+	uint32_t default_mtu;
 
 	/* various thresholds */
 	/* Max times I will init at a guy */
@@ -400,10 +403,6 @@ struct sctp_pcb {
 	 */
 	struct sctp_timer signature_change;
 
-	/* Zero copy full buffer timer */
-	struct sctp_timer zero_copy_timer;
-        /* Zero copy app to transport (sendq) read repulse timer */
-	struct sctp_timer zero_copy_sendq_timer;
 	uint32_t def_cookie_life;
 	/* defaults to 0 */
 	int auto_close_time;
@@ -449,7 +448,7 @@ struct sctp_inpcb {
 	 */
 	union {
 		struct inpcb inp;
-		char align[(sizeof(struct in6pcb) + SCTP_ALIGNM1) &
+		char align[(sizeof(struct inpcb) + SCTP_ALIGNM1) &
 		        ~SCTP_ALIGNM1];
 	}     ip_inp;
 
@@ -804,19 +803,24 @@ int sctp_is_address_on_local_host(struct sockaddr *addr, uint32_t vrf_id);
 
 void sctp_inpcb_free(struct sctp_inpcb *, int, int);
 
+#define SCTP_DONT_INITIALIZE_AUTH_PARAMS	0
+#define SCTP_INITIALIZE_AUTH_PARAMS		1
+
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
 struct sctp_tcb *
 sctp_aloc_assoc(struct sctp_inpcb *, struct sockaddr *,
-                int *, uint32_t, uint32_t, uint16_t, uint16_t, struct thread *);
+                int *, uint32_t, uint32_t, uint16_t, uint16_t, struct thread *,
+                int);
 #elif defined(__Windows__)
 struct sctp_tcb *
 sctp_aloc_assoc(struct sctp_inpcb *, struct sockaddr *,
-                int *, uint32_t, uint32_t, uint16_t, uint16_t, PKTHREAD);
+                int *, uint32_t, uint32_t, uint16_t, uint16_t, PKTHREAD, int);
 #else
 /* proc will be NULL for __Userspace__ */
 struct sctp_tcb *
 sctp_aloc_assoc(struct sctp_inpcb *, struct sockaddr *,
-                int *, uint32_t, uint32_t, uint16_t, uint16_t, struct proc *);
+                int *, uint32_t, uint32_t, uint16_t, uint16_t, struct proc *,
+                int);
 #endif
 
 int sctp_free_assoc(struct sctp_inpcb *, struct sctp_tcb *, int, int);

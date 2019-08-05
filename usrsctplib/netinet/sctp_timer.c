@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -32,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 313030 2017-01-31 23:34:02Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 338134 2018-08-21 13:25:32Z tuexen $");
 #endif
 
 #define _IP_VHL
@@ -674,6 +676,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 				stcb->asoc.peers_rwnd += SCTP_BASE_SYSCTL(sctp_peer_chunk_oh);
 			}
 			chk->sent = SCTP_DATAGRAM_RESEND;
+			chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 			SCTP_STAT_INCR(sctps_markedretrans);
 
 			/* reset the TSN for striking and other FR stuff */
@@ -747,6 +750,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 			chk->whoTo = alt;
 			if (chk->sent != SCTP_DATAGRAM_RESEND) {
 				chk->sent = SCTP_DATAGRAM_RESEND;
+				chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 				sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 				cnt_mk++;
 			}
@@ -963,7 +967,7 @@ sctp_t3rxt_timer(struct sctp_inpcb *inp,
 	 * Special case for cookie-echo'ed case, we don't do output but must
 	 * await the COOKIE-ACK before retransmission
 	 */
-	if (SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_COOKIE_ECHOED) {
+	if (SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_ECHOED) {
 		/*
 		 * Here we just reset the timer and start again since we
 		 * have not established the asoc
@@ -1005,7 +1009,7 @@ sctp_t1init_timer(struct sctp_inpcb *inp,
 		sctp_send_initiate(inp, stcb, SCTP_SO_NOT_LOCKED);
 		return (0);
 	}
-	if (SCTP_GET_STATE((&stcb->asoc)) != SCTP_STATE_COOKIE_WAIT) {
+	if (SCTP_GET_STATE(stcb) != SCTP_STATE_COOKIE_WAIT) {
 		return (0);
 	}
 	if (sctp_threshold_management(inp, stcb, net,
@@ -1053,7 +1057,7 @@ sctp_cookie_timer(struct sctp_inpcb *inp,
 		}
 	}
 	if (cookie == NULL) {
-		if (SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_COOKIE_ECHOED) {
+		if (SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_ECHOED) {
 			/* FOOBAR! */
 			struct mbuf *op_err;
 
@@ -1065,7 +1069,7 @@ sctp_cookie_timer(struct sctp_inpcb *inp,
 #ifdef INVARIANTS
 			panic("Cookie timer expires in wrong state?");
 #else
-			SCTP_PRINTF("Strange in state %d not cookie-echoed yet c-e timer expires?\n", SCTP_GET_STATE(&stcb->asoc));
+			SCTP_PRINTF("Strange in state %d not cookie-echoed yet c-e timer expires?\n", SCTP_GET_STATE(stcb));
 			return (0);
 #endif
 		}
@@ -1094,6 +1098,7 @@ sctp_cookie_timer(struct sctp_inpcb *inp,
 		sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 	}
 	cookie->sent = SCTP_DATAGRAM_RESEND;
+	cookie->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 	/*
 	 * Now call the output routine to kick out the cookie again, Note we
 	 * don't mark any chunks for retran so that FR will need to kick in
@@ -1140,6 +1145,7 @@ sctp_strreset_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			sctp_free_remote_addr(chk->whoTo);
 			if (chk->sent != SCTP_DATAGRAM_RESEND) {
 				chk->sent = SCTP_DATAGRAM_RESEND;
+				chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 				sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 			}
 			chk->whoTo = alt;
@@ -1157,6 +1163,7 @@ sctp_strreset_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	if (strrst->sent != SCTP_DATAGRAM_RESEND)
 		sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 	strrst->sent = SCTP_DATAGRAM_RESEND;
+	strrst->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 
 	/* restart the timer */
 	sctp_timer_start(SCTP_TIMER_TYPE_STRRESET, inp, stcb, strrst->whoTo);
@@ -1221,6 +1228,7 @@ sctp_asconf_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				chk->whoTo = alt;
 				if (chk->sent != SCTP_DATAGRAM_RESEND) {
 					chk->sent = SCTP_DATAGRAM_RESEND;
+					chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 					sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 				}
 				atomic_add_int(&alt->ref_count, 1);
@@ -1235,6 +1243,7 @@ sctp_asconf_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			if (asconf->sent != SCTP_DATAGRAM_RESEND && chk->sent != SCTP_DATAGRAM_UNSENT)
 				sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 			chk->sent = SCTP_DATAGRAM_RESEND;
+			chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 		}
 		if (!(net->dest_state & SCTP_ADDR_REACHABLE)) {
 			/*
@@ -1247,6 +1256,7 @@ sctp_asconf_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		if (asconf->sent != SCTP_DATAGRAM_RESEND)
 			sctp_ucount_incr(stcb->asoc.sent_queue_retran_cnt);
 		asconf->sent = SCTP_DATAGRAM_RESEND;
+		asconf->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 
 		/* send another ASCONF if any and we can do */
 		sctp_send_asconf(stcb, alt, SCTP_ADDR_NOT_LOCKED);
@@ -1567,16 +1577,15 @@ sctp_autoclose_timer(struct sctp_inpcb *inp,
 				 * there is nothing queued to send, so I'm
 				 * done...
 				 */
-				if (SCTP_GET_STATE(asoc) != SCTP_STATE_SHUTDOWN_SENT) {
+				if (SCTP_GET_STATE(stcb) != SCTP_STATE_SHUTDOWN_SENT) {
 					/* only send SHUTDOWN 1st time thru */
 					struct sctp_nets *netp;
 
-					if ((SCTP_GET_STATE(asoc) == SCTP_STATE_OPEN) ||
-					    (SCTP_GET_STATE(asoc) == SCTP_STATE_SHUTDOWN_RECEIVED)) {
+					if ((SCTP_GET_STATE(stcb) == SCTP_STATE_OPEN) ||
+					    (SCTP_GET_STATE(stcb) == SCTP_STATE_SHUTDOWN_RECEIVED)) {
 						SCTP_STAT_DECR_GAUGE32(sctps_currestab);
 					}
-					SCTP_SET_STATE(asoc, SCTP_STATE_SHUTDOWN_SENT);
-					SCTP_CLEAR_SUBSTATE(asoc, SCTP_STATE_SHUTDOWN_PENDING);
+					SCTP_SET_STATE(stcb, SCTP_STATE_SHUTDOWN_SENT);
 					sctp_stop_timers_for_shutdown(stcb);
 					if (stcb->asoc.alternate) {
 						netp = stcb->asoc.alternate;

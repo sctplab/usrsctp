@@ -32,6 +32,9 @@
  * Usage: client remote_addr remote_port [local_port] [local_encaps_port] [remote_encaps_port]
  */
 
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,12 +51,15 @@
 #include <io.h>
 #endif
 #include <usrsctp.h>
+#include "programs_helper.h"
 
 int done = 0;
 
 #ifdef _WIN32
 typedef char* caddr_t;
 #endif
+
+
 
 static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
@@ -63,26 +69,20 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		done = 1;
 		usrsctp_close(sock);
 	} else {
+		if (flags & MSG_NOTIFICATION) {
+			handle_notification((union sctp_notification *)data, datalen);
+		} else {
 #ifdef _WIN32
-		_write(_fileno(stdout), data, (unsigned int)datalen);
+			_write(_fileno(stdout), data, (unsigned int)datalen);
 #else
-		if (write(fileno(stdout), data, datalen) < 0) {
-			perror("write");
-		}
+			if (write(fileno(stdout), data, datalen) < 0) {
+				perror("write");
+			}
 #endif
+		}
 		free(data);
 	}
 	return (1);
-}
-
-void
-debug_printf(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
 }
 
 int
@@ -94,8 +94,13 @@ main(int argc, char *argv[])
 	struct sockaddr_in6 addr6;
 	struct sctp_udpencaps encaps;
 	struct sctpstat stat;
+	struct sctp_event event;
+	uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
+	                          SCTP_PEER_ADDR_CHANGE,
+	                          SCTP_SEND_FAILED_EVENT};
 	char buffer[80];
-	int i, n;
+	unsigned int i;
+	int n;
 
 	if (argc < 3) {
 		printf("%s", "Usage: client remote_addr remote_port local_port local_encaps_port remote_encaps_port\n");
@@ -110,8 +115,19 @@ main(int argc, char *argv[])
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
 #endif
 	usrsctp_sysctl_set_sctp_blackhole(2);
+	usrsctp_sysctl_set_sctp_no_csum_on_loopback(0);
+
 	if ((sock = usrsctp_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
+	}
+	memset(&event, 0, sizeof(event));
+	event.se_assoc_id = SCTP_ALL_ASSOC;
+	event.se_on = 1;
+	for (i = 0; i < sizeof(event_types)/sizeof(uint16_t); i++) {
+		event.se_type = event_types[i];
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
+			perror("setsockopt SCTP_EVENT");
+		}
 	}
 	if (argc > 3) {
 		memset((void *)&addr6, 0, sizeof(struct sockaddr_in6));
@@ -161,7 +177,7 @@ main(int argc, char *argv[])
 	} else {
 		addr = addrs;
 		printf("Local addresses: ");
-		for (i = 0; i < n; i++) {
+		for (i = 0; i < (unsigned int)n; i++) {
 			if (i > 0) {
 				printf("%s", ", ");
 			}
@@ -209,7 +225,7 @@ main(int argc, char *argv[])
 	} else {
 		addr = addrs;
 		printf("Peer addresses: ");
-		for (i = 0; i < n; i++) {
+		for (i = 0; i < (unsigned int)n; i++) {
 			if (i > 0) {
 				printf("%s", ", ");
 			}
@@ -262,7 +278,7 @@ main(int argc, char *argv[])
 	}
 	while (!done) {
 #ifdef _WIN32
-		Sleep(1*1000);
+		Sleep(1 * 1000);
 #else
 		sleep(1);
 #endif
@@ -272,7 +288,7 @@ main(int argc, char *argv[])
 	       stat.sctps_outpackets, stat.sctps_inpackets);
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
-		Sleep(1000);
+		Sleep(1 * 1000);
 #else
 		sleep(1);
 #endif

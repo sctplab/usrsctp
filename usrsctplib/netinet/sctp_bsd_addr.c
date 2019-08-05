@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 2001-2007, by Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2008-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2012, by Michael Tuexen. All rights reserved.
@@ -32,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 342872 2019-01-09 01:11:19Z glebius $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -576,17 +578,15 @@ sctp_init_ifns_for_vrf(int vrfid)
 #endif
 
 	IFNET_RLOCK();
-	TAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_link) {
+	CK_STAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_link) {
+		struct epoch_tracker et;
+
 		if (sctp_is_desired_interface_type(ifn) == 0) {
 			/* non desired type */
 			continue;
 		}
-#if (__FreeBSD_version >= 803000 && __FreeBSD_version < 900000) || __FreeBSD_version > 900000
-		IF_ADDR_RLOCK(ifn);
-#else
-		IF_ADDR_LOCK(ifn);
-#endif
-		TAILQ_FOREACH(ifa, &ifn->if_addrhead, ifa_link) {
+		NET_EPOCH_ENTER(et);
+		CK_STAILQ_FOREACH(ifa, &ifn->if_addrhead, ifa_link) {
 			if (ifa->ifa_addr == NULL) {
 				continue;
 			}
@@ -638,11 +638,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 				sctp_ifa->localifa_flags &= ~SCTP_ADDR_DEFER_USE;
 			}
 		}
-#if (__FreeBSD_version >= 803000 && __FreeBSD_version < 900000) || __FreeBSD_version > 900000
-		IF_ADDR_RUNLOCK(ifn);
-#else
-		IF_ADDR_UNLOCK(ifn);
-#endif
+		NET_EPOCH_EXIT(et);
 	}
 	IFNET_RUNLOCK();
 }
@@ -753,11 +749,11 @@ sctp_add_or_del_interfaces(int (*pred)(struct ifnet *), int add)
 	struct ifaddr *ifa;
 
 	IFNET_RLOCK();
-	TAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_link) {
+	CK_STAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_link) {
 		if (!(*pred)(ifn)) {
 			continue;
 		}
-		TAILQ_FOREACH(ifa, &ifn->if_addrhead, ifa_link) {
+		CK_STAILQ_FOREACH(ifa, &ifn->if_addrhead, ifa_link) {
 			sctp_addr_change(ifa, add ? RTM_ADD : RTM_DELETE);
 		}
 	}
@@ -796,149 +792,52 @@ struct mbuf *
 sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header,
 		      int how, int allonebuf, int type)
 {
-    struct mbuf *m = NULL;
+	struct mbuf *m = NULL;
+#if defined(__FreeBSD__) && __FreeBSD_version > 1100052 || defined(__Userspace__)
 #if defined(__Userspace__)
-
-  /*
-   * __Userspace__
-   * Using m_clget, which creates and mbuf and a cluster and
-   * hooks those together.
-   * TODO: This does not yet have functionality for jumbo packets.
-   *
-   */
-
-	int mbuf_threshold;
-	if (want_header) {
-		MGETHDR(m, how, type);
-	} else {
-		MGET(m, how, type);
-	}
-	if (m == NULL) {
-		return (NULL);
-	}
-	if (allonebuf == 0)
-		mbuf_threshold = SCTP_BASE_SYSCTL(sctp_mbuf_threshold_count);
-	else
-		mbuf_threshold = 1;
-
-
-	if ((int)space_needed > (((mbuf_threshold - 1) * MLEN) + MHLEN)) {
-		MCLGET(m, how);
-		if (m == NULL) {
-			return (NULL);
-		}
-
-		if (SCTP_BUF_IS_EXTENDED(m) == 0) {
-			sctp_m_freem(m);
-			return (NULL);
-		}
-	}
-	SCTP_BUF_LEN(m) = 0;
-	SCTP_BUF_NEXT(m) = SCTP_BUF_NEXT_PKT(m) = NULL;
-
-	/* __Userspace__
-	 * Check if anything need to be done to ensure logging works
-	 */
-#ifdef SCTP_MBUF_LOGGING
-	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_MBUF_LOGGING_ENABLE) {
-		sctp_log_mb(m, SCTP_MBUF_IALLOC);
-	}
-#endif
-#elif defined(__FreeBSD__) && __FreeBSD_version > 1100052
+	m =  m_getm2(NULL, space_needed, how, type, want_header ? M_PKTHDR : 0, allonebuf);
+#else
 	m =  m_getm2(NULL, space_needed, how, type, want_header ? M_PKTHDR : 0);
+#endif
 	if (m == NULL) {
 		/* bad, no memory */
 		return (m);
 	}
+#if !defined(__Userspace__)
 	if (allonebuf) {
 		if (SCTP_BUF_SIZE(m) < space_needed) {
 			m_freem(m);
 			return (NULL);
 		}
-	}
-	if (SCTP_BUF_NEXT(m)) {
-		sctp_m_freem(SCTP_BUF_NEXT(m));
-		SCTP_BUF_NEXT(m) = NULL;
-	}
-#ifdef SCTP_MBUF_LOGGING
-	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_MBUF_LOGGING_ENABLE) {
-		sctp_log_mb(m, SCTP_MBUF_IALLOC);
+		KASSERT(SCTP_BUF_NEXT(m) == NULL, ("%s: no chain allowed", __FUNCTION__));
 	}
 #endif
-#elif defined(__FreeBSD__) && __FreeBSD_version > 602000
-	m =  m_getm2(NULL, space_needed, how, type, want_header ? M_PKTHDR : 0);
-	if (m == NULL) {
-		/* bad, no memory */
-		return (m);
-	}
-	if (allonebuf) {
-		int siz;
-		if (SCTP_BUF_IS_EXTENDED(m)) {
-			siz = SCTP_BUF_EXTEND_SIZE(m);
-		} else {
-			if (want_header)
-				siz = MHLEN;
-			else
-				siz = MLEN;
-		}
-		if (siz < space_needed) {
-			m_freem(m);
-			return (NULL);
-		}
-	}
-	if (SCTP_BUF_NEXT(m)) {
-		sctp_m_freem(SCTP_BUF_NEXT(m));
-		SCTP_BUF_NEXT(m) = NULL;
-	}
 #ifdef SCTP_MBUF_LOGGING
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_MBUF_LOGGING_ENABLE) {
 		sctp_log_mb(m, SCTP_MBUF_IALLOC);
 	}
 #endif
 #else
-#if defined(__FreeBSD__) && __FreeBSD_version >= 601000
-	int aloc_size;
-	int index = 0;
-#endif
 	int mbuf_threshold;
+	unsigned int size;
+
 	if (want_header) {
 		MGETHDR(m, how, type);
+		size = MHLEN;
 	} else {
 		MGET(m, how, type);
+		size = MLEN;
 	}
 	if (m == NULL) {
 		return (NULL);
 	}
-	if (allonebuf == 0)
+	if (allonebuf == 0) {
 		mbuf_threshold = SCTP_BASE_SYSCTL(sctp_mbuf_threshold_count);
-	else
+	} else {
 		mbuf_threshold = 1;
+	}
 
-
-	if (space_needed > (((mbuf_threshold - 1) * MLEN) + MHLEN)) {
-#if defined(__FreeBSD__) && __FreeBSD_version >= 601000
-	try_again:
-		index = 4;
-		if (space_needed <= MCLBYTES) {
-			aloc_size = MCLBYTES;
-		} else {
-			aloc_size = MJUMPAGESIZE;
-			index = 5;
-		}
-		m_cljget(m, how, aloc_size);
-		if (m == NULL) {
-			return (NULL);
-		}
-		if (SCTP_BUF_IS_EXTENDED(m) == 0) {
-			if ((aloc_size != MCLBYTES) &&
-			   (allonebuf == 0)) {
-				aloc_size -= 10;
-				goto try_again;
-			}
-			sctp_m_freem(m);
-			return (NULL);
-		}
-#else
+	if (space_needed > (unsigned int)(((mbuf_threshold - 1) * MLEN) + MHLEN)) {
 		MCLGET(m, how);
 		if (m == NULL) {
 			return (NULL);
@@ -947,7 +846,11 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header,
 			sctp_m_freem(m);
 			return (NULL);
 		}
-#endif
+		size = SCTP_BUF_EXTEND_SIZE(m);
+	}
+	if (allonebuf != 0 && size < space_needed) {
+		m_freem(m);
+		return (NULL);
 	}
 	SCTP_BUF_LEN(m) = 0;
 	SCTP_BUF_NEXT(m) = SCTP_BUF_NEXT_PKT(m) = NULL;

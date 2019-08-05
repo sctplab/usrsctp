@@ -30,6 +30,10 @@
 
 /*
  * Usage: daytime_server [local_encaps_port] [remote_encaps_port]
+ * 
+ * Example
+ * Server: $ ./daytime_server 11111 22222
+ * Client: $ ./client 127.0.0.1 13 0 22222 11111
  */
 
 #ifdef _WIN32
@@ -48,18 +52,12 @@
 #include <arpa/inet.h>
 #endif
 #include <usrsctp.h>
+#include "programs_helper.h"
 
-void
-debug_printf(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
-}
-
+#define PORT 13
 #define DAYTIME_PPID 40
+#define SLEEP 1
+
 int
 main(int argc, char *argv[])
 {
@@ -80,6 +78,7 @@ main(int argc, char *argv[])
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
 #endif
 	usrsctp_sysctl_set_sctp_blackhole(2);
+	usrsctp_sysctl_set_sctp_no_csum_on_loopback(0);
 
 	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
@@ -97,7 +96,7 @@ main(int argc, char *argv[])
 	addr.sin_len = sizeof(struct sockaddr_in);
 #endif
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(13);
+	addr.sin_port = htons(PORT);
 	addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	if (usrsctp_bind(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) < 0) {
 		perror("usrsctp_bind");
@@ -121,16 +120,18 @@ main(int argc, char *argv[])
 		sndinfo.snd_ppid = htonl(DAYTIME_PPID);
 		sndinfo.snd_context = 0;
 		sndinfo.snd_assoc_id = 0;
-		usrsctp_sendv(conn_sock, buffer, strlen(buffer), NULL, 0, (void *)&sndinfo,
-		              (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0);
+		if (usrsctp_sendv(conn_sock, buffer, strlen(buffer), NULL, 0, (void *)&sndinfo,
+		                  (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
+			perror("usrsctp_sendv");
+		}
 		usrsctp_close(conn_sock);
 	}
 	usrsctp_close(sock);
 	while (usrsctp_finish() != 0) {
 #ifdef _WIN32
-		Sleep(1000);
+		Sleep(SLEEP * 1000);
 #else
-		sleep(1);
+		sleep(SLEEP);
 #endif
 	}
 	return (0);

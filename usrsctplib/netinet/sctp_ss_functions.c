@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
  * Copyright (c) 2010-2012, by Michael Tuexen. All rights reserved.
  * Copyright (c) 2010-2012, by Randall Stewart. All rights reserved.
  * Copyright (c) 2010-2012, by Robin Seggelmann. All rights reserved.
@@ -28,7 +30,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_ss_functions.c 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_ss_functions.c 345505 2019-03-25 16:40:54Z tuexen $");
 #endif
 
 #include <netinet/sctp_pcb.h>
@@ -57,6 +59,9 @@ sctp_ss_default_init(struct sctp_tcb *stcb, struct sctp_association *asoc,
 {
 	uint16_t i;
 
+	if (holds_lock == 0) {
+		SCTP_TCB_SEND_LOCK(stcb);
+	}
 	asoc->ss_data.locked_on_sending = NULL;
 	asoc->ss_data.last_out_stream = NULL;
 	TAILQ_INIT(&asoc->ss_data.out.wheel);
@@ -69,7 +74,10 @@ sctp_ss_default_init(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
 		stcb->asoc.ss_functions.sctp_ss_add_to_stream(stcb, &stcb->asoc,
 		                                              &stcb->asoc.strmout[i],
-		                                              NULL, holds_lock);
+		                                              NULL, 1);
+	}
+	if (holds_lock == 0) {
+		SCTP_TCB_SEND_UNLOCK(stcb);
 	}
 	return;
 }
@@ -82,8 +90,10 @@ sctp_ss_default_clear(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		SCTP_TCB_SEND_LOCK(stcb);
 	}
 	while (!TAILQ_EMPTY(&asoc->ss_data.out.wheel)) {
-		struct sctp_stream_out *strq = TAILQ_FIRST(&asoc->ss_data.out.wheel);
-		TAILQ_REMOVE(&asoc->ss_data.out.wheel, TAILQ_FIRST(&asoc->ss_data.out.wheel), ss_params.rr.next_spoke);
+		struct sctp_stream_out *strq;
+
+		strq = TAILQ_FIRST(&asoc->ss_data.out.wheel);
+		TAILQ_REMOVE(&asoc->ss_data.out.wheel, strq, ss_params.rr.next_spoke);
 		strq->ss_params.rr.next_spoke.tqe_next = NULL;
 		strq->ss_params.rr.next_spoke.tqe_prev = NULL;
 	}
@@ -272,9 +282,23 @@ sctp_ss_default_set_value(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_associa
 }
 
 static int
-sctp_ss_default_is_user_msgs_incomplete(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_association *asoc SCTP_UNUSED)
+sctp_ss_default_is_user_msgs_incomplete(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_association *asoc)
 {
-	return (0);
+	struct sctp_stream_out *strq;
+	struct sctp_stream_queue_pending *sp;
+
+	if (asoc->stream_queue_cnt != 1) {
+		return (0);
+	}
+	strq = asoc->ss_data.locked_on_sending;
+	if (strq == NULL) {
+		return (0);
+	}
+	sp = TAILQ_FIRST(&strq->outqueue);
+	if (sp == NULL) {
+		return (0);
+	}
+	return (!sp->msg_is_complete);
 }
 
 /*
@@ -385,11 +409,13 @@ sctp_ss_prio_clear(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		SCTP_TCB_SEND_LOCK(stcb);
 	}
 	while (!TAILQ_EMPTY(&asoc->ss_data.out.wheel)) {
-		struct sctp_stream_out *strq = TAILQ_FIRST(&asoc->ss_data.out.wheel);
+		struct sctp_stream_out *strq;
+
+		strq = TAILQ_FIRST(&asoc->ss_data.out.wheel);
 		if (clear_values) {
 			strq->ss_params.prio.priority = 0;
 		}
-		TAILQ_REMOVE(&asoc->ss_data.out.wheel, TAILQ_FIRST(&asoc->ss_data.out.wheel), ss_params.prio.next_spoke);
+		TAILQ_REMOVE(&asoc->ss_data.out.wheel, strq, ss_params.prio.next_spoke);
 		strq->ss_params.prio.next_spoke.tqe_next = NULL;
 		strq->ss_params.prio.next_spoke.tqe_prev = NULL;
 
@@ -573,11 +599,13 @@ sctp_ss_fb_clear(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		SCTP_TCB_SEND_LOCK(stcb);
 	}
 	while (!TAILQ_EMPTY(&asoc->ss_data.out.wheel)) {
-		struct sctp_stream_out *strq = TAILQ_FIRST(&asoc->ss_data.out.wheel);
+		struct sctp_stream_out *strq;
+
+		strq = TAILQ_FIRST(&asoc->ss_data.out.wheel);
 		if (clear_values) {
 			strq->ss_params.fb.rounds = -1;
 		}
-		TAILQ_REMOVE(&asoc->ss_data.out.wheel, TAILQ_FIRST(&asoc->ss_data.out.wheel), ss_params.fb.next_spoke);
+		TAILQ_REMOVE(&asoc->ss_data.out.wheel, strq, ss_params.fb.next_spoke);
 		strq->ss_params.fb.next_spoke.tqe_next = NULL;
 		strq->ss_params.fb.next_spoke.tqe_prev = NULL;
 	}
@@ -747,6 +775,9 @@ sctp_ss_fcfs_init(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	struct sctp_stream_queue_pending *sp;
 	uint16_t i;
 
+	if (holds_lock == 0) {
+		SCTP_TCB_SEND_LOCK(stcb);
+	}
 	TAILQ_INIT(&asoc->ss_data.out.list);
 	/*
 	 * If there is data in the stream queues already,
@@ -766,11 +797,14 @@ sctp_ss_fcfs_init(struct sctp_tcb *stcb, struct sctp_association *asoc,
 				x++;
 			}
 			if (sp != NULL) {
-				sctp_ss_fcfs_add(stcb, &stcb->asoc, &stcb->asoc.strmout[i], sp, holds_lock);
+				sctp_ss_fcfs_add(stcb, &stcb->asoc, &stcb->asoc.strmout[i], sp, 1);
 				add_more = 1;
 			}
 		}
 		n++;
+	}
+	if (holds_lock == 0) {
+		SCTP_TCB_SEND_UNLOCK(stcb);
 	}
 	return;
 }
@@ -779,12 +813,17 @@ static void
 sctp_ss_fcfs_clear(struct sctp_tcb *stcb, struct sctp_association *asoc,
                    int clear_values, int holds_lock)
 {
+	struct sctp_stream_queue_pending *sp;
+
 	if (clear_values) {
 		if (holds_lock == 0) {
 			SCTP_TCB_SEND_LOCK(stcb);
 		}
 		while (!TAILQ_EMPTY(&asoc->ss_data.out.list)) {
-			TAILQ_REMOVE(&asoc->ss_data.out.list, TAILQ_FIRST(&asoc->ss_data.out.list), ss_next);
+			sp = TAILQ_FIRST(&asoc->ss_data.out.list);
+			TAILQ_REMOVE(&asoc->ss_data.out.list, sp, ss_next);
+			sp->ss_next.tqe_next = NULL;
+			sp->ss_next.tqe_prev = NULL;
 		}
 		if (holds_lock == 0) {
 			SCTP_TCB_SEND_UNLOCK(stcb);
@@ -804,6 +843,8 @@ sctp_ss_fcfs_init_stream(struct sctp_tcb *stcb, struct sctp_stream_out *strq, st
 			stcb->asoc.ss_data.last_out_stream = strq;
 		}
 	}
+	strq->ss_params.fb.next_spoke.tqe_next = NULL;
+	strq->ss_params.fb.next_spoke.tqe_prev = NULL;
 	return;
 }
 
@@ -847,6 +888,8 @@ sctp_ss_fcfs_remove(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	    ((sp->ss_next.tqe_next != NULL) ||
 	     (sp->ss_next.tqe_prev != NULL))) {
 		TAILQ_REMOVE(&asoc->ss_data.out.list, sp, ss_next);
+		sp->ss_next.tqe_next = NULL;
+		sp->ss_next.tqe_prev = NULL;
 	}
 	if (holds_lock == 0) {
 		SCTP_TCB_SEND_UNLOCK(stcb);
