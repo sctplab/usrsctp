@@ -54,7 +54,7 @@
 #define MAX_PACKET_SIZE (1<<16)
 #define LINE_LENGTH (1<<20)
 #define DISCARD_PPID 39
-//#define DUMP_PKTS_TO_FILE
+/* #define DUMP_PKTS_TO_FILE */
 
 #ifdef _WIN32
 static DWORD WINAPI
@@ -84,7 +84,7 @@ handle_packets(void *arg)
 		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
 			if ((dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
-				//fprintf(stderr, "%s", dump_buf);
+				/* fprintf(stderr, "%s", dump_buf); */
 				usrsctp_freedumpbuffer(dump_buf);
 			}
 			usrsctp_conninput(fdp, buf, (size_t)length, 0);
@@ -113,7 +113,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 	fdp = (int *)addr;
 #endif
 	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
-		//fprintf(stderr, "%s", dump_buf);
+		/* fprintf(stderr, "%s", dump_buf); */
 		usrsctp_freedumpbuffer(dump_buf);
 	}
 
@@ -150,7 +150,6 @@ handle_upcall(struct socket *sock, void *data, int flgs)
 	while ((events = usrsctp_get_events(sock)) && (events & SCTP_EVENT_READ)) {
 		struct sctp_recvv_rn rn;
 		ssize_t n;
-		//struct sockaddr_storage addr;
 		union sctp_sockstore addr;
 		int flags = 0;
 		socklen_t len = (socklen_t)sizeof(addr);
@@ -292,7 +291,7 @@ print_addresses(struct socket *sock)
 #endif
 
 int
-main(void)
+main(int argc, char *argv[])
 {
 	struct sockaddr_in sin_s, sin_c;
 	struct sockaddr_conn sconn;
@@ -314,6 +313,13 @@ main(void)
 #ifdef _WIN32
 	WSADATA wsaData;
 #endif
+	uint16_t client_port = 9900;
+	uint16_t server_port = 9901;
+
+	if (argc == 3) {
+		client_port = atoi(argv[1]);
+		server_port = atoi(argv[2]);
+	}
 
 #ifdef _WIN32
 	if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
@@ -347,14 +353,14 @@ main(void)
 #ifdef HAVE_SIN_LEN
 	sin_c.sin_len = sizeof(struct sockaddr_in);
 #endif
-	sin_c.sin_port = htons(9900);
+	sin_c.sin_port = htons(client_port);
 	sin_c.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	memset(&sin_s, 0, sizeof(struct sockaddr_in));
 	sin_s.sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
 	sin_s.sin_len = sizeof(struct sockaddr_in);
 #endif
-	sin_s.sin_port = htons(9901);
+	sin_s.sin_port = htons(server_port);
 	sin_s.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 #ifdef _WIN32
 	if (bind(fd_c, (struct sockaddr *)&sin_c, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {

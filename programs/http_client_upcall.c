@@ -197,6 +197,7 @@ main(int argc, char *argv[])
 #endif
 
 	usrsctp_sysctl_set_sctp_blackhole(2);
+	usrsctp_sysctl_set_sctp_no_csum_on_loopback(0);
 
 	if ((sock = usrsctp_socket(address_family, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
@@ -204,7 +205,7 @@ main(int argc, char *argv[])
 		goto out;
 	}
 
-	//usrsctp_set_non_blocking(sock, 1);
+	/* usrsctp_set_non_blocking(sock, 1); */
 
 	rtoinfo.srto_assoc_id = 0;
 	rtoinfo.srto_initial = 1000;

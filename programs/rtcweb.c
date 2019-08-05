@@ -120,10 +120,10 @@ struct peer_connection {
 #define SCTP_PACKED
 #endif
 
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(__MINGW32__)
 #pragma warning( push )
 #pragma warning( disable : 4200 )
-#endif //defined(_WIN32)
+#endif /* defined(_WIN32) && !defined(__MINGW32__) */
 struct rtcweb_datachannel_open_request {
 	uint8_t msg_type; /* DATA_CHANNEL_OPEN_REQUEST */
 	uint8_t channel_type;
@@ -132,9 +132,9 @@ struct rtcweb_datachannel_open_request {
 	int16_t priority;
 	char label[];
 } SCTP_PACKED;
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(__MINGW32__)
 #pragma warning( pop )
-#endif //defined(_WIN32)
+#endif /* defined(_WIN32) && !defined(__MINGW32__) */
 
 struct rtcweb_datachannel_open_response {
 	uint8_t  msg_type; /* DATA_CHANNEL_OPEN_RESPONSE */
@@ -1336,6 +1336,7 @@ main(int argc, char *argv[])
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
 #endif
 	usrsctp_sysctl_set_sctp_blackhole(2);
+	usrsctp_sysctl_set_sctp_no_csum_on_loopback(0);
 
 	if ((sock = usrsctp_socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &peer_connection)) == NULL) {
 		perror("socket");
@@ -1432,7 +1433,7 @@ main(int argc, char *argv[])
 	unlock_peer_connection(&peer_connection);
 
 	for (;;) {
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
 		if (gets_s(line, LINE_LENGTH) == NULL) {
 #else
 		if (fgets(line, LINE_LENGTH, stdin) == NULL) {
