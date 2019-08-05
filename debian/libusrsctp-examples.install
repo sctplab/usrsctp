@@ -8,5 +8,5 @@
 /usr/bin/ekr_server
 /usr/bin/http_client
 /usr/bin/rtcweb
-/usr/bin/test_binmgmt
+/usr/bin/test_libmgmt
 /usr/bin/tsctp
