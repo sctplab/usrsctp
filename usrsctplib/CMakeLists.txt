@@ -36,9 +36,9 @@
 
 set(VERSION "1.0.0")
 
-set(prefix 				${CMAKE_INSTALL_PREFIX})
+set(prefix 					${CMAKE_INSTALL_PREFIX})
 set(exec_prefix 			${prefix})
-set(libdir 				${exec_prefix}/lib)
+set(libdir 					${exec_prefix}/lib)
 set(includedir 				${prefix}/include/usrsctp)
 set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR})
 set(CMAKE_MACOSX_RPATH 		1)
@@ -181,40 +181,6 @@ set_target_properties(usrsctp-static PROPERTIES OUTPUT_NAME "usrsctp")
 set_target_properties(usrsctp PROPERTIES IMPORT_SUFFIX "_import.lib")
 set_target_properties(usrsctp PROPERTIES SOVERSION 1 VERSION 1.0.0)
 
-if(THREADS_HAVE_PTHREAD_ARG)
-   target_compile_options(PUBLIC usrsctp "-pthread")
-   target_compile_options(PUBLIC usrsctp-static "-pthread")
-endif()
-target_link_libraries (usrsctp "${CMAKE_THREAD_LIBS_INIT}")
-target_link_libraries (usrsctp-static "${CMAKE_THREAD_LIBS_INIT}")
-
-# SETTINGS FOR UNIX COMPILER
-if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xGNU")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic -Wextra -Wall -std=c99 -Wno-unused-parameter")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wextra -Wall -std=c99 -Wno-unused-parameter")
-    if (WERROR)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-    endif ()
-endif ()
-
-# SETTINGS FOR VISUAL STUDIO COMPILER
-if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC")
-    if (CMAKE_C_FLAGS MATCHES "/W[0-4]")
-        STRING(REGEX REPLACE "/W[0-4]" "/W3" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    ELSE ()
-        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
-    endif ()
-
-    if (WERROR)
-        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
-    endif()
-endif ()
-
-if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC90" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC10")
-    SET_SOURCE_FILES_PROPERTIES(${usrsctp_SOURCES} PROPERTIES LANGUAGE C)
-endif()
-
 if (NOT DEFINED CMAKE_INSTALL_LIBDIR)
 	SET(CMAKE_INSTALL_LIBDIR lib)
 endif ()
@@ -225,4 +191,4 @@ endif ()
 #################################################
 
 install(TARGETS usrsctp usrsctp-static DESTINATION ${CMAKE_INSTALL_LIBDIR})
-install(FILES usrsctp.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES usrsctp.h DESTINATION include)

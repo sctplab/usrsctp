@@ -107,44 +107,17 @@ list(APPEND check_programs
 	tsctp_upcall.c
 )
 
-# SETTINGS FOR UNIX COMPILER
-if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xClang" OR "x${CMAKE_C_COMPILER_ID}" STREQUAL "xGNU")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pedantic -Wall -std=c99")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -std=c99")
-    if (WERROR)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-    endif ()
-endif ()
+foreach (source_file ${check_programs})
+	get_filename_component(source_file_we ${source_file} NAME_WE)
+	add_executable(
+		${source_file_we}
+		${source_file}
+		programs_helper.c
+	)
 
-# SETTINGS FOR VISUAL STUDIO COMPILER
-if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC")
-    if (CMAKE_C_FLAGS MATCHES "/W[0-4]")
-        string(REGEX REPLACE "/W[0-4]" "/W3" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    else ()
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
-    endif ()
-
-    if (WERROR)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
-    endif ()
-endif ()
-
-foreach (SOURCE_FILE ${CHECK_PROGRAMS})
-    get_filename_component(SOURCE_FILE_WE ${SOURCE_FILE} NAME_WE)
-    add_executable(
-        ${SOURCE_FILE_WE}
-        ${SOURCE_FILE}
-    )
-
-    target_link_libraries(${SOURCE_FILE_WE}
-        ${LINK_STATIC}
-        ${CMAKE_THREAD_LIBS_INIT}
-    )
-
-    install(TARGETS ${SOURCE_FILE_WE}
-            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-            BUNDLE DESTINATION  ${CMAKE_INSTALL_BINDIR})
-
-    add_test(${SOURCE_FILE_WE} ${SOURCE_FILE_WE})
+	target_link_libraries(
+		${source_file_we}
+		${programs_link_library}
+		${CMAKE_THREAD_LIBS_INIT}
+	)
 endforeach ()
