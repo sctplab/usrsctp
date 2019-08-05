@@ -1975,7 +1975,7 @@ sctp_addr_mgmt_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 
 		/* invalid if we are a v6 only endpoint */
 		if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) &&
-		    SCTP_IPV6_V6ONLY(&inp->ip_inp.inp))
+		    SCTP_IPV6_V6ONLY(inp))
 			return;
 
 		sin = &ifa->address.sin;
@@ -2049,7 +2049,7 @@ sctp_asconf_iterator_ep(struct sctp_inpcb *inp, void *ptr, uint32_t val SCTP_UNU
 		{
 			/* invalid if we are a v6 only endpoint */
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) &&
-			    SCTP_IPV6_V6ONLY(&inp->ip_inp.inp)) {
+			    SCTP_IPV6_V6ONLY(inp)) {
 				cnt_invalid++;
 				if (asc->cnt == cnt_invalid)
 					return (1);
@@ -2166,7 +2166,7 @@ sctp_asconf_iterator_stcb(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 
 			/* invalid if we are a v6 only endpoint */
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) &&
-			    SCTP_IPV6_V6ONLY(&inp->ip_inp.inp))
+			    SCTP_IPV6_V6ONLY(inp))
 				continue;
 
 			sin = &ifa->address.sin;
@@ -2185,7 +2185,7 @@ sctp_asconf_iterator_stcb(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				continue;
 			}
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) &&
-			    SCTP_IPV6_V6ONLY(&inp->ip_inp.inp)) {
+			    SCTP_IPV6_V6ONLY(inp)) {
 				cnt_invalid++;
 				if (asc->cnt == cnt_invalid)
 					return;

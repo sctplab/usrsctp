@@ -6056,7 +6056,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	stc.site_scope = stc.local_scope = stc.loopback_scope = 0;
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) {
 		stc.ipv6_addr_legal = 1;
-		if (SCTP_IPV6_V6ONLY(&inp->ip_inp.inp)) {
+		if (SCTP_IPV6_V6ONLY(inp)) {
 			stc.ipv4_addr_legal = 0;
 		} else {
 			stc.ipv4_addr_legal = 1;

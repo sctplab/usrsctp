@@ -1141,7 +1141,7 @@ sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) {
 		asoc->scope.ipv6_addr_legal = 1;
-		if (SCTP_IPV6_V6ONLY(&inp->ip_inp.inp) == 0) {
+		if (SCTP_IPV6_V6ONLY(inp) == 0) {
 			asoc->scope.ipv4_addr_legal = 1;
 		} else {
 			asoc->scope.ipv4_addr_legal = 0;
@@ -7266,7 +7266,7 @@ sctp_bindx_add_address(struct socket *so, struct sctp_inpcb *inp,
 		sin6 = (struct sockaddr_in6 *)addr_touse;
 		if (IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr)) {
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) &&
-			    SCTP_IPV6_V6ONLY(&inp->ip_inp.inp)) {
+			    SCTP_IPV6_V6ONLY(inp)) {
 				/* can't bind v4-mapped on PF_INET sockets */
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
 				*error = EINVAL;
@@ -7288,7 +7288,7 @@ sctp_bindx_add_address(struct socket *so, struct sctp_inpcb *inp,
 		}
 #endif
 		if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) &&
-		    SCTP_IPV6_V6ONLY(&inp->ip_inp.inp)) {
+		    SCTP_IPV6_V6ONLY(inp)) {
 			/* can't bind v4 on PF_INET sockets */
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
 			*error = EINVAL;
@@ -7421,7 +7421,7 @@ sctp_bindx_delete_address(struct sctp_inpcb *inp,
 		sin6 = (struct sockaddr_in6 *)addr_touse;
 		if (IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr)) {
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) &&
-			    SCTP_IPV6_V6ONLY(&inp->ip_inp.inp)) {
+			    SCTP_IPV6_V6ONLY(inp)) {
 				/* can't bind mapped-v4 on PF_INET sockets */
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
 				*error = EINVAL;
@@ -7443,7 +7443,7 @@ sctp_bindx_delete_address(struct sctp_inpcb *inp,
 		}
 #endif
 		if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) &&
-		    SCTP_IPV6_V6ONLY(&inp->ip_inp.inp)) {
+		    SCTP_IPV6_V6ONLY(inp)) {
 			/* can't bind v4 on PF_INET sockets */
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
 			*error = EINVAL;

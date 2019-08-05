@@ -883,7 +883,7 @@ sctp6_bind(struct socket *so, struct mbuf *nam, struct proc *p)
 	inp->inp_vflag &= ~INP_IPV4;
 	inp->inp_vflag |= INP_IPV6;
 #endif
-	if ((addr != NULL) && (SCTP_IPV6_V6ONLY(&inp->ip_inp.inp) == 0)) {
+	if ((addr != NULL) && (SCTP_IPV6_V6ONLY(inp) == 0)) {
 		switch (addr->sa_family) {
 #ifdef INET
 		case AF_INET:
@@ -1063,7 +1063,7 @@ sctp6_send(struct socket *so, int flags, struct mbuf *m, struct mbuf *nam,
 	}
 #ifdef INET
 	sin6 = (struct sockaddr_in6 *)addr;
-	if (SCTP_IPV6_V6ONLY(&inp->ip_inp.inp)) {
+	if (SCTP_IPV6_V6ONLY(inp)) {
 		/*
 		 * if IPV6_V6ONLY flag, we discard datagrams destined to a
 		 * v4 addr or v4-mapped addr
@@ -1229,7 +1229,7 @@ sctp6_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 	}
 #ifdef INET
 	sin6 = (struct sockaddr_in6 *)addr;
-	if (SCTP_IPV6_V6ONLY(&inp->ip_inp.inp)) {
+	if (SCTP_IPV6_V6ONLY(inp)) {
 		/*
 		 * if IPV6_V6ONLY flag, ignore connections destined to a v4
 		 * addr or v4-mapped addr

@@ -967,7 +967,7 @@ int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af);
 #define IPv6_HOP_LIMIT 128
 
 /* is the endpoint v6only? */
-#define SCTP_IPV6_V6ONLY(inp)	((inp)->inp_flags & IN6P_IPV6_V6ONLY)
+#define SCTP_IPV6_V6ONLY(sctp_inpcb)	((sctp_inpcb)->ip_inp.inp.inp_flags & IN6P_IPV6_V6ONLY)
 /* is the socket non-blocking? */
 #define SCTP_SO_IS_NBIO(so)	((so)->so_state & SS_NBIO)
 #define SCTP_SET_SO_NBIO(so)	((so)->so_state |= SS_NBIO)
