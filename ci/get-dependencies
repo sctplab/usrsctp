@@ -1,0 +1,141 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+#
+# Travis CI Scripts
+# Copyright (C) 2018-2019 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+
+
+import glob
+import os
+import re
+import subprocess
+import sys
+
+
+# ###### Write dependency ###################################################
+dep = re.compile(r'^([a-zA-Z0-9-+\.]+)[\s]*(|\|.*|\(.*)[\s]*$')
+
+def extractDependencies(line, variant):
+   dependencies = []
+
+   # Remove "build-depends:", etc.:
+   m = re.match(r'^(.*:[ \t]*)([a-zA-Z0-9-+]*)(.*)$', line)
+   if m != None:
+      line = m.group(2)
+   line = line.strip()
+
+   # Split into segments
+   for l in line.split(','):
+      l = l.strip()
+      m = dep.match(l)
+      if m != None:
+         dependency = m.group(1)
+
+         # ------ Ugly work-around for cmake --------------------------------
+         # We need cmake >= 3.0!
+         if ((dependency == 'cmake') or (dependency == 'cmake3')):
+            if ((variant == 'debian') or (variant == 'ubuntu')):
+               try:
+                  distribution = subprocess.check_output( ["lsb_release", "-cs"] ).decode('utf-8').strip()
+                  # print("distribution=", distribution, ".")
+                  if distribution in [ 'trusty' ]:
+                     dependency = 'cmake3'
+               except:
+                  pass
+
+         dependencies.append(dependency)
+
+   return dependencies
+
+
+# ###### Main program #######################################################
+
+# ====== Check arguments ====================================================
+if len(sys.argv) < 2:
+   sys.stderr.write('Usage: ' + sys.argv[0] + ' debian|ubuntu|fedora [-i|--install]\n')
+   sys.exit(1)
+variant    = sys.argv[1]
+runInstall = False
+for i in range(2, len(sys.argv)):
+   if sys.argv[i] == '-i' or sys.argv[i] == '--install':
+      runInstall = True
+   else:
+      sys.stderr.write('ERROR: Bad parameter ' + sys.argv[i] + '!')
+      sys.exit(1)
+
+# ====== Debian/Ubuntu ======================================================
+dependencies = [ ]
+if ((variant == 'debian') or  (variant == 'ubuntu')):
+   if os.path.exists('debian/control'):
+      with open('debian/control', 'r') as fp:
+         inside = False
+         for line in fp:
+            if not line:
+               break
+            line_lower = line.lower()
+            if inside:
+               if line.startswith((' ', "\t")):
+                  dependencies = dependencies + extractDependencies(line, variant)
+                  continue
+               elif line.startswith('#'):
+                  continue
+               inside = False
+            if line_lower.startswith(('build-depends:', 'build-depends-indep:')):
+               dependencies = dependencies + extractDependencies(line, variant)
+               inside = True
+
+      for dependency in sorted(dependencies):
+          sys.stdout.write(dependency + ' ')
+      sys.stdout.write('\n')
+
+      if runInstall == True:
+         subprocess.call([ 'apt-get', 'install', '-y' ] + dependencies)
+
+
+# ====== Fedora =============================================================
+elif variant == 'fedora':
+   specFiles = glob.glob('rpm/*.spec')
+   if len(specFiles) > 0:
+      with open(specFiles[0], 'r') as fp:
+         inside = False
+         for line in fp:
+            if not line:
+               break
+            line_lower = line.lower()
+            if inside:
+               if line.startswith((' ', "\t")):
+                  dependencies = dependencies + extractDependencies(line, variant)
+                  continue
+               elif line.startswith('#'):
+                  continue
+               inside = False
+            if line_lower.startswith('buildrequires:'):
+               dependencies = dependencies + extractDependencies(line, variant)
+               inside = True
+
+      for dependency in sorted(dependencies):
+          sys.stdout.write(dependency + ' ')
+      sys.stdout.write('\n')
+
+      if runInstall == True:
+         subprocess.call([ 'dnf', 'install', '-y' ] + dependencies)
+
+# ====== Error ==============================================================
+else:
+   sys.stderr.write('ERROR: Invalid variant ' + variant + '!\n')
+   sys.exit(1)
