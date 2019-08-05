@@ -1,8 +1,7 @@
 #!/bin/bash
-# $Id: clean-deb 1365 2012-04-21 19:21:13Z dreibh $
 #
 # Debian Packaging Scripts
-# Copyright (C) 2002-2012 by Thomas Dreibholz
+# Copyright (C) 2002-2019 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,10 +18,20 @@
 #
 # Contact: dreibh@iem.uni-due.de
 
-. ./debian.conf
 
+# ====== Obtain package information =========================================
 CHANGELOG_HEADER="`head -n1 debian/changelog`"
-PACKAGE=`echo $CHANGELOG_HEADER | sed -e "s/(.*//" -e "s/ //g"`
+PACKAGE=`echo ${CHANGELOG_HEADER} | sed -e "s/(.*//" -e "s/ //g"`
 
+
+# ====== Clean up ===========================================================
 rm -f *.deb *.dsc *.asc *.changes *.build *.upload *.tar.gz stamp-h* svn-commit* *~
-rm -rf $PACKAGE-[0-9]*.[0-9]*.* $PACKAGE"_"[0-9]*.[0-9]*.* CMakeFiles _CPack_Packages
+
+for type in gz bz2 xz ; do
+   find . -maxdepth 1 -name "${PACKAGE}-*.${type}" | xargs -r rm
+   find . -maxdepth 1 -name "${PACKAGE}_*.${type}" | xargs -r rm
+done
+find . -maxdepth 1 -name "*.buildinfo" | xargs -r rm
+
+shopt -s extglob
+rm -rf ${PACKAGE}-+([0-9]).+([0-9]).+([0-9])*

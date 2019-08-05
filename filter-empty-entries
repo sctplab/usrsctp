@@ -1,8 +1,7 @@
 #!/usr/bin/perl
-# $Id: filter-empty-entries 1365 2012-04-21 19:21:13Z dreibh $
 #
 # Debian Packaging Scripts
-# Copyright (C) 2002-2011 by Thomas Dreibholz
+# Copyright (C) 2002-2019 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

@@ -1,8 +1,7 @@
 #!/bin/bash -e
-# $Id: make-deb 2770 2013-05-30 08:46:46Z dreibh $
 #
 # Debian Packaging Scripts
-# Copyright (C) 2002-2017 by Thomas Dreibholz
+# Copyright (C) 2002-2019 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,18 +25,19 @@
 #    Note: Replaces "Maintainer" by Ubuntu Developers and
 #          writes original maintainer entry to "XSBC-Original-Maintainer"
 # ./make-deb unstable           => for Debian Mentors
-# ./make-deb natty|maverick|... => for Launchpad PPA
+# ./make-deb bionic|disco|...   => for Launchpad PPA
 # ---------------------------------------------------------------------------
 
 
+# ====== Obtain package and version information =============================
 DISTRIBUTIONS=`\
 ( \
 while [ x$1 != "x" ] ; do \
-   echo $1 
+   echo $1
    shift
 done \
 ) | sort -u`
-if [ "$DISTRIBUTIONS" == "" ] ; then
+if [ "${DISTRIBUTIONS}" == "" ] ; then
    DISTRIBUTIONS="default"
 fi
 
@@ -45,113 +45,117 @@ fi
 CHANGELOG_HEADER="`head -n1 debian/changelog`"
 
 # The package name, e.g. MyApplication
-PACKAGE=`echo $CHANGELOG_HEADER | sed -e "s/(.*//" -e "s/ //g"`
-
+PACKAGE=`echo ${CHANGELOG_HEADER} | sed -e "s/(.*//" -e "s/ //g"`
 # The package distribution, e.g. precise, raring, ...
-PACKAGE_DISTRIBUTION=`echo $CHANGELOG_HEADER | sed -e "s/[^)]*)//" -e "s/;.*//g" -e "s/ //g"`
+PACKAGE_DISTRIBUTION=`echo ${CHANGELOG_HEADER} | sed -e "s/[^)]*)//" -e "s/;.*//g" -e "s/ //g"`
 # The package's version, e.g. 1.2.3-1ubuntu1
-PACKAGE_VERSION=`echo $CHANGELOG_HEADER | sed -e "s/.*(//" -e "s/).*//" -e "s/ //g" -e "s/ //g" -e "s/^[0-9]://g"`
+PACKAGE_VERSION=`echo ${CHANGELOG_HEADER} | sed -e "s/.*(//" -e "s/).*//" -e "s/ //g" -e "s/ //g" -e "s/^[0-9]://g"`
 # The package's output version, e.g. 1.2.3-1ubuntu
-OUTPUT_VERSION=`echo $PACKAGE_VERSION   | sed -e "s/\(ubuntu\|ppa\)[0-9]*$/\1/"`
+OUTPUT_VERSION=`echo ${PACKAGE_VERSION}   | sed -e "s/\(ubuntu\|ppa\)[0-9]*$/\1/"`
 # The package's Debian version, e.g. 1.2.3-1
-DEBIAN_VERSION=`echo $OUTPUT_VERSION    | sed -e "s/\(ubuntu\|ppa\)$//1"`
+DEBIAN_VERSION=`echo ${OUTPUT_VERSION}    | sed -e "s/\(ubuntu\|ppa\)$//1"`
 # The package's upstream version, e.g. 1.2.3
-UPSTREAM_VERSION=`echo $DEBIAN_VERSION  | sed -e "s/-[0-9]*$//"`
+UPSTREAM_VERSION=`echo ${DEBIAN_VERSION}  | sed -e "s/-[0-9]*$//"`
 # The package's plain upstream version, e.g. 1.2.3 (without e.g. ~svn<xxxx>)
-PLAIN_VERSION=`echo $UPSTREAM_VERSION   | sed -e "s/\([0-9\.]*\)[-+~].*$/\1/"`
+PLAIN_VERSION=`echo ${UPSTREAM_VERSION}   | sed -e "s/\([0-9\.]*\)[-+~].*$/\1/"`
 
 
 echo -e "\x1b[34m######################################################################\x1b[0m"
-echo -e "\x1b[34mCHANGELOG_HEADER:     $CHANGELOG_HEADER\x1b[0m"
-echo -e "\x1b[34mPACKAGE:              $PACKAGE\x1b[0m"
-echo -e "\x1b[34mPACKAGE_DISTRIBUTION: $PACKAGE_DISTRIBUTION\x1b[0m"
-echo -e "\x1b[34mPACKAGE_VERSION       $PACKAGE_VERSION\x1b[0m"
-echo -e "\x1b[34mOUTPUT_VERSION:       $OUTPUT_VERSION\x1b[0m"
-echo -e "\x1b[34mDEBIAN_VERSION:       $DEBIAN_VERSION\x1b[0m"
-echo -e "\x1b[34mUPSTREAM_VERSION:     $UPSTREAM_VERSION\x1b[0m"
-echo -e "\x1b[34mPLAIN_VERSION:        $PLAIN_VERSION\x1b[0m"
+echo -e "\x1b[34mCHANGELOG_HEADER:     ${CHANGELOG_HEADER}\x1b[0m"
+echo -e "\x1b[34mPACKAGE:              ${PACKAGE}\x1b[0m"
+echo -e "\x1b[34mPACKAGE_DISTRIBUTION: ${PACKAGE_DISTRIBUTION}\x1b[0m"
+echo -e "\x1b[34mPACKAGE_VERSION       ${PACKAGE_VERSION}\x1b[0m"
+echo -e "\x1b[34mOUTPUT_VERSION:       ${OUTPUT_VERSION}\x1b[0m"
+echo -e "\x1b[34mDEBIAN_VERSION:       ${DEBIAN_VERSION}\x1b[0m"
+echo -e "\x1b[34mUPSTREAM_VERSION:     ${UPSTREAM_VERSION}\x1b[0m"
+echo -e "\x1b[34mPLAIN_VERSION:        ${PLAIN_VERSION}\x1b[0m"
 echo -e "\x1b[34m######################################################################\x1b[0m"
 
-if [ ! -e ./debian.conf ] ; then
-   echo >&2 "ERROR: debian.conf does not exist -> no configuration for the new package!"
+if [ ! -e ./packaging.conf ] ; then
+   echo >&2 "ERROR: packaging.conf does not exist -> no configuration for the new package!"
    exit 1
 fi
-. ./debian.conf
+. ./packaging.conf
 
 
-echo -e ""
-echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Calling wrap-and-sort ==========================================\x1b[0m"
-echo -e ""
-wrap-and-sort -a -v || exit 1
+# ====== Run warp-and-sort tool =============================================
+if [ -e /usr/bin/wrap-and-sort ] ; then
+   echo -e ""
+   echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Calling wrap-and-sort ==========================================\x1b[0m"
+   echo -e ""
+   wrap-and-sort -a -v
+fi
 
 
+# ====== Create upstream source package =====================================
 echo -e ""
 echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Creating upstream package ======================================\x1b[0m"
 echo -e ""
-UPSTREAM_PACKAGE="`find . -maxdepth 1 -name "$PACKAGE-*.gz" -printf '%f'`"
-UPSTREAM_PACKAGE_TYPE="gz"
-if [ ! -e "$UPSTREAM_PACKAGE" ] ; then
-   UPSTREAM_PACKAGE="`find . -maxdepth 1 -name "$PACKAGE-*.bz2" -printf '%f'`"
-   UPSTREAM_PACKAGE_TYPE="bz2"
+if [ "${SKIP_PACKAGE_SIGNING}" != "" -a ${SKIP_PACKAGE_SIGNING} -eq 1 ] ; then
+   ./make-upstream-package ${PACKAGE} ${UPSTREAM_VERSION} "${MAKE_DIST}" -skip-signing
+else
+   ./make-upstream-package ${PACKAGE} ${UPSTREAM_VERSION} "${MAKE_DIST}"
 fi
-if [ ! -e "$UPSTREAM_PACKAGE" ]; then
-   rm -f $PACKAGE-*.gz $PACKAGE"_"*.gz $PACKAGE-*.bz2 $PACKAGE"_"*.bz2
-   echo -e "\x1b[34m------ Running MAKE_DIST ... ------\x1b[0m"
-   echo "\$ $MAKE_DIST"
-   eval "$MAKE_DIST"
 
-   echo -e "\x1b[34m------ Looking for upstream package ... ------\x1b[0m"
-   UPSTREAM_PACKAGE="`find . -maxdepth 1 -name $PACKAGE-*.gz -printf '%f'`"
-   UPSTREAM_PACKAGE_TYPE="gz"
-   if [ ! -e "$UPSTREAM_PACKAGE" ] ; then
-      UPSTREAM_PACKAGE="`find . -maxdepth 1 -name $PACKAGE-*.bz2 -printf '%f'`"
-      UPSTREAM_PACKAGE_TYPE="bz2"
+for UPSTREAM_PACKAGE_TYPE in xz bz2 gz ; do
+   UPSTREAM_PACKAGE="`find . -maxdepth 1 -name "${PACKAGE}-${UPSTREAM_VERSION}.tar.${UPSTREAM_PACKAGE_TYPE}" -printf '%f'`"
+   if [ -e "${UPSTREAM_PACKAGE}" ] ; then
+      break
    fi
-   if [ ! -e "$UPSTREAM_PACKAGE" ] ; then
-      echo -e "\x1b[34mERROR: No upstrem package found!\x1b[0m"
-      exit 1
-   fi
+done
+if [ ! -e "${UPSTREAM_PACKAGE}" ] ; then
+   echo -e "\x1b[34mERROR: No upstream package (${PACKAGE}-${UPSTREAM_VERSION}.tar.*) found!\x1b[0m"
+   exit 1
 fi
-echo -e ""
-echo -e "\x1b[34m==> Upstream package is $UPSTREAM_PACKAGE (type is $UPSTREAM_PACKAGE_TYPE)\x1b[0m"
-echo -e ""
 
 
+# ====== Sign upstream source package =======================================
+rm -f "${UPSTREAM_PACKAGE}.asc"
+if [ "${SKIP_PACKAGE_SIGNING}" != "" -a ! ${SKIP_PACKAGE_SIGNING} -eq 1 ] ; then
+   echo -e ""
+   echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Sign upstream package ==========================================\x1b[0m"
+   echo -e ""
+   echo -e "\x1b[34mSigning upstream package ${UPSTREAM_PACKAGE} ...\x1b[0m"
+   gpg -sab "${UPSTREAM_PACKAGE}"
+fi
+
+
+# ====== Build source packages ==============================================
 echo -e ""
-echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Creating packages ==============================================\x1b[0m"
-for DISTRIBUTION in $DISTRIBUTIONS ; do
+echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Building source packages =======================================\x1b[0m"
+for DISTRIBUTION in ${DISTRIBUTIONS} ; do
 
    echo -e ""
-   echo -e "\x1b[34m------ Creating package for $DISTRIBUTION ------\x1b[0m"
+   echo -e "\x1b[34m------ Creating package for ${DISTRIBUTION} ------\x1b[0m"
 
-   success=1
-   cp ${UPSTREAM_PACKAGE} ${PACKAGE}_${UPSTREAM_VERSION}.orig.tar.$UPSTREAM_PACKAGE_TYPE 
-   cp ${UPSTREAM_PACKAGE} ${PACKAGE}_$OUTPUT_VERSION.orig.tar.$UPSTREAM_PACKAGE_TYPE 
-   cp ${UPSTREAM_PACKAGE} ${PACKAGE}_$DEBIAN_VERSION.orig.tar.$UPSTREAM_PACKAGE_TYPE 
-   rm -rf ${PACKAGE}-${UPSTREAM_VERSION} 
-   rm -rf ${PACKAGE}-${UPSTREAM_VERSION}.orig 
-   if [ "$UPSTREAM_PACKAGE_TYPE" = "gz" ] ; then
+   cp ${UPSTREAM_PACKAGE} ${PACKAGE}_${UPSTREAM_VERSION}.orig.tar.${UPSTREAM_PACKAGE_TYPE}
+   cp ${UPSTREAM_PACKAGE} ${PACKAGE}_${OUTPUT_VERSION}.orig.tar.${UPSTREAM_PACKAGE_TYPE}
+   cp ${UPSTREAM_PACKAGE} ${PACKAGE}_${DEBIAN_VERSION}.orig.tar.${UPSTREAM_PACKAGE_TYPE}
+   if [ "${SKIP_PACKAGE_SIGNING}" != "" -a ! ${SKIP_PACKAGE_SIGNING} -eq 1 ] ; then
+      cp ${UPSTREAM_PACKAGE}.asc ${PACKAGE}_${UPSTREAM_VERSION}.orig.tar.${UPSTREAM_PACKAGE_TYPE}.asc
+      cp ${UPSTREAM_PACKAGE}.asc ${PACKAGE}_${OUTPUT_VERSION}.orig.tar.${UPSTREAM_PACKAGE_TYPE}.asc
+      cp ${UPSTREAM_PACKAGE}.asc ${PACKAGE}_${DEBIAN_VERSION}.orig.tar.${UPSTREAM_PACKAGE_TYPE}.asc
+   fi
+   rm -rf ${PACKAGE}-${UPSTREAM_VERSION}
+   rm -rf ${PACKAGE}-${UPSTREAM_VERSION}.orig
+   if [ "${UPSTREAM_PACKAGE_TYPE}" == "gz" ] ; then
       tar xzf ${UPSTREAM_PACKAGE}
-   elif [ "$UPSTREAM_PACKAGE_TYPE" = "bz2" ] ; then
+   elif [ "${UPSTREAM_PACKAGE_TYPE}" == "bz2" ] ; then
       tar xjf ${UPSTREAM_PACKAGE}
+   elif [ "${UPSTREAM_PACKAGE_TYPE}" == "xz" ] ; then
+      tar xJf ${UPSTREAM_PACKAGE}
    else
-      echo 2>&1 "ERROR: Bad archive format: $UPSTREAM_PACKAGE"
-      exit 1
-   fi 
-   cp -r ${PACKAGE}-${UPSTREAM_VERSION} ${PACKAGE}-${UPSTREAM_VERSION}.orig 
-   cp -r debian ${PACKAGE}-${UPSTREAM_VERSION} 
-   find ${PACKAGE}-${UPSTREAM_VERSION} -name .svn | xargs --no-run-if-empty rm -rf 
-   cd ${PACKAGE}-${UPSTREAM_VERSION} 
-   success=0
-
-   if [ $success -ne 0 ] ; then
+      echo 2>&1 "ERROR: Bad archive format: ${UPSTREAM_PACKAGE}"
       exit 1
    fi
+   cp -r debian ${PACKAGE}-${UPSTREAM_VERSION}
+   find ${PACKAGE}-${UPSTREAM_VERSION} -name .svn | xargs --no-run-if-empty rm -rf
+   cd ${PACKAGE}-${UPSTREAM_VERSION}
 
-   if [ "$DISTRIBUTION" != "default" ] ; then
-      if [ "$DISTRIBUTION" = "unstable" -o "$DISTRIBUTION" = "testing" -o "$DISTRIBUTION" = "stable" ] ; then
+   if [ "${DISTRIBUTION}" != "default" ] ; then
+      if [ "${DISTRIBUTION}" == "unstable" -o "${DISTRIBUTION}" == "testing" -o "${DISTRIBUTION}" == "stable" ] ; then
          # Debian: Also remove Launchpad Bug IDs.
-         sed -e "s/$PACKAGE_DISTRIBUTION;/$DISTRIBUTION;/1" \
+         sed -e "s/${PACKAGE_DISTRIBUTION};/${DISTRIBUTION};/1" \
              -e "s/\(ubuntu\|ppa\)[0-9]//1" \
              -e "/(LP: #/D" \
              <debian/changelog | ../filter-empty-entries "$DEBIAN_LAST_ENTRY" >debian/changelog.new
@@ -159,33 +163,37 @@ for DISTRIBUTION in $DISTRIBUTIONS ; do
          # Ubuntu PPA
          # Naming example: 2.7.7-0ubuntu1~natty1~ppa0
          # Ubuntu: Also remove Debian Bug IDs.
-         sed -e "s/$PACKAGE_DISTRIBUTION;/$DISTRIBUTION;/1" \
-             -e "s/$PACKAGE_VERSION/$PACKAGE_VERSION~${DISTRIBUTION}1~ppa0/1" \
+         sed -e "s/${PACKAGE_DISTRIBUTION};/${DISTRIBUTION};/1" \
+             -e "s/${PACKAGE_VERSION}/${PACKAGE_VERSION}~${DISTRIBUTION}1~ppa0/1" \
              -e "/(Closes: #/D" \
              <debian/changelog | ../filter-empty-entries "$UBUNTU_LAST_ENTRY" >debian/changelog.new
 
          # ------ Old distributions not supporting c++/regex style symbols --
-         if [ "$DISTRIBUTION" = "dapper"   -o \
-              "$DISTRIBUTION" = "edgy"     -o \
-              "$DISTRIBUTION" = "feisty"   -o \
-              "$DISTRIBUTION" = "hardy"    -o \
-              "$DISTRIBUTION" = "intrepid" -o \
-              "$DISTRIBUTION" = "jaunty"   -o \
-              "$DISTRIBUTION" = "karmic"   -o \
-              "$DISTRIBUTION" = "lucid" ] ; then
+         if [ "${DISTRIBUTION}" == "dapper"   -o \
+              "${DISTRIBUTION}" == "edgy"     -o \
+              "${DISTRIBUTION}" == "feisty"   -o \
+              "${DISTRIBUTION}" == "hardy"    -o \
+              "${DISTRIBUTION}" == "intrepid" -o \
+              "${DISTRIBUTION}" == "jaunty"   -o \
+              "${DISTRIBUTION}" == "karmic"   -o \
+              "${DISTRIBUTION}" == "lucid" ] ; then
             # Just skip the symbols ...
             find debian/ -maxdepth 1 -name "*.symbols" | xargs --no-run-if-empty rm -f
          fi
       fi
+
+      # Remove additional newlines at the end of the file:
+      sed -i -e :a -e '/^\n*$/{$d;N;};/\n$/ba' debian/changelog.new
+
       mv debian/changelog.new debian/changelog
 
       # ------ Old distributions not supporting new Debian format -----------
-      if [ "$DISTRIBUTION" = "dapper"   -o \
-           "$DISTRIBUTION" = "edgy"     -o \
-           "$DISTRIBUTION" = "feisty"   -o \
-           "$DISTRIBUTION" = "hardy"    -o \
-           "$DISTRIBUTION" = "intrepid" -o \
-           "$DISTRIBUTION" = "jaunty" ] ; then
+      if [ "${DISTRIBUTION}" == "dapper"   -o \
+           "${DISTRIBUTION}" == "edgy"     -o \
+           "${DISTRIBUTION}" == "feisty"   -o \
+           "${DISTRIBUTION}" == "hardy"    -o \
+           "${DISTRIBUTION}" == "intrepid" -o \
+           "${DISTRIBUTION}" == "jaunty" ] ; then
          rm -rf debian/source
       fi
       # ---------------------------------------------------------------------
@@ -199,12 +207,12 @@ for DISTRIBUTION in $DISTRIBUTIONS ; do
    fi
 
    echo -e ""
-   echo -e "\x1b[34m------ Creating diff file $PACKAGE-$PACKAGE_VERSION.diff.gz ------\x1b[0m"
+   echo -e "\x1b[34m------ Creating diff file ${PACKAGE}-${PACKAGE_VERSION}.diff.gz ------\x1b[0m"
    (
       cd ..
       diff -urN "--exclude=*~" "--exclude=.svn" "--exclude=.git" \
-         $PACKAGE-$UPSTREAM_VERSION.orig $PACKAGE-$UPSTREAM_VERSION \
-         | gzip -c >$PACKAGE-$PACKAGE_VERSION.diff.gz
+         ${PACKAGE}-${UPSTREAM_VERSION}.orig ${PACKAGE}-${UPSTREAM_VERSION} \
+         | gzip -c >${PACKAGE}-${PACKAGE_VERSION}.diff.gz
    )
 
 
@@ -219,16 +227,15 @@ for DISTRIBUTION in $DISTRIBUTIONS ; do
    # debuild -b
    # Use -i to ignore .svn files!
 
-
-   if [ "$SKIP_PACKAGE_SIGNING" = "" ] ; then
-      SKIP_PACKAGE_SIGNING=0 
+   if [ "${SKIP_PACKAGE_SIGNING}" == "" ] ; then
+      SKIP_PACKAGE_SIGNING=0
    fi
-   if [ $SKIP_PACKAGE_SIGNING -eq 1 ] ; then
+   if [ ${SKIP_PACKAGE_SIGNING} -eq 1 ] ; then
       # Build source package without signature:
-      debuild -us -uc -S "-k$MAINTAINER" -i || exit 1
+      debuild -us -uc -S "-k${MAINTAINER}" -i || exit 1
    else
       # Build source package including signature:
-      debuild -sa -S "-k$MAINTAINER" -i || exit 1
+      debuild -sa -S "-k${MAINTAINER}" -i || exit 1
    fi
 
    # Important: In /etc/pbuilderrc, set COMPONENTS="main universe"!
@@ -237,11 +244,11 @@ for DISTRIBUTION in $DISTRIBUTIONS ; do
 
    cd ..
 
-   if [ "$DISTRIBUTION" = "unstable" -o \
-        "$DISTRIBUTION" = "testing"  -o \
-        "$DISTRIBUTION" = "stable"   -o \
-        "$DISTRIBUTION" = "default" ] ; then
-      if [ "$DISTRIBUTION" = "default" ] ; then
+   if [ "${DISTRIBUTION}" == "unstable" -o \
+        "${DISTRIBUTION}" == "testing"  -o \
+        "${DISTRIBUTION}" == "stable"   -o \
+        "${DISTRIBUTION}" == "default" ] ; then
+      if [ "${DISTRIBUTION}" == "default" ] ; then
          version=${PACKAGE_VERSION}
       else
          version=${DEBIAN_VERSION}
@@ -250,39 +257,26 @@ for DISTRIBUTION in $DISTRIBUTIONS ; do
    else
       dscFile=`ls ${PACKAGE}_${PACKAGE_VERSION}~${DISTRIBUTION}[0-9]~ppa[0-9].dsc | tail -n1`
    fi
-   if [ ! -e $dscFile ] ; then
-      echo -e "\x1b[34mERROR: $dscFile has not been generated successfully -> Aborting!\x1b[0m"
+   if [ ! -e "${dscFile}" ] ; then
+      echo -e "\x1b[34mERROR: ${dscFile} has not been generated successfully -> Aborting!\x1b[0m"
       exit 1
    fi
 
 done
 
 
-
-if [ -e "$UPSTREAM_PACKAGE.asc" ] ; then
-   rm -f "$UPSTREAM_PACKAGE.asc"
-fi
-if [ "$SKIP_PACKAGE_SIGNING" != "" -a ! $SKIP_PACKAGE_SIGNING -eq 1 ] ; then
-   echo -e ""
-   echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Sign upstream package ==========================================\x1b[0m"
-   echo -e ""
-   echo -e "\x1b[34mSigning upstream package $UPSTREAM_PACKAGE ...\x1b[0m"
-   gpg -sab "$UPSTREAM_PACKAGE"
-fi
-
-
-
+# ====== Show results =======================================================
 echo -e ""
-echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Command overview ===============================================\x1b[0m"
+echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Results overview ============================================\x1b[0m"
 echo -e ""
 
 echo -e "\x1b[34mUpload to PPA:\x1b[0m"
-for DISTRIBUTION in $DISTRIBUTIONS ; do
-   if [ "$DISTRIBUTION" = "unstable" -o \
-        "$DISTRIBUTION" = "testing"  -o \
-        "$DISTRIBUTION" = "stable"   -o \
-        "$DISTRIBUTION" = "default" ] ; then
-      if [ "$DISTRIBUTION" = "default" ] ; then
+for DISTRIBUTION in ${DISTRIBUTIONS} ; do
+   if [ "${DISTRIBUTION}" == "unstable" -o \
+        "${DISTRIBUTION}" == "testing"  -o \
+        "${DISTRIBUTION}" == "stable"   -o \
+        "${DISTRIBUTION}" == "default" ] ; then
+      if [ "${DISTRIBUTION}" == "default" ] ; then
          ppa="revu"
          version=${PACKAGE_VERSION}
       else
@@ -294,11 +288,9 @@ for DISTRIBUTION in $DISTRIBUTIONS ; do
       ppa="ppa"
       changesFile=`ls ${PACKAGE}_${PACKAGE_VERSION}~${DISTRIBUTION}[0-9]~ppa[0-9]_source.changes | tail -n1`
    fi
-   echo -e "\x1b[34m   dput $ppa $changesFile\x1b[0m"
+   echo -e "\x1b[34m   dput ${ppa} $changesFile\x1b[0m"
 done
 echo -e ""
-
-
 
 if [ -e make-symbols ] ; then
    echo -e "\x1b[34m################################################################\x1b[0m"
@@ -308,12 +300,12 @@ if [ -e make-symbols ] ; then
 fi
 
 echo -e "\x1b[34mBuild Test Commands:\x1b[0m"
-for DISTRIBUTION in $DISTRIBUTIONS ; do
-   if [ "$DISTRIBUTION" = "unstable" -o \
-        "$DISTRIBUTION" = "testing"  -o \
-        "$DISTRIBUTION" = "stable"   -o \
-        "$DISTRIBUTION" = "default" ] ; then
-      if [ "$DISTRIBUTION" = "default" ] ; then
+for DISTRIBUTION in ${DISTRIBUTIONS} ; do
+   if [ "${DISTRIBUTION}" == "unstable" -o \
+        "${DISTRIBUTION}" == "testing"  -o \
+        "${DISTRIBUTION}" == "stable"   -o \
+        "${DISTRIBUTION}" == "default" ] ; then
+      if [ "${DISTRIBUTION}" == "default" ] ; then
          version=${PACKAGE_VERSION}
       else
          version=${DEBIAN_VERSION}
@@ -324,6 +316,6 @@ for DISTRIBUTION in $DISTRIBUTIONS ; do
       changesFilesPattern="${PACKAGE}_${PACKAGE_VERSION}~${DISTRIBUTION}[0-9]~ppa[0-9]_*.changes"
       dscFile=`ls ${PACKAGE}_${PACKAGE_VERSION}~${DISTRIBUTION}[0-9]~ppa[0-9].dsc | tail -n1`
    fi
-   echo -e "\x1b[34m   sudo pbuilder build $dscFile && lintian -iIEv --pedantic /var/cache/pbuilder/result/$changesFilesPattern\x1b[0m"
+   echo -e "\x1b[34m   sudo pbuilder build ${dscFile} && lintian -iIEv --pedantic /var/cache/pbuilder/result/$changesFilesPattern\x1b[0m"
 done
 echo -e ""

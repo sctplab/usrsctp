@@ -1,8 +1,7 @@
 #!/bin/bash -e
-# $Id: make-deb 2770 2013-05-30 08:46:46Z dreibh $
 #
-# Debian Packaging Scripts
-# Copyright (C) 2002-2017 by Thomas Dreibholz
+# Packaging Scripts
+# Copyright (C) 2002-2019 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,13 +18,110 @@
 #
 # Contact: dreibh@iem.uni-due.de
 
-./clean-deb
-./make-deb trusty wily xenial yakkety zesty unstable
-changeFiles=`ls *.changes`
-for changeFile in $changeFiles ; do
-   if [[ $changeFile =~ .*[0-9](ppa|ubuntu)[0-9].* ]] ; then
-      dput ppa $changeFile
+COPR=0
+DPUT=0
+
+# NOTE: These are the supported distributions by Ubuntu Launchpad and Debian:
+DPUT_DISTRIBUTIONS="precise trusty xenial bionic cosmic disco eoan   unstable"
+
+while [ $# -gt 0 ] ; do
+   if [ "$1" == "dput" ] ; then
+      DPUT=1
+   elif [ "$1" == "copr" ] ; then
+      COPR=1
+   elif [ "$1" == "all" ] ; then
+      DPUT=1
+      COPR=1
    else
-      dput mentors $changeFile
+      echo >&2 "Usage: $0 [dput] [copr] [all]"
+      exit 1
    fi
+   shift
 done
+
+if [ ${DPUT} -eq 0 -a ${COPR} -eq 0 ] ; then
+   COPR=1
+   DPUT=1
+fi
+
+if [ ! -e debian/ ] ; then
+   DPUT=0
+fi
+if [ ! -e rpm/ ] ; then
+   COPR=0
+fi
+
+
+# ====== Build source packages ==============================================
+./clean-deb
+if [ ${DPUT} -ne 0 ] ; then
+   . ./packaging.conf
+   if [ "${NOT_TARGET_DISTRIBUTIONS}" == "" ] ; then
+      echo >&2 "ERROR: Define NOT_TARGET_DISTRIBUTIONS in packaging.conf!"
+      exit 1
+   fi
+   buildForDistribution=""
+   for dputDistribution in ${DPUT_DISTRIBUTIONS} ; do
+      notATarget=0
+      for notTargetDistribution in ${NOT_TARGET_DISTRIBUTIONS} ; do
+         if [ "${notTargetDistribution}" == "${dputDistribution}" ] ; then
+            notATarget=1
+            break
+         fi
+      done
+      if [ $notATarget -eq 0 ] ; then
+         buildForDistribution="${buildForDistribution} ${dputDistribution}"
+      fi
+   done
+
+   echo "Building for distributions:${buildForDistribution}"
+   ./make-deb ${buildForDistribution}
+fi
+
+if [ ${COPR} -ne 0 ] ; then
+   if [ -e rpm -o -e ./make-srpm ] ; then
+      ./make-srpm || exit 1
+   else
+      echo >&2 "ERROR: RPM files not found!"
+      exit 1
+   fi
+fi
+
+
+# ====== dput ===============================================================
+if [ ${DPUT} -ne 0 ] ; then
+   changeFiles=`ls *.changes`
+   for changeFile in $changeFiles ; do
+      if [[ $changeFile =~ .*[0-9](ppa|ubuntu)[0-9].* ]] ; then
+         dput ppa $changeFile
+      else
+         dput mentors $changeFile
+      fi
+   done
+fi
+
+
+# ====== COPR ===============================================================
+if [ ${COPR} -ne 0 ] ; then
+   PACKAGE=`grep "^Name:" rpm/*.spec | head -n1 | sed -e "s/Name://g" -e "s/[ \t]*//g"`
+   SRPM=`find ${HOME}/rpmbuild/SRPMS -name "${PACKAGE}-*.src.rpm"`
+   if [ ! -e "${SRPM}" ] ; then
+      echo >&2 "ERROR: ${PACKAGE}-*.src.rpm not found!"
+      exit 1
+   fi
+
+   COPR_CLI=""
+   for directory in /usr/bin ~/.local/bin ; do
+      if [ -x "${directory}/copr-cli" ] ; then
+         COPR_CLI="${directory}/copr-cli"
+         break
+      fi
+   done
+   if [ "${COPR_CLI}" == "" ] ; then
+      echo >&2 "ERROR: copr-cli not found!"
+      exit 1
+   fi
+   echo "Using ${COPR_CLI}"
+
+   ${COPR_CLI} build --nowait ppa ${SRPM}
+fi
