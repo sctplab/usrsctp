@@ -4549,7 +4549,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #if defined(__APPLE__) && (!defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION))
 			flowlabel = ntohl(inp->ip_inp.inp.inp_flow);
 #else
-			flowlabel = ntohl(((struct in6pcb *)inp)->in6p_flowinfo);
+			flowlabel = ntohl(((struct inpcb *)inp)->inp_flow);
 #endif
 		}
 		flowlabel &= 0x000fffff;
@@ -4627,7 +4627,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #if defined(__APPLE__) && (!defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION))
 			tos_value = (ntohl(inp->ip_inp.inp.inp_flow) >> 20) & 0xff;
 #else
-			tos_value = (ntohl(((struct in6pcb *)inp)->in6p_flowinfo) >> 20) & 0xff;
+			tos_value = (ntohl(((struct inpcb *)inp)->inp_flow) >> 20) & 0xff;
 #endif
 #endif
 		}
@@ -6056,7 +6056,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	stc.site_scope = stc.local_scope = stc.loopback_scope = 0;
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) {
 		stc.ipv6_addr_legal = 1;
-		if (SCTP_IPV6_V6ONLY(inp)) {
+		if (SCTP_IPV6_V6ONLY(&inp->ip_inp.inp)) {
 			stc.ipv4_addr_legal = 0;
 		} else {
 			stc.ipv4_addr_legal = 1;

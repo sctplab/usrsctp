@@ -275,7 +275,7 @@ sctp_sysctl_copy_out_local_addresses(struct sctp_inpcb *inp, struct sctp_tcb *st
 		site_scope = 1;
 		if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) {
 			ipv6_addr_legal = 1;
-			if (SCTP_IPV6_V6ONLY(inp)) {
+			if (SCTP_IPV6_V6ONLY(&inp->ip_inp.inp)) {
 				ipv4_addr_legal = 0;
 			} else {
 				ipv4_addr_legal = 1;

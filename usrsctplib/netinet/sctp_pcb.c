@@ -1956,7 +1956,7 @@ sctp_endpoint_probe(struct sockaddr *nam, struct sctppcbhead *head,
 #ifdef INET
 			case AF_INET:
 				if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) &&
-				    SCTP_IPV6_V6ONLY(inp)) {
+				    SCTP_IPV6_V6ONLY(&inp->ip_inp.inp)) {
 					/* IPv4 on a IPv6 socket with ONLY IPv6 set */
 					SCTP_INP_RUNLOCK(inp);
 					continue;
@@ -2169,7 +2169,7 @@ sctp_isport_inuse(struct sctp_inpcb *inp, uint16_t lport, uint32_t vrf_id)
 		/* This one is in use. */
 		/* check the v6/v4 binding issue */
 		if ((t_inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) &&
-		    SCTP_IPV6_V6ONLY(t_inp)) {
+		    SCTP_IPV6_V6ONLY(&t_inp->ip_inp.inp)) {
 			if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) {
 				/* collision in V6 space */
 				return (t_inp);
@@ -2183,7 +2183,7 @@ sctp_isport_inuse(struct sctp_inpcb *inp, uint16_t lport, uint32_t vrf_id)
 		} else {
 			/* t_inp is bound only V4 */
 			if ((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) &&
-			    SCTP_IPV6_V6ONLY(inp)) {
+			    SCTP_IPV6_V6ONLY(&inp->ip_inp.inp)) {
 				/* no conflict */
 				continue;
 			}
@@ -3364,7 +3364,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 			 * to the proper value.
 			 */
 			if (p && (error = prison_local_ip6(p->td_ucred, &sin6->sin6_addr,
-			    (SCTP_IPV6_V6ONLY(inp) != 0))) != 0) {
+			    (SCTP_IPV6_V6ONLY(&inp->ip_inp.inp) != 0))) != 0) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
 				return (error);
 			}
@@ -4261,10 +4261,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 #else
 	if (inp->inp_vflag & INP_IPV6) {
 #endif
-		struct in6pcb *in6p;
-
-		in6p = (struct in6pcb *)inp;
-		ip6_freepcbopts(in6p->in6p_outputopts);
+		ip6_freepcbopts(ip_inp->in6p_outputopts);
 	}
 #endif
 #endif				/* INET6 */
