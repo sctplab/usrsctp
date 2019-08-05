@@ -34,7 +34,7 @@ project(libusrsctp)
 
 set(BUILD_MAJOR "1")
 set(BUILD_MINOR "0")
-set(BUILD_PATCH "0~td121")
+set(BUILD_PATCH "0~td122")
 set(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
 
 
@@ -190,8 +190,16 @@ if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "AppleCla
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99 -pedantic -Wall -Wextra")
 
 	# Necessary for Fedora >= 30 and Ubuntu >= 19.10 builds:
-	set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-address-of-packed-member")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member")
+	check_c_compiler_flag(-Waddress-of-packed-member has_address_of_packed_member)
+	if (has_address_of_packed_member)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-address-of-packed-member")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member")
+	endif()
+	check_c_compiler_flag(-Wsign-compare has_no_sign_compare)
+	if (has_no_sign_compare)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-sign-compare")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-sign-compare")
+	endif()
 
 	check_c_compiler_flag(-Wfloat-equal has_wfloat_equal)
 	if (has_wfloat_equal)
