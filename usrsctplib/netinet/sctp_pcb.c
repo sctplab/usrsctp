@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 349998 2019-07-15 14:52:52Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 350588 2019-08-05 13:22:15Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4261,7 +4261,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 #else
 	if (inp->inp_vflag & INP_IPV6) {
 #endif
-		ip6_freepcbopts(ip_inp->in6p_outputopts);
+		ip6_freepcbopts(ip_pcb->in6p_outputopts);
 	}
 #endif
 #endif				/* INET6 */
