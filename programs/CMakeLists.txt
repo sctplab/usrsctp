@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2015-2015 Oleg Alexeenkov
-# Copyright (C) 2015-2017 Felix Weinrank
+# Copyright (C) 2015-2019 Felix Weinrank
 #
 # All rights reserved.
 #
@@ -56,12 +56,15 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
 	add_definitions(-D__APPLE_USE_RFC_2292)
 endif ()
 
-if (MSYS)
-	message(STATUS "MSYS")
+if (MSYS OR MINGW)
+	message(STATUS "MSYS / MINGW")
 	add_definitions(-D__USE_MINGW_ANSI_STDIO)
+	# 0x0601 = Windows 7 API
+	add_definitions(-DWINVER=0x0601)
+	add_definitions(-D_WIN32_WINNT=0x0601)
 
 	if (CMAKE_C_COMPILER_ID MATCHES "GNU")
-		message(STATUS "MYSYS + GCC")
+		message(STATUS "MSYS / MINGW + GCC")
 		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-format")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-format")
 	endif ()
@@ -87,6 +90,10 @@ if (sctp_fuzzer_clang)
 	configure_file(fuzzer_unconnected.sh fuzzer_unconnected.sh COPYONLY)
 	configure_file(fuzzer_upcall.sh fuzzer_upcall.sh COPYONLY)
 
+	list(APPEND check_programs
+		fuzzer_unconnected.c
+		fuzzer_upcall.c
+	)
 else ()
 	list(APPEND check_programs
 		chargen_server_upcall.c
@@ -113,12 +120,6 @@ else ()
 		tsctp_upcall.c
 	)
 endif()
-
-list(APPEND check_programs
-	fuzzer_unconnected.c
-	fuzzer_upcall.c
-)
-
 
 foreach (source_file ${check_programs})
 	get_filename_component(source_file_we ${source_file} NAME_WE)
