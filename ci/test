@@ -71,7 +71,7 @@ if [ "${TRAVIS_OS_NAME}" == "linux" ] ; then
          PACKAGE_VERSION=`grep "^Version:" rpm/*.spec | head -n1 | sed -e "s/Version://g" -e "s/[ \t]*//g"`
 
          release=`sudo docker exec ${CONTAINER} bash -c "LANG=C.UTF-8 ; cat /etc/fedora-release | sed -e \"s/^\(.*\) release \([0-9]*\) (\(.*\))$/\2/g\"" | sed -e "s/[^0-9]//g"`
-         arch=`sudo docker exec ${CONTAINER} env LANG=C.UTF-8 uname -m | sed -e "s/[^0-9a-zA-Z_-+]//g"`
+         arch=`sudo docker exec ${CONTAINER} env LANG=C.UTF-8 uname -m | sed -e "s/[^0-9a-zA-Z_+-]//g"`
          if ! sudo docker exec ${CONTAINER} cd /var/lib/mock/fedora-${release}-${arch}/result ; then
             if sudo docker exec ${CONTAINER} cd /var/lib/mock/fedora-rawhide-${arch}/result ; then
                release="rawhide"
