@@ -6444,7 +6444,7 @@ sctp_sorecvmsg(struct socket *so,
 		if ((uio->uio_resid == 0) ||
 #endif
 		    ((in_eeor_mode) &&
-		     (copied_so_far >= (uint32_t)max(so->so_rcv.sb_lowat, 1)))) {
+		     (copied_so_far >= max(so->so_rcv.sb_lowat, 1)))) {
 			goto release;
 		}
 		/*
