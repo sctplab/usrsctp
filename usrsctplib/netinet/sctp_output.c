@@ -13901,7 +13901,7 @@ sctp_lower_sosend(struct socket *so,
 		}
 	}
 #if defined(__Userspace__)
-	if (inp->recv_callback || SCTP_SO_IS_NBIO(so)) {
+	if (inp->recv_callback) {
 		non_blocking = 1;
 	}
 #endif
