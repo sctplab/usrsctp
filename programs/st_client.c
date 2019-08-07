@@ -77,9 +77,7 @@ handle_packets(int sock, struct socket* s, void* sconn_addr)
 	ssize_t length;
 	char buf[MAX_PACKET_SIZE];
 
-	fd_set rfds;
 	struct timeval tv;
-	int retval;
 
 	unsigned next_fire_time = get_tick_count();
 	unsigned last_fire_time = next_fire_time;
@@ -98,8 +96,6 @@ handle_packets(int sock, struct socket* s, void* sconn_addr)
 		wait_time = next_fire_time - now;
 		tv.tv_sec = wait_time / 1000;
 		tv.tv_usec = (wait_time % 1000) * 1000;
-
-		retval = select(1, &rfds, NULL, NULL, &tv);
 
 		length = recv(sock, buf, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
