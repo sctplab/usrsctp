@@ -105,8 +105,16 @@ echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Running lintian ===================
 echo -e ""
 
 changesFile=`find /var/cache/pbuilder/result/ -name "${changesFilesPattern}"`
-if [ ! -e "$changesFile" ] ; then
-    echo >&2 "ERROR: Unable to find changes file $changesFile!"
+if [ ! -e "${changesFile}" ] ; then
+    echo >&2 "ERROR: Unable to find changes file ${changesFile}!"
     exit 1
 fi
-lintian -iIEv --pedantic ${changesFilesPattern} || true
+
+profile="ubuntu"
+if [ "${PACKAGE_DISTRIBUTION}" == "unstable" -o \
+     "${PACKAGE_DISTRIBUTION}" == "testing"  -o \
+     "${PACKAGE_DISTRIBUTION}" == "stable" ] ; then
+   profile="debian"
+fi
+echo "Calling: lintian -iIEv --pedantic --profile ${profile} ${changesFile}"
+lintian -iIEv --pedantic --profile ${profile} ${changesFile} || true

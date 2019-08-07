@@ -44,7 +44,7 @@ while (my $text = <STDIN>) {
             print "$entry\n";
          }
 
-         if($ARGV[0] !~ //) {
+         if($ARGV[0] !~ /^$/) {
             if($text =~ /($ARGV[0])/) {
                exit;
             }
