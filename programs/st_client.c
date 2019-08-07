@@ -43,6 +43,7 @@
 #include <sys/types.h>
 #ifndef _WIN32
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <errno.h>
@@ -69,8 +70,10 @@ static unsigned get_tick_count()
 #ifdef _WIN32
 	return GetTickCount();
 #else
-	static const clock_t clocks_per_msec = CLOCKS_PER_SEC / 1000;
-	return clock() / clocks_per_msec;
+	struct timeval te;
+	gettimeofday(&te, NULL); // get current time
+	unsigned milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; // calculate milliseconds
+	return milliseconds;
 #endif
 }
 
