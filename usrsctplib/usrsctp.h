@@ -1047,7 +1047,7 @@ usrsctp_get_events(struct socket *so);
 
 
 void
-usrsctp_fire_timer(int delta);
+usrsctp_handle_timers(int delta);
 
 #define SCTP_DUMP_OUTBOUND 1
 #define SCTP_DUMP_INBOUND  0

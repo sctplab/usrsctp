@@ -89,7 +89,7 @@ handle_packets(int sock, struct socket* s, void* sconn_addr)
 		int wait_time;
 
 		if ((int) (now - next_fire_time) > 0) {
-			usrsctp_fire_timer(now - last_fire_time);
+			usrsctp_handle_timers(now - last_fire_time);
 			last_fire_time = now;
 			next_fire_time = now + TIMER_INTERVAL_MSECS;
 		}
