@@ -108,25 +108,18 @@ handle_events(int sock, struct socket* s, void* sconn_addr)
 		FD_ZERO(&rfds);
 		FD_SET(sock, &rfds);
 
-		if (FD_ISSET(sock, &rfds))
-			printf("--- FD_ISSET(sock, &rfds): yes\n");
-
-		printf("--- calling select()\n");
-
 		select(sock + 1, &rfds, NULL, NULL, &tv);
 
-		printf("--- calling recv() 2\n");
+		if (FD_ISSET(sock, &rfds)) {
+			length = recv(sock, buf, MAX_PACKET_SIZE, 0);
 
-		length = recv(sock, buf, MAX_PACKET_SIZE, 0);
-
-		printf("--- recv() returned, length:%zu\n", length);
-
-		if (length > 0) {
-			if ((dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
-				fprintf(stderr, "%s", dump_buf);
-				usrsctp_freedumpbuffer(dump_buf);
+			if (length > 0) {
+				if ((dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
+					fprintf(stderr, "%s", dump_buf);
+					usrsctp_freedumpbuffer(dump_buf);
+				}
+				usrsctp_conninput(sconn_addr, buf, (size_t)length, 0);
 			}
-			usrsctp_conninput(sconn_addr, buf, (size_t)length, 0);
 		}
 	}
 }
