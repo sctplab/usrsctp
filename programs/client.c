@@ -119,6 +119,7 @@ main(int argc, char *argv[])
 
 	if ((sock = usrsctp_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
+		return (-1);
 	}
 	memset(&event, 0, sizeof(event));
 	event.se_assoc_id = SCTP_ALL_ASSOC;
@@ -127,6 +128,7 @@ main(int argc, char *argv[])
 		event.se_type = event_types[i];
 		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
 			perror("setsockopt SCTP_EVENT");
+			return (-1);
 		}
 	}
 	if (argc > 3) {
@@ -139,6 +141,7 @@ main(int argc, char *argv[])
 		addr6.sin6_addr = in6addr_any;
 		if (usrsctp_bind(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
 			perror("bind");
+			return (-1);
 		}
 	}
 	if (argc > 5) {
@@ -147,6 +150,7 @@ main(int argc, char *argv[])
 		encaps.sue_port = htons(atoi(argv[5]));
 		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(struct sctp_udpencaps)) < 0) {
 			perror("setsockopt");
+			return (-1);
 		}
 	}
 	memset((void *)&addr4, 0, sizeof(struct sockaddr_in));
@@ -164,16 +168,19 @@ main(int argc, char *argv[])
 	if (inet_pton(AF_INET6, argv[1], &addr6.sin6_addr) == 1) {
 		if (usrsctp_connect(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
 			perror("usrsctp_connect");
+			return (-1);
 		}
 	} else if (inet_pton(AF_INET, argv[1], &addr4.sin_addr) == 1) {
 		if (usrsctp_connect(sock, (struct sockaddr *)&addr4, sizeof(struct sockaddr_in)) < 0) {
 			perror("usrsctp_connect");
+			return (-1);
 		}
 	} else {
 		printf("Illegal destination address.\n");
 	}
 	if ((n = usrsctp_getladdrs(sock, 0, &addrs)) < 0) {
 		perror("usrsctp_getladdrs");
+		return (-1);
 	} else {
 		addr = addrs;
 		printf("Local addresses: ");
@@ -222,6 +229,7 @@ main(int argc, char *argv[])
 	}
 	if ((n = usrsctp_getpaddrs(sock, 0, &addrs)) < 0) {
 		perror("usrsctp_getpaddrs");
+		return (-1);
 	} else {
 		addr = addrs;
 		printf("Peer addresses: ");
@@ -274,6 +282,7 @@ main(int argc, char *argv[])
 	if (!done) {
 		if (usrsctp_shutdown(sock, SHUT_WR) < 0) {
 			perror("usrsctp_shutdown");
+			return (-1);
 		}
 	}
 	while (!done) {
