@@ -211,7 +211,7 @@ for DISTRIBUTION in ${DISTRIBUTIONS} ; do
          echo "${DEBHELPER_LATEST_VERSION}" >debian/compat
          sed -e "s/debhelper (.* [0-9]*)/debhelper (>= ${DEBHELPER_LATEST_VERSION})/g" <debian/control >debian/control.new
          # Newer debhelper does not need "--parallel" for building:
-         sed -e "s/\(.*dh .. --buildsystem=cmake.*\)\(--parallel\)\(.*\)/\1\3/g" -e 's@[[:space:]]*$@@g' <debian/rules >debian/rules.new
+         sed -e "s/\(.*dh \$@ --buildsystem[ =]*cmake.*\)\(--parallel\)\(.*\)/\1\3/g" -e 's@[[:space:]]*$@@g' <debian/rules >debian/rules.new
          mv debian/control.new debian/control
          mv debian/rules.new debian/rules
          updatedDebhelperVersion=1
