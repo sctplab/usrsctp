@@ -71,7 +71,7 @@ static unsigned get_tick_count()
 }
 
 static void
-handle_packets(int sock, struct socket* s, void* sconn_addr)
+handle_events(int sock, struct socket* s, void* sconn_addr)
 {
 	char *dump_buf;
 	ssize_t length;
@@ -348,7 +348,7 @@ main(int argc, char *argv[])
 
 	connecting = 1;
 
-	handle_packets(fd, s, sconn.sconn_addr);
+	handle_events(fd, s, sconn.sconn_addr);
 
 	return 0;
 }
