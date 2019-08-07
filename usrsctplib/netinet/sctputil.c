@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 350011 2019-07-15 20:45:01Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 350625 2019-08-06 08:33:21Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6444,7 +6444,7 @@ sctp_sorecvmsg(struct socket *so,
 		if ((uio->uio_resid == 0) ||
 #endif
 		    ((in_eeor_mode) &&
-		     (copied_so_far >= (uint32_t)max(so->so_rcv.sb_lowat, 1)))) {
+		     (copied_so_far >= max(so->so_rcv.sb_lowat, 1)))) {
 			goto release;
 		}
 		/*
