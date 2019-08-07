@@ -32,9 +32,9 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(libusrsctp C)
 
-set(BUILD_MAJOR "1")
-set(BUILD_MINOR "0")
-set(BUILD_PATCH "0~td122")
+SET(BUILD_MAJOR "1")
+SET(BUILD_MINOR "0")
+SET(BUILD_PATCH "0~td123")
 set(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
 
 
