@@ -1579,9 +1579,6 @@ sowakeup(struct socket *so, struct sockbuf *sb)
 #endif
 	}
 	SOCKBUF_UNLOCK(sb);
-
-	if ((sb->sb_flags & SB_UPCALL) && so->so_upcall != NULL)
-		(*so->so_upcall)(so, so->so_upcallarg, M_NOWAIT);
 }
 #else /* kernel version for reference */
 /*
