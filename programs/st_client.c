@@ -29,6 +29,10 @@
  * SUCH DAMAGE.
  */
 
+/*
+ * Usage: st_client local_addr local_port remote_addr remote_port remote_sctp_port
+ */
+
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
 #endif
@@ -98,9 +102,22 @@ handle_events(int sock, struct socket* s, void* sconn_addr)
 		tv.tv_sec = wait_time / 1000;
 		tv.tv_usec = (wait_time % 1000) * 1000;
 
-		select(1, &rfds, NULL, NULL, &tv);
+		FD_ZERO(&rfds);
+		FD_SET(sock, &rfds);
+
+		if (FD_ISSET(sock, &rfds))
+			printf("--- FD_ISSET(sock, &rfds): yes\n");
+
+		printf("--- calling select()\n");
+
+		select(sock + 1, &rfds, NULL, NULL, &tv);
+
+		printf("--- calling recv() 2\n");
 
 		length = recv(sock, buf, MAX_PACKET_SIZE, 0);
+
+		printf("--- recv() returned, length:%zu\n", length);
+
 		if (length > 0) {
 			if ((dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
 				fprintf(stderr, "%s", dump_buf);
@@ -242,13 +259,13 @@ main(int argc, char *argv[])
 
 	if (argc < 6) {
 		printf("Usage: st_client local_addr local_port remote_addr remote_port remote_sctp_port\n");
-		exit(EXIT_FAILURE);
+		return (-1);
 	}
 
 #ifdef _WIN32
 	if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
 		printf("WSAStartup failed\n");
-		exit (EXIT_FAILURE);
+		return (-1);
 	}
 #endif
 	usrsctp_init_nothreads(0, conn_output, debug_printf);
@@ -256,12 +273,12 @@ main(int argc, char *argv[])
 #ifdef _WIN32
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
 		printf("socket() failed with error: %ld\n", WSAGetLastError());
-        exit(1);
+		return (-1);
 	}
 #else
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 		perror("socket");
-        exit(1);
+		return (-1);
 	}
 #endif
 	memset(&sin, 0, sizeof(struct sockaddr_in));
@@ -272,17 +289,17 @@ main(int argc, char *argv[])
 	sin.sin_port = htons(atoi(argv[2]));
 	if (!inet_pton(AF_INET, argv[1], &sin.sin_addr.s_addr)){
 		printf("error: invalid address\n");
-		exit(1);
+		return (-1);
 	}
 #ifdef _WIN32
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
 		printf("bind() failed with error: %ld\n", WSAGetLastError());
-        exit(1);
+		return (-1);
 	}
 #else
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
 		perror("bind");
-        exit(1);
+		return (-1);
 	}
 #endif
 	memset(&sin, 0, sizeof(struct sockaddr_in));
@@ -293,17 +310,17 @@ main(int argc, char *argv[])
 	sin.sin_port = htons(atoi(argv[4]));
 	if (!inet_pton(AF_INET, argv[3], &sin.sin_addr.s_addr)){
 		printf("error: invalid address\n");
-		exit(1);
+		return (-1);
 	}
 #ifdef _WIN32
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
 		printf("connect() failed with error: %ld\n", WSAGetLastError());
-        exit(1);
+		return (-1);
 	}
 #else
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
 		perror("connect");
-        exit(1);
+		return (-1);
 	}
 #endif
 #ifdef SCTP_DEBUG
@@ -314,7 +331,7 @@ main(int argc, char *argv[])
 
 	if ((s = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
-        exit(1);
+		return (-1);
 	}
 
 	usrsctp_set_non_blocking(s, 1);
@@ -329,6 +346,7 @@ main(int argc, char *argv[])
 	sconn.sconn_addr = NULL;
 	if (usrsctp_bind(s, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_bind");
+		return (-1);
 	}
 
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
@@ -343,7 +361,7 @@ main(int argc, char *argv[])
 
 	if (retval < 0 && errno != EWOULDBLOCK && errno != EINPROGRESS) {
 		perror("usrsctp_connect");
-		exit(1);
+		return (-1);
 	}
 
 	connecting = 1;
