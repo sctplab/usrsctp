@@ -1276,7 +1276,7 @@ print_status(struct peer_connection *pc)
 			printf("unreliable (max. %u rtx).\n", channel->pr_value);
 			break;
 		default:
-			printf("unkown policy %u.\n", channel->pr_policy);
+			printf("unknown policy %u.\n", channel->pr_policy);
 			break;
 		}
 	}
