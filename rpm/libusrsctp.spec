@@ -1,5 +1,5 @@
 Name: libusrsctp
-Version: 1.0.0~td125
+Version: 1.0.0~td126
 Release: 1
 Summary: Portable SCTP Userland Stack
 License: BSD

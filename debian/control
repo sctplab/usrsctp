@@ -2,7 +2,7 @@ Source: libusrsctp
 Maintainer: Thomas Dreibholz <dreibh@iem.uni-due.de>
 Section: net
 Priority: optional
-Build-Depends: cmake,
+Build-Depends: cmake (>= 3.0.2) | cmake3,
                debhelper (>= 9),
                libfile-fcntllock-perl
 Standards-Version: 4.4.0.1
