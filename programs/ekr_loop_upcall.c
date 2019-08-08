@@ -164,7 +164,7 @@ handle_upcall(struct socket *sock, void *data, int flgs)
 			if (flags & MSG_NOTIFICATION) {
 				printf("Notification of length %d received.\n", (int)n);
 			} else {
-				printf("Messsage of length %d received via %p:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u, flags %x.\n",
+				printf("Message of length %d received via %p:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u, flags %x.\n",
 				       (int)n,
 				       addr.sconn.sconn_addr,
 				       ntohs(addr.sconn.sconn_port),
@@ -522,7 +522,7 @@ main(int argc, char *argv[])
 		perror("usrsctp_accept");
 		exit(EXIT_FAILURE);
 	}
-	
+
 	usrsctp_set_upcall(s_s, handle_upcall, &fd_s);
 
 	usrsctp_close(s_l);
