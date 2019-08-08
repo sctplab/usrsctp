@@ -217,15 +217,15 @@ if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "AppleCla
 	endif ()
 
 	if (sctp_sanitizer_address)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=address,undefined -fno-omit-frame-pointer -fsanitize-coverage=trace-cmp,trace-gep,trace-div")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address,undefined -fno-omit-frame-pointer -fsanitize-coverage=trace-cmp,trace-gep,trace-div")
 	endif ()
 
 	if (sctp_sanitizer_memory)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=memory -fno-omit-frame-pointer -fsanitize-memory-track-origins -fsanitize-coverage=trace-cmp,trace-gep,trace-div -fPIE")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -fsanitize-memory-track-origins -fsanitize-coverage=trace-cmp,trace-gep,trace-div -fPIE")
 	endif ()
 
 	if (sctp_fuzzer_clang)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=fuzzer -Wno-gnu-zero-variadic-macro-arguments")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer -Wno-gnu-zero-variadic-macro-arguments")
 	endif ()
 endif ()
 
