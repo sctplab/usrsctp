@@ -2406,6 +2406,20 @@ usrsctp_getsockopt(struct socket *so, int level, int option_name,
 				*option_len = (socklen_t)sizeof(struct linger);
 				return (0);
 			}
+			break;
+		case SO_ERROR:
+			if (*option_len < (socklen_t)sizeof(int)) {
+				errno = EINVAL;
+				return (-1);
+			} else {
+				int *intval;
+
+				intval = (int *)option_value;
+				*intval = so->so_error;
+				*option_len = (socklen_t)sizeof(int);
+				return (0);
+			}
+			break;
 		default:
 			errno = EINVAL;
 			return (-1);

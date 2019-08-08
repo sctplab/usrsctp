@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 350588 2019-08-05 13:22:15Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 350745 2019-08-08 08:23:27Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1381,7 +1381,7 @@ sctp_asconf_queue_add(struct sctp_tcb *stcb, struct sctp_ifa *ifa,
 		if (sctp_asconf_queue_mgmt(stcb,
 					   stcb->asoc.asconf_addr_del_pending,
 					   SCTP_DEL_IP_ADDRESS) == 0) {
-			SCTPDBG(SCTP_DEBUG_ASCONF2, "asconf_queue_add: queing pending delete\n");
+			SCTPDBG(SCTP_DEBUG_ASCONF2, "asconf_queue_add: queuing pending delete\n");
 			pending_delete_queued = 1;
 			/* clear out the pending delete info */
 			stcb->asoc.asconf_del_pending = 0;
