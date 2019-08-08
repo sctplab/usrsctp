@@ -65,7 +65,7 @@
 static int connecting = 0;
 static int finish = 0;
 
-static unsigned get_tick_count()
+static unsigned get_tick_count(void)
 {
 #ifdef _WIN32
 	return GetTickCount();
@@ -225,7 +225,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 		usrsctp_freedumpbuffer(dump_buf);
 	}
 #ifdef _WIN32
-	if (send(*fdp, buf, length, 0) == SOCKET_ERROR) {
+	if (send(*fdp, buf, (int)length, 0) == SOCKET_ERROR) {
 		return (WSAGetLastError());
 #else
 	if (send(*fdp, buf, length, 0) < 0) {
