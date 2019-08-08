@@ -5,6 +5,7 @@ programs_helper_sources = files('programs_helper.c')
 programs = {
     'chargen_server_upcall': files('chargen_server_upcall.c'),
     'client': files('client.c'),
+    'st_client': files('st_client.c'),
     'client_upcall': files('client_upcall.c'),
     'daytime_server': files('daytime_server.c'),
     'daytime_server_upcall': files('daytime_server_upcall.c'),
