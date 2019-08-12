@@ -37,22 +37,6 @@ matrix:
      group: travis_latest
      env: DOCKER="ubuntu:disco" VARIANT="ubuntu" TOOL="pbuilder"
 
-   # ====== Ubuntu 18.10 (Cosmic Cuttlefish) ================================
-   - name: "Ubuntu 18.10 (Cosmic Cuttlefish) with GCC"
-     os: linux
-     dist: xenial
-     group: travis_latest
-     env: DOCKER="ubuntu:cosmic" VARIANT="ubuntu" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   - name: "Ubuntu 18.10 (Cosmic Cuttlefish) with Clang"
-     os: linux
-     dist: xenial
-     group: travis_latest
-     env: DOCKER="ubuntu:cosmic" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "Ubuntu 18.10 (Cosmic Cuttlefish) packaging with pbuilder"
-     dist: xenial
-     group: travis_latest
-     env: DOCKER="ubuntu:cosmic" VARIANT="ubuntu" TOOL="pbuilder"
-
    # ====== Ubuntu 18.04 (Bionic Beaver) ====================================
    - name: "Ubuntu 18.04 (Bionic Beaver) with GCC"
      os: linux
