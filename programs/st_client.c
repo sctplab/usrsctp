@@ -330,6 +330,10 @@ main(int argc, char *argv[])
 		return (-1);
 	}
 
+	const int on = 1;
+
+	usrsctp_setsockopt(s, IPPROTO_SCTP, SCTP_RECVRCVINFO, &on, sizeof(int));
+
 	usrsctp_set_non_blocking(s, 1);
     usrsctp_set_upcall(s, handle_upcall, NULL);
 
