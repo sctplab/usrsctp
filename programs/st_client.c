@@ -130,7 +130,7 @@ static void on_connect(struct socket* s)
 	char buffer[BUFFER_SIZE];
 
 	memset(buffer, 'A', BUFFER_SIZE);
-	sndinfo.snd_sid = 1;
+	sndinfo.snd_sid = 0;
 	sndinfo.snd_flags = 0;
 	sndinfo.snd_ppid = htonl(DISCARD_PPID);
 	sndinfo.snd_context = 0;
