@@ -65,15 +65,17 @@
 static int connecting = 0;
 static int finish = 0;
 
-static unsigned get_tick_count(void)
+static unsigned int get_tick_count(void)
 {
 #ifdef _WIN32
 	return GetTickCount();
 #else
-	struct timeval te;
-	gettimeofday(&te, NULL); // get current time
-	unsigned milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; // calculate milliseconds
-	return milliseconds;
+	struct timeval tv;
+	unsigned int milliseconds;
+
+	gettimeofday(&tv, NULL); /* get current time */
+	milliseconds = tv.tv_sec*1000LL + tv.tv_usec/1000; /* calculate milliseconds */
+	return (milliseconds);
 #endif
 }
 
@@ -154,7 +156,7 @@ static void on_socket_readable(struct socket* s) {
 	/* Keep reading until there is no more data */
 	for (;;) {
 		retval = usrsctp_recvv(s, buffer, sizeof(buffer), (struct sockaddr*) &addr,
-				&fromlen, &rcv_info, &infolen, &infotype, &flags);
+		                       &fromlen, &rcv_info, &infolen, &infotype, &flags);
 
 		if (retval < 0) {
 			if (errno != EWOULDBLOCK) {
@@ -252,6 +254,7 @@ main(int argc, char *argv[])
 #ifdef _WIN32
 	WSADATA wsaData;
 #endif
+	const int on = 1;
 
 	if (argc < 6) {
 		printf("Usage: st_client local_addr local_port remote_addr remote_port remote_sctp_port\n");
@@ -330,12 +333,9 @@ main(int argc, char *argv[])
 		return (-1);
 	}
 
-	const int on = 1;
-
 	usrsctp_setsockopt(s, IPPROTO_SCTP, SCTP_RECVRCVINFO, &on, sizeof(int));
-
 	usrsctp_set_non_blocking(s, 1);
-    usrsctp_set_upcall(s, handle_upcall, NULL);
+	usrsctp_set_upcall(s, handle_upcall, NULL);
 
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
@@ -368,5 +368,5 @@ main(int argc, char *argv[])
 
 	handle_events(fd, s, sconn.sconn_addr);
 
-	return 0;
+	return (0);
 }
