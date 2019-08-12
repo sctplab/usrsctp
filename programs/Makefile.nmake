@@ -57,7 +57,8 @@ all: \
 	ekr_loop_upcall \
 	test_libmgmt \
 	http_client \
-	http_client_upcall
+	http_client_upcall \
+	st_client
 	
 programs_helper.obj : programs_helper.c programs_helper.h
 	cl $(CVARSDLL) $(CFLAGS) -c programs_helper.c
@@ -138,6 +139,10 @@ http_client_upcall:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c http_client_upcall.c
 	link -out:http_client_upcall.exe http_client_upcall.obj programs_helper.obj $(LINKFLAGS)
 
+st_client:
+	$(CC) $(CFLAGS) $(CVARSDLL) -c st_client.c
+	link -out:st_client.exe st_client.obj programs_helper.obj $(LINKFLAGS)
+
 clean:
 	del /F client.exe
 	del /F client.obj
@@ -177,3 +182,5 @@ clean:
 	del /F http_client.obj
 	del /F http_client_upcall.exe
 	del /F http_client_upcall.obj
+	del /F st_client.exe
+	del /F st_client.obj
