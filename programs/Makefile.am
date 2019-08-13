@@ -52,7 +52,8 @@ EXTRA_DIST = \
     ekr_peer.c \
     test_libmgmt.c \
     http_client.c \
-    http_client_upcall.c
+    http_client_upcall.c \
+    st_client.c
 
 noinst_PROGRAMS = \
     test_libmgmt \
@@ -76,7 +77,8 @@ noinst_PROGRAMS = \
     ekr_peer \
     test_libmgmt \
     http_client \
-    http_client_upcall
+    http_client_upcall \
+    st_client
 
 test_libmgmt_SOURCES = programs_helper.c test_libmgmt.c
 test_libmgmt_LDADD = ../usrsctplib/libusrsctp.la
@@ -120,3 +122,5 @@ http_client_SOURCES = programs_helper.c http_client.c
 http_client_LDADD = ../usrsctplib/libusrsctp.la
 http_client_upcall_SOURCES = programs_helper.c http_client_upcall.c
 http_client_upcall_LDADD = ../usrsctplib/libusrsctp.la
+st_client_SOURCES = programs_helper.c st_client.c
+st_client_LDADD = ../usrsctplib/libusrsctp.la

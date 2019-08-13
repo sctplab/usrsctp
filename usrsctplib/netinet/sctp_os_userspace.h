@@ -1160,9 +1160,9 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header, int how, int a
 
 #define SCTP_IS_LISTENING(inp) ((inp->sctp_flags & SCTP_PCB_FLAGS_ACCEPTING) != 0)
 
-#if defined(__Userspace_os_DragonFly) || defined(__Userspace_os_Linux) || defined(__Userspace_os_NaCl) || defined(__Userspace_os_NetBSD) || defined(__Userspace_os_Windows) || defined(__Userspace_os_Fuchsia)
+#if defined(__Userspace_os_Darwin) || defined(__Userspace_os_DragonFly) || defined(__Userspace_os_Linux) || defined(__Userspace_os_NaCl) || defined(__Userspace_os_NetBSD) || defined(__Userspace_os_Windows) || defined(__Userspace_os_Fuchsia)
 int
-timingsafe_bcmp(const void *, const void *, size_t );
+timingsafe_bcmp(const void *, const void *, size_t);
 #endif
 
 #endif
