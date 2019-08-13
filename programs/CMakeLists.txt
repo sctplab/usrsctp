@@ -121,3 +121,4 @@ foreach (source_file ${check_programs})
 		${CMAKE_THREAD_LIBS_INIT}
 	)
 endforeach ()
+
