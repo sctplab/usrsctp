@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2011-2013 Michael Tuexen
  * Copyright (C) 2011-2015 Colin Caughie
+ * Copyright (C) 2011-2019 Felix Weinrank
  *
  * All rights reserved.
  *
