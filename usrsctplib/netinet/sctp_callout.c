@@ -217,7 +217,7 @@ sctp_os_timer_stop(sctp_os_timer_t *c)
 	return (1);
 }
 
-static void
+void
 sctp_handle_tick(int delta)
 {
 	sctp_os_timer_t *c;

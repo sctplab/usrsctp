@@ -80,6 +80,7 @@ option(sctp_sanitizer_memory "Compile with memory sanitizer" 0)
 option(sctp_fuzzer_clang "Compile in Clang fuzzing mode" 0)
 if (sctp_fuzzer_clang)
 	add_definitions(-DFUZZING_MODE)
+	add_definitions(-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
 endif ()
 
 if (sctp_sanitizer_address AND sctp_sanitizer_memory)
@@ -266,4 +267,8 @@ add_subdirectory(usrsctplib)
 
 if (sctp_build_programs)
 	add_subdirectory(programs)
+endif ()
+
+if (sctp_fuzzer_clang)
+	add_subdirectory(fuzzer)
 endif ()

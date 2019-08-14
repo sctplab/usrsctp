@@ -454,7 +454,7 @@ void sctp_drain(void);
 #if defined(__Userspace__)
 void sctp_init(uint16_t,
                int (*)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df),
-               void (*)(const char *, ...));
+               void (*)(const char *, ...), int start_threads);
 #elif defined(__FreeBSD__) && __FreeBSD_version < 902000
 void sctp_init __P((void));
 #elif defined(__APPLE__) && (!defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) &&!defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION))
