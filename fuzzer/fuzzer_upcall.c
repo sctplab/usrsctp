@@ -564,7 +564,6 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	sockets_open++;
 	usrsctp_set_non_blocking(socket_client, 1);
 
-
 	if ((socket_server_listening = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket - socket_server_listening");
 		exit(EXIT_FAILURE);

@@ -86,7 +86,8 @@ configure_file(fuzzer_upcall.sh fuzzer_upcall.sh COPYONLY)
 
 list(APPEND check_programs
 	fuzzer_unconnected.c
-	fuzzer_upcall.c
+	fuzzer_connected_upcall.c
+	fuzzer_connected.c
 )
 
 
