@@ -53,14 +53,14 @@ if [ "${TRAVIS_OS_NAME}" == "linux" ] ; then
          fi
 
          echo "Installing ${packages} ..."
-         sudo docker exec ${CONTAINER} env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive apt-get install -fy ${packages} || {
+         sudo docker exec ${CONTAINER} env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive eatmydata apt-get install -fy ${packages} || {
             echo "NOTE: apt-get failed -> trying dpkg instead of apt-get for local file!"
             # NOTE: Older "apt-get" versions do not handle local files!
-            if ! sudo docker exec ${CONTAINER} env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive dpkg -i ${packages} ; then
+            if ! sudo docker exec ${CONTAINER} env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive eatmydata dpkg -i ${packages} ; then
                echo "There may be some dependencies missing. Trying to install them ..."
-               sudo docker exec ${CONTAINER} env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive apt-get install -fy -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" --no-install-recommends
+               sudo docker exec ${CONTAINER} env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive eatmydata apt-get install -fy -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" --no-install-recommends
                echo "Retrying to install ${packages} ..."
-               sudo docker exec ${CONTAINER} env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive dpkg -i ${packages}
+               sudo docker exec ${CONTAINER} env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive eatmydata dpkg -i ${packages}
             fi
          }
          echo "Done!"
@@ -98,7 +98,7 @@ if [ "${TRAVIS_OS_NAME}" == "linux" ] ; then
          fi
 
          echo "Installing ${packages} ..."
-         sudo docker exec ${CONTAINER} env LANG=C.UTF-8 dnf install -y --allowerasing ${packages}
+         sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so dnf install -y --allowerasing ${packages}
          echo "Done!"
 
       fi

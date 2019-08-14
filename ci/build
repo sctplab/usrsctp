@@ -61,8 +61,8 @@ if [ "${TRAVIS_OS_NAME}" == "linux" ] ; then
          echo "###### Running mock ... ###############################################"
          release=`sudo docker exec -t ${CONTAINER} bash -c "LANG=C.UTF-8 ; cat /etc/fedora-release | sed -e \"s/^\(.*\) release \([0-9]*\) (\(.*\))$/\2/g\"" | sed -e "s/[^0-9]//g"`
          arch=`sudo docker exec -t ${CONTAINER} env LANG=C.UTF-8 uname -m | sed -e "s/[^0-9a-zA-Z_+-]//g"`
-         sudo docker exec ${CONTAINER} env LANG=C.UTF-8 sed -e 's/SKIP_PACKAGE_SIGNING=0/SKIP_PACKAGE_SIGNING=1/g' -i packaging.conf
-         sudo docker exec ${CONTAINER} env LANG=C.UTF-8  ./build-rpm fedora-${release}-${arch}
+         sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so sed -e 's/SKIP_PACKAGE_SIGNING=0/SKIP_PACKAGE_SIGNING=1/g' -i packaging.conf
+         sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so ./build-rpm fedora-${release}-${arch}
 
       else
          echo >&2 "ERROR: Invalid setting of TOOL=${TOOL}"

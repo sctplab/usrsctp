@@ -170,24 +170,30 @@ EOF\""
 
       # ======Fedora Core Linux =============================================
       elif [ "${VARIANT}" == "fedora" ] ; then
+         # ====== Fedora: extract dependencies ==============================
+         echo "###### Obtaining build dependencies ... ###############################"
+         echo "Extracting dependencies ..."
          FEDORA_DEPS="`ci/get-dependencies ${VARIANT}`"
+         echo "Dependencies: ${FEDORA_DEPS}"
+
+         echo "###### Preparing environment setup ... ################################"
+         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 \
+            dnf install -y --allowerasing nosync
+         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so \
+            dnf install -y --allowerasing dnf-plugins-core
+         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so \
+            dnf copr enable -y dreibh/ppa
 
          # ====== Fedora: set up compiler ===================================
          if [ "${TOOL}" == "compile" ] ; then
-            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 \
-               dnf install -y --allowerasing dnf-plugins-core
-            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 \
-               dnf copr enable -y dreibh/ppa
-            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 \
+            echo "###### Installing compile environment ... #############################"
+            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so \
                dnf install -y --allowerasing make clang ${FEDORA_DEPS}
 
          # ====== Fedora: set up mock =======================================
          elif [ "${TOOL}" == "mock" ] ; then
-            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 \
-               dnf install -y --allowerasing dnf-plugins-core
-            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 \
-               dnf copr enable -y dreibh/ppa
-            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 \
+            echo "###### Installing mock environment ... ################################"
+            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so \
                dnf install -y --allowerasing make findutils fedora-release mock rpmdevtools ${FEDORA_DEPS}
 
             release=`sudo docker exec -t ${CONTAINER} bash -c "LANG=C.UTF-8 ; cat /etc/fedora-release | sed -e \"s/^\(.*\) release \([0-9]*\) (\(.*\))$/\2/g\"" | sed -e  "s/[^0-9]//g"`
@@ -203,8 +209,8 @@ EOF\""
                fi
             fi
 
-         sudo docker exec ${CONTAINER} env LANG=C.UTF-8 sed -e 's/SKIP_PACKAGE_SIGNING=0/SKIP_PACKAGE_SIGNING=1/g' -i packaging.conf
-         sudo docker exec ${CONTAINER} env LANG=C.UTF-8  ./build-rpm fedora-${release}-${arch}
+            sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so sed -e 's/SKIP_PACKAGE_SIGNING=0/SKIP_PACKAGE_SIGNING=1/g' -i packaging.conf
+            sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so ./build-rpm fedora-${release}-${arch}
          else
             echo >&2 "ERROR: Invalid setting of TOOL=${TOOL}"
             exit 1
