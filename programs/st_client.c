@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2011-2013 Michael Tuexen
  * Copyright (C) 2011-2015 Colin Caughie
+ * Copyright (C) 2011-2019 Felix Weinrank
  *
  * All rights reserved.
  *
@@ -59,13 +60,15 @@
 #define MAX_PACKET_SIZE (1<<16)
 #define BUFFER_SIZE 80
 #define DISCARD_PPID 39
+#define HTTP_PPID 63
 
 #define TIMER_INTERVAL_MSECS 10
 
 static int connecting = 0;
 static int finish = 0;
 
-static unsigned int get_tick_count(void)
+static unsigned int
+get_tick_count(void)
 {
 #ifdef _WIN32
 	return GetTickCount();
@@ -91,12 +94,10 @@ handle_events(int sock, struct socket* s, void* sconn_addr)
 
 	unsigned next_fire_time = get_tick_count();
 	unsigned last_fire_time = next_fire_time;
+	unsigned now = get_tick_count();
+	int wait_time;
 
 	while (!finish) {
-
-		unsigned now = get_tick_count();
-		int wait_time;
-
 		if ((int) (now - next_fire_time) > 0) {
 			usrsctp_handle_timers(now - last_fire_time);
 			last_fire_time = now;
@@ -126,24 +127,29 @@ handle_events(int sock, struct socket* s, void* sconn_addr)
 	}
 }
 
-static void on_connect(struct socket* s)
+static void
+on_connect(struct socket* s)
 {
 	struct sctp_sndinfo sndinfo;
 	char buffer[BUFFER_SIZE];
+	int bufferlen;
 
-	memset(buffer, 'A', BUFFER_SIZE);
+	/* memset(buffer, 'A', BUFFER_SIZE); */
+	/* bufferlen = BUFFER_SIZE; */
+	bufferlen = snprintf(buffer, BUFFER_SIZE, "GET / HTTP/1.0\r\nUser-agent: libusrsctp\r\nConnection: close\r\n\r\n");
 	sndinfo.snd_sid = 0;
 	sndinfo.snd_flags = 0;
 	sndinfo.snd_ppid = htonl(DISCARD_PPID);
 	sndinfo.snd_context = 0;
 	sndinfo.snd_assoc_id = 0;
-	if (usrsctp_sendv(s, buffer, BUFFER_SIZE, NULL, 0, (void *)&sndinfo,
+	if (usrsctp_sendv(s, buffer, bufferlen, NULL, 0, (void *)&sndinfo,
 	                  (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 		perror("usrsctp_sendv");
 	}
 }
 
-static void on_socket_readable(struct socket* s) {
+static void
+on_socket_readable(struct socket* s) {
 	char buffer[BUFFER_SIZE];
 	union sctp_sockstore addr;
 	socklen_t fromlen = sizeof(addr);
@@ -186,7 +192,8 @@ static void on_socket_readable(struct socket* s) {
 	}
 }
 
-static void handle_upcall(struct socket *s, void *arg, int flags)
+static void
+handle_upcall(struct socket *s, void *arg, int flags)
 {
     int events = usrsctp_get_events(s);
 
