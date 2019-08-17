@@ -50,10 +50,9 @@
 #include <usrsctp.h>
 #include "programs_helper.h"
 
-#define MAX_PACKET_SIZE (1<<12)
-#define LINE_LENGTH (1<<14)
+#define MAX_PACKET_SIZE (1<<16)
+#define LINE_LENGTH (1<<20)
 #define DISCARD_PPID 39
-#define DUMP_PKTS_TO_FILE 1
 #define NUMBER_OF_STEPS 10
 
 #ifdef _WIN32
@@ -116,24 +115,6 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 		/* fprintf(stderr, "%s", dump_buf); */
 		usrsctp_freedumpbuffer(dump_buf);
 	}
-
-#ifdef	DUMP_PKTS_TO_FILE
-	FILE *fp;
-	char fname[128];
-	static int pktnum = 0;
-	snprintf(fname, sizeof(fname), "pkt-%d", pktnum);
-	fp = fopen(fname, "wb");
-	fwrite((char *)buf + 12, 1, length - 12, fp);
-	fclose(fp);
-
-	snprintf(fname, sizeof(fname), "chk-%d", pktnum);
-	fp = fopen(fname, "wb");
-	fwrite((char *)buf + 12 + 16, 1, length - 12 - 16, fp);
-	fclose(fp);
-
-	pktnum++;
-#endif
-
 #ifdef _WIN32
 	if (send(*fdp, buf, (int)length, 0) == SOCKET_ERROR) {
 		return (WSAGetLastError());
