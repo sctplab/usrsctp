@@ -14108,7 +14108,11 @@ sctp_lower_sosend(struct socket *so,
 	/* Calculate the maximum we can send */
 	inqueue_bytes = stcb->asoc.total_output_queue_size - (stcb->asoc.chunks_on_out_queue * SCTP_DATA_CHUNK_OVERHEAD(stcb));
 	if (SCTP_SB_LIMIT_SND(so) > inqueue_bytes) {
-		max_len = SCTP_SB_LIMIT_SND(so) - inqueue_bytes;
+		if (non_blocking) {
+			max_len = sndlen;
+		} else {
+			max_len = SCTP_SB_LIMIT_SND(so) - inqueue_bytes;
+		}
 	} else {
 		max_len = 0;
 	}
