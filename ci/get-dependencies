@@ -30,7 +30,7 @@ import sys
 # ###### Write dependency ###################################################
 dep = re.compile(r'^([a-zA-Z0-9-+\.]+)[\s]*(|\|.*|\(.*)[\s]*$')
 
-def extractDependencies(line, variant):
+def extractDependencies(line, system):
    dependencies = []
 
    # Remove "build-depends:", etc.:
@@ -49,7 +49,7 @@ def extractDependencies(line, variant):
          # ------ Ugly work-around for cmake --------------------------------
          # We need cmake >= 3.0!
          if ((dependency == 'cmake') or (dependency == 'cmake3')):
-            if ((variant == 'debian') or (variant == 'ubuntu')):
+            if ((system == 'debian') or (system == 'ubuntu')):
                try:
                   distribution = subprocess.check_output( ["lsb_release", "-cs"] ).decode('utf-8').strip()
                   # print("distribution=", distribution, ".")
@@ -67,9 +67,9 @@ def extractDependencies(line, variant):
 
 # ====== Check arguments ====================================================
 if len(sys.argv) < 2:
-   sys.stderr.write('Usage: ' + sys.argv[0] + ' debian|ubuntu|fedora [-i|--install]\n')
+   sys.stderr.write('Usage: ' + sys.argv[0] + ' debian|ubuntu|fedora|freebsd [-i|--install]\n')
    sys.exit(1)
-variant    = sys.argv[1]
+system     = sys.argv[1]
 runInstall = False
 for i in range(2, len(sys.argv)):
    if sys.argv[i] == '-i' or sys.argv[i] == '--install':
@@ -80,7 +80,7 @@ for i in range(2, len(sys.argv)):
 
 # ====== Debian/Ubuntu ======================================================
 dependencies = [ ]
-if ((variant == 'debian') or  (variant == 'ubuntu')):
+if ((system == 'debian') or  (system == 'ubuntu')):
    if os.path.exists('debian/control'):
       with open('debian/control', 'r') as fp:
          inside = False
@@ -90,27 +90,31 @@ if ((variant == 'debian') or  (variant == 'ubuntu')):
             line_lower = line.lower()
             if inside:
                if line.startswith((' ', "\t")):
-                  dependencies = dependencies + extractDependencies(line, variant)
+                  dependencies = dependencies + extractDependencies(line, system)
                   continue
                elif line.startswith('#'):
                   continue
                inside = False
             if line_lower.startswith(('build-depends:', 'build-depends-indep:')):
-               dependencies = dependencies + extractDependencies(line, variant)
+               dependencies = dependencies + extractDependencies(line, system)
                inside = True
 
-      for dependency in sorted(dependencies):
+      for dependency in sorted(set(dependencies)):
           sys.stdout.write(dependency + ' ')
       sys.stdout.write('\n')
 
       if runInstall == True:
          subprocess.call([ 'apt-get', 'install', '-y' ] + dependencies)
 
+   else:
+      sys.stderr.write('ERROR: Unable to locate Debian control file!\n')
+      sys.exit(1)
+
 
 # ====== Fedora =============================================================
-elif variant == 'fedora':
+elif system == 'fedora':
    specFiles = glob.glob('rpm/*.spec')
-   if len(specFiles) > 0:
+   if len(specFiles) == 1:
       with open(specFiles[0], 'r') as fp:
          inside = False
          for line in fp:
@@ -119,23 +123,59 @@ elif variant == 'fedora':
             line_lower = line.lower()
             if inside:
                if line.startswith((' ', "\t")):
-                  dependencies = dependencies + extractDependencies(line, variant)
+                  dependencies = dependencies + extractDependencies(line, system)
                   continue
                elif line.startswith('#'):
                   continue
                inside = False
             if line_lower.startswith('buildrequires:'):
-               dependencies = dependencies + extractDependencies(line, variant)
+               dependencies = dependencies + extractDependencies(line, system)
                inside = True
 
-      for dependency in sorted(dependencies):
+      for dependency in sorted(set(dependencies)):
           sys.stdout.write(dependency + ' ')
       sys.stdout.write('\n')
 
       if runInstall == True:
          subprocess.call([ 'dnf', 'install', '-y' ] + dependencies)
 
+   else:
+      sys.stderr.write('ERROR: Unable to locate RPM spec file!\n')
+      sys.exit(1)
+
+
+# ====== FreeBSD ============================================================
+elif system == 'freebsd':
+   freeBSDMakefile = glob.glob('freebsd/*/Makefile')
+   if len(freeBSDMakefile) == 1:
+      freeBSDDirectory = os.path.dirname(freeBSDMakefile[0])
+
+      cmd = 'make build-depends-list && make run-depends-list'
+      try:
+         os.chdir(freeBSDDirectory)
+         output = subprocess.check_output(cmd, shell=True)
+      except Exception as e:
+         sys.stderr.write('ERROR: Getting FreeBSD dependencies failed: ' + str(e) + '\n')
+         sys.exit(1)
+
+      if output != None:
+         ports = output.decode('utf-8').splitlines()
+         for port in ports:
+            dependencies.append(os.path.basename(port))
+
+      for dependency in sorted(set(dependencies)):
+          sys.stdout.write(dependency + ' ')
+      sys.stdout.write('\n')
+
+      if runInstall == True:
+         subprocess.call([ 'pkg', 'install', '-y' ] + dependencies)
+
+   else:
+      sys.stderr.write('ERROR: Unable to locate FreeBSD port makefile!\n')
+      sys.exit(1)
+
+
 # ====== Error ==============================================================
 else:
-   sys.stderr.write('ERROR: Invalid variant ' + variant + '!\n')
+   sys.stderr.write('ERROR: Invalid system name "' + system + '"!\n')
    sys.exit(1)

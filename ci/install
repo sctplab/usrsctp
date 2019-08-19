@@ -25,99 +25,123 @@ RETRY_MAXTRIALS=5
 RETRY_PAUSE=60
 
 
-# ###### Linux ##############################################################
-if [ "${TRAVIS_OS_NAME}" == "linux" ] ; then
+# ###### Linux as-is ########################################################
+if [ "${TRAVIS_OS_NAME}" == "linux" -a "${DOCKER}" == "" -a "${QEMU}" == "" ] ; then
 
-   # ====== Docker ==========================================================
-   if [ "${DOCKER}" != "" ] ; then
+   # ====== Travis CI standard Ubuntu Linux machine =========================
+   # That is: not using Docker
+   # Travis CI only supports Ubuntu:
+   env LANG=C.UTF-8 ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo apt-get install -y software-properties-common
+   env LANG=C.UTF-8 ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo apt-add-repository -y ppa:dreibh/ppa
+   env LANG=C.UTF-8 ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo apt-get update
+   env LANG=C.UTF-8 ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo ci/get-dependencies ubuntu --install
 
-      # ====== Ubuntu Linux =================================================
+   # ====== Coverity Scan ===================================================
+   if [ "${TOOL}" == "coverity" ] ; then
+      rm -rf coverity
+      mkdir coverity
+      cd coverity
+      ../ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- wget --no-verbose https://scan.coverity.com/download/linux64 --post-data "\"token=${COVERITY_SCAN_TOKEN}&project=${COVERITY_PROJECT}\"" -O coverity_tool.tar.gz
+      if [ $? -ne 0 ] ; then
+         echo 2>&1 "ERROR: Download of Coverity Scan analysis tool failed!"
+         exit 1
+      fi
+      tar xzf coverity_tool.tar.gz
+      rm -f coverity_tool.tar.gz
+      cd ..
+   fi
+
+
+# ###### Linux via Docker ###################################################
+elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${DOCKER}" != "" -a "${QEMU}" == "" ] ; then
+
+   # ====== Ubuntu Linux ====================================================
+   if [ "${VARIANT}" == "ubuntu" -o "${VARIANT}" == "debian" ] ; then
+      APT_UPDATE='env LANG=C.UTF-8 apt-get update -o Acquire::GzipIndexes=false'
+      APT_INSTALL="env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive apt-get install -y -o Dpkg::Options::=--force-confold -o Dpkg::Options::=--force-confdef --no-install-recommends"
+      APT_UPGRADE="env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y -o Dpkg::Options::=--force-confold -o Dpkg::Options::=--force-confdef --no-install-recommends"
+      APT_ADD_REPOSITORY="env LANG=C.UTF-8 apt-add-repository -y"
+
+      # ====== Prepare container ============================================
+      echo "###### Preparing container ... ########################################"
+      # Use uncompressed package lists. Necessary to work around
+      # "apt-show-version" problems due to usage of compressed lists in
+      # Docker containers:
+      # https://askubuntu.com/questions/916199/install-apt-show-versions-inside-an-ubuntu-docker-container
+      sudo docker exec ${CONTAINER} env LANG=C.UTF-8 \
+         sed -e "s#http://archive.ubuntu.com/ubuntu/#http://${UBUNTU_MIRROR}/ubuntu/#g" -i /etc/apt/sources.list
+      sudo docker exec ${CONTAINER} bash -c "find /var/lib/apt/lists/ -maxdepth 1 -type f | xargs rm -f"
+      sudo docker exec ${CONTAINER} ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- ${APT_UPDATE}
+
+      echo "Installing eatmydata ..."
+      sudo docker exec ${CONTAINER} ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- ${APT_INSTALL} eatmydata python3 software-properties-common lsb-release
+
+      distribution=`sudo docker exec ${CONTAINER} env LANG=C.UTF-8 lsb_release -cs | sed -e "s/[^0-9a-zA-Z]//g"`
+      if [ "${VARIANT}" == "debian" ] ; then
+         if [[ "$DOCKER" =~ ^(debian:)(.*)$ ]] ; then
+            distribution="${BASH_REMATCH[2]}"
+         fi
+      fi
+      echo "distribution=$distribution"
+
+      # Ubuntu 12.04 needs "python-software-properties" package:
+      if [ "$distribution" == "precise" ] ; then
+         sudo docker exec ${CONTAINER} ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- ${APT_INSTALL} python-software-properties
+      fi
+
+      if [ "${VARIANT}" == "ubuntu" ] ; then
+         mirror="http://${UBUNTU_MIRROR}/ubuntu/"
+      else
+         mirror="http://deb.debian.org/debian"
+      fi
+      echo "mirror=$mirror"
+
+
+      # ====== Ubuntu/Debian: add repositories (dreibh:ppa, backports, updates)
+      echo "###### Adding dreibh:ppa, backports, updates to container ... ###############"
+      if [ "${VARIANT}" == "ubuntu" ] ; then
+         echo "Ubuntu: adding adding ppa:dreibh/ppa ..."
+         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} ${APT_ADD_REPOSITORY} ppa:dreibh/ppa
+         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} eatmydata ${APT_UPDATE}
+      fi
       if [ "${VARIANT}" == "ubuntu" -o "${VARIANT}" == "debian" ] ; then
-         APT_UPDATE='env LANG=C.UTF-8 apt-get update -o Acquire::GzipIndexes=false'
-         APT_INSTALL="env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive apt-get install -y -o Dpkg::Options::=--force-confold -o Dpkg::Options::=--force-confdef --no-install-recommends"
-         APT_UPGRADE="env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y -o Dpkg::Options::=--force-confold -o Dpkg::Options::=--force-confdef --no-install-recommends"
-         APT_ADD_REPOSITORY="env LANG=C.UTF-8 apt-add-repository -y"
+         echo "Ubuntu/Debian: adding ${distribution}-backports ..."
+         # NOTE: backports may be unavailable -> ignore error on apt-get update!
+         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} ${APT_ADD_REPOSITORY} "\"deb ${mirror} ${distribution}-updates main universe\""
+         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} ${APT_ADD_REPOSITORY} "\"deb ${mirror} ${distribution}-backports main universe\""
+         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} eatmydata ${APT_UPDATE} || true
+         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} eatmydata ${APT_UPGRADE}
+      fi
 
-         # ====== Prepare container =========================================
-         echo "###### Preparing container ... ########################################"
-         # Use uncompressed package lists. Necessary to work around
-         # "apt-show-version" problems due to usage of compressed lists in
-         # Docker containers:
-         # https://askubuntu.com/questions/916199/install-apt-show-versions-inside-an-ubuntu-docker-container
-         sudo docker exec ${CONTAINER} env LANG=C.UTF-8 \
-            sed -e "s#http://archive.ubuntu.com/ubuntu/#http://${UBUNTU_MIRROR}/ubuntu/#g" -i /etc/apt/sources.list
-         sudo docker exec ${CONTAINER} bash -c "find /var/lib/apt/lists/ -maxdepth 1 -type f | xargs rm -f"
-         sudo docker exec ${CONTAINER} ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- ${APT_UPDATE}
 
-         echo "Installing eatmydata ..."
-         sudo docker exec ${CONTAINER} ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- ${APT_INSTALL} eatmydata python3 software-properties-common lsb-release
+      # ====== Ubuntu/Debian: extract dependencies ==========================
+      echo "###### Obtaining build dependencies ... ###############################"
+      echo "Extracting dependencies ..."
+      UBUNTU_DEPS=`sudo docker exec ${CONTAINER} env LANG=C.UTF-8 ci/get-dependencies ${VARIANT}`
+      echo "Dependencies: ${UBUNTU_DEPS}"
 
-         distribution=`sudo docker exec ${CONTAINER} env LANG=C.UTF-8 lsb_release -cs | sed -e "s/[^0-9a-zA-Z]//g"`
-         if [ "${VARIANT}" == "debian" ] ; then
-            if [[ "$DOCKER" =~ ^(debian:)(.*)$ ]] ; then
-               distribution="${BASH_REMATCH[2]}"
-            fi
-         fi
-         echo "distribution=$distribution"
 
-         # Ubuntu 12.04 needs "python-software-properties" package:
+      # ====== Ubuntu/Debian: set up compiler ===============================
+      if [ "${TOOL}" == "compile" ] ; then
+         echo "###### Installing compile environment ... #############################"
+         eatmydata ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} ${APT_INSTALL} build-essential joe clang ${UBUNTU_DEPS}
+
+
+      # ====== Ubuntu/Debian: set up pbuilder ===============================
+      elif [ "${TOOL}" == "pbuilder" ] ; then
+         echo "###### Installing pbuilder environment ... ############################"
+         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} eatmydata ${APT_INSTALL} \
+            joe build-essential devscripts fakeroot lintian pbuilder sudo ${UBUNTU_DEPS}
          if [ "$distribution" == "precise" ] ; then
-            sudo docker exec ${CONTAINER} ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- ${APT_INSTALL} python-software-properties
-         fi
-
-         if [ "${VARIANT}" == "ubuntu" ] ; then
-            mirror="http://${UBUNTU_MIRROR}/ubuntu/"
+            # Ubuntu 12.04 needs "python-debian" package:
+            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} eatmydata ${APT_INSTALL} python-debian
          else
-            mirror="http://deb.debian.org/debian"
-         fi
-         echo "mirror=$mirror"
-
-
-         # ====== Ubuntu/Debian: add repositories (dreibh:ppa, backports, updates)
-         echo "###### Adding dreibh:ppa, backports, updates to container ... ###############"
-         if [ "${VARIANT}" == "ubuntu" ] ; then
-            echo "Ubuntu: adding adding ppa:dreibh/ppa and ${distribution}-backports ..."
-            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} ${APT_ADD_REPOSITORY} ppa:dreibh/ppa
-            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} eatmydata ${APT_UPDATE}
-         fi
-         if [ "${VARIANT}" == "ubuntu" -o "${VARIANT}" == "debian" ] ; then
-            echo "Ubuntu/Debian: adding ${distribution}-backports ..."
-            # NOTE: backports may be unavailable -> ignore error on apt-get update!
-            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} ${APT_ADD_REPOSITORY} "\"deb ${mirror} ${distribution}-updates main universe\""
-            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} ${APT_ADD_REPOSITORY} "\"deb ${mirror} ${distribution}-backports main universe\""
-            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} eatmydata ${APT_UPDATE} || true
-            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} eatmydata ${APT_UPGRADE}
+            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} eatmydata ${APT_INSTALL} python3-debian
          fi
 
-
-         # ====== Ubuntu/Debian: extract dependencies =======================
-         echo "###### Obtaining build dependencies ... ###############################"
-         echo "Extracting dependencies ..."
-         UBUNTU_DEPS=`sudo docker exec ${CONTAINER} env LANG=C.UTF-8 ci/get-dependencies ${VARIANT}`
-         echo "Dependencies: ${UBUNTU_DEPS}"
-
-
-         # ====== Ubuntu/Debian: set up compiler ============================
-         if [ "${TOOL}" == "compile" ] ; then
-            echo "###### Installing compile environment ... #############################"
-            eatmydata ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} ${APT_INSTALL} build-essential joe clang ${UBUNTU_DEPS}
-
-
-         # ====== Ubuntu/Debian: set up pbuilder ============================
-         elif [ "${TOOL}" == "pbuilder" ] ; then
-            echo "###### Installing pbuilder environment ... ############################"
-            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} eatmydata ${APT_INSTALL} \
-               joe build-essential devscripts fakeroot lintian pbuilder sudo ${UBUNTU_DEPS}
-            if [ "$distribution" == "precise" ] ; then
-               # Ubuntu 12.04 needs "python-debian" package:
-               ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} eatmydata ${APT_INSTALL} python-debian
-            else
-               ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} eatmydata ${APT_INSTALL} python3-debian
-            fi
-
-            # ====== pbuilder environment ===================================
-            echo "###### Setting up pbuilder ... ########################################"
-            sudo docker exec ${CONTAINER} bash -c "env LANG=C.UTF-8 cat >/etc/pbuilderrc <<EOF
+         # ====== pbuilder environment ======================================
+         echo "###### Setting up pbuilder ... ########################################"
+         sudo docker exec ${CONTAINER} bash -c "env LANG=C.UTF-8 cat >/etc/pbuilderrc <<EOF
 DISTRIBUTION=\"${distribution}\"
 COMPONENTS=\"main universe\"
 MIRRORSITE=\"${mirror}\"
@@ -129,128 +153,262 @@ cores=\\\`getconf _NPROCESSORS_ONLN\\\`
 export CONCURRENCY_LEVEL=\\\${cores}
 export DEB_BUILD_OPTIONS=\"parallel=\\\${cores}\"
 EOF"
-            sudo docker exec ${CONTAINER} env LANG=C.UTF-8 cat /etc/pbuilderrc
-            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 \
-               pbuilder create --debootstrapopts --variant=buildd
-            sudo docker exec ${CONTAINER} env LANG=C.UTF-8 ls -l /var/cache/pbuilder/base.tgz
+         sudo docker exec ${CONTAINER} env LANG=C.UTF-8 cat /etc/pbuilderrc
+         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 \
+            pbuilder create --debootstrapopts --variant=buildd
+         sudo docker exec ${CONTAINER} env LANG=C.UTF-8 ls -l /var/cache/pbuilder/base.tgz
 
-            # ====== Add ppa:dreibh/ppa, updates and backports ==============
-            if [ "${VARIANT}" == "ubuntu" ] ; then
-               echo "###### Adding dreibh:ppa to pbuilder ... ##############################"
-               echo "pbuilder Ubuntu: adding adding ppa:dreibh/ppa and ${distribution}-backports ..."
-               ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} bash -c "\"env LANG=C.UTF-8 eatmydata pbuilder login --save-after-login <<EOF
+         # ====== Add ppa:dreibh/ppa, updates and backports =================
+         if [ "${VARIANT}" == "ubuntu" ] ; then
+            echo "###### Adding dreibh:ppa to pbuilder ... ##############################"
+            echo "pbuilder Ubuntu: adding adding ppa:dreibh/ppa and ${distribution}-backports ..."
+            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} bash -c "\"env LANG=C.UTF-8 eatmydata pbuilder login --save-after-login <<EOF
 ${APT_INSTALL} software-properties-common
 ${APT_ADD_REPOSITORY} ppa:dreibh/ppa
 ${APT_UPDATE}
 EOF\""
-               sudo docker exec ${CONTAINER} env LANG=C.UTF-8 ls -l /var/cache/pbuilder/base.tgz
-            fi
+            sudo docker exec ${CONTAINER} env LANG=C.UTF-8 ls -l /var/cache/pbuilder/base.tgz
+         fi
 
-            if [ "${VARIANT}" == "ubuntu" -o "${VARIANT}" == "debian" ] ; then
-               echo "###### Adding backports and updates to pbuilder ... ###################"
+         if [ "${VARIANT}" == "ubuntu" -o "${VARIANT}" == "debian" ] ; then
+            echo "###### Adding backports and updates to pbuilder ... ###################"
 
-               # NOTE: backports may be unavailable -> ignore error on apt-get update!
-               ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} bash -c "\"env LANG=C.UTF-8 eatmydata pbuilder login --save-after-login <<EOF
+            # NOTE: backports may be unavailable -> ignore error on apt-get update!
+            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} bash -c "\"env LANG=C.UTF-8 eatmydata pbuilder login --save-after-login <<EOF
 ${APT_INSTALL} software-properties-common
 ${APT_ADD_REPOSITORY} \\\"deb ${mirror} ${distribution}-updates main universe\\\"
 ${APT_ADD_REPOSITORY} \\\"deb ${mirror} ${distribution}-backports main universe\\\"
 ${APT_UPDATE} || true
 ${APT_UPGRADE}
 EOF\""
-               sudo docker exec ${CONTAINER} env LANG=C.UTF-8 ls -l /var/cache/pbuilder/base.tgz
-            fi
-
-         else
-            echo >&2 "ERROR: Invalid setting of TOOL=${TOOL}"
-            exit 1
+            sudo docker exec ${CONTAINER} env LANG=C.UTF-8 ls -l /var/cache/pbuilder/base.tgz
          fi
 
-         echo "###### Finished setup of build environment ############################"
-
-
-      # ======Fedora Core Linux =============================================
-      elif [ "${VARIANT}" == "fedora" ] ; then
-         # ====== Fedora: extract dependencies ==============================
-         echo "###### Obtaining build dependencies ... ###############################"
-         echo "Extracting dependencies ..."
-         FEDORA_DEPS="`ci/get-dependencies ${VARIANT}`"
-         echo "Dependencies: ${FEDORA_DEPS}"
-
-         echo "###### Preparing environment setup ... ################################"
-         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 \
-            dnf install -y --allowerasing nosync
-         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so \
-            dnf install -y --allowerasing dnf-plugins-core
-         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so \
-            dnf copr enable -y dreibh/ppa
-
-         # ====== Fedora: set up compiler ===================================
-         if [ "${TOOL}" == "compile" ] ; then
-            echo "###### Installing compile environment ... #############################"
-            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so \
-               dnf install -y --allowerasing make clang ${FEDORA_DEPS}
-
-         # ====== Fedora: set up mock =======================================
-         elif [ "${TOOL}" == "mock" ] ; then
-            echo "###### Installing mock environment ... ################################"
-            ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so \
-               dnf install -y --allowerasing make findutils fedora-release mock rpmdevtools ${FEDORA_DEPS}
-
-            release=`sudo docker exec -t ${CONTAINER} bash -c "LANG=C.UTF-8 ; cat /etc/fedora-release | sed -e \"s/^\(.*\) release \([0-9]*\) (\(.*\))$/\2/g\"" | sed -e  "s/[^0-9]//g"`
-            arch=`sudo docker exec -t ${CONTAINER} env LANG=C.UTF-8 uname -m | sed -e "s/[^0-9a-zA-Z_+-]//g"`
-            if ! sudo docker exec ${CONTAINER} grep "^\[copr-dreibh-ppa\]" /etc/mock/fedora-${release}-${arch}.cfg ; then
-               shopt -s extglob
-               ppa="[copr-dreibh-ppa]\nname=Copr repo for ppa owned by dreibh\nbaseurl=https://copr-be.cloud.fedoraproject.org/results/dreibh/ppa/fedora-\\\$releasever-\\\$basearch/\ntype=rpm-md\nskip_if_unavailable=True\ngpgcheck=1\ngpgkey=https://copr-be.cloud.fedoraproject.org/results/dreibh/ppa/pubkey.gpg\nrepo_gpgcheck=0\nenabled=1"
-               ppa="${ppa//+( )$/\\n}"
-               sudo docker exec ${CONTAINER} sed -e "s@^# repos@# repos\n${ppa}@g" -i /etc/mock/fedora-${release}-${arch}.cfg
-               if ! sudo docker exec ${CONTAINER} grep "^\[copr-dreibh-ppa\]" /etc/mock/fedora-${release}-${arch}.cfg ; then
-                  echo >&2 "ERROR: Unable to inject PPA configuration into Mock configuration file /etc/mock/fedora-${release}-${arch}.cfg!"
-                  exit 1
-               fi
-            fi
-
-            sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so sed -e 's/SKIP_PACKAGE_SIGNING=0/SKIP_PACKAGE_SIGNING=1/g' -i packaging.conf
-            sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so ./build-rpm fedora-${release}-${arch}
-         else
-            echo >&2 "ERROR: Invalid setting of TOOL=${TOOL}"
-            exit 1
-         fi
-
-      # ======Fedora Core Linux ================================================
       else
-         echo >&2 "ERROR: Invalid setting of VARIANT=${VARIANT}"
+         echo >&2 "ERROR: Invalid setting of TOOL=${TOOL}"
          exit 1
       fi
 
+      echo "###### Finished setup of build environment ############################"
 
-   # ====== Travis CI standard Ubuntu Linux machine =========================
-   # That is: not using Docker
-   else
-      # Travis CI only supports Ubuntu:
-      env LANG=C.UTF-8 ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo apt-get install -y software-properties-common
-      env LANG=C.UTF-8 ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo apt-add-repository -y ppa:dreibh/ppa
-      env LANG=C.UTF-8 ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo apt-get update
-      env LANG=C.UTF-8 ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo ci/get-dependencies ubuntu --install
 
-      # ====== Coverity Scan ================================================
-      if [ "${TOOL}" == "coverity" ] ; then
-         rm -rf coverity
-         mkdir coverity
-         cd coverity
-         ../ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- wget --no-verbose https://scan.coverity.com/download/linux64 --post-data "\"token=${COVERITY_SCAN_TOKEN}&project=${COVERITY_PROJECT}\"" -O coverity_tool.tar.gz
-         if [ $? -ne 0 ] ; then
-            echo 2>&1 "ERROR: Download of Coverity Scan analysis tool failed!"
-            exit 1
+   # ======Fedora Core Linux ================================================
+   elif [ "${VARIANT}" == "fedora" ] ; then
+      # ====== Fedora: extract dependencies =================================
+      echo "###### Obtaining build dependencies ... ###############################"
+      echo "Extracting dependencies ..."
+      FEDORA_DEPS="`ci/get-dependencies ${VARIANT}`"
+      echo "Dependencies: ${FEDORA_DEPS}"
+
+      echo "###### Preparing environment setup ... ################################"
+      ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 \
+         dnf install -y --allowerasing nosync
+      ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so \
+         dnf install -y --allowerasing dnf-plugins-core
+      ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so \
+         dnf copr enable -y dreibh/ppa
+
+      # ====== Fedora: set up compiler ======================================
+      if [ "${TOOL}" == "compile" ] ; then
+         echo "###### Installing compile environment ... #############################"
+         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so \
+            dnf install -y --allowerasing make clang ${FEDORA_DEPS}
+
+      # ====== Fedora: set up mock ==========================================
+      elif [ "${TOOL}" == "mock" ] ; then
+         echo "###### Installing mock environment ... ################################"
+         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so \
+            dnf install -y --allowerasing make findutils fedora-release mock rpmdevtools ${FEDORA_DEPS}
+
+         sudo docker exec ${CONTAINER} env LANG=C.UTF-8 groupadd -f mock
+
+         release=`sudo docker exec -t ${CONTAINER} bash -c "LANG=C.UTF-8 ; cat /etc/fedora-release | sed -e \"s/^\(.*\) release \([0-9]*\) (\(.*\))$/\2/g\"" | sed -e  "s/[^0-9]//g"`
+         arch=`sudo docker exec -t ${CONTAINER} env LANG=C.UTF-8 uname -m | sed -e "s/[^0-9a-zA-Z_+-]//g"`
+         if ! sudo docker exec ${CONTAINER} grep "^\[copr-dreibh-ppa\]" /etc/mock/fedora-${release}-${arch}.cfg ; then
+            shopt -s extglob
+            ppa="[copr-dreibh-ppa]\nname=Copr repo for ppa owned by dreibh\nbaseurl=https://copr-be.cloud.fedoraproject.org/results/dreibh/ppa/fedora-\\\$releasever-\\\$basearch/\ntype=rpm-md\nskip_if_unavailable=True\ngpgcheck=1\ngpgkey=https://copr-be.cloud.fedoraproject.org/results/dreibh/ppa/pubkey.gpg\nrepo_gpgcheck=0\nenabled=1"
+            ppa="${ppa//+( )$/\\n}"
+            sudo docker exec ${CONTAINER} sed -e "s@^# repos@# repos\n${ppa}@g" -i /etc/mock/fedora-${release}-${arch}.cfg
+            if ! sudo docker exec ${CONTAINER} grep "^\[copr-dreibh-ppa\]" /etc/mock/fedora-${release}-${arch}.cfg ; then
+               echo >&2 "ERROR: Unable to inject PPA configuration into Mock configuration file /etc/mock/fedora-${release}-${arch}.cfg!"
+               exit 1
+            fi
          fi
-         tar xzf coverity_tool.tar.gz
-         rm -f coverity_tool.tar.gz
-         cd ..
+      else
+         echo >&2 "ERROR: Invalid setting of TOOL=${TOOL}!"
+         exit 1
       fi
 
+   # ======Fedora Core Linux ================================================
+   else
+      echo >&2 "ERROR: Invalid setting of VARIANT=${VARIANT}!"
+      exit 1
    fi
 
 
-# ###### Other ##############################################################
+# ###### FreeBSD via QEMU ###################################################
+elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
+
+   if [ "${VARIANT}" != "" ] ; then
+      # ====== Build fuse-ufs2 ==============================================
+      # Activate "updates" and "backports" repositories!
+      # This is needed to later install dependencies for fuse-ufs2.
+      distribution=`env LANG=C.UTF-8 lsb_release -cs | sed -e "s/[^0-9a-zA-Z]//g"`
+      mirror="http://${UBUNTU_MIRROR}/ubuntu/"
+      if ! grep -E "^deb .* ${distribution}-updates .*" /etc/apt/sources.list >/dev/null ; then
+         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo apt-add-repository -y "\"deb ${mirror} ${distribution}-updates main universe\""
+      fi
+      if ! grep -E "^deb .* ${distribution}-backports .*" /etc/apt/sources.list >/dev/null ; then
+         ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo apt-add-repository -y "\"deb ${mirror} ${distribution}-backports main universe\""
+      fi
+      ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo eatmydata apt-get update || true
+      env LANG=C.UTF-8 ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} --  sudo eatmydata apt-get install -y \
+         build-essential fuse libfuse-dev autoconf automake libtool git libbsd-dev e2fslibs-dev
+
+      pushd /vservers/qemu-freebsd/fuse-ufs2/
+      ./autogen.sh
+      ./configure
+      cores=`getconf _NPROCESSORS_ONLN 2>/dev/null || echo "1"`
+      make -j${cores}
+      popd
+
+
+      # ====== Modify FreeBSD image =========================================
+      pushd /vservers/qemu-freebsd/
+
+      # ~~~~~~ Mount ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      imageName="FreeBSD-${VARIANT}-amd64.raw"
+      ls -l ${imageName}
+      mountPoint=`pwd`/mnt
+
+      sudo umount ${mountPoint} 2>/dev/null || true
+      LOOPDEVS=`sudo losetup -j ${imageName} | awk '{ print $1 }' | sed -e "s/:$//g"`
+      for loopdev in ${LOOPDEVS} ; do
+         sudo losetup -d ${loopdev} || true
+      done
+
+      sudo losetup -P -f ${imageName}
+      sudo losetup -j ${imageName}
+      LOOPDEV=`sudo losetup -j ${imageName} | awk '{ print $1 }' | sed -e "s/:$//g"`
+
+      echo "sudo fuse-ufs2/fuse-ufs/fuse-ufs ${LOOPDEV}p3 ${mountPoint} -o rw"
+      sudo fuse-ufs2/fuse-ufs/fuse-ufs ${LOOPDEV}p3 ${mountPoint} -o rw
+
+      # ~~~~~~ Modify ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      sudo cp ${mountPoint}/etc/rc.conf .
+      sudo bash -c "(
+            echo \"sshd_enable=\\\"YES\\\"\"
+            echo \"ifconfig_vtnet0=\\\"DHCP\\\"\"
+            echo \"ifconfig_vtnet1=\\\"inet 192.168.100.100 netmask 255.255.255.0\\\"\"
+            echo \"nfs_client_enable=\\\"YES\\\"\"
+            echo \"rpc_lockd_enable=\\\"YES\\\"\"
+            echo \"rpc_statd_enable=\\\"YES\\\"\"
+         ) >>${mountPoint}/etc/rc.conf"
+      # sudo cat ${mountPoint}/etc/rc.conf
+
+      sudo bash -c "echo \"PermitRootLogin prohibit-password\" >>${mountPoint}/etc/ssh/sshd_config"
+      # sudo tail -n 6 ${mountPoint}/etc/ssh/sshd_config
+
+      sudo mkdir -p ${mountPoint}/usr/ports
+
+      sudo mkdir -p ${mountPoint}/root/.ssh
+      sudo chmod 700 ${mountPoint}/root/.ssh
+      if [ ! -e ~/.ssh/id_rsa ] ; then
+         ssh-keygen -t rsa -b 4096 -P "" -f ~/.ssh/id_rsa
+      fi
+      sudo cp ~/.ssh/id_rsa.pub ${mountPoint}/root/.ssh/authorized_keys
+      sudo chmod 600 ${mountPoint}/root/.ssh/authorized_keys
+
+      sudo mkdir -p ${mountPoint}/travis
+      sudo sed -e "/^.*\/travis.*$/d" -i~ ${mountPoint}/etc/fstab
+      sudo bash -c "( echo \"192.168.100.1:/travis /travis   nfs   rw,soft,async,noatime,nfsv3,rsize=65536,wsize=65536   0   0\" ; echo \"tmpfs /usr/ports tmpfs rw 0 0\" ) >>${mountPoint}/etc/fstab"
+      sudo cat ${mountPoint}/etc/fstab
+
+      # ~~~~~~ Unmount ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      sudo umount ${mountPoint}
+      sudo losetup -d ${LOOPDEV}
+
+      popd
+
+
+      # ====== Host-only networking =========================================
+      sudo ip link add br0 type bridge || true
+      sudo ip addr flush dev br0
+      sudo ip addr add 192.168.100.1/24 brd 192.168.100.255 dev br0
+      sudo ip tuntap add mode tap
+      sudo ip link set tap0 master br0
+      sudo ip link set dev br0 up
+      sudo ip link set dev tap0 up
+      sudo iptables -A INPUT  -i tap0 -s 192.168.100.0/24 -j ACCEPT
+      sudo iptables -A OUTPUT -o tap0 -d 192.168.100.0/24 -j ACCEPT
+      sudo iptables -A INPUT  -i br0  -s 192.168.100.0/24 -j ACCEPT
+      sudo iptables -A OUTPUT -o br0  -d 192.168.100.0/24 -j ACCEPT
+      sudo iptables -A FORWARD -s 192.168.100.0/24 -d 192.168.100.0/24
+      # sudo dnsmasq --interface=br0 --bind-interfaces \
+      #   --dhcp-range=192.168.100.2,192.168.100.254 || true
+
+
+      # ====== NFS ==========================================================
+      sudo mkdir -p /travis
+      sudo mount --bind `pwd` /travis
+      sudo bash -c "echo \"/travis 192.168.100.0/24(rw,no_root_squash)\" >/etc/exports"
+      env LANG=C.UTF-8 ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- \
+         sudo apt-get install -y qemu-kvm nfs-kernel-server
+      sudo exportfs -v
+      sudo service nfs-kernel-server restart
+
+
+      # ====== Start VM =====================================================
+      sudo killall -q qemu-system-x86_64 || true
+      ssh-keygen -R "[localhost]:8829"
+      # Non-KVM execution: qemu-system-x86_64 \
+      sudo qemu-system-x86_64 -machine type=pc,accel=kvm -nographic \
+         -m 6144 -cpu host -smp $(nproc) \
+         -drive if=virtio,media=disk,file=/vservers/qemu-freebsd/${imageName},format=raw \
+         -netdev user,id=mynet0,hostfwd=tcp:127.0.0.1:8829-:22 -device virtio-net-pci,netdev=mynet0 \
+         -netdev tap,id=network0,ifname=tap0,script=no,downscript=no -device virtio-net-pci,netdev=network0,mac=00:00:00:00:00:00 \
+         &
+
+      ready=0
+      trials=20 ; sleep=15
+      i=0 ; while [ $i -lt ${trials} ] ; do
+         let i=$i+1
+         echo "${i}/${trials}: Waiting for VM to boot ..."
+         sleep ${sleep}
+         if ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost hostname ; then
+            ready=1
+            break
+         fi
+      done
+      if [ ${ready} -eq 0 ] ; then
+         echo >&2 "VM did not boot properly!"
+         exit 1
+      fi
+
+      # ====== Install packages =============================================
+      # Basic dependencies:
+      ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost \
+         env ASSUME_ALWAYS_YES=yes pkg install -y bash gcc joe git
+      ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost \
+         chsh -s /usr/local/bin/bash
+
+      # Ports collection:
+      # This is the slow method via portsnap:
+      # --- ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost \
+      # ---    "portsnap --interactive fetch extract | grep -v ^/usr/ports"
+      # Using Git is much faster:
+      ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost \
+         "rm -rf /usr/ports/* /usr/ports/.git* && git clone --depth=1 --filter=tree:0 https://github.com/freebsd/freebsd-ports /usr/ports"
+
+      # Package's dependencies:
+      ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost \
+         "cd /travis/freebsd/*/ && ( make build-depends-list && make run-depends-list ) | sed 's/^.*\///g' | xargs -r env ASSUME_ALWAYS_YES=yes pkg install -y"
+
+      echo "===== The FreeBSD VM is ready! ====="
+   fi
+
+
+# ###### MacOS X ############################################################
 elif [ "${TRAVIS_OS_NAME}" == "osx" ] ; then
 
    brew update
@@ -259,6 +417,6 @@ elif [ "${TRAVIS_OS_NAME}" == "osx" ] ; then
 
 # ###### Error ##############################################################
 else
-   echo >&2 "ERROR: Invalid setting of TRAVIS_OS_NAME=${TRAVIS_OS_NAME}"
+   echo >&2 "ERROR: Invalid setting of TRAVIS_OS_NAME=${TRAVIS_OS_NAME}, DOCKER=${DOCKER}, QEMU=${QEMU}!"
    exit 1
 fi

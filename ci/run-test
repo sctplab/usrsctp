@@ -22,12 +22,19 @@
 # ====== Get settings =======================================================
 export TRAVIS_OS_NAME="linux"
 
-if [[ "$1" =~ ^(debian|ubuntu|fedora)_([a-z]*|[0-9]*)-(pbuilder|mock|compile)(|-gcc|-clang)$ ]] ; then
-   export DOCKER="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}"
-   export VARIANT="${BASH_REMATCH[1]}"
+if [[ "$1" =~ ^(debian|ubuntu|fedora|freebsd)_([a-zA-Z0-9]*|[0-9\.]*)-(pbuilder|mock|compile)(|-gcc|-clang)$ ]] ; then
+   if [ "${BASH_REMATCH[1]}" == "freebsd" ] ; then
+      export DOCKER=""
+      export QEMU="FreeBSD"
+      export VARIANT="${BASH_REMATCH[2]}-RELEASE"
+   else
+      export DOCKER="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}"
+      export VARIANT="${BASH_REMATCH[1]}"
+   fi
    export TOOL="${BASH_REMATCH[3]}"
    COMPILER="${BASH_REMATCH[4]}"
    echo "DOCKER=${DOCKER}"
+   echo "QEMU=${QEMU}"
    echo "VARIANT=${VARIANT}"
    echo "TOOL=${TOOL}"
    if [ "${TOOL}" == "compile" -a "${COMPILER}" != "" ] ; then
@@ -65,7 +72,7 @@ for script in $SCRIPTS ; do
    echo "###### Running $script ... ######"
    sudo env \
       TRAVIS_OS_NAME="$TRAVIS_OS_NAME" \
-      DOCKER="$DOCKER" \
+      DOCKER="$DOCKER" QEMU="$QEMU" \
       VARIANT="$VARIANT" \
       TOOL="$TOOL" \
       COMPILER_C="$COMPILER_C" \
@@ -77,7 +84,7 @@ for script in $SCRIPTS ; do
       echo ""
       sudo env \
          TRAVIS_OS_NAME="$TRAVIS_OS_NAME" \
-         DOCKER="$DOCKER" \
+         DOCKER="$DOCKER" QEMU="$QEMU" \
          VARIANT="$VARIANT" \
          TOOL="$TOOL" \
          COMPILER_C="$COMPILER_C" \

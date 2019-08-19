@@ -22,86 +22,108 @@
 . `dirname $0`/get-container
 
 
-# ###### Linux ##############################################################
-if [ "${TRAVIS_OS_NAME}" == "linux" ] ; then
+# ###### Linux as-is ########################################################
+if [ "${TRAVIS_OS_NAME}" == "linux" -a "${DOCKER}" == "" -a "${QEMU}" == "" ] ; then
 
-   # ====== Docker ==========================================================
-   if [ "${DOCKER}" != "" ] ; then
+   # Nothing to be done here.
+   true
 
-      # ====== pbuilder environment =========================================
-      if [ "$TOOL" == "pbuilder" ] ; then
-         CHANGELOG_HEADER="`head -n1 debian/changelog`"
-         PACKAGE=`echo ${CHANGELOG_HEADER} | sed -e "s/(.*//" -e "s/ //g"`
-         PACKAGE_VERSION=`echo ${CHANGELOG_HEADER} | sed -e "s/.*(//" -e "s/).*//" -e "s/ //g" -e "s/ //g" -e "s/^[0-9]://g"`
-         OUTPUT_VERSION=`echo ${PACKAGE_VERSION}   | sed -e "s/\(ubuntu\|ppa\)[0-9]*$/\1/"`
-         DEBIAN_VERSION=`echo ${OUTPUT_VERSION}    | sed -e "s/\(ubuntu\|ppa\)$//1"`
 
-         packages=""
-         if [ $#  -eq 0 ] ; then
-            echo "Looking for *${DEBIAN_VERSION}*.deb in /var/cache/pbuilder/result ..."
-            packages="`sudo docker exec ${CONTAINER} env LANG=C.UTF-8 find /var/cache/pbuilder/result -name "*${DEBIAN_VERSION}*.deb"`"
-         fi
-         while [ $# -gt 0 ] ; do
-            echo "Looking for $1*${DEBIAN_VERSION}*.deb in /var/cache/pbuilder/result ..."
-            packages="${packages} `sudo docker exec ${CONTAINER} env LANG=C.UTF-8 find /var/cache/pbuilder/result -name "$1*${DEBIAN_VERSION}*.deb"`"
-            shift
-         done
-         packages=`echo "${packages}" | xargs -n1 | sort -u | xargs`
-         if [ "${packages}" == "" ] ; then
-            echo >&2 "ERROR: No packages have been found!"
-            exit 1
-         fi
+# ###### Linux via Docker ###################################################
+elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${DOCKER}" != "" -a "${QEMU}" == "" ] ; then
 
-         echo "Installing ${packages} ..."
-         sudo docker exec ${CONTAINER} env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive eatmydata apt-get install -fy ${packages} || {
-            echo "NOTE: apt-get failed -> trying dpkg instead of apt-get for local file!"
-            # NOTE: Older "apt-get" versions do not handle local files!
-            if ! sudo docker exec ${CONTAINER} env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive eatmydata dpkg -i ${packages} ; then
-               echo "There may be some dependencies missing. Trying to install them ..."
-               sudo docker exec ${CONTAINER} env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive eatmydata apt-get install -fy -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" --no-install-recommends
-               echo "Retrying to install ${packages} ..."
-               sudo docker exec ${CONTAINER} env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive eatmydata dpkg -i ${packages}
-            fi
-         }
-         echo "Done!"
+   # ====== pbuilder environment =========================================
+   if [ "$TOOL" == "pbuilder" ] ; then
+      CHANGELOG_HEADER="`head -n1 debian/changelog`"
+      PACKAGE=`echo ${CHANGELOG_HEADER} | sed -e "s/(.*//" -e "s/ //g"`
+      PACKAGE_VERSION=`echo ${CHANGELOG_HEADER} | sed -e "s/.*(//" -e "s/).*//" -e "s/ //g" -e "s/ //g" -e "s/^[0-9]://g"`
+      OUTPUT_VERSION=`echo ${PACKAGE_VERSION}   | sed -e "s/\(ubuntu\|ppa\)[0-9]*$/\1/"`
+      DEBIAN_VERSION=`echo ${OUTPUT_VERSION}    | sed -e "s/\(ubuntu\|ppa\)$//1"`
 
-      # ====== mock environment =============================================
-      elif [ "$TOOL" == "mock" ] ; then
-         PACKAGE=`grep "^Name:" rpm/*.spec | head -n1 | sed -e "s/Name://g" -e "s/[ \t]*//g"`
-         PACKAGE_VERSION=`grep "^Version:" rpm/*.spec | head -n1 | sed -e "s/Version://g" -e "s/[ \t]*//g"`
-
-         release=`sudo docker exec ${CONTAINER} bash -c "LANG=C.UTF-8 ; cat /etc/fedora-release | sed -e \"s/^\(.*\) release \([0-9]*\) (\(.*\))$/\2/g\"" | sed -e "s/[^0-9]//g"`
-         arch=`sudo docker exec ${CONTAINER} env LANG=C.UTF-8 uname -m | sed -e "s/[^0-9a-zA-Z_+-]//g"`
-         if ! sudo docker exec ${CONTAINER} cd /var/lib/mock/fedora-${release}-${arch}/result ; then
-            if sudo docker exec ${CONTAINER} cd /var/lib/mock/fedora-rawhide-${arch}/result ; then
-               release="rawhide"
-            else
-               echo >&2 "ERROR: No results have been found!"
-               exit 1
-            fi
-         fi
-
-         packages=""
-         if [ $#  -eq 0 ] ; then
-            echo "Looking for *${PACKAGE_VERSION}*.rpm in /var/lib/mock/fedora-${release}-${arch}/result ..."
-            packages="`sudo docker exec ${CONTAINER} env LANG=C.UTF-8 find /var/lib/mock/fedora-${release}-${arch}/result -name "*${PACKAGE_VERSION}*.rpm" | grep -v "\.src\.rpm$"`"
-         fi
-         while [ $# -gt 0 ] ; do
-            echo "Looking for $1*${PACKAGE_VERSION}*.rpm in /var/lib/mock/fedora-${release}-${arch}/result ..."
-            packages="${packages} `sudo docker exec ${CONTAINER} env LANG=C.UTF-8 find /var/lib/mock/fedora-${release}-${arch}/result -name "$1*${PACKAGE_VERSION}*.rpm" | grep -v "\.src\.rpm$"`"
-            shift
-         done
-         packages=`echo "${packages}" | xargs -n1 | sort -u | xargs`
-         if [ "${packages}" == "" ] ; then
-            echo >&2 "ERROR: No packages have been found!"
-            exit 1
-         fi
-
-         echo "Installing ${packages} ..."
-         sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so dnf install -y --allowerasing ${packages}
-         echo "Done!"
-
+      packages=""
+      if [ $#  -eq 0 ] ; then
+         echo "Looking for *${DEBIAN_VERSION}*.deb in /var/cache/pbuilder/result ..."
+         packages="`sudo docker exec ${CONTAINER} env LANG=C.UTF-8 find /var/cache/pbuilder/result -name "*${DEBIAN_VERSION}*.deb"`"
+      fi
+      while [ $# -gt 0 ] ; do
+         echo "Looking for $1*${DEBIAN_VERSION}*.deb in /var/cache/pbuilder/result ..."
+         packages="${packages} `sudo docker exec ${CONTAINER} env LANG=C.UTF-8 find /var/cache/pbuilder/result -name "$1*${DEBIAN_VERSION}*.deb"`"
+         shift
+      done
+      packages=`echo "${packages}" | xargs -n1 | sort -u | xargs`
+      if [ "${packages}" == "" ] ; then
+         echo >&2 "ERROR: No packages have been found!"
+         exit 1
       fi
 
+      echo "Installing ${packages} ..."
+      sudo docker exec ${CONTAINER} env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive eatmydata apt-get install -fy ${packages} || {
+         echo "NOTE: apt-get failed -> trying dpkg instead of apt-get for local file!"
+         # NOTE: Older "apt-get" versions do not handle local files!
+         if ! sudo docker exec ${CONTAINER} env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive eatmydata dpkg -i ${packages} ; then
+            echo "There may be some dependencies missing. Trying to install them ..."
+            sudo docker exec ${CONTAINER} env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive eatmydata apt-get install -fy -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" --no-install-recommends
+            echo "Retrying to install ${packages} ..."
+            sudo docker exec ${CONTAINER} env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive eatmydata dpkg -i ${packages}
+         fi
+      }
+      echo "Done!"
+
+   # ====== mock environment =============================================
+   elif [ "$TOOL" == "mock" ] ; then
+      PACKAGE=`grep "^Name:" rpm/*.spec | head -n1 | sed -e "s/Name://g" -e "s/[ \t]*//g"`
+      PACKAGE_VERSION=`grep "^Version:" rpm/*.spec | head -n1 | sed -e "s/Version://g" -e "s/[ \t]*//g"`
+
+      release=`sudo docker exec ${CONTAINER} bash -c "LANG=C.UTF-8 ; cat /etc/fedora-release | sed -e \"s/^\(.*\) release \([0-9]*\) (\(.*\))$/\2/g\"" | sed -e "s/[^0-9]//g"`
+      arch=`sudo docker exec ${CONTAINER} env LANG=C.UTF-8 uname -m | sed -e "s/[^0-9a-zA-Z_+-]//g"`
+      if ! sudo docker exec ${CONTAINER} cd /var/lib/mock/fedora-${release}-${arch}/result ; then
+         if sudo docker exec ${CONTAINER} cd /var/lib/mock/fedora-rawhide-${arch}/result ; then
+            release="rawhide"
+         else
+            echo >&2 "ERROR: No results have been found!"
+            exit 1
+         fi
+      fi
+
+      packages=""
+      if [ $#  -eq 0 ] ; then
+         echo "Looking for *${PACKAGE_VERSION}*.rpm in /var/lib/mock/fedora-${release}-${arch}/result ..."
+         packages="`sudo docker exec ${CONTAINER} env LANG=C.UTF-8 find /var/lib/mock/fedora-${release}-${arch}/result -name "*${PACKAGE_VERSION}*.rpm" | grep -v "\.src\.rpm$"`"
+      fi
+      while [ $# -gt 0 ] ; do
+         echo "Looking for $1*${PACKAGE_VERSION}*.rpm in /var/lib/mock/fedora-${release}-${arch}/result ..."
+         packages="${packages} `sudo docker exec ${CONTAINER} env LANG=C.UTF-8 find /var/lib/mock/fedora-${release}-${arch}/result -name "$1*${PACKAGE_VERSION}*.rpm" | grep -v "\.src\.rpm$"`"
+         shift
+      done
+      packages=`echo "${packages}" | xargs -n1 | sort -u | xargs`
+      if [ "${packages}" == "" ] ; then
+         echo >&2 "ERROR: No packages have been found!"
+         exit 1
+      fi
+
+      echo "Installing ${packages} ..."
+      sudo docker exec ${CONTAINER} env LANG=C.UTF-8 LD_PRELOAD=/usr/lib64/nosync/nosync.so dnf install -y --allowerasing ${packages}
+      echo "Done!"
+
    fi
+
+
+# ###### FreeBSD via QEMU ###################################################
+elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
+
+    # FIXME: TBD!
+    true
+
+
+# ###### MacOS X ############################################################
+elif [ "${TRAVIS_OS_NAME}" == "osx" ] ; then
+
+   # Nothing to be done here.
+   true
+
+
+# ###### Error ##############################################################
+else
+   echo >&2 "ERROR: Invalid setting of TRAVIS_OS_NAME=${TRAVIS_OS_NAME}, DOCKER=${DOCKER}, QEMU=${QEMU}!"
+   exit 1
 fi
