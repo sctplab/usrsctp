@@ -32,10 +32,13 @@ while [ $# -gt 0 ] ; do
    elif [[ "$1" =~ ^(-|--)debug$ ]] ; then
       # Enable debugging build:
       CMAKE_OPTIONS="$CMAKE_OPTIONS -DCMAKE_BUILD_TYPE=DEBUG"
+   elif [[ "$1" =~ ^(-|--)verbose$ ]] ; then
+      # Enable verbose Makefile:
+      CMAKE_OPTIONS="$CMAKE_OPTIONS -DCMAKE_VERBOSE_MAKEFILE=ON"
    elif [ "$1" == "--" ] ; then
       break
    else
-      echo >&2 "Usage: autogen.sh [--use-clang|--use-gcc] [--debug]"
+      echo >&2 "Usage: autogen.sh [--use-clang|--use-gcc] [--debug] [--verbose]"
       exit 1
    fi
    shift
