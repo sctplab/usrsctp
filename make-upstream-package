@@ -88,11 +88,13 @@ echo -e ""
 
 # ====== Sign upstream source package =======================================
 if [ ! -e "${UPSTREAM_PACKAGE}.asc" ] ; then
-   if [ "${SKIP_PACKAGE_SIGNING}" != "" -a ! ${SKIP_PACKAGE_SIGNING} -eq 1 ] ; then
+   if [ ! ${SKIP_PACKAGE_SIGNING} == "1" -a ! "${OVERRIDE_SKIP_PACKAGE_SIGNING}" == "1" ] ; then
       echo -e ""
       echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Sign upstream package ==========================================\x1b[0m"
       echo -e ""
       echo -e "\x1b[34mSigning upstream package ${UPSTREAM_PACKAGE} ...\x1b[0m"
       gpg -sab "${UPSTREAM_PACKAGE}"
+   else
+      rm -f "${UPSTREAM_PACKAGE}.asc"
    fi
 fi
