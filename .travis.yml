@@ -213,23 +213,6 @@ matrix:
      group: travis_latest
      env: DOCKER="fedora:29" VARIANT="fedora" TOOL="mock"
 
-   # ====== Fedora 28 =======================================================
-   - name: "Fedora 28 with GCC"
-     os: linux
-     dist: xenial
-     group: travis_latest
-     env: DOCKER="fedora:28" VARIANT="fedora" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   - name: "Fedora 28 with Clang"
-     os: linux
-     dist: xenial
-     group: travis_latest
-     env: DOCKER="fedora:28" VARIANT="fedora" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "Fedora 28 packaging with mock"
-     os: linux
-     dist: xenial
-     group: travis_latest
-     env: DOCKER="fedora:28" VARIANT="fedora" TOOL="mock"
-
    # ====== Fedora Rawhide ==================================================
    # - name: "Fedora Rawhide with GCC"
    #   os: linux
