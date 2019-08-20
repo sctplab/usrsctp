@@ -34,8 +34,8 @@ cmake_minimum_required(VERSION 3.0)
 
 # Debug build type as default
 if (NOT CMAKE_BUILD_TYPE)
-	message(STATUS "No build type selected, using RelWithDebInfo")
-	set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+	message(STATUS "No build type selected, using DEBUG")
+	set(CMAKE_BUILD_TYPE "DEBUG")
 endif ()
 
 include(CheckStructHasMember)
@@ -87,7 +87,7 @@ if (sctp_sanitizer_address AND sctp_sanitizer_memory)
 	message(FATAL_ERROR "Can not compile with both sanitizer options")
 endif ()
 
-if (sctp_link_programs_static OR WIN32 OR sctp_fuzzer_clang)
+if (sctp_link_programs_static OR WIN32)
 	set(programs_link_library "usrsctp-static")
 else ()
 	set(programs_link_library "usrsctp")
@@ -218,7 +218,7 @@ if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "AppleCla
 	endif ()
 
 	if (sctp_sanitizer_address)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address,undefined -fno-omit-frame-pointer -fsanitize-coverage=trace-cmp,trace-gep,trace-div")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address,undefined -fsanitize-address-use-after-scope -fno-omit-frame-pointer -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-gep,trace-div")
 	endif ()
 
 	if (sctp_sanitizer_memory)
@@ -228,6 +228,7 @@ if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "AppleCla
 	if (sctp_fuzzer_clang)
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer -Wno-gnu-zero-variadic-macro-arguments")
 	endif ()
+
 endif ()
 
 # SETTINGS FOR VISUAL STUDIO COMPILER
