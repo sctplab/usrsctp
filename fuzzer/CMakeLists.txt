@@ -82,7 +82,7 @@ endif ()
 # if in fuzzing mode, only build the fuzzer
 configure_file(crashtest.py crashtest.py COPYONLY)
 configure_file(fuzzer_unconnected.sh fuzzer_unconnected.sh COPYONLY)
-configure_file(fuzzer_upcall.sh fuzzer_upcall.sh COPYONLY)
+configure_file(fuzzer_connected_upcall.sh fuzzer_connected_upcall.sh COPYONLY)
 
 list(APPEND check_programs
 	fuzzer_unconnected.c
