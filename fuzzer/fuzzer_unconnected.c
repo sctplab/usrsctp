@@ -54,14 +54,13 @@ struct socket *s_l;
 static int
 conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 {
+#if 0
 	char *dump_buf;
-
-	return 0;
-
 	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
 		fprintf(stderr, "%s", dump_buf);
 		usrsctp_freedumpbuffer(dump_buf);
 	}
+#endif
 	return (0);
 }
 
@@ -140,7 +139,7 @@ init_fuzzer(void) {
 
 	initialized = 1;
 
-	return 0;
+	return (0);
 }
 
 int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
@@ -156,95 +155,5 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 #endif
 	return (0);
 }
-#if !defined(FUZZING_MODE)
-void test_input_file(char *file_path) {
-	char *data;
-	size_t data_size;
-	FILE *file;
 
-	file = fopen(file_path, "rb");
-	if (!file) {
-		perror("fopen");
-		exit(EXIT_FAILURE);
-	}
-
-	fseek(file, 0, SEEK_END);
-	data_size = ftell(file);
-	fseek(file, 0, SEEK_SET);
-	data = malloc(data_size);
-	if (fread(data, 1, data_size, file) != data_size) {
-		fprintf(stderr, "fread failed!\n");
-		exit(EXIT_FAILURE);
-	}
-	fclose(file);
-
-	LLVMFuzzerTestOneInput((const uint8_t *)data, data_size);
-
-	free(data);
-}
-
-int main(int argc, char *argv[])
-{
-	struct stat stat_buf, stat_buf_iterator;
-	DIR *d;
-	struct dirent *dp;
-	char file_path[FILENAME_BUFFER];
-
-
-	if (argc != 2) {
-		printf("[FILE/DIR] argument missing\n");
-		exit(EXIT_FAILURE);
-	}
-
-	if (stat(argv[1], &stat_buf)) {
-		perror("stat");
-		exit(EXIT_FAILURE);
-	}
-
-	if (stat_buf.st_mode & S_IFDIR) {
-		printf("testing directory: %s\n", argv[1]);
-
-		if (!(d = opendir(argv[1]))) {
-			perror("opendir");
-			exit(EXIT_FAILURE);
-		}
-
-		while ((dp = readdir(d)) != NULL) {
-			snprintf(file_path, FILENAME_BUFFER, "%s/%s", argv[1], dp->d_name);
-			printf("%s \n", file_path);
-
-			if (stat(file_path, &stat_buf_iterator)) {
-				perror("stat");
-				exit(EXIT_FAILURE);
-			}
-
-			if (stat_buf_iterator.st_mode & S_IFREG) {
-				test_input_file(file_path);
-			} else {
-				printf("skipping\n");
-			}
-		}
-
-		closedir(d);
-
-
-		// directory
-	} else if (stat_buf.st_mode & S_IFREG) {
-		printf("testing file: %s\n", argv[1]);
-		test_input_file(argv[1]);
-	} else {
-		printf("somethig's odd...\n");
-		exit(EXIT_FAILURE);
-	}
-
-#if defined(FUZZ_FAST)
-	usrsctp_close(s_l);
-	while (usrsctp_finish() != 0) {
-		usleep(1000 * 10);
-	}
-#endif
-
-	return (0);
-}
-#endif
 

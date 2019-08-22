@@ -91,10 +91,10 @@ struct connection_status {
 #define printf_fuzzer_raw(...) { \
 	printf(__VA_ARGS__); \
 }
-#else // !defined(FUZZING_MODE) || defined(FUZZ_VERBOSE)
+#else // defined(FUZZ_VERBOSE)
 #define printf_fuzzer(format, ...)
 #define printf_fuzzer_raw(format, ...)
-#endif //!defined(FUZZING_MODE) || defined(FUZZ_VERBOSE)
+#endif // defined(FUZZ_VERBOSE)
 
 
 static int
@@ -778,106 +778,3 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 	return (0);
 }
-
-#if !defined(FUZZING_MODE)
-void test_input_file(char *file_path) {
-	char *data;
-	size_t data_size;
-	FILE *file;
-
-	file = fopen(file_path, "rb");
-	if (!file) {
-		perror("fopen");
-		exit(EXIT_FAILURE);
-	}
-
-	fseek(file, 0, SEEK_END);
-	data_size = ftell(file);
-	fseek(file, 0, SEEK_SET);
-	data = malloc(data_size);
-	if (fread(data, 1, data_size, file) != data_size) {
-		fprintf(stderr, "fread failed!\n");
-		exit(EXIT_FAILURE);
-	}
-	fclose(file);
-
-	LLVMFuzzerTestOneInput((const uint8_t *)data, data_size);
-
-	free(data);
-}
-
-int main(int argc, char *argv[])
-{
-	struct stat stat_buf, stat_buf_iterator;
-	DIR *d;
-	struct dirent *dp;
-	char file_path[FILENAME_BUFFER];
-
-
-	if (argc != 2) {
-		printf("[FILE/DIR] argument missing\n");
-		exit(EXIT_FAILURE);
-	}
-
-	if (stat(argv[1], &stat_buf)) {
-		perror("stat");
-		exit(EXIT_FAILURE);
-	}
-
-	if (stat_buf.st_mode & S_IFDIR) {
-		printf("testing directory: %s\n", argv[1]);
-
-		if (!(d = opendir(argv[1]))) {
-			perror("opendir");
-			exit(EXIT_FAILURE);
-		}
-
-		while ((dp = readdir(d)) != NULL) {
-			snprintf(file_path, FILENAME_BUFFER, "%s/%s", argv[1], dp->d_name);
-			printf("%s \n", file_path);
-
-			if (stat(file_path, &stat_buf_iterator)) {
-				perror("stat");
-				exit(EXIT_FAILURE);
-			}
-
-			if (stat_buf_iterator.st_mode & S_IFREG) {
-				test_input_file(file_path);
-			} else {
-				printf("skipping\n");
-			}
-		}
-
-		closedir(d);
-
-		// directory
-	} else if (stat_buf.st_mode & S_IFREG) {
-		printf("testing file: %s\n", argv[1]);
-		test_input_file(argv[1]);
-	} else {
-		printf("somethig's odd...\n");
-		exit(EXIT_FAILURE);
-	}
-
-#if defined(FUZZ_FAST)
-	usrsctp_deregister_address((void*)&fd_udp_client);
-	usrsctp_deregister_address((void*)&fd_udp_server);
-
-	while (usrsctp_finish()) {
-		usleep(100 * 1000);
-	}
-
-	pthread_cancel(tid_c);
-	pthread_cancel(tid_s);
-
-	pthread_join(tid_c, NULL);
-	pthread_join(tid_s, NULL);
-
-	close(fd_udp_client);
-	close(fd_udp_server);
-#endif // !defined(FUZZ_FAST)
-
-
-	return (0);
-}
-#endif

@@ -84,7 +84,7 @@ endif ()
 # MISC
 #################################################
 
-if (sctp_fuzzer_clang)
+if (sctp_build_fuzzer)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer -Wno-gnu-zero-variadic-macro-arguments")
 endif ()
 

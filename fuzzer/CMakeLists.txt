@@ -55,25 +55,11 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
 	add_definitions(-D__APPLE_USE_RFC_2292)
 endif ()
 
-if (MSYS OR MINGW)
-	message(STATUS "MSYS / MINGW")
-	add_definitions(-D__USE_MINGW_ANSI_STDIO)
-	# 0x0601 = Windows 7 API
-	add_definitions(-DWINVER=0x0601)
-	add_definitions(-D_WIN32_WINNT=0x0601)
-
-	if (CMAKE_C_COMPILER_ID MATCHES "GNU")
-		message(STATUS "MSYS / MINGW + GCC")
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-format")
-	endif ()
-endif ()
-
-
 #################################################
 # MISC
 #################################################
 
-if (sctp_fuzzer_clang)
+if (sctp_build_fuzzer)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer -Wno-gnu-zero-variadic-macro-arguments")
 endif ()
 

@@ -77,9 +77,8 @@ option(sctp_sanitizer_address "Compile with address sanitizer" 0)
 
 option(sctp_sanitizer_memory "Compile with memory sanitizer" 0)
 
-option(sctp_fuzzer_clang "Compile in Clang fuzzing mode" 0)
-if (sctp_fuzzer_clang)
-	add_definitions(-DFUZZING_MODE)
+option(sctp_build_fuzzer "Compile in clang fuzzing mode" 0)
+if (sctp_build_fuzzer)
 	add_definitions(-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
 endif ()
 
@@ -259,7 +258,6 @@ endif ()
 
 message(STATUS "Compiler flags (CMAKE_C_FLAGS): ${CMAKE_C_FLAGS}")
 
-
 #################################################
 # INCLUDE SUBDIRS
 #################################################
@@ -270,6 +268,6 @@ if (sctp_build_programs)
 	add_subdirectory(programs)
 endif ()
 
-if (sctp_fuzzer_clang)
+if (sctp_build_fuzzer OR DEFINED ENV{LIB_FUZZING_ENGINE})
 	add_subdirectory(fuzzer)
 endif ()
