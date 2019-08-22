@@ -1,5 +1,5 @@
-libusrsctp (1.0.0~td126-1ubuntu1) disco; urgency=medium
+libusrsctp (1.0.0~td127-1ubuntu1) disco; urgency=medium
 
   * Initial release.
 
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Thu, 08 Aug 2019 10:54:03 +0200
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Thu, 22 Aug 2019 12:35:29 +0200
