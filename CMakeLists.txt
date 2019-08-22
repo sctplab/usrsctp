@@ -218,11 +218,15 @@ if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "AppleCla
 	endif ()
 
 	if (sctp_sanitizer_address)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address,undefined,signed-integer-overflow -fno-sanitize-recover=all -fsanitize-address-use-after-scope -fno-omit-frame-pointer")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address,undefined,signed-integer-overflow -fno-sanitize-recover=all -fsanitize-address-use-after-scope ")
 	endif ()
 
 	if (sctp_sanitizer_memory)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -fsanitize-memory-track-origins -fPIE")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=memory -fsanitize-memory-track-origins -fPIE")
+	endif ()
+
+	if (sctp_sanitizer_address OR sctp_sanitizer_memory)
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-omit-frame-pointer -fsanitize-coverage=trace-cmp,trace-div,trace-gep")
 	endif ()
 
 endif ()
