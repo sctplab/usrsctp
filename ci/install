@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
 #
 # Travis CI Scripts
 # Copyright (C) 2018-2019 by Thomas Dreibholz
@@ -17,6 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Contact: dreibh@iem.uni-due.de
+
+# Bash options:
+set -e
 
 
 . `dirname $0`/get-container
@@ -250,6 +253,8 @@ EOF\""
 elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
 
    if [ "${VARIANT}" != "" ] ; then
+      imageName="FreeBSD-${VARIANT}-amd64.raw"
+
       # ====== Build fuse-ufs2 ==============================================
       # Activate "updates" and "backports" repositories!
       # This is needed to later install dependencies for fuse-ufs2.
@@ -263,7 +268,8 @@ elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
       fi
       ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo eatmydata apt-get update || true
       env LANG=C.UTF-8 ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} --  sudo eatmydata apt-get install -y \
-         build-essential fuse libfuse-dev autoconf automake libtool git libbsd-dev e2fslibs-dev
+         build-essential fuse libfuse-dev autoconf automake libtool git libbsd-dev e2fslibs-dev \
+         gdisk parted
 
       pushd /vservers/qemu-freebsd/fuse-ufs2/
       ./autogen.sh
@@ -276,8 +282,13 @@ elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
       # ====== Modify FreeBSD image =========================================
       pushd /vservers/qemu-freebsd/
 
+      # ~~~~~ Grow image ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      truncate -s 128G ${imageName}
+      echo -e "w\nY\nY\n" | LANG=C gdisk ${imageName}
+      parted -s ${imageName} resizepart 3 100%
+      parted -s ${imageName} print
+
       # ~~~~~~ Mount ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      imageName="FreeBSD-${VARIANT}-amd64.raw"
       ls -l ${imageName}
       mountPoint=`pwd`/mnt
 
@@ -386,11 +397,20 @@ elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
       fi
 
       # ====== Install packages =============================================
+      # Ensure the file system is okay (fuse-ufs2 in write mode is unreliable!)
+      ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost \
+         "mount -fr / ; fsck -y /dev/gpt/rootfs ; mount -fw / ; df -h"
+
       # Basic dependencies:
       ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost \
          env ASSUME_ALWAYS_YES=yes pkg install -y bash gcc joe git
+
+      # Bash shell:
+      # Use bash, and make sure it is available under /bin/bash.
       ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost \
          chsh -s /usr/local/bin/bash
+      ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost \
+         ln -s /usr/local/bin/bash /bin/bash || true
 
       # Ports collection:
       # This is the slow method via portsnap:
@@ -398,7 +418,7 @@ elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
       # ---    "portsnap --interactive fetch extract | grep -v ^/usr/ports"
       # Using Git is much faster:
       ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost \
-         "rm -rf /usr/ports/* /usr/ports/.git* && git clone --depth=1 --filter=tree:0 https://github.com/freebsd/freebsd-ports /usr/ports"
+         "rm -rf /usr/ports/* /usr/ports/.git* ; git clone --depth=1 --filter=tree:0 https://github.com/freebsd/freebsd-ports /usr/ports"
 
       # Package's dependencies:
       ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost \
