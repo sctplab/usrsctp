@@ -65,7 +65,7 @@ if (MSYS OR MINGW)
 
 	if (CMAKE_C_COMPILER_ID MATCHES "GNU")
 		message(STATUS "MSYS / MINGW + GCC")
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-format")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-format")
 	endif ()
 endif ()
 

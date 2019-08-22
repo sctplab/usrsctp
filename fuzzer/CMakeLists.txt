@@ -1,5 +1,4 @@
 #
-# Copyright (C) 2015-2015 Oleg Alexeenkov
 # Copyright (C) 2015-2019 Felix Weinrank
 #
 # All rights reserved.
@@ -88,7 +87,6 @@ list(APPEND check_programs
 	fuzzer_unconnected.c
 	fuzzer_connected_upcall.c
 )
-
 
 foreach (source_file ${check_programs})
 	get_filename_component(source_file_we ${source_file} NAME_WE)
