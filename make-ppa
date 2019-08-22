@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
 #
 # Packaging Scripts
 # Copyright (C) 2002-2019 by Thomas Dreibholz
@@ -18,11 +18,14 @@
 #
 # Contact: dreibh@iem.uni-due.de
 
+# Bash options:
+set -e
+
 COPR=0
 DPUT=0
 
 # NOTE: These are the supported distributions by Ubuntu Launchpad and Debian:
-DPUT_DISTRIBUTIONS="precise trusty xenial bionic cosmic disco eoan   unstable"
+DPUT_DISTRIBUTIONS="precise trusty xenial bionic disco eoan   unstable"
 
 while [ $# -gt 0 ] ; do
    if [ "$1" == "dput" ] ; then
