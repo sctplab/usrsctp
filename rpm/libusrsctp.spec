@@ -74,6 +74,7 @@ make install DESTDIR=%{buildroot}
 %{_bindir}/http_client
 %{_bindir}/http_client_upcall
 %{_bindir}/rtcweb
+%{_bindir}/st_client
 %{_bindir}/test_libmgmt
 %{_bindir}/test_timer
 %{_bindir}/tsctp
