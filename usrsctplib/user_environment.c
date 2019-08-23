@@ -99,6 +99,11 @@ static int (*read_func)(void *, int) = read_random_phony;
 int
 read_random(void *buf, int count)
 {
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+	memset(buf, 'A', count);
+	return (count);
+#else
 	return ((*read_func)(buf, count));
+#endif
 }
 

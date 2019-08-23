@@ -931,10 +931,6 @@ sctp_select_initial_TSN(struct sctp_pcb *inp)
 	uint8_t *p;
 	int store_at, new_store;
 
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-	return (1207);
-#endif /* FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION */
-
 	if (inp->initial_sequence_debug != 0) {
 		uint32_t ret;
 
@@ -971,9 +967,6 @@ sctp_select_a_tag(struct sctp_inpcb *inp, uint16_t lport, uint16_t rport, int ch
 		(void)SCTP_GETTIME_TIMEVAL(&now);
 	}
 	for (;;) {
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-		return (1988);
-#endif /* FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION */
 		x = sctp_select_initial_TSN(&inp->sctp_ep);
 		if (x == 0) {
 			/* we never use 0 */
