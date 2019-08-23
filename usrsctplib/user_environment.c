@@ -64,6 +64,14 @@ userland_mutex_t atomic_mtx;
  * provide _some_ kind of randomness. This should only be used
  * inside other RNG's, like arc4random(9).
  */
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+static int
+read_random_phony(void *buf, int count)
+{
+	memset(buf, 'A', count);
+	return (count);
+}
+#else
 #if defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Darwin)
 static int
 read_random_phony(void *buf, int count)
@@ -92,6 +100,7 @@ read_random_phony(void *buf, int count)
 	return (count);
 }
 #endif
+#endif
 
 static int (*read_func)(void *, int) = read_random_phony;
 
@@ -99,11 +108,6 @@ static int (*read_func)(void *, int) = read_random_phony;
 int
 read_random(void *buf, int count)
 {
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-	memset(buf, 'A', count);
-	return (count);
-#else
 	return ((*read_func)(buf, count));
-#endif
 }
 
