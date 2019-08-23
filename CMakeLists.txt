@@ -268,6 +268,6 @@ if (sctp_build_programs)
 	add_subdirectory(programs)
 endif ()
 
-if (sctp_build_fuzzer OR DEFINED ENV{LIB_FUZZING_ENGINE})
+if (sctp_build_fuzzer)
 	add_subdirectory(fuzzer)
 endif ()
