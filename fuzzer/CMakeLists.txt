@@ -28,7 +28,7 @@
 # SUCH DAMAGE.
 #
 
-project(usrsctp-fuzzer C)
+#project(usrsctp-fuzzer C)
 
 #################################################
 # INCLUDE MODULES
@@ -63,7 +63,7 @@ endif ()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-gnu-zero-variadic-macro-arguments")
 
 if (sctp_build_fuzzer)
-	set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer")
 endif ()
 
 
@@ -86,7 +86,6 @@ foreach (source_file ${check_programs})
 	add_executable(
 		${source_file_we}
 		${source_file}
-		../programs/programs_helper.c
 	)
 
 	target_link_libraries(

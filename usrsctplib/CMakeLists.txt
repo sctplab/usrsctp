@@ -65,7 +65,7 @@ endif ()
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
 	add_definitions(-U__APPLE__)
 	add_definitions(-D__APPLE_USE_RFC_2292)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -Wno-address-of-packed-member -Wno-deprecated-declarations")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-address-of-packed-member -Wno-deprecated-declarations")
 endif ()
 
 if (CMAKE_SYSTEM_NAME MATCHES "DragonFly")
