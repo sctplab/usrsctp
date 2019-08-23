@@ -28,7 +28,7 @@
 # SUCH DAMAGE.
 #
 
-project(usrsctp-fuzzer CXX)
+project(usrsctp-fuzzer C)
 
 #################################################
 # INCLUDE MODULES
@@ -63,7 +63,7 @@ endif ()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-gnu-zero-variadic-macro-arguments")
 
 if (sctp_build_fuzzer)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=fuzzer")
+	set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer")
 endif ()
 
 
@@ -77,8 +77,8 @@ configure_file(fuzzer_unconnected.sh fuzzer_unconnected.sh COPYONLY)
 configure_file(fuzzer_connected_upcall.sh fuzzer_connected_upcall.sh COPYONLY)
 
 list(APPEND check_programs
-	fuzzer_unconnected.cc
-	fuzzer_connected_upcall.cc
+	fuzzer_unconnected.c
+	fuzzer_connected_upcall.c
 )
 
 foreach (source_file ${check_programs})
