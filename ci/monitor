@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+#
+# Travis CI Scripts
+# Copyright (C) 2018-2019 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+
+# Bash options:
+set -e
+
+
+# ###### Wait and display status ############################################
+ wait_for_timeout ()
+ {
+   local pid="${1}"
+   local timeout="${2}"
+   shift ; shift
+
+   local count=0
+   while [[ "${count}" -lt "${timeout}" ]]; do
+      echo "Waiting for ${pid}: ${count}/${timeout} ..."
+      sleep 60
+      let count=${count}+1
+
+      # local i=0
+      # while [ ${i} -lt 60 ] ; do
+      #    let i=${i}+1
+      #    echo "Waiting for ${pid}: ${count}/${timeout} ..."
+      #    echo -n "."
+      #    if test $(($i%60)) = 0 ; then
+      #       echo " ${count}"
+      #    fi
+      # done
+   done
+   echo "Timeout (${timeout} min) for ${pid} reached -> sending SIGKILL ..."
+   kill -9 ${pid}
+}
+
+
+# ###### Main program #######################################################
+if [ $# -lt 2 ] ; then
+   echo >&2 "Usage: $0 timeout_in_min command [args ...]"
+   exit 1
+fi
+
+timeout=$1
+shift
+command=("${@}")
+logfile="monitor_${$}.log"
+
+echo "Calling: ${command[@]}"
+"${command[@]}" 2>&1 | tee "${logfile}" &
+command_pid="${!}"
+wait_for_timeout "${command_pid}" "${timeout}" "${cmd[@]}" &
+status_pid="${!}"
+
+result=1
+{
+   set +e
+   wait "${command_pid}" 2>/dev/null
+   result="${?}"
+   ps -p ${status_pid} &>/dev/null && kill ${status_pid}
+   set -e
+}
+
+exit ${result}
