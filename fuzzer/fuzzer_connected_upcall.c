@@ -55,8 +55,11 @@
 //#define FUZZ_VERBOSE
 
 static int fd_udp_client, fd_udp_server;
-static struct socket *socket_client, *socket_server_listening;
-static uint8_t sockets_open = 0;
+static struct socket *socket_client, *socket_server_listening, *socket_server_connected;
+static uint8_t socket_client_open = 0;
+static uint8_t socket_server_listening_open = 0;
+static uint8_t socket_server_connected_open = 0;
+
 static pthread_t tid_c, tid_s;
 
 static char *common_header_client[12];
@@ -86,6 +89,29 @@ struct connection_status {
 	printf("[%5d][%15.15s] ", __LINE__, __func__); \
 	printf(__VA_ARGS__); \
 	printf("\n"); \
+}
+
+void
+debug_printf(const char *format, ...)
+{
+	static struct timeval time_main;
+
+	va_list ap;
+	struct timeval time_now;
+	struct timeval time_delta;
+
+	if (time_main.tv_sec == 0  && time_main.tv_usec == 0) {
+		gettimeofday(&time_main, NULL);
+	}
+
+	gettimeofday(&time_now, NULL);
+	timersub(&time_now, &time_main, &time_delta);
+
+	printf("[%u.%03u] ", (unsigned int) time_delta.tv_sec, (unsigned int) time_delta.tv_usec / 1000);
+
+	va_start(ap, format);
+	vprintf(format, ap);
+	va_end(ap);
 }
 
 #define printf_fuzzer_raw(...) { \
@@ -241,28 +267,28 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 
 	if (cs->type == CS_SERVER_LISTENING) {
 		// upcall for listening socket -> call accept!
-		struct socket* conn_sock;
 		struct connection_status* cs_new;
 
 		cs_new = (struct connection_status *) calloc(1, sizeof(struct connection_status));
 		cs_new->type = CS_SERVER_CONNECTED;
 
-		if (((conn_sock = usrsctp_accept(sock, NULL, NULL)) == NULL) && (errno != EINPROGRESS)) {
+		if (((socket_server_connected = usrsctp_accept(sock, NULL, NULL)) == NULL) && (errno != EINPROGRESS)) {
 			perror("usrsctp_accept");
 			exit(EXIT_FAILURE);
 		}
 		pthread_mutex_lock(&mutex);
-		sockets_open++;
+		socket_server_connected_open = 1;
 		pthread_cond_signal(&cond);
 		pthread_mutex_unlock(&mutex);
 
-		usrsctp_set_upcall(conn_sock, handle_upcall, cs_new);
+		usrsctp_set_upcall(socket_server_connected, handle_upcall, cs_new);
 
 		// close listening socket, we do not need it anymore
 		free(cs);
 		usrsctp_close(sock);
+		printf_fuzzer("closing listening server socket\n");
 		pthread_mutex_lock(&mutex);
-		sockets_open--;
+		socket_server_listening_open = 0;
 		pthread_cond_signal(&cond);
 		pthread_mutex_unlock(&mutex);
 		return;
@@ -310,8 +336,9 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 				cs->data_size = 0;
 				free(cs);
 				usrsctp_close(sock);
+				printf_fuzzer("closing client socket\n");
 				pthread_mutex_lock(&mutex);
-				sockets_open--;
+				socket_client_open = 0;
 				pthread_cond_signal(&cond);
 				pthread_mutex_unlock(&mutex);
 				return;
@@ -332,7 +359,7 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 
 			n = usrsctp_recvv(sock, buf, MAX_PACKET_SIZE, (struct sockaddr *) &addr, &len, (void *)&rn, &infolen, &infotype, &flags);
 
-			printf_fuzzer("usrsctp_recvv() for %p", (void *)sock);
+			printf_fuzzer("usrsctp_recvv() for %p - n : %zd", (void *)sock, n);
 
 			if (n > 0) {
 				if (flags & MSG_NOTIFICATION) {
@@ -349,10 +376,18 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 
 			if (n == -1 || notification_retval == -1) {
 				printf_fuzzer("n : %zd || notification_retval : %d", n, notification_retval);
+				if (cs->type == CS_SERVER_CONNECTED) {
+					socket_server_connected = 0;
+				} else if (cs->type == CS_CLIENT) {
+					socket_server_connected_open = 0;
+				} else {
+					exit(EXIT_FAILURE);
+				}
+
 				free(cs);
 				usrsctp_close(sock);
 				pthread_mutex_lock(&mutex);
-				sockets_open--;
+
 				pthread_cond_signal(&cond);
 				pthread_mutex_unlock(&mutex);
 				break;
@@ -561,14 +596,14 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		perror("usrsctp_socket - socket_client");
 		exit(EXIT_FAILURE);
 	}
-	sockets_open++;
+	socket_client_open = 1;
 	usrsctp_set_non_blocking(socket_client, 1);
 
 	if ((socket_server_listening = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket - socket_server_listening");
 		exit(EXIT_FAILURE);
 	}
-	sockets_open++;
+	socket_server_listening_open = 1;
 	usrsctp_set_non_blocking(socket_server_listening, 1);
 
 	memset(&event, 0, sizeof(event));
@@ -736,18 +771,34 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	}
 
 	gettimeofday(&tv, NULL);
-	time_to_wait.tv_sec = tv.tv_sec + 5;
-	time_to_wait.tv_nsec = 0;
+	time_to_wait.tv_sec = tv.tv_sec + 1;
+	time_to_wait.tv_nsec = tv.tv_usec;
 
 	pthread_mutex_lock(&mutex);
-	while (sockets_open) {
-		printf_fuzzer("waiting for sockets %d...", sockets_open);
+	while (socket_client_open || socket_server_connected_open || socket_server_listening_open) {
 		timedwait_retval = pthread_cond_timedwait(&cond, &mutex, &time_to_wait);
 
 		if (timedwait_retval == ETIMEDOUT) {
-			printf("Tor 3 - der Zonk!\n");
-			usrsctp_close(socket_client);
-			usrsctp_close(socket_server_listening);
+
+			printf_fuzzer("socket_client %p : %s\n", (void *)socket_client, socket_client_open ? "OPEN" : "CLOSED");
+			printf_fuzzer("socket_server_connected %p : %s\n", (void *)socket_server_connected, socket_server_connected_open ? "OPEN" : "CLOSED");
+			printf_fuzzer("socket_server_listening %p : %s\n", (void *)socket_server_listening, socket_server_listening_open ? "OPEN" : "CLOSED");
+
+			if (socket_client_open) {
+				printf_fuzzer("closing socket_client_open : %p\n", (void *)socket_client);
+				usrsctp_close(socket_client);
+			}
+
+			if (socket_server_connected_open) {
+				printf_fuzzer("closing socket_server_connected_open : %p\n", (void *)socket_server_connected);
+				usrsctp_close(socket_server_connected);
+			}
+
+			if (socket_server_listening_open) {
+				printf_fuzzer("closing socket_server_listening_open : %p\n", (void *)socket_server_listening);
+				usrsctp_close(socket_server_listening);
+			}
+
 			break;
 		}
 	}
