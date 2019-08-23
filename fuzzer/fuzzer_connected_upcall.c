@@ -52,7 +52,7 @@
 #define FUZZ_EXPLICIT_EOR
 #define FUZZ_STREAM_RESET
 #define FUZZ_DISABLE_LINGER
-#define FUZZ_VERBOSE
+//#define FUZZ_VERBOSE
 
 static int fd_udp_client, fd_udp_server;
 static struct socket *socket_client, *socket_server_listening, *socket_server_connected;
@@ -286,7 +286,7 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 		// close listening socket, we do not need it anymore
 		free(cs);
 		usrsctp_close(sock);
-		printf("closing listening server socket\n");
+		printf_fuzzer("closing listening server socket\n");
 		pthread_mutex_lock(&mutex);
 		socket_server_listening_open = 0;
 		pthread_cond_signal(&cond);
@@ -336,7 +336,7 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 				cs->data_size = 0;
 				free(cs);
 				usrsctp_close(sock);
-				printf("closing client socket\n");
+				printf_fuzzer("closing client socket\n");
 				pthread_mutex_lock(&mutex);
 				socket_client_open = 0;
 				pthread_cond_signal(&cond);
@@ -376,9 +376,6 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 
 			if (n == -1 || notification_retval == -1) {
 				printf_fuzzer("n : %zd || notification_retval : %d", n, notification_retval);
-				free(cs);
-				usrsctp_close(sock);
-				pthread_mutex_lock(&mutex);
 				if (cs->type == CS_SERVER_CONNECTED) {
 					socket_server_connected = 0;
 				} else if (cs->type == CS_CLIENT) {
@@ -386,6 +383,11 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 				} else {
 					exit(EXIT_FAILURE);
 				}
+
+				free(cs);
+				usrsctp_close(sock);
+				pthread_mutex_lock(&mutex);
+
 				pthread_cond_signal(&cond);
 				pthread_mutex_unlock(&mutex);
 				break;
@@ -770,7 +772,7 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 	gettimeofday(&tv, NULL);
 	time_to_wait.tv_sec = tv.tv_sec + 1;
-	time_to_wait.tv_nsec = 0;
+	time_to_wait.tv_nsec = tv.tv_usec;
 
 	pthread_mutex_lock(&mutex);
 	while (socket_client_open || socket_server_connected_open || socket_server_listening_open) {
