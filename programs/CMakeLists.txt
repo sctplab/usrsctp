@@ -76,10 +76,6 @@ endif ()
 
 find_package(Threads)
 
-if (sctp_build_fuzzer)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer-no-link")
-endif ()
-
 
 #################################################
 # PROGRAMS
@@ -123,5 +119,5 @@ foreach (source_file ${check_programs})
 		${source_file_we}
 		${programs_link_library}
 		${CMAKE_THREAD_LIBS_INIT}
-		)
+	)
 endforeach ()

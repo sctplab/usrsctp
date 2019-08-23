@@ -45,7 +45,6 @@
 #include "../programs/programs_helper.h"
 
 
-#define FILENAME_BUFFER 512
 #define FUZZ_FAST 1
 
 struct sockaddr_conn sconn;

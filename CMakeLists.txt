@@ -80,6 +80,7 @@ option(sctp_sanitizer_memory "Compile with memory sanitizer" 0)
 option(sctp_build_fuzzer "Compile in clang fuzzing mode" 0)
 if (sctp_build_fuzzer)
 	add_definitions(-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer-no-link")
 endif ()
 
 if (sctp_sanitizer_address AND sctp_sanitizer_memory)
@@ -257,6 +258,7 @@ if (CMAKE_C_COMPILER_ID MATCHES "MSVC")
 endif ()
 
 message(STATUS "Compiler flags (CMAKE_C_FLAGS): ${CMAKE_C_FLAGS}")
+
 
 #################################################
 # INCLUDE SUBDIRS
