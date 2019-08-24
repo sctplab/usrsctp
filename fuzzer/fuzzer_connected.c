@@ -61,7 +61,7 @@ static const char *init_ack = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\
 "\xd8\x64\xff\xe2\x25\xd6\x81\x9e";
 
 static const char *cookie_ack = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\x0b\x00\x00\x04";
-
+static const char *common_header = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00";
 
 #ifdef FUZZ_VERBOSE
 static char *dump_buf;
@@ -137,6 +137,7 @@ int
 LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 	static int initialized;
+	char *pktbuf;
 
 	if (!initialized) {
 		initialized = initialize_fuzzer();
@@ -215,10 +216,31 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	usrsctp_conninput((void *)1, cookie_ack, 16, 0);
 
 	// Boum! :)
-	usrsctp_conninput((void *)1, data, data_size, 0);
+	pktbuf = malloc(data_size + 12);
+	memcpy(pktbuf, common_header, 12);
+	memcpy(pktbuf + 12, data, data_size);
+
+	//printf("data_size : %zu\n", data_size);
+
+#ifdef FUZZ_VERBOSE
+	debug_printf(">>>>>>>>>>>>>>>INJECTING\n");
+	if ((dump_buf = usrsctp_dumppacket(pktbuf, data_size + 12, SCTP_DUMP_INBOUND)) != NULL) {
+		fprintf(stderr, "%s", dump_buf);
+		usrsctp_freedumpbuffer(dump_buf);
+	}
+#endif
+
+	usrsctp_conninput((void *)1, pktbuf, data_size + 12, 0);
 
 	usrsctp_close(socket_client);
 
+#if 0
+	static int j;
+	j++;
+	if (j > 100) {
+		exit(0);
+	}
+#endif
 	return (0);
 }
 
