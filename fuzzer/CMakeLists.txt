@@ -71,11 +71,10 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer")
 # if in fuzzing mode, only build the fuzzer
 configure_file(crashtest.py crashtest.py COPYONLY)
 configure_file(fuzzer_unconnected.sh fuzzer_unconnected.sh COPYONLY)
-configure_file(fuzzer_connected_upcall.sh fuzzer_connected_upcall.sh COPYONLY)
+configure_file(fuzzer_connected.sh fuzzer_connected.sh COPYONLY)
 
 list(APPEND check_programs
 	fuzzer_unconnected.c
-	fuzzer_connected_upcall.c
 	fuzzer_connected.c
 )
 
