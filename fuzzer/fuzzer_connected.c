@@ -49,6 +49,7 @@
 
 struct sockaddr_conn sconn;
 struct socket *socket_client;
+uint8_t initialize_required = 1;
 
 static int
 conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
@@ -67,12 +68,12 @@ static void
 handle_upcall(struct socket *sock, void *arg, int flgs)
 {
 	fprintf(stderr, "Listening socket established, implement logic!\n");
-	exit(EXIT_FAILURE);
+	initialize_required = 1;
+	//exit(EXIT_FAILURE);
 }
 
 int
 init_fuzzer(void) {
-	static uint8_t initialized = 0;
 	struct sctp_event event;
 	uint16_t event_types[] = {
 		SCTP_ASSOC_CHANGE,
@@ -83,12 +84,6 @@ init_fuzzer(void) {
 		SCTP_ADAPTATION_INDICATION,
 		SCTP_PARTIAL_DELIVERY_EVENT};
 	unsigned long i;
-
-#if defined(FUZZ_FAST)
-	if (initialized) {
-		return 0;
-	}
-#endif
 
 	usrsctp_init(0, conn_output, NULL);
 	usrsctp_enable_crc32c_offload();
@@ -135,26 +130,31 @@ init_fuzzer(void) {
 	//usrsctp_conninput((void *)1, init_ack, sizeof(init_ack), 0);
 	//usrsctp_conninput((void *)1, cookie_ack, sizeof(cookie_ack), 0);
 
-
-
-	initialized = 1;
+#ifdef FUZZ_FAST
+	initialize_required = 0;
+#endif
 
 	return (0);
 }
 
 int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
-	init_fuzzer();
+
+	if (initialize_required) {
+		init_fuzzer();
+	}
+
 	//exit(0);
 
 	usrsctp_conninput((void *)1, data, data_size, 0);
 
-#if !defined(FUZZ_FAST)
-	usrsctp_close(socket_client);
-	while (usrsctp_finish() != 0) {
-		//sleep(1);
+	if (initialize_required) {
+		usrsctp_close(socket_client);
+		while (usrsctp_finish() != 0) {
+			usleep(1000);
+		}
 	}
-#endif
+
 	return (0);
 }
 
