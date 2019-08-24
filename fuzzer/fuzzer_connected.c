@@ -32,24 +32,73 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <errno.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <dirent.h>
+#include <sys/time.h>
 #include <usrsctp.h>
-#include "../programs/programs_helper.h"
+
+//#define FUZZ_VERBOSE
+
+static const char *init_ack = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\x02\x00\x01\x4c" \
+"\x20\x0f\x67\x0d\x00\x02\x00\x00\x00\x04\x00\x04\xbd\xf0\x8d\x18" \
+"\xc0\x00\x00\x04\x80\x08\x00\x09\xc0\x0f\xc1\x80\x82\x00\x00\x00" \
+"\x80\x02\x00\x24\xfd\x30\xc7\x17\x34\x27\x17\x1c\xa2\xc6\x78\x20" \
+"\x62\xc3\xa1\x3f\xb6\x86\x92\x42\xc5\x0b\xb6\x36\xd7\xf6\xf4\x19" \
+"\xee\xd3\xc9\x1e\x80\x04\x00\x06\x00\x01\x00\x00\x80\x03\x00\x06" \
+"\x80\xc1\x00\x00\x00\x07\x00\xf4\x4b\x41\x4d\x45\x2d\x42\x53\x44" \
+"\x20\x31\x2e\x31\x00\x00\x00\x00\x25\xfa\x5e\x5d\x00\x00\x00\x00" \
+"\xe6\xc3\x0a\x00\x00\x00\x00\x00\x60\xea\x00\x00\x54\x6f\x2d\xff" \
+"\xd1\x7f\x68\x2a\x00\x00\x00\x01\x20\x0f\x67\x0d\x80\x3b\x00\x00" \
+"\xc0\x60\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00" \
+"\x80\x3b\x00\x00\xc0\x60\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" \
+"\x04\x00\x00\x00\x00\x00\x00\x00\x13\x88\x13\x88\x00\x00\x01\x00" \
+"\x01\x01\x01\x00\x00\x00\x00\x00\x01\x00\x00\x14\x01\x00\x00\x00" \
+"\x00\x00\x20\x00\x00\x08\x00\x08\x00\x00\x00\x01\x02\x00\x01\x4c" \
+"\x20\x0f\x67\x0d\x00\x02\x00\x00\x00\x04\x00\x04\xbd\xf0\x8d\x18" \
+"\xc0\x00\x00\x04\x80\x08\x00\x09\xc0\x0f\xc1\x80\x82\x00\x00\x00" \
+"\x80\x02\x00\x24\xfd\x30\xc7\x17\x34\x27\x17\x1c\xa2\xc6\x78\x20" \
+"\x62\xc3\xa1\x3f\xb6\x86\x92\x42\xc5\x0b\xb6\x36\xd7\xf6\xf4\x19" \
+"\xee\xd3\xc9\x1e\x80\x04\x00\x06\x00\x01\x00\x00\x80\x03\x00\x06" \
+"\x80\xc1\x00\x00\x41\xc3\xed\x62\x2c\x1c\x3c\x03\x41\x6d\x17\xc8" \
+"\xd8\x64\xff\xe2\x25\xd6\x81\x9e";
+
+static const char *cookie_ack = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\x0b\x00\x00\x04";
+
+
+#ifdef FUZZ_VERBOSE
+static char *dump_buf;
+void
+debug_printf(const char *format, ...)
+{
+	static struct timeval time_main;
+
+	va_list ap;
+	struct timeval time_now;
+	struct timeval time_delta;
+
+	if (time_main.tv_sec == 0  && time_main.tv_usec == 0) {
+		gettimeofday(&time_main, NULL);
+	}
+
+	gettimeofday(&time_now, NULL);
+	timersub(&time_now, &time_main, &time_delta);
+
+	fprintf(stderr, "[%u.%03u] ", (unsigned int) time_delta.tv_sec, (unsigned int) time_delta.tv_usec / 1000);
+
+	va_start(ap, format);
+	vprintf(format, ap);
+	va_end(ap);
+}
+#else
+void
+debug_printf(const char *format, ...)
+{
+}
+#endif
 
 
 static int
 conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 {
-#if 0
-	char *dump_buf;
+#ifdef FUZZ_VERBOSE
 	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
 		fprintf(stderr, "%s", dump_buf);
 		usrsctp_freedumpbuffer(dump_buf);
@@ -58,28 +107,34 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 	return (0);
 }
 
+
 static void
 handle_upcall(struct socket *sock, void *arg, int flgs)
 {
-	fprintf(stderr, "Listening socket established, implement logic!\n");
+	debug_printf("handle_upcall() called - implement logic!\n");
 }
+
 
 int
 initialize_fuzzer(void) {
+#ifdef FUZZ_VERBOSE
+	usrsctp_init(0, conn_output, debug_printf);
+#else
 	usrsctp_init(0, conn_output, NULL);
+#endif
 	usrsctp_enable_crc32c_offload();
 	/* set up a connected UDP socket */
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 #endif
 	usrsctp_register_address((void *)1);
-
-	printf("usrsctp initialized\n");
-
+	debug_printf("usrsctp initialized\n");
 	return 1;
 }
 
-int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
+
+int
+LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 	static int initialized;
 
@@ -126,6 +181,8 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		}
 	}
 
+	usrsctp_set_upcall(socket_client, handle_upcall, NULL);
+
 	/* Bind the local side. */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
@@ -141,19 +198,26 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		}
 	}
 
-	usrsctp_set_upcall(socket_client, handle_upcall, NULL);
+#ifdef FUZZ_VERBOSE
+	if ((dump_buf = usrsctp_dumppacket(init_ack, 344, SCTP_DUMP_INBOUND)) != NULL) {
+		fprintf(stderr, "%s", dump_buf);
+		usrsctp_freedumpbuffer(dump_buf);
+	}
+#endif
+	usrsctp_conninput((void *)1, init_ack, 344, 0);
 
-	//usrsctp_conninput((void *)1, init_ack, sizeof(init_ack), 0);
-	//usrsctp_conninput((void *)1, cookie_ack, sizeof(cookie_ack), 0);
+#ifdef FUZZ_VERBOSE
+	if ((dump_buf = usrsctp_dumppacket(cookie_ack, 16, SCTP_DUMP_INBOUND)) != NULL) {
+		fprintf(stderr, "%s", dump_buf);
+		usrsctp_freedumpbuffer(dump_buf);
+	}
+#endif
+	usrsctp_conninput((void *)1, cookie_ack, 16, 0);
 
-
-
-
+	// Boum! :)
 	usrsctp_conninput((void *)1, data, data_size, 0);
 
 	usrsctp_close(socket_client);
-
-
 
 	return (0);
 }
