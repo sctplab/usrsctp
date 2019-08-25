@@ -229,9 +229,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 #endif
 
 	usrsctp_conninput((void *)1, pktbuf, data_size + 12, 0);
-
 	usrsctp_close(socket_client);
-
 	free(pktbuf);
 
 #if 0

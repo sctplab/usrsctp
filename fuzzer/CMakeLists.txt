@@ -57,7 +57,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
 endif ()
 
 #################################################
-# MISC
+# COMPILER FLAGS
 #################################################
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-gnu-zero-variadic-macro-arguments")
