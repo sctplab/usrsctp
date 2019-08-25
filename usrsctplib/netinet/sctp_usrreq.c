@@ -92,9 +92,17 @@ sctp_init(void)
 	sctp_init_sysctls();
 #if defined(__Userspace__)
 #if defined(__Userspace_os_Windows) || defined(__Userspace_os_NaCl)
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+	srand(0);
+#else
 	srand((unsigned int)time(NULL));
+#endif
+#else
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+	srandom(0);
 #else
 	srandom(getpid()); /* so inp->sctp_ep.random_numbers are truly random... */
+#endif
 #endif
 #endif
 #if defined(__Panda__)
