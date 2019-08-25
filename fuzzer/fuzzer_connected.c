@@ -138,16 +138,11 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 	static int initialized;
 	char *pktbuf;
-
-	if (!initialized) {
-		initialized = initialize_fuzzer();
-	}
-
 	struct sockaddr_conn sconn;
 	struct socket *socket_client;
 	struct linger so_linger;
-
 	struct sctp_event event;
+	unsigned long i;
 	uint16_t event_types[] = {
 		SCTP_ASSOC_CHANGE,
 		SCTP_PEER_ADDR_CHANGE,
@@ -155,13 +150,18 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		SCTP_REMOTE_ERROR,
 		SCTP_SHUTDOWN_EVENT,
 		SCTP_ADAPTATION_INDICATION,
-		SCTP_PARTIAL_DELIVERY_EVENT};
-	unsigned long i;
+		SCTP_PARTIAL_DELIVERY_EVENT
+	};
+
+	if (!initialized) {
+		initialized = initialize_fuzzer();
+	}
 
 	if ((socket_client = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, 0)) == NULL) {
 		perror("usrsctp_socket");
 		exit(EXIT_FAILURE);
 	}
+
 	usrsctp_set_non_blocking(socket_client, 1);
 
 	so_linger.l_onoff = 1;
@@ -184,7 +184,6 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 	usrsctp_set_upcall(socket_client, handle_upcall, NULL);
 
-	/* Bind the local side. */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
 #ifdef HAVE_SCONN_LEN
@@ -215,7 +214,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 #endif
 	usrsctp_conninput((void *)1, cookie_ack, 16, 0);
 
-	// Boum! :)
+	// concat common header and fuzzer input
 	pktbuf = malloc(data_size + 12);
 	memcpy(pktbuf, common_header, 12);
 	memcpy(pktbuf + 12, data, data_size);
@@ -227,18 +226,10 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		usrsctp_freedumpbuffer(dump_buf);
 	}
 #endif
-
 	usrsctp_conninput((void *)1, pktbuf, data_size + 12, 0);
+
 	usrsctp_close(socket_client);
 	free(pktbuf);
-
-#if 0
-	static int j;
-	j++;
-	if (j > 100) {
-		exit(0);
-	}
-#endif
 	return (0);
 }
 
