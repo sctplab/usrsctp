@@ -31,19 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <errno.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <dirent.h>
 #include <usrsctp.h>
-#include "../programs/programs_helper.h"
-
 
 #define FUZZ_FAST 1
 
@@ -141,7 +129,8 @@ init_fuzzer(void) {
 	return (0);
 }
 
-int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
+int
+LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 	init_fuzzer();
 	usrsctp_conninput((void *)1, data, data_size, 0);
@@ -152,6 +141,7 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		//sleep(1);
 	}
 #endif
+
 	return (0);
 }
 
