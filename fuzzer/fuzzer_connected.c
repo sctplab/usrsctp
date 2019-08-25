@@ -220,10 +220,8 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	memcpy(pktbuf, common_header, 12);
 	memcpy(pktbuf + 12, data, data_size);
 
-	//printf("data_size : %zu\n", data_size);
-
 #ifdef FUZZ_VERBOSE
-	debug_printf(">>>>>>>>>>>>>>>INJECTING\n");
+	debug_printf(">>>> INJECTING\n");
 	if ((dump_buf = usrsctp_dumppacket(pktbuf, data_size + 12, SCTP_DUMP_INBOUND)) != NULL) {
 		fprintf(stderr, "%s", dump_buf);
 		usrsctp_freedumpbuffer(dump_buf);
@@ -233,6 +231,8 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	usrsctp_conninput((void *)1, pktbuf, data_size + 12, 0);
 
 	usrsctp_close(socket_client);
+
+	free(pktbuf);
 
 #if 0
 	static int j;
