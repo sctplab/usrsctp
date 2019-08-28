@@ -308,13 +308,13 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		offset += split_size;
 		split_packets--;
 
-		dump_packet(pktbuf, data_size + 12, SCTP_DUMP_INBOUND);
-		usrsctp_conninput((void *)1, pktbuf, data_size + 12, 0);
+		dump_packet(pktbuf, split_size + 12, SCTP_DUMP_INBOUND);
+		usrsctp_conninput((void *)1, pktbuf, split_size + 12, 0);
 	}
 
 	memcpy(pktbuf + 12, data + offset, data_size - offset);
-	dump_packet(pktbuf, data_size + 12, SCTP_DUMP_INBOUND);
-	usrsctp_conninput((void *)1, pktbuf, data_size + 12, 0);
+	dump_packet(pktbuf, data_size - offset + 12, SCTP_DUMP_INBOUND);
+	usrsctp_conninput((void *)1, pktbuf, data_size - offset + 12, 0);
 
 	usrsctp_close(socket_client);
 	free(pktbuf);
