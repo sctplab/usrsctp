@@ -42,6 +42,8 @@
 #define FUZZ_STREAM_RESET
 #define FUZZ_DISABLE_LINGER
 
+#define BUFFERSIZE 256
+
 static const char *init_ack = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\x02\x00\x01\x4c" \
 "\x20\x0f\x67\x0d\x00\x02\x00\x00\x00\x04\x00\x04\xbd\xf0\x8d\x18" \
 "\xc0\x00\x00\x04\x80\x08\x00\x09\xc0\x0f\xc1\x80\x82\x00\x00\x00" \
@@ -123,6 +125,26 @@ static void
 handle_upcall(struct socket *sock, void *arg, int flgs)
 {
 	debug_printf("handle_upcall() called - implement logic!\n");
+	int events = usrsctp_get_events(sock);
+	while (events & SCTP_EVENT_READ) {
+		struct sctp_recvv_rn rn;
+		ssize_t n;
+		struct sockaddr_in addr;
+		char *buf = calloc(1, BUFFERSIZE);
+		int flags = 0;
+		socklen_t len = (socklen_t)sizeof(struct sockaddr_in);
+		unsigned int infotype = 0;
+		socklen_t infolen = sizeof(struct sctp_recvv_rn);
+		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
+		n = usrsctp_recvv(sock, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn, &infolen, &infotype, &flags);
+
+		free(buf);
+		if (n <= 0) {
+			break;
+		}
+
+		events = usrsctp_get_events(sock);
+	}
 }
 
 
@@ -154,7 +176,8 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	struct linger so_linger;
 	struct sctp_event event;
 	unsigned long i;
-	uint8_t fuzzing_stage;
+	uint8_t fuzzing_stage, split_packets, split_size;
+	size_t offset;
 	uint16_t event_types[] = {
 		SCTP_ASSOC_CHANGE,
 		SCTP_PEER_ADDR_CHANGE,
@@ -252,25 +275,44 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 			exit(EXIT_FAILURE);
 		}
 	}
-	
-	fuzzing_stage = data_size % 3;
 
-	// Send INIT
-	if (fuzzing_stage >= 1) {
-		dump_packet(init_ack, 344, SCTP_DUMP_INBOUND);
-		usrsctp_conninput((void *)1, init_ack, 344, 0);
+	if (data_size > 10) {
+		fuzzing_stage = data[0] % 2;
+		split_packets = (data[1] % 4);
+		split_size = data_size / (split_packets + 1);
+	} else {
+		fuzzing_stage = 1;
+		split_packets = 0;
 	}
 
+	//printf("Stage %d - Packets %d\n", fuzzing_stage, split_packets);
+
+	// Send INIT
+	dump_packet(init_ack, 344, SCTP_DUMP_INBOUND);
+	usrsctp_conninput((void *)1, init_ack, 344, 0);
+
 	// Send COOKIE ACK
-	if (fuzzing_stage >= 2) {
+	if (fuzzing_stage >= 1) {
 		dump_packet(cookie_ack, 16, SCTP_DUMP_INBOUND);
 		usrsctp_conninput((void *)1, cookie_ack, 16, 0);
 	}
 
 	// concat common header and fuzzer input
+	offset = 0;
 	pktbuf = malloc(data_size + 12);
 	memcpy(pktbuf, common_header, 12);
-	memcpy(pktbuf + 12, data, data_size);
+
+	// splitting logic
+	while (split_packets > 0) {
+		memcpy(pktbuf + 12, data + offset , split_size);
+		offset += split_size;
+		split_packets--;
+
+		dump_packet(pktbuf, data_size + 12, SCTP_DUMP_INBOUND);
+		usrsctp_conninput((void *)1, pktbuf, data_size + 12, 0);
+	}
+
+	memcpy(pktbuf + 12, data + offset, data_size - offset);
 	dump_packet(pktbuf, data_size + 12, SCTP_DUMP_INBOUND);
 	usrsctp_conninput((void *)1, pktbuf, data_size + 12, 0);
 
