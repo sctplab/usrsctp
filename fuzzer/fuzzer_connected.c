@@ -36,6 +36,11 @@
 #include <usrsctp.h>
 
 //#define FUZZ_VERBOSE
+//#define FUZZ_FAST
+#define FUZZ_INTERLEAVING
+#define FUZZ_EXPLICIT_EOR
+#define FUZZ_STREAM_RESET
+#define FUZZ_DISABLE_LINGER
 
 static const char *init_ack = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\x02\x00\x01\x4c" \
 "\x20\x0f\x67\x0d\x00\x02\x00\x00\x00\x04\x00\x04\xbd\xf0\x8d\x18" \
@@ -160,6 +165,13 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		SCTP_PARTIAL_DELIVERY_EVENT
 	};
 
+#if defined(FUZZ_EXPLICIT_EOR) || defined(FUZZ_INTERLEAVING)
+	int enable;
+#endif
+#if defined(FUZZ_STREAM_RESET) || defined(FUZZ_INTERLEAVING)
+	struct sctp_assoc_value assoc_val;
+#endif
+
 	if (!initialized) {
 		initialized = initialize_fuzzer();
 	}
@@ -188,6 +200,42 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 			exit(EXIT_FAILURE);
 		}
 	}
+
+#if defined(FUZZ_EXPLICIT_EOR)
+	enable = 1;
+	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_EXPLICIT_EOR, &enable, sizeof(enable)) < 0) {
+		perror("setsockopt SCTP_EXPLICIT_EOR socket_client");
+		exit(EXIT_FAILURE);
+	}
+#endif // defined(FUZZ_EXPLICIT_EOR)
+
+#if defined(FUZZ_STREAM_RESET)
+	assoc_val.assoc_id = SCTP_ALL_ASSOC;
+	assoc_val.assoc_value = SCTP_ENABLE_RESET_STREAM_REQ | SCTP_ENABLE_CHANGE_ASSOC_REQ;
+	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_ENABLE_STREAM_RESET, &assoc_val, sizeof(struct sctp_assoc_value)) < 0) {
+		perror("setsockopt SCTP_ENABLE_STREAM_RESET socket_client");
+		exit(EXIT_FAILURE);
+	}
+#endif //defined(FUZZ_STREAM_RESET)
+
+
+#if defined(FUZZ_INTERLEAVING)
+#if !defined(SCTP_INTERLEAVING_SUPPORTED)
+#define SCTP_INTERLEAVING_SUPPORTED 0x00001206
+#endif // !defined(SCTP_INTERLEAVING_SUPPORTED)
+	enable = 2;
+	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &enable, sizeof(enable)) < 0) {
+		perror("usrsctp_setsockopt SCTP_FRAGMENT_INTERLEAVE socket_client");
+		exit(EXIT_FAILURE);
+	}
+
+	memset(&assoc_val, 0, sizeof(assoc_val));
+	assoc_val.assoc_value = 1;
+	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_INTERLEAVING_SUPPORTED, &assoc_val, sizeof(assoc_val)) < 0) {
+		perror("usrsctp_setsockopt SCTP_INTERLEAVING_SUPPORTED socket_client");
+		exit(EXIT_FAILURE);
+	}
+#endif // defined(FUZZ_INTERLEAVING)
 
 	usrsctp_set_upcall(socket_client, handle_upcall, NULL);
 
