@@ -91,19 +91,25 @@ debug_printf(const char *format, ...)
 void
 debug_printf(const char *format, ...)
 {
+	// Nothing
 }
 #endif
+
+static void
+dump_packet(const void *buffer, size_t bufferlen, int inout) {
+#ifdef FUZZ_VERBOSE
+	if ((dump_buf = usrsctp_dumppacket(buffer, bufferlen, inout)) != NULL) {
+		fprintf(stderr, "%s", dump_buf);
+		usrsctp_freedumpbuffer(dump_buf);
+	}
+#endif
+}
 
 
 static int
 conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 {
-#ifdef FUZZ_VERBOSE
-	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
-		fprintf(stderr, "%s", dump_buf);
-		usrsctp_freedumpbuffer(dump_buf);
-	}
-#endif
+	dump_packet(buf, length, SCTP_DUMP_OUTBOUND);
 	return (0);
 }
 
@@ -143,6 +149,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	struct linger so_linger;
 	struct sctp_event event;
 	unsigned long i;
+	uint8_t fuzzing_stage;
 	uint16_t event_types[] = {
 		SCTP_ASSOC_CHANGE,
 		SCTP_PEER_ADDR_CHANGE,
@@ -197,35 +204,26 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 			exit(EXIT_FAILURE);
 		}
 	}
+	
+	fuzzing_stage = data_size % 3;
 
-#ifdef FUZZ_VERBOSE
-	if ((dump_buf = usrsctp_dumppacket(init_ack, 344, SCTP_DUMP_INBOUND)) != NULL) {
-		fprintf(stderr, "%s", dump_buf);
-		usrsctp_freedumpbuffer(dump_buf);
+	// Send INIT
+	if (fuzzing_stage >= 1) {
+		dump_packet(init_ack, 344, SCTP_DUMP_INBOUND);
+		usrsctp_conninput((void *)1, init_ack, 344, 0);
 	}
-#endif
-	usrsctp_conninput((void *)1, init_ack, 344, 0);
 
-#ifdef FUZZ_VERBOSE
-	if ((dump_buf = usrsctp_dumppacket(cookie_ack, 16, SCTP_DUMP_INBOUND)) != NULL) {
-		fprintf(stderr, "%s", dump_buf);
-		usrsctp_freedumpbuffer(dump_buf);
+	// Send COOKIE ACK
+	if (fuzzing_stage >= 2) {
+		dump_packet(cookie_ack, 16, SCTP_DUMP_INBOUND);
+		usrsctp_conninput((void *)1, cookie_ack, 16, 0);
 	}
-#endif
-	usrsctp_conninput((void *)1, cookie_ack, 16, 0);
 
 	// concat common header and fuzzer input
 	pktbuf = malloc(data_size + 12);
 	memcpy(pktbuf, common_header, 12);
 	memcpy(pktbuf + 12, data, data_size);
-
-#ifdef FUZZ_VERBOSE
-	debug_printf(">>>> INJECTING\n");
-	if ((dump_buf = usrsctp_dumppacket(pktbuf, data_size + 12, SCTP_DUMP_INBOUND)) != NULL) {
-		fprintf(stderr, "%s", dump_buf);
-		usrsctp_freedumpbuffer(dump_buf);
-	}
-#endif
+	dump_packet(pktbuf, data_size + 12, SCTP_DUMP_INBOUND);
 	usrsctp_conninput((void *)1, pktbuf, data_size + 12, 0);
 
 	usrsctp_close(socket_client);
