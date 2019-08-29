@@ -60,7 +60,7 @@ endif ()
 # COMPILER FLAGS
 #################################################
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-gnu-zero-variadic-macro-arguments")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-gnu-zero-variadic-macro-arguments -Wno-unused-variable")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer")
 
 
@@ -68,26 +68,21 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer")
 # PROGRAMS
 #################################################
 
-# if in fuzzing mode, only build the fuzzer
 configure_file(crashtest.py crashtest.py COPYONLY)
-configure_file(fuzzer_unconnected.sh fuzzer_unconnected.sh COPYONLY)
-configure_file(fuzzer_connected.sh fuzzer_connected.sh COPYONLY)
+configure_file(fuzzer_listen.sh fuzzer_listen.sh COPYONLY)
+configure_file(fuzzer_client.sh fuzzer_client.sh COPYONLY)
 
-list(APPEND check_programs
-	fuzzer_unconnected.c
-	fuzzer_connected.c
-)
+add_executable(fuzzer_listen fuzzer_listen.c)
+target_link_libraries(fuzzer_listen usrsctp-static)
 
-foreach (source_file ${check_programs})
-	get_filename_component(source_file_we ${source_file} NAME_WE)
-	add_executable(
-		${source_file_we}
-		${source_file}
-	)
+add_executable(fuzzer_connect_cookie_wait fuzzer_client.c)
+target_compile_definitions(fuzzer_connect_cookie_wait PRIVATE FUZZ_COOKIE_WAIT)
+target_link_libraries(fuzzer_connect_cookie_wait usrsctp-static)
 
-	target_link_libraries(
-		${source_file_we}
-		usrsctp-static
-	)
-endforeach ()
+add_executable(fuzzer_connect_cookie_echoed fuzzer_client.c)
+target_compile_definitions(fuzzer_connect_cookie_echoed PRIVATE FUZZ_COOKIE_ECHOED)
+target_link_libraries(fuzzer_connect_cookie_echoed usrsctp-static)
 
+add_executable(fuzzer_connect_established fuzzer_client.c)
+target_compile_definitions(fuzzer_connect_established PRIVATE FUZZ_ESTABLISHED)
+target_link_libraries(fuzzer_connect_established usrsctp-static)

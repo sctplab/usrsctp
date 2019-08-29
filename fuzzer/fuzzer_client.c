@@ -36,7 +36,6 @@
 #include <usrsctp.h>
 
 //#define FUZZ_VERBOSE
-//#define FUZZ_FAST
 #define FUZZ_INTERLEAVING
 #define FUZZ_EXPLICIT_EOR
 #define FUZZ_STREAM_RESET
@@ -162,7 +161,7 @@ initialize_fuzzer(void) {
 #endif
 	usrsctp_register_address((void *)1);
 	debug_printf("usrsctp initialized\n");
-	return 1;
+	return (1);
 }
 
 
@@ -176,8 +175,6 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	struct linger so_linger;
 	struct sctp_event event;
 	unsigned long i;
-	uint8_t fuzzing_stage, split_packets, split_size;
-	size_t offset;
 	uint16_t event_types[] = {
 		SCTP_ASSOC_CHANGE,
 		SCTP_PEER_ADDR_CHANGE,
@@ -241,7 +238,6 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	}
 #endif //defined(FUZZ_STREAM_RESET)
 
-
 #if defined(FUZZ_INTERLEAVING)
 #if !defined(SCTP_INTERLEAVING_SUPPORTED)
 #define SCTP_INTERLEAVING_SUPPORTED 0x00001206
@@ -276,45 +272,24 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		}
 	}
 
-	if (data_size > 10) {
-		fuzzing_stage = data[0] % 2;
-		split_packets = (data[1] % 4);
-		split_size = data_size / (split_packets + 1);
-	} else {
-		fuzzing_stage = 1;
-		split_packets = 0;
-	}
-
-	//printf("Stage %d - Packets %d\n", fuzzing_stage, split_packets);
-
-	// Send INIT
+#if defined(FUZZ_COOKIE_ECHOED) || defined (FUZZ_ESTABLISHED)
+	// Inject INIT-ACK
 	dump_packet(init_ack, 344, SCTP_DUMP_INBOUND);
 	usrsctp_conninput((void *)1, init_ack, 344, 0);
+#endif
 
-	// Send COOKIE ACK
-	if (fuzzing_stage >= 1) {
-		dump_packet(cookie_ack, 16, SCTP_DUMP_INBOUND);
-		usrsctp_conninput((void *)1, cookie_ack, 16, 0);
-	}
+#if defined(FUZZ_ESTABLISHED)
+	// Inject COOKIE ACK
+	dump_packet(cookie_ack, 16, SCTP_DUMP_INBOUND);
+	usrsctp_conninput((void *)1, cookie_ack, 16, 0);
+#endif
 
-	// concat common header and fuzzer input
-	offset = 0;
+	// Inject fuzzed packet
 	pktbuf = malloc(data_size + 12);
-	memcpy(pktbuf, common_header, 12);
-
-	// splitting logic
-	while (split_packets > 0) {
-		memcpy(pktbuf + 12, data + offset , split_size);
-		offset += split_size;
-		split_packets--;
-
-		dump_packet(pktbuf, split_size + 12, SCTP_DUMP_INBOUND);
-		usrsctp_conninput((void *)1, pktbuf, split_size + 12, 0);
-	}
-
-	memcpy(pktbuf + 12, data + offset, data_size - offset);
-	dump_packet(pktbuf, data_size - offset + 12, SCTP_DUMP_INBOUND);
-	usrsctp_conninput((void *)1, pktbuf, data_size - offset + 12, 0);
+	memcpy(pktbuf, common_header, 12); // common header
+	memcpy(pktbuf + 12, data, data_size);
+	dump_packet(pktbuf, data_size + 12, SCTP_DUMP_INBOUND);
+	usrsctp_conninput((void *)1, pktbuf, data_size + 12, 0);
 
 	usrsctp_close(socket_client);
 	free(pktbuf);
