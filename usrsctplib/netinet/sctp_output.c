@@ -9537,6 +9537,9 @@ sctp_send_cookie_echo(struct mbuf *m,
 		}
 		ptype = ntohs(phdr->param_type);
 		plen = ntohs(phdr->param_length);
+		if (plen == 0) {
+			return (-3);
+		}
 		if (ptype == SCTP_STATE_COOKIE) {
 			int pad;
 
