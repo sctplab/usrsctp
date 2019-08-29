@@ -68,10 +68,6 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer")
 # PROGRAMS
 #################################################
 
-configure_file(crashtest.py crashtest.py COPYONLY)
-configure_file(fuzzer_listen.sh fuzzer_listen.sh COPYONLY)
-configure_file(fuzzer_connect.sh fuzzer_connect.sh COPYONLY)
-
 add_executable(fuzzer_listen fuzzer_listen.c)
 target_link_libraries(fuzzer_listen usrsctp-static)
 
