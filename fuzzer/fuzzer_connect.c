@@ -35,7 +35,7 @@
 #include <sys/time.h>
 #include <usrsctp.h>
 
-#define FUZZ_VERBOSE
+//#define FUZZ_VERBOSE
 #define FUZZ_INTERLEAVING
 #define FUZZ_EXPLICIT_EOR
 #define FUZZ_STREAM_RESET
