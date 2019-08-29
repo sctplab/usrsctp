@@ -70,19 +70,19 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer")
 
 configure_file(crashtest.py crashtest.py COPYONLY)
 configure_file(fuzzer_listen.sh fuzzer_listen.sh COPYONLY)
-configure_file(fuzzer_client.sh fuzzer_client.sh COPYONLY)
+configure_file(fuzzer_connect.sh fuzzer_connect.sh COPYONLY)
 
 add_executable(fuzzer_listen fuzzer_listen.c)
 target_link_libraries(fuzzer_listen usrsctp-static)
 
-add_executable(fuzzer_connect_cookie_wait fuzzer_client.c)
+add_executable(fuzzer_connect_cookie_wait fuzzer_connect.c)
 target_compile_definitions(fuzzer_connect_cookie_wait PRIVATE FUZZ_COOKIE_WAIT)
 target_link_libraries(fuzzer_connect_cookie_wait usrsctp-static)
 
-add_executable(fuzzer_connect_cookie_echoed fuzzer_client.c)
+add_executable(fuzzer_connect_cookie_echoed fuzzer_connect.c)
 target_compile_definitions(fuzzer_connect_cookie_echoed PRIVATE FUZZ_COOKIE_ECHOED)
 target_link_libraries(fuzzer_connect_cookie_echoed usrsctp-static)
 
-add_executable(fuzzer_connect_established fuzzer_client.c)
+add_executable(fuzzer_connect_established fuzzer_connect.c)
 target_compile_definitions(fuzzer_connect_established PRIVATE FUZZ_ESTABLISHED)
 target_link_libraries(fuzzer_connect_established usrsctp-static)
