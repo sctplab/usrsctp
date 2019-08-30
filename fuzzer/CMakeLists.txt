@@ -82,3 +82,11 @@ target_link_libraries(fuzzer_connect_cookie_echoed usrsctp-static)
 add_executable(fuzzer_connect_established fuzzer_connect.c)
 target_compile_definitions(fuzzer_connect_established PRIVATE FUZZ_ESTABLISHED)
 target_link_libraries(fuzzer_connect_established usrsctp-static)
+
+add_executable(fuzzer_connect_data_sent fuzzer_connect.c)
+target_compile_definitions(fuzzer_connect_data_sent PRIVATE FUZZ_DATA_SENT)
+target_link_libraries(fuzzer_connect_data_sent usrsctp-static)
+
+add_executable(fuzzer_connect_data_received fuzzer_connect.c)
+target_compile_definitions(fuzzer_connect_data_received PRIVATE FUZZ_DATA_RECEIVED)
+target_link_libraries(fuzzer_connect_data_received usrsctp-static)
