@@ -8179,11 +8179,13 @@ sctpconn_connect(struct socket *so, struct sockaddr *addr)
 		/* Gak! no memory */
 		goto out_now;
 	}
-	if (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) {
+	SCTP_INP_RLOCK(stcb->sctp_ep);
+        if (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) {
 		stcb->sctp_ep->sctp_flags |= SCTP_PCB_FLAGS_CONNECTED;
 		/* Set the connected flag so we can queue data */
 		soisconnecting(so);
 	}
+        SCTP_INP_RUNLOCK(stcb->sctp_ep);
 	SCTP_SET_STATE(stcb, SCTP_STATE_COOKIE_WAIT);
 	(void)SCTP_GETTIME_TIMEVAL(&stcb->asoc.time_entered);
 
