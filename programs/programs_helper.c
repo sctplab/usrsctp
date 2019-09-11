@@ -47,7 +47,7 @@ debug_printf(const char *format, ...)
 	gettimeofday(&time_now, NULL);
 	timersub(&time_now, &time_main, &time_delta);
 
-	printf("[%u.%03u] ", (unsigned int) time_delta.tv_sec, (unsigned int) time_delta.tv_usec / 1000);
+	fprintf(stderr, "[%u.%03u] ", (unsigned int) time_delta.tv_sec, (unsigned int) time_delta.tv_usec / 1000);
 
 	va_start(ap, format);
 	vprintf(format, ap);

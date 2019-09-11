@@ -103,6 +103,12 @@ option(sctp_sanitizer_address "Compile with address sanitizer" 0)
 
 option(sctp_sanitizer_memory "Compile with memory sanitizer" 0)
 
+option(sctp_build_fuzzer "Compile in clang fuzzing mode" 0)
+if (sctp_build_fuzzer)
+	add_definitions(-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer-no-link")
+endif ()
+
 if (sctp_sanitizer_address AND sctp_sanitizer_memory)
 	message(FATAL_ERROR "Can not compile with both sanitizer options")
 endif ()
@@ -250,12 +256,17 @@ if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "AppleCla
 	endif ()
 
 	if (sctp_sanitizer_address)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address,undefined,signed-integer-overflow -fno-sanitize-recover=all -fsanitize-address-use-after-scope ")
 	endif ()
 
 	if (sctp_sanitizer_memory)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=memory -fsanitize-memory-track-origins -fPIE")
 	endif ()
+
+	if (sctp_sanitizer_address OR sctp_sanitizer_memory)
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-omit-frame-pointer -fsanitize-coverage=edge,indirect-calls,trace-cmp,trace-div,trace-gep")
+	endif ()
+
 endif ()
 
 # SETTINGS FOR VISUAL STUDIO COMPILER
@@ -303,4 +314,8 @@ add_subdirectory(usrsctplib)
 
 if (sctp_build_programs)
 	add_subdirectory(programs)
+endif ()
+
+if (sctp_build_fuzzer)
+	add_subdirectory(fuzzer)
 endif ()
