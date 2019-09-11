@@ -73,7 +73,8 @@ elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
       # ====== Download fuse-ufs2 ========================================
       if [ ! -d fuse-ufs2/ ] ; then
          echo "Downloading fuse-ufs2 ..."
-         git clone https://github.com/mkatiyar/fuse-ufs2
+         git clone https://github.com/dreibh/fuse-ufs2 -b dreibh/ubuntu-disco-fix
+         # git clone https://github.com/mkatiyar/fuse-ufs2
       fi
    fi
 

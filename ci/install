@@ -23,7 +23,7 @@ set -e
 
 
 . `dirname $0`/get-container
-UBUNTU_MIRROR="archive.ubuntu.com"
+UBUNTU_MIRROR="us.archive.ubuntu.com"
 RETRY_MAXTRIALS=5
 RETRY_PAUSE=60
 
@@ -158,8 +158,7 @@ export DEB_BUILD_OPTIONS=\"parallel=\\\${cores}\"
 EOF"
          sudo docker exec ${CONTAINER} env LANG=C.UTF-8 cat /etc/pbuilderrc
          ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- sudo docker exec ${CONTAINER} env LANG=C.UTF-8 \
-            pbuilder create --debootstrapopts --variant=buildd
-         sudo docker exec ${CONTAINER} env LANG=C.UTF-8 ls -l /var/cache/pbuilder/base.tgz
+            eatmydata pbuilder create --debootstrapopts --variant=buildd
 
          # ====== Add ppa:dreibh/ppa, updates and backports =================
          if [ "${VARIANT}" == "ubuntu" ] ; then
@@ -170,7 +169,6 @@ ${APT_INSTALL} software-properties-common
 ${APT_ADD_REPOSITORY} ppa:dreibh/ppa
 ${APT_UPDATE}
 EOF\""
-            sudo docker exec ${CONTAINER} env LANG=C.UTF-8 ls -l /var/cache/pbuilder/base.tgz
          fi
 
          if [ "${VARIANT}" == "ubuntu" -o "${VARIANT}" == "debian" ] ; then
@@ -184,7 +182,6 @@ ${APT_ADD_REPOSITORY} \\\"deb ${mirror} ${distribution}-backports main universe\
 ${APT_UPDATE} || true
 ${APT_UPGRADE}
 EOF\""
-            sudo docker exec ${CONTAINER} env LANG=C.UTF-8 ls -l /var/cache/pbuilder/base.tgz
          fi
 
       else
@@ -371,7 +368,7 @@ elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
 
       # ====== Start VM =====================================================
       sudo killall -q qemu-system-x86_64 || true
-      ssh-keygen -R "[localhost]:8829"
+      ssh-keygen -R "[localhost]:8829" -f ~/.ssh/known_hosts
       # Non-KVM execution: qemu-system-x86_64 \
       sudo qemu-system-x86_64 -machine type=pc,accel=kvm -nographic \
          -m 6144 -cpu host -smp $(nproc) \
@@ -403,7 +400,9 @@ elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
 
       # Basic dependencies:
       ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost \
-         env ASSUME_ALWAYS_YES=yes pkg install -y bash gcc joe git
+         env ASSUME_ALWAYS_YES=yes pkg update
+      ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost \
+         env ASSUME_ALWAYS_YES=yes pkg install -y bash gcc joe git libtool autoconf automake
 
       # Bash shell:
       # Use bash, and make sure it is available under /bin/bash.
@@ -418,7 +417,7 @@ elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
       # ---    "portsnap --interactive fetch extract | grep -v ^/usr/ports"
       # Using Git is much faster:
       ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost \
-         "rm -rf /usr/ports/* /usr/ports/.git* ; git clone --depth=1 --filter=tree:0 https://github.com/freebsd/freebsd-ports /usr/ports"
+         "rm -rf /usr/ports ; git clone --depth=1 --filter=tree:0 https://github.com/freebsd/freebsd-ports /usr/ports"
 
       # Package's dependencies:
       ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost \

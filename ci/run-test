@@ -62,7 +62,7 @@ elif [ "$1" == "" ] ; then
    export TOOL="pbuilder"
 
 else
-   echo >&2 "Usage: $0 [ubuntu|fedora]_[release]-[pbuilder|mock|compile-[gcc|clang]]"
+   echo >&2 "Usage: $0 [ubuntu|fedora|freebsd]_[release]-[pbuilder|mock|compile-[gcc|clang]]"
    exit 1
 fi
 
