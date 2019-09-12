@@ -9,280 +9,280 @@ cache:
 matrix:
   include:
 
-   # ###### Ubuntu Linux ####################################################
+   ## ###### Ubuntu Linux ####################################################
 
-   # ====== Ubuntu 19.10 (Eoan Ermine) ======================================
-   - name: "Ubuntu 19.10 (Eoan Ermine) with GCC"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:eoan" VARIANT="ubuntu" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   - name: "Ubuntu 19.10 (Eoan Ermine) with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:eoan" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "Ubuntu 19.10 (Eoan Ermine) packaging with pbuilder"
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:eoan" VARIANT="ubuntu" TOOL="pbuilder"
-
-   # ====== Ubuntu 19.04 (Disco Dingo) ======================================
-   - name: "Ubuntu 19.04 (Disco Dingo) with GCC"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:disco" VARIANT="ubuntu" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   - name: "Ubuntu 19.04 (Disco Dingo) with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:disco" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "Ubuntu 19.04 (Disco Dingo) packaging with pbuilder"
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:disco" VARIANT="ubuntu" TOOL="pbuilder"
-
-   # ====== Ubuntu 18.04 (Bionic Beaver) ====================================
-   - name: "Ubuntu 18.04 (Bionic Beaver) with GCC"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:bionic" VARIANT="ubuntu" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   - name: "Ubuntu 18.04 (Bionic Beaver) with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:bionic" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "Ubuntu 18.04 (Bionic Beaver) packaging with pbuilder"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:bionic" VARIANT="ubuntu" TOOL="pbuilder"
-
-   # ====== Ubuntu 16.04 (Xenial Xerus) =====================================
-   - name: "Ubuntu 16.04 (Xenial Xerus) with GCC"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:xenial" VARIANT="ubuntu" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   - name: "Ubuntu 16.04 (Xenial Xerus) with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:xenial" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "Ubuntu 16.04 (Xenial Xerus) packaging with pbuilder"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:xenial" VARIANT="ubuntu" TOOL="pbuilder"
-
-   # ====== Ubuntu 14.04 (Trusty Tahr) ======================================
-   - name: "Ubuntu 14.04 (Trusty Tahr) with GCC"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:trusty" VARIANT="ubuntu" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   - name: "Ubuntu 14.04 (Trusty Tahr) with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:trusty" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "Ubuntu 14.04 (Trusty Tahr) packaging with pbuilder"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:trusty" VARIANT="ubuntu" TOOL="pbuilder"
-
-
-    # ###### Debian Linux ###################################################
-
-    # ====== Debian Testing =================================================
-   - name: "Debian Testing with GCC"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="debian:testing" VARIANT="debian" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   - name: "Debian Testing with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="debian:testing" VARIANT="debian" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "Debian Testing packaging with pbuilder"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="debian:testing" VARIANT="debian" TOOL="pbuilder"
-
-   # ====== Debian Sid ======================================================
-   - name: "Debian Sid with GCC"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="debian:sid" VARIANT="debian" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   - name: "Debian Sid with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="debian:sid" VARIANT="debian" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "Debian Sid packaging with pbuilder"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="debian:sid" VARIANT="debian" TOOL="pbuilder"
-
-   # ====== Debian Buster ===================================================
-   - name: "Debian Buster with GCC"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="debian:buster" VARIANT="debian" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   - name: "Debian Buster with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="debian:buster" VARIANT="debian" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "Debian Buster packaging with pbuilder"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="debian:buster" VARIANT="debian" TOOL="pbuilder"
-
-   # ====== Debian Stretch ==================================================
-   - name: "Debian Stretch with GCC"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="debian:stretch" VARIANT="debian" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   - name: "Debian Stretch with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="debian:stretch" VARIANT="debian" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "Debian Stretch packaging with pbuilder"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="debian:stretch" VARIANT="debian" TOOL="pbuilder"
-
-
-   # ###### FreeBSD #########################################################
-
-   # ====== FreeBSD 12.0-RELEASE ============================================
-   - name: "FreeBSD 12.0-RELEASE with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: QEMU="FreeBSD" VARIANT="12.0-RELEASE" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "FreeBSD 12.0-RELEASE with GCC"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: QEMU="FreeBSD" VARIANT="12.0-RELEASE" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-
-   # ====== FreeBSD 11.3-RELEASE ============================================
-   - name: "FreeBSD 11.3-RELEASE with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: QEMU="FreeBSD" VARIANT="11.3-RELEASE" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "FreeBSD 11.3-RELEASE with GCC"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: QEMU="FreeBSD" VARIANT="11.3-RELEASE" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-
-   # ====== FreeBSD 11.2-RELEASE ============================================
-   - name: "FreeBSD 11.2-RELEASE with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: QEMU="FreeBSD" VARIANT="11.2-RELEASE" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "FreeBSD 11.2-RELEASE with GCC"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: QEMU="FreeBSD" VARIANT="11.2-RELEASE" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-
-
-   # ###### Fedora Linux ####################################################
-
-   ## ====== Fedora 31 =======================================================
-   #- name: "Fedora 31 with GCC"
+   ## ====== Ubuntu 19.10 (Eoan Ermine) ======================================
+   #- name: "Ubuntu 19.10 (Eoan Ermine) with GCC"
      #os: linux
      #dist: bionic
      #group: travis_latest
-     #env: DOCKER="fedora:31" VARIANT="fedora" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   #- name: "Fedora 31 with Clang"
+     #env: DOCKER="ubuntu:eoan" VARIANT="ubuntu" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+   #- name: "Ubuntu 19.10 (Eoan Ermine) with Clang"
      #os: linux
      #dist: bionic
      #group: travis_latest
-     #env: DOCKER="fedora:31" VARIANT="fedora" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   #- name: "Fedora 31 packaging with mock"
+     #env: DOCKER="ubuntu:eoan" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   #- name: "Ubuntu 19.10 (Eoan Ermine) packaging with pbuilder"
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="ubuntu:eoan" VARIANT="ubuntu" TOOL="pbuilder"
+
+   ## ====== Ubuntu 19.04 (Disco Dingo) ======================================
+   #- name: "Ubuntu 19.04 (Disco Dingo) with GCC"
      #os: linux
      #dist: bionic
      #group: travis_latest
-     #env: DOCKER="fedora:31" VARIANT="fedora" TOOL="mock"
+     #env: DOCKER="ubuntu:disco" VARIANT="ubuntu" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+   #- name: "Ubuntu 19.04 (Disco Dingo) with Clang"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="ubuntu:disco" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   #- name: "Ubuntu 19.04 (Disco Dingo) packaging with pbuilder"
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="ubuntu:disco" VARIANT="ubuntu" TOOL="pbuilder"
 
-   # ====== Fedora 30 =======================================================
-   - name: "Fedora 30 with GCC"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="fedora:30" VARIANT="fedora" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   - name: "Fedora 30 with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="fedora:30" VARIANT="fedora" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "Fedora 30 packaging with mock"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="fedora:30" VARIANT="fedora" TOOL="mock"
+   ## ====== Ubuntu 18.04 (Bionic Beaver) ====================================
+   #- name: "Ubuntu 18.04 (Bionic Beaver) with GCC"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="ubuntu:bionic" VARIANT="ubuntu" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+   #- name: "Ubuntu 18.04 (Bionic Beaver) with Clang"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="ubuntu:bionic" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   #- name: "Ubuntu 18.04 (Bionic Beaver) packaging with pbuilder"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="ubuntu:bionic" VARIANT="ubuntu" TOOL="pbuilder"
 
-   # ====== Fedora 29 =======================================================
-   - name: "Fedora 29 with GCC"
-     os: linux
-     dist: bionic
+   ## ====== Ubuntu 16.04 (Xenial Xerus) =====================================
+   #- name: "Ubuntu 16.04 (Xenial Xerus) with GCC"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="ubuntu:xenial" VARIANT="ubuntu" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+   #- name: "Ubuntu 16.04 (Xenial Xerus) with Clang"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="ubuntu:xenial" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   #- name: "Ubuntu 16.04 (Xenial Xerus) packaging with pbuilder"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="ubuntu:xenial" VARIANT="ubuntu" TOOL="pbuilder"
+
+   ## ====== Ubuntu 14.04 (Trusty Tahr) ======================================
+   #- name: "Ubuntu 14.04 (Trusty Tahr) with GCC"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="ubuntu:trusty" VARIANT="ubuntu" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+   #- name: "Ubuntu 14.04 (Trusty Tahr) with Clang"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="ubuntu:trusty" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   #- name: "Ubuntu 14.04 (Trusty Tahr) packaging with pbuilder"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="ubuntu:trusty" VARIANT="ubuntu" TOOL="pbuilder"
+
+
+    ## ###### Debian Linux ###################################################
+
+    ## ====== Debian Testing =================================================
+   #- name: "Debian Testing with GCC"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="debian:testing" VARIANT="debian" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+   #- name: "Debian Testing with Clang"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="debian:testing" VARIANT="debian" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   #- name: "Debian Testing packaging with pbuilder"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="debian:testing" VARIANT="debian" TOOL="pbuilder"
+
+   ## ====== Debian Sid ======================================================
+   #- name: "Debian Sid with GCC"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="debian:sid" VARIANT="debian" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+   #- name: "Debian Sid with Clang"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="debian:sid" VARIANT="debian" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   #- name: "Debian Sid packaging with pbuilder"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="debian:sid" VARIANT="debian" TOOL="pbuilder"
+
+   ## ====== Debian Buster ===================================================
+   #- name: "Debian Buster with GCC"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="debian:buster" VARIANT="debian" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+   #- name: "Debian Buster with Clang"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="debian:buster" VARIANT="debian" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   #- name: "Debian Buster packaging with pbuilder"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="debian:buster" VARIANT="debian" TOOL="pbuilder"
+
+   ## ====== Debian Stretch ==================================================
+   #- name: "Debian Stretch with GCC"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="debian:stretch" VARIANT="debian" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+   #- name: "Debian Stretch with Clang"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="debian:stretch" VARIANT="debian" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   #- name: "Debian Stretch packaging with pbuilder"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="debian:stretch" VARIANT="debian" TOOL="pbuilder"
+
+
+   ## ###### FreeBSD #########################################################
+
+   ## ====== FreeBSD 12.0-RELEASE ============================================
+   #- name: "FreeBSD 12.0-RELEASE with Clang"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: QEMU="FreeBSD" VARIANT="12.0-RELEASE" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   #- name: "FreeBSD 12.0-RELEASE with GCC"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: QEMU="FreeBSD" VARIANT="12.0-RELEASE" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+
+   ## ====== FreeBSD 11.3-RELEASE ============================================
+   #- name: "FreeBSD 11.3-RELEASE with Clang"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: QEMU="FreeBSD" VARIANT="11.3-RELEASE" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   #- name: "FreeBSD 11.3-RELEASE with GCC"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: QEMU="FreeBSD" VARIANT="11.3-RELEASE" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+
+   ## ====== FreeBSD 11.2-RELEASE ============================================
+   #- name: "FreeBSD 11.2-RELEASE with Clang"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: QEMU="FreeBSD" VARIANT="11.2-RELEASE" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   #- name: "FreeBSD 11.2-RELEASE with GCC"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: QEMU="FreeBSD" VARIANT="11.2-RELEASE" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+
+
+   ## ###### Fedora Linux ####################################################
+
+   ### ====== Fedora 31 =======================================================
+   ##- name: "Fedora 31 with GCC"
+     ##os: linux
+     ##dist: bionic
+     ##group: travis_latest
+     ##env: DOCKER="fedora:31" VARIANT="fedora" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+   ##- name: "Fedora 31 with Clang"
+     ##os: linux
+     ##dist: bionic
+     ##group: travis_latest
+     ##env: DOCKER="fedora:31" VARIANT="fedora" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   ##- name: "Fedora 31 packaging with mock"
+     ##os: linux
+     ##dist: bionic
+     ##group: travis_latest
+     ##env: DOCKER="fedora:31" VARIANT="fedora" TOOL="mock"
+
+   ## ====== Fedora 30 =======================================================
+   #- name: "Fedora 30 with GCC"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="fedora:30" VARIANT="fedora" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+   #- name: "Fedora 30 with Clang"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="fedora:30" VARIANT="fedora" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   #- name: "Fedora 30 packaging with mock"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="fedora:30" VARIANT="fedora" TOOL="mock"
+
+   ## ====== Fedora 29 =======================================================
+   #- name: "Fedora 29 with GCC"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="fedora:29" VARIANT="fedora" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+   #- name: "Fedora 29 with Clang"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="fedora:29" VARIANT="fedora" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   #- name: "Fedora 29 packaging with mock"
+     #os: linux
+     #dist: bionic
+     #group: travis_latest
+     #env: DOCKER="fedora:29" VARIANT="fedora" TOOL="mock"
+
+   ## ====== Fedora Rawhide ==================================================
+   ## - name: "Fedora Rawhide with GCC"
+   ##   os: linux
+   ##   dist: bionic
+   ##   group: travis_latest
+   ##   env: DOCKER="fedora:rawhide" VARIANT="fedora" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+   ## - name: "Fedora Rawhide with Clang"
+   ##   os: linux
+   ##   dist: bionic
+   ##   group: travis_latest
+   ##   env: DOCKER="fedora:rawhide" VARIANT="fedora" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   ## - name: "Fedora Rawhide packaging with mock"
+   ##   os: linux
+   ##   dist: bionic
+   ##   group: travis_latest
+   ##   env: DOCKER="fedora:rawhide" VARIANT="fedora" TOOL="mock"
+
+
+   # ###### Other ###########################################################
+
+   # ====== MacOS X ========================================================
+   - name: "MacOS X"
+     os: osx
+     compiler: clang
      group: travis_latest
-     env: DOCKER="fedora:29" VARIANT="fedora" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   - name: "Fedora 29 with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="fedora:29" VARIANT="fedora" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "Fedora 29 packaging with mock"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="fedora:29" VARIANT="fedora" TOOL="mock"
-
-   # ====== Fedora Rawhide ==================================================
-   # - name: "Fedora Rawhide with GCC"
-   #   os: linux
-   #   dist: bionic
-   #   group: travis_latest
-   #   env: DOCKER="fedora:rawhide" VARIANT="fedora" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   # - name: "Fedora Rawhide with Clang"
-   #   os: linux
-   #   dist: bionic
-   #   group: travis_latest
-   #   env: DOCKER="fedora:rawhide" VARIANT="fedora" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   # - name: "Fedora Rawhide packaging with mock"
-   #   os: linux
-   #   dist: bionic
-   #   group: travis_latest
-   #   env: DOCKER="fedora:rawhide" VARIANT="fedora" TOOL="mock"
-
-
-    # ###### Other ##########################################################
-
-    # ====== MacOS X ========================================================
-    #- os: osx
-    #  osx_image: xcode9.4
-    #  compiler: clang
-    #  group: travis_latest
 
 
 before_install:
