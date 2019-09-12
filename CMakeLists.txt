@@ -29,8 +29,34 @@
 # SUCH DAMAGE.
 #
 
-project(usrsctplib C)
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.0.2)
+project(libusrsctp C)
+
+SET(BUILD_MAJOR "1")
+SET(BUILD_MINOR "0")
+SET(BUILD_PATCH "0~td128")
+set(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
+
+
+# INSTALLATION_DIRECTORIES
+#################################################
+
+# See: https://cmake.org/cmake/help/v3.0/module/GNUInstallDirs.html
+INCLUDE(GNUInstallDirs)
+
+
+# TARBALL
+#################################################
+
+set(CPACK_SOURCE_GENERATOR "TGZ")
+set(CPACK_SOURCE_PACKAGE_FILE_NAME
+   "${CMAKE_PROJECT_NAME}-${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH}")
+set(CPACK_SOURCE_IGNORE_FILES
+   "${PROJECT_SOURCE_DIR}/${CMAKE_PROJECT_NAME}-*;${PROJECT_SOURCE_DIR}/${CMAKE_PROJECT_NAME}_*;/build/;/.git/;/CMakeFiles/;CMakeCache.txt$;.cmake$;.tar.gz$;/_CPack_Packages;/Makefile$;~$;/build-deb;/clean-deb;/filter-empty-entries;/make-symbols;/make-ppa;/make-deb;/debian.conf;/make-rpm;/rpm.conf;${CPACK_SOURCE_IGNORE_FILES}")
+message("CPACK_SOURCE_IGNORE_FILES = ${CPACK_SOURCE_IGNORE_FILES}")
+include(CPack)
+
+add_custom_target(dist COMMAND ${CMAKE_MAKE_PROGRAM} clean package_source)
 
 # Debug build type as default
 if (NOT CMAKE_BUILD_TYPE)
@@ -168,6 +194,18 @@ endif ()
 if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "AppleClang" OR CMAKE_C_COMPILER_ID MATCHES "GNU")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -pedantic -Wall -Wextra")
 
+	# Necessary for Fedora >= 30 and Ubuntu >= 19.10 builds:
+	check_c_compiler_flag(-Waddress-of-packed-member has_address_of_packed_member)
+	if (has_address_of_packed_member)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-address-of-packed-member")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member")
+	endif()
+	check_c_compiler_flag(-Wsign-compare has_no_sign_compare)
+	if (has_no_sign_compare)
+		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-sign-compare")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-sign-compare")
+	endif()
+
 	check_c_compiler_flag(-Wfloat-equal has_wfloat_equal)
 	if (has_wfloat_equal)
 		set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wfloat-equal")
@@ -263,6 +301,14 @@ message(STATUS "Compiler flags (CMAKE_C_FLAGS): ${CMAKE_C_FLAGS}")
 #################################################
 # INCLUDE SUBDIRS
 #################################################
+
+# Enable verbose output in DEBUG mode
+if (${CMAKE_BUILD_TYPE} MATCHES "DEBUG")
+    message(STATUS "enabling verbose outout")
+    set(CMAKE_VERBOSE_MAKEFILE on)
+endif()
+
+find_package(Threads REQUIRED)
 
 add_subdirectory(usrsctplib)
 
