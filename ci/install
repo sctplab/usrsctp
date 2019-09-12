@@ -437,8 +437,11 @@ elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
 # ###### MacOS X ############################################################
 elif [ "${TRAVIS_OS_NAME}" == "osx" ] ; then
 
-   brew update
-   brew install $@
+   # For MacOS, the dependencies have to be specified as parameters to "ci/install":
+   if [ "$@" != "" ] ; then
+      brew update
+      brew install $@
+   fi
 
 
 # ###### Error ##############################################################
