@@ -35,7 +35,7 @@
 #include <sys/time.h>
 #include <usrsctp.h>
 
-//#define FUZZ_VERBOSE
+#define FUZZ_VERBOSE
 #define FUZZ_INTERLEAVING
 #define FUZZ_EXPLICIT_EOR
 #define FUZZ_STREAM_RESET
@@ -43,7 +43,50 @@
 
 #define BUFFERSIZE 256
 
-static const char *init_ack = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\x02\x00\x01\xf8" \
+#define SCTP_PACKED __attribute__((packed))
+
+/* Initiate (INIT)/Initiate Ack (INIT ACK) */
+struct sctp_init {
+	uint32_t initiate_tag;	/* initiate tag */
+	uint32_t a_rwnd;	/* a_rwnd */
+	uint16_t num_outbound_streams;	/* OS */
+	uint16_t num_inbound_streams;	/* MIS */
+	uint32_t initial_tsn;	/* I-TSN */
+	/* optional param's follow */
+} SCTP_PACKED;
+
+/*
+ * SCTP Chunks
+ */
+struct sctp_chunkhdr {
+	uint8_t chunk_type;	/* chunk type */
+	uint8_t chunk_flags;	/* chunk flags */
+	uint16_t chunk_length;	/* chunk length */
+	/* optional params follow */
+} SCTP_PACKED;
+
+/*
+ * SCTP protocol - RFC4960.
+ */
+struct sctphdr {
+	uint16_t src_port;	/* source port */
+	uint16_t dest_port;	/* destination port */
+	uint32_t v_tag;		/* verification tag of packet */
+	uint32_t checksum;	/* CRC32C checksum */
+	/* chunks follow... */
+} SCTP_PACKED;
+
+struct sctp_init_chunk {
+	struct sctp_chunkhdr ch;
+	struct sctp_init init;
+} SCTP_PACKED;
+
+struct sctp_init_msg {
+	struct sctphdr sh;
+	struct sctp_init_chunk msg;
+} SCTP_PACKED;
+
+static char *init_ack = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\x02\x00\x01\xf8" \
 "\xc7\xa1\xb0\x4d\x00\x1c\x71\xc7\x00\x0a\xff\xff\x03\x91\x94\x1b" \
 "\x80\x00\x00\x04\xc0\x00\x00\x04\x80\x08\x00\x09\xc0\x0f\xc1\x80" \
 "\x82\x00\x00\x00\x80\x02\x00\x24\x61\x6c\x7e\x52\x2a\xdb\xe0\xa2" \
@@ -77,9 +120,9 @@ static const char *init_ack = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\
 "\x64\x30\x8a\xb9\x7c\xe5\x93\x69\x52\xa9\xc8\xd5\xa1\x1b\x7d\xef" \
 "\xea\xfa\x23\x32";
 
-static const char *cookie_ack = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\x0b\x00\x00\x04";
-static const char *sctp_abort = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\x06\x00\x00\x08\x00\x0c\x00\x04";
-static const char *sctp_i_data = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00" \
+static char *cookie_ack = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\x0b\x00\x00\x04";
+static char *sctp_abort = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\x06\x00\x00\x08\x00\x0c\x00\x04";
+static char *sctp_i_data = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00" \
 "\x00\x1b\x21\x73\xa3\x58\x90\xe2\xba\x9e\x8c\xfc\x08\x00\x45\x02" \
 "\x04\x34\x00\x00\x40\x00\x40\x84\x9a\x0b\xd4\xc9\x79\x52\xd4\xc9" \
 "\x79\x53\x65\x75\x13\x89\x11\x97\x93\x37\x26\x6c\xb7\x65\x40\x02" \
@@ -149,7 +192,11 @@ static const char *sctp_i_data = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x
 "\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41" \
 "\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41" \
 "\x41\x41";
-static const char *common_header = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00";
+static char *common_header = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00";
+
+static char *init_chunk_first_bytes = "\xe7\xd0\x13\x89\x00\x00\x00\x00\x00\x00\x00\x00";
+
+static uint32_t vtag = 0;
 
 #ifdef FUZZ_VERBOSE
 static char *dump_buf;
@@ -197,6 +244,17 @@ dump_packet(const void *buffer, size_t bufferlen, int inout) {
 static int
 conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 {
+	if (length >= strlen(init_chunk_first_bytes) && memcmp(buf, init_chunk_first_bytes, strlen(init_chunk_first_bytes)) == 0) {
+
+
+		struct sctp_init_msg *sctp_init = (struct sctp_init_msg*) buf;
+		struct sctphdr *hdr = (struct sctphdr*) common_header;
+
+		debug_printf("Found INIT, extracting VTAG : %d\n", sctp_init->msg.init.initiate_tag);
+
+		hdr->v_tag = sctp_init->msg.init.initiate_tag;
+
+	}
 	dump_packet(buf, length, SCTP_DUMP_OUTBOUND);
 	return (0);
 }
