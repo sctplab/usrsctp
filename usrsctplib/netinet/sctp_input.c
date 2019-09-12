@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 349986 2019-07-14 12:04:39Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 351654 2019-09-01 10:09:53Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -471,21 +471,49 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 {
 	struct sctp_association *asoc;
 	struct mbuf *op_err;
-	int retval, abort_flag;
-	uint32_t initack_limit;
+	int retval, abort_flag, cookie_found;
+	int initack_limit;
 	int nat_friendly = 0;
 
 	/* First verify that we have no illegal param's */
 	abort_flag = 0;
+	cookie_found = 0;
 
 	op_err = sctp_arethere_unrecognized_parameters(m,
 						       (offset + sizeof(struct sctp_init_chunk)),
-						       &abort_flag, (struct sctp_chunkhdr *)cp, &nat_friendly);
+						       &abort_flag, (struct sctp_chunkhdr *)cp,
+						       &nat_friendly, &cookie_found);
 	if (abort_flag) {
 		/* Send an abort and notify peer */
 		sctp_abort_an_association(stcb->sctp_ep, stcb, op_err, SCTP_SO_NOT_LOCKED);
 		*abort_no_unlock = 1;
 		return (-1);
+	}
+	if (!cookie_found) {
+		uint16_t len;
+
+		len = (uint16_t)(sizeof(struct sctp_error_missing_param) + sizeof(uint16_t));
+		/* We abort with an error of missing mandatory param */
+		op_err = sctp_get_mbuf_for_msg(len, 0, M_NOWAIT, 1, MT_DATA);
+		if (op_err != NULL) {
+			struct sctp_error_missing_param *cause;
+
+			SCTP_BUF_LEN(op_err) = len;
+			cause = mtod(op_err, struct sctp_error_missing_param *);
+			/* Subtract the reserved param */
+			cause->cause.code = htons(SCTP_CAUSE_MISSING_PARAM);
+			cause->cause.length = htons(len);
+			cause->num_missing_params = htonl(1);
+			cause->type[0] = htons(SCTP_STATE_COOKIE);
+		}
+		sctp_abort_association(stcb->sctp_ep, stcb, m, iphlen,
+				       src, dst, sh, op_err,
+#if defined(__FreeBSD__)
+				       mflowtype, mflowid,
+#endif
+				       vrf_id, net->port);
+		*abort_no_unlock = 1;
+		return (-3);
 	}
 	asoc = &stcb->asoc;
 	asoc->peer_supports_nat = (uint8_t)nat_friendly;
@@ -578,42 +606,8 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 		}
 	}
 #endif
-	retval = sctp_send_cookie_echo(m, offset, stcb, net);
-	if (retval < 0) {
-		/*
-		 * No cookie, we probably should send a op error. But in any
-		 * case if there is no cookie in the INIT-ACK, we can
-		 * abandon the peer, its broke.
-		 */
-		if (retval == -3) {
-			uint16_t len;
-
-			len = (uint16_t)(sizeof(struct sctp_error_missing_param) + sizeof(uint16_t));
-			/* We abort with an error of missing mandatory param */
-			op_err = sctp_get_mbuf_for_msg(len, 0, M_NOWAIT, 1, MT_DATA);
-			if (op_err != NULL) {
-				struct sctp_error_missing_param *cause;
-
-				SCTP_BUF_LEN(op_err) = len;
-				cause = mtod(op_err, struct sctp_error_missing_param *);
-				/* Subtract the reserved param */
-				cause->cause.code = htons(SCTP_CAUSE_MISSING_PARAM);
-				cause->cause.length = htons(len);
-				cause->num_missing_params = htonl(1);
-				cause->type[0] = htons(SCTP_STATE_COOKIE);
-			}
-			sctp_abort_association(stcb->sctp_ep, stcb, m, iphlen,
-			                       src, dst, sh, op_err,
-#if defined(__FreeBSD__)
-			                       mflowtype, mflowid,
-#endif
-			                       vrf_id, net->port);
-			*abort_no_unlock = 1;
-		}
-		return (retval);
-	}
-
-	return (0);
+	retval = sctp_send_cookie_echo(m, offset, initack_limit, stcb, net);
+	return (retval);
 }
 
 static void
