@@ -278,23 +278,23 @@ matrix:
 
    # ###### Other ###########################################################
 
-   # ====== MacOS X ========================================================
-   - name: "MacOS 10.14"
+   # ====== MacOS X =========================================================
+   - name: "MacOS 10.14 with Xcode 11"
      os: osx
      osx_image: xcode11
      compiler: clang
      group: travis_latest
-   - name: "MacOS 10.13"
+   - name: "MacOS 10.13 with Xcode 10"
      os: osx
      osx_image: xcode10
      compiler: clang
      group: travis_latest
-   - name: "MacOS 10.12"
+   - name: "MacOS 10.12 with Xcode 9"
      os: osx
      osx_image: xcode9
      compiler: clang
      group: travis_latest
-   - name: "MacOS 10.11"
+   - name: "MacOS 10.11 with Xcode 8"
      os: osx
      osx_image: xcode8
      compiler: clang
