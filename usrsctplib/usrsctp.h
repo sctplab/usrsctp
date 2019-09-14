@@ -1033,6 +1033,9 @@ int
 usrsctp_set_ulpinfo(struct socket *, void *);
 
 int
+usrsctp_set_sb_threshold(struct socket *, uint32_t);
+
+int
 usrsctp_set_upcall(struct socket *so,
                    void (*upcall)(struct socket *, void *, int),
                    void *arg);

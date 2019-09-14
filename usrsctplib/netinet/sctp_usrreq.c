@@ -9073,4 +9073,19 @@ register_ulp_info (struct socket *so, void *ulp_info)
 	SCTP_INP_WUNLOCK(inp);
 	return (1);
 }
+
+int
+register_sb_threshold(struct socket *so, uint32_t sb_threshold)
+{
+	struct sctp_inpcb *inp;
+
+	inp = (struct sctp_inpcb *) so->so_pcb;
+	if (inp == NULL) {
+		return (0);
+	}
+	SCTP_INP_WLOCK(inp);
+	inp->send_sb_threshold = sb_threshold;
+	SCTP_INP_WUNLOCK(inp);
+	return (1);
+}
 #endif

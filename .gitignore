@@ -83,3 +83,6 @@ callgrind.out*
 
 # cmake build
 /build
+
+# ctags
+tags

@@ -2585,6 +2585,12 @@ usrsctp_set_ulpinfo(struct socket *so, void *ulp_info)
 }
 
 int
+usrsctp_set_sb_threshold(struct socket *so, uint32_t sb_threshold)
+{
+    return (register_sb_threshold(so, sb_threshold));
+}
+
+int
 usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 {
 	struct sctp_getaddresses *gaddrs;
