@@ -592,14 +592,18 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 			sb_free_now = SCTP_SB_LIMIT_SND(stcb->sctp_socket) - (inqueue_bytes + stcb->asoc.sb_send_resv);
 
 			/* check if the amount free in the send socket buffer crossed the threshold */
-			if (inp->send_callback &&
+			if ((inp->send_callback || inp->send_callback2) &&
 			    (((inp->send_sb_threshold > 0) &&
 			      (sb_free_now >= inp->send_sb_threshold) &&
 			      (stcb->asoc.chunks_on_out_queue <= SCTP_BASE_SYSCTL(sctp_max_chunks_on_queue))) ||
 			     (inp->send_sb_threshold == 0))) {
 				atomic_add_int(&stcb->asoc.refcnt, 1);
 				SCTP_TCB_UNLOCK(stcb);
-				inp->send_callback(stcb->sctp_socket, sb_free_now);
+                if (inp->send_callback) {
+                    inp->send_callback(stcb->sctp_socket, sb_free_now);
+                } else {
+                    inp->send_callback2(stcb->sctp_socket, sb_free_now, stcb->sctp_ep->ulp_info);
+                }
 				SCTP_TCB_LOCK(stcb);
 				atomic_subtract_int(&stcb->asoc.refcnt, 1);
 			}
@@ -3034,6 +3038,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 			inp->ulp_info = (*inp_p)->ulp_info;
 			inp->recv_callback = (*inp_p)->recv_callback;
 			inp->send_callback = (*inp_p)->send_callback;
+			inp->send_callback2 = (*inp_p)->send_callback2;
 			inp->send_sb_threshold = (*inp_p)->send_sb_threshold;
 #endif
 			/*

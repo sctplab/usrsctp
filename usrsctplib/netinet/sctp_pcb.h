@@ -600,6 +600,7 @@ struct sctp_inpcb {
                              struct sctp_rcvinfo, int, void *);
 	uint32_t send_sb_threshold;
 	int (*send_callback)(struct socket *, uint32_t);
+	int (*send_callback2)(struct socket *, uint32_t, void *);
 #endif
 };
 
@@ -608,6 +609,7 @@ int register_recv_cb (struct socket *,
                       int (*)(struct socket *, union sctp_sockstore, void *, size_t,
                               struct sctp_rcvinfo, int, void *));
 int register_send_cb (struct socket *, uint32_t, int (*)(struct socket *, uint32_t));
+int register_send_cb2 (struct socket *, uint32_t, int (*)(struct socket *, uint32_t, void *));
 int register_ulp_info (struct socket *, void *);
 
 #endif

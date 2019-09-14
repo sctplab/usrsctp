@@ -154,6 +154,7 @@ sctp_do_peeloff(struct socket *head, struct socket *so, sctp_assoc_t assoc_id)
 	n_inp->ulp_info = inp->ulp_info;
 	n_inp->recv_callback = inp->recv_callback;
 	n_inp->send_callback = inp->send_callback;
+	n_inp->send_callback2 = inp->send_callback2;
 	n_inp->send_sb_threshold = inp->send_sb_threshold;
 #endif
 	/*
@@ -259,6 +260,7 @@ sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
 	n_inp->ulp_info = inp->ulp_info;
 	n_inp->recv_callback = inp->recv_callback;
 	n_inp->send_callback = inp->send_callback;
+	n_inp->send_callback2 = inp->send_callback2;
 	n_inp->send_sb_threshold = inp->send_sb_threshold;
 #endif
 

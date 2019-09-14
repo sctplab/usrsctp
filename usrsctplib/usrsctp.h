@@ -907,6 +907,14 @@ usrsctp_socket(int domain, int type, int protocol,
                uint32_t sb_threshold,
                void *ulp_info);
 
+struct socket *
+usrsctp_socket2(int domain, int type, int protocol,
+               int (*receive_cb)(struct socket *sock, union sctp_sockstore addr, void *data,
+                                 size_t datalen, struct sctp_rcvinfo, int flags, void *ulp_info),
+               int (*send_cb2)(struct socket *sock, uint32_t sb_free, void *ulp_info),
+               uint32_t sb_threshold,
+               void *ulp_info);
+
 int
 usrsctp_setsockopt(struct socket *so,
                    int level,

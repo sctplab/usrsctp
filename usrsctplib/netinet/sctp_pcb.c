@@ -2844,6 +2844,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	inp->ulp_info = NULL;
 	inp->recv_callback = NULL;
 	inp->send_callback = NULL;
+	inp->send_callback2 = NULL;
 	inp->send_sb_threshold = 0;
 #endif
 	/* init the small hash table we use to track asocid <-> tcb */

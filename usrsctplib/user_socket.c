@@ -1461,6 +1461,44 @@ usrsctp_socket(int domain, int type, int protocol,
 	return (so);
 }
 
+struct socket *
+usrsctp_socket2(int domain, int type, int protocol,
+	       int (*receive_cb)(struct socket *sock, union sctp_sockstore addr, void *data,
+                                 size_t datalen, struct sctp_rcvinfo, int flags, void *ulp_info),
+	       int (*send_cb2)(struct socket *sock, uint32_t sb_free, void* ulp_info),
+	       uint32_t sb_threshold,
+	       void *ulp_info)
+{
+	struct socket *so;
+
+	if ((protocol == IPPROTO_SCTP) && (SCTP_BASE_VAR(sctp_pcb_initialized) == 0)) {
+		errno = EPROTONOSUPPORT;
+		return (NULL);
+	}
+	if ((receive_cb == NULL) &&
+	    ((send_cb2 != NULL) || (sb_threshold != 0) || (ulp_info != NULL))) {
+		errno = EINVAL;
+		return (NULL);
+	}
+	if ((domain == AF_CONN) && (SCTP_BASE_VAR(conn_output) == NULL)) {
+		errno = EAFNOSUPPORT;
+		return (NULL);
+	}
+	errno = socreate(domain, &so, type, protocol);
+	if (errno) {
+		return (NULL);
+	}
+	/*
+	 * The original socket call returns the file descriptor fd.
+	 * td->td_retval[0] = fd.
+	 * We are returning struct socket *so.
+	 */
+	register_recv_cb(so, receive_cb);
+	register_send_cb2(so, sb_threshold, send_cb2);
+	register_ulp_info(so, ulp_info);
+	return (so);
+}
+
 
 u_long	sb_max = SB_MAX;
 u_long sb_max_adj =
@@ -2579,7 +2617,7 @@ usrsctp_opt_info(struct socket *so, sctp_assoc_t id, int opt, void *arg, socklen
 }
 
 int
-usrsctp_set_ulpinfo(struct socket *so, void *ulp_info)
+usrsctp_set_ulp_info(struct socket *so, void *ulp_info)
 {
 	return (register_ulp_info(so, ulp_info));
 }
