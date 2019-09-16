@@ -35,7 +35,7 @@
 #include <sys/time.h>
 #include <usrsctp.h>
 
-//#define FUZZ_VERBOSE
+#define FUZZ_VERBOSE
 #define FUZZ_INTERLEAVING
 #define FUZZ_EXPLICIT_EOR
 #define FUZZ_STREAM_RESET
@@ -424,7 +424,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 #if defined(FUZZ_COOKIE_ECHOED) || defined(FUZZ_ESTABLISHED) || defined(FUZZ_DATA_SENT) || defined(FUZZ_DATA_RECEIVED)
 	// Inject INIT-ACK
 	fuzzing_header = (struct sctp_header *) init_ack;
-	//fuzzing_header->v_tag = assoc_vtag;
+	fuzzing_header->v_tag = assoc_vtag;
 	dump_packet(init_ack, 516, SCTP_DUMP_INBOUND);
 	usrsctp_conninput((void *)1, init_ack, 516, 0);
 	debug_printf(" >>> INIT_ACK\n");
