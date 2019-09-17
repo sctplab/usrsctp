@@ -28,7 +28,6 @@
  * SUCH DAMAGE.
  */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -96,7 +95,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 		debug_printf("Found INIT, extracting VTAG : %u\n", init_chunk->initiate_tag);
 		assoc_vtag = init_chunk->initiate_tag;
 	}
-	
+
 	dump_packet(buf, length, SCTP_DUMP_OUTBOUND);
 	return (0);
 }
@@ -167,7 +166,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	};
 
 	// WITH COMMON HEADER!
-	char fuzz_init_ack[] = "\x13\x89\x13\x88\xef\x38\x12\x25\x00\x00\x00\x00\x02\x00\x01\xf8" \
+	char fuzz_init_ack[] = "\x13\x89\x13\x88\x54\xc2\x7c\x46\x00\x00\x00\x00\x02\x00\x01\xf8" \
 		"\xc7\xa1\xb0\x4d\x00\x1c\x71\xc7\x00\x0a\xff\xff\x03\x91\x94\x1b" \
 		"\x80\x00\x00\x04\xc0\x00\x00\x04\x80\x08\x00\x09\xc0\x0f\xc1\x80" \
 		"\x82\x00\x00\x00\x80\x02\x00\x24\x61\x6c\x7e\x52\x2a\xdb\xe0\xa2" \
@@ -202,13 +201,13 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		"\xea\xfa\x23\x32";
 
 	// WITH COMMON HEADER!
-	char fuzz_cookie_ack[] = "\x13\x89\x13\x88\xef\x38\x12\x25\x00\x00\x00\x00\x0b\x00\x00\x04";
+	char fuzz_cookie_ack[] = "\x13\x89\x13\x88\x54\xc2\x7c\x46\x00\x00\x00\x00\x0b\x00\x00\x04";
 
 	// WITH COMMON HEADER!
-	char fuzz_abort[] = "\x13\x89\x13\x88\xef\x38\x12\x25\x00\x00\x00\x00\x06\x00\x00\x08\x00\x0c\x00\x04";
+	char fuzz_abort[] = "\x13\x89\x13\x88\x54\xc2\x7c\x46\x00\x00\x00\x00\x06\x00\x00\x08\x00\x0c\x00\x04";
 
 	// WITH COMMON HEADER!
-	char fuzz_i_data[] = "\x13\x89\x13\x88\xef\x38\x12\x25\x00\x00\x00\x00" \
+	char fuzz_i_data[] = "\x13\x89\x13\x88\x54\xc2\x7c\x46\x00\x00\x00\x00" \
 		"\x00\x1b\x04\x42\xa3\x58\x90\xe2\xba\x9e\x8c\xfc\x08\x00\x45\x02" \
 		"\x04\x34\x00\x00\x40\x00\x40\x84\x9a\x0b\xd4\xc9\x79\x52\xd4\xc9" \
 		"\x79\x53\x65\x75\x13\x89\x11\x97\x93\x37\x26\x6c\xb7\x65\x40\x02" \
@@ -279,7 +278,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		"\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41" \
 		"\x41\x41";
 
-	char fuzz_common_header[] = "\x13\x89\x13\x88\xef\x38\x12\x25\x00\x00\x00\x00";
+	char fuzz_common_header[] = "\x13\x89\x13\x88\x54\xc2\x7c\x46\x00\x00\x00\x00";
 
 	debug_printf(">>>>>>>>>>>>>>>>>>> LLVMFuzzerTestOneInput()\n");
 
@@ -424,8 +423,12 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 	// Inject fuzzed packet
 	pktbuf = malloc(data_size + 12);
-	memcpy(pktbuf, common_header, 12); // common header
+	memcpy(pktbuf, fuzz_common_header, 12); // common header
 	memcpy(pktbuf + 12, data, data_size);
+
+	common_header = (struct sctp_common_header*) pktbuf;
+	common_header->verification_tag = assoc_vtag;
+
 	dump_packet(pktbuf, data_size + 12, SCTP_DUMP_INBOUND);
 	usrsctp_conninput((void *)1, pktbuf, data_size + 12, 0);
 
@@ -434,5 +437,6 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	free(pktbuf);
 	return (0);
 }
+
 
 
