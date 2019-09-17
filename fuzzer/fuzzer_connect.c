@@ -36,7 +36,7 @@
 #include <usrsctp.h>
 #include "fuzzer_common.h"
 
-//#define FUZZ_VERBOSE
+#define FUZZ_VERBOSE
 #define FUZZ_INTERLEAVING
 #define FUZZ_EXPLICIT_EOR
 #define FUZZ_STREAM_RESET
@@ -164,6 +164,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		SCTP_ADAPTATION_INDICATION,
 		SCTP_PARTIAL_DELIVERY_EVENT
 	};
+	uint8_t fuzzing_stage = FUZZING_STAGE;
 
 	// WITH COMMON HEADER!
 	char fuzz_init_ack[] = "\x13\x89\x13\x88\x54\xc2\x7c\x46\x00\x00\x00\x00\x02\x00\x01\xf8" \
@@ -280,7 +281,11 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 	char fuzz_common_header[] = "\x13\x89\x13\x88\x54\xc2\x7c\x46\x00\x00\x00\x00";
 
-	debug_printf(">>>>>>>>>>>>>>>>>>> LLVMFuzzerTestOneInput()\n");
+	if (!fuzzing_stage) {
+		fuzzing_stage = (data[0] % 5) + 1;
+	}
+
+	debug_printf(">>>>>>>>>>>>>>>>>>> LLVMFuzzerTestOneInput() - Stage %d\n", fuzzing_stage);
 
 #if defined(FUZZ_EXPLICIT_EOR) || defined(FUZZ_INTERLEAVING)
 	int enable;
@@ -389,37 +394,37 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		}
 	}
 
-#if defined(FUZZ_COOKIE_ECHOED) || defined(FUZZ_ESTABLISHED) || defined(FUZZ_DATA_SENT) || defined(FUZZ_DATA_RECEIVED)
-	// Inject INIT-ACK
-	common_header = (struct sctp_common_header*) fuzz_init_ack;
-	common_header->verification_tag = assoc_vtag;
-	dump_packet(fuzz_init_ack, 516, SCTP_DUMP_INBOUND);
-	usrsctp_conninput((void *)1, fuzz_init_ack, 516, 0);
-	debug_printf(" >>> INIT_ACK\n");
-#endif
+	if (fuzzing_stage > 0) {
+		// Inject INIT-ACK
+		common_header = (struct sctp_common_header*) fuzz_init_ack;
+		common_header->verification_tag = assoc_vtag;
+		dump_packet(fuzz_init_ack, 516, SCTP_DUMP_INBOUND);
+		usrsctp_conninput((void *)1, fuzz_init_ack, 516, 0);
+		debug_printf(" >>> Injecting INIT_ACK\n");
+	}
 
-#if defined(FUZZ_ESTABLISHED) || defined(FUZZ_DATA_SENT) || defined(FUZZ_DATA_RECEIVED)
-	// Inject COOKIE ACK
-	common_header = (struct sctp_common_header*) fuzz_cookie_ack;
-	common_header->verification_tag = assoc_vtag;
-	dump_packet(fuzz_cookie_ack, 16, SCTP_DUMP_INBOUND);
-	usrsctp_conninput((void *)1, fuzz_cookie_ack, 16, 0);
-	debug_printf(" >>> COOKIE_ACK\n");
-#endif
+	if (fuzzing_stage > 1) {
+		// Inject COOKIE ACK
+		common_header = (struct sctp_common_header*) fuzz_cookie_ack;
+		common_header->verification_tag = assoc_vtag;
+		dump_packet(fuzz_cookie_ack, 16, SCTP_DUMP_INBOUND);
+		usrsctp_conninput((void *)1, fuzz_cookie_ack, 16, 0);
+		debug_printf(" >>> Injecting COOKIE_ACK\n");
+	}
 
-#if defined(FUZZ_DATA_SENT)
-	const char *sendbuffer = "Geologie ist keine richtige Wissenschaft!";
-	usrsctp_sendv(socket_client, sendbuffer, strlen(sendbuffer), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
-#endif
+	if (fuzzing_stage == 4) {
+		const char *sendbuffer = "Geologie ist keine richtige Wissenschaft!";
+		usrsctp_sendv(socket_client, sendbuffer, strlen(sendbuffer), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
+	}
 
-#if defined(FUZZ_DATA_RECEIVED)
-	// Inject I_DATA ACK
-	common_header = (struct sctp_common_header*) fuzz_i_data;
-	common_header->verification_tag = assoc_vtag;
-	dump_packet(fuzz_i_data, 1102, SCTP_DUMP_INBOUND);
-	usrsctp_conninput((void *)1, fuzz_i_data, 1102, 0);
-	debug_printf(" >>> I_DATA\n");
-#endif
+	if (fuzzing_stage == 5) {
+		// Inject I_DATA ACK
+		common_header = (struct sctp_common_header*) fuzz_i_data;
+		common_header->verification_tag = assoc_vtag;
+		dump_packet(fuzz_i_data, 1102, SCTP_DUMP_INBOUND);
+		usrsctp_conninput((void *)1, fuzz_i_data, 1102, 0);
+		debug_printf(" >>> Injecting I_DATA\n");
+	}
 
 	// Inject fuzzed packet
 	pktbuf = malloc(data_size + 12);

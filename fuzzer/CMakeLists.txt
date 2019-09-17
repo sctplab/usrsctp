@@ -68,25 +68,37 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer")
 # PROGRAMS
 #################################################
 
+# FUZZING_STAGE LEVELS
+# 0 - MULTI - based on input
+# 1 - COOKIE_WAIT
+# 2 - COOKIE_ECHO
+# 3 - ESTABLISHED
+# 4 - DATA SENT
+# 5 - DATA RECEIVED
+
 add_executable(fuzzer_listen fuzzer_listen.c)
 target_link_libraries(fuzzer_listen usrsctp-static)
 
+add_executable(fuzzer_connect_multi fuzzer_connect.c)
+target_compile_definitions(fuzzer_connect_multi PRIVATE FUZZING_STAGE=0)
+target_link_libraries(fuzzer_connect_multi usrsctp-static)
+
 add_executable(fuzzer_connect_cookie_wait fuzzer_connect.c)
-target_compile_definitions(fuzzer_connect_cookie_wait PRIVATE FUZZ_COOKIE_WAIT)
+target_compile_definitions(fuzzer_connect_cookie_wait PRIVATE FUZZING_STAGE=1)
 target_link_libraries(fuzzer_connect_cookie_wait usrsctp-static)
 
 add_executable(fuzzer_connect_cookie_echoed fuzzer_connect.c)
-target_compile_definitions(fuzzer_connect_cookie_echoed PRIVATE FUZZ_COOKIE_ECHOED)
+target_compile_definitions(fuzzer_connect_cookie_echoed PRIVATE FUZZING_STAGE=2)
 target_link_libraries(fuzzer_connect_cookie_echoed usrsctp-static)
 
 add_executable(fuzzer_connect_established fuzzer_connect.c)
-target_compile_definitions(fuzzer_connect_established PRIVATE FUZZ_ESTABLISHED)
+target_compile_definitions(fuzzer_connect_established PRIVATE FUZZING_STAGE=3)
 target_link_libraries(fuzzer_connect_established usrsctp-static)
 
 add_executable(fuzzer_connect_data_sent fuzzer_connect.c)
-target_compile_definitions(fuzzer_connect_data_sent PRIVATE FUZZ_DATA_SENT)
+target_compile_definitions(fuzzer_connect_data_sent PRIVATE FUZZING_STAGE=4)
 target_link_libraries(fuzzer_connect_data_sent usrsctp-static)
 
 add_executable(fuzzer_connect_data_received fuzzer_connect.c)
-target_compile_definitions(fuzzer_connect_data_received PRIVATE FUZZ_DATA_RECEIVED)
+target_compile_definitions(fuzzer_connect_data_received PRIVATE FUZZING_STAGE=5)
 target_link_libraries(fuzzer_connect_data_received usrsctp-static)
