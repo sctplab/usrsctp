@@ -34,57 +34,15 @@
 #include <stdarg.h>
 #include <sys/time.h>
 #include <usrsctp.h>
+#include "fuzzer_common.h"
 
-#define FUZZ_VERBOSE
+//#define FUZZ_VERBOSE
 #define FUZZ_INTERLEAVING
 #define FUZZ_EXPLICIT_EOR
 #define FUZZ_STREAM_RESET
 #define FUZZ_DISABLE_LINGER
 
 #define BUFFERSIZE 256
-
-#define SCTP_PACKED __attribute__((packed))
-
-/* Initiate (INIT)/Initiate Ack (INIT ACK) */
-struct sctp_init {
-	uint32_t initiate_tag;	/* initiate tag */
-	uint32_t a_rwnd;	/* a_rwnd */
-	uint16_t num_outbound_streams;	/* OS */
-	uint16_t num_inbound_streams;	/* MIS */
-	uint32_t initial_tsn;	/* I-TSN */
-	/* optional param's follow */
-} SCTP_PACKED;
-
-/*
- * SCTP Chunks
- */
-struct sctp_chunkhdr {
-	uint8_t chunk_type;	/* chunk type */
-	uint8_t chunk_flags;	/* chunk flags */
-	uint16_t chunk_length;	/* chunk length */
-	/* optional params follow */
-} SCTP_PACKED;
-
-/*
- * SCTP protocol - RFC4960.
- */
-struct sctp_header {
-	uint16_t src_port;	/* source port */
-	uint16_t dest_port;	/* destination port */
-	uint32_t v_tag;		/* verification tag of packet */
-	uint32_t checksum;	/* CRC32C checksum */
-	/* chunks follow... */
-} SCTP_PACKED;
-
-struct sctp_init_chunk {
-	struct sctp_chunkhdr ch;
-	struct sctp_init init;
-} SCTP_PACKED;
-
-struct sctp_init_msg {
-	struct sctp_header sh;
-	struct sctp_init_chunk msg;
-} SCTP_PACKED;
 
 static uint32_t assoc_vtag = 0;
 
@@ -128,18 +86,14 @@ dump_packet(const void *buffer, size_t bufferlen, int inout) {
 static int
 conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 {
-	struct sctp_init_msg *sctp_init;
-	struct sctp_header *fuzzer_header;
+	struct sctp_init_chunk *init_chunk;
 	const char *init_chunk_first_bytes = "\xe7\xd0\x13\x89\x00\x00\x00\x00\x00\x00\x00\x00";
 
 	if ((length >= 13) && (memcmp(buf, init_chunk_first_bytes, 12) == 0)) {
 		debug_printf("length %d / sizeof %lu\n", length, sizeof(init_chunk_first_bytes));
-		sctp_init = (struct sctp_init_msg*) buf;
-		debug_printf("Found INIT, extracting VTAG : %d\n", sctp_init->msg.init.initiate_tag);
-
-
-		fuzzer_header = (struct sctp_header *) buf;
-		fuzzer_header->v_tag = sctp_init->msg.init.initiate_tag;;
+		init_chunk = (struct sctp_init_chunk*) ((char *)buf + sizeof(struct sctp_common_header));
+		debug_printf("Found INIT, extracting VTAG : %u\n", init_chunk->initiate_tag);
+		assoc_vtag = init_chunk->initiate_tag;
 	} else {
 
 	}
@@ -200,6 +154,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	struct linger so_linger;
 	struct sctp_event event;
 	unsigned long i;
+	struct sctp_common_header* common_header;
 	uint16_t event_types[] = {
 		SCTP_ASSOC_CHANGE,
 		SCTP_PEER_ADDR_CHANGE,
@@ -210,10 +165,8 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		SCTP_PARTIAL_DELIVERY_EVENT
 	};
 
-	struct sctp_header *fuzzing_header;
-
 	// WITH COMMON HEADER!
-	char *init_ack = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\x02\x00\x01\xf8" \
+	char fuzz_init_ack[] = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\x02\x00\x01\xf8" \
 		"\xc7\xa1\xb0\x4d\x00\x1c\x71\xc7\x00\x0a\xff\xff\x03\x91\x94\x1b" \
 		"\x80\x00\x00\x04\xc0\x00\x00\x04\x80\x08\x00\x09\xc0\x0f\xc1\x80" \
 		"\x82\x00\x00\x00\x80\x02\x00\x24\x61\x6c\x7e\x52\x2a\xdb\xe0\xa2" \
@@ -248,13 +201,13 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		"\xea\xfa\x23\x32";
 
 	// WITH COMMON HEADER!
-	char *cookie_ack = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\x0b\x00\x00\x04";
+	char fuzz_cookie_ack[] = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\x0b\x00\x00\x04";
 
 	// WITH COMMON HEADER!
-	char *sctp_abort = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\x06\x00\x00\x08\x00\x0c\x00\x04";
+	char fuzz_abort[] = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00\x06\x00\x00\x08\x00\x0c\x00\x04";
 
 	// WITH COMMON HEADER!
-	char *sctp_i_data = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00" \
+	char fuzz_i_data[] = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00" \
 		"\x00\x1b\x21\x73\xa3\x58\x90\xe2\xba\x9e\x8c\xfc\x08\x00\x45\x02" \
 		"\x04\x34\x00\x00\x40\x00\x40\x84\x9a\x0b\xd4\xc9\x79\x52\xd4\xc9" \
 		"\x79\x53\x65\x75\x13\x89\x11\x97\x93\x37\x26\x6c\xb7\x65\x40\x02" \
@@ -325,7 +278,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		"\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41\x41" \
 		"\x41\x41";
 
-	char *common_header = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00";
+	char fuzz_common_header[] = "\x13\x89\xe7\xd0\xef\x38\x12\x25\x00\x00\x00\x00";
 
 	debug_printf(">>>>>>>>>>>>>>>>>>> LLVMFuzzerTestOneInput()\n");
 
@@ -423,18 +376,19 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 #if defined(FUZZ_COOKIE_ECHOED) || defined(FUZZ_ESTABLISHED) || defined(FUZZ_DATA_SENT) || defined(FUZZ_DATA_RECEIVED)
 	// Inject INIT-ACK
-	fuzzing_header = (struct sctp_header *) init_ack;
-	fuzzing_header->v_tag = assoc_vtag;
-	dump_packet(init_ack, 516, SCTP_DUMP_INBOUND);
-	usrsctp_conninput((void *)1, init_ack, 516, 0);
+	common_header = (struct sctp_common_header*) fuzz_init_ack;
+	common_header->verification_tag = assoc_vtag;
+	dump_packet(fuzz_init_ack, 516, SCTP_DUMP_INBOUND);
+	usrsctp_conninput((void *)1, fuzz_init_ack, 516, 0);
 	debug_printf(" >>> INIT_ACK\n");
 #endif
 
 #if defined(FUZZ_ESTABLISHED) || defined(FUZZ_DATA_SENT) || defined(FUZZ_DATA_RECEIVED)
 	// Inject COOKIE ACK
-	//memcpy(cookie_ack, common_header, 12);
-	dump_packet(cookie_ack, 16, SCTP_DUMP_INBOUND);
-	usrsctp_conninput((void *)1, cookie_ack, 16, 0);
+	common_header = (struct sctp_common_header*) fuzz_cookie_ack;
+	common_header->verification_tag = assoc_vtag;
+	dump_packet(fuzz_cookie_ack, 16, SCTP_DUMP_INBOUND);
+	usrsctp_conninput((void *)1, fuzz_cookie_ack, 16, 0);
 	debug_printf(" >>> COOKIE_ACK\n");
 #endif
 
@@ -445,9 +399,10 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 #if defined(FUZZ_DATA_RECEIVED)
 	// Inject I_DATA ACK
-	//memcpy(sctp_i_data, common_header, 12);
-	dump_packet(sctp_i_data, 1102, SCTP_DUMP_INBOUND);
-	usrsctp_conninput((void *)1, sctp_i_data, 1102, 0);
+	common_header = (struct sctp_common_header*) fuzz_i_data;
+	common_header->verification_tag = assoc_vtag;
+	dump_packet(fuzz_i_data, 1102, SCTP_DUMP_INBOUND);
+	usrsctp_conninput((void *)1, fuzz_i_data, 1102, 0);
 	debug_printf(" >>> I_DATA\n");
 #endif
 
