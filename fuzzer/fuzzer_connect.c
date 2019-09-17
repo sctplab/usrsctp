@@ -88,8 +88,8 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 {
 	struct sctp_init_chunk *init_chunk;
 	const char *init_chunk_first_bytes = "\x13\x88\x13\x89\x00\x00\x00\x00\x00\x00\x00\x00\x01";
-
-	if ((length >= 13) && (memcmp(buf, init_chunk_first_bytes, 12) == 0)) {
+	// length >= (12 Common + 16 min INIT)
+	if ((length >= 28) && (memcmp(buf, init_chunk_first_bytes, 12) == 0)) {
 		debug_printf("length %d / sizeof %lu\n", length, sizeof(struct sctp_common_header));
 		init_chunk = (struct sctp_init_chunk*) ((char *)buf + sizeof(struct sctp_common_header));
 		debug_printf("Found INIT, extracting VTAG : %u\n", init_chunk->initiate_tag);
