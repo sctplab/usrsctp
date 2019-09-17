@@ -480,6 +480,8 @@ struct sctp_event_subscribe {
 
 
 /* Flags that go into the sinfo->sinfo_flags field */
+#define SCTP_DATA_LAST_FRAG   0x0001 /* tail part of the message could not be sent */
+#define SCTP_DATA_NOT_FRAG    0x0003 /* complete message could not be sent */
 #define SCTP_NOTIFICATION     0x0010 /* next message is a notification */
 #define SCTP_COMPLETE         0x0020 /* next message is complete */
 #define SCTP_EOF              0x0100 /* Start shutdown procedures */
