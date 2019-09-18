@@ -4,7 +4,7 @@ import subprocess
 import os
 
 reportdir = "reports/"
-fuzzer = "./fuzzer_connected"
+fuzzer = "./fuzzer_connect_multi"
 
 class bcolors:
 	HEADER = '\033[95m'
