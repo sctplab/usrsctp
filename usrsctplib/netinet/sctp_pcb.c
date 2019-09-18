@@ -2843,6 +2843,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 #if defined(__Userspace__)
 	inp->ulp_info = NULL;
 	inp->recv_callback = NULL;
+	inp->recv_callback2 = NULL;
 	inp->send_callback = NULL;
 	inp->send_callback2 = NULL;
 	inp->send_sb_threshold = 0;

@@ -3037,6 +3037,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 #if defined(__Userspace__)
 			inp->ulp_info = (*inp_p)->ulp_info;
 			inp->recv_callback = (*inp_p)->recv_callback;
+			inp->recv_callback2 = (*inp_p)->recv_callback2;
 			inp->send_callback = (*inp_p)->send_callback;
 			inp->send_callback2 = (*inp_p)->send_callback2;
 			inp->send_sb_threshold = (*inp_p)->send_sb_threshold;

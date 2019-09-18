@@ -1262,6 +1262,7 @@ out:
 
 
 #if defined(__Userspace__)
+
 /* Taken from  /src/sys/kern/uipc_socket.c
  * and modified for __Userspace__
  * socreate returns a socket.  The socket should be
@@ -1463,11 +1464,9 @@ usrsctp_socket(int domain, int type, int protocol,
 
 struct socket *
 usrsctp_socket2(int domain, int type, int protocol,
-	       int (*receive_cb)(struct socket *sock, union sctp_sockstore addr, void *data,
-                                 size_t datalen, struct sctp_rcvinfo, int flags, void *ulp_info),
-	       int (*send_cb2)(struct socket *sock, uint32_t sb_free, void* ulp_info),
-	       uint32_t sb_threshold,
-	       void *ulp_info)
+                void (*recv_callback2)(struct socket *, uint32_t, void *),
+                void (*send_callback2)(struct socket *, uint32_t, void *),
+                void *ulp_info)
 {
 	struct socket *so;
 
@@ -1475,8 +1474,7 @@ usrsctp_socket2(int domain, int type, int protocol,
 		errno = EPROTONOSUPPORT;
 		return (NULL);
 	}
-	if ((receive_cb == NULL) &&
-	    ((send_cb2 != NULL) || (sb_threshold != 0) || (ulp_info != NULL))) {
+	if ((recv_callback2 == NULL) && ((send_callback2 != NULL) || (ulp_info != NULL))) {
 		errno = EINVAL;
 		return (NULL);
 	}
@@ -1493,8 +1491,8 @@ usrsctp_socket2(int domain, int type, int protocol,
 	 * td->td_retval[0] = fd.
 	 * We are returning struct socket *so.
 	 */
-	register_recv_cb(so, receive_cb);
-	register_send_cb2(so, sb_threshold, send_cb2);
+	register_recv_callback2(so, recv_callback2);
+	register_send_callback2(so, send_callback2);
 	register_ulp_info(so, ulp_info);
 	return (so);
 }
@@ -2617,10 +2615,27 @@ usrsctp_opt_info(struct socket *so, sctp_assoc_t id, int opt, void *arg, socklen
 }
 
 int
-usrsctp_set_ulp_info(struct socket *so, void *ulp_info)
+usrsctp_set_ulpinfo(struct socket *so, void *ulp_info)
 {
 	return (register_ulp_info(so, ulp_info));
 }
+
+int
+usrsctp_set_recv_callback2(struct socket *so,
+                          void (*recv_callback2)(struct socket *so, uint32_t msg_size,
+                                                 void *ulp_info))
+{
+	return (register_recv_callback2(so, recv_callback2));
+}
+
+int
+usrsctp_set_send_callback2(struct socket *so,
+                           void (*send_callback2)(struct socket *so, uint32_t sb_free,
+                                                  void *ulp_info))
+{
+	return (register_recv_callback2(so, send_callback2));
+}
+
 
 int
 usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)

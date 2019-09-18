@@ -907,13 +907,22 @@ usrsctp_socket(int domain, int type, int protocol,
                uint32_t sb_threshold,
                void *ulp_info);
 
+
 struct socket *
 usrsctp_socket2(int domain, int type, int protocol,
-               int (*receive_cb)(struct socket *sock, union sctp_sockstore addr, void *data,
-                                 size_t datalen, struct sctp_rcvinfo, int flags, void *ulp_info),
-               int (*send_cb2)(struct socket *sock, uint32_t sb_free, void *ulp_info),
-               uint32_t sb_threshold,
-               void *ulp_info);
+                /* This callback indicates that a message is readable using recvv.
+                 * msg_size represents the size of the data contained in the msg.
+                 * if msg_size is 0, then this is a notification that contains no
+                 * data. */
+                void (*recv_callback2)(struct socket *sock, uint32_t msg_size, void *ulp_info),
+                /* This callback indicates that there are sb_free free bytes in
+                 * the send buffer of the socket. usrsctp_set_sb_threshold can
+                 * be used to set the minimum free bytes to trigger a callback. */
+                void (*send_callback2)(struct socket *sock, uint32_t sb_free, void *ulp_info),
+                /* This is a pointer for user data that will be passed to each of
+                 * the callbacks. Note that this pointer is behind a lock so it
+                 * can only be accessed by one of the callbacks at a time. */
+                void *ulp_info);
 
 int
 usrsctp_setsockopt(struct socket *so,
@@ -1039,6 +1048,12 @@ usrsctp_deregister_address(void *);
 
 int
 usrsctp_set_ulpinfo(struct socket *, void *);
+
+int
+usrsctp_set_recv_callback2(struct socket *, void (*)(struct socket *, uint32_t, void *));
+
+int
+usrsctp_set_send_callback2(struct socket *, void (*)(struct socket *, uint32_t, void *));
 
 int
 usrsctp_set_upcall(struct socket *so,

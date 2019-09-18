@@ -9023,8 +9023,9 @@ sctp_usrreq(so, req, m, nam, control)
 #if defined(__Userspace__)
 int
 register_recv_cb(struct socket *so,
-                 int (*receive_cb)(struct socket *sock, union sctp_sockstore addr, void *data,
-                 size_t datalen, struct sctp_rcvinfo, int flags, void *ulp_info))
+                 int (*receive_cb)(struct socket *sock, union sctp_sockstore addr,
+                 void *data, size_t datalen, struct sctp_rcvinfo, int flags,
+                 void *ulp_info))
 {
 	struct sctp_inpcb *inp;
 
@@ -9039,7 +9040,8 @@ register_recv_cb(struct socket *so,
 }
 
 int
-register_send_cb(struct socket *so, uint32_t sb_threshold, int (*send_cb)(struct socket *sock, uint32_t sb_free))
+register_send_cb(struct socket *so, uint32_t sb_threshold,
+                 int (*send_cb)(struct socket *sock, uint32_t sb_free))
 {
 	struct sctp_inpcb *inp;
 
@@ -9060,7 +9062,8 @@ register_send_cb(struct socket *so, uint32_t sb_threshold, int (*send_cb)(struct
 }
 
 int
-register_send_cb2(struct socket *so, uint32_t sb_threshold, int (*send_cb2)(struct socket *sock, uint32_t sb_free, void *ulp_info))
+register_recv_callback2(struct socket *so,
+                        void (*recv_callback2)(struct socket *, uint32_t, void *))
 {
 	struct sctp_inpcb *inp;
 
@@ -9069,14 +9072,25 @@ register_send_cb2(struct socket *so, uint32_t sb_threshold, int (*send_cb2)(stru
 		return (0);
 	}
 	SCTP_INP_WLOCK(inp);
-	inp->send_callback2 = send_cb2;
-	inp->send_sb_threshold = sb_threshold;
+	inp->recv_callback2 = recv_callback2;
 	SCTP_INP_WUNLOCK(inp);
-	/* FIXME change to current amount free. This will be the full buffer
-	 * the first time this is registered but it could be only a portion
-	 * of the send buffer if this is called a second time e.g. if the
-	 * threshold changes.
-	 */
+	return (1);
+}
+
+
+int
+register_send_callback2(struct socket *so,
+                        void (*send_callback2)(struct socket *, uint32_t, void *))
+{
+	struct sctp_inpcb *inp;
+
+	inp = (struct sctp_inpcb *) so->so_pcb;
+	if (inp == NULL) {
+		return (0);
+	}
+	SCTP_INP_WLOCK(inp);
+	inp->send_callback2 = send_callback2;
+	SCTP_INP_WUNLOCK(inp);
 	return (1);
 }
 

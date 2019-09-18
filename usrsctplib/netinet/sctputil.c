@@ -3851,7 +3851,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 	case SCTP_NOTIFY_ASSOC_DOWN:
 		sctp_notify_assoc_change(SCTP_SHUTDOWN_COMP, stcb, error, NULL, 0, so_locked);
 #if defined(__Userspace__)
-		if (stcb->sctp_ep->recv_callback) {
+		if ((stcb->sctp_ep->recv_callback) || (stcb->sctp_ep->recv_callback2)) {
 			if (stcb->sctp_socket) {
 				union sctp_sockstore addr;
 				struct sctp_rcvinfo rcv;
@@ -3860,7 +3860,11 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 				memset(&rcv, 0, sizeof(struct sctp_rcvinfo));
 				atomic_add_int(&stcb->asoc.refcnt, 1);
 				SCTP_TCB_UNLOCK(stcb);
-				stcb->sctp_ep->recv_callback(stcb->sctp_socket, addr, NULL, 0, rcv, 0, stcb->sctp_ep->ulp_info);
+                if (stcb->sctp_ep->recv_callback) {
+                    stcb->sctp_ep->recv_callback(stcb->sctp_socket, addr, NULL, 0, rcv, 0, stcb->sctp_ep->ulp_info);
+                } else {
+                    stcb->sctp_ep->recv_callback2(stcb->sctp_socket, 0, stcb->sctp_ep->ulp_info);
+                }
 				SCTP_TCB_LOCK(stcb);
 				atomic_subtract_int(&stcb->asoc.refcnt, 1);
 			}
@@ -4821,11 +4825,25 @@ sctp_invoke_recv_callback(struct sctp_inpcb *inp,
 {
 	uint32_t pd_point, length;
 
-	if ((inp->recv_callback == NULL) ||
+	if (((inp->recv_callback == NULL) && inp->recv_callback2 == NULL) ||
 	    (stcb == NULL) ||
 	    (stcb->sctp_socket == NULL)) {
 		return;
 	}
+
+    /* Not need to receive the message, just tell the callback how
+     * many bytes are readable. */
+    if (inp->recv_callback2) {
+		atomic_add_int(&stcb->asoc.refcnt, 1);
+		SCTP_TCB_UNLOCK(stcb);
+		if (inp_read_lock_held == 0) {
+			SCTP_INP_READ_UNLOCK(inp);
+		}
+		inp->recv_callback2(stcb->sctp_socket, control->length, inp->ulp_info);
+		SCTP_TCB_LOCK(stcb);
+		atomic_subtract_int(&stcb->asoc.refcnt, 1);
+        return;
+    }
 
 	length = control->length;
 	if (stcb != NULL && stcb->sctp_socket != NULL) {
