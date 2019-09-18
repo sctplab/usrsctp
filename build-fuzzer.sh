@@ -3,13 +3,13 @@ set -e
 
 NPROC=1
 
-if [ "$(uname)" == "Linux" ]; then
+if [ "$(uname)" = "Linux" ]; then
     NPROC=$(nproc)
     CC=clang-9
-elif [ "$(uname)" == "Darwin" ]; then
+elif [ "$(uname)" = "Darwin" ]; then
     NPROC=$(sysctl -n hw.ncpu)
     CC=/usr/local/opt/llvm/bin/clang
-elif [ "$(uname)" == "FreeBSD" ]; then
+elif [ "$(uname)" = "FreeBSD" ]; then
     NPROC=$(sysctl -n hw.ncpu)
     CC=/clang-devel
 else

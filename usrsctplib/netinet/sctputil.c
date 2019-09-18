@@ -914,7 +914,7 @@ sctp_fill_random_store(struct sctp_pcb *m)
 	 */
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 	for (int i = 0; i < (int) (sizeof(m->random_store) / sizeof(int)); i++) {
-		m->random_store[i] = (uint8_t) rand();
+		m->random_store[i] = (uint8_t) (i + m->random_counter);
 	}
 #else
 	m->store_at = 0;

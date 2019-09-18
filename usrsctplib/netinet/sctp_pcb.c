@@ -7829,8 +7829,9 @@ sctp_is_vtag_good(uint32_t tag, uint16_t lport, uint16_t rport, struct timeval *
 	struct sctpasochead *head;
 	struct sctp_tcb *stcb;
 	int i;
-
+	printf("checking tag a %u\n", tag);
 	SCTP_INP_INFO_RLOCK();
+	printf("checking tag b %u\n", tag);
 	head = &SCTP_BASE_INFO(sctp_asochash)[SCTP_PCBHASH_ASOC(tag,
 								SCTP_BASE_INFO(hashasocmark))];
 	LIST_FOREACH(stcb, head, sctp_asocs) {
