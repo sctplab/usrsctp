@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_crc32.c 349151 2019-06-17 19:49:08Z delphij $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_crc32.c 352361 2019-09-15 18:29:45Z tuexen $");
 
 #include "opt_sctp.h"
 
@@ -815,17 +815,17 @@ sctp_delayed_cksum(struct mbuf *m, uint32_t offset)
 	SCTP_STAT_INCR(sctps_sendswcrc);
 	offset += offsetof(struct sctphdr, checksum);
 
-	if (offset + sizeof(uint32_t) > (uint32_t)(m->m_len)) {
+	if (offset + sizeof(uint32_t) > (uint32_t)(m->m_pkthdr.len)) {
 #ifdef INVARIANTS
-		panic("sctp_delayed_cksum(): m->m_len: %d, offset: %u.",
-		      m->m_len, offset);
+		panic("sctp_delayed_cksum(): m->m_pkthdr.len: %d, offset: %u.",
+		      m->m_pkthdr.len, offset);
 #else
-		SCTP_PRINTF("sctp_delayed_cksum(): m->m_len: %d, offset: %u.\n",
-		            m->m_len, offset);
+		SCTP_PRINTF("sctp_delayed_cksum(): m->m_pkthdr.len: %d, offset: %u.\n",
+		            m->m_pkthdr.len, offset);
 #endif
 		return;
 	}
-	*(uint32_t *)(m->m_data + offset) = checksum;
+	m_copyback(m, (int)offset, (int)sizeof(uint32_t), (caddr_t)&checksum);
 }
 #endif
 #endif
