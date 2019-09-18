@@ -4,19 +4,24 @@ set -e
 NPROC=1
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    echo "OS : LINUX"
+    echo "OS : Linux"
     NPROC=$(nproc)
     CC=clang-9
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "OS : MAC OS"
+    echo "OS : macOS"
     NPROC=$(sysctl -n hw.ncpu)
     CC=/usr/local/opt/llvm/bin/clang
 elif [[ "$OSTYPE" == "freebsd"* ]]; then
-    echo "OS : FREEBSD"
+    echo "OS : FreeBSD"
     NPROC=$(sysctl -n hw.ncpu)
     CC=/clang-devel
 else
-    echo "UNSUPPORTED OS - EXIT"
+    echo "Error: OS not supported, sorry!"
+    exit 1
+fi
+
+if ! [ -x "$(command -v $CC)" ]; then
+    echo "Error: $CC is not installed!" >&2
     exit 1
 fi
 
