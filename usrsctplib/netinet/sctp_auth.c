@@ -35,7 +35,6 @@
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 352438 2019-09-17 09:46:42Z tuexen $");
-
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1730,6 +1729,11 @@ sctp_handle_auth(struct sctp_tcb *stcb, struct sctp_auth_chunk *auth,
 	(void)sctp_compute_hmac_m(hmac_id, stcb->asoc.authinfo.recv_key,
 	    m, offset, computed_digest);
 
+#if defined(__Userspace__)
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+	return (0);
+#endif
+#endif
 	/* compare the computed digest with the one in the AUTH chunk */
 	if (timingsafe_bcmp(digest, computed_digest, digestlen) != 0) {
 		SCTP_STAT_INCR(sctps_recvauthfailed);
