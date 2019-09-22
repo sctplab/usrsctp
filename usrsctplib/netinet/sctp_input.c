@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 351654 2019-09-01 10:09:53Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 352592 2019-09-22 10:40:15Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -579,8 +579,8 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 	    asoc->primary_destination, SCTP_FROM_SCTP_INPUT + SCTP_LOC_3);
 
 	/* calculate the RTO */
-	net->RTO = sctp_calculate_rto(stcb, asoc, net, &asoc->time_entered,
-	                              SCTP_RTT_FROM_NON_DATA);
+	sctp_calculate_rto(stcb, asoc, net, &asoc->time_entered,
+	                   SCTP_RTT_FROM_NON_DATA);
 #if defined(__Userspace__)
 	if (stcb->sctp_ep->recv_callback) {
 		if (stcb->sctp_socket) {
@@ -721,8 +721,8 @@ sctp_handle_heartbeat_ack(struct sctp_heartbeat_chunk *cp,
 	tv.tv_sec = cp->heartbeat.hb_info.time_value_1;
 	tv.tv_usec = cp->heartbeat.hb_info.time_value_2;
 	/* Now lets do a RTO with this */
-	r_net->RTO = sctp_calculate_rto(stcb, &stcb->asoc, r_net, &tv,
-	                                SCTP_RTT_FROM_NON_DATA);
+	sctp_calculate_rto(stcb, &stcb->asoc, r_net, &tv,
+	                   SCTP_RTT_FROM_NON_DATA);
 	if (!(r_net->dest_state & SCTP_ADDR_REACHABLE)) {
 		r_net->dest_state |= SCTP_ADDR_REACHABLE;
 		sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_UP, stcb,
@@ -1759,9 +1759,8 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 				old.tv_sec = cookie->time_entered.tv_sec;
 				old.tv_usec = cookie->time_entered.tv_usec;
 				net->hb_responded = 1;
-				net->RTO = sctp_calculate_rto(stcb, asoc, net,
-				                              &old,
-				                              SCTP_RTT_FROM_NON_DATA);
+				sctp_calculate_rto(stcb, asoc, net, &old,
+				                   SCTP_RTT_FROM_NON_DATA);
 
 				if (stcb->asoc.sctp_autoclose_ticks &&
 				    (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_AUTOCLOSE))) {
@@ -2515,8 +2514,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 		/* calculate the RTT and set the encaps port */
 		old.tv_sec = cookie->time_entered.tv_sec;
 		old.tv_usec = cookie->time_entered.tv_usec;
-		(*netp)->RTO = sctp_calculate_rto(stcb, asoc, *netp,
-		                                  &old, SCTP_RTT_FROM_NON_DATA);
+		sctp_calculate_rto(stcb, asoc, *netp, &old, SCTP_RTT_FROM_NON_DATA);
 	}
 	/* respond with a COOKIE-ACK */
 	sctp_send_cookie_ack(stcb);
@@ -3159,9 +3157,8 @@ sctp_handle_cookie_ack(struct sctp_cookie_ack_chunk *cp SCTP_UNUSED,
 		SCTP_STAT_INCR_COUNTER32(sctps_activeestab);
 		SCTP_STAT_INCR_GAUGE32(sctps_currestab);
 		if (asoc->overall_error_count == 0) {
-			net->RTO = sctp_calculate_rto(stcb, asoc, net,
-			                              &asoc->time_entered,
-			                              SCTP_RTT_FROM_NON_DATA);
+			sctp_calculate_rto(stcb, asoc, net, &asoc->time_entered,
+			                   SCTP_RTT_FROM_NON_DATA);
 		}
 		(void)SCTP_GETTIME_TIMEVAL(&asoc->time_entered);
 		sctp_ulp_notify(SCTP_NOTIFY_ASSOC_UP, stcb, 0, NULL, SCTP_SO_NOT_LOCKED);

@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 350625 2019-08-06 08:33:21Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 352592 2019-09-22 10:40:15Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2574,25 +2574,24 @@ sctp_mtu_size_reset(struct sctp_inpcb *inp,
 
 
 /*
- * given an association and starting time of the current RTT period return
- * RTO in number of msecs net should point to the current network
+ * Given an association and starting time of the current RTT period, update
+ * RTO in number of msecs. net should point to the current network.
+ * Return 1, if an RTO update was performed, return 0 if no update was
+ * performed due to invalid starting point.
  */
 
-uint32_t
+int
 sctp_calculate_rto(struct sctp_tcb *stcb,
 		   struct sctp_association *asoc,
 		   struct sctp_nets *net,
 		   struct timeval *old,
 		   int rtt_from_sack)
 {
-	/*-
-	 * given an association and the starting time of the current RTT
-	 * period (in value1/value2) return RTO in number of msecs.
-	 */
-	int32_t rtt; /* RTT in ms */
+	struct timeval now;
+	uint64_t rtt_us;	/* RTT in us */
+	int32_t rtt;		/* RTT in ms */
 	uint32_t new_rto;
 	int first_measure = 0;
-	struct timeval now;
 
 	/************************/
 	/* 1. calculate new RTT */
@@ -2603,10 +2602,19 @@ sctp_calculate_rto(struct sctp_tcb *stcb,
 	} else {
 		(void)SCTP_GETTIME_TIMEVAL(&now);
 	}
+	if ((old->tv_sec > now.tv_sec) ||
+	    ((old->tv_sec == now.tv_sec) && (old->tv_sec > now.tv_sec))) {
+		/* The starting point is in the future. */
+		return (0);
+	}
 	timevalsub(&now, old);
+	rtt_us = (uint64_t)1000000 * (uint64_t)now.tv_sec + (uint64_t)now.tv_usec;
+	if (rtt_us > SCTP_RTO_UPPER_BOUND * 1000) {
+		/* The RTT is larger than a sane value. */
+		return (0);
+	}
 	/* store the current RTT in us */
-	net->rtt = (uint64_t)1000000 * (uint64_t)now.tv_sec +
-	           (uint64_t)now.tv_usec;
+	net->rtt = rtt_us;
 	/* compute rtt in ms */
 	rtt = (int32_t)(net->rtt / 1000);
 	if ((asoc->cc_functions.sctp_rtt_calculated) && (rtt_from_sack == SCTP_RTT_FROM_DATA)) {
@@ -2635,7 +2643,7 @@ sctp_calculate_rto(struct sctp_tcb *stcb,
 	 * Paper "Congestion Avoidance and Control", Annex A.
 	 *
 	 * (net->lastsa >> SCTP_RTT_SHIFT) is the srtt
-	 * (net->lastsa >> SCTP_RTT_VAR_SHIFT) is the rttvar
+	 * (net->lastsv >> SCTP_RTT_VAR_SHIFT) is the rttvar
 	 */
 	if (net->RTO_measured) {
 		rtt -= (net->lastsa >> SCTP_RTT_SHIFT);
@@ -2676,8 +2684,8 @@ sctp_calculate_rto(struct sctp_tcb *stcb,
 	if (new_rto > stcb->asoc.maxrto) {
 		new_rto = stcb->asoc.maxrto;
 	}
-	/* we are now returning the RTO */
-	return (new_rto);
+	net->RTO = new_rto;
+	return (1);
 }
 
 /*
