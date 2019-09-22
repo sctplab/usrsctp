@@ -23,6 +23,7 @@ FNULL = open(os.devnull, "w")
 crashfiles = []
 crashfiles.extend(glob.glob("crash-*"))
 crashfiles.extend(glob.glob("timeout-*"))
+crashfiles.extend(glob.glob("leak-*"))
 
 if not os.path.exists(reportdir):
 	os.makedirs(reportdir)
