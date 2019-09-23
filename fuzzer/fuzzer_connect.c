@@ -47,7 +47,7 @@
 static uint32_t assoc_vtag = 0;
 
 void
-debug_printf(const char *format, ...)
+fuzzer_printf(const char *format, ...)
 {
 #ifdef FUZZ_VERBOSE
 	static struct timeval time_main;
@@ -90,9 +90,9 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 	const char *init_chunk_first_bytes = "\x13\x88\x13\x89\x00\x00\x00\x00\x00\x00\x00\x00\x01";
 	// length >= (12 Common + 16 min INIT)
 	if ((length >= 28) && (memcmp(buf, init_chunk_first_bytes, 12) == 0)) {
-		//debug_printf("length %d / sizeof %lu\n", length, sizeof(struct sctp_common_header));
+		//fuzzer_printf("length %d / sizeof %lu\n", length, sizeof(struct sctp_common_header));
 		init_chunk = (struct sctp_init_chunk*) ((char *)buf + sizeof(struct sctp_common_header));
-		debug_printf("Found outgoing INIT, extracting VTAG : %u\n", init_chunk->initiate_tag);
+		fuzzer_printf("Found outgoing INIT, extracting VTAG : %u\n", init_chunk->initiate_tag);
 		assoc_vtag = init_chunk->initiate_tag;
 	}
 
@@ -104,7 +104,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 static void
 handle_upcall(struct socket *sock, void *arg, int flgs)
 {
-	debug_printf("handle_upcall()\n");
+	fuzzer_printf("handle_upcall()\n");
 	int events = usrsctp_get_events(sock);
 	while (events & SCTP_EVENT_READ) {
 		struct sctp_recvv_rn rn;
@@ -117,15 +117,15 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 		socklen_t infolen = sizeof(struct sctp_recvv_rn);
 		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
 		n = usrsctp_recvv(sock, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn, &infolen, &infotype, &flags);
-		debug_printf("usrsctp_recvv() - returned %d\n", n);
+		fuzzer_printf("usrsctp_recvv() - returned %d\n", n);
 
 		if (flags & MSG_NOTIFICATION) {
-			debug_printf("NOTIFICATION received\n");
+			fuzzer_printf("NOTIFICATION received\n");
 #ifdef FUZZ_VERBOSE
 			handle_notification((union sctp_notification *)buf, n);
 #endif
 		} else {
-			debug_printf("DATA received\n");
+			fuzzer_printf("DATA received\n");
 		}
 		free(buf);
 		if (n <= 0) {
@@ -147,7 +147,7 @@ initialize_fuzzer(void) {
 #endif
 	usrsctp_register_address((void *)1);
 
-	debug_printf("usrsctp initialized\n");
+	fuzzer_printf("usrsctp initialized\n");
 	return (1);
 }
 
@@ -294,7 +294,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		fuzzing_stage = (data[0] % 5) + 1;
 	}
 
-	debug_printf("LLVMFuzzerTestOneInput() - Stage %d\n", fuzzing_stage);
+	fuzzer_printf("LLVMFuzzerTestOneInput() - Stage %d\n", fuzzing_stage);
 
 #if defined(FUZZ_EXPLICIT_EOR) || defined(FUZZ_INTERLEAVING)
 	int enable;
@@ -309,7 +309,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 	if (data_size < 8 || data_size > 65535) {
 		// Skip too small and too large packets
-		debug_printf("data_size %d makes no sense, skipping\n");
+		fuzzer_printf("data_size %d makes no sense, skipping\n");
 		return (0);
 	}
 
@@ -397,7 +397,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	sconn.sconn_port = htons(5001);
 	sconn.sconn_addr = (void *)1;
 
-	debug_printf("Calling usrsctp_connect()\n");
+	fuzzer_printf("Calling usrsctp_connect()\n");
 	if (usrsctp_connect(socket_client, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		if (errno != EINPROGRESS) {
 			perror("usrsctp_connect");
@@ -410,7 +410,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		common_header = (struct sctp_common_header*) fuzz_init_ack;
 		common_header->verification_tag = assoc_vtag;
 
-		debug_printf("Injecting INIT_ACK\n");
+		fuzzer_printf("Injecting INIT_ACK\n");
 		dump_packet(fuzz_init_ack, 516, SCTP_DUMP_INBOUND);
 		usrsctp_conninput((void *)1, fuzz_init_ack, 516, 0);
 	}
@@ -420,14 +420,14 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		common_header = (struct sctp_common_header*) fuzz_cookie_ack;
 		common_header->verification_tag = assoc_vtag;
 
-		debug_printf("Injecting COOKIE_ACK\n");
+		fuzzer_printf("Injecting COOKIE_ACK\n");
 		dump_packet(fuzz_cookie_ack, 16, SCTP_DUMP_INBOUND);
 		usrsctp_conninput((void *)1, fuzz_cookie_ack, 16, 0);
 	}
 
 	if (fuzzing_stage == 4) {
 		const char *sendbuffer = "Geologie ist keine richtige Wissenschaft!";
-		debug_printf("Calling usrsctp_sendv()\n");
+		fuzzer_printf("Calling usrsctp_sendv()\n");
 		usrsctp_sendv(socket_client, sendbuffer, strlen(sendbuffer), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
 	}
 
@@ -435,7 +435,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		// Inject I_DATA ACK
 		common_header = (struct sctp_common_header*) fuzz_i_data;
 		common_header->verification_tag = assoc_vtag;
-		debug_printf("Injecting I_DATA\n");
+		fuzzer_printf("Injecting I_DATA\n");
 		dump_packet(fuzz_i_data, 1102, SCTP_DUMP_INBOUND);
 		usrsctp_conninput((void *)1, fuzz_i_data, 1102, 0);
 
@@ -449,20 +449,20 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	common_header = (struct sctp_common_header*) pktbuf;
 	common_header->verification_tag = assoc_vtag;
 
-	debug_printf("Injecting FUZZER-Packet\n");
+	fuzzer_printf("Injecting FUZZER-Packet\n");
 	dump_packet(pktbuf, data_size + 12, SCTP_DUMP_INBOUND);
 	usrsctp_conninput((void *)1, pktbuf, data_size + 12, 0);
 
-	debug_printf("Calling usrsctp_close()\n");
+	fuzzer_printf("Calling usrsctp_close()\n");
 	usrsctp_close(socket_client);
 
 	free(pktbuf);
 
 #if 0
-	debug_printf("Calling usrsctp_finish()\n");
+	fuzzer_printf("Calling usrsctp_finish()\n");
 	while (usrsctp_finish() != 0) {
 	}
-	debug_printf("Done!\n");
+	fuzzer_printf("Done!\n");
 #endif
 
 	return (0);
