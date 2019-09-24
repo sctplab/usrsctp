@@ -26,5 +26,5 @@ echo "OS :" $(uname)
 echo "CC :" $CC
 echo "NP :" $NPROC
 
-cmake -Dsctp_build_fuzzer=1 -Dsctp_build_programs=0 -Dsctp_invariants=1 -Dsctp_sanitizer_address=1  -DCMAKE_C_COMPILER="$CC" .
+cmake -Dsctp_build_fuzzer=1 -Dsctp_build_programs=0 -Dsctp_invariants=1 -Dsctp_sanitizer_address=1  -DCMAKE_C_COMPILER="$CC" -DCMAKE_BUILD_TYPE=RelWithDebInfo .
 make -j"$NPROC"
