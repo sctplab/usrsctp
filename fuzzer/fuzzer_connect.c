@@ -139,7 +139,7 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 
 int
 initialize_fuzzer(void) {
-	usrsctp_init(0, conn_output, debug_printf);
+	usrsctp_init(0, conn_output, fuzzer_printf);
 	usrsctp_enable_crc32c_offload();
 	/* set up a connected UDP socket */
 #ifdef SCTP_DEBUG
