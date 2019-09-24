@@ -133,6 +133,11 @@ int
 LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 	init_fuzzer();
+
+	if (data_size < 8 || data_size > 65535) {
+		// Skip too small and too large packets
+		return (0);
+	}
 	usrsctp_conninput((void *)1, data, data_size, 0);
 
 #if !defined(FUZZ_FAST)
