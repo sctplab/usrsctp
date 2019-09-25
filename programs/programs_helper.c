@@ -32,8 +32,11 @@ gettimeofday(struct timeval *tv, void *ignore)
 #endif
 
 void
-debug_printf_runtime(void) {
+debug_printf(const char *format, ...)
+{
 	static struct timeval time_main;
+
+	va_list ap;
 	struct timeval time_now;
 	struct timeval time_delta;
 
@@ -45,6 +48,10 @@ debug_printf_runtime(void) {
 	timersub(&time_now, &time_main, &time_delta);
 
 	fprintf(stderr, "[%u.%03u] ", (unsigned int) time_delta.tv_sec, (unsigned int) time_delta.tv_usec / 1000);
+
+	va_start(ap, format);
+	vprintf(format, ap);
+	va_end(ap);
 }
 
 static void

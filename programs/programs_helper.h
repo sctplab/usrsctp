@@ -47,15 +47,7 @@ struct sctp_init_chunk {
 	/* optional param's follow */
 } SCTP_PACKED;
 
-void
-debug_printf_runtime(void);
-
-#define debug_printf(...)                       \
-	do {                                        \
-		debug_printf_runtime(void);             \
-		fprintf(stderr, __VA_ARGS__);           \
-	} while (0)
-
+void debug_printf(const char *format, ...);
 void handle_notification(union sctp_notification *notif, size_t n);
 #ifndef timersub
 #define timersub(tvp, uvp, vvp)                                   \

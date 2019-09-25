@@ -46,11 +46,30 @@
 
 static uint32_t assoc_vtag = 0;
 
+void
+fuzzer_printf(const char *format, ...)
+{
 #ifdef FUZZ_VERBOSE
-#define fuzzer_printf(...) debug_printf(__VA_ARGS__)
-#else
-#define fuzzer_printf(...)
+	static struct timeval time_main;
+	va_list ap;
+	struct timeval time_now;
+	struct timeval time_delta;
+
+	if (time_main.tv_sec == 0  && time_main.tv_usec == 0) {
+		gettimeofday(&time_main, NULL);
+	}
+
+	gettimeofday(&time_now, NULL);
+	timersub(&time_now, &time_main, &time_delta);
+
+	fprintf(stderr, "[%u.%03u] ", (unsigned int) time_delta.tv_sec, (unsigned int) time_delta.tv_usec / 1000);
+
+	va_start(ap, format);
+	vprintf(format, ap);
+	va_end(ap);
 #endif
+}
+
 
 static void
 dump_packet(const void *buffer, size_t bufferlen, int inout) {
@@ -98,7 +117,7 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 		socklen_t infolen = sizeof(struct sctp_recvv_rn);
 		memset(&rn, 0, sizeof(struct sctp_recvv_rn));
 		n = usrsctp_recvv(sock, buf, BUFFERSIZE, (struct sockaddr *) &addr, &len, (void *)&rn, &infolen, &infotype, &flags);
-		fuzzer_printf("usrsctp_recvv() - returned %zd\n", n);
+		fuzzer_printf("usrsctp_recvv() - returned %d\n", n);
 
 		if (flags & MSG_NOTIFICATION) {
 			fuzzer_printf("NOTIFICATION received\n");
@@ -120,11 +139,7 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 
 int
 initialize_fuzzer(void) {
-#ifdef FUZZ_VERBOSE
-	usrsctp_init(0, conn_output, debug_printf);
-#else
-	usrsctp_init(0, conn_output, NULL);
-#endif
+	usrsctp_init(0, conn_output, fuzzer_printf);
 	usrsctp_enable_crc32c_offload();
 	/* set up a connected UDP socket */
 #ifdef SCTP_DEBUG
@@ -294,7 +309,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 	if (data_size < 8 || data_size > 65535) {
 		// Skip too small and too large packets
-		fuzzer_printf("data_size %zu makes no sense, skipping\n", data_size);
+		fuzzer_printf("data_size %d makes no sense, skipping\n");
 		return (0);
 	}
 
