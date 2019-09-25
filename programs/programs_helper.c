@@ -47,6 +47,10 @@ debug_printf_runtime(void) {
 	fprintf(stderr, "[%u.%03u] ", (unsigned int) time_delta.tv_sec, (unsigned int) time_delta.tv_usec / 1000);
 }
 
+void debug_printf_usrsctp(...) {
+	debug_printf(...);
+}
+
 static void
 handle_association_change_event(struct sctp_assoc_change *sac)
 {

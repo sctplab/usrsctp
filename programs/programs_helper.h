@@ -50,6 +50,9 @@ struct sctp_init_chunk {
 void
 debug_printf_runtime(void);
 
+void
+debug_printf_usrsctp(void);
+
 #define debug_printf(...)                       \
 	do {                                        \
 		debug_printf_runtime(void);             \
