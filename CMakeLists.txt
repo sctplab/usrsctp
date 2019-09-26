@@ -222,7 +222,7 @@ if (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "AppleCla
 	endif ()
 
 	if (sctp_build_fuzzer)
-		#add_definitions(-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
+		add_definitions(-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer-no-link")
 	endif ()
 

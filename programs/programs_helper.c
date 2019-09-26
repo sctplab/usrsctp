@@ -58,7 +58,7 @@ debug_printf_stack(const char *format, ...)
 	debug_printf_runtime();
 
 	va_start(ap, format);
-	vprintf(format, ap);
+	vfprintf(stderr, format, ap);
 	va_end(ap);
 }
 
