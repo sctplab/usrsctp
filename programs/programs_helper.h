@@ -28,12 +28,19 @@
 #ifndef __PROGRAMS_HELPER_H__
 #define __PROGRAMS_HELPER_H__
 
+#ifndef _WIN32
+#define SCTP_PACKED __attribute__((packed))
+#else
+#pragma pack (push, 1)
+#define SCTP_PACKED
+#endif
+
 struct sctp_chunk_header {
 	uint8_t chunk_type;	/* chunk type */
 	uint8_t chunk_flags;	/* chunk flags */
 	uint16_t chunk_length;	/* chunk length */
 	/* optional params follow */
-} __attribute__((packed));
+} SCTP_PACKED;
 
 struct sctp_init_chunk {
 	struct sctp_chunk_header ch;
@@ -43,8 +50,13 @@ struct sctp_init_chunk {
 	uint16_t num_inbound_streams;	/* MIS */
 	uint32_t initial_tsn;	/* I-TSN */
 	/* optional param's follow */
-} __attribute__((packed));
+} SCTP_PACKED;
 
+#ifdef _WIN32
+#pragma pack(pop)
+#endif
+
+#undef SCTP_PACKED
 
 void
 handle_notification(union sctp_notification *notif, size_t n);
