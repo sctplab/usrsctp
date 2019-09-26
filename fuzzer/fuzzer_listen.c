@@ -55,7 +55,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 static void
 handle_upcall(struct socket *sock, void *arg, int flgs)
 {
-	fprintf(stderr, "Listening socket established, implement logic!\n");
+	debug_printf("Listening socket established, implement logic!\n");
 	exit(EXIT_FAILURE);
 }
 
