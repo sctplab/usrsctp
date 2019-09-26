@@ -913,9 +913,15 @@ sctp_fill_random_store(struct sctp_pcb *m)
 	 * numbers, but thats ok too since that is random as well :->
 	 */
 	m->store_at = 0;
+#if defined(__Userspace__) && defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
+	for (int i = 0; i < (int) (sizeof(m->random_store) / sizeof(int)); i++) {
+		m->random_store[i] = (uint8_t) rand();
+	}
+#else
 	(void)sctp_hmac(SCTP_HMAC, (uint8_t *)m->random_numbers,
 	    sizeof(m->random_numbers), (uint8_t *)&m->random_counter,
 	    sizeof(m->random_counter), (uint8_t *)m->random_store);
+#endif
 	m->random_counter++;
 }
 

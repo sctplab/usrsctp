@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <usrsctp.h>
+#include "../programs/programs_helper.h"
 
 #define FUZZ_FAST 1
 
@@ -54,7 +55,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 static void
 handle_upcall(struct socket *sock, void *arg, int flgs)
 {
-	fprintf(stderr, "Listening socket established, implement logic!\n");
+	debug_printf("Listening socket established, implement logic!\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -78,9 +79,14 @@ init_fuzzer(void) {
 	}
 #endif
 
+#ifdef FUZZ_VERBOSE
+	usrsctp_init(0, conn_output, debug_printf_stack);
+#else
 	usrsctp_init(0, conn_output, NULL);
+#endif
+
 	usrsctp_enable_crc32c_offload();
-	/* set up a connected UDP socket */
+	
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 #endif
@@ -133,6 +139,11 @@ int
 LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 	init_fuzzer();
+
+	if (data_size < 8 || data_size > 65535) {
+		// Skip too small and too large packets
+		return (0);
+	}
 	usrsctp_conninput((void *)1, data, data_size, 0);
 
 #if !defined(FUZZ_FAST)

@@ -622,7 +622,7 @@ int main(int argc, char **argv)
 	local_addr.sin_port = htons(local_port);
 	local_addr.sin_addr.s_addr = src_addr;
 
-	usrsctp_init(local_udp_port, NULL, debug_printf);
+	usrsctp_init(local_udp_port, NULL, debug_printf_stack);
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 #endif
