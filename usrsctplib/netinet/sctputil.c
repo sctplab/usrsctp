@@ -912,12 +912,12 @@ sctp_fill_random_store(struct sctp_pcb *m)
 	 * want. There is a danger that two guys will use the same random
 	 * numbers, but thats ok too since that is random as well :->
 	 */
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+	m->store_at = 0;
+#if defined(__Userspace__) && defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
 	for (int i = 0; i < (int) (sizeof(m->random_store) / sizeof(int)); i++) {
 		m->random_store[i] = (uint8_t) (i + m->random_counter);
 	}
 #else
-	m->store_at = 0;
 	(void)sctp_hmac(SCTP_HMAC, (uint8_t *)m->random_numbers,
 	    sizeof(m->random_numbers), (uint8_t *)&m->random_counter,
 	    sizeof(m->random_counter), (uint8_t *)m->random_store);
