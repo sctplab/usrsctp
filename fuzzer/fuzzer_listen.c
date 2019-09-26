@@ -81,7 +81,7 @@ init_fuzzer(void) {
 
 	usrsctp_init(0, conn_output, debug_printf_stack);
 	usrsctp_enable_crc32c_offload();
-	/* set up a connected UDP socket */
+	
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 #endif
