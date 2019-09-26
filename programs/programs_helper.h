@@ -28,14 +28,12 @@
 #ifndef __PROGRAMS_HELPER_H__
 #define __PROGRAMS_HELPER_H__
 
-#define SCTP_PACKED __attribute__((packed))
-
 struct sctp_chunk_header {
 	uint8_t chunk_type;	/* chunk type */
 	uint8_t chunk_flags;	/* chunk flags */
 	uint16_t chunk_length;	/* chunk length */
 	/* optional params follow */
-} SCTP_PACKED;
+} __attribute__((packed));
 
 struct sctp_init_chunk {
 	struct sctp_chunk_header ch;
@@ -45,7 +43,7 @@ struct sctp_init_chunk {
 	uint16_t num_inbound_streams;	/* MIS */
 	uint32_t initial_tsn;	/* I-TSN */
 	/* optional param's follow */
-} SCTP_PACKED;
+} __attribute__((packed));
 
 
 void
