@@ -76,7 +76,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer")
 # 4 - DATA SENT
 # 5 - DATA RECEIVED
 
-add_executable(fuzzer_listen fuzzer_listen.c)
+add_executable(fuzzer_listen fuzzer_listen.c ../programs/programs_helper.c)
 target_link_libraries(fuzzer_listen usrsctp-static)
 
 add_executable(fuzzer_connect_multi fuzzer_connect.c ../programs/programs_helper.c)

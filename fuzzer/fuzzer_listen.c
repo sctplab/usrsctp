@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <usrsctp.h>
+#include "../programs/programs_helper.h"
 
 #define FUZZ_FAST 1
 
@@ -78,7 +79,7 @@ init_fuzzer(void) {
 	}
 #endif
 
-	usrsctp_init(0, conn_output, NULL);
+	usrsctp_init(0, conn_output, debug_printf_stack);
 	usrsctp_enable_crc32c_offload();
 	/* set up a connected UDP socket */
 #ifdef SCTP_DEBUG
