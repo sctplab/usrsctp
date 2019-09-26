@@ -61,4 +61,17 @@ void handle_notification(union sctp_notification *notif, size_t n);
 	} while (0)
 #endif
 
-#endif /* __PROGRAMS_HELPER_H__ */ 
+void
+debug_printf_runtime(void);
+
+void
+debug_printf_stack(const char *format, ...);
+
+
+// #define debug_printf(...)                       \
+// 	do {                                        \
+// 		debug_printf_runtime();             \
+// 		fprintf(stderr, __VA_ARGS__);           \
+// 	} while (0)
+
+#endif /* __PROGRAMS_HELPER_H__ */

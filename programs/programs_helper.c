@@ -31,8 +31,13 @@ gettimeofday(struct timeval *tv, void *ignore)
 }
 #endif
 
+void debug_printf_runtime(void) {
+
+}
+
+
 void
-debug_printf(const char *format, ...)
+debug_printf_stack(const char *format, ...)
 {
 	static struct timeval time_main;
 
