@@ -47,8 +47,9 @@ struct sctp_init_chunk {
 	/* optional param's follow */
 } SCTP_PACKED;
 
-void debug_printf(const char *format, ...);
-void handle_notification(union sctp_notification *notif, size_t n);
+
+void
+handle_notification(union sctp_notification *notif, size_t n);
 #ifndef timersub
 #define timersub(tvp, uvp, vvp)                                   \
 	do {                                                      \
@@ -68,10 +69,11 @@ void
 debug_printf_stack(const char *format, ...);
 
 
-// #define debug_printf(...)                       \
-// 	do {                                        \
-// 		debug_printf_runtime();             \
-// 		fprintf(stderr, __VA_ARGS__);           \
-// 	} while (0)
+#define debug_printf(...)                       \
+	do {                                        \
+		fprintf(stderr, "[P]");                 \
+		debug_printf_runtime();                 \
+		fprintf(stderr, __VA_ARGS__);           \
+	} while (0)
 
 #endif /* __PROGRAMS_HELPER_H__ */

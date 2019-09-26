@@ -159,9 +159,9 @@ main(int argc, char *argv[])
 	const int on = 1;
 
 	if (argc > 1) {
-		usrsctp_init(atoi(argv[1]), NULL, debug_printf);
+		usrsctp_init(atoi(argv[1]), NULL, debug_printf_stack);
 	} else {
-		usrsctp_init(9899, NULL, debug_printf);
+		usrsctp_init(9899, NULL, debug_printf_stack);
 	}
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
