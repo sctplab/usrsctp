@@ -79,7 +79,12 @@ init_fuzzer(void) {
 	}
 #endif
 
+#ifdef FUZZ_VERBOSE
 	usrsctp_init(0, conn_output, debug_printf_stack);
+#else
+	usrsctp_init(0, conn_output, NULL);
+#endif
+
 	usrsctp_enable_crc32c_offload();
 	
 #ifdef SCTP_DEBUG
