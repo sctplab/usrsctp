@@ -153,6 +153,10 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	};
 	uint8_t fuzzing_stage = FUZZING_STAGE;
 	int fuzzed_packet_size;
+	int enable;
+#if defined(FUZZ_STREAM_RESET) || defined(FUZZ_INTERLEAVING)
+	struct sctp_assoc_value assoc_val;
+#endif
 
 	// WITH COMMON HEADER!
 	char fuzz_init_ack[] = "\x13\x89\x13\x88\x54\xc2\x7c\x46\x00\x00\x00\x00\x02\x00\x01\xf8" \
@@ -275,13 +279,6 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 	debug_printf("LLVMFuzzerTestOneInput() - Stage %d\n", fuzzing_stage);
 
-#if defined(FUZZ_EXPLICIT_EOR) || defined(FUZZ_INTERLEAVING)
-	int enable;
-#endif
-#if defined(FUZZ_STREAM_RESET) || defined(FUZZ_INTERLEAVING)
-	struct sctp_assoc_value assoc_val;
-#endif
-
 	if (!initialized) {
 		initialized = initialize_fuzzer();
 	}
@@ -315,6 +312,18 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 			perror("setsockopt SCTP_EVENT socket_client");
 			exit(EXIT_FAILURE);
 		}
+	}
+
+	enable = 1;
+	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RECVRCVINFO, &enable, sizeof(enable)) < 0) {
+		perror("setsockopt SCTP_RECVRCVINFO socket_client");
+		exit(EXIT_FAILURE);
+	}
+
+	enable = 1;
+	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RECVNXTINFO, &enable, sizeof(enable)) < 0) {
+		perror("setsockopt SCTP_RECVNXTINFO socket_client");
+		exit(EXIT_FAILURE);
 	}
 
 #if defined(FUZZ_EXPLICIT_EOR)
