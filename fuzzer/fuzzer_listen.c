@@ -36,6 +36,17 @@
 
 #define FUZZ_FAST 1
 
+#ifdef FUZZ_VERBOSE
+#define fuzzer_printf(...)                       \
+	do {                                        \
+		fprintf(stderr, "[P]");                 \
+		debug_printf_runtime();                 \
+		fprintf(stderr, __VA_ARGS__);           \
+	} while (0)
+#else
+#define fuzzer_printf(...)
+#endif
+
 struct sockaddr_conn sconn;
 struct socket *s_l;
 
@@ -55,7 +66,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 static void
 handle_upcall(struct socket *sock, void *arg, int flgs)
 {
-	debug_printf("Listening socket established, implement logic!\n");
+	fuzzer_printf("Listening socket established, implement logic!\n");
 	exit(EXIT_FAILURE);
 }
 
