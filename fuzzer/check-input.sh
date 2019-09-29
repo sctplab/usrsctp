@@ -14,7 +14,7 @@ echo "########## Beginning Fuzzer Chain"
 echo ""
 
 set +e
-./fuzzer_connect_multi_verbose -timeout=30 $1 2>fuzzer.log
+./fuzzer_connect_multi_verbose -timeout=30 $1 2>$1.log
 FUZZER_RETVAL=$?
 set -e
 
@@ -27,17 +27,18 @@ else
         exit
 fi
 
-grep "# SCTP_PACKET" fuzzer.log > text2pcap.log
-text2pcap -n -l 248 -D -t "%H:%M:%S." text2pcap.log fuzzer.pcapng
+grep "# SCTP_PACKET" $1.log > $1.pcap-log
+text2pcap -n -l 248 -D -t "%H:%M:%S." $1.pcap-log $1.pcapng
+rm $1.pcap-log
 
 echo ""
-echo "LOG:   fuzzer.log"
-echo "PCAP:  fuzzer.pcapng"
+echo "LOG:   $1.log"
+echo "PCAP:  $1.pcapng"
 echo ""
 
 # Open Wireshark if we have an X session
 if [ -z ${DISPLAY+x} ]; then
     echo "\$DISPLAY unset, skipping wireshark"
 else
-    wireshark fuzzer.pcapng
+    wireshark $1.pcapng
 fi
