@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+#
+# usage: check-input.sh input_data
+#
+
 set -e
 set -u
 
@@ -8,25 +12,19 @@ set -u
 echo "Fuzzer Input: $1"
 echo "########## Beginning Fuzzer Chain"
 echo ""
-#./fuzzer_connected CORPUS_CONNECTED/tsctp-000005 2>fuzzer.log
-#./fuzzer_connect_data_sent CORPUS_CONNECT/data-1.bin 2>fuzzer.log
-#./fuzzer_connect_data_received CORPUS_CONNECT/data-1.bin 2>fuzzer.log
-#./fuzzer_connect_multi -timeout=6 timeout-00b96dd43f1251438bb44daa0a5a24ae4df5bce5 2>fuzzer.log
 
 set +e
 ./fuzzer_connect_multi_verbose -timeout=30 $1 2>fuzzer.log
 FUZZER_RETVAL=$?
 set -e
 
-#echo $FUZZER_RETVAL
-
 if [ "$FUZZER_RETVAL" -eq "0" ]; then
-        echo "Execution successful - issue not reproducable!"
+        echo "Execution successful - fuzzer terminated without an issue"
 elif [ "$FUZZER_RETVAL" -eq "77" ]; then
         echo "Exceution successful - found an issue!"
 else
         echo "Internal error, exiting!"
-        exit;
+        exit
 fi
 
 grep "# SCTP_PACKET" fuzzer.log > text2pcap.log
