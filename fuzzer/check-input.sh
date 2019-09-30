@@ -18,13 +18,15 @@ set +e
 FUZZER_RETVAL=$?
 set -e
 
+echo "retval $FUZZER_RETVAL"
+
 if [ "$FUZZER_RETVAL" -eq "0" ]; then
         echo "Execution successful - fuzzer terminated without an issue"
 elif [ "$FUZZER_RETVAL" -eq "77" ]; then
         echo "Exceution successful - found an issue!"
 else
-        echo "Internal error, exiting!"
-        exit
+        echo "Unexpected return code: $FUZZER_RETVAL - handle with care..!"
+        #exit
 fi
 
 grep "# SCTP_PACKET" $1.log > $1.pcap-log
