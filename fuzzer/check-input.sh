@@ -9,6 +9,10 @@ set -u
 
 #make
 
+C_RED='\033[0;31m' # RED
+C_GRN='\033[0;32m' # RED
+C_NOC='\033[0m' # No Color
+
 echo "Fuzzer Input: $1"
 echo "########## Beginning Fuzzer Chain"
 echo ""
@@ -21,9 +25,13 @@ set -e
 echo "retval $FUZZER_RETVAL"
 
 if [ "$FUZZER_RETVAL" -eq "0" ]; then
-        echo "Execution successful - fuzzer terminated without an issue"
+        echo -e "$C_RED"
+        echo "$1 - NOT REPRODUCABLE"
+        echo -e "$C_NOC"
 elif [ "$FUZZER_RETVAL" -eq "77" ]; then
-        echo "Exceution successful - found an issue!"
+        echo -e "$C_GRN"
+        echo "$1 - REPRODUCABLE"
+        echo -e "$C_NOC"
 else
         echo "Unexpected return code: $FUZZER_RETVAL - handle with care..!"
         #exit
