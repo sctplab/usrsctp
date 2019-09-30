@@ -5,7 +5,7 @@ NPROC=1
 
 if [ "$(uname)" = "Linux" ]; then
     NPROC=$(nproc)
-    CC=clang-9
+    CC=clang-10
 elif [ "$(uname)" = "Darwin" ]; then
     NPROC=$(sysctl -n hw.ncpu)
     CC=/usr/local/opt/llvm/bin/clang
@@ -34,7 +34,7 @@ cd ..
 find . -iwholename '*cmake*' -not -name CMakeLists.txt -delete
 
 # Build with ASAN / MSAN
-cmake -Dsctp_build_fuzzer=1 -Dsctp_build_programs=0 -Dsctp_invariants=1 -Dsctp_sanitizer_address=1  -DCMAKE_C_COMPILER="$CC" -DCMAKE_BUILD_TYPE=RelWithDebInfo .
-#cmake -Dsctp_build_fuzzer=1 -Dsctp_build_programs=0 -Dsctp_invariants=1 -Dsctp_sanitizer_memory=1  -DCMAKE_C_COMPILER="$CC" -DCMAKE_BUILD_TYPE=RelWithDebInfo .
+#cmake -Dsctp_build_fuzzer=1 -Dsctp_build_programs=0 -Dsctp_invariants=1 -Dsctp_sanitizer_address=1  -DCMAKE_C_COMPILER="$CC" -DCMAKE_BUILD_TYPE=RelWithDebInfo .
+cmake -Dsctp_build_fuzzer=1 -Dsctp_build_programs=0 -Dsctp_invariants=1 -Dsctp_sanitizer_memory=1  -DCMAKE_C_COMPILER="$CC" -DCMAKE_BUILD_TYPE=RelWithDebInfo .
 
 make -j"$NPROC"
