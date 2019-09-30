@@ -218,7 +218,7 @@ sctp_os_timer_stop(sctp_os_timer_t *c)
 }
 
 void
-sctp_handle_tick(int delta)
+sctp_handle_tick(int elapsed_ticks)
 {
 	sctp_os_timer_t *c;
 	void (*c_func)(void *);
@@ -227,7 +227,7 @@ sctp_handle_tick(int delta)
 
 	SCTP_TIMERQ_LOCK();
 	/* update our tick count */
-	ticks += delta;
+	ticks += elapsed_ticks;
 	c = TAILQ_FIRST(&SCTP_BASE_INFO(callqueue));
 	while (c) {
 		if (c->c_time <= ticks) {

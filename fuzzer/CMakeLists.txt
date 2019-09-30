@@ -60,7 +60,7 @@ endif ()
 # COMPILER FLAGS
 #################################################
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-gnu-zero-variadic-macro-arguments")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-gnu-zero-variadic-macro-arguments -Wno-unused-variable")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer")
 
 
@@ -68,26 +68,41 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer")
 # PROGRAMS
 #################################################
 
-# if in fuzzing mode, only build the fuzzer
-configure_file(crashtest.py crashtest.py COPYONLY)
-configure_file(fuzzer_unconnected.sh fuzzer_unconnected.sh COPYONLY)
-configure_file(fuzzer_connected.sh fuzzer_connected.sh COPYONLY)
+# FUZZING_STAGE LEVELS
+# 0 - MULTI - based on input
+# 1 - COOKIE_WAIT
+# 2 - COOKIE_ECHO
+# 3 - ESTABLISHED
+# 4 - DATA SENT
+# 5 - DATA RECEIVED
 
-list(APPEND check_programs
-	fuzzer_unconnected.c
-	fuzzer_connected.c
-)
+add_executable(fuzzer_listen fuzzer_listen.c ../programs/programs_helper.c)
+target_link_libraries(fuzzer_listen usrsctp-static)
 
-foreach (source_file ${check_programs})
-	get_filename_component(source_file_we ${source_file} NAME_WE)
-	add_executable(
-		${source_file_we}
-		${source_file}
-	)
+add_executable(fuzzer_connect_multi fuzzer_connect.c ../programs/programs_helper.c)
+target_compile_definitions(fuzzer_connect_multi PRIVATE FUZZING_STAGE=0)
+target_link_libraries(fuzzer_connect_multi usrsctp-static)
 
-	target_link_libraries(
-		${source_file_we}
-		usrsctp-static
-	)
-endforeach ()
+add_executable(fuzzer_connect_multi_verbose fuzzer_connect.c ../programs/programs_helper.c)
+target_compile_definitions(fuzzer_connect_multi_verbose PRIVATE FUZZING_STAGE=0 FUZZ_VERBOSE)
+target_link_libraries(fuzzer_connect_multi_verbose usrsctp-static)
 
+# add_executable(fuzzer_connect_cookie_wait fuzzer_connect.c)
+# target_compile_definitions(fuzzer_connect_cookie_wait PRIVATE FUZZING_STAGE=1)
+# target_link_libraries(fuzzer_connect_cookie_wait usrsctp-static)
+
+# add_executable(fuzzer_connect_cookie_echoed fuzzer_connect.c)
+# target_compile_definitions(fuzzer_connect_cookie_echoed PRIVATE FUZZING_STAGE=2)
+# target_link_libraries(fuzzer_connect_cookie_echoed usrsctp-static)
+
+# add_executable(fuzzer_connect_established fuzzer_connect.c)
+# target_compile_definitions(fuzzer_connect_established PRIVATE FUZZING_STAGE=3)
+# target_link_libraries(fuzzer_connect_established usrsctp-static)
+
+# add_executable(fuzzer_connect_data_sent fuzzer_connect.c)
+# target_compile_definitions(fuzzer_connect_data_sent PRIVATE FUZZING_STAGE=4)
+# target_link_libraries(fuzzer_connect_data_sent usrsctp-static)
+
+# add_executable(fuzzer_connect_data_received fuzzer_connect.c)
+# target_compile_definitions(fuzzer_connect_data_received PRIVATE FUZZING_STAGE=5)
+# target_link_libraries(fuzzer_connect_data_received usrsctp-static)
