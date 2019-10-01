@@ -4,8 +4,8 @@
 # usage: check-input.sh input_data
 #
 
-set -e
-set -u
+set -e	# stop on error
+set -u	# uinitialized variables -> error!
 
 #make
 
@@ -22,19 +22,19 @@ set +e
 FUZZER_RETVAL=$?
 set -e
 
-echo "retval $FUZZER_RETVAL"
+echo "Fuzzer returncode: $FUZZER_RETVAL"
 
 if [ "$FUZZER_RETVAL" -eq "0" ]; then
-        echo -e "$C_RED"
-        echo "$1 - NOT REPRODUCABLE"
-        echo -e "$C_NOC"
+	echo -e "$C_RED"
+	echo "$1 - NOT REPRODUCABLE"
+	echo -e "$C_NOC"
 elif [ "$FUZZER_RETVAL" -eq "77" ]; then
-        echo -e "$C_GRN"
-        echo "$1 - REPRODUCABLE"
-        echo -e "$C_NOC"
+	echo -e "$C_GRN"
+	echo "$1 - REPRODUCABLE"
+	echo -e "$C_NOC"
 else
-        echo "Unexpected return code: $FUZZER_RETVAL - handle with care..!"
-        #exit
+	echo "Unexpected return code: $FUZZER_RETVAL - handle with care..!"
+	#exit
 fi
 
 grep "# SCTP_PACKET" $1.log > $1.pcap-log
@@ -48,7 +48,7 @@ echo ""
 
 # Open Wireshark if we have an X session
 if [ -z ${DISPLAY+x} ]; then
-    echo "\$DISPLAY unset, skipping wireshark"
+	echo "\$DISPLAY unset, skipping wireshark"
 else
-    wireshark $1.pcapng
+	wireshark $1.pcapng
 fi
