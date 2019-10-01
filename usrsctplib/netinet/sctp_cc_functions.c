@@ -1953,13 +1953,13 @@ between(uint32_t seq1, uint32_t seq2, uint32_t seq3)
 	return (seq3 - seq2 >= seq1 - seq2);
 }
 
-static inline uint32_t
+static inline uint64_t
 htcp_cong_time(struct htcp *ca)
 {
 	return (sctp_get_tick_count() - ca->last_cong);
 }
 
-static inline uint32_t
+static inline uint64_t
 htcp_ccount(struct htcp *ca)
 {
 	return (htcp_cong_time(ca)/ca->minRTT);
@@ -2008,7 +2008,7 @@ measure_rtt(struct sctp_nets *net)
 static void
 measure_achieved_throughput(struct sctp_nets *net)
 {
-	uint32_t now = sctp_get_tick_count();
+	uint64_t now = sctp_get_tick_count();
 
 	if (net->fast_retran_ip == 0)
 		net->cc_mod.htcp_ca.bytes_acked = net->net_ack;
@@ -2077,9 +2077,9 @@ htcp_alpha_update(struct htcp *ca)
 {
 	uint32_t minRTT = ca->minRTT;
 	uint32_t factor = 1;
-	uint32_t diff = htcp_cong_time(ca);
+	uint64_t diff = htcp_cong_time(ca);
 
-	if (diff > (uint32_t)hz) {
+	if (diff > (uint64_t)hz) {
 		diff -= hz;
 		factor = 1+ ( 10*diff + ((diff/2)*(diff/2)/hz))/hz;
 	}

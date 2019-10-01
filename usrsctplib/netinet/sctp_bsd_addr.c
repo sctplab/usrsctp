@@ -948,7 +948,7 @@ sctp_packet_log(struct mbuf *m)
 	lenat++;
 	tick_tock = (uint32_t *)lenat;
 	lenat++;
-	*tick_tock = sctp_get_tick_count();
+	*tick_tock = (uint32_t)sctp_get_tick_count();
 	copyto = (void *)lenat;
 	thisone = thisend - sizeof(int);
 	lenat = (int *)&SCTP_BASE_VAR(packet_log_buffer)[thisone];
