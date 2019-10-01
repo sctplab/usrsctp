@@ -230,7 +230,7 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 	ticks += elapsed_ticks;
 	c = TAILQ_FIRST(&SCTP_BASE_INFO(callqueue));
 	while (c) {
-		if ((ticks - c->c_time) & 0x80000000) {
+		if (SCTP_UINT32_GE(ticks, c->c_time)) {
 			sctp_os_timer_next = TAILQ_NEXT(c, tqe);
 			TAILQ_REMOVE(&SCTP_BASE_INFO(callqueue), c, tqe);
 			c_func = c->c_func;
