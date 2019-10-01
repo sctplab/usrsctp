@@ -315,7 +315,7 @@ struct sctp_remote_error {
 	uint32_t sre_length;
 	uint16_t sre_error;
 	sctp_assoc_t sre_assoc_id;
-	uint8_t sre_data[4];
+	uint8_t sre_data[];
 };
 
 /* shutdown event */
