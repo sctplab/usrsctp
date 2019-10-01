@@ -230,7 +230,7 @@ sctp_handle_tick(uint64_t elapsed_ticks)
 	/* update our tick count */
 	initial_ticks = ticks;
 	ticks = initial_ticks + elapsed_ticks;
-	KASSERT(initial_ticks <= ticks, "Ticks counter overflow detected");
+	KASSERT(initial_ticks <= ticks, ("Ticks counter overflow detected"));
 
 	c = TAILQ_FIRST(&SCTP_BASE_INFO(callqueue));
 	while (c) {
