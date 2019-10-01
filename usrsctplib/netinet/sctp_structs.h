@@ -61,7 +61,7 @@ struct sctp_timer {
 
 	/* for sanity checking */
 	void *self;
-	uint64_t ticks;
+	uint32_t ticks;
 	uint32_t stopped_from;
 };
 
@@ -268,8 +268,8 @@ struct htcp {
 	uint16_t	alpha;		/* Fixed point arith, << 7 */
 	uint8_t		beta;           /* Fixed point arith, << 7 */
 	uint8_t		modeswitch;     /* Delay modeswitch until we had at least one congestion event */
-	uint64_t	last_cong;	/* Time since last congestion event end */
-	uint64_t	undo_last_cong;
+	uint32_t	last_cong;	/* Time since last congestion event end */
+	uint32_t	undo_last_cong;
 	uint16_t	bytes_acked;
 	uint32_t	bytecount;
 	uint32_t	minRTT;
@@ -283,7 +283,7 @@ struct htcp {
 	uint32_t	maxB;
 	uint32_t	old_maxB;
 	uint32_t	Bi;
-	uint64_t	lasttime;
+	uint32_t	lasttime;
 };
 
 struct rtcc_cc {
@@ -365,7 +365,7 @@ struct sctp_nets {
 	 * JRS - 5/8/07 - Variable to track last time
 	 *  a destination was active for CMT PF
 	 */
-	uint64_t last_active;
+	uint32_t last_active;
 
 	/*
 	 * CMT variables (iyengar@cis.udel.edu)

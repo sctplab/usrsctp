@@ -67,14 +67,14 @@
 static int connecting = 0;
 static int finish = 0;
 
-static uint64_t
+static unsigned int
 get_tick_count(void)
 {
 #ifdef _WIN32
-	return GetTickCount64();
+	return GetTickCount();
 #else
 	struct timeval tv;
-	uint64_t milliseconds;
+	unsigned int milliseconds;
 
 	gettimeofday(&tv, NULL); /* get current time */
 	milliseconds = tv.tv_sec*1000LL + tv.tv_usec/1000; /* calculate milliseconds */
@@ -92,13 +92,13 @@ handle_events(int sock, struct socket* s, void* sconn_addr)
 	fd_set rfds;
 	struct timeval tv;
 
-	uint64_t next_fire_time = get_tick_count();
-	uint64_t last_fire_time = next_fire_time;
-	uint64_t now = get_tick_count();
+	unsigned next_fire_time = get_tick_count();
+	unsigned last_fire_time = next_fire_time;
+	unsigned now = get_tick_count();
 	int wait_time;
 
 	while (!finish) {
-		if ((now - next_fire_time) & (1ULL<<63)) {
+		if ((int) (now - next_fire_time) > 0) {
 			usrsctp_handle_timers(now - last_fire_time);
 			last_fire_time = now;
 			next_fire_time = now + TIMER_INTERVAL_MSECS;
