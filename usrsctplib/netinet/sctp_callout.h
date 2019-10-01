@@ -84,13 +84,13 @@ extern userland_mutex_t sctp_os_timerwait_mtx;
 #endif
 #endif
 
-int sctp_get_tick_count(void);
+uint32_t sctp_get_tick_count(void);
 
 TAILQ_HEAD(calloutlist, sctp_callout);
 
 struct sctp_callout {
 	TAILQ_ENTRY(sctp_callout) tqe;
-	int c_time;		/* ticks to the event */
+	uint32_t c_time;		/* ticks to the event */
 	void *c_arg;		/* function argument */
 	void (*c_func)(void *);	/* function to call */
 	int c_flags;		/* state of this entry */
@@ -103,7 +103,7 @@ typedef struct sctp_callout sctp_os_timer_t;
 void sctp_os_timer_init(sctp_os_timer_t *tmr);
 void sctp_os_timer_start(sctp_os_timer_t *, int, void (*)(void *), void *);
 int sctp_os_timer_stop(sctp_os_timer_t *);
-void sctp_handle_tick(int);
+void sctp_handle_tick(uint32_t);
 
 #define SCTP_OS_TIMER_INIT	sctp_os_timer_init
 #define SCTP_OS_TIMER_START	sctp_os_timer_start
