@@ -228,7 +228,6 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 	SCTP_TIMERQ_LOCK();
 	/* update our tick count */
 	ticks += elapsed_ticks;
-
 	c = TAILQ_FIRST(&SCTP_BASE_INFO(callqueue));
 	while (c) {
 		if ((ticks - c->c_time) & (1UL << 31)) {
