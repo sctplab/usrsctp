@@ -234,7 +234,7 @@ sctp_handle_tick(uint64_t elapsed_ticks)
 
 	c = TAILQ_FIRST(&SCTP_BASE_INFO(callqueue));
 	while (c) {
-		if (c->c_time <= ticks) {
+		if ((ticks - c->c_time) & (1ULL << 63)) {
 			sctp_os_timer_next = TAILQ_NEXT(c, tqe);
 			TAILQ_REMOVE(&SCTP_BASE_INFO(callqueue), c, tqe);
 			c_func = c->c_func;

@@ -98,7 +98,7 @@ handle_events(int sock, struct socket* s, void* sconn_addr)
 	int wait_time;
 
 	while (!finish) {
-		if (now > next_fire_time) {
+		if ((now - next_fire_time) & (1ULL<<63)) {
 			usrsctp_handle_timers(now - last_fire_time);
 			last_fire_time = now;
 			next_fire_time = now + TIMER_INTERVAL_MSECS;
