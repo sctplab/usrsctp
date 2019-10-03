@@ -315,7 +315,7 @@ struct sctp_remote_error {
 	uint32_t sre_length;
 	uint16_t sre_error;
 	sctp_assoc_t sre_assoc_id;
-	uint8_t sre_data[4];
+	uint8_t sre_data[];
 };
 
 /* shutdown event */
@@ -1042,7 +1042,7 @@ usrsctp_get_events(struct socket *so);
 
 
 void
-usrsctp_handle_timers(int delta);
+usrsctp_handle_timers(uint32_t delta);
 
 #define SCTP_DUMP_OUTBOUND 1
 #define SCTP_DUMP_INBOUND  0
