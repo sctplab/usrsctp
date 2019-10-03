@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 352894 2019-09-30 12:06:57Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 353060 2019-10-03 18:36:54Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -174,10 +174,16 @@ sctp_process_asconf_add_ip(struct sockaddr *src, struct sctp_asconf_paramhdr *ap
 #endif
 
 	aparam_length = ntohs(aph->ph.param_length);
+	if (aparam_length < sizeof(struct sctp_asconf_paramhdr) + sizeof(struct sctp_paramhdr)) {
+		return (NULL);
+	}
 	ph = (struct sctp_paramhdr *)(aph + 1);
 	param_type = ntohs(ph->param_type);
 #if defined(INET) || defined(INET6)
 	param_length = ntohs(ph->param_length);
+	if (param_length + sizeof(struct sctp_asconf_paramhdr) != aparam_length) {
+		return (NULL);
+	}
 #endif
 	sa = &store.sa;
 	switch (param_type) {
@@ -334,8 +340,14 @@ sctp_process_asconf_delete_ip(struct sockaddr *src,
 	aparam_length = ntohs(aph->ph.param_length);
 	ph = (struct sctp_paramhdr *)(aph + 1);
 	param_type = ntohs(ph->param_type);
+	if (aparam_length < sizeof(struct sctp_asconf_paramhdr) + sizeof(struct sctp_paramhdr)) {
+		return (NULL);
+	}
 #if defined(INET) || defined(INET6)
 	param_length = ntohs(ph->param_length);
+	if (param_length + sizeof(struct sctp_asconf_paramhdr) != aparam_length) {
+		return (NULL);
+	}
 #endif
 	sa = &store.sa;
 	switch (param_type) {
@@ -467,10 +479,16 @@ sctp_process_asconf_set_primary(struct sockaddr *src,
 #endif
 
 	aparam_length = ntohs(aph->ph.param_length);
+	if (aparam_length < sizeof(struct sctp_asconf_paramhdr) + sizeof(struct sctp_paramhdr)) {
+		return (NULL);
+	}
 	ph = (struct sctp_paramhdr *)(aph + 1);
 	param_type = ntohs(ph->param_type);
 #if defined(INET) || defined(INET6)
 	param_length = ntohs(ph->param_length);
+	if (param_length + sizeof(struct sctp_asconf_paramhdr) != aparam_length) {
+		return (NULL);
+	}
 #endif
 	sa = &store.sa;
 	switch (param_type) {
