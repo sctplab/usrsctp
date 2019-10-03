@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 353069 2019-10-03 20:39:17Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 353071 2019-10-03 20:47:57Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -716,8 +716,8 @@ sctp_handle_asconf(struct mbuf *m, unsigned int offset,
 		sctp_m_freem(m_ack);
 		return;
 	}
-	/* param_length is already validated in process_control... */
-	offset += ntohs(p_addr->ph.param_length);	/* skip lookup addr */
+	/* skip lookup addr */
+	offset += SCTP_SIZE32(ntohs(p_addr->ph.param_length));
 	/* get pointer to first asconf param in ASCONF */
 	aph = (struct sctp_asconf_paramhdr *)sctp_m_getptr(m, offset, sizeof(struct sctp_asconf_paramhdr), (uint8_t *)&aparam_buf);
 	if (aph == NULL) {
