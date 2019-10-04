@@ -81,6 +81,7 @@ usrsctp_HEADERS = \
 	netinet\sctp_auth.h \
 	netinet\sctp_bsd_addr.h \
 	netinet\sctp_callout.h \
+	netinet\sctp_callout_queue.h \
 	netinet\sctp_constants.h \
 	netinet\sctp_crc32.h \
 	netinet\sctp_header.h \
@@ -128,6 +129,9 @@ sctp_bsd_addr.obj : netinet\sctp_bsd_addr.c $(usrsctp_HEADERS)
 
 sctp_callout.obj : netinet\sctp_callout.c $(usrsctp_HEADERS)
 	cl $(CVARSDLL) $(CFLAGS) -c netinet\sctp_callout.c
+
+sctp_callout_queue.obj : netinet\sctp_callout_queue.c $(usrsctp_HEADERS)
+	cl $(CVARSDLL) $(CFLAGS) -c netinet\sctp_callout_queue.c
 
 sctp_cc_functions.obj : netinet\sctp_cc_functions.c $(usrsctp_HEADERS)
 	cl $(CVARSDLL) $(CFLAGS) -c netinet\sctp_cc_functions.c

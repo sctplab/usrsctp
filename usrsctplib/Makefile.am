@@ -50,6 +50,7 @@ libusrsctp_la_SOURCES  = user_atomic.h \
                          netinet/sctp_auth.c netinet/sctp_auth.h \
                          netinet/sctp_bsd_addr.c netinet/sctp_bsd_addr.h \
                          netinet/sctp_callout.c netinet/sctp_callout.h \
+                         netinet/sctp_callout_queue.c netinet/sctp_callout_queue.h \
                          netinet/sctp_cc_functions.c \
                          netinet/sctp_constants.h \
                          netinet/sctp_crc32.c netinet/sctp_crc32.h \

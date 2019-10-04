@@ -3,6 +3,7 @@ sources += files([
     'sctp_auth.c',
     'sctp_bsd_addr.c',
     'sctp_callout.c',
+    'sctp_callout_queue.c',
     'sctp_cc_functions.c',
     'sctp_crc32.c',
     'sctp_indata.c',
