@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 351654 2019-09-01 10:09:53Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 353119 2019-10-05 09:46:11Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -9569,8 +9569,7 @@ sctp_send_cookie_echo(struct mbuf *m,
 				pad = 4 - pad;
 			}
 			if (pad > 0) {
-				cookie = sctp_pad_lastmbuf(cookie, pad, NULL);
-				if (cookie == NULL) {
+				if (sctp_pad_lastmbuf(cookie, pad, NULL) == NULL) {
 					return (-8);
 				}
 			}
