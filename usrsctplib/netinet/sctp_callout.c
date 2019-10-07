@@ -59,13 +59,13 @@
  * Callout/Timer routines for OS that doesn't have them
  */
 #if defined(__APPLE__) || defined(__Userspace__)
-static int ticks = 0;
+static uint32_t ticks = 0;
 #else
 extern int ticks;
 #endif
 
-int sctp_get_tick_count(void) {
-	int ret;
+uint32_t sctp_get_tick_count(void) {
+	uint32_t ret;
 
 	SCTP_TIMERQ_LOCK();
 	ret = ticks;
@@ -218,7 +218,7 @@ sctp_os_timer_stop(sctp_os_timer_t *c)
 }
 
 void
-sctp_handle_tick(int elapsed_ticks)
+sctp_handle_tick(uint32_t elapsed_ticks)
 {
 	sctp_os_timer_t *c;
 	void (*c_func)(void *);
@@ -230,7 +230,7 @@ sctp_handle_tick(int elapsed_ticks)
 	ticks += elapsed_ticks;
 	c = TAILQ_FIRST(&SCTP_BASE_INFO(callqueue));
 	while (c) {
-		if (c->c_time <= ticks) {
+		if (SCTP_UINT32_GE(ticks, c->c_time)) {
 			sctp_os_timer_next = TAILQ_NEXT(c, tqe);
 			TAILQ_REMOVE(&SCTP_BASE_INFO(callqueue), c, tqe);
 			c_func = c->c_func;

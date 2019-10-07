@@ -53,12 +53,8 @@ debug_printf_stack(const char *format, ...)
 {
 	va_list ap;
 
-	fprintf(stderr, "[S]");
-
-	debug_printf_runtime();
-
 	va_start(ap, format);
-	vfprintf(stderr, format, ap);
+	vprintf(format, ap);
 	va_end(ap);
 }
 
