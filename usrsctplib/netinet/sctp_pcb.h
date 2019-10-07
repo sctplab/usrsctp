@@ -57,6 +57,7 @@ TAILQ_HEAD(sctp_streamhead, sctp_stream_queue_pending);
 
 #include <netinet/sctp_structs.h>
 #include <netinet/sctp_auth.h>
+#include <netinet/sctp_callout_queue.h>
 
 #define SCTP_PCBHASH_ALLADDR(port, mask) (port & mask)
 #define SCTP_PCBHASH_ASOC(tag, mask) (tag & mask)
@@ -282,7 +283,7 @@ struct sctp_epinfo {
 	struct sctp_timer addr_wq_timer;
 
 #if defined(_SCTP_NEEDS_CALLOUT_) || defined(_USER_SCTP_NEEDS_CALLOUT_)
-	struct calloutlist callqueue;
+	sctp_binary_heap_t timers_queue;
 #endif
 };
 
