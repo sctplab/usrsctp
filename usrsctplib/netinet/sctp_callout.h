@@ -142,9 +142,8 @@ void sctp_handle_tick(uint32_t);
 
 #define SCTP_OS_TIMER_INIT	sctp_os_timer_init
 #define SCTP_OS_TIMER_START	sctp_os_timer_start
-#define SCTP_OS_TIMER_STOP	sctp_os_timer_stop
-/* MT FIXME: Is the following correct? */
-#define SCTP_OS_TIMER_STOP_DRAIN SCTP_OS_TIMER_STOP
+#define SCTP_OS_TIMER_STOP	sctp_os_timer_cancel
+#define SCTP_OS_TIMER_STOP_DRAIN sctp_os_timer_stop
 #define	SCTP_OS_TIMER_PENDING(tmr) sctp_os_timer_is_pending(tmr)
 #define	SCTP_OS_TIMER_ACTIVE(tmr) sctp_os_timer_is_active(tmr)
 #define	SCTP_OS_TIMER_DEACTIVATE(tmr) sctp_os_timer_cancel(tmr)
