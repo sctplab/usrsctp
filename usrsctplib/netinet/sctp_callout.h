@@ -78,6 +78,35 @@ __FBSDID("$FreeBSD$");
 
 uint32_t sctp_get_tick_count(void);
 
+/*
+ * Callout state transitions:
+ * to update it import to http://asciiflow.com/
+ * 
+ *                         cancel
+ *                      +----------+
+ *                      |          |
+ *                  +---+---+      |
+ *                  |  new  +<-----+
+ *                  +---+---+
+ *                      |                 start
+ *                      |     +-------------------------------+
+ *                start |     |                               |
+ *                      v     v                               |
+ *               +------+-----+-+         tick          +-----+-----+
+ *        +----->+  scheduled   +---------------------->+  running  |
+ *        |      +------+-------+                       ++----+-----+
+ *        |             |                                |    |
+ *        |             |             tick (done)        |    |
+ * start  |      cancel |     +--------------------------+    |  cancel
+ *        |             |     |                               |
+ *        |             v     v                               v
+ *        |      +------+-----++     tick (done)     +--------+-----------+
+ *        +------+  completed  +<--------------------+  cancel requested  +-----+
+ *               +-+-----------+                     +---------+----------+     |
+ *                 |         ^                                 ^                |
+ *                 +---------+                                 +----------------+
+ *                   cancel                                       start/cancel
+*/
 enum sctp_callout_state
 {
 	SCTP_CALLOUT_NEW = 0, /* default state of a callout */
