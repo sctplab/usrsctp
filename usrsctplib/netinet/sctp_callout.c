@@ -334,7 +334,7 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 	while (0 == sctp_binary_heap_peek(heap, &node))
 	{
 		sctp_os_timer_t* t = ((sctp_os_timer_t*)node->data);
-		if (!SCTP_UINT32_GE(sctp_get_tick_count(), t->c_time))
+		if (!SCTP_UINT32_GE(ticks, t->c_time))
 		{
 			// Earliest timer is not ready yet 
 			break;
