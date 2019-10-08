@@ -296,9 +296,7 @@ void
 sctp_os_timer_cancel(sctp_os_timer_t* c)
 {
 	SCTP_TIMERQ_LOCK();
-
 	sctp_os_timer_cancel_impl(c);
-
 	SCTP_TIMERQ_UNLOCK();
 }
 
@@ -307,9 +305,7 @@ void
 sctp_os_timer_wait_completion(sctp_os_timer_t* c)
 {
 	SCTP_TIMERQ_LOCK();
-
 	sctp_os_timer_wait_completion_impl(c);
-
 	SCTP_TIMERQ_UNLOCK();
 }
 
@@ -318,10 +314,8 @@ int
 sctp_os_timer_stop(sctp_os_timer_t *c)
 {
 	SCTP_TIMERQ_LOCK();
-
 	sctp_os_timer_cancel_impl(c);
 	sctp_os_timer_wait_completion_impl(c);
-
 	SCTP_TIMERQ_UNLOCK();
 	return (1);
 }
