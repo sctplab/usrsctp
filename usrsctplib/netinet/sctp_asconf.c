@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 353123 2019-10-05 13:28:01Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 353303 2019-10-08 11:07:16Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -343,11 +343,11 @@ sctp_process_asconf_delete_ip(struct sockaddr *src,
 #endif
 
 	aparam_length = ntohs(aph->ph.param_length);
-	ph = (struct sctp_paramhdr *)(aph + 1);
-	param_type = ntohs(ph->param_type);
 	if (aparam_length < sizeof(struct sctp_asconf_paramhdr) + sizeof(struct sctp_paramhdr)) {
 		return (NULL);
 	}
+	ph = (struct sctp_paramhdr *)(aph + 1);
+	param_type = ntohs(ph->param_type);
 #if defined(INET) || defined(INET6)
 	param_length = ntohs(ph->param_length);
 	if (param_length + sizeof(struct sctp_asconf_paramhdr) != aparam_length) {
