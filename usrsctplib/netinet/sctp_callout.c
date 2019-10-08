@@ -107,6 +107,83 @@ void sctp_userland_cond_destroy(userland_cond_t* cond)
 }
 #endif
 
+
+static void
+sctp_os_timer_cancel_impl(sctp_os_timer_t* c)
+{
+	switch (c->c_state)
+	{
+	case SCTP_CALLOUT_SCHEDULED:
+	{
+		sctp_binary_heap_remove(&SCTP_BASE_INFO(timers_queue), &c->heap_node);
+		c->c_state = SCTP_CALLOUT_COMPLETED;
+		break;
+	}
+	case SCTP_CALLOUT_RUNNING:
+	{
+		c->c_state = SCTP_CALLOUT_CANCEL_REQUESTED;
+		break;
+	}
+	case SCTP_CALLOUT_CANCEL_REQUESTED:
+	case SCTP_CALLOUT_COMPLETED:
+	case SCTP_CALLOUT_NEW:
+	{
+		// nothing to do
+		break;
+	}
+	default:
+	{
+		KASSERT(0, ("Unknown callout state"));
+		break;
+	}
+	}
+}
+
+
+static void
+sctp_os_timer_wait_completion_impl(sctp_os_timer_t* c)
+{
+	userland_thread_id_t current_tid;
+	sctp_userspace_thread_id(&current_tid);
+
+	int retry_condition_wait = 1;
+	do
+	{
+		switch (c->c_state)
+		{
+		case SCTP_CALLOUT_RUNNING:
+		case SCTP_CALLOUT_CANCEL_REQUESTED:
+		case SCTP_CALLOUT_SCHEDULED:
+		{
+			if (current_tid == c->c_executor_id)
+			{
+				// callout tried to wait for completion of itself
+				retry_condition_wait = 0;
+			}
+			else
+			{
+#if defined (__Userspace__)
+				sctp_userland_cond_wait(&c->c_completion, &SCTP_BASE_VAR(timer_mtx));
+#endif
+			}
+			break;
+		}
+		case SCTP_CALLOUT_COMPLETED:
+		case SCTP_CALLOUT_NEW:
+		{
+			retry_condition_wait = 0;
+			break;
+		}
+		default:
+		{
+			KASSERT(0, ("Unknown callout state"));
+			break;
+		}
+		}
+	} while (retry_condition_wait);
+}
+
+
 /*
  * Callout/Timer routines for OS that doesn't have them
  */
@@ -171,7 +248,10 @@ sctp_os_timer_start(sctp_os_timer_t *c, uint32_t to_ticks, void (*ftn) (void *),
 {
 	/* paranoia */
 	if ((c == NULL) || (ftn == NULL))
-	    return;
+	{
+		KASSERT(0, ("Attempted to start NULL timer or NULL callback"));
+		return;
+	}
 
 	SCTP_TIMERQ_LOCK();
 
@@ -179,7 +259,7 @@ sctp_os_timer_start(sctp_os_timer_t *c, uint32_t to_ticks, void (*ftn) (void *),
 	{
 	case SCTP_CALLOUT_CANCEL_REQUESTED:
 	{
-		/* Do not reschedule cancelled callout */
+		/* Do not re-schedule cancelled callout which is not yet completed */
 		break;
 	}
 	case SCTP_CALLOUT_SCHEDULED:
@@ -215,32 +295,7 @@ sctp_os_timer_cancel(sctp_os_timer_t* c)
 {
 	SCTP_TIMERQ_LOCK();
 
-	switch (c->c_state)
-	{
-	case SCTP_CALLOUT_SCHEDULED:
-	{
-		sctp_binary_heap_remove(&SCTP_BASE_INFO(timers_queue), &c->heap_node);
-		c->c_state = SCTP_CALLOUT_COMPLETED;
-		break;
-	}
-	case SCTP_CALLOUT_RUNNING:
-	{
-		c->c_state = SCTP_CALLOUT_CANCEL_REQUESTED;
-		break;
-	}
-	case SCTP_CALLOUT_CANCEL_REQUESTED:
-	case SCTP_CALLOUT_COMPLETED:
-	case SCTP_CALLOUT_NEW:
-	{
-		// nothing to do
-		break;
-	}
-	default:
-	{
-		KASSERT(0, ("Unknown callout state"));
-		break;
-	}
-	}
+	sctp_os_timer_cancel_impl(c);
 
 	SCTP_TIMERQ_UNLOCK();
 }
@@ -251,44 +306,7 @@ sctp_os_timer_wait_completion(sctp_os_timer_t* c)
 {
 	SCTP_TIMERQ_LOCK();
 
-	userland_thread_id_t current_tid;
-	sctp_userspace_thread_id(&current_tid);
-
-	int retry_condition_wait = 1;
-	do
-	{
-		switch (c->c_state)
-		{
-		case SCTP_CALLOUT_RUNNING:
-		case SCTP_CALLOUT_CANCEL_REQUESTED:
-		case SCTP_CALLOUT_SCHEDULED:
-		{
-			if (current_tid == c->c_executor_id)
-			{
-				// callout tried to wait for completion of itself
-				retry_condition_wait = 0;
-			}
-			else
-			{
-#if defined (__Userspace__)
-				sctp_userland_cond_wait(&c->c_completion, &SCTP_BASE_VAR(timer_mtx));
-#endif
-			}
-			break;
-		}
-		case SCTP_CALLOUT_COMPLETED:
-		case SCTP_CALLOUT_NEW:
-		{
-			retry_condition_wait = 0;
-			break;
-		}
-		default:
-		{
-			KASSERT(0, ("Unknown callout state"));
-			break;
-		}
-		}
-	} while (retry_condition_wait);
+	sctp_os_timer_wait_completion_impl(c);
 
 	SCTP_TIMERQ_UNLOCK();
 }
@@ -299,8 +317,8 @@ sctp_os_timer_stop(sctp_os_timer_t *c)
 {
 	SCTP_TIMERQ_LOCK();
 
-	sctp_os_timer_cancel(c);
-	sctp_os_timer_wait_completion(c);
+	sctp_os_timer_cancel_impl(c);
+	sctp_os_timer_wait_completion_impl(c);
 
 	SCTP_TIMERQ_UNLOCK();
 	return (1);
