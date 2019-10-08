@@ -39,6 +39,7 @@ __FBSDID("$FreeBSD$");
 #define _NETINET_SCTP_CALLOUT_
 
 #include "sctp_callout_queue.h"
+#include "sctp_os_userspace.h"
 
 /*
  * NOTE: the following MACROS are required for locking the callout
