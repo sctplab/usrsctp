@@ -106,7 +106,7 @@ sctp_os_timer_init(sctp_os_timer_t *c)
 }
 
 void
-sctp_os_timer_start(sctp_os_timer_t *c, int to_ticks, void (*ftn) (void *),
+sctp_os_timer_start(sctp_os_timer_t *c, uint32_t to_ticks, void (*ftn) (void *),
                     void *arg)
 {
 	/* paranoia */
@@ -147,7 +147,7 @@ sctp_os_timer_start(sctp_os_timer_t *c, int to_ticks, void (*ftn) (void *),
 	 * We could unlock/splx here and lock/spl at the TAILQ_INSERT_TAIL,
 	 * but there's no point since doing this setup doesn't take much time.
 	 */
-	if (to_ticks <= 0)
+	if (to_ticks == 0)
 		to_ticks = 1;
 
 	c->c_arg = arg;
