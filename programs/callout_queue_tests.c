@@ -44,14 +44,14 @@ typedef struct item
 	int32_t priority;
 } item_t;
 
-int item_comparer(void* x, void* y)
+int item_comparer(const void* x, const void* y)
 {
-	struct item* X = (struct item*)x;
-	struct item* Y = (struct item*)y;
+	const struct item *X = x;
+	const struct item *Y = y;
 	return X->priority - Y->priority;
 }
 
-int always_equal_comparer(void *x, void *y)
+int always_equal_comparer(const void *x, const void *y)
 {
 	return 0;
 }

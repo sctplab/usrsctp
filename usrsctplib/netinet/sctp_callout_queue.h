@@ -43,7 +43,7 @@ typedef struct sctp_binary_heap_node sctp_binary_heap_node_t;
 typedef struct sctp_binary_heap sctp_binary_heap_t;
 
 /* function to compare data stored in heap nodes */
-typedef int (*sctp_binary_heap_node_data_comparer)(void*, void*);
+typedef int (*sctp_binary_heap_node_data_comparer)(const void*, const void*);
 
 /* structure representing heap node */
 struct sctp_binary_heap_node

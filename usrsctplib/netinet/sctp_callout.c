@@ -204,7 +204,7 @@ uint32_t sctp_get_tick_count(void) {
 }
 
 int
-sctp_os_timer_compare(sctp_os_timer_t* a, sctp_os_timer_t* b)
+sctp_os_timer_compare(const sctp_os_timer_t * a, const sctp_os_timer_t *b)
 {
 	if (SCTP_UINT32_GT(a->c_time, b->c_time))
 	{
