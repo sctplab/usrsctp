@@ -227,6 +227,15 @@ sctp_os_timer_init(sctp_os_timer_t *c)
 #endif
 }
 
+void
+sctp_os_timer_deinit(sctp_os_timer_t* c)
+{
+	KASSERT(!sctp_os_timer_is_active(c), ("Deiniting active timer"));
+#if defined(__Userspace__)
+	sctp_userland_cond_destroy(&c->c_completion);
+#endif
+}
+
 int sctp_os_timer_is_pending(const sctp_os_timer_t *c)
 {
 	SCTP_TIMERQ_LOCK();

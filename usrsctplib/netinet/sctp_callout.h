@@ -131,7 +131,8 @@ struct sctp_callout {
 typedef struct sctp_callout sctp_os_timer_t;
 
 int sctp_os_timer_compare(const sctp_os_timer_t*, const sctp_os_timer_t*);
-void sctp_os_timer_init(sctp_os_timer_t *tmr);
+void sctp_os_timer_init(sctp_os_timer_t *);
+void sctp_os_timer_deinit(sctp_os_timer_t *);
 int sctp_os_timer_is_pending(const sctp_os_timer_t*);
 int sctp_os_timer_is_active(const sctp_os_timer_t*);
 void sctp_os_timer_start(sctp_os_timer_t *, uint32_t, void (*)(void *), void *);
@@ -141,6 +142,7 @@ int sctp_os_timer_stop(sctp_os_timer_t *);
 void sctp_handle_tick(uint32_t);
 
 #define SCTP_OS_TIMER_INIT	sctp_os_timer_init
+#define SCTP_OS_TIMER_DEINIT sctp_os_timer_deinit
 #define SCTP_OS_TIMER_START	sctp_os_timer_start
 #define SCTP_OS_TIMER_STOP	sctp_os_timer_cancel
 #define SCTP_OS_TIMER_STOP_DRAIN sctp_os_timer_stop
