@@ -140,6 +140,9 @@ initialize_fuzzer(void) {
 #endif
 	usrsctp_register_address((void *)1);
 
+	//usrsctp_sysctl_set_sctp_auto_asconf(0);
+	//usrsctp_sysctl_set_sctp_auth_enable(0);
+
 	fuzzer_printf("usrsctp initialized\n");
 	return (1);
 }

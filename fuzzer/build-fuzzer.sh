@@ -7,15 +7,12 @@ NPROC=1
 if [ "$(uname)" = "Linux" ]; then
 	NPROC=$(nproc)
 	CC=clang-10
-	LINKER=ld.lld-10
 elif [ "$(uname)" = "Darwin" ]; then
 	NPROC=$(sysctl -n hw.ncpu)
 	CC=/usr/local/opt/llvm/bin/clang
-	LINKER=/usr/local/opt/llvm/bin/ld.lld
 elif [ "$(uname)" = "FreeBSD" ]; then
 	NPROC=$(sysctl -n hw.ncpu)
 	CC=clang-devel
-	LINKER=ld.lld-devel
 else
 	echo "Error: $(uname) not supported, sorry!"
 	exit 1
@@ -44,7 +41,7 @@ pwd
 find . -iwholename '*cmake*' -not -name CMakeLists.txt -delete
 
 # Build with ASAN / MSAN
-cmake -Dsctp_build_fuzzer=1 -Dsctp_build_programs=0 -Dsctp_invariants=1 -Dsctp_sanitizer_address=1 -DCMAKE_LINKER="$LINKER" -DCMAKE_C_COMPILER="$CC" -DCMAKE_BUILD_TYPE=RelWithDebInfo .
-#cmake -Dsctp_build_fuzzer=1 -Dsctp_build_programs=0 -Dsctp_invariants=1 -Dsctp_sanitizer_memory=1 -DCMAKE_LINKER="$LINKER" -DCMAKE_C_COMPILER="$CC" -DCMAKE_BUILD_TYPE=RelWithDebInfo .
+cmake -Dsctp_build_fuzzer=1 -Dsctp_build_programs=0 -Dsctp_invariants=1 -Dsctp_sanitizer_address=1 -DCMAKE_LINKER="$CC" -DCMAKE_C_COMPILER="$CC" -DCMAKE_BUILD_TYPE=RelWithDebInfo .
+#cmake -Dsctp_build_fuzzer=1 -Dsctp_build_programs=0 -Dsctp_invariants=1 -Dsctp_sanitizer_memory=1 -DCMAKE_LINKER="$CC" -DCMAKE_C_COMPILER="$CC" -DCMAKE_BUILD_TYPE=RelWithDebInfo .
 
 make -j"$NPROC"
