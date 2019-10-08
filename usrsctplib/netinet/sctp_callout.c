@@ -158,6 +158,7 @@ sctp_os_timer_wait_completion_impl(sctp_os_timer_t* c)
 			if (current_tid == c->c_executor_id)
 			{
 				// callout tried to wait for completion of itself
+				KASSERT(0, ("Deadlock detected: wait for self completion"));
 				retry_condition_wait = 0;
 			}
 			else
