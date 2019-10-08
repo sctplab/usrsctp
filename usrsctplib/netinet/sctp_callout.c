@@ -265,8 +265,10 @@ sctp_os_timer_start(sctp_os_timer_t *c, uint32_t to_ticks, void (*ftn) (void *),
 	case SCTP_CALLOUT_SCHEDULED:
 	{
 		sctp_binary_heap_remove(&SCTP_BASE_INFO(timers_queue), &c->heap_node);
-		// FALLTHROUGH
+		// Workaround for  -Wimplicit-fallthrough
+		goto SCHEDULE_TIMER;
 	}
+	SCHEDULE_TIMER:
 	case SCTP_CALLOUT_RUNNING:
 	case SCTP_CALLOUT_NEW:
 	case SCTP_CALLOUT_COMPLETED:
