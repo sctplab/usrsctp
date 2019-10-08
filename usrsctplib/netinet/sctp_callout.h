@@ -130,7 +130,7 @@ struct sctp_callout {
 };
 typedef struct sctp_callout sctp_os_timer_t;
 
-int sctp_os_timer_compare(sctp_os_timer_t*, sctp_os_timer_t*);
+int sctp_os_timer_compare(const sctp_os_timer_t*, const sctp_os_timer_t*);
 void sctp_os_timer_init(sctp_os_timer_t *tmr);
 int sctp_os_timer_is_pending(const sctp_os_timer_t*);
 int sctp_os_timer_is_active(const sctp_os_timer_t*);
