@@ -155,7 +155,7 @@ sctp_os_timer_wait_completion_impl(sctp_os_timer_t* c)
 		case SCTP_CALLOUT_CANCEL_REQUESTED:
 		case SCTP_CALLOUT_SCHEDULED:
 		{
-			if (current_tid == c->c_executor_id)
+			if (sctp_userspace_thread_equal(current_tid, c->c_executor_id))
 			{
 				// callout tried to wait for completion of itself
 				KASSERT(0, ("Deadlock detected: wait for self completion"));
