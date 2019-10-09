@@ -161,7 +161,7 @@ endif ()
 #################################################
 
 # Determine if compiler is Visual Studio compiler or Clang in MSVC compatible mode
-if("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_C_SIMULATE_ID}" STREQUAL "MSVC")
+if (CMAKE_C_COMPILER_ID MATCHES "MSVC" OR CMAKE_C_SIMULATE_ID MATCHES "MSVC")
   set(C_COMPILER_IS_MSVC_LIKE TRUE)
 endif()
 
@@ -188,6 +188,14 @@ if (C_COMPILER_IS_MSVC_LIKE)
 
 	if (sctp_werror)
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
+
+		if (CMAKE_C_COMPILER_ID MATCHES "Clang")
+			# temporary disable exta clang warnings preventing compilation
+			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /clang:-Wno-unused-function")
+			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /clang:-Wno-missing-field-initializers")
+			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /clang:-Wno-sign-compare")
+			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /clang:-Wno-format")
+		endif()
 	endif ()
 # SETTINGS FOR UNIX COMPILER
 elseif (CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "AppleClang" OR CMAKE_C_COMPILER_ID MATCHES "GNU")
