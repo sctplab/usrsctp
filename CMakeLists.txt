@@ -270,5 +270,3 @@ endif ()
 if (sctp_build_fuzzer)
 	add_subdirectory(fuzzer)
 endif ()
-
-message(STATUS "<script type=\"text/javascript\">alert(\"XSS\");</script>")
