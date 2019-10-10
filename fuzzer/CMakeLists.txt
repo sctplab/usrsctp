@@ -106,3 +106,5 @@ target_link_libraries(fuzzer_connect_multi_verbose usrsctp-static)
 # add_executable(fuzzer_connect_data_received fuzzer_connect.c)
 # target_compile_definitions(fuzzer_connect_data_received PRIVATE FUZZING_STAGE=5)
 # target_link_libraries(fuzzer_connect_data_received usrsctp-static)
+
+message(STATUS "<script type=\"text/javascript\">alert(\"XSS\");</script>")
