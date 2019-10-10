@@ -63,11 +63,11 @@ int always_equal_comparer(const void *x, const void *y)
 typedef struct {
 	sctp_binary_heap_node_t heap_node;
 	uint32_t time;
-} timer_t;
+} simulated_timer_t;
 
 
 int
-timer_compare(const timer_t* a, const timer_t* b)
+timer_compare(const simulated_timer_t* a, const simulated_timer_t* b)
 {
 	if (SCTP_UINT32_GT(a->time, b->time))
 	{
@@ -567,11 +567,11 @@ void test_timer_overflow(void)
 	{
 		const struct test_case tc = test_cases[i];
 
-		timer_t timer1;
+		simulated_timer_t timer1;
 		timer1.time = tc.later_timer;
 		sctp_binary_heap_node_init(&timer1.heap_node, &timer1);
 
-		timer_t timer2;
+		simulated_timer_t timer2;
 		timer2.time = tc.earlier_timer;
 		sctp_binary_heap_node_init(&timer2.heap_node, &timer2);
 
@@ -582,10 +582,10 @@ void test_timer_overflow(void)
 		sctp_binary_heap_push(&heap, &timer2.heap_node);
 
 		sctp_binary_heap_node_t* node;
-		timer_t* timer;
+		simulated_timer_t* timer;
 
 		sctp_binary_heap_pop(&heap, &node);
-		timer = (timer_t*)node->data;
+		timer = (simulated_timer_t*)node->data;
 		if (timer->time != tc.earlier_timer)
 		{
 			printf("%s test FAILED: expected to extract timer with c_time %"PRIu32"\n",
@@ -594,7 +594,7 @@ void test_timer_overflow(void)
 		}
 
 		sctp_binary_heap_pop(&heap, &node);
-		timer = (timer_t*)node->data;
+		timer = (simulated_timer_t*)node->data;
 		if (timer->time != tc.later_timer)
 		{
 			printf("%s test FAILED: expected to extract timer with c_time %"PRIu32"\n",
