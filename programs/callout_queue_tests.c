@@ -32,16 +32,16 @@
 
 
 #include <netinet/sctp_callout_queue.h>
-#include <netinet/sctp_os_userspace.h>
-#include <netinet/sctp_callout.h>
+#include "netinet/sctp_constants.h"
 
 #include <stdio.h>
 #include <inttypes.h>
 #include <stdlib.h>
 
+
 typedef struct item
 {
-	struct sctp_binary_heap_node heap_node;
+	sctp_binary_heap_node_t heap_node;
 	int32_t priority;
 } item_t;
 
@@ -55,6 +55,29 @@ int item_comparer(const void* x, const void* y)
 int always_equal_comparer(const void *x, const void *y)
 {
 	return 0;
+}
+
+/**
+ * Simulates sctp_os_timer_t
+ */
+typedef struct {
+	sctp_binary_heap_node_t heap_node;
+	uint32_t time;
+} timer_t;
+
+
+int
+timer_compare(const timer_t* a, const timer_t* b)
+{
+	if (SCTP_UINT32_GT(a->time, b->time))
+	{
+		return 1;
+	}
+	if (a->time == b->time)
+	{
+		return 0;
+	}
+	return -1;
 }
 
 
@@ -123,23 +146,29 @@ void test_sctp_binary_heap_get_node_by_index_simple(void)
 	sctp_binary_heap_init(&heap, item_comparer);
 
 	struct item root;
+	root.priority = 1;
 	sctp_binary_heap_node_init(&root.heap_node, &root);
 
 	struct item left;
+	left.priority = 2;
 	sctp_binary_heap_node_init(&left.heap_node, &left);
 
 	struct item right;
+	right.priority = 3;
 	sctp_binary_heap_node_init(&right.heap_node, &right);
 
 	// manual heap construction
 	heap.root = &root.heap_node;
 	root.heap_node.parent = NULL;
+	root.heap_node.heap = &heap;
 
 	root.heap_node.left = &left.heap_node;
 	left.heap_node.parent = &root.heap_node;
+	left.heap_node.heap = &heap;
 
 	root.heap_node.right = &right.heap_node;
 	right.heap_node.parent = &root.heap_node;
+	right.heap_node.heap = &heap;
 	heap.size = 3;
 	sctp_binary_heap_verify(&heap);
 	
@@ -533,31 +562,31 @@ void test_timer_overflow(void)
 		{ UINT32_MAX - 10, 10 /* UINT32_MAX */ },
 		{ UINT32_MAX / 2 - 10, UINT32_MAX / 2 + 10 },
 	};
-
+	
 	for (size_t i = 0; i < sizeof(test_cases)/sizeof(test_cases[0]); i++)
 	{
 		const struct test_case tc = test_cases[i];
 
-		sctp_os_timer_t timer1;
-		sctp_os_timer_init(&timer1);
-		timer1.c_time = tc.later_timer;
+		timer_t timer1;
+		timer1.time = tc.later_timer;
+		sctp_binary_heap_node_init(&timer1.heap_node, &timer1);
 
-		sctp_os_timer_t timer2;
-		sctp_os_timer_init(&timer2);
-		timer2.c_time = tc.earlier_timer;
+		timer_t timer2;
+		timer2.time = tc.earlier_timer;
+		sctp_binary_heap_node_init(&timer2.heap_node, &timer2);
 
 		sctp_binary_heap_t heap;
-		sctp_binary_heap_init(&heap, (sctp_binary_heap_node_data_comparer)sctp_os_timer_compare);
+		sctp_binary_heap_init(&heap, (sctp_binary_heap_node_data_comparer)timer_compare);
 
 		sctp_binary_heap_push(&heap, &timer1.heap_node);
 		sctp_binary_heap_push(&heap, &timer2.heap_node);
 
 		sctp_binary_heap_node_t* node;
-		sctp_os_timer_t* timer;
+		timer_t* timer;
 
 		sctp_binary_heap_pop(&heap, &node);
-		timer = (sctp_os_timer_t*)node->data;
-		if (timer->c_time != tc.earlier_timer)
+		timer = (timer_t*)node->data;
+		if (timer->time != tc.earlier_timer)
 		{
 			printf("%s test FAILED: expected to extract timer with c_time %"PRIu32"\n",
 				__func__, tc.earlier_timer);
@@ -565,8 +594,8 @@ void test_timer_overflow(void)
 		}
 
 		sctp_binary_heap_pop(&heap, &node);
-		timer = (sctp_os_timer_t*)node->data;
-		if (timer->c_time != tc.later_timer)
+		timer = (timer_t*)node->data;
+		if (timer->time != tc.later_timer)
 		{
 			printf("%s test FAILED: expected to extract timer with c_time %"PRIu32"\n",
 				__func__, tc.later_timer);
