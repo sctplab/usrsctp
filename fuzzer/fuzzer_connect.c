@@ -388,7 +388,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	bind4.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	if (usrsctp_bind(socket_client, (struct sockaddr *)&bind4, sizeof(bind4)) < 0) {
-		perror("bind");
+		perror("usrsctp_bind");
 		usrsctp_close(socket_client);
 		exit(EXIT_FAILURE);
 	}
