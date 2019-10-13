@@ -159,10 +159,12 @@ sctp_init(void)
 	SCTP_BASE_VAR(debug_printf) = debug_printf;
 	SCTP_BASE_VAR(crc32c_offloaded) = 0;
 #endif
-	sctp_pcb_init(start_threads);
 #if defined(__Userspace__)
+	sctp_pcb_init(start_threads);
 	if (start_threads)
 		sctp_start_timer();
+#else
+	sctp_pcb_init();
 #endif
 #if defined(SCTP_PACKET_LOGGING)
 	SCTP_BASE_VAR(packet_log_writers) = 0;
