@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 350626 2019-08-06 10:29:19Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 353480 2019-10-13 18:17:08Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -60,6 +60,9 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 350626 2019-08-06 10:29:19Z t
 #include <netinet/sctp_callout.h>
 #else
 #include <netinet/udp.h>
+#endif
+#if defined(__FreeBSD__)
+#include <sys/eventhandler.h>
 #endif
 
 #if defined(HAVE_SCTP_PEELOFF_SOCKOPT)
@@ -175,6 +178,10 @@ sctp_init(void)
 	SCTP_BASE_VAR(sctp_main_timer_ticks) = 0;
 	sctp_start_main_timer();
 	timeout(sctp_delayed_startup, NULL, 1);
+#endif
+#if defined(__FreeBSD__)
+	EVENTHANDLER_REGISTER(rt_addrmsg, sctp_addr_change_event_handler,
+	    NULL, EVENTHANDLER_PRI_FIRST);
 #endif
 }
 
