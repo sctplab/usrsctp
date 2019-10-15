@@ -6845,7 +6845,10 @@ sctp_pcb_init(void)
 #if defined(_SCTP_NEEDS_CALLOUT_) || defined(_USER_SCTP_NEEDS_CALLOUT_)
 	/* allocate the lock for the callout/timer queue */
 	SCTP_TIMERQ_LOCK_INIT();
-	sctp_binary_heap_init(&SCTP_BASE_INFO(timers_queue), (sctp_binary_heap_node_data_comparer)sctp_os_timer_compare, NULL);
+	sctp_binary_heap_init(
+		&SCTP_BASE_INFO(timers_queue), 
+		(sctp_binary_heap_node_data_comparer)sctp_os_timer_compare, 
+		(sctp_binary_heap_node_data_visualizer)sctp_os_timer_describe);
 #endif
 #if defined(__Userspace__)
 	mbuf_initialize(NULL);

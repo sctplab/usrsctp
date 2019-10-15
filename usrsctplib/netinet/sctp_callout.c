@@ -203,6 +203,11 @@ uint32_t sctp_get_tick_count(void) {
 	return ret;
 }
 
+void sctp_os_timer_describe(const sctp_os_timer_t* t, size_t max_len, char *buffer)
+{
+	snprintf(buffer, max_len, "t=%" PRIu32 ",f=%p,a=%p", t->c_time, (void *)t->c_func, (void *)t->c_arg);
+}
+
 int
 sctp_os_timer_compare(const sctp_os_timer_t * a, const sctp_os_timer_t *b)
 {
