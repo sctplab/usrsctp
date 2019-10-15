@@ -47,14 +47,32 @@ typedef struct item
 
 int item_comparer(const void* x, const void* y)
 {
-	const struct item *X = x;
-	const struct item *Y = y;
+	const item_t* X = x;
+	const item_t* Y = y;
 	return X->priority - Y->priority;
+}
+
+void item_visualizer(const void* x, size_t max_len, char *out_buffer) 
+{
+	const item_t* X = x;
+	snprintf(out_buffer, max_len, "%" PRId32, X->priority);
 }
 
 int always_equal_comparer(const void *x, const void *y)
 {
 	return 0;
+}
+
+void shuffle_array(uint32_t *a, size_t size) 
+{
+	// https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#The_modern_algorithm
+	for (size_t i = size - 1; i >= 1; i--) 
+	{
+		size_t j = random() % (i + 1);
+		uint32_t temp = a[j];
+		a[j] = a[i];
+		a[i] = temp;
+	}
 }
 
 /**
@@ -143,7 +161,7 @@ void test_sctp_binary_heap_node_traverse_path(void)
 void test_sctp_binary_heap_get_node_by_index_simple(void)
 {
 	struct sctp_binary_heap heap;
-	sctp_binary_heap_init(&heap, item_comparer);
+	sctp_binary_heap_init(&heap, item_comparer, item_visualizer);
 
 	struct item root;
 	root.priority = 1;
@@ -170,7 +188,11 @@ void test_sctp_binary_heap_get_node_by_index_simple(void)
 	right.heap_node.parent = &root.heap_node;
 	right.heap_node.heap = &heap;
 	heap.size = 3;
-	sctp_binary_heap_verify(&heap);
+	if (0 != sctp_binary_heap_verify(&heap))
+	{
+		printf("%s test FAILED: Heap is not valid\n", __func__);
+		return;
+	}
 	
 	sctp_binary_heap_node_t* parent, **node;
 	sctp_binary_heap_get_node_by_index(&heap, 0, &parent, &node);
@@ -217,13 +239,19 @@ void test_sctp_binary_heap_get_node_by_index(void)
 	}
 
 	sctp_binary_heap_t heap;
-	sctp_binary_heap_init(&heap, item_comparer);
+	sctp_binary_heap_init(&heap, item_comparer, item_visualizer);
 
 	for (size_t i = 0; i < items_count; i++)
 	{
 		sctp_binary_heap_node_init(&items[i].heap_node, &items[i]);
 		items[i].priority = (int)i; // write node index as priority
 		sctp_binary_heap_push(&heap, &items[i].heap_node);
+	}
+
+	if (0 != sctp_binary_heap_verify(&heap))
+	{
+		printf("%s test FAILED: Heap is not valid\n", __func__);
+		goto free_mem;
 	}
 
 	for (size_t i = 0; i < items_count; i++)
@@ -233,25 +261,25 @@ void test_sctp_binary_heap_get_node_by_index(void)
 		if (node == NULL || *node == NULL)
 		{
 			printf("%s test FAILED: unable to get heap node by index %zu\n", __func__, i);
-			goto free_items;
+			goto free_mem;
 		}
 		const size_t node_index = ((item_t*)(*node)->data)->priority;
 		if (node_index != i)
 		{
 			printf("%s test FAILED: got wrong node by index %zu, obtained node has index %zu\n",
 				__func__, i, node_index);
-			goto free_items;
+			goto free_mem;
 		}
 		if ((*node)->parent != parent)
 		{
 			printf("%s test FAILED: (*node)->parent does not match to parent at index %zu\n", __func__, i);
-			goto free_items;
+			goto free_mem;
 		}
 	}
 
 	printf("%s test PASSED\n", __func__);
 
-free_items:
+free_mem:
 	if (items != NULL)
 	{
 		free(items);
@@ -263,7 +291,7 @@ free_items:
 void test_sctp_binary_heap_push_simple(void)
 {
 	struct sctp_binary_heap heap;
-	sctp_binary_heap_init(&heap, item_comparer);
+	sctp_binary_heap_init(&heap, item_comparer, item_visualizer);
 
 	struct item item1;
 	item1.priority = 20;
@@ -315,6 +343,11 @@ void test_sctp_binary_heap_push_simple(void)
 			__func__, item3.priority);
 		return;
 	}
+	if (0 != sctp_binary_heap_verify(&heap))
+	{
+		printf("%s test FAILED: Heap is not valid\n", __func__);
+		return;
+	}
 
 	printf("%s test PASSED\n", __func__);
 }
@@ -331,7 +364,7 @@ void test_sctp_binary_heap_push_pop_sequential_items(void)
 	}
 
 	sctp_binary_heap_t heap;
-	sctp_binary_heap_init(&heap, item_comparer);
+	sctp_binary_heap_init(&heap, item_comparer, item_visualizer);
 
 	for (size_t i = 0; i < items_count; i++)
 	{
@@ -342,8 +375,14 @@ void test_sctp_binary_heap_push_pop_sequential_items(void)
 		{
 			printf("%s test FAILED: heap size expected to be %zu\n",
 				__func__, i + 1);
-			goto free_items;
+			goto free_mem;
 		}
+	}
+
+	if (0 != sctp_binary_heap_verify(&heap))
+	{
+		printf("%s test FAILED: Heap is not valid\n", __func__);
+		goto free_mem;
 	}
 
 	sctp_binary_heap_node_t *node;
@@ -363,19 +402,19 @@ void test_sctp_binary_heap_push_pop_sequential_items(void)
 		{
 			printf("%s test FAILED: heap size expected to be %zu\n",
 				__func__, index);
-			goto free_items;
+			goto free_mem;
 		}
 	}
 	if (sctp_binary_heap_size(&heap) != 0)
 	{
 		printf("%s test FAILED: heap size expected to be 0\n",
 			__func__);
-		goto free_items;
+		goto free_mem;
 	}
 	
 	printf("%s test PASSED\n", __func__);
 
-free_items:
+free_mem:
 	if (items != NULL)
 	{
 		free(items);
@@ -396,7 +435,7 @@ void test_sctp_binary_heap_push_pop_random_items(void)
 	}
 
 	sctp_binary_heap_t heap;
-	sctp_binary_heap_init(&heap, item_comparer);
+	sctp_binary_heap_init(&heap, item_comparer, item_visualizer);
 
 	for (size_t i = 0; i < items_count; i++)
 	{
@@ -407,10 +446,15 @@ void test_sctp_binary_heap_push_pop_random_items(void)
 		{
 			printf("%s test FAILED: heap size expected to be %zu\n",
 				__func__, i + 1);
-			goto free_items;
+			goto free_mem;
 		}
 	}
-	sctp_binary_heap_verify(&heap);
+
+	if (0 != sctp_binary_heap_verify(&heap))
+	{
+		printf("%s test FAILED: Heap is not valid\n", __func__);
+		goto free_mem;
+	}
 
 	int32_t root_priority = INT32_MIN;
 	sctp_binary_heap_node_t * top;
@@ -421,7 +465,7 @@ void test_sctp_binary_heap_push_pop_random_items(void)
 		{
 			printf("%s test FAILED: Priority %"PRId32" of popped item is less than previously popped %"PRId32" \n",
 				__func__, next_priority, root_priority);
-			goto free_items;
+			goto free_mem;
 		}
 		root_priority = next_priority;
 	}
@@ -430,11 +474,11 @@ void test_sctp_binary_heap_push_pop_random_items(void)
 	{
 		printf("%s test FAILED: heap size expected to be 0\n",
 			__func__);
-		goto free_items;
+		goto free_mem;
 	}
 	printf("%s test PASSED\n", __func__);
 
-free_items:
+free_mem:
 	if (items != NULL)
 	{
 		free(items);
@@ -455,7 +499,7 @@ void test_sctp_binary_heap_push_interleaved_with_pop_random_items(void)
 	}
 
 	sctp_binary_heap_t heap;
-	sctp_binary_heap_init(&heap, item_comparer);
+	sctp_binary_heap_init(&heap, item_comparer, item_visualizer);
 
 	for (size_t i = 0; i < items_count; i++)
 	{
@@ -466,10 +510,15 @@ void test_sctp_binary_heap_push_interleaved_with_pop_random_items(void)
 		{
 			printf("%s test FAILED: heap size expected to be %zu\n",
 				__func__, i + 1);
-			goto free_items;
+			goto free_mem;
 		}
 	}
-	sctp_binary_heap_verify(&heap);
+
+	if (0 != sctp_binary_heap_verify(&heap))
+	{
+		printf("%s test FAILED: Heap is not valid\n", __func__);
+		goto free_mem;
+	}
 
 	int32_t root_priority = INT32_MIN;
 	sctp_binary_heap_node_t* top;
@@ -484,7 +533,7 @@ void test_sctp_binary_heap_push_interleaved_with_pop_random_items(void)
 		{
 			printf("%s test FAILED: Priority %"PRId32" of popped item is less than previously popped %"PRId32" \n",
 				__func__, next_priority, root_priority);
-			goto free_items;
+			goto free_mem;
 		}
 
 		if (iterations % 2 == 0)
@@ -505,7 +554,7 @@ void test_sctp_binary_heap_push_interleaved_with_pop_random_items(void)
 
 	printf("%s test PASSED\n", __func__);
 
-free_items:
+free_mem:
 	if (items != NULL)
 	{
 		free(items);
@@ -519,13 +568,19 @@ void test_sctp_binary_heap_priority_collision_handled_in_push_order(void)
 	item_t items[512];
 
 	sctp_binary_heap_t heap;
-	sctp_binary_heap_init(&heap, always_equal_comparer);
+	sctp_binary_heap_init(&heap, always_equal_comparer, item_visualizer);
 
 	for (size_t i = 0; i < 512; i++)
 	{
 		items[i].priority = (int32_t)i;
 		sctp_binary_heap_node_init(&items[i].heap_node, &items[i]);
 		sctp_binary_heap_push(&heap, &items[i].heap_node);
+	}
+
+	if (0 != sctp_binary_heap_verify(&heap))
+	{
+		printf("%s test FAILED: Heap is not valid\n", __func__);
+		return;
 	}
 
 	for (size_t i = 0; i < 512; i++)
@@ -548,6 +603,74 @@ void test_sctp_binary_heap_priority_collision_handled_in_push_order(void)
 		return;
 	}
 	printf("%s test PASSED\n", __func__);
+}
+
+void test_random_remove() 
+{
+	const size_t items_count = 30 * 1024;
+	uint32_t* remove_order = NULL;
+	item_t* items = NULL;
+
+	items = (item_t*)malloc(items_count * sizeof(item_t));
+	if (items == NULL)
+	{
+		printf("%s test FAILED: failed to allocate memory for items\n",
+			__func__);
+		goto free_mem;
+	}
+
+	remove_order = (uint32_t *)malloc(items_count * sizeof(uint32_t));
+	if (remove_order == NULL) 
+	{
+		printf("%s test FAILED: failed to allocate memory for remove order array \n",
+			__func__);
+		goto free_mem;
+	}
+
+	sctp_binary_heap_t heap;
+	sctp_binary_heap_init(&heap, item_comparer, item_visualizer);
+
+	for (size_t i = 0; i < items_count; i++) 
+	{
+		remove_order[i] = i;
+		items[i].priority = (i + 1);
+		sctp_binary_heap_node_init(&items[i].heap_node, &items[i]);
+		sctp_binary_heap_push(&heap, &items[i].heap_node);
+	}
+
+	shuffle_array(remove_order, items_count);
+
+	for (size_t i = 0; i < items_count; i++) 
+	{
+		sctp_binary_heap_remove(&heap, &items[remove_order[i]].heap_node);
+
+		if (0 != sctp_binary_heap_verify(&heap)) 
+		{
+			printf("%s test FAILED: heap state is invalid after remove\n",
+				__func__);
+			goto free_mem;
+		}
+	}
+
+	if (sctp_binary_heap_size(&heap) != 0)
+	{
+		printf("%s test FAILED: heap size expected to be 0\n",
+			__func__);
+		goto free_mem;
+	}
+	printf("%s test PASSED\n", __func__);
+
+free_mem:
+	if (items != NULL)
+	{
+		free(items);
+		items = NULL;
+	}
+	if (remove_order != NULL)
+	{
+		free(remove_order);
+		remove_order = NULL;
+	}
 }
 
 
@@ -576,7 +699,7 @@ void test_timer_overflow(void)
 		sctp_binary_heap_node_init(&timer2.heap_node, &timer2);
 
 		sctp_binary_heap_t heap;
-		sctp_binary_heap_init(&heap, (sctp_binary_heap_node_data_comparer)timer_compare);
+		sctp_binary_heap_init(&heap, (sctp_binary_heap_node_data_comparer)timer_compare, item_visualizer);
 
 		sctp_binary_heap_push(&heap, &timer1.heap_node);
 		sctp_binary_heap_push(&heap, &timer2.heap_node);
@@ -608,6 +731,8 @@ void test_timer_overflow(void)
 
 int main(void)
 {
+	srand(42);
+	srandom(42);
 	test_sctp_binary_heap_node_traverse_path();
 	test_sctp_binary_heap_get_node_by_index_simple();
 	test_sctp_binary_heap_get_node_by_index();
@@ -617,4 +742,5 @@ int main(void)
 	test_sctp_binary_heap_push_interleaved_with_pop_random_items();
 	test_sctp_binary_heap_priority_collision_handled_in_push_order();
 	test_timer_overflow();
+	test_random_remove();
 }

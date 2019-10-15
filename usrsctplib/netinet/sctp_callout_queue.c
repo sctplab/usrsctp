@@ -43,31 +43,36 @@
 #endif
 
 
-void
+static void
 sctp_binary_heap_node_swap_nodes(
 	sctp_binary_heap_t*,
 	sctp_binary_heap_node_t*,
 	sctp_binary_heap_node_t*);
 
 
-void
+static void
 sctp_binary_heap_node_swap_non_adjacent(
 	sctp_binary_heap_t*,
 	sctp_binary_heap_node_t*,
 	sctp_binary_heap_node_t*);
 
 
-void
+static void
 sctp_binary_heap_node_swap_with_parent(
 	sctp_binary_heap_t*,
 	sctp_binary_heap_node_t*);
 
 
-void
-sctp_binary_heap_node_verify(
+static int
+sctp_binary_heap_node_verify_connectivity(
 	const sctp_binary_heap_t*,
 	const sctp_binary_heap_node_t*);
 
+
+static int
+sctp_binary_heap_node_verify_priorities(
+	const sctp_binary_heap_t*,
+	const sctp_binary_heap_node_t*);
 
 static size_t
 sctp_binary_heap_node_parent_index(size_t index)
@@ -148,10 +153,12 @@ sctp_binary_heap_get_node_by_index(
 void
 sctp_binary_heap_init(
 	sctp_binary_heap_t* heap,
-	sctp_binary_heap_node_data_comparer comparer)
+	sctp_binary_heap_node_data_comparer comparer,
+	sctp_binary_heap_node_data_visualizer data_visualizer)
 {
 	memset(heap, 0, sizeof(*heap));
 	heap->comparer = comparer;
+	heap->data_visualizer = data_visualizer;
 }
 
 
@@ -196,25 +203,29 @@ sctp_binary_heap_remove(
 	if (heap->size > 0)
 	{
 		sctp_binary_heap_node_t* parent;
-		sctp_binary_heap_node_t** last_node;
-		int ret = sctp_binary_heap_get_node_by_index(heap, heap->size, &parent, &last_node);
+		sctp_binary_heap_node_t* last_node, **last_node_loc;
+		int ret = sctp_binary_heap_get_node_by_index(heap, heap->size, &parent, &last_node_loc);
 		KASSERT(ret == 0, ("Node lookup must succeed"));
 		(void)ret;
-		sctp_binary_heap_node_swap_nodes(heap, node, *last_node);
-		if (node->parent->left == node)
+		last_node = *last_node_loc;
+
+		sctp_binary_heap_node_swap_nodes(heap, node, last_node);
+		if (node->parent->left == node) 
 		{
 			node->parent->left = NULL;
 		}
-		else if (node->parent->right == node)
+		else if (node->parent->right == node) 
 		{
 			node->parent->right = NULL;
 		}
-		else
+		else 
 		{
 			KASSERT(0, ("Wrong link from parent node"));
 			return;
 		}
-		sctp_binary_heap_bubble_down(heap, heap->root);
+
+		sctp_binary_heap_bubble_down(heap, last_node);
+		sctp_binary_heap_bubble_up(heap, last_node);
 	}
 	else
 	{
@@ -226,6 +237,9 @@ sctp_binary_heap_remove(
 	node->parent = NULL;
 	node->heap = NULL;
 	node->sequence = 0;
+#if defined(SCTP_BINARY_HEAP_VERIFY_MUTATE_FUNCTIONS)
+	sctp_binary_heap_verify(heap);
+#endif
 }
 
 
@@ -254,9 +268,6 @@ sctp_binary_heap_pop(
 		return -1;
 	}
 	sctp_binary_heap_remove(heap, *out_node);
-#if defined(SCTP_BINARY_HEAP_VERIFY_MUTATE_FUNCTIONS)
-	sctp_binary_heap_verify(heap);
-#endif
 	return 0;
 }
 
@@ -302,6 +313,10 @@ sctp_binary_heap_node_swap_nodes(
 		KASSERT(0, ("Nodes does not belong to the heap"));
 		return;
 	}
+	if (a == b) 
+	{
+		return;
+	}
 
 	if (a->parent == b)
 	{
@@ -336,7 +351,7 @@ sctp_binary_heap_node_swap_non_adjacent(
 	}
 	if (a->parent == b || b ->parent == a)
 	{
-		KASSERT(0, ("Nodes are adjusent"));
+		KASSERT(0, ("Nodes are adjacent"));
 		return;
 	}
 	sctp_binary_heap_node_t* const a_parent = a->parent,
@@ -430,6 +445,9 @@ sctp_binary_heap_node_swap_non_adjacent(
 	{
 		heap->root = a;
 	}
+#if defined(SCTP_BINARY_HEAP_VERIFY_MUTATE_FUNCTIONS)
+	sctp_binary_heap_node_verify_connectivity(heap, heap->root);
+#endif
 }
 
 
@@ -520,6 +538,11 @@ sctp_binary_heap_node_swap_with_parent(
 	{
 		heap->root = node;
 	}
+
+#if defined(SCTP_BINARY_HEAP_VERIFY_MUTATE_FUNCTIONS)
+	sctp_binary_heap_node_verify_connectivity(heap, heap->root);
+#endif
+
 }
 
 
@@ -545,7 +568,7 @@ sctp_binary_heap_bubble_down(
 	sctp_binary_heap_t* heap,
 	sctp_binary_heap_node_t* node)
 {
-	while (1)
+	for (uint32_t depth = 0; depth < 64; depth++)
 	{
 		sctp_binary_heap_node_t* smallest = node;
 		if (node->left != NULL && sctp_binary_heap_node_compare_data(heap, node->left, smallest) < 0)
@@ -565,7 +588,7 @@ sctp_binary_heap_bubble_down(
 }
 
 
-void
+int
 sctp_binary_heap_verify(
 	const sctp_binary_heap_t* heap)
 {
@@ -573,64 +596,89 @@ sctp_binary_heap_verify(
 	if (actual_nodes_count != heap->size)
 	{
 		KASSERT(0,
-			("Actual and declared nodes count mismatches"));
-		return;
+			("Actual and declared nodes count mismatch"));
+		return -1;
 	}
 
-	if (heap->root != NULL)
+	int err = sctp_binary_heap_node_verify_connectivity(heap, heap->root);
+	if (err != 0) 
 	{
-		sctp_binary_heap_node_verify(heap, heap->root);
+		return err;
 	}
+	return sctp_binary_heap_node_verify_priorities(heap, heap->root);
 }
 
 
-void
-sctp_binary_heap_node_verify(
+static int
+sctp_binary_heap_node_verify_connectivity(
 	const sctp_binary_heap_t* heap,
-	const sctp_binary_heap_node_t* node)
+	const sctp_binary_heap_node_t* node) 
 {
+	if (node == NULL)
+	{
+		return 0;
+	}
 	if (heap != node->heap)
 	{
 		KASSERT(0, ("Node belong to different heap"));
-		return;
+		return -1;
+	}
+	if (node == heap->root && node->parent != NULL)
+	{
+		KASSERT(0, ("Root node must have parent set to NULL"));
+		return -1;
 	}
 
-	if (node->parent == NULL)
-	{
-		if (node != heap->root)
-		{
-			KASSERT(0, ("Root node must have parent set to NULL"));
-			return;
-		}
-	}
-	else
-	{
-		if (sctp_binary_heap_node_compare_data(heap, node->parent, node) > 0)
-		{
-			KASSERT(0, ("Parent has bigger priority"));
-			return;
-		}
-	}
-
-	if (node->left != NULL)
+	int err = 0;
+	if (err == 0 && node->left != NULL)
 	{
 		if (node->left->parent != node)
 		{
-			KASSERT(0, ("Left substree wrong parent"));
-			return;
+			KASSERT(0, ("Left substree hsa wrong link to parent"));
+			return -1;
 		}
-		sctp_binary_heap_node_verify(heap, node->left);
+		err = sctp_binary_heap_node_verify_connectivity(heap, node->left);
 	}
 
-	if (node->right != NULL)
+	if (err == 0 && node->right != NULL)
 	{
 		if (node->right->parent != node)
 		{
-			KASSERT(0, ("Right substree has wrong parent"));
-			return;
+			KASSERT(0, ("Right substree has wrong link to parent"));
+			return -1;
 		}
-		sctp_binary_heap_node_verify(heap, node->right);
+		err = sctp_binary_heap_node_verify_connectivity(heap, node->right);
 	}
+
+	return err;
+}
+
+static int
+sctp_binary_heap_node_verify_priorities(
+	const sctp_binary_heap_t* heap,
+	const sctp_binary_heap_node_t* node)
+{
+	if (node == NULL)
+	{
+		return 0;
+	}
+
+	if (node->parent != NULL && sctp_binary_heap_node_compare_data(heap, node->parent, node) > 0)
+	{
+		KASSERT(0, ("Parent has bigger priority"));
+		return -1;
+	}
+
+	int err = 0;
+	if (err == 0 && node->left != NULL)
+	{
+		err = sctp_binary_heap_node_verify_priorities(heap, node->left);
+	}
+	if (err == 0 && node->right != NULL)
+	{
+		err = sctp_binary_heap_node_verify_priorities(heap, node->right);
+	}
+	return err;
 }
 
 
@@ -652,4 +700,44 @@ sctp_binary_heap_node_compare_data(
 		return 0;
 	}
 	return SCTP_UINT32_GT(a->sequence, b->sequence) ? 1 : -1;
+}
+
+
+static
+void 
+sctp_binary_heap_node_print(sctp_binary_heap_node_t *node, uint32_t space) 
+{ 
+	if (node == NULL) 
+	{
+		return; 
+	}
+	const uint32_t indent = 10;
+
+	space += indent; 
+  
+	sctp_binary_heap_node_print(node->right, space); 
+
+	printf("\n"); 
+	for (uint32_t i = indent; i < space; i++)
+	{
+		printf(" ");
+	}
+	if (node->heap->data_visualizer != NULL) 
+	{
+		char vis[8] = {0};
+		node->heap->data_visualizer(node->data, sizeof(vis), vis);
+		printf("%s\n", vis); 
+	}
+	else 
+	{
+		printf("%p\n", node->data); 
+	}
+	sctp_binary_heap_node_print(node->left, space); 
+} 
+
+void 
+sctp_binary_heap_print(
+	const sctp_binary_heap_t* heap) 
+{
+	sctp_binary_heap_node_print(heap->root, 0);
 }

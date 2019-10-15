@@ -45,6 +45,9 @@ typedef struct sctp_binary_heap sctp_binary_heap_t;
 /* function to compare data stored in heap nodes */
 typedef int (*sctp_binary_heap_node_data_comparer)(const void*, const void*);
 
+/* function to visualize node's data as a string */
+typedef void (*sctp_binary_heap_node_data_visualizer)(const void*, size_t max_len, char *out_buffer);
+
 /* structure representing heap node */
 struct sctp_binary_heap_node
 {
@@ -63,6 +66,7 @@ struct sctp_binary_heap
 	uint32_t push_sequence; /* next assigned sequence number by push operation */
 	size_t size; /* number of nodes stored in this heap */
 	sctp_binary_heap_node_data_comparer comparer; /* function to compare data associated with nodes */
+	sctp_binary_heap_node_data_visualizer data_visualizer; /* optional user-provided function to provide human readable representation of node's data */
 };
 
 
@@ -84,7 +88,8 @@ sctp_binary_heap_get_node_by_index(
 void
 sctp_binary_heap_init(
 	sctp_binary_heap_t*,
-	sctp_binary_heap_node_data_comparer);
+	sctp_binary_heap_node_data_comparer,
+	sctp_binary_heap_node_data_visualizer);
 
 
 void
@@ -140,7 +145,7 @@ sctp_binary_heap_bubble_down(
 	sctp_binary_heap_node_t*);
 
 
-void
+int
 sctp_binary_heap_verify(
 	const sctp_binary_heap_t*);
 
@@ -151,5 +156,9 @@ sctp_binary_heap_node_compare_data(
 	const sctp_binary_heap_node_t*,
 	const sctp_binary_heap_node_t*);
 
+
+void 
+sctp_binary_heap_print(
+	const sctp_binary_heap_t*);
 
 #endif
