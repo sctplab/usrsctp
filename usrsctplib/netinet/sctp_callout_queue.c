@@ -724,7 +724,7 @@ sctp_binary_heap_node_print(sctp_binary_heap_node_t *node, uint32_t space)
 	}
 	if (node->heap->data_visualizer != NULL) 
 	{
-		char vis[8] = {0};
+		char vis[10] = {0};
 		node->heap->data_visualizer(node->data, sizeof(vis), vis);
 		printf("%s\n", vis); 
 	}
