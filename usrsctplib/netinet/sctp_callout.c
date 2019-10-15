@@ -46,6 +46,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <user_atomic.h>
 #include <netinet/sctp_sysctl.h>
 #include <netinet/sctp_pcb.h>
