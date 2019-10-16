@@ -46,6 +46,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <user_atomic.h>
 #include <netinet/sctp_sysctl.h>
 #include <netinet/sctp_pcb.h>
@@ -54,6 +55,85 @@
 #include <netinet/sctp_callout.h>
 #include <netinet/sctp_pcb.h>
 #endif
+
+#if defined(__Userspace__)
+static void
+sctp_userland_cond_wait(userland_cond_t* cond,
+						userland_mutex_t* mtx) {
+#if defined(__Userspace_os_Windows)
+	const DWORD timeoutMillis = 20 * 1000;
+	const BOOL waited = SleepConditionVariableCS(cond, mtx, timeoutMillis);
+	if (!waited) {
+		SCTP_PRINTF("WARN; SleepConditionVariableCS did not return within %ul millis\n", timeoutMillis);
+	}
+#else
+	struct timespec ts;
+	ts.tv_sec = 20;
+	ts.tv_nsec = 0;
+	int rc = pthread_cond_timedwait(cond, mtx, &ts);
+	if (rc) {
+		if (rc == ETIMEDOUT) {
+			SCTP_PRINTF("WARN; pthread_cond_timedwait did not return within %" PRd64 " sec\n",
+				(int64_t)ts.tv_sec);
+		} else {
+			SCTP_PRINTF("ERROR; return code from pthread_cond_wait is %d\n",
+				rc);
+		}
+	}
+#endif
+}
+
+static void
+sctp_userland_cond_signal(userland_cond_t* cond) {
+#if defined(__Userspace_os_Windows)
+	WakeAllConditionVariable(cond);
+#else
+	int rc = pthread_cond_broadcast(cond);
+	if (rc) {
+		SCTP_PRINTF("ERROR; return code from pthread_cond_broadcast is %d\n", rc);
+	}
+#endif
+}
+
+static void
+sctp_userland_cond_init(userland_cond_t* cond) {
+#if defined(__Userspace_os_Windows)
+	InitializeConditionVariable(cond);
+#else
+	int rc = pthread_cond_init(cond, NULL);
+	if (rc) {
+		SCTP_PRINTF("ERROR; return code from pthread_cond_init is %d\n", rc);
+	}
+#endif
+}
+
+static void
+sctp_userland_cond_destroy(userland_cond_t* cond) {
+#if defined(__Userspace_os_Windows)
+	DeleteConditionVariable(cond);
+#else
+	int rc = pthread_cond_destroy(cond);
+	if (rc) {
+		SCTP_PRINTF("ERROR; return code from pthread_cond_destroy is %d\n", rc);
+	}
+#endif
+}
+#endif
+
+static int
+sctp_os_timer_cancel_impl(sctp_os_timer_t* c) {
+	// Assume SCTP_TIMERQ_LOCK done by caller
+
+	c->c_flags &= ~(SCTP_CALLOUT_ACTIVE);
+
+	if (c->c_flags & SCTP_CALLOUT_PENDING)
+	{
+		c->c_flags &= ~SCTP_CALLOUT_PENDING;
+		sctp_binary_heap_remove(&SCTP_BASE_INFO(timers_queue), &c->heap_node);
+		return (1);
+	}
+	return (0);
+}
 
 /*
  * Callout/Timer routines for OS that doesn't have them
@@ -73,68 +153,95 @@ uint32_t sctp_get_tick_count(void) {
 	return ret;
 }
 
-/*
- * SCTP_TIMERQ_LOCK protects:
- * - SCTP_BASE_INFO(callqueue)
- * - sctp_os_timer_next: next timer to check
- * - sctp_os_timer_current: current callout callback in progress
- * - sctp_os_timer_current_tid: current callout thread id in progress
- * - sctp_os_timer_waiting: some thread is waiting for callout to complete
- * - sctp_os_timer_wait_ctr: incremented every time a thread wants to wait
- *                           for a callout to complete.
- */
-static sctp_os_timer_t *sctp_os_timer_next = NULL;
-static sctp_os_timer_t *sctp_os_timer_current = NULL;
-static int sctp_os_timer_waiting = 0;
-static int sctp_os_timer_wait_ctr = 0;
-static userland_thread_id_t sctp_os_timer_current_tid;
+void
+sctp_os_timer_describe(const sctp_os_timer_t* t,
+                       size_t max_len,
+                       char* buffer) {
+  snprintf(buffer, max_len, "t=%" PRIu32 ",f=%p,a=%p", t->c_time,
+           (void*)t->c_func, (void*)t->c_arg);
+}
 
-/*
- * SCTP_TIMERWAIT_LOCK (sctp_os_timerwait_mtx) protects:
- * - sctp_os_timer_wait_cond: waiting for callout to complete
- * - sctp_os_timer_done_ctr: value of "wait_ctr" after triggering "waiting"
- */
-userland_mutex_t sctp_os_timerwait_mtx;
-static userland_cond_t sctp_os_timer_wait_cond;
-static int sctp_os_timer_done_ctr = 0;
-
+int
+sctp_os_timer_compare(const sctp_os_timer_t* a, const sctp_os_timer_t* b) {
+  if (a->c_time == b->c_time) {
+    return 0;
+  }
+  return SCTP_UINT32_GT(a->c_time, b->c_time) ? 1 : -1;
+}
 
 void
 sctp_os_timer_init(sctp_os_timer_t *c)
 {
 	memset(c, 0, sizeof(*c));
+	sctp_binary_heap_node_init(&c->heap_node, c);
+#if defined(__Userspace__)
+	sctp_userland_cond_init(&c->c_completion);
+#endif
 }
+
+void
+sctp_os_timer_deinit(sctp_os_timer_t* c)
+{
+	KASSERT(!sctp_os_timer_is_active(c), ("Deiniting an active timer"));
+#if defined(__Userspace__)
+	sctp_userland_cond_destroy(&c->c_completion);
+#endif
+}
+
+int
+sctp_os_timer_is_pending(const sctp_os_timer_t* c) {
+	SCTP_TIMERQ_LOCK();
+	const int is_pending = (c->c_flags & SCTP_CALLOUT_PENDING);
+	SCTP_TIMERQ_UNLOCK();
+	return is_pending;
+}
+
+int
+sctp_os_timer_is_active(const sctp_os_timer_t* c) {
+	SCTP_TIMERQ_LOCK();
+	const int is_active = (c->c_flags & SCTP_CALLOUT_ACTIVE);
+	SCTP_TIMERQ_UNLOCK();
+	return is_active;
+}
+
+void
+sctp_os_timer_deactivate(sctp_os_timer_t* c) {
+	SCTP_TIMERQ_LOCK();
+	c->c_flags &= ~SCTP_CALLOUT_ACTIVE;
+	SCTP_TIMERQ_UNLOCK();
+}
+
 
 void
 sctp_os_timer_start(sctp_os_timer_t *c, uint32_t to_ticks, void (*ftn) (void *),
                     void *arg)
 {
 	/* paranoia */
-	if ((c == NULL) || (ftn == NULL))
-	    return;
+	if ((c == NULL) || (ftn == NULL)) {
+		KASSERT(0, ("Timer is NULL or callback is NULL"));
+		return;
+	}
 
 	SCTP_TIMERQ_LOCK();
 	/* check to see if we're rescheduling a timer */
-	if (c == sctp_os_timer_current) {
+	if ((c->c_flags & SCTP_CALLOUT_EXECUTING) != 0) {
 		/*
-		 * We're being asked to reschedule a callout which is
-		 * currently in progress.
-		 */
-		if (sctp_os_timer_waiting) {
+		* We're being asked to reschedule a callout which is
+		* currently in progress.
+		*/
+		if ((c->c_flags & SCTP_CALLOUT_ACTIVE) == 0) {
 			/*
-			 * This callout is already being stopped.
-			 * callout.  Don't reschedule.
+			* This callout is already being stopped.
+			* callout.  Don't reschedule.
 			 */
 			SCTP_TIMERQ_UNLOCK();
 			return;
 		}
 	}
 
+	sctp_binary_heap_t* timers_queue = &SCTP_BASE_INFO(timers_queue);
 	if (c->c_flags & SCTP_CALLOUT_PENDING) {
-		if (c == sctp_os_timer_next) {
-			sctp_os_timer_next = TAILQ_NEXT(c, tqe);
-		}
-		TAILQ_REMOVE(&SCTP_BASE_INFO(callqueue), c, tqe);
+		sctp_binary_heap_remove(timers_queue, &c->heap_node);
 		/*
 		 * part of the normal "stop a pending callout" process
 		 * is to clear the CALLOUT_ACTIVE and CALLOUT_PENDING
@@ -154,65 +261,41 @@ sctp_os_timer_start(sctp_os_timer_t *c, uint32_t to_ticks, void (*ftn) (void *),
 	c->c_flags = (SCTP_CALLOUT_ACTIVE | SCTP_CALLOUT_PENDING);
 	c->c_func = ftn;
 	c->c_time = ticks + to_ticks;
-	TAILQ_INSERT_TAIL(&SCTP_BASE_INFO(callqueue), c, tqe);
+	sctp_binary_heap_push(timers_queue, &c->heap_node);
 	SCTP_TIMERQ_UNLOCK();
+}
+
+int
+sctp_os_timer_cancel(sctp_os_timer_t* c) {
+	int ret;
+	SCTP_TIMERQ_LOCK();
+	ret = sctp_os_timer_cancel_impl(c);
+	SCTP_TIMERQ_UNLOCK();
+	return ret;
 }
 
 int
 sctp_os_timer_stop(sctp_os_timer_t *c)
 {
-	int wakeup_cookie;
-
 	SCTP_TIMERQ_LOCK();
-	/*
-	 * Don't attempt to delete a callout that's not on the queue.
-	 */
-	if (!(c->c_flags & SCTP_CALLOUT_PENDING)) {
-		c->c_flags &= ~SCTP_CALLOUT_ACTIVE;
-		if (sctp_os_timer_current != c) {
-			SCTP_TIMERQ_UNLOCK();
-			return (0);
-		} else {
-			/*
-			 * Deleting the callout from the currently running
-			 * callout from the same thread, so just return
-			 */
-			userland_thread_id_t tid;
-			sctp_userspace_thread_id(&tid);
-			if (sctp_userspace_thread_equal(tid,
-						sctp_os_timer_current_tid)) {
-				SCTP_TIMERQ_UNLOCK();
-				return (0);
-			}
 
-			/* need to wait until the callout is finished */
-			sctp_os_timer_waiting = 1;
-			wakeup_cookie = ++sctp_os_timer_wait_ctr;
-			SCTP_TIMERQ_UNLOCK();
-			SCTP_TIMERWAIT_LOCK();
-			/*
-			 * wait only if sctp_handle_tick didn't do a wakeup
-			 * in between the lock dance
-			 */
-			if (wakeup_cookie - sctp_os_timer_done_ctr > 0) {
-#if defined (__Userspace_os_Windows)
-				SleepConditionVariableCS(&sctp_os_timer_wait_cond,
-							 &sctp_os_timerwait_mtx,
-							 INFINITE);
-#else
-				pthread_cond_wait(&sctp_os_timer_wait_cond,
-						  &sctp_os_timerwait_mtx);
-#endif
-			}
-			SCTP_TIMERWAIT_UNLOCK();
+	sctp_os_timer_cancel_impl(c);
+
+	while (c->c_flags & SCTP_CALLOUT_EXECUTING) {
+		/*
+		 * Deleting the callout from the currently running
+		 * callout from the same thread, so just return
+		 */
+		userland_thread_id_t tid;
+		sctp_userspace_thread_id(&tid);
+		if (sctp_userspace_thread_equal(tid, c->c_executor_id)) {
+			break;
 		}
-		return (0);
+#if defined(__Userspace__)
+		sctp_userland_cond_wait(&c->c_completion, &SCTP_BASE_VAR(timer_mtx));
+#endif
 	}
-	c->c_flags &= ~(SCTP_CALLOUT_ACTIVE | SCTP_CALLOUT_PENDING);
-	if (c == sctp_os_timer_next) {
-		sctp_os_timer_next = TAILQ_NEXT(c, tqe);
-	}
-	TAILQ_REMOVE(&SCTP_BASE_INFO(callqueue), c, tqe);
+
 	SCTP_TIMERQ_UNLOCK();
 	return (1);
 }
@@ -220,48 +303,42 @@ sctp_os_timer_stop(sctp_os_timer_t *c)
 void
 sctp_handle_tick(uint32_t elapsed_ticks)
 {
-	sctp_os_timer_t *c;
-	void (*c_func)(void *);
-	void *c_arg;
-	int wakeup_cookie;
-
 	SCTP_TIMERQ_LOCK();
 	/* update our tick count */
 	ticks += elapsed_ticks;
-	c = TAILQ_FIRST(&SCTP_BASE_INFO(callqueue));
-	while (c) {
-		if (SCTP_UINT32_GE(ticks, c->c_time)) {
-			sctp_os_timer_next = TAILQ_NEXT(c, tqe);
-			TAILQ_REMOVE(&SCTP_BASE_INFO(callqueue), c, tqe);
-			c_func = c->c_func;
-			c_arg = c->c_arg;
+
+	sctp_binary_heap_t* heap = &SCTP_BASE_INFO(timers_queue);
+	sctp_binary_heap_node_t* node = NULL;
+	while (0 == sctp_binary_heap_peek(heap, &node)) {
+		sctp_os_timer_t* c = (sctp_os_timer_t*)node->data;
+		if (!SCTP_UINT32_GE(ticks, c->c_time))
+		{
+			// Earliest timer is not ready yet 
+			break;
+		}
+		sctp_binary_heap_remove(heap, node);
+
+		if ((c->c_flags & (SCTP_CALLOUT_ACTIVE | SCTP_CALLOUT_PENDING)) != 0) {
+			userland_thread_id_t tid;
+			sctp_userspace_thread_id(&tid);
+
+			c->c_executor_id = tid;
+			void (*c_func)(void*) = c->c_func;
+			void* c_arg = c->c_arg;
 			c->c_flags &= ~SCTP_CALLOUT_PENDING;
-			sctp_os_timer_current = c;
-			sctp_userspace_thread_id(&sctp_os_timer_current_tid);
+
+			c->c_flags |= SCTP_CALLOUT_EXECUTING;
 			SCTP_TIMERQ_UNLOCK();
 			c_func(c_arg);
 			SCTP_TIMERQ_LOCK();
-			sctp_os_timer_current = NULL;
-			if (sctp_os_timer_waiting) {
-				wakeup_cookie = sctp_os_timer_wait_ctr;
-				SCTP_TIMERQ_UNLOCK();
-				SCTP_TIMERWAIT_LOCK();
-#if defined (__Userspace_os_Windows)
-				WakeAllConditionVariable(&sctp_os_timer_wait_cond);
-#else
-				pthread_cond_broadcast(&sctp_os_timer_wait_cond);
+			c->c_flags &= ~SCTP_CALLOUT_EXECUTING;
+#if defined(__Userspace__)
+			sctp_userland_cond_signal(&c->c_completion);
 #endif
-				sctp_os_timer_done_ctr = wakeup_cookie;
-				SCTP_TIMERWAIT_UNLOCK();
-				SCTP_TIMERQ_LOCK();
-				sctp_os_timer_waiting = 0;
-			}
-			c = sctp_os_timer_next;
 		} else {
-			c = TAILQ_NEXT(c, tqe);
+			KASSERT(0, ("Timer from queue expected to be scheduled and active"));
 		}
 	}
-	sctp_os_timer_next = NULL;
 	SCTP_TIMERQ_UNLOCK();
 }
 
@@ -309,15 +386,6 @@ sctp_start_timer(void)
 	 * here, it is being done in sctp_pcb_init()
 	 */
 	int rc;
-
-#if defined(__Userspace_os_Windows)
-	InitializeConditionVariable(&sctp_os_timer_wait_cond);
-#else
-	rc = pthread_cond_init(&sctp_os_timer_wait_cond, NULL);
-	if (rc)
-		SCTP_PRINTF("ERROR; return code from pthread_cond_init is %d\n", rc);
-#endif
-
 	rc = sctp_userspace_thread_create(&SCTP_BASE_VAR(timer_thread), user_sctp_timer_iterate);
 	if (rc) {
 		SCTP_PRINTF("ERROR; return code from sctp_thread_create() is %d\n", rc);

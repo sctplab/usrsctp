@@ -38,6 +38,9 @@ __FBSDID("$FreeBSD$");
 #ifndef _NETINET_SCTP_CALLOUT_
 #define _NETINET_SCTP_CALLOUT_
 
+#include "sctp_callout_queue.h"
+#include "sctp_os_userspace.h"
+
 /*
  * NOTE: the following MACROS are required for locking the callout
  * queue along with a lock/mutex in the OS specific headers and
@@ -52,67 +55,67 @@ __FBSDID("$FreeBSD$");
 
 #define SCTP_TICKS_PER_FASTTIMO 20	/* called about every 20ms */
 
-extern userland_mutex_t sctp_os_timerwait_mtx;
-
 #if defined(__Userspace__)
 #if defined(__Userspace_os_Windows)
 #define SCTP_TIMERQ_LOCK()          EnterCriticalSection(&SCTP_BASE_VAR(timer_mtx))
 #define SCTP_TIMERQ_UNLOCK()        LeaveCriticalSection(&SCTP_BASE_VAR(timer_mtx))
 #define SCTP_TIMERQ_LOCK_INIT()     InitializeCriticalSection(&SCTP_BASE_VAR(timer_mtx))
 #define SCTP_TIMERQ_LOCK_DESTROY()  DeleteCriticalSection(&SCTP_BASE_VAR(timer_mtx))
-
-#define SCTP_TIMERWAIT_LOCK()          EnterCriticalSection(&sctp_os_timerwait_mtx)
-#define SCTP_TIMERWAIT_UNLOCK()        LeaveCriticalSection(&sctp_os_timerwait_mtx)
-#define SCTP_TIMERWAIT_LOCK_INIT()     InitializeCriticalSection(&sctp_os_timerwait_mtx)
-#define SCTP_TIMERWAIT_LOCK_DESTROY()  DeleteCriticalSection(&sctp_os_timerwait_mtx)
 #else
 #ifdef INVARIANTS
 #define SCTP_TIMERQ_LOCK()          KASSERT(pthread_mutex_lock(&SCTP_BASE_VAR(timer_mtx)) == 0, ("%s: timer_mtx already locked", __func__))
 #define SCTP_TIMERQ_UNLOCK()        KASSERT(pthread_mutex_unlock(&SCTP_BASE_VAR(timer_mtx)) == 0, ("%s: timer_mtx not locked", __func__))
-#define SCTP_TIMERWAIT_LOCK()       KASSERT(pthread_mutex_lock(&sctp_os_timerwait_mtx) == 0, ("%s: sctp_os_timerwait_mtx already locked", __func__))
-#define SCTP_TIMERWAIT_UNLOCK()	    KASSERT(pthread_mutex_unlock(&sctp_os_timerwait_mtx) == 0, ("%s: sctp_os_timerwait_mtx not locked", __func__))
 #else
 #define SCTP_TIMERQ_LOCK()          (void)pthread_mutex_lock(&SCTP_BASE_VAR(timer_mtx))
 #define SCTP_TIMERQ_UNLOCK()        (void)pthread_mutex_unlock(&SCTP_BASE_VAR(timer_mtx))
-#define SCTP_TIMERWAIT_LOCK()       (void)pthread_mutex_lock(&sctp_os_timerwait_mtx)
-#define SCTP_TIMERWAIT_UNLOCK()     (void)pthread_mutex_unlock(&sctp_os_timerwait_mtx)
 #endif
 #define SCTP_TIMERQ_LOCK_INIT()     (void)pthread_mutex_init(&SCTP_BASE_VAR(timer_mtx), &SCTP_BASE_VAR(mtx_attr))
 #define SCTP_TIMERQ_LOCK_DESTROY()  (void)pthread_mutex_destroy(&SCTP_BASE_VAR(timer_mtx))
-#define SCTP_TIMERWAIT_LOCK_INIT()     (void)pthread_mutex_init(&sctp_os_timerwait_mtx, &SCTP_BASE_VAR(mtx_attr))
-#define SCTP_TIMERWAIT_LOCK_DESTROY()  (void)pthread_mutex_destroy(&sctp_os_timerwait_mtx)
 #endif
 #endif
 
 uint32_t sctp_get_tick_count(void);
 
-TAILQ_HEAD(calloutlist, sctp_callout);
 
 struct sctp_callout {
-	TAILQ_ENTRY(sctp_callout) tqe;
+	sctp_binary_heap_node_t heap_node;
 	uint32_t c_time;		/* ticks to the event */
 	void *c_arg;		/* function argument */
 	void (*c_func)(void *);	/* function to call */
 	int c_flags;		/* state of this entry */
+#if defined(__Userspace__)
+	userland_cond_t c_completion; /* conditional variable signaled
+									 when timer completes execution */
+	userland_thread_id_t c_executor_id;
+#endif
 };
 typedef struct sctp_callout sctp_os_timer_t;
 
 #define	SCTP_CALLOUT_ACTIVE	0x0002	/* callout is currently active */
 #define	SCTP_CALLOUT_PENDING	0x0004	/* callout is waiting for timeout */
+#define	SCTP_CALLOUT_EXECUTING	0x0008	/* callout is currently executing */
 
-void sctp_os_timer_init(sctp_os_timer_t *tmr);
+void sctp_os_timer_describe(const sctp_os_timer_t*, size_t, char*);
+int sctp_os_timer_compare(const sctp_os_timer_t*, const sctp_os_timer_t*);
+void sctp_os_timer_init(sctp_os_timer_t*);
+void sctp_os_timer_deinit(sctp_os_timer_t*);
+int sctp_os_timer_is_pending(const sctp_os_timer_t*);
+int sctp_os_timer_is_active(const sctp_os_timer_t*);
+void sctp_os_timer_deactivate(sctp_os_timer_t*);
+
 void sctp_os_timer_start(sctp_os_timer_t *, uint32_t, void (*)(void *), void *);
+int sctp_os_timer_cancel(sctp_os_timer_t*);
 int sctp_os_timer_stop(sctp_os_timer_t *);
 void sctp_handle_tick(uint32_t);
 
 #define SCTP_OS_TIMER_INIT	sctp_os_timer_init
+#define SCTP_OS_TIMER_DEINIT sctp_os_timer_deinit
 #define SCTP_OS_TIMER_START	sctp_os_timer_start
-#define SCTP_OS_TIMER_STOP	sctp_os_timer_stop
-/* MT FIXME: Is the following correct? */
-#define SCTP_OS_TIMER_STOP_DRAIN SCTP_OS_TIMER_STOP
-#define	SCTP_OS_TIMER_PENDING(tmr) ((tmr)->c_flags & SCTP_CALLOUT_PENDING)
-#define	SCTP_OS_TIMER_ACTIVE(tmr) ((tmr)->c_flags & SCTP_CALLOUT_ACTIVE)
-#define	SCTP_OS_TIMER_DEACTIVATE(tmr) ((tmr)->c_flags &= ~SCTP_CALLOUT_ACTIVE)
+#define SCTP_OS_TIMER_STOP sctp_os_timer_cancel
+#define SCTP_OS_TIMER_STOP_DRAIN sctp_os_timer_stop
+#define SCTP_OS_TIMER_PENDING(tmr) sctp_os_timer_is_pending(tmr)
+#define SCTP_OS_TIMER_ACTIVE(tmr) sctp_os_timer_is_active(tmr)
+#define SCTP_OS_TIMER_DEACTIVATE(tmr) sctp_os_timer_deactivate(tmr)
 
 #if defined(__Userspace__)
 void sctp_start_timer(void);
