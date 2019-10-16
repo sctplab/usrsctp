@@ -163,8 +163,7 @@ void
 sctp_os_timer_describe(const sctp_os_timer_t* t,
                        size_t max_len,
                        char* buffer) {
-	snprintf(buffer, max_len, "t=%" PRIu32 ",f=%p,a=%p", t->c_time,
-		(void*)t->c_func, (void*)t->c_arg);
+	snprintf(buffer, max_len, "t=%" PRIu32 ",a=%p", t->c_time, t);
 }
 
 int
