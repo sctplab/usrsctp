@@ -74,6 +74,26 @@ sctp_binary_heap_node_verify_priorities(
 	const sctp_binary_heap_t*,
 	const sctp_binary_heap_node_t*);
 
+
+static void
+sctp_binary_heap_bubble_up(
+	sctp_binary_heap_t*,
+	sctp_binary_heap_node_t*);
+
+
+static void
+sctp_binary_heap_bubble_down(
+	sctp_binary_heap_t*,
+	sctp_binary_heap_node_t*);
+
+
+static int
+sctp_binary_heap_node_compare_data(
+	const sctp_binary_heap_t*,
+	const sctp_binary_heap_node_t*,
+	const sctp_binary_heap_node_t*);
+
+
 static size_t
 sctp_binary_heap_node_parent_index(size_t index)
 {
@@ -306,7 +326,7 @@ sctp_binary_heap_push(
 }
 
 
-void
+static void
 sctp_binary_heap_node_swap_nodes(
 	sctp_binary_heap_t* heap,
 	sctp_binary_heap_node_t* a,
@@ -342,7 +362,7 @@ sctp_binary_heap_node_swap_nodes(
 }
 
 
-void
+static void
 sctp_binary_heap_node_swap_non_adjacent(
 	sctp_binary_heap_t* heap,
 	sctp_binary_heap_node_t* a,
@@ -460,7 +480,7 @@ sctp_binary_heap_node_swap_non_adjacent(
 }
 
 
-void
+static void
 sctp_binary_heap_node_swap_with_parent(
 	sctp_binary_heap_t* heap,
 	sctp_binary_heap_node_t* node)
@@ -555,7 +575,7 @@ sctp_binary_heap_node_swap_with_parent(
 }
 
 
-void
+static void
 sctp_binary_heap_bubble_up(
 	sctp_binary_heap_t* heap,
 	sctp_binary_heap_node_t* node)
@@ -572,7 +592,7 @@ sctp_binary_heap_bubble_up(
 }
 
 
-void
+static void
 sctp_binary_heap_bubble_down(
 	sctp_binary_heap_t* heap,
 	sctp_binary_heap_node_t* node)
@@ -690,7 +710,7 @@ sctp_binary_heap_node_verify_priorities(
 }
 
 
-int
+static int
 sctp_binary_heap_node_compare_data(
 	const sctp_binary_heap_t* heap,
 	const sctp_binary_heap_node_t* a,
@@ -711,8 +731,7 @@ sctp_binary_heap_node_compare_data(
 }
 
 
-static
-void 
+static void
 sctp_binary_heap_node_print(sctp_binary_heap_node_t *node, uint32_t space) 
 { 
 	if (node == NULL) 
@@ -743,6 +762,7 @@ sctp_binary_heap_node_print(sctp_binary_heap_node_t *node, uint32_t space)
 	}
 	sctp_binary_heap_node_print(node->left, space); 
 } 
+
 
 void 
 sctp_binary_heap_print(

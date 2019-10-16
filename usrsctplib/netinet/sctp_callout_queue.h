@@ -138,28 +138,9 @@ sctp_binary_heap_peek(
 	sctp_binary_heap_node_t**);
 
 
-void
-sctp_binary_heap_bubble_up(
-	sctp_binary_heap_t*,
-	sctp_binary_heap_node_t*);
-
-
-void
-sctp_binary_heap_bubble_down(
-	sctp_binary_heap_t*,
-	sctp_binary_heap_node_t*);
-
-
 int
 sctp_binary_heap_verify(
 	const sctp_binary_heap_t*);
-
-
-int
-sctp_binary_heap_node_compare_data(
-	const sctp_binary_heap_t*,
-	const sctp_binary_heap_node_t*,
-	const sctp_binary_heap_node_t*);
 
 
 void 
