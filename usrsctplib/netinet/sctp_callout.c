@@ -346,7 +346,6 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 	/* update our tick count */
 	ticks += elapsed_ticks;
 
-	uint32_t timedout_callouts = 0;
 	sctp_binary_heap_t* heap = &SCTP_BASE_INFO(timers_queue);
 	sctp_binary_heap_node_t* node = NULL;
 	while (0 == sctp_binary_heap_peek(heap, &node)) {
