@@ -73,7 +73,7 @@ sctp_userland_cond_wait(userland_cond_t* cond,
 	int rc = pthread_cond_timedwait(cond, mtx, &ts);
 	if (rc) {
 		if (rc == ETIMEDOUT) {
-			SCTP_PRINTF("WARN; pthread_cond_timedwait did not return within %" PRd64 " sec\n",
+			SCTP_PRINTF("WARN; pthread_cond_timedwait did not return within %" PRId64 " sec\n",
 				(int64_t)ts.tv_sec);
 		} else {
 			SCTP_PRINTF("ERROR; return code from pthread_cond_wait is %d\n",
