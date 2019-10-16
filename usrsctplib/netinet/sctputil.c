@@ -37,6 +37,7 @@
 __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 353518 2019-10-14 20:32:11Z tuexen $");
 #endif
 
+#include <inttypes.h>
 #include <netinet/sctp_os.h>
 #include <netinet/sctp_pcb.h>
 #include <netinet/sctputil.h>
@@ -1703,7 +1704,7 @@ sctp_timeout_handler(void *t)
 	}
 	type = tmr->type;
 	tmr->stopped_from = 0xa005;
-	SCTPDBG(SCTP_DEBUG_TIMER1, "Timer type %d goes off\n", type);
+	SCTPDBG(SCTP_DEBUG_TIMER1, "Timer %p of type %d goes off with callout is %p\n", tmr, type, &(tmr->timer));
 	if (!SCTP_OS_TIMER_ACTIVE(&tmr->timer)) {
 		if (inp) {
 			SCTP_INP_DECR_REF(inp);
@@ -2372,6 +2373,8 @@ sctp_timer_start(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 #ifndef __Panda__
 	tmr->ticks = sctp_get_tick_count();
 #endif
+	SCTPDBG(SCTP_DEBUG_TIMER1, "%s: Starting timer %p of type %d with delay %" PRIu32 " and callout %p\n",
+		__func__, tmr, t_type, to_ticks, &(tmr->timer));
 	(void)SCTP_OS_TIMER_START(&tmr->timer, to_ticks, sctp_timeout_handler, tmr);
 	return;
 }

@@ -661,7 +661,7 @@ extern void getwintimeofday(struct timeval *tv);
 
 /* SCTP DEBUG Switch parameters */
 #define SCTP_DEBUG_TIMER1	0x00000001
-#define SCTP_DEBUG_TIMER2	0x00000002	/* unused */
+#define SCTP_DEBUG_TIMER2	0x00000002
 #define SCTP_DEBUG_TIMER3	0x00000004	/* unused */
 #define SCTP_DEBUG_TIMER4	0x00000008
 #define SCTP_DEBUG_OUTPUT1	0x00000010
