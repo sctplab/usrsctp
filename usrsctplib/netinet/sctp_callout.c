@@ -192,7 +192,7 @@ sctp_os_timer_deinit(sctp_os_timer_t* c)
 {
 	SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": request to deinit callout %p\n", 
 		__func__, sctp_get_tick_count(), c);
-	KASSERT(!sctp_os_timer_is_active(c), ("Deiniting an active timer"));
+	KASSERT(!sctp_os_timer_is_active(c), ("Deiniting an active callout"));
 #if defined(__Userspace__)
 	sctp_userland_cond_destroy(&c->c_completion);
 #endif
@@ -235,7 +235,7 @@ sctp_os_timer_start(sctp_os_timer_t *c, uint32_t to_ticks, void (*ftn) (void *),
 	}
 
 	SCTP_TIMERQ_LOCK();
-	SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": request to start timer %p with delay of %" PRIu32 " ticks\n", 
+	SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": request to start callout %p with delay of %" PRIu32 " ticks\n", 
 		__func__, ticks, c, to_ticks);
 	/* check to see if we're rescheduling a timer */
 	if ((c->c_flags & SCTP_CALLOUT_EXECUTING) != 0) {
@@ -354,8 +354,8 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 		if (!SCTP_UINT32_GE(ticks, c->c_time))
 		{
 			if (last_heap_modification_reported != heap->mod_count) {
-				SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": the next soonest callout %p is scheduled at %" PRIu32 "\n",
-					__func__, ticks, c, c->c_time);
+				SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": the next soonest callout %p is scheduled at %" PRIu32 ", total scheduled callouts %zu\n",
+					__func__, ticks, c, c->c_time, sctp_binary_heap_size(heap));
 				last_heap_modification_reported = heap->mod_count;
 			}
 			// Earliest timer is not ready yet 
