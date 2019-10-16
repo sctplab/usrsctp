@@ -45,25 +45,33 @@ typedef struct item
 	int32_t priority;
 } item_t;
 
-int item_comparer(const void* x, const void* y)
+
+int
+item_comparer(const void* x, const void* y)
 {
 	const item_t* X = x;
 	const item_t* Y = y;
 	return X->priority - Y->priority;
 }
 
-void item_visualizer(const void* x, size_t max_len, char *out_buffer) 
+
+void
+item_visualizer(const void* x, size_t max_len, char *out_buffer)
 {
 	const item_t* X = x;
 	snprintf(out_buffer, max_len, "%" PRId32, X->priority);
 }
 
-int always_equal_comparer(const void *x, const void *y)
+
+int
+always_equal_comparer(const void *x, const void *y)
 {
 	return 0;
 }
 
-void shuffle_array(uint32_t *a, size_t size) 
+
+void
+shuffle_array(uint32_t *a, size_t size)
 {
 	// https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#The_modern_algorithm
 	for (size_t i = size - 1; i >= 1; i--) 
@@ -88,19 +96,16 @@ typedef struct {
 int
 timer_compare(const simulated_timer_t* a, const simulated_timer_t* b)
 {
-	if (SCTP_UINT32_GT(a->time, b->time))
-	{
-		return 1;
-	}
 	if (a->time == b->time)
 	{
 		return 0;
 	}
-	return -1;
+	return SCTP_UINT32_GT(a->time, b->time) ? 1 : -1;
 }
 
 
-void test_sctp_binary_heap_node_traverse_path(void)
+void
+test_sctp_binary_heap_node_traverse_path(void)
 {
 	/*
 	 * heap keyed by node index
@@ -159,7 +164,8 @@ void test_sctp_binary_heap_node_traverse_path(void)
 }
 
 
-void test_sctp_binary_heap_get_node_by_index_simple(void)
+void
+test_sctp_binary_heap_get_node_by_index_simple(void)
 {
 	struct sctp_binary_heap heap;
 	sctp_binary_heap_init(&heap, item_comparer, item_visualizer);
@@ -229,7 +235,8 @@ void test_sctp_binary_heap_get_node_by_index_simple(void)
 }
 
 
-void test_sctp_binary_heap_get_node_by_index(void)
+void
+test_sctp_binary_heap_get_node_by_index(void)
 {
 	const size_t items_count = 128;
 	item_t* items = (item_t*)malloc(items_count * sizeof(item_t));
@@ -289,7 +296,8 @@ free_mem:
 }
 
 
-void test_sctp_binary_heap_push_simple(void)
+void
+test_sctp_binary_heap_push_simple(void)
 {
 	struct sctp_binary_heap heap;
 	sctp_binary_heap_init(&heap, item_comparer, item_visualizer);
@@ -354,7 +362,8 @@ void test_sctp_binary_heap_push_simple(void)
 }
 
 
-void test_sctp_binary_heap_push_pop_sequential_items(void)
+void
+test_sctp_binary_heap_push_pop_sequential_items(void)
 {
 	const size_t items_count = 1024 * 1024;
 	item_t* items = (item_t*)malloc(items_count * sizeof(item_t));
@@ -424,7 +433,8 @@ free_mem:
 }
 
 
-void test_sctp_binary_heap_push_pop_random_items(void)
+void 
+test_sctp_binary_heap_push_pop_random_items(void)
 {
 	const size_t items_count = 1024 * 1024;
 	item_t *items = (item_t*) malloc(items_count * sizeof(item_t));
@@ -488,7 +498,8 @@ free_mem:
 }
 
 
-void test_sctp_binary_heap_push_interleaved_with_pop_random_items(void)
+void
+test_sctp_binary_heap_push_interleaved_with_pop_random_items(void)
 {
 	const size_t items_count = 1024 * 1024;
 	item_t* items = (item_t*)malloc(items_count * sizeof(item_t));
@@ -564,7 +575,8 @@ free_mem:
 }
 
 
-void test_sctp_binary_heap_priority_collision_handled_in_push_order(void)
+void
+test_sctp_binary_heap_priority_collision_handled_in_push_order(void)
 {
 	item_t items[512];
 
@@ -606,7 +618,8 @@ void test_sctp_binary_heap_priority_collision_handled_in_push_order(void)
 	printf("%s test PASSED\n", __func__);
 }
 
-void test_random_remove() 
+void
+test_random_remove()
 {
 	const uint32_t items_count = 30 * 1024;
 	uint32_t* remove_order = NULL;
@@ -675,7 +688,8 @@ free_mem:
 }
 
 
-void test_timer_overflow(void)
+void
+test_timer_overflow(void)
 {
 	struct test_case {
 		uint32_t earlier_timer;
