@@ -140,11 +140,11 @@ sctp_os_timer_cancel_impl(sctp_os_timer_t* c) {
 		c->c_flags &= ~SCTP_CALLOUT_PENDING;
 		sctp_binary_heap_remove(&SCTP_BASE_INFO(timers_queue), &c->heap_node);
 		SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": cancelled pending callout %p\n",
-			__func__, ticks);
+			__func__, ticks, c);
 		return (1);
 	}
 	SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": cancelled non-pending callout %p\n",
-		__func__, ticks);
+		__func__, ticks, c);
 	return (0);
 }
 
