@@ -84,9 +84,8 @@ struct sctp_callout {
 	void (*c_func)(void *);	/* function to call */
 	int c_flags;		/* state of this entry */
 #if defined(__Userspace__)
-	userland_cond_t c_completion; /* conditional variable signaled
-									 when timer completes execution */
-	userland_thread_id_t c_executor_id;
+	userland_cond_t c_completion; /* conditional variable signaled when timer completes execution */
+	userland_thread_id_t c_executor_id; /* id of thread executing timer's callback */
 #endif
 };
 typedef struct sctp_callout sctp_os_timer_t;

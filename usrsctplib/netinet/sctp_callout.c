@@ -226,13 +226,13 @@ sctp_os_timer_start(sctp_os_timer_t *c, uint32_t to_ticks, void (*ftn) (void *),
 	/* check to see if we're rescheduling a timer */
 	if ((c->c_flags & SCTP_CALLOUT_EXECUTING) != 0) {
 		/*
-		* We're being asked to reschedule a callout which is
-		* currently in progress.
-		*/
+		 * We're being asked to reschedule a callout which is
+		 * currently in progress.
+		 */
 		if ((c->c_flags & SCTP_CALLOUT_ACTIVE) == 0) {
 			/*
-			* This callout is already being stopped.
-			* callout.  Don't reschedule.
+			 * This callout is already being stopped.
+			 * callout.  Don't reschedule.
 			 */
 			SCTP_TIMERQ_UNLOCK();
 			return;
