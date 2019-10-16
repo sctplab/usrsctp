@@ -63,7 +63,7 @@ struct sctp_binary_heap_node
 struct sctp_binary_heap
 {
 	sctp_binary_heap_node_t* root; /* pointer to root node of the heap */
-	uint32_t push_sequence; /* next assigned sequence number by push operation */
+	uint32_t mod_count; /* number of heap modification operations executed */
 	size_t size; /* number of nodes stored in this heap */
 	sctp_binary_heap_node_data_comparer comparer; /* function to compare data associated with nodes */
 	sctp_binary_heap_node_data_visualizer data_visualizer; /* optional user-provided function to provide human readable representation of node's data */

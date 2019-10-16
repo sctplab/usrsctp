@@ -200,6 +200,7 @@ sctp_binary_heap_remove(
 	}
 
 	heap->size -= 1;
+	heap->mod_count += 1;
 	if (heap->size > 0)
 	{
 		sctp_binary_heap_node_t* parent;
@@ -287,9 +288,9 @@ sctp_binary_heap_push(
 	*next = node;
 	node->heap = heap;
 	node->parent = parent;
-	node->sequence = heap->push_sequence;
+	node->sequence = heap->mod_count;
 	heap->size += 1;
-	heap->push_sequence += 1;
+	heap->mod_count += 1;
 	sctp_binary_heap_bubble_up(heap, node);
 #if defined(SCTP_BINARY_HEAP_VERIFY_MUTATE_FUNCTIONS)
 	sctp_binary_heap_verify(heap);
