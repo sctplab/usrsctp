@@ -154,7 +154,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 	static int initialized;
 	char *fuzzed_packet_buffer;
-	struct sockaddr_in bind4;
+	struct sockaddr_in6 bind6;
 	struct sockaddr_conn sconn;
 	struct socket *socket_client;
 	struct linger so_linger;
@@ -363,15 +363,15 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	assert(result == 0);
 #endif // defined(FUZZ_INTERLEAVING)
 
-	memset((void *)&bind4, 0, sizeof(struct sockaddr_in));
+	memset((void *)&bind6, 0, sizeof(struct sockaddr_in6));
 #ifdef HAVE_SIN_LEN
-	bind4.sin_len = sizeof(struct sockaddr_in6);
+	bind6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
-	bind4.sin_family = AF_INET;
-	bind4.sin_port = htons(5000);
-	bind4.sin_addr.s_addr = htonl(INADDR_ANY);
+	bind6.sin6_family = AF_INET;
+	bind6.sin6_port = htons(5000);
+	bind6.sin6_addr = in6addr_any;
 
-	result = usrsctp_bind(socket_client, (struct sockaddr *)&bind4, sizeof(bind4));
+	result = usrsctp_bind(socket_client, (struct sockaddr *)&bind6, sizeof(bind6));
 	assert(result == 0);
 
 	usrsctp_set_upcall(socket_client, handle_upcall, NULL);
