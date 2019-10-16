@@ -38,60 +38,397 @@
 
 #include <inttypes.h>
 
+
 #if defined(SCTP_DEBUG)
+// Uncomment or define via compiler switch to enable
+// checking of correctness of heap mutation functions
 //#define SCTP_BINARY_HEAP_VERIFY_MUTATE_FUNCTIONS
 #endif
 
 
-static void
-sctp_binary_heap_node_swap_nodes(
-	sctp_binary_heap_t*,
-	sctp_binary_heap_node_t*,
-	sctp_binary_heap_node_t*);
-
-
-static void
-sctp_binary_heap_node_swap_non_adjacent(
-	sctp_binary_heap_t*,
-	sctp_binary_heap_node_t*,
-	sctp_binary_heap_node_t*);
-
-
-static void
-sctp_binary_heap_node_swap_with_parent(
-	sctp_binary_heap_t*,
-	sctp_binary_heap_node_t*);
-
-
 static int
-sctp_binary_heap_node_verify_connectivity(
-	const sctp_binary_heap_t*,
-	const sctp_binary_heap_node_t*);
+sctp_binary_heap_node_compare_data(
+	const sctp_binary_heap_t* heap,
+	const sctp_binary_heap_node_t* a,
+	const sctp_binary_heap_node_t* b)
+{
+	const int cmp = heap->comparer(a->data, b->data);
+	if (cmp != 0)
+	{
+		return cmp;
+	}
+	// break equal priorities by order of push into heap
+	if (a->sequence == b->sequence)
+	{
+		KASSERT(a == b, ("Only possible when compared to itself"));
+		return 0;
+	}
+	return SCTP_UINT32_GT(a->sequence, b->sequence) ? 1 : -1;
+}
 
 
 static int
 sctp_binary_heap_node_verify_priorities(
-	const sctp_binary_heap_t*,
-	const sctp_binary_heap_node_t*);
+	const sctp_binary_heap_t* heap,
+	const sctp_binary_heap_node_t* node)
+{
+	if (node == NULL)
+	{
+		return 0;
+	}
+
+	if (node->parent != NULL && sctp_binary_heap_node_compare_data(heap, node->parent, node) > 0)
+	{
+		KASSERT(0, ("Parent has bigger priority"));
+		return -1;
+	}
+
+	int err = 0;
+	if (err == 0 && node->left != NULL)
+	{
+		err = sctp_binary_heap_node_verify_priorities(heap, node->left);
+	}
+	if (err == 0 && node->right != NULL)
+	{
+		err = sctp_binary_heap_node_verify_priorities(heap, node->right);
+	}
+	return err;
+}
+
+
+static int
+sctp_binary_heap_node_verify_connectivity(
+	const sctp_binary_heap_t* heap,
+	const sctp_binary_heap_node_t* node) 
+{
+	if (node == NULL)
+	{
+		return 0;
+	}
+	if (heap != node->heap)
+	{
+		KASSERT(0, ("Node belong to different heap"));
+		return -1;
+	}
+	if (node == heap->root && node->parent != NULL)
+	{
+		KASSERT(0, ("Root node must have parent set to NULL"));
+		return -1;
+	}
+
+	int err = 0;
+	if (err == 0 && node->left != NULL)
+	{
+		if (node->left->parent != node)
+		{
+			KASSERT(0, ("Left substree hsa wrong link to parent"));
+			return -1;
+		}
+		err = sctp_binary_heap_node_verify_connectivity(heap, node->left);
+	}
+
+	if (err == 0 && node->right != NULL)
+	{
+		if (node->right->parent != node)
+		{
+			KASSERT(0, ("Right substree has wrong link to parent"));
+			return -1;
+		}
+		err = sctp_binary_heap_node_verify_connectivity(heap, node->right);
+	}
+
+	return err;
+}
+
+
+static void
+sctp_binary_heap_node_swap_non_adjacent(
+	sctp_binary_heap_t* heap,
+	sctp_binary_heap_node_t* a,
+	sctp_binary_heap_node_t* b)
+{
+	if (a->heap != b->heap)
+	{
+		KASSERT(0, ("Nodes belong to the different heaps"));
+		return;
+	}
+	if (heap != a->heap)
+	{
+		KASSERT(0, ("Nodes does not belong to the heap"));
+		return;
+	}
+	if (a->parent == b || b->parent == a)
+	{
+		KASSERT(0, ("Nodes are adjacent"));
+		return;
+	}
+	sctp_binary_heap_node_t* const a_parent = a->parent;
+	sctp_binary_heap_node_t* const a_left_child = a->left;
+	sctp_binary_heap_node_t* const a_right_child = a->right;
+
+	sctp_binary_heap_node_t* const b_parent = b->parent;
+	sctp_binary_heap_node_t* const b_left_child = b->left;
+	sctp_binary_heap_node_t* const b_right_child = b->right;
+
+	sctp_binary_heap_node_t** a_from_parent = NULL;
+	if (a_parent != NULL)
+	{
+		if (a_parent->left == a)
+		{
+			a_from_parent = &a_parent->left;
+		}
+		else if (a_parent->right == a)
+		{
+			a_from_parent = &a_parent->right;
+		}
+		else
+		{
+			KASSERT(0, ("Heap inconsistency detected"));
+			return;
+		}
+	}
+
+	sctp_binary_heap_node_t** b_from_parent = NULL;
+	if (b_parent != NULL)
+	{
+		if (b_parent->left == b)
+		{
+			b_from_parent = &b_parent->left;
+		}
+		else if (b_parent->right == b)
+		{
+			b_from_parent = &b_parent->right;
+		}
+		else
+		{
+			KASSERT(0, ("Heap inconsistency detected"));
+			return;
+		}
+	}
+	// swap
+	// a
+	a->left = b_left_child;
+	if (b_left_child != NULL)
+	{
+		b_left_child->parent = a;
+	}
+
+	a->right = b_right_child;
+	if (b_right_child != NULL)
+	{
+		b_right_child->parent = a;
+	}
+
+	a->parent = b_parent;
+	if (b_from_parent != NULL)
+	{
+		*b_from_parent = a;
+	}
+
+	// b
+	b->left = a_left_child;
+	if (a_left_child != NULL)
+	{
+		a_left_child->parent = b;
+	}
+
+	b->right = a_right_child;
+	if (a_right_child != NULL)
+	{
+		a_right_child->parent = b;
+	}
+
+	b->parent = a_parent;
+	if (a_from_parent != NULL)
+	{
+		*a_from_parent = b;
+	}
+
+	// maybe update root
+	if (heap->root == a)
+	{
+		heap->root = b;
+	}
+	else if (heap->root == b)
+	{
+		heap->root = a;
+	}
+#if defined(SCTP_BINARY_HEAP_VERIFY_MUTATE_FUNCTIONS)
+	sctp_binary_heap_node_verify_connectivity(heap, heap->root);
+#endif
+}
+
+
+static void
+sctp_binary_heap_node_swap_with_parent(
+	sctp_binary_heap_t* heap,
+	sctp_binary_heap_node_t* node)
+{
+	if (heap != node->heap)
+	{
+		KASSERT(0, ("Node does notbelong to the heap"));
+		return;
+	}
+
+	sctp_binary_heap_node_t* const parent = node->parent;
+	if (parent == NULL)
+	{
+		return;
+	}
+
+	const int parent_is_root = (parent == heap->root);
+
+	// populate pointers to neighbor nodes
+	sctp_binary_heap_node_t* const parent_parent = parent->parent;
+	sctp_binary_heap_node_t* const parent_left_child = parent->left;
+	sctp_binary_heap_node_t* const parent_right_child = parent->right;
+	sctp_binary_heap_node_t* const node_left_child = node->left;
+	sctp_binary_heap_node_t* const node_right_child = node->right;
+
+	sctp_binary_heap_node_t** parent_parent_child = NULL;
+	if (parent_parent != NULL)
+	{
+		if (parent_parent->left == parent)
+		{
+			parent_parent_child = &parent_parent->left;
+		}
+		else if (parent_parent->right == parent)
+		{
+			parent_parent_child = &parent_parent->right;
+		}
+		else
+		{
+			KASSERT(0, ("Heap inconsistency detected"));
+			return;
+		}
+	}
+
+	// updated pointers (up to 10)
+	node->parent = parent_parent;
+	if (parent_parent_child != NULL)
+	{
+		*parent_parent_child = node;
+	}
+	parent->parent = node;
+
+	if (node_left_child != NULL)
+	{
+		node_left_child->parent = parent;
+	}
+	if (node_right_child != NULL)
+	{
+		node_right_child->parent = parent;
+	}
+
+	parent->right = node_right_child;
+	parent->left = node_left_child;
+
+	if (node == parent_left_child)
+	{
+		node->left = parent;
+		node->right = parent_right_child;
+		if (parent_right_child != NULL)
+		{
+			parent_right_child->parent = node;
+		}
+	}
+	else
+	{
+		node->right = parent;
+		node->left = parent_left_child;
+		if (parent_left_child != NULL)
+		{
+			parent_left_child->parent = node;
+		}
+	}
+
+	if (parent_is_root)
+	{
+		heap->root = node;
+	}
+
+#if defined(SCTP_BINARY_HEAP_VERIFY_MUTATE_FUNCTIONS)
+	sctp_binary_heap_node_verify_connectivity(heap, heap->root);
+#endif
+}
+
+
+static void
+sctp_binary_heap_node_swap_nodes(
+	sctp_binary_heap_t* heap,
+	sctp_binary_heap_node_t* a,
+	sctp_binary_heap_node_t* b)
+{
+	if (a->heap != b->heap)
+	{
+		KASSERT(0, ("Nodes belong to the different heaps"));
+		return;
+	}
+	if (heap != a->heap)
+	{
+		KASSERT(0, ("Nodes does not belong to the heap"));
+		return;
+	}
+	if (a == b) 
+	{
+		return;
+	}
+
+	if (a->parent == b)
+	{
+		sctp_binary_heap_node_swap_with_parent(heap, a);
+	}
+	else if (b->parent == a)
+	{
+		sctp_binary_heap_node_swap_with_parent(heap, b);
+	}
+	else
+	{
+		sctp_binary_heap_node_swap_non_adjacent(heap, a, b);
+	}
+}
 
 
 static void
 sctp_binary_heap_bubble_up(
-	sctp_binary_heap_t*,
-	sctp_binary_heap_node_t*);
+	sctp_binary_heap_t* heap,
+	sctp_binary_heap_node_t* node)
+{
+	sctp_binary_heap_node_t *n = node;
+	while (n->parent != NULL)
+	{
+		if (sctp_binary_heap_node_compare_data(heap, n, n->parent) > 0)
+		{
+			break;
+		}
+		sctp_binary_heap_node_swap_with_parent(heap, n);
+	}
+}
 
 
 static void
 sctp_binary_heap_bubble_down(
-	sctp_binary_heap_t*,
-	sctp_binary_heap_node_t*);
-
-
-static int
-sctp_binary_heap_node_compare_data(
-	const sctp_binary_heap_t*,
-	const sctp_binary_heap_node_t*,
-	const sctp_binary_heap_node_t*);
+	sctp_binary_heap_t* heap,
+	sctp_binary_heap_node_t* node)
+{
+	for (uint32_t depth = 0; depth < 64; depth++)
+	{
+		sctp_binary_heap_node_t* smallest = node;
+		if (node->left != NULL && sctp_binary_heap_node_compare_data(heap, node->left, smallest) < 0)
+		{
+			smallest = node->left;
+		}
+		if (node->right != NULL && sctp_binary_heap_node_compare_data(heap, node->right, smallest) < 0)
+		{
+			smallest = node->right;
+		}
+		if (smallest == node)
+		{
+			return;
+		}
+		sctp_binary_heap_node_swap_with_parent(heap, smallest);
+	}
+}
 
 
 static size_t
@@ -111,6 +448,39 @@ sctp_binary_heap_node_count_descendants(const sctp_binary_heap_node_t* node)
 	return 1
 		+ sctp_binary_heap_node_count_descendants(node->left)
 		+ sctp_binary_heap_node_count_descendants(node->right);
+}
+
+
+static void
+sctp_binary_heap_node_print(sctp_binary_heap_node_t *node, uint32_t space) 
+{ 
+	if (node == NULL) 
+	{
+		return; 
+	}
+	const uint32_t indent = 10;
+
+	space += indent; 
+  
+	sctp_binary_heap_node_print(node->right, space); 
+
+	printf("\n"); 
+	for (uint32_t i = indent; i < space; i++)
+	{
+		printf(" ");
+	}
+	if (node->heap->data_visualizer != NULL) 
+	{
+		char vis[11] = {0};
+		node->heap->data_visualizer(node->data, sizeof(vis) - 1, vis);
+		vis[sizeof(vis)-1] = 0; 
+		printf("%s\n", vis); 
+	}
+	else 
+	{
+		printf("%p\n", node->data); 
+	}
+	sctp_binary_heap_node_print(node->left, space); 
 }
 
 
@@ -326,297 +696,6 @@ sctp_binary_heap_push(
 }
 
 
-static void
-sctp_binary_heap_node_swap_nodes(
-	sctp_binary_heap_t* heap,
-	sctp_binary_heap_node_t* a,
-	sctp_binary_heap_node_t* b)
-{
-	if (a->heap != b->heap)
-	{
-		KASSERT(0, ("Nodes belong to the different heaps"));
-		return;
-	}
-	if (heap != a->heap)
-	{
-		KASSERT(0, ("Nodes does not belong to the heap"));
-		return;
-	}
-	if (a == b) 
-	{
-		return;
-	}
-
-	if (a->parent == b)
-	{
-		sctp_binary_heap_node_swap_with_parent(heap, a);
-	}
-	else if (b->parent == a)
-	{
-		sctp_binary_heap_node_swap_with_parent(heap, b);
-	}
-	else
-	{
-		sctp_binary_heap_node_swap_non_adjacent(heap, a, b);
-	}
-}
-
-
-static void
-sctp_binary_heap_node_swap_non_adjacent(
-	sctp_binary_heap_t* heap,
-	sctp_binary_heap_node_t* a,
-	sctp_binary_heap_node_t* b)
-{
-	if (a->heap != b->heap)
-	{
-		KASSERT(0, ("Nodes belong to the different heaps"));
-		return;
-	}
-	if (heap != a->heap)
-	{
-		KASSERT(0, ("Nodes does not belong to the heap"));
-		return;
-	}
-	if (a->parent == b || b->parent == a)
-	{
-		KASSERT(0, ("Nodes are adjacent"));
-		return;
-	}
-	sctp_binary_heap_node_t* const a_parent = a->parent;
-	sctp_binary_heap_node_t* const a_left_child = a->left;
-	sctp_binary_heap_node_t* const a_right_child = a->right;
-
-	sctp_binary_heap_node_t* const b_parent = b->parent;
-	sctp_binary_heap_node_t* const b_left_child = b->left;
-	sctp_binary_heap_node_t* const b_right_child = b->right;
-
-	sctp_binary_heap_node_t** a_from_parent = NULL;
-	if (a_parent != NULL)
-	{
-		if (a_parent->left == a)
-		{
-			a_from_parent = &a_parent->left;
-		}
-		else if (a_parent->right == a)
-		{
-			a_from_parent = &a_parent->right;
-		}
-		else
-		{
-			KASSERT(0, ("Heap inconsistency detected"));
-			return;
-		}
-	}
-
-	sctp_binary_heap_node_t** b_from_parent = NULL;
-	if (b_parent != NULL)
-	{
-		if (b_parent->left == b)
-		{
-			b_from_parent = &b_parent->left;
-		}
-		else if (b_parent->right == b)
-		{
-			b_from_parent = &b_parent->right;
-		}
-		else
-		{
-			KASSERT(0, ("Heap inconsistency detected"));
-			return;
-		}
-	}
-	// swap
-	// a
-	a->left = b_left_child;
-	if (b_left_child != NULL)
-	{
-		b_left_child->parent = a;
-	}
-
-	a->right = b_right_child;
-	if (b_right_child != NULL)
-	{
-		b_right_child->parent = a;
-	}
-
-	a->parent = b_parent;
-	if (b_from_parent != NULL)
-	{
-		*b_from_parent = a;
-	}
-
-	// b
-	b->left = a_left_child;
-	if (a_left_child != NULL)
-	{
-		a_left_child->parent = b;
-	}
-
-	b->right = a_right_child;
-	if (a_right_child != NULL)
-	{
-		a_right_child->parent = b;
-	}
-
-	b->parent = a_parent;
-	if (a_from_parent != NULL)
-	{
-		*a_from_parent = b;
-	}
-
-	// maybe update root
-	if (heap->root == a)
-	{
-		heap->root = b;
-	}
-	else if (heap->root == b)
-	{
-		heap->root = a;
-	}
-#if defined(SCTP_BINARY_HEAP_VERIFY_MUTATE_FUNCTIONS)
-	sctp_binary_heap_node_verify_connectivity(heap, heap->root);
-#endif
-}
-
-
-static void
-sctp_binary_heap_node_swap_with_parent(
-	sctp_binary_heap_t* heap,
-	sctp_binary_heap_node_t* node)
-{
-	if (heap != node->heap)
-	{
-		KASSERT(0, ("Node does notbelong to the heap"));
-		return;
-	}
-
-	sctp_binary_heap_node_t* const parent = node->parent;
-	if (parent == NULL)
-	{
-		return;
-	}
-
-	const int parent_is_root = (parent == heap->root);
-
-	// populate pointers to neighbor nodes
-	sctp_binary_heap_node_t* const parent_parent = parent->parent;
-	sctp_binary_heap_node_t* const parent_left_child = parent->left;
-	sctp_binary_heap_node_t* const parent_right_child = parent->right;
-	sctp_binary_heap_node_t* const node_left_child = node->left;
-	sctp_binary_heap_node_t* const node_right_child = node->right;
-
-	sctp_binary_heap_node_t** parent_parent_child = NULL;
-	if (parent_parent != NULL)
-	{
-		if (parent_parent->left == parent)
-		{
-			parent_parent_child = &parent_parent->left;
-		}
-		else if (parent_parent->right == parent)
-		{
-			parent_parent_child = &parent_parent->right;
-		}
-		else
-		{
-			KASSERT(0, ("Heap inconsistency detected"));
-			return;
-		}
-	}
-
-	// updated pointers (up to 10)
-	node->parent = parent_parent;
-	if (parent_parent_child != NULL)
-	{
-		*parent_parent_child = node;
-	}
-	parent->parent = node;
-
-	if (node_left_child != NULL)
-	{
-		node_left_child->parent = parent;
-	}
-	if (node_right_child != NULL)
-	{
-		node_right_child->parent = parent;
-	}
-
-	parent->right = node_right_child;
-	parent->left = node_left_child;
-
-	if (node == parent_left_child)
-	{
-		node->left = parent;
-		node->right = parent_right_child;
-		if (parent_right_child != NULL)
-		{
-			parent_right_child->parent = node;
-		}
-	}
-	else
-	{
-		node->right = parent;
-		node->left = parent_left_child;
-		if (parent_left_child != NULL)
-		{
-			parent_left_child->parent = node;
-		}
-	}
-
-	if (parent_is_root)
-	{
-		heap->root = node;
-	}
-
-#if defined(SCTP_BINARY_HEAP_VERIFY_MUTATE_FUNCTIONS)
-	sctp_binary_heap_node_verify_connectivity(heap, heap->root);
-#endif
-
-}
-
-
-static void
-sctp_binary_heap_bubble_up(
-	sctp_binary_heap_t* heap,
-	sctp_binary_heap_node_t* node)
-{
-	sctp_binary_heap_node_t *n = node;
-	while (n->parent != NULL)
-	{
-		if (sctp_binary_heap_node_compare_data(heap, n, n->parent) > 0)
-		{
-			break;
-		}
-		sctp_binary_heap_node_swap_with_parent(heap, n);
-	}
-}
-
-
-static void
-sctp_binary_heap_bubble_down(
-	sctp_binary_heap_t* heap,
-	sctp_binary_heap_node_t* node)
-{
-	for (uint32_t depth = 0; depth < 64; depth++)
-	{
-		sctp_binary_heap_node_t* smallest = node;
-		if (node->left != NULL && sctp_binary_heap_node_compare_data(heap, node->left, smallest) < 0)
-		{
-			smallest = node->left;
-		}
-		if (node->right != NULL && sctp_binary_heap_node_compare_data(heap, node->right, smallest) < 0)
-		{
-			smallest = node->right;
-		}
-		if (smallest == node)
-		{
-			return;
-		}
-		sctp_binary_heap_node_swap_with_parent(heap, smallest);
-	}
-}
-
-
 int
 sctp_binary_heap_verify(
 	const sctp_binary_heap_t* heap)
@@ -635,133 +714,6 @@ sctp_binary_heap_verify(
 	}
 	return sctp_binary_heap_node_verify_priorities(heap, heap->root);
 }
-
-
-static int
-sctp_binary_heap_node_verify_connectivity(
-	const sctp_binary_heap_t* heap,
-	const sctp_binary_heap_node_t* node) 
-{
-	if (node == NULL)
-	{
-		return 0;
-	}
-	if (heap != node->heap)
-	{
-		KASSERT(0, ("Node belong to different heap"));
-		return -1;
-	}
-	if (node == heap->root && node->parent != NULL)
-	{
-		KASSERT(0, ("Root node must have parent set to NULL"));
-		return -1;
-	}
-
-	int err = 0;
-	if (err == 0 && node->left != NULL)
-	{
-		if (node->left->parent != node)
-		{
-			KASSERT(0, ("Left substree hsa wrong link to parent"));
-			return -1;
-		}
-		err = sctp_binary_heap_node_verify_connectivity(heap, node->left);
-	}
-
-	if (err == 0 && node->right != NULL)
-	{
-		if (node->right->parent != node)
-		{
-			KASSERT(0, ("Right substree has wrong link to parent"));
-			return -1;
-		}
-		err = sctp_binary_heap_node_verify_connectivity(heap, node->right);
-	}
-
-	return err;
-}
-
-static int
-sctp_binary_heap_node_verify_priorities(
-	const sctp_binary_heap_t* heap,
-	const sctp_binary_heap_node_t* node)
-{
-	if (node == NULL)
-	{
-		return 0;
-	}
-
-	if (node->parent != NULL && sctp_binary_heap_node_compare_data(heap, node->parent, node) > 0)
-	{
-		KASSERT(0, ("Parent has bigger priority"));
-		return -1;
-	}
-
-	int err = 0;
-	if (err == 0 && node->left != NULL)
-	{
-		err = sctp_binary_heap_node_verify_priorities(heap, node->left);
-	}
-	if (err == 0 && node->right != NULL)
-	{
-		err = sctp_binary_heap_node_verify_priorities(heap, node->right);
-	}
-	return err;
-}
-
-
-static int
-sctp_binary_heap_node_compare_data(
-	const sctp_binary_heap_t* heap,
-	const sctp_binary_heap_node_t* a,
-	const sctp_binary_heap_node_t* b)
-{
-	const int cmp = heap->comparer(a->data, b->data);
-	if (cmp != 0)
-	{
-		return cmp;
-	}
-	// break equal priorities by order of push into heap
-	if (a->sequence == b->sequence)
-	{
-		KASSERT(a == b, ("Only possible when compared to itself"));
-		return 0;
-	}
-	return SCTP_UINT32_GT(a->sequence, b->sequence) ? 1 : -1;
-}
-
-
-static void
-sctp_binary_heap_node_print(sctp_binary_heap_node_t *node, uint32_t space) 
-{ 
-	if (node == NULL) 
-	{
-		return; 
-	}
-	const uint32_t indent = 10;
-
-	space += indent; 
-  
-	sctp_binary_heap_node_print(node->right, space); 
-
-	printf("\n"); 
-	for (uint32_t i = indent; i < space; i++)
-	{
-		printf(" ");
-	}
-	if (node->heap->data_visualizer != NULL) 
-	{
-		char vis[11] = {0};
-		node->heap->data_visualizer(node->data, sizeof(vis) - 1, vis);
-		vis[sizeof(vis)-1] = 0; 
-		printf("%s\n", vis); 
-	}
-	else 
-	{
-		printf("%p\n", node->data); 
-	}
-	sctp_binary_heap_node_print(node->left, space); 
-} 
 
 
 void 
