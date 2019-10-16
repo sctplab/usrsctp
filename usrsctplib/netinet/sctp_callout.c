@@ -134,6 +134,7 @@ sctp_os_timer_cancel_impl(sctp_os_timer_t* c) {
 	// Assume SCTP_TIMERQ_LOCK done by caller
 
 	c->c_flags &= ~(SCTP_CALLOUT_ACTIVE);
+	c->c_flags |= (SCTP_CALLOUT_CANCELLED);
 
 	if (c->c_flags & SCTP_CALLOUT_PENDING)
 	{
@@ -242,15 +243,19 @@ sctp_os_timer_start(sctp_os_timer_t *c, uint32_t to_ticks, void (*ftn) (void *),
 		 * We're being asked to reschedule a callout which is
 		 * currently in progress.
 		 */
-		if ((c->c_flags & SCTP_CALLOUT_ACTIVE) == 0) {
+		if ((c->c_flags & SCTP_CALLOUT_CANCELLED) != 0) {
 			/*
 			 * This callout is already being stopped.
 			 * callout.  Don't reschedule.
 			 */
-			SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": callout %p is already being stopped\n",
+			SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": callout %p is cancelled\n",
 				__func__, ticks, c);
 			SCTP_TIMERQ_UNLOCK();
 			return;
+		}
+		if ((c->c_flags & SCTP_CALLOUT_ACTIVE) == 0) {
+			SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": callout %p is executing and deactivated\n",
+				__func__, ticks, c);
 		}
 	}
 
@@ -277,7 +282,8 @@ sctp_os_timer_start(sctp_os_timer_t *c, uint32_t to_ticks, void (*ftn) (void *),
 		to_ticks = 1;
 
 	c->c_arg = arg;
-	c->c_flags = (SCTP_CALLOUT_ACTIVE | SCTP_CALLOUT_PENDING);
+	c->c_flags &= (~SCTP_CALLOUT_CANCELLED);
+	c->c_flags |= (SCTP_CALLOUT_ACTIVE | SCTP_CALLOUT_PENDING);
 	c->c_func = ftn;
 	c->c_time = target_ticks;
 	sctp_binary_heap_push(timers_queue, &c->heap_node);
@@ -357,7 +363,7 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 		}
 		sctp_binary_heap_remove(heap, node);
 
-		if ((c->c_flags & (SCTP_CALLOUT_ACTIVE | SCTP_CALLOUT_PENDING)) != 0) {
+		if ((c->c_flags & ((~SCTP_CALLOUT_CANCELLED) | SCTP_CALLOUT_ACTIVE | SCTP_CALLOUT_PENDING)) != 0) {
 			userland_thread_id_t tid;
 			sctp_userspace_thread_id(&tid);
 

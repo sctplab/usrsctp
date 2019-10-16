@@ -93,6 +93,7 @@ typedef struct sctp_callout sctp_os_timer_t;
 #define	SCTP_CALLOUT_ACTIVE	0x0002	/* callout is currently active */
 #define	SCTP_CALLOUT_PENDING	0x0004	/* callout is waiting for timeout */
 #define	SCTP_CALLOUT_EXECUTING	0x0008	/* callout is currently executing */
+#define	SCTP_CALLOUT_CANCELLED	0x0010	/* callout is cancelled */
 
 void sctp_os_timer_describe(const sctp_os_timer_t*, size_t, char*);
 int sctp_os_timer_compare(const sctp_os_timer_t*, const sctp_os_timer_t*);
