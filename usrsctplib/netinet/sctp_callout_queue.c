@@ -350,18 +350,18 @@ sctp_binary_heap_node_swap_non_adjacent(
 		KASSERT(0, ("Nodes does not belong to the heap"));
 		return;
 	}
-	if (a->parent == b || b ->parent == a)
+	if (a->parent == b || b->parent == a)
 	{
 		KASSERT(0, ("Nodes are adjacent"));
 		return;
 	}
-	sctp_binary_heap_node_t* const a_parent = a->parent,
-		* const a_left_child = a->left,
-		* const a_right_child = a->right;
+	sctp_binary_heap_node_t* const a_parent = a->parent;
+	sctp_binary_heap_node_t* const a_left_child = a->left;
+	sctp_binary_heap_node_t* const a_right_child = a->right;
 
-	sctp_binary_heap_node_t* const b_parent = b->parent,
-		* const b_left_child = b->left,
-		* const b_right_child = b->right;
+	sctp_binary_heap_node_t* const b_parent = b->parent;
+	sctp_binary_heap_node_t* const b_left_child = b->left;
+	sctp_binary_heap_node_t* const b_right_child = b->right;
 
 	sctp_binary_heap_node_t** a_from_parent = NULL;
 	if (a_parent != NULL)
@@ -479,7 +479,7 @@ sctp_binary_heap_node_swap_with_parent(
 	sctp_binary_heap_node_t* const node_right_child = node->right;
 
 	sctp_binary_heap_node_t** parent_parent_child = NULL;
-	if (parent_parent)
+	if (parent_parent != NULL)
 	{
 		if (parent_parent->left == parent)
 		{
@@ -596,8 +596,7 @@ sctp_binary_heap_verify(
 	const size_t actual_nodes_count = sctp_binary_heap_node_count_descendants(heap->root);
 	if (actual_nodes_count != heap->size)
 	{
-		KASSERT(0,
-			("Actual and declared nodes count mismatch"));
+		KASSERT(0, ("Actual and declared nodes count mismatch"));
 		return -1;
 	}
 
