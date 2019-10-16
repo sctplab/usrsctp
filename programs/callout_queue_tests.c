@@ -68,7 +68,8 @@ void shuffle_array(uint32_t *a, size_t size)
 	// https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#The_modern_algorithm
 	for (size_t i = size - 1; i >= 1; i--) 
 	{
-		size_t j = random() % (i + 1);
+		const size_t r = (size_t)1 * RAND_MAX * rand() + rand();
+		size_t j = r % (i + 1);
 		uint32_t temp = a[j];
 		a[j] = a[i];
 		a[i] = temp;
@@ -607,7 +608,7 @@ void test_sctp_binary_heap_priority_collision_handled_in_push_order(void)
 
 void test_random_remove() 
 {
-	const size_t items_count = 30 * 1024;
+	const uint32_t items_count = 30 * 1024;
 	uint32_t* remove_order = NULL;
 	item_t* items = NULL;
 
@@ -630,7 +631,7 @@ void test_random_remove()
 	sctp_binary_heap_t heap;
 	sctp_binary_heap_init(&heap, item_comparer, item_visualizer);
 
-	for (size_t i = 0; i < items_count; i++) 
+	for (uint32_t i = 0; i < items_count; i++) 
 	{
 		remove_order[i] = i;
 		items[i].priority = (i + 1);
@@ -640,7 +641,7 @@ void test_random_remove()
 
 	shuffle_array(remove_order, items_count);
 
-	for (size_t i = 0; i < items_count; i++) 
+	for (uint32_t i = 0; i < items_count; i++) 
 	{
 		sctp_binary_heap_remove(&heap, &items[remove_order[i]].heap_node);
 
@@ -732,7 +733,6 @@ void test_timer_overflow(void)
 int main(void)
 {
 	srand(42);
-	srandom(42);
 	test_sctp_binary_heap_node_traverse_path();
 	test_sctp_binary_heap_get_node_by_index_simple();
 	test_sctp_binary_heap_get_node_by_index();
