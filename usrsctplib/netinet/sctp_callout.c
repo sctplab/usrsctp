@@ -349,8 +349,7 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 	sctp_binary_heap_node_t* node = NULL;
 	while (0 == sctp_binary_heap_peek(heap, &node)) {
 		sctp_os_timer_t* c = (sctp_os_timer_t*)node->data;
-		if (!SCTP_UINT32_GE(ticks, c->c_time))
-		{
+		if (!SCTP_UINT32_GE(ticks, c->c_time)) {
 			if (last_heap_modification_reported != heap->mod_count) {
 				SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": the next soonest callout %p is scheduled at %" PRIu32 ", total scheduled callouts %zu\n",
 					__func__, ticks, c, c->c_time, sctp_binary_heap_size(heap));
@@ -385,7 +384,7 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 		} else {
 			SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": skipping callout %p with wrong flags %d\n", 
 				__func__, ticks, c, c->c_flags);
-			KASSERT(0, ("Timer from queue expected to be scheduled and active"));
+			KASSERT(0, ("Timer from queue expected to be scheduled and active and not cancelled"));
 		}
 	}
 	SCTP_TIMERQ_UNLOCK();
