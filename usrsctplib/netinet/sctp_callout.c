@@ -339,7 +339,7 @@ sctp_os_timer_stop(sctp_os_timer_t *c)
 void
 sctp_handle_tick(uint32_t elapsed_ticks)
 {
-	static uint32_t last_heap_modification_reported = 0;
+	static uint32_t last_heap_version_reported = 0;
 
 	SCTP_TIMERQ_LOCK();
 	/* update our tick count */
@@ -350,10 +350,10 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 	while (0 == sctp_binary_heap_peek(heap, &node)) {
 		sctp_os_timer_t* c = (sctp_os_timer_t*)node->data;
 		if (!SCTP_UINT32_GE(ticks, c->c_time)) {
-			if (last_heap_modification_reported != heap->mod_count) {
+			if (last_heap_version_reported != sctp_binary_heap_version(heap)) {
 				SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": the next soonest callout %p is scheduled at %" PRIu32 ", total scheduled callouts %zu\n",
 					__func__, ticks, c, c->c_time, sctp_binary_heap_size(heap));
-				last_heap_modification_reported = heap->mod_count;
+				last_heap_version_reported = sctp_binary_heap_version(heap);
 			}
 			// Earliest timer is not ready yet 
 			break;

@@ -103,6 +103,11 @@ sctp_binary_heap_size(
 	const sctp_binary_heap_t*);
 
 
+uint32_t
+sctp_binary_heap_version(
+	const sctp_binary_heap_t*);
+
+
 int
 sctp_binary_heap_contains_node(
 	const sctp_binary_heap_t*,

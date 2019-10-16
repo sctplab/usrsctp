@@ -172,10 +172,18 @@ sctp_binary_heap_node_init(
 }
 
 
-size_t sctp_binary_heap_size(
+size_t 
+sctp_binary_heap_size(
 	const sctp_binary_heap_t* heap)
 {
 	return heap->size;
+}
+
+uint32_t
+sctp_binary_heap_version(
+	const sctp_binary_heap_t* heap)
+{
+	return heap->mod_count;
 }
 
 
