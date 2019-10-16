@@ -59,7 +59,7 @@
 #if defined(__Userspace__)
 static void
 sctp_userland_cond_wait(userland_cond_t* cond,
-						userland_mutex_t* mtx) {
+                        userland_mutex_t* mtx) {
 #if defined(__Userspace_os_Windows)
 	const DWORD timeoutMillis = 20 * 1000;
 	const BOOL waited = SleepConditionVariableCS(cond, mtx, timeoutMillis);
