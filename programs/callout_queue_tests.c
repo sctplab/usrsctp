@@ -619,7 +619,7 @@ test_sctp_binary_heap_priority_collision_handled_in_push_order(void)
 }
 
 void
-test_random_remove()
+test_random_remove(void)
 {
 	const uint32_t items_count = 30 * 1024;
 	uint32_t* remove_order = NULL;
