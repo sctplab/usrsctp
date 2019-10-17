@@ -121,7 +121,7 @@ sctp_binary_heap_node_verify_connectivity(
 	{
 		if (node->left->parent != node)
 		{
-			KASSERT(0, ("Left substree hsa wrong link to parent"));
+			KASSERT(0, ("Left substree has wrong link to parent"));
 			return -1;
 		}
 		err = sctp_binary_heap_node_verify_connectivity(heap, node->left);
