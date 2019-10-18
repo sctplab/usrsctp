@@ -101,7 +101,7 @@ typedef struct sctp_callout sctp_os_timer_t;
 #define	SCTP_CALLOUT_PENDING	0x0004	/* callout is waiting for timeout */
 
 void sctp_os_timer_init(sctp_os_timer_t *tmr);
-void sctp_os_timer_start(sctp_os_timer_t *, int, void (*)(void *), void *);
+void sctp_os_timer_start(sctp_os_timer_t *, uint32_t, void (*)(void *), void *);
 int sctp_os_timer_stop(sctp_os_timer_t *);
 void sctp_handle_tick(uint32_t);
 
