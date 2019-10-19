@@ -65,7 +65,21 @@ static uint32_t ticks = 0;
 extern int ticks;
 #endif
 
+
+/*
+ * SCTP_TIMERQ_LOCK protects:
+ * - SCTP_BASE_INFO(timers_queue)
+ * - sctp_os_timer_current: current callout callback in progress
+ * - sctp_os_timer_current_tid: current callout thread id in progress
+ * - sctp_os_timer_current_completed: conditional variable signaled when 
+ *                                    current callout finished execution
+ */
+static sctp_os_timer_t *sctp_os_timer_current = NULL;
+static userland_thread_id_t sctp_os_timer_current_tid;
+static userland_cond_t sctp_os_timer_current_completed;
+
 #if defined(__Userspace__)
+
 static void
 sctp_userland_cond_wait(userland_cond_t* cond,
                         userland_mutex_t* mtx) {
@@ -181,20 +195,6 @@ sctp_os_timer_init(sctp_os_timer_t *c)
 		__func__, sctp_get_tick_count(), c);
 	memset(c, 0, sizeof(*c));
 	sctp_binary_heap_node_init(&c->heap_node, c);
-#if defined(__Userspace__)
-	sctp_userland_cond_init(&c->c_completion);
-#endif
-}
-
-void
-sctp_os_timer_deinit(sctp_os_timer_t* c)
-{
-	SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": request to deinit callout %p\n", 
-		__func__, sctp_get_tick_count(), c);
-	KASSERT(!sctp_os_timer_is_active(c), ("Deiniting an active callout"));
-#if defined(__Userspace__)
-	sctp_userland_cond_destroy(&c->c_completion);
-#endif
 }
 
 int
@@ -237,7 +237,7 @@ sctp_os_timer_start(sctp_os_timer_t *c, uint32_t to_ticks, void (*ftn) (void *),
 	SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": request to start callout %p with delay of %" PRIu32 " ticks\n", 
 		__func__, ticks, c, to_ticks);
 	/* check to see if we're rescheduling a timer */
-	if ((c->c_flags & SCTP_CALLOUT_EXECUTING) != 0) {
+	if (c == sctp_os_timer_current) {
 		/*
 		 * We're being asked to reschedule a callout which is
 		 * currently in progress.
@@ -310,23 +310,23 @@ sctp_os_timer_stop(sctp_os_timer_t *c)
 		__func__, ticks, c);
 	sctp_os_timer_cancel_impl(c);
 
-	while (c->c_flags & SCTP_CALLOUT_EXECUTING) {
-		/*
-		 * Deleting the callout from the currently running
-		 * callout from the same thread, so just return
-		 */
+	while (c == sctp_os_timer_current) {
 		userland_thread_id_t tid;
 		sctp_userspace_thread_id(&tid);
-		if (sctp_userspace_thread_equal(tid, c->c_executor_id)) {
-			SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": self cancel %p\n",
+		if (sctp_userspace_thread_equal(tid, sctp_os_timer_current_tid)) {
+			/*
+			 * Deleting the callout from the currently running
+			 * callout from the same thread, so just return
+			 */
+			SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": self stop %p\n",
 				__func__, ticks, c);
 			break;
 		}
 #if defined(__Userspace__)
-		sctp_userland_cond_wait(&c->c_completion, &SCTP_BASE_VAR(timer_mtx));
+		sctp_userland_cond_wait(&sctp_os_timer_current_completed, &SCTP_BASE_VAR(timer_mtx));
 #endif
 
-		if (!(c->c_flags & SCTP_CALLOUT_EXECUTING)) {
+		if (c != sctp_os_timer_current) {
 			SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": waited callout completion %p\n", 
 				__func__, ticks, c);
 		}
@@ -361,25 +361,24 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 		sctp_binary_heap_remove(heap, node);
 
 		if ((c->c_flags & ((~SCTP_CALLOUT_CANCELLED) | SCTP_CALLOUT_ACTIVE | SCTP_CALLOUT_PENDING)) != 0) {
-			userland_thread_id_t tid;
-			sctp_userspace_thread_id(&tid);
 
-			c->c_executor_id = tid;
 			void (*c_func)(void*) = c->c_func;
 			void* c_arg = c->c_arg;
+			uint32_t c_time = c->c_time;
 			c->c_flags &= ~SCTP_CALLOUT_PENDING;
 
-			c->c_flags |= SCTP_CALLOUT_EXECUTING;
+			sctp_userspace_thread_id(&sctp_os_timer_current_tid);
+			sctp_os_timer_current = c;
 			SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": callout %p with to_ticks = %" PRIu32 " is about to execute\n", 
-				__func__, ticks, c, c->c_time);
+				__func__, ticks, sctp_os_timer_current, c_time);
 			SCTP_TIMERQ_UNLOCK();
 			c_func(c_arg);
 			SCTP_TIMERQ_LOCK();
 			SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": callout %p with to_ticks = %" PRIu32 " is executed\n", 
-				__func__, ticks, c, c->c_time);
-			c->c_flags &= ~SCTP_CALLOUT_EXECUTING;
+				__func__, ticks, sctp_os_timer_current, c_time);
+			sctp_os_timer_current = NULL;
 #if defined(__Userspace__)
-			sctp_userland_cond_signal(&c->c_completion);
+			sctp_userland_cond_signal(&sctp_os_timer_current_completed);
 #endif
 		} else {
 			SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": skipping callout %p with wrong flags %d\n", 
@@ -433,6 +432,9 @@ sctp_start_timer(void)
 	 * No need to do SCTP_TIMERQ_LOCK_INIT();
 	 * here, it is being done in sctp_pcb_init()
 	 */
+#if defined(__Userspace__)
+	sctp_userland_cond_init(&sctp_os_timer_current_completed);
+#endif
 	int rc;
 	rc = sctp_userspace_thread_create(&SCTP_BASE_VAR(timer_thread), user_sctp_timer_iterate);
 	if (rc) {

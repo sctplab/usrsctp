@@ -240,11 +240,8 @@ extern struct pr_usrreqs sctp_usrreqs;
 	if ((__net)) { \
 		if (SCTP_DECREMENT_AND_CHECK_REFCOUNT(&(__net)->ref_count)) { \
 			(void)SCTP_OS_TIMER_STOP_DRAIN(&(__net)->rxt_timer.timer); \
-			SCTP_OS_TIMER_DEINIT(&(__net)->rxt_timer.timer); \
 			(void)SCTP_OS_TIMER_STOP_DRAIN(&(__net)->pmtu_timer.timer); \
-			SCTP_OS_TIMER_DEINIT(&(__net)->pmtu_timer.timer); \
 			(void)SCTP_OS_TIMER_STOP_DRAIN(&(__net)->hb_timer.timer); \
-			SCTP_OS_TIMER_DEINIT(&(__net)->hb_timer.timer); \
 			if ((__net)->ro.ro_rt) { \
 				RTFREE((__net)->ro.ro_rt); \
 				(__net)->ro.ro_rt = NULL; \

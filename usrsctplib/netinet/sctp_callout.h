@@ -83,22 +83,16 @@ struct sctp_callout {
 	void *c_arg;		/* function argument */
 	void (*c_func)(void *);	/* function to call */
 	int c_flags;		/* state of this entry */
-#if defined(__Userspace__)
-	userland_cond_t c_completion; /* conditional variable signaled when timer completes execution */
-	userland_thread_id_t c_executor_id; /* id of thread executing timer's callback */
-#endif
 };
 typedef struct sctp_callout sctp_os_timer_t;
 
 #define	SCTP_CALLOUT_ACTIVE	0x0002	/* callout is currently active */
 #define	SCTP_CALLOUT_PENDING	0x0004	/* callout is waiting for timeout */
-#define	SCTP_CALLOUT_EXECUTING	0x0008	/* callout is currently executing */
-#define	SCTP_CALLOUT_CANCELLED	0x0010	/* callout is cancelled */
+#define	SCTP_CALLOUT_CANCELLED	0x0008	/* callout is cancelled */
 
 void sctp_os_timer_describe(const sctp_os_timer_t*, size_t, char*);
 int sctp_os_timer_compare(const sctp_os_timer_t*, const sctp_os_timer_t*);
 void sctp_os_timer_init(sctp_os_timer_t*);
-void sctp_os_timer_deinit(sctp_os_timer_t*);
 int sctp_os_timer_is_pending(const sctp_os_timer_t*);
 int sctp_os_timer_is_active(const sctp_os_timer_t*);
 void sctp_os_timer_deactivate(sctp_os_timer_t*);
@@ -109,7 +103,6 @@ int sctp_os_timer_stop(sctp_os_timer_t *);
 void sctp_handle_tick(uint32_t);
 
 #define SCTP_OS_TIMER_INIT	sctp_os_timer_init
-#define SCTP_OS_TIMER_DEINIT sctp_os_timer_deinit
 #define SCTP_OS_TIMER_START	sctp_os_timer_start
 #define SCTP_OS_TIMER_STOP sctp_os_timer_cancel
 #define SCTP_OS_TIMER_STOP_DRAIN sctp_os_timer_stop
