@@ -65,6 +65,14 @@ static uint32_t ticks = 0;
 extern int ticks;
 #endif
 
+uint32_t sctp_get_tick_count(void) {
+	uint32_t ret;
+
+	SCTP_TIMERQ_LOCK();
+	ret = ticks;
+	SCTP_TIMERQ_UNLOCK();
+	return ret;
+}
 
 /*
  * SCTP_TIMERQ_LOCK protects:
@@ -161,16 +169,6 @@ sctp_os_timer_cancel_impl(sctp_os_timer_t* c) {
 	SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": cancelled non-pending callout %p\n",
 		__func__, ticks, c);
 	return (0);
-}
-
-
-uint32_t sctp_get_tick_count(void) {
-	uint32_t ret;
-
-	SCTP_TIMERQ_LOCK();
-	ret = ticks;
-	SCTP_TIMERQ_UNLOCK();
-	return ret;
 }
 
 void
@@ -366,9 +364,8 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 			void* c_arg = c->c_arg;
 			uint32_t c_time = c->c_time;
 			c->c_flags &= ~SCTP_CALLOUT_PENDING;
-
-			sctp_userspace_thread_id(&sctp_os_timer_current_tid);
 			sctp_os_timer_current = c;
+			sctp_userspace_thread_id(&sctp_os_timer_current_tid);
 			SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": callout %p with to_ticks = %" PRIu32 " is about to execute\n", 
 				__func__, ticks, sctp_os_timer_current, c_time);
 			SCTP_TIMERQ_UNLOCK();
@@ -432,9 +429,7 @@ sctp_start_timer(void)
 	 * No need to do SCTP_TIMERQ_LOCK_INIT();
 	 * here, it is being done in sctp_pcb_init()
 	 */
-#if defined(__Userspace__)
 	sctp_userland_cond_init(&sctp_os_timer_current_completed);
-#endif
 	int rc;
 	rc = sctp_userspace_thread_create(&SCTP_BASE_VAR(timer_thread), user_sctp_timer_iterate);
 	if (rc) {
