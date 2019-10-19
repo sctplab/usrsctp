@@ -91,11 +91,10 @@ typedef struct sctp_callout sctp_os_timer_t;
 
 void sctp_os_timer_describe(const sctp_os_timer_t*, size_t, char*);
 int sctp_os_timer_compare(const sctp_os_timer_t*, const sctp_os_timer_t*);
-void sctp_os_timer_init(sctp_os_timer_t*);
 int sctp_os_timer_is_pending(const sctp_os_timer_t*);
 int sctp_os_timer_is_active(const sctp_os_timer_t*);
 void sctp_os_timer_deactivate(sctp_os_timer_t*);
-
+void sctp_os_timer_init(sctp_os_timer_t*);
 void sctp_os_timer_start(sctp_os_timer_t *, uint32_t, void (*)(void *), void *);
 int sctp_os_timer_cancel(sctp_os_timer_t*);
 int sctp_os_timer_stop(sctp_os_timer_t *);
