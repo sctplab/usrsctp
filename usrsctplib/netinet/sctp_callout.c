@@ -371,6 +371,10 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 			SCTP_TIMERQ_UNLOCK();
 			c_func(c_arg);
 			SCTP_TIMERQ_LOCK();
+			/* sctp_os_timer_current pointer MUST NOT be dereferenced
+			 * after this point, because it's memory might be already
+			 * freed by c_func or something else.
+			 */
 			SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": callout %p with to_ticks = %" PRIu32 " is executed\n", 
 				__func__, ticks, sctp_os_timer_current, c_time);
 			sctp_os_timer_current = NULL;
