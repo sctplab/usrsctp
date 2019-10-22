@@ -423,6 +423,7 @@ user_sctp_timer_iterate(void *arg)
 		}
 		sctp_handle_tick(MSEC_TO_TICKS(TIMEOUT_INTERVAL));
 	}
+	sctp_userland_cond_destroy(&sctp_os_timer_current_completed);
 	return (NULL);
 }
 
