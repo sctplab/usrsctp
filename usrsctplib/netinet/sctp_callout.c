@@ -363,6 +363,7 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 			void (*c_func)(void*) = c->c_func;
 			void* c_arg = c->c_arg;
 			uint32_t c_time = c->c_time;
+			(void)c_time; // workaround for unused variable warning
 			c->c_flags &= ~SCTP_CALLOUT_PENDING;
 			sctp_os_timer_current = c;
 			sctp_userspace_thread_id(&sctp_os_timer_current_tid);
