@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 350588 2019-08-05 13:22:15Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 353466 2019-10-13 09:35:03Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -62,12 +62,8 @@ __FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 350588 2019-08-05 13:22:15Z
 #include <netinet/icmp6.h>
 #include <netinet/udp.h>
 #endif
-
 #if defined(__APPLE__)
 #define APPLE_FILE_NO 9
-#endif
-#if !defined(__Userspace__)
-extern struct protosw inetsw[];
 #endif
 #if defined(__Panda__) || defined(__Userspace__)
 int ip6_v6only=0;

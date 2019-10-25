@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 342872 2019-01-09 01:11:19Z glebius $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 353480 2019-10-13 18:17:08Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -569,6 +569,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 	 * any IFA that exists as we float through the
 	 * list of IFA's
 	 */
+	struct epoch_tracker et;
 	struct ifnet *ifn;
 	struct ifaddr *ifa;
 	struct sctp_ifa *sctp_ifa;
@@ -578,14 +579,12 @@ sctp_init_ifns_for_vrf(int vrfid)
 #endif
 
 	IFNET_RLOCK();
+	NET_EPOCH_ENTER(et);
 	CK_STAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_link) {
-		struct epoch_tracker et;
-
 		if (sctp_is_desired_interface_type(ifn) == 0) {
 			/* non desired type */
 			continue;
 		}
-		NET_EPOCH_ENTER(et);
 		CK_STAILQ_FOREACH(ifa, &ifn->if_addrhead, ifa_link) {
 			if (ifa->ifa_addr == NULL) {
 				continue;
@@ -638,8 +637,8 @@ sctp_init_ifns_for_vrf(int vrfid)
 				sctp_ifa->localifa_flags &= ~SCTP_ADDR_DEFER_USE;
 			}
 		}
-		NET_EPOCH_EXIT(et);
 	}
+	NET_EPOCH_EXIT(et);
 	IFNET_RUNLOCK();
 }
 #endif
@@ -742,6 +741,11 @@ sctp_addr_change(struct ifaddr *ifa, int cmd)
 }
 
 #if defined(__FreeBSD__)
+void
+sctp_addr_change_event_handler(void *arg __unused, struct ifaddr *ifa, int cmd) {
+	sctp_addr_change(ifa, cmd);
+}
+
 void
 sctp_add_or_del_interfaces(int (*pred)(struct ifnet *), int add)
 {
