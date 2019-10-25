@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <assert.h>
 #include <sys/time.h>
 #include <usrsctp.h>
 #include "../programs/programs_helper.h"
@@ -153,7 +154,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 	static int initialized;
 	char *fuzzed_packet_buffer;
-	struct sockaddr_in bind4;
+	struct sockaddr_in6 bind6;
 	struct sockaddr_conn sconn;
 	struct socket *socket_client;
 	struct linger so_linger;
@@ -172,6 +173,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	uint8_t fuzzing_stage = FUZZING_STAGE;
 	int fuzzed_packet_size;
 	int enable;
+	int result;
 #if defined(FUZZ_STREAM_RESET) || defined(FUZZ_INTERLEAVING)
 	struct sctp_assoc_value assoc_val;
 #endif
@@ -307,58 +309,44 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		return (0);
 	}
 
-	if ((socket_client = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, 0)) == NULL) {
-		perror("usrsctp_socket");
-		exit(EXIT_FAILURE);
-	}
+	socket_client = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, 0);
+	assert(socket_client != NULL);
 
 	usrsctp_set_non_blocking(socket_client, 1);
 
 	so_linger.l_onoff = 1;
 	so_linger.l_linger = 0;
-	if (usrsctp_setsockopt(socket_client, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
-		perror("usrsctp_setsockopt 1");
-		exit(EXIT_FAILURE);
-	}
+	result = usrsctp_setsockopt(socket_client, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger));
+	assert(result == 0);
 
 	memset(&event, 0, sizeof(event));
 	event.se_assoc_id = SCTP_FUTURE_ASSOC;
 	event.se_on = 1;
 	for (i = 0; i < (sizeof(event_types) / sizeof(uint16_t)); i++) {
 		event.se_type = event_types[i];
-		if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event)) < 0) {
-			perror("setsockopt SCTP_EVENT socket_client");
-			exit(EXIT_FAILURE);
-		}
+		result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_EVENT, &event, sizeof(event));
+		assert(result == 0);
 	}
 
 	enable = 1;
-	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RECVRCVINFO, &enable, sizeof(enable)) < 0) {
-		perror("setsockopt SCTP_RECVRCVINFO socket_client");
-		exit(EXIT_FAILURE);
-	}
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RECVRCVINFO, &enable, sizeof(enable));
+	assert(result == 0);
 
 	enable = 1;
-	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RECVNXTINFO, &enable, sizeof(enable)) < 0) {
-		perror("setsockopt SCTP_RECVNXTINFO socket_client");
-		exit(EXIT_FAILURE);
-	}
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RECVNXTINFO, &enable, sizeof(enable));
+	assert(result == 0);
 
 #if defined(FUZZ_EXPLICIT_EOR)
 	enable = 1;
-	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_EXPLICIT_EOR, &enable, sizeof(enable)) < 0) {
-		perror("setsockopt SCTP_EXPLICIT_EOR socket_client");
-		exit(EXIT_FAILURE);
-	}
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_EXPLICIT_EOR, &enable, sizeof(enable));
+	assert(result == 0);
 #endif // defined(FUZZ_EXPLICIT_EOR)
 
 #if defined(FUZZ_STREAM_RESET)
 	assoc_val.assoc_id = SCTP_ALL_ASSOC;
 	assoc_val.assoc_value = SCTP_ENABLE_RESET_STREAM_REQ | SCTP_ENABLE_CHANGE_ASSOC_REQ;
-	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_ENABLE_STREAM_RESET, &assoc_val, sizeof(struct sctp_assoc_value)) < 0) {
-		perror("setsockopt SCTP_ENABLE_STREAM_RESET socket_client");
-		exit(EXIT_FAILURE);
-	}
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_ENABLE_STREAM_RESET, &assoc_val, sizeof(struct sctp_assoc_value));
+	assert(result == 0);
 #endif //defined(FUZZ_STREAM_RESET)
 
 #if defined(FUZZ_INTERLEAVING)
@@ -366,32 +354,25 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 #define SCTP_INTERLEAVING_SUPPORTED 0x00001206
 #endif // !defined(SCTP_INTERLEAVING_SUPPORTED)
 	enable = 2;
-	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &enable, sizeof(enable)) < 0) {
-		perror("usrsctp_setsockopt SCTP_FRAGMENT_INTERLEAVE socket_client");
-		exit(EXIT_FAILURE);
-	}
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &enable, sizeof(enable));
+	assert(result == 0);
 
 	memset(&assoc_val, 0, sizeof(assoc_val));
 	assoc_val.assoc_value = 1;
-	if (usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_INTERLEAVING_SUPPORTED, &assoc_val, sizeof(assoc_val)) < 0) {
-		perror("usrsctp_setsockopt SCTP_INTERLEAVING_SUPPORTED socket_client");
-		exit(EXIT_FAILURE);
-	}
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_INTERLEAVING_SUPPORTED, &assoc_val, sizeof(assoc_val));
+	assert(result == 0);
 #endif // defined(FUZZ_INTERLEAVING)
 
-	memset((void *)&bind4, 0, sizeof(struct sockaddr_in));
+	memset((void *)&bind6, 0, sizeof(struct sockaddr_in6));
 #ifdef HAVE_SIN_LEN
-	bind4.sin_len = sizeof(struct sockaddr_in6);
+	bind6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
-	bind4.sin_family = AF_INET;
-	bind4.sin_port = htons(5000);
-	bind4.sin_addr.s_addr = htonl(INADDR_ANY);
+	bind6.sin6_family = AF_INET;
+	bind6.sin6_port = htons(5000);
+	bind6.sin6_addr = in6addr_any;
 
-	if (usrsctp_bind(socket_client, (struct sockaddr *)&bind4, sizeof(bind4)) < 0) {
-		perror("usrsctp_bind");
-		usrsctp_close(socket_client);
-		exit(EXIT_FAILURE);
-	}
+	result = usrsctp_bind(socket_client, (struct sockaddr *)&bind6, sizeof(bind6));
+	assert(result == 0);
 
 	usrsctp_set_upcall(socket_client, handle_upcall, NULL);
 
@@ -404,12 +385,8 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	sconn.sconn_addr = (void *)1;
 
 	fuzzer_printf("Calling usrsctp_connect()\n");
-	if (usrsctp_connect(socket_client, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
-		if (errno != EINPROGRESS) {
-			perror("usrsctp_connect");
-			exit(EXIT_FAILURE);
-		}
-	}
+	result = usrsctp_connect(socket_client, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn));
+	assert(result == 0 || errno == EINPROGRESS);
 
 	if (fuzzing_stage > 0) {
 		fuzzer_printf("Injecting INIT_ACK\n");
@@ -460,11 +437,9 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	dump_packet(fuzzed_packet_buffer, fuzzed_packet_size, SCTP_DUMP_INBOUND);
 	usrsctp_conninput((void *)1, fuzzed_packet_buffer, fuzzed_packet_size, 0);
 
+	free(fuzzed_packet_buffer);
 	fuzzer_printf("Calling usrsctp_close()\n");
 	usrsctp_close(socket_client);
-
-	free(fuzzed_packet_buffer);
-
 #if 0
 	fuzzer_printf("Calling usrsctp_finish()\n");
 	while (usrsctp_finish() != 0) {
