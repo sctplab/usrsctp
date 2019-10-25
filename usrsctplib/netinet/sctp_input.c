@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 353122 2019-10-05 12:34:50Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 353518 2019-10-14 20:32:11Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -51,13 +51,15 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 353122 2019-10-05 12:34:50Z tu
 #include <netinet/sctp_bsd_addr.h>
 #include <netinet/sctp_timer.h>
 #include <netinet/sctp_crc32.h>
+#if defined(__FreeBSD__)
+#include <netinet/sctp_kdtrace.h>
+#endif
 #if defined(INET) || defined(INET6)
 #if !defined(__Userspace_os_Windows)
 #include <netinet/udp.h>
 #endif
 #endif
 #if defined(__FreeBSD__)
-#include <netinet/in_kdtrace.h>
 #include <sys/smp.h>
 #endif
 
