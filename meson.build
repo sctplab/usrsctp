@@ -199,6 +199,7 @@ if compiler.get_id() == 'msvc' and get_option('default_library') == 'shared'
 
     usrsctp = shared_library('usrsctp',
         link_whole: usrsctp_static,
+        dependencies: dependencies,
         vs_module_defs: usrsctp_def,
         install: true,
         version: meson.project_version())
