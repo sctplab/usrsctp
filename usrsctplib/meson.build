@@ -1,9 +1,9 @@
 # Includes
-include_dirs = include_directories(
+include_dirs = [include_directories(
     '.',
     'netinet',
     'netinet6',
-)
+)]
 
 # Sources
 sources = files([
@@ -13,7 +13,8 @@ sources = files([
     'user_socket.c',
 ])
 if system == 'android'
-    sources += files('ifaddrs.c')
+    sources += files('android/ifaddrs.c')
+    include_dirs += include_directories('android')
 endif
 
 subdir('netinet')
