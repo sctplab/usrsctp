@@ -56,7 +56,7 @@ add_project_arguments([
 
 # OS-specific settings
 system = host_machine.system()
-if system == 'linux'
+if ['linux', 'android'].contains(system)
     add_project_arguments([
         '-D__Userspace_os_Linux',
         '-D_GNU_SOURCE',
@@ -68,7 +68,7 @@ elif system == 'freebsd'
     ] + compiler.get_supported_arguments([
         '-Wno-address-of-packed-member',
     ]), language: 'c')
-elif system == 'darwin'
+elif ['darwin', 'ios'].contains(system)
     add_project_arguments([
             '-D__Userspace_os_Darwin',
             '-U__APPLE__',
@@ -199,6 +199,7 @@ if compiler.get_id() == 'msvc' and get_option('default_library') == 'shared'
 
     usrsctp = shared_library('usrsctp',
         link_whole: usrsctp_static,
+        dependencies: dependencies,
         vs_module_defs: usrsctp_def,
         install: true,
         version: meson.project_version())
