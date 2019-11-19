@@ -12,6 +12,9 @@ sources = files([
     'user_recv_thread.c',
     'user_socket.c',
 ])
+if system == 'android'
+    sources += files('ifaddrs.c')
+endif
 
 subdir('netinet')
 subdir('netinet6')

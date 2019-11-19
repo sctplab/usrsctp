@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 352592 2019-09-22 10:40:15Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 353518 2019-10-14 20:32:11Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -59,12 +59,12 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 352592 2019-09-22 10:40:15Z tuex
 #include <netinet/sctp_constants.h>
 #endif
 #if defined(__FreeBSD__)
+#include <netinet/sctp_kdtrace.h>
 #if defined(INET6) || defined(INET)
 #include <netinet/tcp_var.h>
 #endif
 #include <netinet/udp.h>
 #include <netinet/udp_var.h>
-#include <netinet/in_kdtrace.h>
 #include <sys/proc.h>
 #ifdef INET6
 #include <netinet/icmp6.h>
@@ -913,15 +913,9 @@ sctp_fill_random_store(struct sctp_pcb *m)
 	 * numbers, but thats ok too since that is random as well :->
 	 */
 	m->store_at = 0;
-#if defined(__Userspace__) && defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
-	for (int i = 0; i < (int) (sizeof(m->random_store) / sizeof(m->random_store[0])); i++) {
-		m->random_store[i] = (uint8_t) rand();
-	}
-#else
 	(void)sctp_hmac(SCTP_HMAC, (uint8_t *)m->random_numbers,
 	    sizeof(m->random_numbers), (uint8_t *)&m->random_counter,
 	    sizeof(m->random_counter), (uint8_t *)m->random_store);
-#endif
 	m->random_counter++;
 }
 
