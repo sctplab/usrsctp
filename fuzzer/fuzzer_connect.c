@@ -367,7 +367,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 #ifdef HAVE_SIN_LEN
 	bind6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
-	bind6.sin6_family = AF_INET;
+	bind6.sin6_family = AF_INET6;
 	bind6.sin6_port = htons(5000);
 	bind6.sin6_addr = in6addr_any;
 
