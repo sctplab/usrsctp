@@ -44,6 +44,7 @@
 #define FUZZ_DISABLE_LINGER
 
 #define BUFFERSIZE 4096
+#define COMMON_HEADER_SIZE 12
 
 static uint32_t assoc_vtag = 0;
 
@@ -74,8 +75,8 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 {
 	struct sctp_init_chunk *init_chunk;
 	const char *init_chunk_first_bytes = "\x13\x88\x13\x89\x00\x00\x00\x00\x00\x00\x00\x00\x01";
-	// length >= (12 Common + 16 min INIT)
-	if ((length >= 28) && (memcmp(buf, init_chunk_first_bytes, 12) == 0)) {
+	// length >= (COMMON_HEADER_SIZE + 16 min INIT)
+	if ((length >= 28) && (memcmp(buf, init_chunk_first_bytes, COMMON_HEADER_SIZE) == 0)) {
 		//fuzzer_printf("length %d / sizeof %lu\n", length, sizeof(struct sctp_common_header));
 		init_chunk = (struct sctp_init_chunk*) ((char *)buf + sizeof(struct sctp_common_header));
 		fuzzer_printf("Found outgoing INIT, extracting VTAG : %u\n", init_chunk->initiate_tag);
@@ -153,7 +154,8 @@ int
 LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 	static int initialized;
-	char *fuzzed_packet_buffer;
+	char *fuzz_packet_buffer;
+	int fuzz_packet_size;
 	struct sockaddr_in6 bind6;
 	struct sockaddr_conn sconn;
 	struct socket *socket_client;
@@ -171,9 +173,9 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		SCTP_PARTIAL_DELIVERY_EVENT
 	};
 	uint8_t fuzzing_stage = FUZZING_STAGE;
-	int fuzzed_packet_size;
 	int enable;
 	int result;
+	size_t data_sent = 0;
 #if defined(FUZZ_STREAM_RESET) || defined(FUZZ_INTERLEAVING)
 	struct sctp_assoc_value assoc_val;
 #endif
@@ -424,20 +426,30 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		usrsctp_conninput((void *)1, fuzz_i_data, 1102, 0);
 	}
 
-	// Inject fuzzed packet - we skip the first byte cause we are using it for stage decision
-	fuzzed_packet_size = data_size + 12;
-	fuzzed_packet_buffer = malloc(fuzzed_packet_size);
-	memcpy(fuzzed_packet_buffer, fuzz_common_header, 12); // common header
-	memcpy(fuzzed_packet_buffer + 12, data, data_size);
+	while (data_sent < data_size) {
 
-	common_header = (struct sctp_common_header*) fuzzed_packet_buffer;
-	common_header->verification_tag = assoc_vtag;
+		fuzz_packet_size = rand() % 1500;
 
-	fuzzer_printf("Injecting FUZZER-Packet\n");
-	dump_packet(fuzzed_packet_buffer, fuzzed_packet_size, SCTP_DUMP_INBOUND);
-	usrsctp_conninput((void *)1, fuzzed_packet_buffer, fuzzed_packet_size, 0);
+		if ((data_sent + fuzz_packet_size) > data_size) {
+			fuzz_packet_size = (data_size - data_sent);
+		}
 
-	free(fuzzed_packet_buffer);
+		fuzz_packet_buffer = malloc(fuzz_packet_size + COMMON_HEADER_SIZE);
+		memcpy(fuzz_packet_buffer, fuzz_common_header, COMMON_HEADER_SIZE); // common header
+		memcpy(fuzz_packet_buffer + COMMON_HEADER_SIZE, fuzz_packet_size, data_size + data_sent);
+
+		common_header = (struct sctp_common_header*) fuzz_packet_buffer;
+		common_header->verification_tag = assoc_vtag;
+
+		fuzzer_printf("Injecting FUZZER-Packet\n");
+		dump_packet(fuzz_packet_buffer, fuzz_packet_size + COMMON_HEADER_SIZE, SCTP_DUMP_INBOUND);
+		usrsctp_conninput((void *)1, fuzz_packet_buffer, fuzz_packet_size + COMMON_HEADER_SIZE, 0);
+
+		free(fuzz_packet_buffer);
+
+		data_sent =+ fuzz_packet_size;
+	}
+
 	fuzzer_printf("Calling usrsctp_close()\n");
 	usrsctp_close(socket_client);
 #if 0
