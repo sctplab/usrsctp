@@ -425,18 +425,15 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		dump_packet(fuzz_i_data, 1102, SCTP_DUMP_INBOUND);
 		usrsctp_conninput((void *)1, fuzz_i_data, 1102, 0);
 	}
-
 	while (data_sent < data_size) {
-
 		fuzz_packet_size = rand() % 1500;
-
 		if ((data_sent + fuzz_packet_size) > data_size) {
 			fuzz_packet_size = (data_size - data_sent);
 		}
 
 		fuzz_packet_buffer = malloc(fuzz_packet_size + COMMON_HEADER_SIZE);
 		memcpy(fuzz_packet_buffer, fuzz_common_header, COMMON_HEADER_SIZE); // common header
-		memcpy(fuzz_packet_buffer + COMMON_HEADER_SIZE, fuzz_packet_size, data_size + data_sent);
+		memcpy(fuzz_packet_buffer + COMMON_HEADER_SIZE, data + data_sent, fuzz_packet_size);
 
 		common_header = (struct sctp_common_header*) fuzz_packet_buffer;
 		common_header->verification_tag = assoc_vtag;
@@ -447,7 +444,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 		free(fuzz_packet_buffer);
 
-		data_sent =+ fuzz_packet_size;
+		data_sent += fuzz_packet_size;
 	}
 
 	fuzzer_printf("Calling usrsctp_close()\n");
