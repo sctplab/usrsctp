@@ -294,7 +294,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	char fuzz_common_header[] = "\x13\x89\x13\x88\x54\xc2\x7c\x46\x00\x00\x00\x00";
 
 	if (!fuzzing_stage) {
-		fuzzing_stage = (data[0] % 5) + 1;
+		fuzzing_stage = rand() % 6;
 	}
 
 	fuzzer_printf("LLVMFuzzerTestOneInput() - Stage %d\n", fuzzing_stage);
@@ -425,10 +425,10 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	}
 
 	// Inject fuzzed packet - we skip the first byte cause we are using it for stage decision
-	fuzzed_packet_size = data_size + 12 - 1;
+	fuzzed_packet_size = data_size + 12;
 	fuzzed_packet_buffer = malloc(fuzzed_packet_size);
 	memcpy(fuzzed_packet_buffer, fuzz_common_header, 12); // common header
-	memcpy(fuzzed_packet_buffer + 12, data + 1, data_size - 1);
+	memcpy(fuzzed_packet_buffer + 12, data, data_size);
 
 	common_header = (struct sctp_common_header*) fuzzed_packet_buffer;
 	common_header->verification_tag = assoc_vtag;
