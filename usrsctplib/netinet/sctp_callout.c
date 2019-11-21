@@ -223,7 +223,6 @@ sctp_os_timer_deactivate(sctp_os_timer_t* c) {
 	SCTP_TIMERQ_UNLOCK();
 }
 
-
 void
 sctp_os_timer_start(sctp_os_timer_t *c, uint32_t to_ticks, void (*ftn) (void *),
                     void *arg)
