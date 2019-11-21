@@ -91,6 +91,9 @@ static userland_cond_t sctp_os_timer_current_changed;
 static void
 sctp_userland_cond_wait(userland_cond_t* cond,
                         userland_mutex_t* mtx) {
+	// callee must be robust to spurious wakeups, both because
+	// wakeup could happen due to native API behavior and because
+	// there is indendend timeout for wait.
 #if defined(__Userspace_os_Windows)
 	const DWORD timeoutMillis = 20 * 1000;
 	const BOOL waited = SleepConditionVariableCS(cond, mtx, timeoutMillis);
