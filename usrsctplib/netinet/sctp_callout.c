@@ -79,7 +79,7 @@ uint32_t sctp_get_tick_count(void) {
  * - SCTP_BASE_INFO(timers_queue)
  * - sctp_os_timer_current: current callout callback in progress
  * - sctp_os_timer_current_tid: current callout thread id in progress
- * - sctp_os_timer_current_changed: conditional variable signaled when 
+ * - sctp_os_timer_current_changed: conditional variable signaled when
  *                                  current callout pointer is changed
  */
 static sctp_os_timer_t *sctp_os_timer_current = NULL;
