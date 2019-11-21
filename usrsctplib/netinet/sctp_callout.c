@@ -79,12 +79,12 @@ uint32_t sctp_get_tick_count(void) {
  * - SCTP_BASE_INFO(timers_queue)
  * - sctp_os_timer_current: current callout callback in progress
  * - sctp_os_timer_current_tid: current callout thread id in progress
- * - sctp_os_timer_current_completed: conditional variable signaled when 
- *                                    current callout finished execution
+ * - sctp_os_timer_current_changed: conditional variable signaled when 
+ *                                  current callout pointer is changed
  */
 static sctp_os_timer_t *sctp_os_timer_current = NULL;
 static userland_thread_id_t sctp_os_timer_current_tid;
-static userland_cond_t sctp_os_timer_current_completed;
+static userland_cond_t sctp_os_timer_current_changed;
 
 #if defined(__Userspace__)
 
@@ -321,7 +321,7 @@ sctp_os_timer_stop(sctp_os_timer_t *c)
 			break;
 		}
 #if defined(__Userspace__)
-		sctp_userland_cond_wait(&sctp_os_timer_current_completed, &SCTP_BASE_VAR(timer_mtx));
+		sctp_userland_cond_wait(&sctp_os_timer_current_changed, &SCTP_BASE_VAR(timer_mtx));
 #endif
 
 		if (c != sctp_os_timer_current) {
@@ -380,7 +380,7 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 				__func__, ticks, sctp_os_timer_current, c_time);
 			sctp_os_timer_current = NULL;
 #if defined(__Userspace__)
-			sctp_userland_cond_signal(&sctp_os_timer_current_completed);
+			sctp_userland_cond_signal(&sctp_os_timer_current_changed);
 #endif
 		} else {
 			SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": skipping callout %p with wrong flags %d\n", 
@@ -424,7 +424,7 @@ user_sctp_timer_iterate(void *arg)
 		}
 		sctp_handle_tick(MSEC_TO_TICKS(TIMEOUT_INTERVAL));
 	}
-	sctp_userland_cond_destroy(&sctp_os_timer_current_completed);
+	sctp_userland_cond_destroy(&sctp_os_timer_current_changed);
 	return (NULL);
 }
 
@@ -435,7 +435,7 @@ sctp_start_timer(void)
 	 * No need to do SCTP_TIMERQ_LOCK_INIT();
 	 * here, it is being done in sctp_pcb_init()
 	 */
-	sctp_userland_cond_init(&sctp_os_timer_current_completed);
+	sctp_userland_cond_init(&sctp_os_timer_current_changed);
 	int rc;
 	rc = sctp_userspace_thread_create(&SCTP_BASE_VAR(timer_thread), user_sctp_timer_iterate);
 	if (rc) {
