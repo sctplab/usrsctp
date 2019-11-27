@@ -367,8 +367,11 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 			uint32_t c_time = c->c_time;
 			(void)c_time; // workaround for unused variable warning
 			c->c_flags &= ~SCTP_CALLOUT_PENDING;
-			sctp_os_timer_current = c;
 			sctp_userspace_thread_id(&sctp_os_timer_current_tid);
+			sctp_os_timer_current = c;
+#if defined(__Userspace__)
+			sctp_userland_cond_signal(&sctp_os_timer_current_changed);
+#endif
 			SCTPDBG(SCTP_DEBUG_TIMER2, "%s: now=%" PRIu32 ": callout %p with to_ticks = %" PRIu32 " is about to execute\n", 
 				__func__, ticks, sctp_os_timer_current, c_time);
 			SCTP_TIMERQ_UNLOCK();
