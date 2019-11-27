@@ -19,4 +19,4 @@ fi
 echo "$NPROC"
 
 
-./fuzzer_connect_multi -jobs=64 -timeout=10 -max_len=4086 CORPUS_CONNECT
+./fuzzer_connect_multi -jobs=64 -timeout=10 -max_len=32000 CORPUS_CONNECT
