@@ -166,16 +166,24 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	uint16_t event_types[] = {
 		SCTP_ASSOC_CHANGE,
 		SCTP_PEER_ADDR_CHANGE,
-		SCTP_SEND_FAILED_EVENT,
 		SCTP_REMOTE_ERROR,
+		SCTP_SEND_FAILED,
 		SCTP_SHUTDOWN_EVENT,
 		SCTP_ADAPTATION_INDICATION,
-		SCTP_PARTIAL_DELIVERY_EVENT
+		SCTP_PARTIAL_DELIVERY_EVENT,
+		SCTP_AUTHENTICATION_EVENT,
+		SCTP_STREAM_RESET_EVENT,
+		SCTP_SENDER_DRY_EVENT,
+		SCTP_NOTIFICATIONS_STOPPED_EVENT,
+		SCTP_ASSOC_RESET_EVENT,
+		SCTP_STREAM_CHANGE_EVENT,
+		SCTP_SEND_FAILED_EVENT
 	};
 	uint8_t fuzzing_stage = FUZZING_STAGE;
 	int enable;
 	int result;
 	size_t data_sent = 0;
+	struct sctp_initmsg initmsg;
 #if defined(FUZZ_STREAM_RESET) || defined(FUZZ_INTERLEAVING)
 	struct sctp_assoc_value assoc_val;
 #endif
@@ -315,6 +323,13 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	assert(socket_client != NULL);
 
 	usrsctp_set_non_blocking(socket_client, 1);
+
+	// all max!
+	memset(&initmsg, 1, sizeof(struct sctp_initmsg));
+	//initmsg.sinit_num_ostreams = NUMBER_OF_STREAMS;
+	//initmsg.sinit_max_instreams = NUMBER_OF_STREAMS;
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_INITMSG, &initmsg, sizeof(struct sctp_initmsg));
+	assert(result == 0);
 
 	so_linger.l_onoff = 1;
 	so_linger.l_linger = 0;
