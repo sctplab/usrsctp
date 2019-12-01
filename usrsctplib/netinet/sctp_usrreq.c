@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 355172 2019-11-28 12:50:25Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 355265 2019-12-01 17:35:36Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -305,7 +305,10 @@ sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint16_t nxtsz)
 						       chk->rec.data.tsn);
 				}
 				/* Clear any time so NO RTT is being done */
-				chk->do_rtt = 0;
+				if (chk->do_rtt == 1) {
+					chk->do_rtt = 0;
+					chk->whoTo->rto_needed = 1;
+				}
 			}
 		}
 	}
