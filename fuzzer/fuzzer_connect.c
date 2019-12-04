@@ -42,6 +42,7 @@
 #define FUZZ_EXPLICIT_EOR
 #define FUZZ_STREAM_RESET
 #define FUZZ_DISABLE_LINGER
+#define FUZZ_SPLIT_PACKETS
 
 #define BUFFERSIZE 4096
 #define COMMON_HEADER_SIZE 12
@@ -441,7 +442,12 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		usrsctp_conninput((void *)1, fuzz_i_data, 1102, 0);
 	}
 	while (data_sent < data_size) {
+
+#ifdef FUZZ_SPLIT_PACKETS
 		fuzz_packet_size = rand() % 1500;
+#else
+		fuzz_packet_size = data_size;
+#endif
 		if ((data_sent + fuzz_packet_size) > data_size) {
 			fuzz_packet_size = (data_size - data_sent);
 		}
