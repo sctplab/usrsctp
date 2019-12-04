@@ -26,7 +26,7 @@
  */
 
 /*
- * Compile: cc -Wall -Werror -pedantic -I../usrsctplib/netinet  pcap2corpus.c -lpcap -o pcap2corpus 
+ * Compile: cc -Wall -Werror -pedantic pcap2corpus.c -lpcap -o pcap2corpus
  *
  * Usage: pcap2corpus infile outfile_prefix [expression]
  *        if no expression, a pcap filter, is provided, sctp is used.
