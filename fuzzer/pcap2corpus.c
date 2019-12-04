@@ -26,18 +26,17 @@
  */
 
 /*
- * Compile: cc -o pcap2corpus pcap2corpus.c -lpcap
+ * Compile: cc -Wall -Werror -pedantic -I../usrsctplib/netinet  pcap2corpus.c -lpcap -o pcap2corpus 
  *
  * Usage: pcap2corpus infile outfile_prefix [expression]
  *        if no expression, a pcap filter, is provided, sctp is used.
  */
-
+#define _GNU_SOURCE
 #include <sys/types.h>
 #include <net/ethernet.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
-#include <netinet/sctp.h>
 #include <pcap/pcap.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,6 +53,17 @@ struct args {
 	int linktype;
 	unsigned int offset;
 };
+
+/*
+ * SCTP protocol - RFC4960.
+ */
+struct sctphdr {
+	uint16_t src_port;	/* source port */
+	uint16_t dest_port;	/* destination port */
+	uint32_t v_tag;		/* verification tag of packet */
+	uint32_t checksum;	/* CRC32C checksum */
+	/* chunks follow... */
+} __attribute__((packed));
 
 static int
 loopback_is_ipv4(const void *bytes)
