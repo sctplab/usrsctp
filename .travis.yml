@@ -11,6 +11,22 @@ matrix:
 
    # ###### Ubuntu Linux ####################################################
 
+   # ====== Ubuntu 20.04 (Focal Fossum) =====================================
+   - name: "Ubuntu 20.04 (Focal Fossum) with GCC"
+     os: linux
+     dist: xenial
+     group: travis_latest
+     env: DOCKER="ubuntu:eoan" VARIANT="ubuntu" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+   - name: "Ubuntu 20.04 (Focal Fossum) with Clang"
+     os: linux
+     dist: xenial
+     group: travis_latest
+     env: DOCKER="ubuntu:eoan" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   - name: "Ubuntu 20.04 (Focal Fossum) packaging with pbuilder"
+     dist: xenial
+     group: travis_latest
+     env: DOCKER="ubuntu:eoan" VARIANT="ubuntu" TOOL="pbuilder"
+
    # ====== Ubuntu 19.10 (Eoan Ermine) ======================================
    - name: "Ubuntu 19.10 (Eoan Ermine) with GCC"
      os: linux
