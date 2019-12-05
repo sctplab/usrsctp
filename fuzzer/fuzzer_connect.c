@@ -362,7 +362,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 #if defined(FUZZ_STREAM_RESET)
 	assoc_val.assoc_id = SCTP_ALL_ASSOC;
-	assoc_val.assoc_value = SCTP_ENABLE_RESET_STREAM_REQ | SCTP_ENABLE_CHANGE_ASSOC_REQ;
+	assoc_val.assoc_value = SCTP_ENABLE_RESET_STREAM_REQ | SCTP_ENABLE_RESET_ASSOC_REQ | SCTP_ENABLE_CHANGE_ASSOC_REQ;
 	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_ENABLE_STREAM_RESET, &assoc_val, sizeof(struct sctp_assoc_value));
 	assert(result == 0);
 #endif //defined(FUZZ_STREAM_RESET)
@@ -406,7 +406,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	result = usrsctp_connect(socket_client, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn));
 	assert(result == 0 || errno == EINPROGRESS);
 
-	if (fuzzing_stage > 0) {
+	if (data[0] & (1 << 0)) {
 		fuzzer_printf("Injecting INIT_ACK\n");
 
 		common_header = (struct sctp_common_header*) fuzz_init_ack;
@@ -416,7 +416,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		usrsctp_conninput((void *)1, fuzz_init_ack, 516, 0);
 	}
 
-	if (fuzzing_stage > 1) {
+	if (data[0] & (1 << 1)) {
 		fuzzer_printf("Injecting COOKIE_ACK\n");
 
 		common_header = (struct sctp_common_header*) fuzz_cookie_ack;
@@ -426,13 +426,17 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		usrsctp_conninput((void *)1, fuzz_cookie_ack, 16, 0);
 	}
 
-	if (fuzzing_stage == 4) {
+	if (data[0] & (1 << 0) &&
+		data[0] & (1 << 1) &&
+		data[0] & (1 << 2)) {
 		const char *sendbuffer = "Geologie ist keine richtige Wissenschaft!";
 		fuzzer_printf("Calling usrsctp_sendv()\n");
 		usrsctp_sendv(socket_client, sendbuffer, strlen(sendbuffer), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
 	}
 
-	if (fuzzing_stage == 5) {
+	if (data[0] & (1 << 0) &&
+		data[0] & (1 << 1) &&
+		data[0] & (1 << 3)) {
 		fuzzer_printf("Injecting I_DATA\n");
 
 		common_header = (struct sctp_common_header*) fuzz_i_data;
@@ -441,20 +445,35 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		dump_packet(fuzz_i_data, 1102, SCTP_DUMP_INBOUND);
 		usrsctp_conninput((void *)1, fuzz_i_data, 1102, 0);
 	}
-	while (data_sent < data_size) {
+
+	if (data[0] & (1 << 0) &&
+		data[0] & (1 << 1) &&
+		data[0] & (1 << 4)) {
+		fuzzer_printf("Stream Reset\n");
+
+		struct sctp_reset_streams srs;
+		memset(&srs, 0, sizeof(struct sctp_reset_streams));
+
+		srs.srs_flags = SCTP_STREAM_RESET_INCOMING | SCTP_STREAM_RESET_OUTGOING;
+
+		result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RESET_STREAMS, &srs, sizeof(struct sctp_reset_streams));
+		assert(result == 0);
+	}
+
+	while (data_sent < (data_size - 1)) {
 
 #ifdef FUZZ_SPLIT_PACKETS
 		fuzz_packet_size = rand() % 1500;
 #else
 		fuzz_packet_size = data_size;
 #endif
-		if ((data_sent + fuzz_packet_size) > data_size) {
-			fuzz_packet_size = (data_size - data_sent);
+		if ((data_sent + fuzz_packet_size) > (data_size - 1)) {
+			fuzz_packet_size = (data_size - 1 - data_sent);
 		}
 
 		fuzz_packet_buffer = malloc(fuzz_packet_size + COMMON_HEADER_SIZE);
 		memcpy(fuzz_packet_buffer, fuzz_common_header, COMMON_HEADER_SIZE); // common header
-		memcpy(fuzz_packet_buffer + COMMON_HEADER_SIZE, data + data_sent, fuzz_packet_size);
+		memcpy(fuzz_packet_buffer + COMMON_HEADER_SIZE, data + 1 + data_sent, fuzz_packet_size);
 
 		common_header = (struct sctp_common_header*) fuzz_packet_buffer;
 		common_header->verification_tag = assoc_vtag;

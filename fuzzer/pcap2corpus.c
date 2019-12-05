@@ -45,6 +45,8 @@
 static unsigned long nr_read = 0;
 static unsigned long nr_decaps = 0;
 
+#define PRE_PADDING 1
+
 struct args {
 	struct bpf_program bpf_prog;
 	char *filename_prefix;
@@ -111,6 +113,7 @@ packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char *byt
 	const struct ip *ip4_hdr_in;
 	const struct ip6_hdr *ip6_hdr_in;
 	size_t offset, length;
+	int null = 0;
 
 	args = (struct args *)(void *)user;
 	bytes_out = NULL;
@@ -154,6 +157,7 @@ out:
 	if (bytes_out != NULL) {
 		asprintf(&filename, "%s-%06lu", args->filename_prefix, nr_decaps);
 		file = fopen(filename, "w");
+		fwrite(&null, 1, PRE_PADDING, file);
 		fwrite(bytes_out, length, 1, file);
 		fclose(file);
 		free(filename);
