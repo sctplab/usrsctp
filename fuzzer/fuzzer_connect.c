@@ -156,7 +156,6 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 	static int initialized;
 	char *fuzz_packet_buffer;
-	int fuzz_packet_size;
 	struct sockaddr_in6 bind6;
 	struct sockaddr_conn sconn;
 	struct socket *socket_client;
@@ -180,10 +179,8 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		SCTP_STREAM_CHANGE_EVENT,
 		SCTP_SEND_FAILED_EVENT
 	};
-	uint8_t fuzzing_stage = FUZZING_STAGE;
 	int enable;
 	int result;
-	size_t data_sent = 0;
 	struct sctp_initmsg initmsg;
 #if defined(FUZZ_STREAM_RESET) || defined(FUZZ_INTERLEAVING)
 	struct sctp_assoc_value assoc_val;
@@ -304,17 +301,15 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 	char fuzz_common_header[] = "\x13\x89\x13\x88\x54\xc2\x7c\x46\x00\x00\x00\x00";
 
-	if (!fuzzing_stage) {
-		fuzzing_stage = rand() % 6;
-	}
 
-	fuzzer_printf("LLVMFuzzerTestOneInput() - Stage %d\n", fuzzing_stage);
+
+	fuzzer_printf("LLVMFuzzerTestOneInput()\n");
 
 	if (!initialized) {
 		initialized = initialize_fuzzer();
 	}
 
-	if (data_size < 8 || data_size > 65535) {
+	if (data_size < 5 || data_size > 65535) {
 		// Skip too small and too large packets
 		fuzzer_printf("data_size %zu makes no sense, skipping\n", data_size);
 		return (0);
@@ -460,32 +455,19 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		assert(result == 0);
 	}
 
-	while (data_sent < (data_size - 1)) {
 
-#ifdef FUZZ_SPLIT_PACKETS
-		fuzz_packet_size = rand() % 1500;
-#else
-		fuzz_packet_size = data_size;
-#endif
-		if ((data_sent + fuzz_packet_size) > (data_size - 1)) {
-			fuzz_packet_size = (data_size - 1 - data_sent);
-		}
+	fuzz_packet_buffer = malloc(data_size - 1 + COMMON_HEADER_SIZE);
+	memcpy(fuzz_packet_buffer, fuzz_common_header, COMMON_HEADER_SIZE); // common header
+	memcpy(fuzz_packet_buffer + COMMON_HEADER_SIZE, data + 1, data_size - 1);
 
-		fuzz_packet_buffer = malloc(fuzz_packet_size + COMMON_HEADER_SIZE);
-		memcpy(fuzz_packet_buffer, fuzz_common_header, COMMON_HEADER_SIZE); // common header
-		memcpy(fuzz_packet_buffer + COMMON_HEADER_SIZE, data + 1 + data_sent, fuzz_packet_size);
+	common_header = (struct sctp_common_header*) fuzz_packet_buffer;
+	common_header->verification_tag = assoc_vtag;
 
-		common_header = (struct sctp_common_header*) fuzz_packet_buffer;
-		common_header->verification_tag = assoc_vtag;
+	fuzzer_printf("Injecting FUZZER-Packet\n");
+	dump_packet(fuzz_packet_buffer, data_size - 1 + COMMON_HEADER_SIZE, SCTP_DUMP_INBOUND);
+	usrsctp_conninput((void *)1, fuzz_packet_buffer, data_size - 1 + COMMON_HEADER_SIZE, 0);
 
-		fuzzer_printf("Injecting FUZZER-Packet\n");
-		dump_packet(fuzz_packet_buffer, fuzz_packet_size + COMMON_HEADER_SIZE, SCTP_DUMP_INBOUND);
-		usrsctp_conninput((void *)1, fuzz_packet_buffer, fuzz_packet_size + COMMON_HEADER_SIZE, 0);
-
-		free(fuzz_packet_buffer);
-
-		data_sent += fuzz_packet_size;
-	}
+	free(fuzz_packet_buffer);
 
 	fuzzer_printf("Calling usrsctp_close()\n");
 	usrsctp_close(socket_client);
