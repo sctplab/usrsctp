@@ -332,7 +332,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	assert(result == 0);
 
 	memset(&event, 0, sizeof(event));
-	event.se_assoc_id = SCTP_FUTURE_ASSOC;
+	event.se_assoc_id = SCTP_ALL_ASSOC;
 	event.se_on = 1;
 	for (i = 0; i < (sizeof(event_types) / sizeof(uint16_t)); i++) {
 		event.se_type = event_types[i];
