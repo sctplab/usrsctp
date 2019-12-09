@@ -47,8 +47,10 @@ echo "PCAP:  $1.pcapng"
 echo ""
 
 # Open Wireshark if we have an X session
-if [ -z ${DISPLAY+x} ]; then
-	echo "\$DISPLAY unset, skipping wireshark"
-else
-	wireshark $1.pcapng
-fi
+#if [ -z ${DISPLAY+x} ]; then
+	#echo "\$DISPLAY unset, skipping wireshark"
+#else
+	#wireshark $1.pcapng
+#fi
+
+exit $FUZZER_RETVAL
