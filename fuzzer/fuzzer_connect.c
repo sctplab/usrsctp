@@ -176,7 +176,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		SCTP_STREAM_CHANGE_EVENT,
 		SCTP_SEND_FAILED_EVENT
 	};
-	int enable;
+	int optval;
 	int result;
 	struct sctp_initmsg initmsg;
 #if defined(FUZZ_STREAM_RESET) || defined(FUZZ_INTERLEAVING)
@@ -326,17 +326,17 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		assert(result == 0);
 	}
 
-	enable = 1;
-	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RECVRCVINFO, &enable, sizeof(enable));
+	optval = 1;
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RECVRCVINFO, &optval, sizeof(optval));
 	assert(result == 0);
 
-	enable = 1;
-	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RECVNXTINFO, &enable, sizeof(enable));
+	optval = 1;
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RECVNXTINFO, &optval, sizeof(optval));
 	assert(result == 0);
 
 #if defined(FUZZ_EXPLICIT_EOR)
-	enable = 1;
-	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_EXPLICIT_EOR, &enable, sizeof(enable));
+	optval = 1;
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_EXPLICIT_EOR, &optval, sizeof(optval));
 	assert(result == 0);
 #endif // defined(FUZZ_EXPLICIT_EOR)
 
@@ -351,8 +351,8 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 #if !defined(SCTP_INTERLEAVING_SUPPORTED)
 #define SCTP_INTERLEAVING_SUPPORTED 0x00001206
 #endif // !defined(SCTP_INTERLEAVING_SUPPORTED)
-	enable = 2;
-	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &enable, sizeof(enable));
+	optval = 2;
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &optval, sizeof(optval));
 	assert(result == 0);
 
 	memset(&assoc_val, 0, sizeof(assoc_val));
@@ -381,6 +381,11 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 #endif // HAVE_SCONN_LEN
 	sconn.sconn_port = htons(5001);
 	sconn.sconn_addr = (void *)1;
+
+	// Disable Nagle.
+	optval = 1;
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_NODELAY, &optval, sizeof(optval));
+	assert(result == 0);
 
 	fuzzer_printf("Calling usrsctp_connect()\n");
 	result = usrsctp_connect(socket_client, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn));
