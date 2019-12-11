@@ -39,9 +39,16 @@
 
 //#define FUZZ_VERBOSE
 #define FUZZ_INTERLEAVING
-//#define FUZZ_EXPLICIT_EOR
 #define FUZZ_STREAM_RESET
-#define FUZZ_DISABLE_LINGER
+
+#define FUZZ_B_INJECT_INIT_ACK        (1 << 0)
+#define FUZZ_B_INJECT_COOKIE_ACK      (1 << 1)
+#define FUZZ_B_SEND_DATA              (1 << 2)
+#define FUZZ_B_SEND_STREAM_RESET      (1 << 3)
+#define FUZZ_B_INJECT_DATA            (1 << 4)
+#define FUZZ_B_I_DATA_SUPPORT         (1 << 5)
+#define FUZZ_B_RESERVED1              (1 << 6)
+#define FUZZ_B_RESERVED2              (1 << 7)
 
 #define BUFFER_SIZE 4096
 #define COMMON_HEADER_SIZE 12
@@ -69,6 +76,7 @@ dump_packet(const void *buffer, size_t bufferlen, int inout) {
 	}
 #endif // FUZZ_VERBOSE
 }
+
 
 static int
 conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
@@ -213,7 +221,6 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		"\x00\x03\x00\x01\x80\x03\x00\x06\x80\xc1\x00\x00\x81\xe1\x1e\x81" \
 		"\xea\x41\xeb\xf0\x12\xd9\x74\xbe\x13\xfd\x4b\x6c\x5c\xa2\x8f\x00";
 
-
 	// WITH COMMON HEADER!
 	char fuzz_cookie_ack[] = "\x13\x89\x13\x88\x54\xc2\x7c\x46\x00\x00\x00\x00\x0b\x00\x00\x04";
 
@@ -334,12 +341,6 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RECVNXTINFO, &optval, sizeof(optval));
 	assert(result == 0);
 
-#if defined(FUZZ_EXPLICIT_EOR)
-	optval = 1;
-	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_EXPLICIT_EOR, &optval, sizeof(optval));
-	assert(result == 0);
-#endif // defined(FUZZ_EXPLICIT_EOR)
-
 #if defined(FUZZ_STREAM_RESET)
 	assoc_val.assoc_id = SCTP_ALL_ASSOC;
 	assoc_val.assoc_value = SCTP_ENABLE_RESET_STREAM_REQ | SCTP_ENABLE_RESET_ASSOC_REQ | SCTP_ENABLE_CHANGE_ASSOC_REQ;
@@ -351,14 +352,17 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 #if !defined(SCTP_INTERLEAVING_SUPPORTED)
 #define SCTP_INTERLEAVING_SUPPORTED 0x00001206
 #endif // !defined(SCTP_INTERLEAVING_SUPPORTED)
-	optval = 2;
-	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &optval, sizeof(optval));
-	assert(result == 0);
 
-	memset(&assoc_val, 0, sizeof(assoc_val));
-	assoc_val.assoc_value = 1;
-	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_INTERLEAVING_SUPPORTED, &assoc_val, sizeof(assoc_val));
-	assert(result == 0);
+	if (data[0] & FUZZ_B_I_DATA_SUPPORT) {
+		optval = 2;
+		result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &optval, sizeof(optval));
+		assert(result == 0);
+
+		memset(&assoc_val, 0, sizeof(assoc_val));
+		assoc_val.assoc_value = 1;
+		result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_INTERLEAVING_SUPPORTED, &assoc_val, sizeof(assoc_val));
+		assert(result == 0);
+	}
 #endif // defined(FUZZ_INTERLEAVING)
 
 	memset((void *)&bind6, 0, sizeof(struct sockaddr_in6));
@@ -372,6 +376,11 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	result = usrsctp_bind(socket_client, (struct sockaddr *)&bind6, sizeof(bind6));
 	assert(result == 0);
 
+	// Disable Nagle.
+	optval = 1;
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_NODELAY, &optval, sizeof(optval));
+	assert(result == 0);
+
 	usrsctp_set_upcall(socket_client, handle_upcall, NULL);
 
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
@@ -382,16 +391,11 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	sconn.sconn_port = htons(5001);
 	sconn.sconn_addr = (void *)1;
 
-	// Disable Nagle.
-	optval = 1;
-	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_NODELAY, &optval, sizeof(optval));
-	assert(result == 0);
-
 	fuzzer_printf("Calling usrsctp_connect()\n");
 	result = usrsctp_connect(socket_client, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn));
 	assert(result == 0 || errno == EINPROGRESS);
 
-	if (data[0] & (1 << 0)) {
+	if (data[0] & FUZZ_B_INJECT_INIT_ACK) {
 		fuzzer_printf("Injecting INIT-ACK\n");
 
 		common_header = (struct sctp_common_header*) fuzz_init_ack;
@@ -401,7 +405,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		usrsctp_conninput((void *)1, fuzz_init_ack, 448, 0);
 	}
 
-	if (data[0] & (1 << 1)) {
+	if (data[0] & FUZZ_B_INJECT_COOKIE_ACK) {
 		fuzzer_printf("Injecting COOKIE-ACK\n");
 
 		common_header = (struct sctp_common_header*) fuzz_cookie_ack;
@@ -411,19 +415,18 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		usrsctp_conninput((void *)1, fuzz_cookie_ack, 16, 0);
 	}
 
-	// Required: INIT-ACK and COOKIE-ACK
-	if (data[0] & (1 << 0) &&
-		data[0] & (1 << 1) &&
-		data[0] & (1 << 2)) {
+	if (data[0] & FUZZ_B_INJECT_INIT_ACK &&
+		data[0] & FUZZ_B_INJECT_COOKIE_ACK &&
+		data[0] & FUZZ_B_SEND_DATA) {
 		const char *sendbuffer = "Geologie ist keine richtige Wissenschaft!";
 		fuzzer_printf("Calling usrsctp_sendv()\n");
 		usrsctp_sendv(socket_client, sendbuffer, strlen(sendbuffer), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
 	}
 
 	// Required: INIT-ACK and COOKIE-ACK
-	if (data[0] & (1 << 0) &&
-		data[0] & (1 << 1) &&
-		data[0] & (1 << 4)) {
+	if (data[0] & FUZZ_B_INJECT_INIT_ACK &&
+		data[0] & FUZZ_B_INJECT_COOKIE_ACK &&
+		data[0] & FUZZ_B_SEND_STREAM_RESET) {
 		fuzzer_printf("Sending Stream Reset for all streams\n");
 
 		struct sctp_reset_streams srs;
@@ -434,9 +437,9 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	}
 
 	// Required: INIT-ACK and COOKIE-ACK
-	if (data[0] & (1 << 0) &&
-		data[0] & (1 << 1) &&
-		data[0] & (1 << 3)) {
+	if (data[0] & FUZZ_B_INJECT_INIT_ACK &&
+		data[0] & FUZZ_B_INJECT_COOKIE_ACK &&
+		data[0] & FUZZ_B_INJECT_DATA) {
 		fuzzer_printf("Injecting I-DATA\n");
 
 		common_header = (struct sctp_common_header*) fuzz_i_data;
