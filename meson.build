@@ -159,7 +159,7 @@ have_sin6_len = compiler.has_member('struct sockaddr_in6', 'sin6_len', prefix: p
 if have_sin6_len
     add_project_arguments('-DHAVE_SIN6_LEN', language: 'c')
 endif
-have_sconn_len = compiler.has_member('struct sockaddr_conn', 'sconn_len', prefix: '#include "usrsctp.h"')
+have_sconn_len = compiler.has_member('struct sockaddr_conn', 'sconn_len', prefix: '#include "usrsctp.h"', include_directories: include_directories('usrsctplib'))
 if have_sconn_len
     add_project_arguments('-DHAVE_SCONN_LEN', language: 'c')
 endif
