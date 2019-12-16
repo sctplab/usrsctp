@@ -5760,7 +5760,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 				if (net->port == 0) {
 					/* UDP encapsulation turned on. */
 					net->mtu -= sizeof(struct udphdr);
-					if (stcb->asoc.smallest_mtu > net->mtu) {
+					if ((stcb != NULL) && (stcb->asoc.smallest_mtu > net->mtu)) {
 						sctp_pathmtu_adjustment(stcb, net->mtu);
 					}
 				} else if (port == 0) {
@@ -5802,7 +5802,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 		if (net->port == 0) {
 			/* UDP encapsulation turned on. */
 			net->mtu -= sizeof(struct udphdr);
-			if (stcb->asoc.smallest_mtu > net->mtu) {
+			if ((stcb != NULL) && (stcb->asoc.smallest_mtu > net->mtu)) {
 				sctp_pathmtu_adjustment(stcb, net->mtu);
 			}
 		} else if (port == 0) {
