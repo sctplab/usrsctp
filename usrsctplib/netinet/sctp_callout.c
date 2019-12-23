@@ -78,24 +78,17 @@ uint32_t sctp_get_tick_count(void) {
  * - SCTP_BASE_INFO(callqueue)
  * - sctp_os_timer_next: next timer to check
  * - sctp_os_timer_current: current callout callback in progress
- * - sctp_os_timer_waiting: some thread is waiting for callout to complete
- * - sctp_os_timer_wait_ctr: incremented every time a thread wants to wait
- *                           for a callout to complete.
+ * - sctp_os_timer_waiting: waiting for callout to complete
  */
 static sctp_os_timer_t *sctp_os_timer_next = NULL;
 static sctp_os_timer_t *sctp_os_timer_current = NULL;
 static int sctp_os_timer_waiting = 0;
-static int sctp_os_timer_wait_ctr = 0;
 
-/*
- * SCTP_TIMERWAIT_LOCK (sctp_os_timerwait_mtx) protects:
- * - sctp_os_timer_wait_cond: waiting for callout to complete
- * - sctp_os_timer_done_ctr: value of "wait_ctr" after triggering "waiting"
- */
-userland_mutex_t sctp_os_timerwait_mtx;
-static userland_cond_t sctp_os_timer_wait_cond;
-static int sctp_os_timer_done_ctr = 0;
-
+#if defined (__Userspace_os_Windows)
+static CONDITION_VARIABLE sctp_os_timer_wait_cond;
+#else
+static pthread_cond_t sctp_os_timer_wait_cond;
+#endif
 
 void
 sctp_os_timer_init(sctp_os_timer_t *c)
@@ -144,8 +137,6 @@ sctp_os_timer_start(sctp_os_timer_t *c, uint32_t to_ticks, void (*ftn) (void *),
 int
 sctp_os_timer_stop(sctp_os_timer_t *c)
 {
-	int wakeup_cookie;
-
 	SCTP_TIMERQ_LOCK();
 	/*
 	 * Don't attempt to delete a callout that's not on the queue.
@@ -158,26 +149,15 @@ sctp_os_timer_stop(sctp_os_timer_t *c)
 		} else {
 			/* need to wait until the callout is finished */
 			sctp_os_timer_waiting = 1;
-			wakeup_cookie = sctp_os_timer_wait_ctr++;
-			SCTP_TIMERQ_UNLOCK();
-			SCTP_TIMERWAIT_LOCK();
-			/*
-			 * wait only if sctp_handle_tick didn't do a wakeup
-			 * in between the lock dance
-			 */
-			if (wakeup_cookie - sctp_os_timer_done_ctr > 0) {
 #if defined (__Userspace_os_Windows)
-				SleepConditionVariableCS(&sctp_os_timer_wait_cond,
-							 &sctp_os_timerwait_mtx,
-							 INFINITE);
+			SleepConditionVariableCS(&sctp_os_timer_wait_cond,
+						 &SCTP_BASE_VAR(timer_mtx),
+						 INFINITE);
 #else
-				pthread_cond_wait(&sctp_os_timer_wait_cond,
-						  &SCTP_BASE_VAR(timer_mtx));
+			pthread_cond_wait(&sctp_os_timer_wait_cond,
+					  &SCTP_BASE_VAR(timer_mtx));
 #endif
-			}
-			SCTP_TIMERWAIT_UNLOCK();
 		}
-		return (0);
 	}
 	c->c_flags &= ~(SCTP_CALLOUT_ACTIVE | SCTP_CALLOUT_PENDING);
 	if (c == sctp_os_timer_next) {
@@ -194,7 +174,6 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 	sctp_os_timer_t *c;
 	void (*c_func)(void *);
 	void *c_arg;
-	int wakeup_cookie;
 
 	SCTP_TIMERQ_LOCK();
 	/* update our tick count */
@@ -213,17 +192,11 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 			SCTP_TIMERQ_LOCK();
 			sctp_os_timer_current = NULL;
 			if (sctp_os_timer_waiting) {
-				wakeup_cookie = sctp_os_timer_wait_ctr;
-				SCTP_TIMERQ_UNLOCK();
-				SCTP_TIMERWAIT_LOCK();
 #if defined (__Userspace_os_Windows)
 				WakeAllConditionVariable(&sctp_os_timer_wait_cond);
 #else
 				pthread_cond_broadcast(&sctp_os_timer_wait_cond);
 #endif
-				sctp_os_timer_done_ctr = wakeup_cookie;
-				SCTP_TIMERWAIT_UNLOCK();
-				SCTP_TIMERQ_LOCK();
 				sctp_os_timer_waiting = 0;
 			}
 			c = sctp_os_timer_next;
