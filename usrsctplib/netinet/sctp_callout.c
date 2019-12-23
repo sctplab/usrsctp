@@ -173,7 +173,7 @@ sctp_os_timer_stop(sctp_os_timer_t *c)
 		} else {
 			/* need to wait until the callout is finished */
 			sctp_os_timer_waiting = 1;
-			wakeup_cookie = ++sctp_os_timer_wait_ctr;
+			wakeup_cookie = sctp_os_timer_wait_ctr++;
 			SCTP_TIMERQ_UNLOCK();
 			SCTP_TIMERWAIT_LOCK();
 			/*
