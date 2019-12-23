@@ -113,21 +113,6 @@ sctp_os_timer_start(sctp_os_timer_t *c, uint32_t to_ticks, void (*ftn) (void *),
 
 	SCTP_TIMERQ_LOCK();
 	/* check to see if we're rescheduling a timer */
-	if (c == sctp_os_timer_current) {
-		/*
-		 * We're being asked to reschedule a callout which is
-		 * currently in progress.
-		 */
-		if (sctp_os_timer_waiting) {
-			/*
-			 * This callout is already being stopped.
-			 * callout.  Don't reschedule.
-			 */
-			SCTP_TIMERQ_UNLOCK();
-			return;
-		}
-	}
-
 	if (c->c_flags & SCTP_CALLOUT_PENDING) {
 		if (c == sctp_os_timer_next) {
 			sctp_os_timer_next = TAILQ_NEXT(c, tqe);
@@ -187,7 +172,7 @@ sctp_os_timer_stop(sctp_os_timer_t *c)
 							 INFINITE);
 #else
 				pthread_cond_wait(&sctp_os_timer_wait_cond,
-						  &sctp_os_timerwait_mtx);
+						  &SCTP_BASE_VAR(timer_mtx));
 #endif
 			}
 			SCTP_TIMERWAIT_UNLOCK();
