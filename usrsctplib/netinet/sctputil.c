@@ -1673,8 +1673,14 @@ sctp_timeout_handler(void *t)
 	struct socket *upcall_socket = NULL;
 #endif
 	int did_output;
+	int released_asoc_reference;
 	int type;
 
+	/*
+	 * NOTE: If inp, stcb or net are non-null, then references to these were
+	 * added when the timer was started, and must be released before this
+	 * function returns.
+	 */
 	tmr = (struct sctp_timer *)t;
 	inp = (struct sctp_inpcb *)tmr->ep;
 	stcb = (struct sctp_tcb *)tmr->tcb;
@@ -1683,6 +1689,7 @@ sctp_timeout_handler(void *t)
 	CURVNET_SET((struct vnet *)tmr->vnet);
 #endif
 	did_output = 1;
+	released_asoc_reference = 0;
 
 #ifdef SCTP_AUDITING_ENABLED
 	sctp_audit_log(0xF0, (uint8_t) tmr->type);
@@ -1695,10 +1702,7 @@ sctp_timeout_handler(void *t)
 		 * SCTP_PRINTF("Stale SCTP timer fired (%p), ignoring...\n",
 		 *             (void *)tmr);
 		 */
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
-		CURVNET_RESTORE();
-#endif
-		return;
+		goto out_decr;
 	}
 	tmr->stopped_from = 0xa001;
 	if (!SCTP_IS_TIMER_TYPE_VALID(tmr->type)) {
@@ -1706,22 +1710,15 @@ sctp_timeout_handler(void *t)
 		 * SCTP_PRINTF("SCTP timer fired with invalid type: 0x%x\n",
 		 * tmr->type);
 		 */
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
-		CURVNET_RESTORE();
-#endif
-		return;
+		goto out_decr;
 	}
 	tmr->stopped_from = 0xa002;
 	if ((tmr->type != SCTP_TIMER_TYPE_ADDR_WQ) && (inp == NULL)) {
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
-		CURVNET_RESTORE();
-#endif
-		return;
+		goto out_decr;
 	}
 	/* if this is an iterator timeout, get the struct and clear inp */
 	tmr->stopped_from = 0xa003;
 	if (inp) {
-		SCTP_INP_INCR_REF(inp);
 		if ((inp->sctp_socket == NULL) &&
 		    ((tmr->type != SCTP_TIMER_TYPE_INPKILL) &&
 		     (tmr->type != SCTP_TIMER_TYPE_INIT) &&
@@ -1732,58 +1729,33 @@ sctp_timeout_handler(void *t)
 		     (tmr->type != SCTP_TIMER_TYPE_SHUTDOWNACK) &&
 		     (tmr->type != SCTP_TIMER_TYPE_SHUTDOWNGUARD) &&
 		     (tmr->type != SCTP_TIMER_TYPE_ASOCKILL))) {
-			SCTP_INP_DECR_REF(inp);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
-			CURVNET_RESTORE();
-#endif
-			return;
+			goto out_decr;
 		}
 	}
 	tmr->stopped_from = 0xa004;
-	if (stcb) {
-		atomic_add_int(&stcb->asoc.refcnt, 1);
-		if (stcb->asoc.state == 0) {
-			atomic_add_int(&stcb->asoc.refcnt, -1);
-			if (inp) {
-				SCTP_INP_DECR_REF(inp);
-			}
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
-			CURVNET_RESTORE();
-#endif
-			return;
-		}
+	if (stcb && stcb->asoc.state == 0) {
+		goto out_decr;
 	}
 	type = tmr->type;
 	tmr->stopped_from = 0xa005;
 	SCTPDBG(SCTP_DEBUG_TIMER1, "Timer type %d goes off\n", type);
 	if (!SCTP_OS_TIMER_ACTIVE(&tmr->timer)) {
-		if (inp) {
-			SCTP_INP_DECR_REF(inp);
-		}
-		if (stcb) {
-			atomic_add_int(&stcb->asoc.refcnt, -1);
-		}
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
-		CURVNET_RESTORE();
-#endif
-		return;
+		goto out_decr;
 	}
 	tmr->stopped_from = 0xa006;
 
 	if (stcb) {
 		SCTP_TCB_LOCK(stcb);
+		/*
+		 * Release reference so that association can be freed if necessary below.
+		 * This is safe now that we have acquired the lock.
+		 */
 		atomic_add_int(&stcb->asoc.refcnt, -1);
+		released_asoc_reference = 1;
 		if ((type != SCTP_TIMER_TYPE_ASOCKILL) &&
 		    ((stcb->asoc.state == 0) ||
 		     (stcb->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED))) {
-			SCTP_TCB_UNLOCK(stcb);
-			if (inp) {
-				SCTP_INP_DECR_REF(inp);
-			}
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
-			CURVNET_RESTORE();
-#endif
-			return;
+			goto get_out;
 		}
 	} else if (inp != NULL) {
 		if (type != SCTP_TIMER_TYPE_INPKILL) {
@@ -2132,8 +2104,15 @@ out_decr:
 		sorele(upcall_socket);
 	}
 #endif
+	/* Note that these reference counts were incremented in sctp_timer_start. */
 	if (inp) {
 		SCTP_INP_DECR_REF(inp);
+	}
+	if (stcb && !released_asoc_reference) {
+		atomic_add_int(&stcb->asoc.refcnt, -1);
+	}
+	if (net) {
+		sctp_free_remote_addr(net);
 	}
 
 out_no_decr:
@@ -2157,7 +2136,13 @@ sctp_timer_start(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	if (stcb) {
 		SCTP_TCB_LOCK_ASSERT(stcb);
 	}
-	/* Don't restart timer on net that's been removed. */
+	/* Don't restart timer on association that's about to be killed. */
+	if (stcb != NULL &&
+	    (stcb->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED) &&
+	    (t_type != SCTP_TIMER_TYPE_ASOCKILL)) {
+		return;
+	}
+	/* Similarly, don't restart timer on net that's been removed. */
 	if (net != NULL && (net->dest_state & SCTP_ADDR_BEING_DELETED)) {
 		return;
 	}
@@ -2428,7 +2413,21 @@ sctp_timer_start(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 #ifndef __Panda__
 	tmr->ticks = sctp_get_tick_count();
 #endif
-	(void)SCTP_OS_TIMER_START(&tmr->timer, to_ticks, sctp_timeout_handler, tmr);
+	if (!SCTP_OS_TIMER_START(&tmr->timer, to_ticks, sctp_timeout_handler, tmr)) {
+		/*
+		 * If this is a newly scheduled callout, as opposed to a rescheduled one,
+		 * increment relevant reference counts.
+		 */
+		if (inp) {
+			SCTP_INP_INCR_REF(inp);
+		}
+		if (stcb) {
+			atomic_add_int(&stcb->asoc.refcnt, 1);
+		}
+		if (net) {
+			atomic_add_int(&net->ref_count, 1);
+		}
+	}
 	return;
 }
 
@@ -2579,7 +2578,21 @@ sctp_timer_stop(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	}
 	tmr->self = NULL;
 	tmr->stopped_from = from;
-	(void)SCTP_OS_TIMER_STOP(&tmr->timer);
+	if (SCTP_OS_TIMER_STOP(&tmr->timer)) {
+		/*
+		 * If timer was actually stopped, decrement reference counts that were
+		 * incremented in sctp_timer_start.
+		 */
+		if (inp) {
+			SCTP_INP_DECR_REF(inp);
+		}
+		if (stcb) {
+			atomic_add_int(&stcb->asoc.refcnt, -1);
+		}
+		if (net) {
+			sctp_free_remote_addr(net);
+		}
+	}
 	return;
 }
 
@@ -8424,4 +8437,3 @@ sctp_add_substate(struct sctp_tcb *stcb, int substate)
 	}
 #endif
 }
-

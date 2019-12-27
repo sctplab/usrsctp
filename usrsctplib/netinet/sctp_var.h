@@ -191,7 +191,6 @@ extern struct pr_usrreqs sctp_usrreqs;
 #define sctp_free_remote_addr(__net) { \
 	if ((__net)) {  \
 		if (SCTP_DECREMENT_AND_CHECK_REFCOUNT(&(__net)->ref_count)) { \
-			(void)SCTP_OS_TIMER_STOP(&(__net)->rxt_timer.timer); \
 			if ((__net)->ro.ro_rt) { \
 				RTFREE((__net)->ro.ro_rt); \
 				(__net)->ro.ro_rt = NULL; \
@@ -237,7 +236,6 @@ extern struct pr_usrreqs sctp_usrreqs;
 #define sctp_free_remote_addr(__net) { \
 	if ((__net)) { \
 		if (SCTP_DECREMENT_AND_CHECK_REFCOUNT(&(__net)->ref_count)) { \
-			(void)SCTP_OS_TIMER_STOP(&(__net)->rxt_timer.timer); \
 			if ((__net)->ro.ro_rt) { \
 				RTFREE((__net)->ro.ro_rt); \
 				(__net)->ro.ro_rt = NULL; \

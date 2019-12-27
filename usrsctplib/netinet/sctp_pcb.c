@@ -4149,6 +4149,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	if (SCTP_ASOC_CREATE_LOCK_CONTENDED(inp))
 		being_refed++;
 
+	/* NOTE: 0 refcount also means no timers are referencing us. */
 	if ((inp->refcount) ||
 	    (being_refed) ||
 	    (inp->sctp_flags & SCTP_PCB_FLAGS_CLOSE_IP)) {
@@ -4170,19 +4171,6 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	SCTP_INP_WUNLOCK(inp);
 	SCTP_ASOC_CREATE_UNLOCK(inp);
 	SCTP_INP_INFO_WUNLOCK();
-	/* Now we release all locks. Since this INP
-	 * cannot be found anymore except possibly by the
-	 * kill timer that might be running. We call
-	 * the drain function here. It should hit the case
-	 * were it sees the ACTIVE flag cleared and exit
-	 * out freeing us to proceed and destroy everything.
-	 */
-	if (from != SCTP_CALLED_FROM_INPKILL_TIMER) {
-		(void)SCTP_OS_TIMER_STOP_DRAIN(&inp->sctp_ep.signature_change.timer);
-	} else {
-		/* Probably un-needed */
-		(void)SCTP_OS_TIMER_STOP(&inp->sctp_ep.signature_change.timer);
-	}
 
 #ifdef SCTP_LOG_CLOSING
 	sctp_log_closing(inp, NULL, 5);
