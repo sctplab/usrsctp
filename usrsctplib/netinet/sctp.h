@@ -1,4 +1,3 @@
-
 /*-
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -35,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 356270 2020-01-02 13:55:10Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 356271 2020-01-02 14:04:16Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_H_
