@@ -71,7 +71,6 @@ elif system == 'freebsd'
 elif ['darwin', 'ios'].contains(system)
     add_project_arguments([
             '-D__Userspace_os_Darwin',
-            '-U__APPLE__',
             '-D__APPLE_USE_RFC_2292',
         ] + compiler.get_supported_arguments([
             '-Wno-address-of-packed-member',
@@ -208,7 +207,8 @@ else
         dependencies: dependencies,
         include_directories: include_dirs,
         install: true,
-        version: meson.project_version())
+        version: meson.project_version(),
+        c_args: '-U__APPLE__')
 endif
 
 # Declare dependency
