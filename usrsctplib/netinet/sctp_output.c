@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 353518 2019-10-14 20:32:11Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 356357 2020-01-04 20:33:12Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7374,14 +7374,14 @@ sctp_sendall(struct sctp_inpcb *inp, struct uio *uio, struct mbuf *m,
 	}
 #if defined(__APPLE__)
 #if defined(APPLE_LEOPARD)
-	if (uio->uio_resid > SCTP_MAX_SENDALL_LIMIT) {
+	if (uio->uio_resid > SCTP_BASE_SYSCTL(sctp_sendall_limit)) {
 #else
-	if (uio_resid(uio) > SCTP_MAX_SENDALL_LIMIT) {
+	if (uio_resid(uio) > SCTP_BASE_SYSCTL(sctp_sendall_limit)) {
 #endif
 #else
-	if (uio->uio_resid > SCTP_MAX_SENDALL_LIMIT) {
+	if (uio->uio_resid > SCTP_BASE_SYSCTL(sctp_sendall_limit)) {
 #endif
-		/* You must be less than the max! */
+		/* You must not be larger than the limit! */
 		return (EMSGSIZE);
 	}
 	SCTP_MALLOC(ca, struct sctp_copy_all *, sizeof(struct sctp_copy_all),
