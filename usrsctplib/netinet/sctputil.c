@@ -8100,7 +8100,7 @@ sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa, void *d, void *ctx
 			soref(upcall_socket);
 			SOCK_UNLOCK(upcall_socket);
 			if ((upcall_socket->so_upcall != NULL) &&
-			    (upcall_socket->so_error != 0) {
+			    (upcall_socket->so_error != 0)) {
 				(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
 			}
 			ACCEPT_LOCK();
