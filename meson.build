@@ -56,7 +56,7 @@ add_project_arguments([
 
 # OS-specific settings
 system = host_machine.system()
-if ['linux', 'android'].contains(system)
+if system in ['linux', 'android']
     add_project_arguments([
         '-D__Userspace_os_Linux',
         '-D_GNU_SOURCE',
@@ -68,7 +68,7 @@ elif system == 'freebsd'
     ] + compiler.get_supported_arguments([
         '-Wno-address-of-packed-member',
     ]), language: 'c')
-elif ['darwin', 'ios'].contains(system)
+elif system in ['darwin', 'ios']
     add_project_arguments([
             '-D__Userspace_os_Darwin',
             '-D__APPLE_USE_RFC_2292',
