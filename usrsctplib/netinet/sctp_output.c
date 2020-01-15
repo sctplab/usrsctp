@@ -7379,7 +7379,7 @@ sctp_sendall(struct sctp_inpcb *inp, struct uio *uio, struct mbuf *m,
 	if (uio_resid(uio) > SCTP_BASE_SYSCTL(sctp_sendall_limit)) {
 #endif
 #else
-	if (uio->uio_resid > SCTP_BASE_SYSCTL(sctp_sendall_limit)) {
+	if (uio->uio_resid > (ssize_t) SCTP_BASE_SYSCTL(sctp_sendall_limit)) {
 #endif
 		/* You must not be larger than the limit! */
 		return (EMSGSIZE);
