@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 355931 2019-12-20 15:25:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 356377 2020-01-05 14:06:40Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -8180,7 +8180,7 @@ sctp_initiate_iterator(inp_func inpf,
 		    SCTP_M_ITER);
 	if (it == NULL) {
 		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_PCB, ENOMEM);
-		return (ENOMEM);
+		return (-1);
 	}
 	memset(it, 0, sizeof(*it));
 	it->function_assoc = af;

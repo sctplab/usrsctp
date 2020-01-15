@@ -7908,9 +7908,9 @@ sctp_recv_icmp_tunneled_packet(int cmd, struct sockaddr *sa, void *vip, void *ct
 		            ntohs(inner_ip->ip_len),
 		            (uint32_t)ntohs(icmp->icmp_nextmtu));
 #if defined(__Userspace__)
-		if (!(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) &&) {
+		if (!(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) &&
 		    (stcb->sctp_socket != NULL)) {
-			struct socket *upcall_socket = NULL;
+			struct socket *upcall_socket;
 
 			upcall_socket = stcb->sctp_socket;
 			SOCK_LOCK(upcall_socket);
@@ -8093,14 +8093,14 @@ sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa, void *d, void *ctx
 #if defined(__Userspace__)
 		if (!(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) &&
 		    (stcb->sctp_socket != NULL)) {
-			struct socket *upcall_socket = NULL;
+			struct socket *upcall_socket;
 
 			upcall_socket = stcb->sctp_socket;
 			SOCK_LOCK(upcall_socket);
 			soref(upcall_socket);
 			SOCK_UNLOCK(upcall_socket);
 			if ((upcall_socket->so_upcall != NULL) &&
-			    (upcall_socket->so_error) {
+			    (upcall_socket->so_error != 0)) {
 				(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
 			}
 			ACCEPT_LOCK();
