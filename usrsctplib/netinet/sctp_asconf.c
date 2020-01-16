@@ -130,7 +130,7 @@ sctp_asconf_error_response(uint32_t id, uint16_t cause, uint8_t *error_tlv,
 			tlv_length);
 		return (NULL);
 	}
-	m_reply = sctp_get_mbuf_for_msg(buf_len, 0, M_NOWAIT, 1, MT_DATA);
+	m_reply = sctp_get_mbuf_for_msg((unsigned int)buf_len, 0, M_NOWAIT, 1, MT_DATA);
 	if (m_reply == NULL) {
 		SCTPDBG(SCTP_DEBUG_ASCONF1,
 			"asconf_error_response: couldn't get mbuf!\n");
@@ -150,7 +150,7 @@ sctp_asconf_error_response(uint32_t id, uint16_t cause, uint8_t *error_tlv,
 			tlv[tlv_length + i] = 0;
 		}
 	}
-	SCTP_BUF_LEN(m_reply) = buf_len;
+	SCTP_BUF_LEN(m_reply) = (int)buf_len;
 	return (m_reply);
 }
 
