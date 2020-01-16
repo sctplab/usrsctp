@@ -216,7 +216,7 @@ sctp_startup_iterator(void)
 void
 sctp_gather_internal_ifa_flags(struct sctp_ifa *ifa)
 {
-    return; /* stub */
+	return; /* stub */
 }
 #else
 void
