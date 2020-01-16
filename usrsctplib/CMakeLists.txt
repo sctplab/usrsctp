@@ -53,20 +53,23 @@ add_definitions(-DSCTP_PROCESS_LEVEL_LOCKS)
 # OS DEPENDENT
 #################################################
 
+check_c_compiler_flag(-Wno-address-of-packed-member has_wno_address_of_packet_member)
+if (has_wno_address_of_packet_member)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-address-of-packed-member")
+endif ()
+
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 	add_definitions(-D_GNU_SOURCE)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-address-of-packed-member")
 endif ()
 
 if (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
 	add_definitions(-U__FreeBSD__)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-address-of-packed-member")
 endif ()
 
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
 	add_definitions(-U__APPLE__)
 	add_definitions(-D__APPLE_USE_RFC_2292)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-address-of-packed-member -Wno-deprecated-declarations")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-deprecated-declarations")
 endif ()
 
 if (CMAKE_SYSTEM_NAME MATCHES "DragonFly")
