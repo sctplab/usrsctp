@@ -580,13 +580,13 @@ struct sctp_generic_sendmsg_args {
 };
 
 struct sctp_generic_recvmsg_args {
-        int sd;
-        struct iovec *iov;
-        int iovlen;
-        struct sockaddr *from;
-        socklen_t *fromlenaddr; /* was __socklen_t */
-        struct sctp_sndrcvinfo *sinfo;
-        int *msg_flags;
+	int sd;
+	struct iovec *iov;
+	int iovlen;
+	struct sockaddr *from;
+	socklen_t *fromlenaddr; /* was __socklen_t */
+	struct sctp_sndrcvinfo *sinfo;
+	int *msg_flags;
 };
 
 
