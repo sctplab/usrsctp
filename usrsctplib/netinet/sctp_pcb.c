@@ -299,10 +299,10 @@ void
 sctp_free_vrf(struct sctp_vrf *vrf)
 {
 	if (SCTP_DECREMENT_AND_CHECK_REFCOUNT(&vrf->refcount)) {
-		if (vrf->vrf_addr_hash) {
-			SCTP_HASH_FREE(vrf->vrf_addr_hash, vrf->vrf_addr_hashmark);
-			vrf->vrf_addr_hash = NULL;
-		}
+                if (vrf->vrf_addr_hash) {
+                    SCTP_HASH_FREE(vrf->vrf_addr_hash, vrf->vrf_addr_hashmark);
+                    vrf->vrf_addr_hash = NULL;
+                }
 		/* We zero'd the count */
 		LIST_REMOVE(vrf, next_vrf);
 		SCTP_FREE(vrf, SCTP_M_VRF);

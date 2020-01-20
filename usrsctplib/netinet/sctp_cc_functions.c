@@ -2167,7 +2167,7 @@ htcp_cong_avoid(struct sctp_tcb *stcb, struct sctp_nets *net)
 		 */
 		/* What is snd_cwnd_cnt?? */
 		if (((net->partial_bytes_acked/net->mtu * net->cc_mod.htcp_ca.alpha) >> 7)*net->mtu >= net->cwnd) {
-			/*-
+                        /*-
 			 * Does SCTP have a cwnd clamp?
 			 * if (net->snd_cwnd < net->snd_cwnd_clamp) - Nope (RRS).
 			 */

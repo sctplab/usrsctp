@@ -12286,9 +12286,9 @@ sctp_send_packet_dropped(struct sctp_tcb *stcb, struct sctp_nets *net,
 	struct sctp_chunkhdr *ch, chunk_buf;
 	unsigned int chk_length;
 
-	if (!stcb) {
-		return;
-	}
+        if (!stcb) {
+            return;
+        }
 	asoc = &stcb->asoc;
 	SCTP_TCB_LOCK_ASSERT(stcb);
 	if (asoc->pktdrop_supported == 0) {
@@ -15069,12 +15069,12 @@ sctp_v4src_match_nexthop(struct sctp_ifa *sifa, sctp_route_t *ro)
 int
 sctp_v6src_match_nexthop(struct sockaddr_in6 *src6, sctp_route_t *ro)
 {
-	return (0);
+    return (0);
 }
 int
 sctp_v4src_match_nexthop(struct sctp_ifa *sifa, sctp_route_t *ro)
 {
-	return (0);
+    return (0);
 }
 
 #endif
