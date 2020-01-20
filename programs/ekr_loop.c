@@ -514,9 +514,9 @@ main(int argc, char *argv[])
 		}
 		debug_printf("Sending done, sleeping\n");
 #ifdef _WIN32
-		Sleep(1000);
+		Sleep(10000);
 #else
-		sleep(1);
+		sleep(10);
 #endif
 	}
 	free(line);
