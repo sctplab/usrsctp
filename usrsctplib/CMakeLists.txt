@@ -178,6 +178,9 @@ list(APPEND usrsctp_sources
 add_library(usrsctp SHARED ${usrsctp_sources} ${usrsctp_headers})
 add_library(usrsctp-static STATIC ${usrsctp_sources} ${usrsctp_headers})
 
+target_include_directories(usrsctp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(usrsctp-static PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
 if (WIN32)
 	message(STATUS "link library: ws2_32")
 	target_link_libraries(usrsctp ws2_32 iphlpapi.lib)
