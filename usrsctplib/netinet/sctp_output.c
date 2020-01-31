@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 356378 2020-01-05 14:08:01Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 357197 2020-01-28 10:09:05Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7379,7 +7379,7 @@ sctp_sendall(struct sctp_inpcb *inp, struct uio *uio, struct mbuf *m,
 	if (uio_resid(uio) > SCTP_BASE_SYSCTL(sctp_sendall_limit)) {
 #endif
 #else
-	if (uio->uio_resid > SCTP_BASE_SYSCTL(sctp_sendall_limit)) {
+	if (uio->uio_resid > (ssize_t)SCTP_BASE_SYSCTL(sctp_sendall_limit)) {
 #endif
 		/* You must not be larger than the limit! */
 		return (EMSGSIZE);
