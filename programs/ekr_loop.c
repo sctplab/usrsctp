@@ -274,7 +274,7 @@ main(int argc, char *argv[])
 #else
 	pthread_t tid_c, tid_s;
 #endif
-	int i, j, cur_buf_size, snd_buf_size, rcv_buf_size;
+	int i, j, cur_buf_size, snd_buf_size, rcv_buf_size, retry_counter;
 	socklen_t opt_len;
 	struct sctp_sndinfo sndinfo;
 	char *line;
@@ -491,6 +491,8 @@ main(int argc, char *argv[])
 	sndinfo.snd_context = 0;
 	sndinfo.snd_assoc_id = 0;
 
+	retry_counter = 0;
+
 	for (i = 0; i < NUMBER_OF_STEPS; i++) {
 		j = 0;
 		if (i % 2) {
@@ -500,24 +502,35 @@ main(int argc, char *argv[])
 		}
 		/* Send a 1 MB message */
 		debug_printf("usrscp_sendv - step %d - call %d flags %x\n", i, ++j, sndinfo.snd_flags);
-		if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
+		while (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
 				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 			perror("usrsctp_sendv");
-			exit(EXIT_FAILURE);
+			if (errno != EAGAIN || retry_counter > 120) {
+				exit(EXIT_FAILURE);
+			}
+			retry_counter++;
+#ifdef _WIN32
+			Sleep(1000);
+#else
+			sleep(1);
+#endif
 		}
 		/* Send a 1 MB message */
 		debug_printf("usrscp_sendv - step %d - call %d flags %x\n", i, ++j, sndinfo.snd_flags);
-		if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
+		while (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
 				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
 			perror("usrsctp_sendv");
-			exit(EXIT_FAILURE);
+			if (errno != EAGAIN || retry_counter > 120) {
+				exit(EXIT_FAILURE);
+			}
+			retry_counter++;
+#ifdef _WIN32
+			Sleep(1000);
+#else
+			sleep(1);
+#endif
 		}
 		debug_printf("Sending done, sleeping\n");
-#ifdef _WIN32
-		Sleep(30000);
-#else
-		sleep(30);
-#endif
 	}
 	free(line);
 	usrsctp_shutdown(s_c, SHUT_WR);
