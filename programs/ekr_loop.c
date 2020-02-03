@@ -521,8 +521,9 @@ main(int argc, char *argv[])
 		debug_printf("usrscp_sendv - step %d - call %d flags %x\n", i, ++j, sndinfo.snd_flags);
 		while (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
 				 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
+			fprintf(stderr,"usrsctp_sendv - errno: %d - %s\n", errno, strerror(errno));
 			if (errno != EWOULDBLOCK || !sendv_retries_left) {
-				fprintf(stderr,"usrsctp_sendv - errno: %d - %s\n", errno, strerror(errno));
+				exit(EXIT_FAILURE);
 			}
 			sendv_retries_left--;
 #ifdef _WIN32
