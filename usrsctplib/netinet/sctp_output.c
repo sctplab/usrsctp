@@ -11149,7 +11149,7 @@ sctp_send_sack(struct sctp_tcb *stcb, int so_locked
 			if (stcb->asoc.delayed_ack) {
 				sctp_timer_stop(SCTP_TIMER_TYPE_RECV,
 				                stcb->sctp_ep, stcb, NULL,
-				                SCTP_FROM_SCTP_OUTPUT + SCTP_LOC_3);
+				                SCTP_FROM_SCTP_OUTPUT + SCTP_LOC_4);
 				sctp_timer_start(SCTP_TIMER_TYPE_RECV,
 				    stcb->sctp_ep, stcb, NULL);
 			} else {
@@ -11218,7 +11218,7 @@ sctp_send_sack(struct sctp_tcb *stcb, int so_locked
 		if (stcb->asoc.delayed_ack) {
 			sctp_timer_stop(SCTP_TIMER_TYPE_RECV,
 			                stcb->sctp_ep, stcb, NULL,
-			                SCTP_FROM_SCTP_OUTPUT + SCTP_LOC_4);
+			                SCTP_FROM_SCTP_OUTPUT + SCTP_LOC_5);
 			sctp_timer_start(SCTP_TIMER_TYPE_RECV,
 			    stcb->sctp_ep, stcb, NULL);
 		} else {
@@ -13869,7 +13869,7 @@ sctp_lower_sosend(struct socket *so,
 			if (control) {
 				if (sctp_process_cmsgs_for_init(stcb, control, &error)) {
 					sctp_free_assoc(inp, stcb, SCTP_PCBFREE_FORCE,
-					                SCTP_FROM_SCTP_OUTPUT + SCTP_LOC_5);
+					                SCTP_FROM_SCTP_OUTPUT + SCTP_LOC_6);
 					hold_tcblock = 0;
 					stcb = NULL;
 					goto out_unlocked;
