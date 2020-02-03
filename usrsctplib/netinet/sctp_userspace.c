@@ -49,7 +49,7 @@
  * routines.
  */
 #if defined(__MINGW32__)
-#pragma GCC diagnostic push 
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #endif
 static DWORD WINAPI
