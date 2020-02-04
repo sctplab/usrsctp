@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 356376 2020-01-05 13:56:32Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 357501 2020-02-04 14:01:07Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -820,7 +820,6 @@ sctp_stop_timers_for_shutdown(struct sctp_tcb *stcb)
 	(void)SCTP_OS_TIMER_STOP(&asoc->strreset_timer.timer);
 	(void)SCTP_OS_TIMER_STOP(&asoc->asconf_timer.timer);
 	(void)SCTP_OS_TIMER_STOP(&asoc->autoclose_timer.timer);
-	(void)SCTP_OS_TIMER_STOP(&asoc->delayed_event_timer.timer);
 	TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
 		(void)SCTP_OS_TIMER_STOP(&net->pmtu_timer.timer);
 		(void)SCTP_OS_TIMER_STOP(&net->hb_timer.timer);
