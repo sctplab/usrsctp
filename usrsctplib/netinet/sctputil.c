@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 353518 2019-10-14 20:32:11Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 356376 2020-01-05 13:56:32Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1529,12 +1529,11 @@ select_a_new_ep:
 void
 sctp_iterator_worker(void)
 {
-	struct sctp_iterator *it, *nit;
+	struct sctp_iterator *it;
 
 	/* This function is called with the WQ lock in place */
-
 	sctp_it_ctl.iterator_running = 1;
-	TAILQ_FOREACH_SAFE(it, &sctp_it_ctl.iteratorhead, sctp_nxt_itr, nit) {
+	while ((it = TAILQ_FIRST(&sctp_it_ctl.iteratorhead)) != NULL) {
 		/* now lets work on this one */
 		TAILQ_REMOVE(&sctp_it_ctl.iteratorhead, it, sctp_nxt_itr);
 		SCTP_IPI_ITERATOR_WQ_UNLOCK();
