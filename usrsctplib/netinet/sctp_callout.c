@@ -86,17 +86,20 @@ sctp_os_timer_init(sctp_os_timer_t *c)
 	memset(c, 0, sizeof(*c));
 }
 
-void
+int
 sctp_os_timer_start(sctp_os_timer_t *c, uint32_t to_ticks, void (*ftn) (void *),
                     void *arg)
 {
+	int ret = 0;
+
 	/* paranoia */
 	if ((c == NULL) || (ftn == NULL))
-	    return;
+		return (ret);
 
 	SCTP_TIMERQ_LOCK();
 	/* check to see if we're rescheduling a timer */
 	if (c->c_flags & SCTP_CALLOUT_PENDING) {
+		ret = 1;
 		if (c == sctp_os_timer_next) {
 			sctp_os_timer_next = TAILQ_NEXT(c, tqe);
 		}
@@ -122,6 +125,7 @@ sctp_os_timer_start(sctp_os_timer_t *c, uint32_t to_ticks, void (*ftn) (void *),
 	c->c_time = ticks + to_ticks;
 	TAILQ_INSERT_TAIL(&SCTP_BASE_INFO(callqueue), c, tqe);
 	SCTP_TIMERQ_UNLOCK();
+	return (ret);
 }
 
 int
