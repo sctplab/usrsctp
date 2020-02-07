@@ -314,7 +314,7 @@ main(int argc, char *argv[])
 		exit (EXIT_FAILURE);
 	}
 #endif
-	usrsctp_init(0, conn_output, debug_printf);
+	usrsctp_init(0, conn_output, debug_printf_stack);
 	usrsctp_enable_crc32c_offload();
 	/* set up a connected UDP socket */
 #ifdef _WIN32

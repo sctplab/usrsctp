@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 350625 2019-08-06 08:33:21Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 357501 2020-02-04 14:01:07Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -59,12 +59,12 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 350625 2019-08-06 08:33:21Z tuex
 #include <netinet/sctp_constants.h>
 #endif
 #if defined(__FreeBSD__)
+#include <netinet/sctp_kdtrace.h>
 #if defined(INET6) || defined(INET)
 #include <netinet/tcp_var.h>
 #endif
 #include <netinet/udp.h>
 #include <netinet/udp_var.h>
-#include <netinet/in_kdtrace.h>
 #include <sys/proc.h>
 #ifdef INET6
 #include <netinet/icmp6.h>
@@ -820,7 +820,6 @@ sctp_stop_timers_for_shutdown(struct sctp_tcb *stcb)
 	(void)SCTP_OS_TIMER_STOP(&asoc->strreset_timer.timer);
 	(void)SCTP_OS_TIMER_STOP(&asoc->asconf_timer.timer);
 	(void)SCTP_OS_TIMER_STOP(&asoc->autoclose_timer.timer);
-	(void)SCTP_OS_TIMER_STOP(&asoc->delayed_event_timer.timer);
 	TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
 		(void)SCTP_OS_TIMER_STOP(&net->pmtu_timer.timer);
 		(void)SCTP_OS_TIMER_STOP(&net->hb_timer.timer);
@@ -913,9 +912,15 @@ sctp_fill_random_store(struct sctp_pcb *m)
 	 * numbers, but thats ok too since that is random as well :->
 	 */
 	m->store_at = 0;
+#if defined(__Userspace__) && defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
+	for (int i = 0; i < (int) (sizeof(m->random_store) / sizeof(m->random_store[0])); i++) {
+		m->random_store[i] = (uint8_t) rand();
+	}
+#else
 	(void)sctp_hmac(SCTP_HMAC, (uint8_t *)m->random_numbers,
 	    sizeof(m->random_numbers), (uint8_t *)&m->random_counter,
 	    sizeof(m->random_counter), (uint8_t *)m->random_store);
+#endif
 	m->random_counter++;
 }
 
@@ -1523,12 +1528,11 @@ select_a_new_ep:
 void
 sctp_iterator_worker(void)
 {
-	struct sctp_iterator *it, *nit;
+	struct sctp_iterator *it;
 
 	/* This function is called with the WQ lock in place */
-
 	sctp_it_ctl.iterator_running = 1;
-	TAILQ_FOREACH_SAFE(it, &sctp_it_ctl.iteratorhead, sctp_nxt_itr, nit) {
+	while ((it = TAILQ_FIRST(&sctp_it_ctl.iteratorhead)) != NULL) {
 		/* now lets work on this one */
 		TAILQ_REMOVE(&sctp_it_ctl.iteratorhead, it, sctp_nxt_itr);
 		SCTP_IPI_ITERATOR_WQ_UNLOCK();
@@ -2574,25 +2578,24 @@ sctp_mtu_size_reset(struct sctp_inpcb *inp,
 
 
 /*
- * given an association and starting time of the current RTT period return
- * RTO in number of msecs net should point to the current network
+ * Given an association and starting time of the current RTT period, update
+ * RTO in number of msecs. net should point to the current network.
+ * Return 1, if an RTO update was performed, return 0 if no update was
+ * performed due to invalid starting point.
  */
 
-uint32_t
+int
 sctp_calculate_rto(struct sctp_tcb *stcb,
 		   struct sctp_association *asoc,
 		   struct sctp_nets *net,
 		   struct timeval *old,
 		   int rtt_from_sack)
 {
-	/*-
-	 * given an association and the starting time of the current RTT
-	 * period (in value1/value2) return RTO in number of msecs.
-	 */
-	int32_t rtt; /* RTT in ms */
+	struct timeval now;
+	uint64_t rtt_us;	/* RTT in us */
+	int32_t rtt;		/* RTT in ms */
 	uint32_t new_rto;
 	int first_measure = 0;
-	struct timeval now;
 
 	/************************/
 	/* 1. calculate new RTT */
@@ -2603,10 +2606,19 @@ sctp_calculate_rto(struct sctp_tcb *stcb,
 	} else {
 		(void)SCTP_GETTIME_TIMEVAL(&now);
 	}
+	if ((old->tv_sec > now.tv_sec) ||
+	    ((old->tv_sec == now.tv_sec) && (old->tv_sec > now.tv_sec))) {
+		/* The starting point is in the future. */
+		return (0);
+	}
 	timevalsub(&now, old);
+	rtt_us = (uint64_t)1000000 * (uint64_t)now.tv_sec + (uint64_t)now.tv_usec;
+	if (rtt_us > SCTP_RTO_UPPER_BOUND * 1000) {
+		/* The RTT is larger than a sane value. */
+		return (0);
+	}
 	/* store the current RTT in us */
-	net->rtt = (uint64_t)1000000 * (uint64_t)now.tv_sec +
-	           (uint64_t)now.tv_usec;
+	net->rtt = rtt_us;
 	/* compute rtt in ms */
 	rtt = (int32_t)(net->rtt / 1000);
 	if ((asoc->cc_functions.sctp_rtt_calculated) && (rtt_from_sack == SCTP_RTT_FROM_DATA)) {
@@ -2635,7 +2647,7 @@ sctp_calculate_rto(struct sctp_tcb *stcb,
 	 * Paper "Congestion Avoidance and Control", Annex A.
 	 *
 	 * (net->lastsa >> SCTP_RTT_SHIFT) is the srtt
-	 * (net->lastsa >> SCTP_RTT_VAR_SHIFT) is the rttvar
+	 * (net->lastsv >> SCTP_RTT_VAR_SHIFT) is the rttvar
 	 */
 	if (net->RTO_measured) {
 		rtt -= (net->lastsa >> SCTP_RTT_SHIFT);
@@ -2676,8 +2688,8 @@ sctp_calculate_rto(struct sctp_tcb *stcb,
 	if (new_rto > stcb->asoc.maxrto) {
 		new_rto = stcb->asoc.maxrto;
 	}
-	/* we are now returning the RTO */
-	return (new_rto);
+	net->RTO = new_rto;
+	return (1);
 }
 
 /*
@@ -7894,9 +7906,9 @@ sctp_recv_icmp_tunneled_packet(int cmd, struct sockaddr *sa, void *vip, void *ct
 		            ntohs(inner_ip->ip_len),
 		            (uint32_t)ntohs(icmp->icmp_nextmtu));
 #if defined(__Userspace__)
-		if (!(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) &&) {
+		if (!(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) &&
 		    (stcb->sctp_socket != NULL)) {
-			struct socket *upcall_socket = NULL;
+			struct socket *upcall_socket;
 
 			upcall_socket = stcb->sctp_socket;
 			SOCK_LOCK(upcall_socket);
@@ -8079,14 +8091,14 @@ sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa, void *d, void *ctx
 #if defined(__Userspace__)
 		if (!(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) &&
 		    (stcb->sctp_socket != NULL)) {
-			struct socket *upcall_socket = NULL;
+			struct socket *upcall_socket;
 
 			upcall_socket = stcb->sctp_socket;
 			SOCK_LOCK(upcall_socket);
 			soref(upcall_socket);
 			SOCK_UNLOCK(upcall_socket);
 			if ((upcall_socket->so_upcall != NULL) &&
-			    (upcall_socket->so_error) {
+			    (upcall_socket->so_error != 0)) {
 				(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
 			}
 			ACCEPT_LOCK();

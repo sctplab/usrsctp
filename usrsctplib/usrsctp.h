@@ -315,7 +315,7 @@ struct sctp_remote_error {
 	uint32_t sre_length;
 	uint16_t sre_error;
 	sctp_assoc_t sre_assoc_id;
-	uint8_t sre_data[4];
+	uint8_t sre_data[];
 };
 
 /* shutdown event */
@@ -480,6 +480,8 @@ struct sctp_event_subscribe {
 
 
 /* Flags that go into the sinfo->sinfo_flags field */
+#define SCTP_DATA_LAST_FRAG   0x0001 /* tail part of the message could not be sent */
+#define SCTP_DATA_NOT_FRAG    0x0003 /* complete message could not be sent */
 #define SCTP_NOTIFICATION     0x0010 /* next message is a notification */
 #define SCTP_COMPLETE         0x0020 /* next message is complete */
 #define SCTP_EOF              0x0100 /* Start shutdown procedures */
@@ -1040,7 +1042,7 @@ usrsctp_get_events(struct socket *so);
 
 
 void
-usrsctp_handle_timers(int delta);
+usrsctp_handle_timers(uint32_t delta);
 
 #define SCTP_DUMP_OUTBOUND 1
 #define SCTP_DUMP_INBOUND  0
@@ -1128,6 +1130,7 @@ USRSCTP_SYSCTL_DECL(sctp_udp_tunneling_port)
 USRSCTP_SYSCTL_DECL(sctp_enable_sack_immediately)
 USRSCTP_SYSCTL_DECL(sctp_vtag_time_wait)
 USRSCTP_SYSCTL_DECL(sctp_blackhole)
+USRSCTP_SYSCTL_DECL(sctp_sendall_limit)
 USRSCTP_SYSCTL_DECL(sctp_diag_info_code)
 USRSCTP_SYSCTL_DECL(sctp_fr_max_burst_default)
 USRSCTP_SYSCTL_DECL(sctp_path_pf_threshold)

@@ -195,7 +195,7 @@ on_socket_readable(struct socket* s) {
 static void
 handle_upcall(struct socket *s, void *arg, int flags)
 {
-    int events = usrsctp_get_events(s);
+	int events = usrsctp_get_events(s);
 
 	if (connecting) {
 		if (events & SCTP_EVENT_ERROR) {
@@ -274,7 +274,7 @@ main(int argc, char *argv[])
 		return (-1);
 	}
 #endif
-	usrsctp_init_nothreads(0, conn_output, debug_printf);
+	usrsctp_init_nothreads(0, conn_output, debug_printf_stack);
 	/* set up a connected UDP socket */
 #ifdef _WIN32
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {

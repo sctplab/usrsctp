@@ -53,6 +53,11 @@ add_definitions(-DSCTP_PROCESS_LEVEL_LOCKS)
 # OS DEPENDENT
 #################################################
 
+check_c_compiler_flag(-Wno-address-of-packed-member has_wno_address_of_packet_member)
+if (has_wno_address_of_packet_member)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-address-of-packed-member")
+endif ()
+
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 	add_definitions(-D_GNU_SOURCE)
 endif ()
@@ -172,6 +177,9 @@ list(APPEND usrsctp_sources
 
 add_library(usrsctp SHARED ${usrsctp_sources} ${usrsctp_headers})
 add_library(usrsctp-static STATIC ${usrsctp_sources} ${usrsctp_headers})
+
+target_include_directories(usrsctp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(usrsctp-static PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 if (WIN32)
 	message(STATUS "link library: ws2_32")

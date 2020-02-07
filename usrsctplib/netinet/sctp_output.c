@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 351654 2019-09-01 10:09:53Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 357197 2020-01-28 10:09:05Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -56,6 +56,9 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 351654 2019-09-01 10:09:53Z t
 #include <netinet/sctp_bsd_addr.h>
 #include <netinet/sctp_input.h>
 #include <netinet/sctp_crc32.h>
+#if defined(__FreeBSD__)
+#include <netinet/sctp_kdtrace.h>
+#endif
 #if defined(__Userspace_os_Linux)
 #define __FAVOR_BSD    /* (on Ubuntu at least) enables UDP header field names like BSD in RFC 768 */
 #endif
@@ -72,7 +75,6 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 351654 2019-09-01 10:09:53Z t
 #include <netinet/udp_var.h>
 #endif
 #include <machine/in_cksum.h>
-#include <netinet/in_kdtrace.h>
 #endif
 #if defined(__Userspace__) && defined(INET6)
 #include <netinet6/sctp6_var.h>
@@ -7372,14 +7374,14 @@ sctp_sendall(struct sctp_inpcb *inp, struct uio *uio, struct mbuf *m,
 	}
 #if defined(__APPLE__)
 #if defined(APPLE_LEOPARD)
-	if (uio->uio_resid > SCTP_MAX_SENDALL_LIMIT) {
+	if (uio->uio_resid > SCTP_BASE_SYSCTL(sctp_sendall_limit)) {
 #else
-	if (uio_resid(uio) > SCTP_MAX_SENDALL_LIMIT) {
+	if (uio_resid(uio) > SCTP_BASE_SYSCTL(sctp_sendall_limit)) {
 #endif
 #else
-	if (uio->uio_resid > SCTP_MAX_SENDALL_LIMIT) {
+	if (uio->uio_resid > (ssize_t)SCTP_BASE_SYSCTL(sctp_sendall_limit)) {
 #endif
-		/* You must be less than the max! */
+		/* You must not be larger than the limit! */
 		return (EMSGSIZE);
 	}
 	SCTP_MALLOC(ca, struct sctp_copy_all *, sizeof(struct sctp_copy_all),
@@ -7439,7 +7441,7 @@ sctp_sendall(struct sctp_inpcb *inp, struct uio *uio, struct mbuf *m,
 				     (void *)ca, 0,
 				     sctp_sendall_completes, inp, 1);
 	if (ret) {
-		SCTP_PRINTF("Failed to initiate iterator for sendall\n");
+		inp->sctp_flags &= ~SCTP_PCB_FLAGS_SND_ITERATOR_UP;
 		SCTP_FREE(ca, SCTP_M_COPYAL);
 		SCTP_LTRACE_ERR_RET_PKT(m, inp, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, EFAULT);
 		return (EFAULT);
@@ -8377,8 +8379,8 @@ sctp_med_chunk_output(struct sctp_inpcb *inp,
 	int bundle_at, ctl_cnt, no_data_chunks, eeor_mode;
 	unsigned int mtu, r_mtu, omtu, mx_mtu, to_out;
 	int tsns_sent = 0;
-	uint32_t auth_offset = 0;
-	struct sctp_auth_chunk *auth = NULL;
+	uint32_t auth_offset;
+	struct sctp_auth_chunk *auth;
 	uint16_t auth_keyid;
 	int override_ok = 1;
 	int skip_fill_up = 0;
@@ -8576,6 +8578,8 @@ again_one_more_time:
 		}
 		bundle_at = 0;
 		endoutchain = outchain = NULL;
+		auth = NULL;
+		auth_offset = 0;
 		no_fragmentflg = 1;
 		one_chunk = 0;
 		if (net->dest_state & SCTP_ADDR_UNCONFIRMED) {
@@ -9569,8 +9573,7 @@ sctp_send_cookie_echo(struct mbuf *m,
 				pad = 4 - pad;
 			}
 			if (pad > 0) {
-				cookie = sctp_pad_lastmbuf(cookie, pad, NULL);
-				if (cookie == NULL) {
+				if (sctp_pad_lastmbuf(cookie, pad, NULL) == NULL) {
 					return (-8);
 				}
 			}
@@ -11146,7 +11149,7 @@ sctp_send_sack(struct sctp_tcb *stcb, int so_locked
 			if (stcb->asoc.delayed_ack) {
 				sctp_timer_stop(SCTP_TIMER_TYPE_RECV,
 				                stcb->sctp_ep, stcb, NULL,
-				                SCTP_FROM_SCTP_OUTPUT + SCTP_LOC_3);
+				                SCTP_FROM_SCTP_OUTPUT + SCTP_LOC_4);
 				sctp_timer_start(SCTP_TIMER_TYPE_RECV,
 				    stcb->sctp_ep, stcb, NULL);
 			} else {
@@ -11215,7 +11218,7 @@ sctp_send_sack(struct sctp_tcb *stcb, int so_locked
 		if (stcb->asoc.delayed_ack) {
 			sctp_timer_stop(SCTP_TIMER_TYPE_RECV,
 			                stcb->sctp_ep, stcb, NULL,
-			                SCTP_FROM_SCTP_OUTPUT + SCTP_LOC_4);
+			                SCTP_FROM_SCTP_OUTPUT + SCTP_LOC_5);
 			sctp_timer_start(SCTP_TIMER_TYPE_RECV,
 			    stcb->sctp_ep, stcb, NULL);
 		} else {
@@ -13866,7 +13869,7 @@ sctp_lower_sosend(struct socket *so,
 			if (control) {
 				if (sctp_process_cmsgs_for_init(stcb, control, &error)) {
 					sctp_free_assoc(inp, stcb, SCTP_PCBFREE_FORCE,
-					                SCTP_FROM_SCTP_OUTPUT + SCTP_LOC_5);
+					                SCTP_FROM_SCTP_OUTPUT + SCTP_LOC_6);
 					hold_tcblock = 0;
 					stcb = NULL;
 					goto out_unlocked;

@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 351641 2019-08-31 13:13:40Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 357501 2020-02-04 14:01:07Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -51,9 +51,6 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 351641 2019-08-31 13:13:40Z tuex
 #include <netinet/sctp_output.h>
 #include <netinet/sctp_timer.h>
 #include <netinet/sctp_bsd_addr.h>
-#if defined(__FreeBSD__) && __FreeBSD_version >= 1000000
-#include <netinet/sctp_dtrace_define.h>
-#endif
 #if defined(INET) || defined(INET6)
 #if !defined(__Userspace_os_Windows)
 #include <netinet/udp.h>
@@ -3192,7 +3189,6 @@ sctp_move_pcb_and_assoc(struct sctp_inpcb *old_inp, struct sctp_inpcb *new_inp,
 	stcb->asoc.strreset_timer.ep = (void *)new_inp;
 	stcb->asoc.shut_guard_timer.ep = (void *)new_inp;
 	stcb->asoc.autoclose_timer.ep = (void *)new_inp;
-	stcb->asoc.delayed_event_timer.ep = (void *)new_inp;
 	stcb->asoc.delete_prim_timer.ep = (void *)new_inp;
 	/* now what about the nets? */
 	TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
@@ -3934,7 +3930,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	}
 	/* First time through we have the socket lock, after that no more. */
 	sctp_timer_stop(SCTP_TIMER_TYPE_NEWCOOKIE, inp, NULL, NULL,
-			SCTP_FROM_SCTP_PCB + SCTP_LOC_1);
+	                SCTP_FROM_SCTP_PCB + SCTP_LOC_1);
 
 	if (inp->control) {
 		sctp_m_freem(inp->control);
@@ -5171,7 +5167,6 @@ sctp_aloc_assoc(struct sctp_inpcb *inp, struct sockaddr *firstaddr,
 	SCTP_OS_TIMER_INIT(&asoc->asconf_timer.timer);
 	SCTP_OS_TIMER_INIT(&asoc->shut_guard_timer.timer);
 	SCTP_OS_TIMER_INIT(&asoc->autoclose_timer.timer);
-	SCTP_OS_TIMER_INIT(&asoc->delayed_event_timer.timer);
 	SCTP_OS_TIMER_INIT(&asoc->delete_prim_timer.timer);
 
 	LIST_INSERT_HEAD(&inp->sctp_asoc_list, stcb, sctp_tcblist);
@@ -5554,8 +5549,6 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 	asoc->autoclose_timer.self = NULL;
 	(void)SCTP_OS_TIMER_STOP(&asoc->shut_guard_timer.timer);
 	asoc->shut_guard_timer.self = NULL;
-	(void)SCTP_OS_TIMER_STOP(&asoc->delayed_event_timer.timer);
-	asoc->delayed_event_timer.self = NULL;
 	/* Mobility adaptation */
 	(void)SCTP_OS_TIMER_STOP(&asoc->delete_prim_timer.timer);
 	asoc->delete_prim_timer.self = NULL;
@@ -5741,7 +5734,6 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 	(void)SCTP_OS_TIMER_STOP(&asoc->asconf_timer.timer);
 	(void)SCTP_OS_TIMER_STOP(&asoc->shut_guard_timer.timer);
 	(void)SCTP_OS_TIMER_STOP(&asoc->autoclose_timer.timer);
-	(void)SCTP_OS_TIMER_STOP(&asoc->delayed_event_timer.timer);
 	TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
 		(void)SCTP_OS_TIMER_STOP(&net->rxt_timer.timer);
 		(void)SCTP_OS_TIMER_STOP(&net->pmtu_timer.timer);
@@ -6848,7 +6840,6 @@ sctp_pcb_init(void)
 #if defined(_SCTP_NEEDS_CALLOUT_) || defined(_USER_SCTP_NEEDS_CALLOUT_)
 	/* allocate the lock for the callout/timer queue */
 	SCTP_TIMERQ_LOCK_INIT();
-	SCTP_TIMERWAIT_LOCK_INIT();
 	TAILQ_INIT(&SCTP_BASE_INFO(callqueue));
 #endif
 #if defined(__Userspace__)
@@ -7044,7 +7035,6 @@ retry:
 	/* free the locks and mutexes */
 #if defined(__APPLE__)
 	SCTP_TIMERQ_LOCK_DESTROY();
-	SCTP_TIMERWAIT_LOCK_DESTROY();
 #endif
 #ifdef SCTP_PACKET_LOGGING
 	SCTP_IP_PKTLOG_DESTROY();
@@ -7071,7 +7061,6 @@ retry:
 #endif
 #if defined(__Userspace__)
 	SCTP_TIMERQ_LOCK_DESTROY();
-	SCTP_TIMERWAIT_LOCK_DESTROY();
 	SCTP_ZONE_DESTROY(zone_mbuf);
 	SCTP_ZONE_DESTROY(zone_clust);
 	SCTP_ZONE_DESTROY(zone_ext_refcnt);
@@ -7250,7 +7239,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 		if (offset + plen > limit) {
 			break;
 		}
-		if (plen == 0) {
+		if (plen < sizeof(struct sctp_paramhdr)) {
 			break;
 		}
 #ifdef INET
@@ -7465,6 +7454,9 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 			}
 			if (plen > sizeof(lstore)) {
 				return (-23);
+			}
+			if (plen < sizeof(struct sctp_asconf_addrv4_param)) {
+				return (-101);
 			}
 			phdr = sctp_get_next_param(m, offset,
 						   (struct sctp_paramhdr *)&lstore,
@@ -8180,7 +8172,7 @@ sctp_initiate_iterator(inp_func inpf,
 		    SCTP_M_ITER);
 	if (it == NULL) {
 		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_PCB, ENOMEM);
-		return (ENOMEM);
+		return (-1);
 	}
 	memset(it, 0, sizeof(*it));
 	it->function_assoc = af;
