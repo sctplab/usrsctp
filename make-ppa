@@ -114,7 +114,7 @@ if [ ${COPR} -ne 0 ] ; then
    fi
 
    COPR_CLI=""
-   for directory in /usr/bin ~/.local/bin ; do
+   for directory in /usr/bin /usr/local/bin ~/.local/bin ; do
       if [ -x "${directory}/copr-cli" ] ; then
          COPR_CLI="${directory}/copr-cli"
          break
