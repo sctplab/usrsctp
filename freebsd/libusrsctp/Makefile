@@ -2,7 +2,7 @@
 # $FreeBSD$
 
 PORTNAME=	libusrsctp
-PORTVERSION=	1.0.0~td128
+PORTVERSION=	1.0.0~td131
 CATEGORIES=	net
 MASTER_SITES=	https://packages.nntb.no/software/libusrsctp/
 

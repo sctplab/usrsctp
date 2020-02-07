@@ -1,5 +1,6 @@
-libusrsctp (1.0.0~td128-1ubuntu1) disco; urgency=medium
+libusrsctp (1.0.0~td131-1ubuntu1) focal; urgency=medium
 
   * Initial release.
+  * debian/control: Updated standards version to 4.5.0.0.
 
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 11 Sep 2019 15:55:10 +0300
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Fri, 07 Feb 2020 13:54:12 +0100
