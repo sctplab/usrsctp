@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 357500 2020-02-04 12:34:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 357705 2020-02-09 22:05:41Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2649,7 +2649,8 @@ sctp_sack_check(struct sctp_tcb *stcb, int was_a_gap)
 				 * first packet OR there are gaps or
 				 * duplicates.
 				 */
-				(void)SCTP_OS_TIMER_STOP(&stcb->asoc.dack_timer.timer);
+				sctp_timer_stop(SCTP_TIMER_TYPE_RECV, stcb->sctp_ep, stcb, NULL,
+				                SCTP_FROM_SCTP_INDATA + SCTP_LOC_19);
 				sctp_send_sack(stcb, SCTP_SO_NOT_LOCKED);
 			}
 		} else {
