@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 357761 2020-02-11 14:00:27Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 357768 2020-02-11 18:15:57Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2156,6 +2156,10 @@ sctp_timer_start(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	tmr = NULL;
 	if (stcb) {
 		SCTP_TCB_LOCK_ASSERT(stcb);
+	}
+	/* Don't restart timer on net that's been removed. */
+	if (net != NULL && (net->dest_state & SCTP_ADDR_BEING_DELETED)) {
+		return;
 	}
 	switch (t_type) {
 	case SCTP_TIMER_TYPE_ADDR_WQ:

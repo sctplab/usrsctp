@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 357761 2020-02-11 14:00:27Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 357768 2020-02-11 18:15:57Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5241,6 +5241,7 @@ out:
 	                SCTP_FROM_SCTP_PCB + SCTP_LOC_9);
 	sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, inp, stcb, net,
 	                SCTP_FROM_SCTP_PCB + SCTP_LOC_10);
+	net->dest_state |= SCTP_ADDR_BEING_DELETED;
 	sctp_free_remote_addr(net);
 }
 
