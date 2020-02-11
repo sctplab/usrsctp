@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 357708 2020-02-09 22:40:05Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 357761 2020-02-11 14:00:27Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5536,7 +5536,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		}
 	}
 	/* Now clean up any other timers */
-	sctp_stop_association_timers(stcb, false);
+	sctp_stop_association_timers(stcb, 0);
 	/* Now the read queue needs to be cleaned up (only once) */
 	if ((stcb->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED) == 0) {
 		SCTP_ADD_SUBSTATE(stcb, SCTP_STATE_ABOUT_TO_BE_FREED);
@@ -5705,7 +5705,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 	/* Now restop the timers to be sure
 	 * this is paranoia at is finest!
 	 */
-	sctp_stop_association_timers(stcb, true);
+	sctp_stop_association_timers(stcb, 1);
 
 	/*
 	 * The chunk lists and such SHOULD be empty but we check them just
