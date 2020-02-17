@@ -521,6 +521,9 @@ sctp_ss_prio_select(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_nets *net,
 {
 	struct sctp_stream_out *strq, *strqt, *strqn;
 
+	if (asoc->ss_data.locked_on_sending) {
+		return (asoc->ss_data.locked_on_sending);
+	}
 	strqt = asoc->ss_data.last_out_stream;
 prio_again:
 	/* Find the next stream to use */
