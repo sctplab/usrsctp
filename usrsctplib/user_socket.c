@@ -3021,7 +3021,7 @@ usrsctp_freeladdrs(struct sockaddr *addrs)
 	/* Take away the hidden association id */
 	void *fr_addr;
 
-	fr_addr = (void *)((caddr_t)addrs - sizeof(sctp_assoc_t));
+	fr_addr = (void *)((caddr_t)addrs - offsetof(struct sctp_getaddresses,addr));
 	/* Now free it */
 	free(fr_addr);
 }
