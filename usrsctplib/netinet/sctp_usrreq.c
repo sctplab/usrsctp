@@ -6965,7 +6965,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		SCTP_CHECK_AND_CAST(addrs, optval, struct sctp_getaddresses,
 				    optsize);
 #ifdef INET
-		if (addrs->addr->sa_family == AF_INET) {
+		if (addrs->addr->sa.sa_family == AF_INET) {
 			if (optsize < sizeof(struct sctp_getaddresses) - sizeof(struct sockaddr) + sizeof(struct sockaddr_in)) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 				error = EINVAL;
@@ -6980,7 +6980,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		} else
 #endif
 #ifdef INET6
-		if (addrs->addr->sa_family == AF_INET6) {
+		if (addrs->addr->sa.sa_family == AF_INET6) {
 			if (optsize < sizeof(struct sctp_getaddresses) - sizeof(struct sockaddr) + sizeof(struct sockaddr_in6)) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 				error = EINVAL;
@@ -6999,7 +6999,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		       error = EAFNOSUPPORT;
 		       break;
 		}
-		sctp_bindx_add_address(so, inp, addrs->addr,
+		sctp_bindx_add_address(so, inp, &addrs->addr->sa,
 				       addrs->sget_assoc_id, vrf_id,
 				       &error, p);
 		break;
@@ -7014,7 +7014,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 #endif
 		SCTP_CHECK_AND_CAST(addrs, optval, struct sctp_getaddresses, optsize);
 #ifdef INET
-		if (addrs->addr->sa_family == AF_INET) {
+		if (addrs->addr->sa.sa_family == AF_INET) {
 			if (optsize < sizeof(struct sctp_getaddresses) - sizeof(struct sockaddr) + sizeof(struct sockaddr_in)) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 				error = EINVAL;
@@ -7029,7 +7029,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		} else
 #endif
 #ifdef INET6
-		if (addrs->addr->sa_family == AF_INET6) {
+		if (addrs->addr->sa.sa_family == AF_INET6) {
 			if (optsize < sizeof(struct sctp_getaddresses) - sizeof(struct sockaddr) + sizeof(struct sockaddr_in6)) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 				error = EINVAL;
@@ -7050,7 +7050,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			error = EAFNOSUPPORT;
 			break;
 		}
-		sctp_bindx_delete_address(inp, addrs->addr,
+		sctp_bindx_delete_address(inp, &addrs->addr->sa,
 					  addrs->sget_assoc_id, vrf_id,
 					  &error);
 		break;

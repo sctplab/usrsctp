@@ -2695,7 +2695,7 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 		memcpy(gaddrs->addr, sa, sa->sa_len);
 #if defined(INET) || defined(INET6)
 		if ((i == 0) && (sport != 0)) {
-			switch (gaddrs->addr->sa_family) {
+			switch (gaddrs->addr->sa.sa_family) {
 #ifdef INET
 			case AF_INET:
 				sin = (struct sockaddr_in *)gaddrs->addr;
@@ -2740,7 +2740,7 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 		 */
 #if defined(INET) || defined(INET6)
 		if ((i == 0) && (sport != 0)) {
-			switch (gaddrs->addr->sa_family) {
+			switch (gaddrs->addr->sa.sa_family) {
 #ifdef INET
 			case AF_INET:
 				sin = (struct sockaddr_in *)gaddrs->addr;
