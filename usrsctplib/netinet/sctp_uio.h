@@ -662,23 +662,19 @@ struct sctp_setpeerprim {
 	uint8_t sspp_padding[4];
 };
 
-/*
- * This is necessary to prevent misaligned access to a sockaddr_conn.
- *
- * On a 64 bit system, sockaddr_conn is 8-byte aligned due to one of its
- * members being a pointer. However, sockaddr is only 4-byte aligned, so
- * without this union the compiler would not insert the necessary padding
- * between sget_assoc_id and addr.
- */
-union sockaddr_union {
-	struct sockaddr addr;
-	struct sockaddr_conn addr_conn;
+union sctp_sockstore {
+	struct sockaddr_in sin;
+	struct sockaddr_in6 sin6;
+#if defined(__Userspace__)
+	struct sockaddr_conn sconn;
+#endif
+	struct sockaddr sa;
 };
 
 struct sctp_getaddresses {
 	sctp_assoc_t sget_assoc_id;
 	/* addr is filled in for N * sockaddr_storage */
-	union sockaddr_union addr[1];
+	union sctp_sockstore addr[1];
 };
 
 struct sctp_status {
@@ -1149,14 +1145,6 @@ struct sctpstat {
 #define SCTP_STAT_DECR_COUNTER64(_x) SCTP_STAT_DECR(_x)
 #define SCTP_STAT_DECR_GAUGE32(_x) SCTP_STAT_DECR(_x)
 
-union sctp_sockstore {
-	struct sockaddr_in sin;
-	struct sockaddr_in6 sin6;
-#if defined(__Userspace__)
-	struct sockaddr_conn sconn;
-#endif
-	struct sockaddr sa;
-};
 
 
 /***********************************/
