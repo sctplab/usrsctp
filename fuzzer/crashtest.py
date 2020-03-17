@@ -5,7 +5,6 @@ import os
 import re
 
 reportdir = "reports/"
-fuzzer = "./fuzzer_connect_multi"
 
 class bcolors:
 	HEADER = '\033[95m'
