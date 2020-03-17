@@ -1655,7 +1655,6 @@ sctp_handle_auth(struct sctp_tcb *stcb, struct sctp_auth_chunk *auth,
 	return (0);
 #endif
 #endif
-
 	/* is the indicated HMAC supported? */
 	if (!sctp_auth_is_supported_hmac(stcb->asoc.local_hmacs, hmac_id)) {
 		struct mbuf *op_err;
@@ -1735,6 +1734,7 @@ sctp_handle_auth(struct sctp_tcb *stcb, struct sctp_auth_chunk *auth,
 	sctp_zero_m(m, offset + sizeof(*auth), SCTP_SIZE32(digestlen));
 	(void)sctp_compute_hmac_m(hmac_id, stcb->asoc.authinfo.recv_key,
 	    m, offset, computed_digest);
+
 	/* compare the computed digest with the one in the AUTH chunk */
 	if (timingsafe_bcmp(digest, computed_digest, digestlen) != 0) {
 		SCTP_STAT_INCR(sctps_recvauthfailed);
