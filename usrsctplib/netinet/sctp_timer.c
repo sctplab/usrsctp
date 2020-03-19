@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 359151 2020-03-19 18:55:54Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 359152 2020-03-19 21:01:16Z tuexen $");
 #endif
 
 #define _IP_VHL
@@ -1206,7 +1206,7 @@ sctp_asconf_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			 * Mark this peer as ASCONF incapable and cleanup.
 			 */
 			SCTPDBG(SCTP_DEBUG_TIMER1, "asconf_timer: Peer has not responded to our repeated ASCONFs\n");
-			sctp_asconf_cleanup(stcb, net);
+			sctp_asconf_cleanup(stcb);
 			return (0);
 		}
 		/*
