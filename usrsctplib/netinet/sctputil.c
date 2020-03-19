@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 359131 2020-03-19 14:37:28Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 359151 2020-03-19 18:55:54Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2037,7 +2037,7 @@ sctp_timeout_handler(void *t)
 		if ((stcb == NULL) || (inp == NULL)) {
 			break;
 		}
-		if (sctp_strreset_timer(inp, stcb, net)) {
+		if (sctp_strreset_timer(inp, stcb)) {
 			/* no need to unlock on tcb its gone */
 			goto out_decr;
 		}
