@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 359048 2020-03-17 19:20:12Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 359131 2020-03-19 14:37:28Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -893,7 +893,7 @@ static uint32_t sctp_mtu_sizes[] = {
 	2048,
 	4352,
 	4464,
-	8166,
+	8168,
 	17912,
 	32000,
 	65532
