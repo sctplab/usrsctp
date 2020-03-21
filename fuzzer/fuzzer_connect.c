@@ -33,7 +33,6 @@
 #include <string.h>
 #include <stdarg.h>
 #include <assert.h>
-#include <sys/time.h>
 #include <usrsctp.h>
 #include "../programs/programs_helper.h"
 
