@@ -322,6 +322,7 @@ struct sctp_base_info {
 #if defined(INET) || defined(INET6)
 	int userspace_route;
 	userland_thread_t recvthreadroute;
+	int recvthreadroute_should_exit;
 #endif
 #endif
 #ifdef INET
@@ -334,6 +335,9 @@ struct sctp_base_info {
 #endif
 	userland_thread_t recvthreadraw;
 	userland_thread_t recvthreadudp;
+	int recvthreadraw_should_exit;
+	int recvthreadudp_should_exit;
+
 #endif
 #ifdef INET6
 #if defined(__Userspace_os_Windows) && !defined(__MINGW32__)
@@ -345,6 +349,8 @@ struct sctp_base_info {
 #endif
 	userland_thread_t recvthreadraw6;
 	userland_thread_t recvthreadudp6;
+	int recvthreadraw6_should_exit;
+	int recvthreadudp6_should_exit;
 #endif
 	int (*conn_output)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df);
 	void (*debug_printf)(const char *format, ...);

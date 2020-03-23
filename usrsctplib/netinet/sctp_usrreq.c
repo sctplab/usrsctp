@@ -147,15 +147,20 @@ sctp_init(void)
 #if !defined(__Userspace_os_Windows)
 #if defined(INET) || defined(INET6)
 	SCTP_BASE_VAR(userspace_route) = -1;
+	SCTP_BASE_VAR(recvthreadroute_should_exit) = 0;
 #endif
 #endif
 #ifdef INET
 	SCTP_BASE_VAR(userspace_rawsctp) = -1;
 	SCTP_BASE_VAR(userspace_udpsctp) = -1;
+	SCTP_BASE_VAR(recvthreadraw_should_exit) = 0;
+	SCTP_BASE_VAR(recvthreadudp_should_exit) = 0;
 #endif
 #ifdef INET6
 	SCTP_BASE_VAR(userspace_rawsctp6) = -1;
 	SCTP_BASE_VAR(userspace_udpsctp6) = -1;
+	SCTP_BASE_VAR(recvthreadraw6_should_exit) = 0;
+	SCTP_BASE_VAR(recvthreadudp6_should_exit) = 0;
 #endif
 	SCTP_BASE_VAR(timer_thread_should_exit) = 0;
 	SCTP_BASE_VAR(conn_output) = conn_output;
@@ -213,13 +218,13 @@ sctp_finish(void)
 #endif
 #if !defined(__Userspace_os_Windows)
 #if defined(INET) || defined(INET6)
-	if (SCTP_BASE_VAR(userspace_route) != -1) {
+	if (atomic_cmpset_int(&SCTP_BASE_VAR(recvthreadroute_should_exit), 1, 0)) {
 		pthread_join(SCTP_BASE_VAR(recvthreadroute), NULL);
 	}
 #endif
 #endif
 #ifdef INET
-	if (SCTP_BASE_VAR(userspace_rawsctp) != -1) {
+	if (atomic_cmpset_int(&SCTP_BASE_VAR(recvthreadraw_should_exit), 1, 0)) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadraw), INFINITE);
 		CloseHandle(SCTP_BASE_VAR(recvthreadraw));
@@ -227,7 +232,7 @@ sctp_finish(void)
 		pthread_join(SCTP_BASE_VAR(recvthreadraw), NULL);
 #endif
 	}
-	if (SCTP_BASE_VAR(userspace_udpsctp) != -1) {
+	if (atomic_cmpset_int(&SCTP_BASE_VAR(recvthreadudp_should_exit), 1, 0)) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadudp), INFINITE);
 		CloseHandle(SCTP_BASE_VAR(recvthreadudp));
@@ -237,7 +242,7 @@ sctp_finish(void)
 	}
 #endif
 #ifdef INET6
-	if (SCTP_BASE_VAR(userspace_rawsctp6) != -1) {
+	if (atomic_cmpset_int(&SCTP_BASE_VAR(recvthreadraw6_should_exit), 1, 0)) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadraw6), INFINITE);
 		CloseHandle(SCTP_BASE_VAR(recvthreadraw6));
@@ -245,7 +250,7 @@ sctp_finish(void)
 		pthread_join(SCTP_BASE_VAR(recvthreadraw6), NULL);
 #endif
 	}
-	if (SCTP_BASE_VAR(userspace_udpsctp6) != -1) {
+	if (atomic_cmpset_int(&SCTP_BASE_VAR(recvthreadudp6_should_exit), 1, 0)) {
 #if defined(__Userspace_os_Windows)
 		WaitForSingleObject(SCTP_BASE_VAR(recvthreadudp6), INFINITE);
 		CloseHandle(SCTP_BASE_VAR(recvthreadudp6));
