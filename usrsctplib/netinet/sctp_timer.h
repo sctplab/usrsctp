@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.h 359151 2020-03-19 18:55:54Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.h 359195 2020-03-21 16:12:19Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_TIMER_H_
@@ -46,8 +46,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.h 359151 2020-03-19 18:55:54Z tu
 #define SCTP_RTT_VAR_SHIFT 2
 
 struct sctp_nets *
-sctp_find_alternate_net(struct sctp_tcb *,
-    struct sctp_nets *, int mode);
+sctp_find_alternate_net(struct sctp_tcb *, struct sctp_nets *, int);
 
 int
 sctp_t3rxt_timer(struct sctp_inpcb *, struct sctp_tcb *,
@@ -84,12 +83,10 @@ sctp_asconf_timer(struct sctp_inpcb *, struct sctp_tcb *,
     struct sctp_nets *);
 
 void
-sctp_delete_prim_timer(struct sctp_inpcb *, struct sctp_tcb *,
-    struct sctp_nets *);
+sctp_delete_prim_timer(struct sctp_inpcb *, struct sctp_tcb *);
 
 void
-sctp_autoclose_timer(struct sctp_inpcb *, struct sctp_tcb *,
-    struct sctp_nets *net);
+sctp_autoclose_timer(struct sctp_inpcb *, struct sctp_tcb *);
 
 void sctp_audit_retranmission_queue(struct sctp_association *);
 

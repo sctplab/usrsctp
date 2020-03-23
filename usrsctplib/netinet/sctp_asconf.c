@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 359152 2020-03-19 21:01:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 359195 2020-03-21 16:12:19Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -602,8 +602,7 @@ sctp_process_asconf_set_primary(struct sockaddr *src,
 				sctp_move_chunks_from_net(stcb,
 						stcb->asoc.deleted_primary);
 			}
-			sctp_delete_prim_timer(stcb->sctp_ep, stcb,
-						stcb->asoc.deleted_primary);
+			sctp_delete_prim_timer(stcb->sctp_ep, stcb);
 		}
 	} else {
 		/* couldn't set the requested primary address! */

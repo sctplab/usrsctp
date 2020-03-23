@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 359152 2020-03-19 21:01:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 359195 2020-03-21 16:12:19Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2029,7 +2029,7 @@ sctp_timeout_handler(void *t)
 			break;
 		}
 		SCTP_STAT_INCR(sctps_timoautoclose);
-		sctp_autoclose_timer(inp, stcb, net);
+		sctp_autoclose_timer(inp, stcb);
 		sctp_chunk_output(inp, stcb, SCTP_OUTPUT_FROM_AUTOCLOSE_TMR, SCTP_SO_NOT_LOCKED);
 		did_output = 0;
 		break;
@@ -2101,7 +2101,7 @@ sctp_timeout_handler(void *t)
 		if ((stcb == NULL) || (inp == NULL)) {
 			break;
 		}
-		sctp_delete_prim_timer(inp, stcb, net);
+		sctp_delete_prim_timer(inp, stcb);
 		SCTP_STAT_INCR(sctps_timodelprim);
 		break;
 	default:
