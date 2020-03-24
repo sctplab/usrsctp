@@ -126,7 +126,7 @@
 	EnterCriticalSection(&SCTP_BASE_INFO(wq_addr_mtx))
 #define SCTP_WQ_ADDR_UNLOCK() \
 	LeaveCriticalSection(&SCTP_BASE_INFO(wq_addr_mtx))
-#define SCTP_WQ_ADDR_ASSERT()
+#define SCTP_WQ_ADDR_LOCK_ASSERT()
 
 #define SCTP_INP_INFO_LOCK_INIT() \
 	InitializeCriticalSection(&SCTP_BASE_INFO(ipi_ep_mtx))
