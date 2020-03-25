@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 359152 2020-03-19 21:01:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 359302 2020-03-25 15:29:01Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5509,35 +5509,6 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 	else
 		so = inp->sctp_socket;
 
-	if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
-	    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL)) {
-		/*
-		 * For TCP type we need special handling when we are
-		 * connected. We also include the peel'ed off ones to.
-		 */
-		if (inp->sctp_flags & SCTP_PCB_FLAGS_CONNECTED) {
-			inp->sctp_flags &= ~SCTP_PCB_FLAGS_CONNECTED;
-			inp->sctp_flags |= SCTP_PCB_FLAGS_WAS_CONNECTED;
-			if (so) {
-				SOCKBUF_LOCK(&so->so_rcv);
-				so->so_state &= ~(SS_ISCONNECTING |
-				    SS_ISDISCONNECTING |
-				    SS_ISCONFIRMING |
-				    SS_ISCONNECTED);
-				so->so_state |= SS_ISDISCONNECTED;
-#if defined(__APPLE__)
-				socantrcvmore(so);
-#else
-				socantrcvmore_locked(so);
-#endif
-				socantsendmore(so);
-				sctp_sowwakeup(inp, so);
-				sctp_sorwakeup(inp, so);
-				SCTP_SOWAKEUP(so);
-			}
-		}
-	}
-
 	/*
 	 * We used timer based freeing if a reader or writer is in the way.
 	 * So we first check if we are actually being called from a timer,
@@ -5662,6 +5633,35 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 	    (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE))
 		/* nothing around */
 		so = NULL;
+
+	if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
+	    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL)) {
+		/*
+		 * For TCP type we need special handling when we are
+		 * connected. We also include the peel'ed off ones to.
+		 */
+		if (inp->sctp_flags & SCTP_PCB_FLAGS_CONNECTED) {
+			inp->sctp_flags &= ~SCTP_PCB_FLAGS_CONNECTED;
+			inp->sctp_flags |= SCTP_PCB_FLAGS_WAS_CONNECTED;
+			if (so) {
+				SOCKBUF_LOCK(&so->so_rcv);
+				so->so_state &= ~(SS_ISCONNECTING |
+				    SS_ISDISCONNECTING |
+				    SS_ISCONFIRMING |
+				    SS_ISCONNECTED);
+				so->so_state |= SS_ISDISCONNECTED;
+#if defined(__APPLE__)
+				socantrcvmore(so);
+#else
+				socantrcvmore_locked(so);
+#endif
+				socantsendmore(so);
+				sctp_sowwakeup(inp, so);
+				sctp_sorwakeup(inp, so);
+				SCTP_SOWAKEUP(so);
+			}
+		}
+	}
 
 	/* Make it invalid too, that way if its
 	 * about to run it will abort and return.
