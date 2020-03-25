@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 359288 2020-03-24 23:04:07Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 359301 2020-03-25 13:19:41Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1746,12 +1746,12 @@ sctp_timeout_handler(void *t)
 		     (type != SCTP_TIMER_TYPE_SHUTDOWNGUARD) &&
 		     (type != SCTP_TIMER_TYPE_ASOCKILL))) {
 			SCTP_INP_DECR_REF(inp);
+			SCTPDBG(SCTP_DEBUG_TIMER2,
+			        "Timer type %d handler exiting due to closed socket.\n",
+			        type);
 #if defined(__FreeBSD__) && __FreeBSD_version >= 801000
 			CURVNET_RESTORE();
 #endif
-			SCTPDBG(SCTP_DEBUG_TIMER2,
-			        "Timer type = %d handler exiting due to closed socket\n",
-			        type);
 			return;
 		}
 	}
@@ -1763,12 +1763,12 @@ sctp_timeout_handler(void *t)
 			if (inp) {
 				SCTP_INP_DECR_REF(inp);
 			}
+			SCTPDBG(SCTP_DEBUG_TIMER2,
+			        "Timer type %d handler exiting due to CLOSED association.\n",
+			        type);
 #if defined(__FreeBSD__) && __FreeBSD_version >= 801000
 			CURVNET_RESTORE();
 #endif
-			SCTPDBG(SCTP_DEBUG_TIMER2,
-			        "Timer type = %d handler exiting due to CLOSED association\n",
-			        type);
 			return;
 		}
 	}
@@ -1781,12 +1781,12 @@ sctp_timeout_handler(void *t)
 		if (stcb) {
 			atomic_add_int(&stcb->asoc.refcnt, -1);
 		}
+		SCTPDBG(SCTP_DEBUG_TIMER2,
+			"Timer type %d handler exiting due to not being active.\n",
+			type);
 #if defined(__FreeBSD__) && __FreeBSD_version >= 801000
 		CURVNET_RESTORE();
 #endif
-		SCTPDBG(SCTP_DEBUG_TIMER2,
-			"Timer type = %d handler exiting due to not being active\n",
-			type);
 		return;
 	}
 	tmr->stopped_from = 0xa004;
@@ -1801,12 +1801,12 @@ sctp_timeout_handler(void *t)
 			if (inp) {
 				SCTP_INP_DECR_REF(inp);
 			}
+			SCTPDBG(SCTP_DEBUG_TIMER2,
+			        "Timer type %d handler exiting due to CLOSED association.\n",
+			        type);
 #if defined(__FreeBSD__) && __FreeBSD_version >= 801000
 			CURVNET_RESTORE();
 #endif
-			SCTPDBG(SCTP_DEBUG_TIMER2,
-			        "Timer type = %d handler exiting due to CLOSED association\n",
-			        type);
 			return;
 		}
 	} else if (inp != NULL) {
@@ -2161,7 +2161,7 @@ out_decr:
 	}
 
 out_no_decr:
-	SCTPDBG(SCTP_DEBUG_TIMER2, "Timer type = %d handler finished\n", type);
+	SCTPDBG(SCTP_DEBUG_TIMER2, "Timer type %d handler finished.\n", type);
 #if defined(__FreeBSD__)
 #if __FreeBSD_version >= 801000
 	CURVNET_RESTORE();
