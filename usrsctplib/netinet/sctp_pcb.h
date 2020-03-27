@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 359357 2020-03-27 11:08:11Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 359379 2020-03-27 21:48:52Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_PCB_H_
@@ -363,11 +363,11 @@ struct sctp_pcb {
 	uint32_t secret_key[SCTP_HOW_MANY_SECRETS][SCTP_NUMBER_OF_SECRETS];
 	unsigned int size_of_a_cookie;
 
-	unsigned int sctp_timeoutticks[SCTP_NUM_TMRS];
-	unsigned int sctp_minrto;
-	unsigned int sctp_maxrto;
-	unsigned int initial_rto;
-	int initial_init_rto_max;
+	uint32_t sctp_timeoutticks[SCTP_NUM_TMRS];
+	uint32_t sctp_minrto;
+	uint32_t sctp_maxrto;
+	uint32_t initial_rto;
+	uint32_t initial_init_rto_max;
 
 	unsigned int sctp_sack_freq;
 	uint32_t sctp_sws_sender;

@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 359357 2020-03-27 11:08:11Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 359379 2020-03-27 21:48:52Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_STRUCTS_H_
@@ -1121,7 +1121,7 @@ struct sctp_association {
 	uint32_t heart_beat_delay;
 
 	/* autoclose */
-	unsigned int sctp_autoclose_ticks;
+	uint32_t sctp_autoclose_ticks;
 
 	/* how many preopen streams we have */
 	unsigned int pre_open_streams;
