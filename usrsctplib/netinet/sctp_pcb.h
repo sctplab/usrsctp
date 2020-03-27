@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 354018 2019-10-24 09:22:23Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 359357 2020-03-27 11:08:11Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_PCB_H_
@@ -410,7 +410,7 @@ struct sctp_pcb {
 
 	uint32_t def_cookie_life;
 	/* defaults to 0 */
-	int auto_close_time;
+	uint32_t auto_close_time;
 	uint32_t initial_sequence_debug;
 	uint32_t adaptation_layer_indicator;
 	uint8_t adaptation_layer_indicator_provided;
