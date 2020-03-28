@@ -3390,10 +3390,17 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 				memcpy(&sstat->sstat_primary.spinfo_address,
 				       &stcb->asoc.primary_destination->ro._l_addr,
 				       sizeof(struct sockaddr_in));
-			} else {
+			} else if (stcb->asoc.primary_destination->ro._l_addr.sa.sa_family == AF_INET6) {
 				memcpy(&sstat->sstat_primary.spinfo_address,
 				       &stcb->asoc.primary_destination->ro._l_addr,
 				       sizeof(struct sockaddr_in6));
+			} else if (stcb->asoc.primary_destination->ro._l_addr.sa.sa_family == AF_CONN) {
+				memcpy(&sstat->sstat_primary.spinfo_address,
+				       &stcb->asoc.primary_destination->ro._l_addr,
+				       sizeof(struct sockaddr_conn));
+			} else {
+				error = EAFNOSUPPORT;
+				break;
 			}
 #endif
 			((struct sockaddr_in *)&sstat->sstat_primary.spinfo_address)->sin_port = stcb->rport;
