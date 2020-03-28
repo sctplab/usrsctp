@@ -54,6 +54,7 @@
 #include <netinet/sctp_callout.h>
 #include <netinet/sctp_pcb.h>
 #endif
+#include <netinet/sctputil.h>
 
 /*
  * Callout/Timer routines for OS that doesn't have them
