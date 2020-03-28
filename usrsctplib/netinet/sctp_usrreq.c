@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 359405 2020-03-28 20:25:45Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 359410 2020-03-28 22:35:04Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3383,17 +3383,33 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		if (net != NULL) {
 #ifdef HAVE_SA_LEN
 			memcpy(&sstat->sstat_primary.spinfo_address,
-			       &stcb->asoc.primary_destination->ro._l_addr,
-			       ((struct sockaddr *)(&stcb->asoc.primary_destination->ro._l_addr))->sa_len);
+			       &net->ro._l_addr,
+			       ((struct sockaddr *)(&net->ro._l_addr))->sa_len);
 #else
-			if (stcb->asoc.primary_destination->ro._l_addr.sa.sa_family == AF_INET) {
+			switch (stcb->asoc.primary_destination->ro._l_addr.sa.sa_family) {
+#if defined(INET)
+			case AF_INET:
 				memcpy(&sstat->sstat_primary.spinfo_address,
-				       &stcb->asoc.primary_destination->ro._l_addr,
+				       &net->ro._l_addr,
 				       sizeof(struct sockaddr_in));
-			} else {
+				break;
+#endif
+#if defined(INET6)
+			case AF_INET6:
 				memcpy(&sstat->sstat_primary.spinfo_address,
-				       &stcb->asoc.primary_destination->ro._l_addr,
+				       &net->ro._l_addr,
 				       sizeof(struct sockaddr_in6));
+				break;
+#endif
+#if defined(__Userspace__)
+			case AF_CONN:
+				memcpy(&sstat->sstat_primary.spinfo_address,
+				       &net->ro._l_addr,
+				       sizeof(struct sockaddr_conn));
+				break;
+#endif
+			default:
+				break;
 			}
 #endif
 			((struct sockaddr_in *)&sstat->sstat_primary.spinfo_address)->sin_port = stcb->rport;
