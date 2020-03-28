@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 359195 2020-03-21 16:12:19Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 359405 2020-03-28 20:25:45Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2724,7 +2724,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 	 */
 	(void)SCTP_GETTIME_TIMEVAL(&now);
 	/* Expire time is in Ticks, so we convert to seconds */
-	time_expires.tv_sec = cookie->time_entered.tv_sec + TICKS_TO_SEC(cookie->cookie_life);
+	time_expires.tv_sec = cookie->time_entered.tv_sec + sctp_ticks_to_secs(cookie->cookie_life);
 	time_expires.tv_usec = cookie->time_entered.tv_usec;
 #ifndef __FreeBSD__
 	if (timercmp(&now, &time_expires, >))

@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 359302 2020-03-25 15:29:01Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 359405 2020-03-28 20:25:45Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3000,13 +3000,13 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	m = &inp->sctp_ep;
 
 	/* setup the base timeout information */
-	m->sctp_timeoutticks[SCTP_TIMER_SEND] = SEC_TO_TICKS(SCTP_SEND_SEC);	/* needed ? */
-	m->sctp_timeoutticks[SCTP_TIMER_INIT] = SEC_TO_TICKS(SCTP_INIT_SEC);	/* needed ? */
-	m->sctp_timeoutticks[SCTP_TIMER_RECV] = MSEC_TO_TICKS(SCTP_BASE_SYSCTL(sctp_delayed_sack_time_default));
-	m->sctp_timeoutticks[SCTP_TIMER_HEARTBEAT] = MSEC_TO_TICKS(SCTP_BASE_SYSCTL(sctp_heartbeat_interval_default));
-	m->sctp_timeoutticks[SCTP_TIMER_PMTU] = SEC_TO_TICKS(SCTP_BASE_SYSCTL(sctp_pmtu_raise_time_default));
-	m->sctp_timeoutticks[SCTP_TIMER_MAXSHUTDOWN] = SEC_TO_TICKS(SCTP_BASE_SYSCTL(sctp_shutdown_guard_time_default));
-	m->sctp_timeoutticks[SCTP_TIMER_SIGNATURE] = SEC_TO_TICKS(SCTP_BASE_SYSCTL(sctp_secret_lifetime_default));
+	m->sctp_timeoutticks[SCTP_TIMER_SEND] = sctp_secs_to_ticks(SCTP_SEND_SEC);	/* needed ? */
+	m->sctp_timeoutticks[SCTP_TIMER_INIT] = sctp_secs_to_ticks(SCTP_INIT_SEC);	/* needed ? */
+	m->sctp_timeoutticks[SCTP_TIMER_RECV] = sctp_msecs_to_ticks(SCTP_BASE_SYSCTL(sctp_delayed_sack_time_default));
+	m->sctp_timeoutticks[SCTP_TIMER_HEARTBEAT] = sctp_msecs_to_ticks(SCTP_BASE_SYSCTL(sctp_heartbeat_interval_default));
+	m->sctp_timeoutticks[SCTP_TIMER_PMTU] = sctp_secs_to_ticks(SCTP_BASE_SYSCTL(sctp_pmtu_raise_time_default));
+	m->sctp_timeoutticks[SCTP_TIMER_MAXSHUTDOWN] = sctp_secs_to_ticks(SCTP_BASE_SYSCTL(sctp_shutdown_guard_time_default));
+	m->sctp_timeoutticks[SCTP_TIMER_SIGNATURE] = sctp_secs_to_ticks(SCTP_BASE_SYSCTL(sctp_secret_lifetime_default));
 	/* all max/min max are in ms */
 	m->sctp_maxrto = SCTP_BASE_SYSCTL(sctp_rto_max_default);
 	m->sctp_minrto = SCTP_BASE_SYSCTL(sctp_rto_min_default);
@@ -3054,7 +3054,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	sctp_timer_start(SCTP_TIMER_TYPE_NEWCOOKIE, inp, NULL, NULL);
 
 	/* How long is a cookie good for ? */
-	m->def_cookie_life = MSEC_TO_TICKS(SCTP_BASE_SYSCTL(sctp_valid_cookie_life_default));
+	m->def_cookie_life = sctp_msecs_to_ticks(SCTP_BASE_SYSCTL(sctp_valid_cookie_life_default));
 	/*
 	 * Initialize authentication parameters
 	 */

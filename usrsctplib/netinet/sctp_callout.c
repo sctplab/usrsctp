@@ -210,7 +210,7 @@ user_sctp_timer_iterate(void *arg)
 		if (atomic_cmpset_int(&SCTP_BASE_VAR(timer_thread_should_exit), 1, 1)) {
 			break;
 		}
-		sctp_handle_tick(MSEC_TO_TICKS(TIMEOUT_INTERVAL));
+		sctp_handle_tick(sctp_msecs_to_ticks(TIMEOUT_INTERVAL));
 	}
 	return (NULL);
 }

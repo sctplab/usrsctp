@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 359379 2020-03-27 21:48:52Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 359405 2020-03-28 20:25:45Z tuexen $");
 #endif
 
 #define _IP_VHL
@@ -1558,7 +1558,7 @@ sctp_autoclose_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb)
 			tim_touse = &asoc->time_last_sent;
 		}
 		/* Now has long enough transpired to autoclose? */
-		ticks_gone_by = SEC_TO_TICKS((uint32_t)(tn.tv_sec - tim_touse->tv_sec));
+		ticks_gone_by = sctp_secs_to_ticks((uint32_t)(tn.tv_sec - tim_touse->tv_sec));
 		if (ticks_gone_by >= asoc->sctp_autoclose_ticks) {
 			/*
 			 * autoclose time has hit, call the output routine,
