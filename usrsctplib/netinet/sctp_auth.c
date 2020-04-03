@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#ifdef SCTP_KERNEL_FreeBSD
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 355931 2019-12-20 15:25:08Z tuexen $");
 #endif
@@ -568,7 +568,7 @@ sctp_auth_key_acquire(struct sctp_tcb *stcb, uint16_t key_id)
 
 void
 sctp_auth_key_release(struct sctp_tcb *stcb, uint16_t key_id, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
 	SCTP_UNUSED
 #endif
 )
@@ -1751,7 +1751,7 @@ sctp_handle_auth(struct sctp_tcb *stcb, struct sctp_auth_chunk *auth,
 void
 sctp_notify_authentication(struct sctp_tcb *stcb, uint32_t indication,
 			   uint16_t keyid, uint16_t alt_keyid, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
 	SCTP_UNUSED
 #endif
 )

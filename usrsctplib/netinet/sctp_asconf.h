@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#ifdef SCTP_KERNEL_FreeBSD
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.h 359152 2020-03-19 21:01:16Z tuexen $");
 #endif
@@ -80,7 +80,7 @@ sctp_check_address_list(struct sctp_tcb *, struct mbuf *, int, int,
 
 extern void
 sctp_assoc_immediate_retrans(struct sctp_tcb *, struct sctp_nets *);
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Userspace__)
+#if defined(SCTP_KERNEL_FreeBSD) || defined(SCTP_KERNEL_APPLE) || defined(__Userspace__)
 extern void
 sctp_net_immediate_retrans(struct sctp_tcb *, struct sctp_nets *);
 #endif

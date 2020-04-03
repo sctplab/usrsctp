@@ -119,8 +119,8 @@ struct sctp_common_header {
 /* The definition of struct sockaddr_conn MUST be in
  * tune with other sockaddr_* structures.
  */
-#if defined(__APPLE__) || defined(__Bitrig__) || defined(__DragonFly__) || \
-    defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
+#if defined(SCTP_KERNEL_APPLE) || defined(__Bitrig__) || defined(SCTP_KERNEL_DragonFly) || \
+    defined(SCTP_KERNEL_FreeBSD) || defined(SCTP_KERNEL_OpenBSD) || defined(SCTP_KERNEL_NetBSD)
 struct sockaddr_conn {
 	uint8_t sconn_len;
 	uint8_t sconn_family;

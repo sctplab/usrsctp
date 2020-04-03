@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#ifdef SCTP_KERNEL_FreeBSD
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 359379 2020-03-27 21:48:52Z tuexen $");
 #endif
@@ -55,7 +55,7 @@ struct sctp_timer {
 	void *ep;
 	void *tcb;
 	void *net;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 800000
 	void *vnet;
 #endif
 
@@ -113,11 +113,11 @@ typedef void (*asoc_func) (struct sctp_inpcb *, struct sctp_tcb *, void *ptr,
 typedef int (*inp_func) (struct sctp_inpcb *, void *ptr, uint32_t val);
 typedef void (*end_func) (void *ptr, uint32_t val);
 
-#if defined(__FreeBSD__) && defined(SCTP_MCORE_INPUT) && defined(SMP)
+#if defined(SCTP_KERNEL_FreeBSD) && defined(SCTP_MCORE_INPUT) && defined(SMP)
 /* whats on the mcore control struct */
 struct sctp_mcore_queue {
 	TAILQ_ENTRY(sctp_mcore_queue) next;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 801000
 	struct vnet *vn;
 #endif
 	struct mbuf *m;
@@ -142,7 +142,7 @@ struct sctp_mcore_ctrl {
 
 struct sctp_iterator {
 	TAILQ_ENTRY(sctp_iterator) sctp_nxt_itr;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 801000
 	struct vnet *vn;
 #endif
 	struct sctp_timer tmr;
@@ -184,10 +184,10 @@ struct sctp_asconf_iterator {
 };
 
 struct iterator_control {
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	struct mtx ipi_iterator_wq_mtx;
 	struct mtx it_mtx;
-#elif defined(__APPLE__)
+#elif defined(SCTP_KERNEL_APPLE)
 	lck_mtx_t *ipi_iterator_wq_mtx;
 	lck_mtx_t *it_mtx;
 #elif defined(SCTP_PROCESS_LEVEL_LOCKS)
@@ -220,7 +220,7 @@ struct iterator_control {
 	uint32_t iterator_running;
 	uint32_t iterator_flags;
 };
-#if !defined(__FreeBSD__)
+#if !defined(SCTP_KERNEL_FreeBSD)
 #define SCTP_ITERATOR_MUST_EXIT		0x00000001
 #define SCTP_ITERATOR_EXITED		0x00000002
 #endif
@@ -229,7 +229,7 @@ struct iterator_control {
 
 struct sctp_net_route {
 	sctp_rtentry_t *ro_rt;
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 #if __FreeBSD_version < 1100093
 #if __FreeBSD_version >= 800000
 	void *ro_lle;
@@ -249,7 +249,7 @@ struct sctp_net_route {
 	uint16_t	spare;
 #endif
 #endif
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 #if !defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION) && !defined(APPLE_ELCAPITAN)
 	struct llentry	*ro_lle;
 #endif
@@ -443,7 +443,7 @@ struct sctp_nets {
 	uint8_t last_hs_used;	/* index into the last HS table entry we used */
 	uint8_t lan_type;
 	uint8_t rto_needed;
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	uint32_t flowid;
 	uint8_t flowtype;
 #endif

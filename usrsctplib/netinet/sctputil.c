@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#ifdef SCTP_KERNEL_FreeBSD
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 359405 2020-03-28 20:25:45Z tuexen $");
 #endif
@@ -43,7 +43,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 359405 2020-03-28 20:25:45Z tuex
 #include <netinet/sctp_var.h>
 #include <netinet/sctp_sysctl.h>
 #ifdef INET6
-#if defined(__Userspace__) || defined(__FreeBSD__)
+#if defined(__Userspace__) || defined(SCTP_KERNEL_FreeBSD)
 #include <netinet6/sctp6_var.h>
 #endif
 #endif
@@ -58,7 +58,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 359405 2020-03-28 20:25:45Z tuex
 #if defined(__Userspace__)
 #include <netinet/sctp_constants.h>
 #endif
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 #include <netinet/sctp_kdtrace.h>
 #if defined(INET6) || defined(INET)
 #include <netinet/tcp_var.h>
@@ -71,7 +71,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 359405 2020-03-28 20:25:45Z tuex
 #endif
 #endif
 
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 #define APPLE_FILE_NO 8
 #endif
 
@@ -274,7 +274,7 @@ sctp_log_mb(struct mbuf *m, int from)
 	sctp_clog.x.mb.data = SCTP_BUF_AT(m, 0);
 	if (SCTP_BUF_IS_EXTENDED(m)) {
 		sctp_clog.x.mb.ext = SCTP_BUF_EXTEND_BASE(m);
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 		/* APPLE does not use a ref_cnt, but a forward/backward ref queue */
 #else
 		sctp_clog.x.mb.refcnt = (uint8_t)(SCTP_BUF_EXTEND_REFCNT(m));
@@ -372,7 +372,7 @@ sctp_log_cwnd(struct sctp_tcb *stcb, struct sctp_nets *net, int augment, uint8_t
 #endif
 }
 
-#ifndef __APPLE__
+#ifndef SCTP_KERNEL_APPLE
 void
 sctp_log_lock(struct sctp_inpcb *inp, struct sctp_tcb *stcb, uint8_t from)
 {
@@ -387,7 +387,7 @@ sctp_log_lock(struct sctp_inpcb *inp, struct sctp_tcb *stcb, uint8_t from)
 		sctp_clog.x.lock.sock = (void *) NULL;
 	}
 	sctp_clog.x.lock.inp = (void *) inp;
-#if (defined(__FreeBSD__) && __FreeBSD_version >= 503000) || (defined(__APPLE__))
+#if (defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 503000) || (defined(SCTP_KERNEL_APPLE))
 	if (stcb) {
 		sctp_clog.x.lock.tcb_lock = mtx_owned(&stcb->tcb_mtx);
 	} else {
@@ -400,7 +400,7 @@ sctp_log_lock(struct sctp_inpcb *inp, struct sctp_tcb *stcb, uint8_t from)
 		sctp_clog.x.lock.inp_lock = SCTP_LOCK_UNKNOWN;
 		sctp_clog.x.lock.create_lock = SCTP_LOCK_UNKNOWN;
 	}
-#if (defined(__FreeBSD__) && __FreeBSD_version <= 602000)
+#if (defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version <= 602000)
 	sctp_clog.x.lock.info_lock = mtx_owned(&SCTP_BASE_INFO(ipi_ep_mtx));
 #else
 	sctp_clog.x.lock.info_lock = rw_wowned(&SCTP_BASE_INFO(ipi_ep_mtx));
@@ -1493,7 +1493,7 @@ sctp_expand_mapping_array(struct sctp_association *asoc, uint32_t needed)
 static void
 sctp_iterator_work(struct sctp_iterator *it)
 {
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	struct epoch_tracker et;
 #endif
 	struct sctp_inpcb *tinp;
@@ -1501,7 +1501,7 @@ sctp_iterator_work(struct sctp_iterator *it)
 	int inp_skip = 0;
 	int first_in = 1;
 
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	NET_EPOCH_ENTER(et);
 #endif
 	SCTP_INP_INFO_RLOCK();
@@ -1521,7 +1521,7 @@ done_with_iterator:
 			(*it->function_atend) (it->pointer, it->val);
 		}
 		SCTP_FREE(it, SCTP_M_ITER);
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 		NET_EPOCH_EXIT(et);
 #endif
 		return;
@@ -1591,7 +1591,7 @@ select_a_new_ep:
 				/* We won't be staying here */
 				SCTP_INP_DECR_REF(it->inp);
 				atomic_add_int(&it->stcb->asoc.refcnt, -1);
-#if !defined(__FreeBSD__)
+#if !defined(SCTP_KERNEL_FreeBSD)
 				if (sctp_it_ctl.iterator_flags &
 				   SCTP_ITERATOR_MUST_EXIT) {
 					goto done_with_iterator;
@@ -1667,15 +1667,15 @@ sctp_iterator_worker(void)
 		/* now lets work on this one */
 		TAILQ_REMOVE(&sctp_it_ctl.iteratorhead, it, sctp_nxt_itr);
 		SCTP_IPI_ITERATOR_WQ_UNLOCK();
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 801000
 		CURVNET_SET(it->vn);
 #endif
 		sctp_iterator_work(it);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 801000
 		CURVNET_RESTORE();
 #endif
 		SCTP_IPI_ITERATOR_WQ_LOCK();
-#if !defined(__FreeBSD__)
+#if !defined(SCTP_KERNEL_FreeBSD)
 		if (sctp_it_ctl.iterator_flags & SCTP_ITERATOR_MUST_EXIT) {
 			break;
 		}
@@ -1769,7 +1769,7 @@ sctp_handle_addr_wq(void)
 void
 sctp_timeout_handler(void *t)
 {
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	struct epoch_tracker et;
 #endif
 	struct timeval tv;
@@ -1778,7 +1778,7 @@ sctp_timeout_handler(void *t)
 	struct sctp_nets *net;
 	struct sctp_timer *tmr;
 	struct mbuf *op_err;
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 	struct socket *so;
 #endif
 #if defined(__Userspace__)
@@ -1792,7 +1792,7 @@ sctp_timeout_handler(void *t)
 	inp = (struct sctp_inpcb *)tmr->ep;
 	stcb = (struct sctp_tcb *)tmr->tcb;
 	net = (struct sctp_nets *)tmr->net;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 801000
 	CURVNET_SET((struct vnet *)tmr->vnet);
 #endif
 	did_output = 1;
@@ -1820,7 +1820,7 @@ sctp_timeout_handler(void *t)
 			SCTPDBG(SCTP_DEBUG_TIMER2,
 			        "Timer type %d handler exiting due to CLOSED association.\n",
 			        type);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 801000
 			CURVNET_RESTORE();
 #endif
 			return;
@@ -1838,7 +1838,7 @@ sctp_timeout_handler(void *t)
 		SCTPDBG(SCTP_DEBUG_TIMER2,
 			"Timer type %d handler exiting due to not being active.\n",
 			type);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 801000
 		CURVNET_RESTORE();
 #endif
 		return;
@@ -1858,7 +1858,7 @@ sctp_timeout_handler(void *t)
 			SCTPDBG(SCTP_DEBUG_TIMER2,
 			        "Timer type %d handler exiting due to CLOSED association.\n",
 			        type);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 801000
 			CURVNET_RESTORE();
 #endif
 			return;
@@ -1871,7 +1871,7 @@ sctp_timeout_handler(void *t)
 
 	/* Record in stopped_from which timeout occurred. */
 	tmr->stopped_from = type;
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	NET_EPOCH_ENTER(et);
 #endif
 	/* mark as being serviced now */
@@ -2114,14 +2114,14 @@ sctp_timeout_handler(void *t)
 		 */
 		sctp_timer_stop(SCTP_TIMER_TYPE_INPKILL, inp, NULL, NULL,
 		                SCTP_FROM_SCTPUTIL + SCTP_LOC_3);
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 		SCTP_SOCKET_LOCK(SCTP_INP_SO(inp), 1);
 #endif
 		SCTP_INP_DECR_REF(inp);
 		SCTP_INP_WUNLOCK(inp);
 		sctp_inpcb_free(inp, SCTP_FREE_SHOULD_USE_ABORT,
 				SCTP_CALLED_FROM_INPKILL_TIMER);
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 		SCTP_SOCKET_UNLOCK(SCTP_INP_SO(inp), 1);
 #endif
 		inp = NULL;
@@ -2135,7 +2135,7 @@ sctp_timeout_handler(void *t)
 		SCTP_INP_DECR_REF(inp);
 		sctp_timer_stop(SCTP_TIMER_TYPE_ASOCKILL, inp, stcb, NULL,
 		                SCTP_FROM_SCTPUTIL + SCTP_LOC_1);
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 		so = SCTP_INP_SO(inp);
 		atomic_add_int(&stcb->asoc.refcnt, 1);
 		SCTP_TCB_UNLOCK(stcb);
@@ -2145,7 +2145,7 @@ sctp_timeout_handler(void *t)
 #endif
 		(void)sctp_free_assoc(inp, stcb, SCTP_NORMAL_PROC,
 		                      SCTP_FROM_SCTPUTIL + SCTP_LOC_2);
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 		SCTP_SOCKET_UNLOCK(so, 1);
 #endif
 		/*
@@ -2216,7 +2216,7 @@ out_decr:
 
 out_no_decr:
 	SCTPDBG(SCTP_DEBUG_TIMER2, "Timer type %d handler finished.\n", type);
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 #if __FreeBSD_version >= 801000
 	CURVNET_RESTORE();
 #endif
@@ -2639,7 +2639,7 @@ sctp_timer_start(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		tmr->net = (void *)net;
 	}
 	tmr->self = (void *)tmr;
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	tmr->vnet = (void *)curvnet;
 #endif
 	tmr->ticks = sctp_get_tick_count();
@@ -3220,7 +3220,7 @@ sctp_pad_lastmbuf(struct mbuf *m, int padval, struct mbuf *last_mbuf)
 static void
 sctp_notify_assoc_change(uint16_t state, struct sctp_tcb *stcb,
     uint16_t error, struct sctp_abort_chunk *abort, uint8_t from_peer, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
     )
@@ -3231,7 +3231,7 @@ sctp_notify_assoc_change(uint16_t state, struct sctp_tcb *stcb,
 	unsigned int notif_len;
 	uint16_t abort_len;
 	unsigned int i;
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 	struct socket *so;
 #endif
 
@@ -3350,7 +3350,7 @@ set_error:
 		SOCK_UNLOCK(stcb->sctp_socket);
 	}
 	/* Wake ANY sleepers */
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 	so = SCTP_INP_SO(stcb->sctp_ep);
 	if (!so_locked) {
 		atomic_add_int(&stcb->asoc.refcnt, 1);
@@ -3371,7 +3371,7 @@ set_error:
 	}
 	sorwakeup(stcb->sctp_socket);
 	sowwakeup(stcb->sctp_socket);
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 	if (!so_locked) {
 		SCTP_SOCKET_UNLOCK(so, 1);
 	}
@@ -3381,7 +3381,7 @@ set_error:
 static void
 sctp_notify_peer_addr_change(struct sctp_tcb *stcb, uint32_t state,
     struct sockaddr *sa, uint32_t error, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
 )
@@ -3487,7 +3487,7 @@ sctp_notify_peer_addr_change(struct sctp_tcb *stcb, uint32_t state,
 static void
 sctp_notify_send_failed(struct sctp_tcb *stcb, uint8_t sent, uint32_t error,
     struct sctp_tmit_chunk *chk, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
     )
@@ -3623,7 +3623,7 @@ sctp_notify_send_failed(struct sctp_tcb *stcb, uint8_t sent, uint32_t error,
 static void
 sctp_notify_send_failed2(struct sctp_tcb *stcb, uint32_t error,
 			 struct sctp_stream_queue_pending *sp, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
                          SCTP_UNUSED
 #endif
                          )
@@ -3773,7 +3773,7 @@ sctp_notify_adaptation_layer(struct sctp_tcb *stcb)
 static void
 sctp_notify_partial_delivery_indication(struct sctp_tcb *stcb, uint32_t error,
 					uint32_t val, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
                              SCTP_UNUSED
 #endif
                                         )
@@ -3838,7 +3838,7 @@ sctp_notify_partial_delivery_indication(struct sctp_tcb *stcb, uint32_t error,
 	}
 	if (stcb->sctp_ep && stcb->sctp_socket) {
 		/* This should always be the case */
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 		struct socket *so;
 
 		so = SCTP_INP_SO(stcb->sctp_ep);
@@ -3855,7 +3855,7 @@ sctp_notify_partial_delivery_indication(struct sctp_tcb *stcb, uint32_t error,
 		}
 #endif
 		sctp_sorwakeup(stcb->sctp_ep, stcb->sctp_socket);
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 		if (!so_locked) {
 			SCTP_SOCKET_UNLOCK(so, 1);
 		}
@@ -3877,7 +3877,7 @@ sctp_notify_shutdown_event(struct sctp_tcb *stcb)
 	if ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 	    (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL)) {
 		/* mark socket closed for read/write and wakeup! */
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 		struct socket *so;
 
 		so = SCTP_INP_SO(stcb->sctp_ep);
@@ -3892,7 +3892,7 @@ sctp_notify_shutdown_event(struct sctp_tcb *stcb)
 		}
 #endif
 		socantsendmore(stcb->sctp_socket);
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 		SCTP_SOCKET_UNLOCK(so, 1);
 #endif
 	}
@@ -3936,7 +3936,7 @@ sctp_notify_shutdown_event(struct sctp_tcb *stcb)
 static void
 sctp_notify_sender_dry_event(struct sctp_tcb *stcb,
                              int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
                              SCTP_UNUSED
 #endif
                              )
@@ -4227,7 +4227,7 @@ sctp_notify_remote_error(struct sctp_tcb *stcb, uint16_t error, struct sctp_erro
 void
 sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
     uint32_t error, void *data, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
     )
@@ -4239,14 +4239,14 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		/* If the socket is gone we are out of here */
 		return;
 	}
-#if (defined(__FreeBSD__) && __FreeBSD_version > 500000) || defined(__Windows__)
+#if (defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version > 500000) || defined(__Windows__)
 	if (stcb->sctp_socket->so_rcv.sb_state & SBS_CANTRCVMORE) {
 #else
 	if (stcb->sctp_socket->so_state & SS_CANTRCVMORE) {
 #endif
 		return;
 	}
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	if (so_locked) {
 		sctp_lock_assert(SCTP_INP_SO(stcb->sctp_ep));
 	} else {
@@ -4432,7 +4432,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 
 void
 sctp_report_all_outbound(struct sctp_tcb *stcb, uint16_t error, int holds_lock, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
     )
@@ -4451,7 +4451,7 @@ sctp_report_all_outbound(struct sctp_tcb *stcb, uint16_t error, int holds_lock, 
 		/* already being freed */
 		return;
 	}
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	if (so_locked) {
 		sctp_lock_assert(SCTP_INP_SO(stcb->sctp_ep));
 	} else {
@@ -4552,7 +4552,7 @@ sctp_report_all_outbound(struct sctp_tcb *stcb, uint16_t error, int holds_lock, 
 void
 sctp_abort_notification(struct sctp_tcb *stcb, uint8_t from_peer, uint16_t error,
 			struct sctp_abort_chunk *abort, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
     )
@@ -4560,7 +4560,7 @@ sctp_abort_notification(struct sctp_tcb *stcb, uint8_t from_peer, uint16_t error
 	if (stcb == NULL) {
 		return;
 	}
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	if (so_locked) {
 		sctp_lock_assert(SCTP_INP_SO(stcb->sctp_ep));
 	} else {
@@ -4591,13 +4591,13 @@ sctp_abort_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
                        struct mbuf *m, int iphlen,
                        struct sockaddr *src, struct sockaddr *dst,
                        struct sctphdr *sh, struct mbuf *op_err,
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
                        uint8_t mflowtype, uint32_t mflowid,
 #endif
                        uint32_t vrf_id, uint16_t port)
 {
 	uint32_t vtag;
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 	struct socket *so;
 #endif
 
@@ -4607,7 +4607,7 @@ sctp_abort_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		vrf_id = stcb->asoc.vrf_id;
 	}
 	sctp_send_abort(m, iphlen, src, dst, sh, vtag, op_err,
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	                mflowtype, mflowid, inp->fibnum,
 #endif
 	                vrf_id, port);
@@ -4616,7 +4616,7 @@ sctp_abort_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		sctp_abort_notification(stcb, 0, 0, NULL, SCTP_SO_NOT_LOCKED);
 		SCTP_ADD_SUBSTATE(stcb, SCTP_STATE_WAS_ABORTED);
 		/* Ok, now lets free it */
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 		so = SCTP_INP_SO(inp);
 		atomic_add_int(&stcb->asoc.refcnt, 1);
 		SCTP_TCB_UNLOCK(stcb);
@@ -4631,7 +4631,7 @@ sctp_abort_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		}
 		(void)sctp_free_assoc(inp, stcb, SCTP_NORMAL_PROC,
 		                      SCTP_FROM_SCTPUTIL + SCTP_LOC_4);
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 		SCTP_SOCKET_UNLOCK(so, 1);
 #endif
 	}
@@ -4702,19 +4702,19 @@ void
 sctp_abort_an_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
                           struct mbuf *op_err,
                           int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
                           SCTP_UNUSED
 #endif
 )
 {
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 	struct socket *so;
 #endif
 
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 	so = SCTP_INP_SO(inp);
 #endif
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	if (so_locked) {
 		sctp_lock_assert(SCTP_INP_SO(inp));
 	} else {
@@ -4725,14 +4725,14 @@ sctp_abort_an_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		/* Got to have a TCB */
 		if (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) {
 			if (LIST_EMPTY(&inp->sctp_asoc_list)) {
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 				if (!so_locked) {
 					SCTP_SOCKET_LOCK(so, 1);
 				}
 #endif
 				sctp_inpcb_free(inp, SCTP_FREE_SHOULD_USE_ABORT,
 						SCTP_CALLED_DIRECTLY_NOCMPSET);
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 				if (!so_locked) {
 					SCTP_SOCKET_UNLOCK(so, 1);
 				}
@@ -4758,7 +4758,7 @@ sctp_abort_an_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 #ifdef SCTP_ASOCLOG_OF_TSNS
 	sctp_print_out_track_log(stcb);
 #endif
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 	if (!so_locked) {
 		atomic_add_int(&stcb->asoc.refcnt, 1);
 		SCTP_TCB_UNLOCK(stcb);
@@ -4769,7 +4769,7 @@ sctp_abort_an_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 #endif
 	(void)sctp_free_assoc(inp, stcb, SCTP_NORMAL_PROC,
 	                      SCTP_FROM_SCTPUTIL + SCTP_LOC_5);
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 	if (!so_locked) {
 		SCTP_SOCKET_UNLOCK(so, 1);
 	}
@@ -4781,7 +4781,7 @@ sctp_handle_ootb(struct mbuf *m, int iphlen, int offset,
                  struct sockaddr *src, struct sockaddr *dst,
                  struct sctphdr *sh, struct sctp_inpcb *inp,
                  struct mbuf *cause,
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
                  uint8_t mflowtype, uint32_t mflowid, uint16_t fibnum,
 #endif
                  uint32_t vrf_id, uint16_t port)
@@ -4794,12 +4794,12 @@ sctp_handle_ootb(struct mbuf *m, int iphlen, int offset,
 	/* Generate a TO address for future reference */
 	if (inp && (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE)) {
 		if (LIST_EMPTY(&inp->sctp_asoc_list)) {
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 			SCTP_SOCKET_LOCK(SCTP_INP_SO(inp), 1);
 #endif
 			sctp_inpcb_free(inp, SCTP_FREE_SHOULD_USE_ABORT,
 					SCTP_CALLED_DIRECTLY_NOCMPSET);
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 			SCTP_SOCKET_UNLOCK(SCTP_INP_SO(inp), 1);
 #endif
 		}
@@ -4831,7 +4831,7 @@ sctp_handle_ootb(struct mbuf *m, int iphlen, int offset,
 			return;
 		case SCTP_SHUTDOWN_ACK:
 			sctp_send_shutdown_complete2(src, dst, sh,
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 			                             mflowtype, mflowid, fibnum,
 #endif
 			                             vrf_id, port);
@@ -4847,7 +4847,7 @@ sctp_handle_ootb(struct mbuf *m, int iphlen, int offset,
 	    ((SCTP_BASE_SYSCTL(sctp_blackhole) == 1) &&
 	     (contains_init_chunk == 0))) {
 		sctp_send_abort(m, iphlen, src, dst, sh, 0, cause,
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 		                mflowtype, mflowid, fibnum,
 #endif
 		                vrf_id, port);
@@ -5034,7 +5034,7 @@ void
 sctp_print_address(struct sockaddr *sa)
 {
 #ifdef INET6
-#if defined(__FreeBSD__) && __FreeBSD_version >= 700000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 700000
 	char ip6buf[INET6_ADDRSTRLEN];
 #endif
 #endif
@@ -5059,7 +5059,7 @@ sctp_print_address(struct sockaddr *sa)
 			    ntohs(sin6->sin6_port),
 			    sin6->sin6_scope_id);
 #else
-#if defined(__FreeBSD__) && __FreeBSD_version >= 700000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 700000
 		SCTP_PRINTF("IPv6 address: %s:port:%d scope:%u\n",
 			    ip6_sprintf(ip6buf, &sin6->sin6_addr),
 			    ntohs(sin6->sin6_port),
@@ -5117,19 +5117,19 @@ sctp_pull_off_control_to_new_inp(struct sctp_inpcb *old_inp,
 	struct sctp_queued_to_read *control, *nctl;
 	struct sctp_readhead tmp_queue;
 	struct mbuf *m;
-#if defined(__FreeBSD__) || defined(__APPLE__)
+#if defined(SCTP_KERNEL_FreeBSD) || defined(SCTP_KERNEL_APPLE)
 	int error = 0;
 #endif
 
 	old_so = old_inp->sctp_socket;
 	new_so = new_inp->sctp_socket;
 	TAILQ_INIT(&tmp_queue);
-#if defined(__FreeBSD__) || defined(__APPLE__)
-#if defined(__FreeBSD__) && __FreeBSD_version < 700000
+#if defined(SCTP_KERNEL_FreeBSD) || defined(SCTP_KERNEL_APPLE)
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 700000
 	SOCKBUF_LOCK(&(old_so->so_rcv));
 #endif
 	error = sblock(&old_so->so_rcv, waitflags);
-#if defined(__FreeBSD__) && __FreeBSD_version < 700000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 700000
 	SOCKBUF_UNLOCK(&(old_so->so_rcv));
 #endif
 	if (error) {
@@ -5169,17 +5169,17 @@ sctp_pull_off_control_to_new_inp(struct sctp_inpcb *old_inp,
 	}
 	SCTP_INP_READ_UNLOCK(old_inp);
 	/* Remove the sb-lock on the old socket */
-#if defined(__FreeBSD__) && __FreeBSD_version < 700000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 700000
 	SOCKBUF_LOCK(&(old_so->so_rcv));
 #endif
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	sbunlock(&old_so->so_rcv, 1);
 #endif
 
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	sbunlock(&old_so->so_rcv);
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_version < 700000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 700000
 	SOCKBUF_UNLOCK(&(old_so->so_rcv));
 #endif
 	/* Now we move them over to the new socket buffer */
@@ -5205,13 +5205,13 @@ void
 sctp_wakeup_the_read_socket(struct sctp_inpcb *inp,
     struct sctp_tcb *stcb,
     int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
 )
 {
 	if ((inp != NULL) && (inp->sctp_socket != NULL)) {
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 		struct socket *so;
 
 		so = SCTP_INP_SO(inp);
@@ -5232,7 +5232,7 @@ sctp_wakeup_the_read_socket(struct sctp_inpcb *inp,
 		}
 #endif
 		sctp_sorwakeup(inp, inp->sctp_socket);
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 		if (!so_locked) {
 			SCTP_SOCKET_UNLOCK(so, 1);
 		}
@@ -5347,7 +5347,7 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
     int end,
     int inp_read_lock_held,
     int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
     )
@@ -5366,7 +5366,7 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
 #endif
 		return;
 	}
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	if (so_locked) {
 		sctp_lock_assert(SCTP_INP_SO(inp));
 	} else {
@@ -5543,7 +5543,7 @@ sctp_free_bufspace(struct sctp_tcb *stcb, struct sctp_association *asoc,
 int
 sctp_release_pr_sctp_chunk(struct sctp_tcb *stcb, struct sctp_tmit_chunk *tp1,
 			   uint8_t sent, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
 			   SCTP_UNUSED
 #endif
 	)
@@ -5558,7 +5558,7 @@ sctp_release_pr_sctp_chunk(struct sctp_tcb *stcb, struct sctp_tmit_chunk *tp1,
 	int notdone;
 	int do_wakeup_routine = 0;
 
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	if (so_locked) {
 		sctp_lock_assert(SCTP_INP_SO(stcb->sctp_ep));
 	} else {
@@ -5715,7 +5715,7 @@ sctp_release_pr_sctp_chunk(struct sctp_tcb *stcb, struct sctp_tmit_chunk *tp1,
 				chk->rec.data.context = sp->context;
 				chk->flags = sp->act_flags;
 				chk->whoTo = NULL;
-#if defined(__FreeBSD__) || defined(__Panda__)
+#if defined(SCTP_KERNEL_FreeBSD) || defined(__Panda__)
 				chk->rec.data.tsn = atomic_fetchadd_int(&stcb->asoc.sending_seq, 1);
 #else
 				chk->rec.data.tsn = stcb->asoc.sending_seq++;
@@ -5759,7 +5759,7 @@ sctp_release_pr_sctp_chunk(struct sctp_tcb *stcb, struct sctp_tmit_chunk *tp1,
 		SCTP_TCB_SEND_UNLOCK(stcb);
 	}
 	if (do_wakeup_routine) {
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 		struct socket *so;
 
 		so = SCTP_INP_SO(stcb->sctp_ep);
@@ -5777,7 +5777,7 @@ sctp_release_pr_sctp_chunk(struct sctp_tcb *stcb, struct sctp_tmit_chunk *tp1,
 		}
 #endif
 		sctp_sowwakeup(stcb->sctp_ep, stcb->sctp_socket);
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 		if (!so_locked) {
 			SCTP_SOCKET_UNLOCK(so, 1);
 		}
@@ -5985,7 +5985,7 @@ sctp_user_rcvd(struct sctp_tcb *stcb, uint32_t *freed_so_far, int hold_rlock,
 	       uint32_t rwnd_req)
 {
 	/* User pulled some data, do we need a rwnd update? */
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	struct epoch_tracker et;
 #endif
 	int r_unlocked = 0;
@@ -6043,7 +6043,7 @@ sctp_user_rcvd(struct sctp_tcb *stcb, uint32_t *freed_so_far, int hold_rlock,
 			goto out;
 		}
 		SCTP_STAT_INCR(sctps_wu_sacks_sent);
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 		NET_EPOCH_ENTER(et);
 #endif
 		sctp_send_sack(stcb, SCTP_SO_LOCKED);
@@ -6051,7 +6051,7 @@ sctp_user_rcvd(struct sctp_tcb *stcb, uint32_t *freed_so_far, int hold_rlock,
 		sctp_chunk_output(stcb->sctp_ep, stcb,
 				  SCTP_OUTPUT_FROM_USR_RCVD, SCTP_SO_LOCKED);
 		/* make sure no timer is running */
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 		NET_EPOCH_EXIT(et);
 #endif
 		sctp_timer_stop(SCTP_TIMER_TYPE_RECV, stcb->sctp_ep, stcb, NULL,
@@ -6110,7 +6110,7 @@ sctp_sorecvmsg(struct socket *so,
 	int hold_rlock = 0;
 	ssize_t slen = 0;
 	uint32_t held_length = 0;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 700000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 700000
 	int sockbuf_lock = 0;
 #endif
 
@@ -6126,7 +6126,7 @@ sctp_sorecvmsg(struct socket *so,
 	} else {
 		in_flags = 0;
 	}
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 #if defined(APPLE_LEOPARD)
 	slen = uio->uio_resid;
 #else
@@ -6146,7 +6146,7 @@ sctp_sorecvmsg(struct socket *so,
 		return (EINVAL);
 	}
 	if ((in_flags & (MSG_DONTWAIT
-#if defined(__FreeBSD__) && __FreeBSD_version > 500000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version > 500000
 			 | MSG_NBIO
 #endif
 		     )) ||
@@ -6165,7 +6165,7 @@ sctp_sorecvmsg(struct socket *so,
 		rwnd_req = SCTP_MIN_RWND;
 	in_eeor_mode = sctp_is_feature_on(inp, SCTP_PCB_FLAGS_EXPLICIT_EOR);
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_RECV_RWND_LOGGING_ENABLE) {
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 #if defined(APPLE_LEOPARD)
 		sctp_misc_ints(SCTP_SORECV_ENTER,
 			       rwnd_req, in_eeor_mode, so->so_rcv.sb_cc, uio->uio_resid);
@@ -6178,12 +6178,12 @@ sctp_sorecvmsg(struct socket *so,
 			       rwnd_req, in_eeor_mode, so->so_rcv.sb_cc, (uint32_t)uio->uio_resid);
 #endif
 	}
-#if (defined(__FreeBSD__) && __FreeBSD_version < 700000) || defined(__Userspace__)
+#if (defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 700000) || defined(__Userspace__)
 	SOCKBUF_LOCK(&so->so_rcv);
 	hold_sblock = 1;
 #endif
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) &SCTP_RECV_RWND_LOGGING_ENABLE) {
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 #if defined(APPLE_LEOPARD)
 		sctp_misc_ints(SCTP_SORECV_ENTERPL,
 			       rwnd_req, block_allowed, so->so_rcv.sb_cc, uio->uio_resid);
@@ -6197,31 +6197,31 @@ sctp_sorecvmsg(struct socket *so,
 #endif
 	}
 
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	error = sblock(&so->so_rcv, SBLOCKWAIT(in_flags));
 #endif
 
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	error = sblock(&so->so_rcv, (block_allowed ? SBL_WAIT : 0));
 #endif
 	if (error) {
 		goto release_unlocked;
 	}
-#if defined(__FreeBSD__) && __FreeBSD_version >= 700000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 700000
         sockbuf_lock = 1;
 #endif
  restart:
-#if (defined(__FreeBSD__) && __FreeBSD_version < 700000) || defined(__Userspace__)
+#if (defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 700000) || defined(__Userspace__)
 	if (hold_sblock == 0) {
 		SOCKBUF_LOCK(&so->so_rcv);
 		hold_sblock = 1;
 	}
 #endif
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	sbunlock(&so->so_rcv, 1);
 #endif
 
-#if defined(__FreeBSD__) && __FreeBSD_version < 700000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 700000
 	sbunlock(&so->so_rcv);
 #endif
 
@@ -6234,7 +6234,7 @@ sctp_sorecvmsg(struct socket *so,
 	    (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE)) {
 		goto out;
 	}
-#if (defined(__FreeBSD__) && __FreeBSD_version > 500000) || defined(__Windows__)
+#if (defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version > 500000) || defined(__Windows__)
 	if ((so->so_rcv.sb_state & SBS_CANTRCVMORE) && (so->so_rcv.sb_cc == 0)) {
 #else
 	if ((so->so_state & SS_CANTRCVMORE) && (so->so_rcv.sb_cc == 0)) {
@@ -6302,10 +6302,10 @@ sctp_sorecvmsg(struct socket *so,
 		SOCKBUF_UNLOCK(&so->so_rcv);
 		hold_sblock = 0;
 	}
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	error = sblock(&so->so_rcv, SBLOCKWAIT(in_flags));
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_version < 700000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 700000
 	error = sblock(&so->so_rcv, (block_allowed ? M_WAITOK : 0));
 #endif
 	/* we possibly have data we can read */
@@ -6659,7 +6659,7 @@ sctp_sorecvmsg(struct socket *so,
 		m = control->data;
 		while (m) {
 			/* Move out all we can */
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 #if defined(APPLE_LEOPARD)
 			cp_len = uio->uio_resid;
 #else
@@ -6677,12 +6677,12 @@ sctp_sorecvmsg(struct socket *so,
 				SCTP_INP_READ_UNLOCK(inp);
 				hold_rlock = 0;
 			}
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 			SCTP_SOCKET_UNLOCK(so, 0);
 #endif
 			if (cp_len > 0)
 				error = uiomove(mtod(m, char *), (int)cp_len, uio);
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 			SCTP_SOCKET_LOCK(so, 0);
 #endif
 			/* re-read */
@@ -6737,7 +6737,7 @@ sctp_sorecvmsg(struct socket *so,
 					/* been through it all, must hold sb lock ok to null tail */
 					if (control->data == NULL) {
 #ifdef INVARIANTS
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 						if ((control->end_added == 0) ||
 						    (TAILQ_NEXT(control, next) == NULL)) {
 							/* If the end is not added, OR the
@@ -6785,7 +6785,7 @@ sctp_sorecvmsg(struct socket *so,
 					copied_so_far += cp_len;
 				}
 			}
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 #if defined(APPLE_LEOPARD)
 			if ((out_flags & MSG_EOR) || (uio->uio_resid == 0)) {
 #else
@@ -6871,7 +6871,7 @@ sctp_sorecvmsg(struct socket *so,
 		if (out_flags & MSG_EOR) {
 			goto release;
 		}
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 #if defined(APPLE_LEOPARD)
 		if ((uio->uio_resid == 0) ||
 #else
@@ -6909,7 +6909,7 @@ sctp_sorecvmsg(struct socket *so,
 			sctp_user_rcvd(stcb, &freed_so_far, hold_rlock, rwnd_req);
 		}
 	wait_some_more:
-#if (defined(__FreeBSD__) && __FreeBSD_version > 500000) || defined(__Windows__)
+#if (defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version > 500000) || defined(__Windows__)
 		if (so->so_rcv.sb_state & SBS_CANTRCVMORE) {
 			goto release;
 		}
@@ -6934,13 +6934,13 @@ sctp_sorecvmsg(struct socket *so,
 		    (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_FRAG_INTERLEAVE))) {
 			goto release;
 		}
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 		sbunlock(&so->so_rcv, 1);
 #endif
 		if (so->so_rcv.sb_cc <= control->held_length) {
 			error = sbwait(&so->so_rcv);
 			if (error) {
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 				goto release;
 #else
 				goto release_unlocked;
@@ -6948,7 +6948,7 @@ sctp_sorecvmsg(struct socket *so,
 			}
 			control->held_length = 0;
 		}
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 		error = sblock(&so->so_rcv, SBLOCKWAIT(in_flags));
 #endif
 		if (hold_sblock) {
@@ -7020,7 +7020,7 @@ sctp_sorecvmsg(struct socket *so,
 		if (control->spec_flags & M_NOTIFICATION) {
 			out_flags |= MSG_NOTIFICATION;
 		}
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 #if defined(APPLE_LEOPARD)
 		uio->uio_resid = control->length;
 #else
@@ -7057,7 +7057,7 @@ sctp_sorecvmsg(struct socket *so,
 		SCTP_INP_READ_UNLOCK(inp);
 		hold_rlock = 0;
 	}
-#if (defined(__FreeBSD__) && __FreeBSD_version < 700000) || defined(__Userspace__)
+#if (defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 700000) || defined(__Userspace__)
 	if (hold_sblock == 0) {
 		SOCKBUF_LOCK(&so->so_rcv);
 		hold_sblock = 1;
@@ -7068,13 +7068,13 @@ sctp_sorecvmsg(struct socket *so,
 		hold_sblock = 0;
 	}
 #endif
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	sbunlock(&so->so_rcv, 1);
 #endif
 
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	sbunlock(&so->so_rcv);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 700000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 700000
 	sockbuf_lock = 0;
 #endif
 #endif
@@ -7109,7 +7109,7 @@ sctp_sorecvmsg(struct socket *so,
 	if (hold_sblock) {
 		SOCKBUF_UNLOCK(&so->so_rcv);
 	}
-#if defined(__FreeBSD__) && __FreeBSD_version >= 700000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 700000
 	if (sockbuf_lock) {
 		sbunlock(&so->so_rcv);
 	}
@@ -7138,7 +7138,7 @@ sctp_sorecvmsg(struct socket *so,
 		if (stcb) {
 			sctp_misc_ints(SCTP_SORECV_DONE,
 				       freed_so_far,
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 #if defined(APPLE_LEOPARD)
 				       ((uio) ? (slen - uio->uio_resid) : slen),
 #else
@@ -7152,7 +7152,7 @@ sctp_sorecvmsg(struct socket *so,
 		} else {
 			sctp_misc_ints(SCTP_SORECV_DONE,
 				       freed_so_far,
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 #if defined(APPLE_LEOPARD)
 				       ((uio) ? (slen - uio->uio_resid) : slen),
 #else
@@ -7282,7 +7282,7 @@ sctp_soreceive(	struct socket *so,
 		fromlen = 0;
 	}
 
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	SCTP_SOCKET_LOCK(so, 1);
 #endif
 	if (filling_sinfo) {
@@ -7314,7 +7314,7 @@ sctp_soreceive(	struct socket *so,
 #else
 		if (from) {
 #endif
-#if (defined(__FreeBSD__) && __FreeBSD_version > 500000) || defined(__Windows__)
+#if (defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version > 500000) || defined(__Windows__)
 			*psa = sodupsockaddr(from, M_NOWAIT);
 #else
 			*psa = dup_sockaddr(from, mp0 == 0);
@@ -7323,14 +7323,14 @@ sctp_soreceive(	struct socket *so,
 			*psa = NULL;
 		}
 	}
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	SCTP_SOCKET_UNLOCK(so, 1);
 #endif
 	return (error);
 }
 
 
-#if (defined(__FreeBSD__) && __FreeBSD_version < 603000) || defined(__Windows__)
+#if (defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 603000) || defined(__Windows__)
 /*
  * General routine to allocate a hash table with control of memory flags.
  * is in 7.0 and beyond for sure :-)
@@ -7382,7 +7382,7 @@ sctp_hashinit_flags(int elements, struct malloc_type *type,
 /*
  * __Userspace__ Defining sctp_hashinit_flags() and sctp_hashdestroy() for userland.
  * NOTE: We don't want multiple definitions here. So sctp_hashinit_flags() above for
- *__FreeBSD__ must be excluded.
+ *SCTP_KERNEL_FreeBSD must be excluded.
  *
  */
 
@@ -7973,7 +7973,7 @@ sctp_local_addr_count(struct sctp_tcb *stcb)
 							/* skip unspecified addrs */
 							continue;
 						}
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 						if (prison_check_ip4(stcb->sctp_ep->ip_inp.inp.inp_cred,
 						                     &sin->sin_addr) != 0) {
 							continue;
@@ -8002,7 +8002,7 @@ sctp_local_addr_count(struct sctp_tcb *stcb)
 						if (IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
 							continue;
 						}
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 						if (prison_check_ip6(stcb->sctp_ep->ip_inp.inp.inp_cred,
 						                     &sin6->sin6_addr) != 0) {
 							continue;
@@ -8131,7 +8131,7 @@ sctp_log_trace(uint32_t subsys, const char *str SCTP_UNUSED, uint32_t a, uint32_
 }
 
 #endif
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 #if __FreeBSD_version >= 800044
 static void
 sctp_recv_udp_tunneled_packet(struct mbuf *m, int off, struct inpcb *inp,
@@ -8349,7 +8349,7 @@ sctp_recv_icmp_tunneled_packet(int cmd, struct sockaddr *sa, void *vip, void *ct
 		}
 #endif
 	} else {
-#if defined(__FreeBSD__) && __FreeBSD_version < 500000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 500000
 		/*
 		 * XXX must be fixed for 5.x and higher, leave for
 		 * 4.x
@@ -8420,7 +8420,7 @@ sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa, void *d, void *ctx
 #endif
 	src.sin6_port = sh.src_port;
 	src.sin6_addr = ip6cp->ip6c_ip6->ip6_src;
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	if (in6_setscope(&src.sin6_addr, ip6cp->ip6c_m->m_pkthdr.rcvif, NULL) != 0) {
 		return;
 	}
@@ -8432,7 +8432,7 @@ sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa, void *d, void *ctx
 #endif
 	dst.sin6_port = sh.dest_port;
 	dst.sin6_addr = ip6cp->ip6c_ip6->ip6_dst;
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	if (in6_setscope(&dst.sin6_addr, ip6cp->ip6c_m->m_pkthdr.rcvif, NULL) != 0) {
 		return;
 	}
@@ -8463,7 +8463,7 @@ sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa, void *d, void *ctx
 				return;
 			}
 		} else {
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 			if (ip6cp->ip6c_m->m_pkthdr.len >=
 			    ip6cp->ip6c_off + sizeof(struct udphdr) +
 			                      sizeof(struct sctphdr) +
@@ -8532,7 +8532,7 @@ sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa, void *d, void *ctx
 		}
 #endif
 	} else {
-#if defined(__FreeBSD__) && __FreeBSD_version < 500000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 500000
 		if (PRC_IS_REDIRECT(cmd) && (inp != NULL)) {
 			in6_rtchange(inp, inet6ctlerrmap[cmd]);
 		}
@@ -8700,7 +8700,7 @@ sctp_min_mtu(uint32_t mtu1, uint32_t mtu2, uint32_t mtu3)
 	}
 }
 
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 void
 sctp_hc_set_mtu(union sctp_sockstore *addr, uint16_t fibnum, uint32_t mtu)
 {

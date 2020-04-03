@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#ifdef SCTP_KERNEL_FreeBSD
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 #endif
@@ -44,14 +44,14 @@ __FBSDID("$FreeBSD$");
 #include <sys/types.h>
 #if defined(SCTP_USE_NSS_SHA1)
 #if defined(__Userspace_os_Darwin)
-/* The NSS sources require __APPLE__ to be defined.
+/* The NSS sources require SCTP_KERNEL_APPLE to be defined.
  * XXX: Remove this ugly hack once the platform defines have been cleaned up.
  */
-#define __APPLE__
+#define SCTP_KERNEL_APPLE
 #endif
 #include <pk11pub.h>
 #if defined(__Userspace_os_Darwin)
-#undef __APPLE__
+#undef SCTP_KERNEL_APPLE
 #endif
 #elif defined(SCTP_USE_OPENSSL_SHA1)
 #include <openssl/sha.h>
@@ -83,7 +83,7 @@ struct sctp_sha1_context {
 #endif
 };
 
-#if (defined(__APPLE__) && defined(KERNEL))
+#if (defined(SCTP_KERNEL_APPLE) && defined(KERNEL))
 #ifndef _KERNEL
 #define _KERNEL
 #endif

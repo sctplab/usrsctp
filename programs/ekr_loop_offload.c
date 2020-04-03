@@ -78,7 +78,7 @@ handle_packets(void *arg)
 	fdp = (int *)arg;
 #endif
 	for (;;) {
-#if defined(__NetBSD__)
+#if defined(SCTP_KERNEL_NetBSD)
 		pthread_testcancel();
 #endif
 		length = recv(*fdp, buffer, MAX_PACKET_SIZE, 0);

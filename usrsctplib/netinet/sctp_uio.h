@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#ifdef SCTP_KERNEL_FreeBSD
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 336511 2018-07-19 20:16:33Z tuexen $");
 #endif
@@ -40,7 +40,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 336511 2018-07-19 20:16:33Z tuex
 #ifndef _NETINET_SCTP_UIO_H_
 #define _NETINET_SCTP_UIO_H_
 
-#if (defined(__APPLE__) && defined(KERNEL))
+#if (defined(SCTP_KERNEL_APPLE) && defined(KERNEL))
 #ifndef _KERNEL
 #define _KERNEL
 #endif
@@ -110,7 +110,7 @@ struct sctp_event_subscribe {
  * ancillary data structures
  */
 struct sctp_initmsg {
-#if defined(__FreeBSD__) && __FreeBSD_version < 800000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 800000
 	/* This is a bug. Not fixed for ABI compatibility */
 	uint32_t sinit_num_ostreams;
 	uint32_t sinit_max_instreams;
@@ -143,7 +143,7 @@ struct sctp_sndrcvinfo {
 	uint16_t sinfo_stream;
 	uint16_t sinfo_ssn;
 	uint16_t sinfo_flags;
-#if defined(__FreeBSD__) && __FreeBSD_version < 800000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 800000
 	uint16_t sinfo_pr_policy;
 #endif
 	uint32_t sinfo_ppid;
@@ -161,7 +161,7 @@ struct sctp_extrcvinfo {
 	uint16_t sinfo_stream;
 	uint16_t sinfo_ssn;
 	uint16_t sinfo_flags;
-#if defined(__FreeBSD__) && __FreeBSD_version < 800000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 800000
 	uint16_t sinfo_pr_policy;
 #endif
 	uint32_t sinfo_ppid;
@@ -1121,7 +1121,7 @@ struct sctpstat {
 
 #define SCTP_STAT_INCR(_x) SCTP_STAT_INCR_BY(_x,1)
 #define SCTP_STAT_DECR(_x) SCTP_STAT_DECR_BY(_x,1)
-#if defined(__FreeBSD__) && defined(SMP) && defined(SCTP_USE_PERCPU_STAT)
+#if defined(SCTP_KERNEL_FreeBSD) && defined(SMP) && defined(SCTP_USE_PERCPU_STAT)
 #define SCTP_STAT_INCR_BY(_x,_d) (SCTP_BASE_STATS[PCPU_GET(cpuid)]._x += _d)
 #define SCTP_STAT_DECR_BY(_x,_d) (SCTP_BASE_STATS[PCPU_GET(cpuid)]._x -= _d)
 #else
@@ -1150,7 +1150,7 @@ union sctp_sockstore {
 /* And something for us old timers */
 /***********************************/
 
-#ifndef __APPLE__
+#ifndef SCTP_KERNEL_APPLE
 #ifndef __Userspace__
 #ifndef ntohll
 #if defined(__Userspace_os_Linux)
@@ -1183,7 +1183,7 @@ union sctp_sockstore {
 struct xsctp_inpcb {
 	uint32_t last;
 	uint32_t flags;
-#if defined(__FreeBSD__) && __FreeBSD_version < 1000048
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 1000048
 	uint32_t features;
 #else
 	uint64_t features;
@@ -1193,7 +1193,7 @@ struct xsctp_inpcb {
 	uint32_t total_nospaces;
 	uint32_t fragmentation_point;
 	uint16_t local_port;
-#if defined(__FreeBSD__) && __FreeBSD_version > 1100096
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version > 1100096
 	uint16_t qlen_old;
 	uint16_t maxqlen_old;
 #else
@@ -1201,18 +1201,18 @@ struct xsctp_inpcb {
 	uint16_t maxqlen;
 #endif
 	uint16_t __spare16;
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	kvaddr_t socket;
 #else
 	void *socket;
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_version > 1100096
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version > 1100096
 	uint32_t qlen;
 	uint32_t maxqlen;
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_version < 1000048
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 1000048
 	uint32_t extra_padding[32]; /* future */
-#elif defined(__FreeBSD__) && (__FreeBSD_version < 1001517)
+#elif defined(SCTP_KERNEL_FreeBSD) && (__FreeBSD_version < 1001517)
 	uint32_t extra_padding[31]; /* future */
 #else
 	uint32_t extra_padding[26]; /* future */
@@ -1245,7 +1245,7 @@ struct xsctp_tcb {
 	uint16_t remote_port;                   /* sctpAssocEntry 4   */
 	struct sctp_timeval start_time;         /* sctpAssocEntry 16  */
 	struct sctp_timeval discontinuity_time; /* sctpAssocEntry 17  */
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 #if __FreeBSD_version >= 800000
 	uint32_t peers_rwnd;
 	sctp_assoc_t assoc_id;                  /* sctpAssocEntry 1   */
@@ -1281,7 +1281,7 @@ struct xsctp_raddr {
 	uint8_t heartbeat_enabled;         /* sctpAssocLocalRemEntry 4   */
 	uint8_t potentially_failed;
 	struct sctp_timeval start_time;    /* sctpAssocLocalRemEntry 8   */
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 #if __FreeBSD_version >= 800000
 	uint32_t rtt;
 	uint32_t heartbeat_interval;
@@ -1334,7 +1334,7 @@ sctp_lower_sosend(struct socket *so,
     int flags,
     struct sctp_sndrcvinfo *srcv
 #if !(defined(__Panda__) || defined(__Userspace__))
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 500000
     ,struct thread *p
 #elif defined(__Windows__)
     , PKTHREAD p
@@ -1365,7 +1365,7 @@ sctp_sorecvmsg(struct socket *so,
 #if !(defined(_KERNEL)) && !(defined(__Userspace__))
 
 __BEGIN_DECLS
-#if defined(__FreeBSD__) && __FreeBSD_version < 902000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 902000
 int	sctp_peeloff __P((int, sctp_assoc_t));
 int	sctp_bindx __P((int, struct sockaddr *, int, int));
 int	sctp_connectx __P((int, const struct sockaddr *, int, sctp_assoc_t *));

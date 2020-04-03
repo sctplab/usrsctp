@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#ifdef SCTP_KERNEL_FreeBSD
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 359405 2020-03-28 20:25:45Z tuexen $");
 #endif
@@ -563,7 +563,7 @@ extern void getwintimeofday(struct timeval *tv);
 					 ((t) < SCTP_TIMER_TYPE_LAST))
 
 
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 /* Number of ticks to run the main timer at in msec */
 #define SCTP_MAIN_TIMER_DEFAULT		10
 #endif
@@ -863,7 +863,7 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_CHUNKQUEUE_SCALE 10
 #endif
 
-#ifdef __FreeBSD__
+#ifdef SCTP_KERNEL_FreeBSD
 /* clock variance is 1 ms */
 #define SCTP_CLOCK_GRANULARITY	1
 #else
@@ -970,7 +970,7 @@ extern void getwintimeofday(struct timeval *tv);
 
 /*-
  * defines for socket lock states.
- * Used by __APPLE__ and SCTP_SO_LOCK_TESTING
+ * Used by SCTP_KERNEL_APPLE and SCTP_SO_LOCK_TESTING
  */
 #define SCTP_SO_LOCKED		1
 #define SCTP_SO_NOT_LOCKED	0
@@ -1025,7 +1025,7 @@ do { \
 	} \
 } while (0)
 
-#if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(SCTP_KERNEL_FreeBSD) || defined(__Windows__) || defined(__Userspace__)
 #define sctp_sowwakeup_locked(inp, so) \
 do { \
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_DONT_WAKE) { \
@@ -1056,7 +1056,7 @@ do { \
 	} \
 } while (0)
 
-#if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(SCTP_KERNEL_FreeBSD) || defined(__Windows__) || defined(__Userspace__)
 #define sctp_sorwakeup_locked(inp, so) \
 do { \
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_DONT_WAKE) { \

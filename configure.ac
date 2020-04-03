@@ -46,11 +46,11 @@ APPCFLAGS=""
 case $host_os in
 darwin*)
   CFLAGS="$CFLAGS -std=c99 -Wno-deprecated-declarations -D__APPLE_USE_RFC_2292"
-  LIBCFLAGS="$LIBCFLAGS -U__APPLE__ -D__Userspace_os_Darwin"
+  LIBCFLAGS="$LIBCFLAGS -D__Userspace_os_Darwin"
   ;;
 dragonfly*)
   CFLAGS="$CFLAGS -std=c99 -pthread"
-  LIBCFLAGS="$LIBCFLAGS -U__DragonFly__ -D__Userspace_os_DragonFly"
+  LIBCFLAGS="$LIBCFLAGS -D__Userspace_os_DragonFly"
   ;;
 freebsd*)
   CFLAGS="$CFLAGS -std=c99 -pthread"
@@ -58,7 +58,7 @@ freebsd*)
     CFLAGS="$CFLAGS -Wno-unknown-warning-option"
     LDFLAGS="$LDFLAGS -Qunused-arguments"
   fi
-  LIBCFLAGS="$LIBCFLAGS -U__FreeBSD__ -D__Userspace_os_FreeBSD"
+  LIBCFLAGS="$LIBCFLAGS -D__Userspace_os_FreeBSD"
   ;;
 linux*)
   CFLAGS="$CFLAGS -std=c99 -pthread -D_GNU_SOURCE -Wno-address-of-packed-member"
@@ -66,11 +66,11 @@ linux*)
   ;;
 netbsd*)
   CFLAGS="$CFLAGS -std=c99 -pthread"
-  LIBCFLAGS="$LIBCFLAGS -U__NetBSD__ -D__Userspace_os_NetBSD"
+  LIBCFLAGS="$LIBCFLAGS -D__Userspace_os_NetBSD"
   ;;
 openbsd*)
   CFLAGS="$CFLAGS -std=c99 -pthread"
-  LIBCFLAGS="$LIBCFLAGS -U__OpenBSD__ -D__Userspace_os_OpenBSD"
+  LIBCFLAGS="$LIBCFLAGS -D__Userspace_os_OpenBSD"
   ;;
 solaris*)
   CFLAGS="$CFLAGS -D_XPG4_2"

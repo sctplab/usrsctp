@@ -459,11 +459,11 @@ struct sx {int dummy;};
 #include <user_mbuf.h>
 /* #include <sys/uio.h> */
 /* #include <sys/lock.h> */
-#if defined(__FreeBSD__) && __FreeBSD_version > 602000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version > 602000
 #include <sys/rwlock.h>
 #endif
 /* #include <sys/kthread.h> */
-#if defined(__FreeBSD__) && __FreeBSD_version > 602000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version > 602000
 #include <sys/priv.h>
 #endif
 /* #include <sys/random.h> */

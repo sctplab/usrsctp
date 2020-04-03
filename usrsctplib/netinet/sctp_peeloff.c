@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#ifdef SCTP_KERNEL_FreeBSD
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_peeloff.c 337708 2018-08-13 13:58:45Z tuexen $");
 #endif
@@ -49,7 +49,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_peeloff.c 337708 2018-08-13 13:58:45Z 
 #include <netinet/sctputil.h>
 #include <netinet/sctp_auth.h>
 
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 #define APPLE_FILE_NO 5
 #endif
 
@@ -164,7 +164,7 @@ sctp_do_peeloff(struct socket *head, struct socket *so, sctp_assoc_t assoc_id)
 	atomic_add_int(&stcb->asoc.refcnt, 1);
 	SCTP_TCB_UNLOCK(stcb);
 
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	sctp_pull_off_control_to_new_inp(inp, n_inp, stcb, SBL_WAIT);
 #else
 	sctp_pull_off_control_to_new_inp(inp, n_inp, stcb, M_WAITOK);
@@ -205,18 +205,18 @@ sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
 	}
 	atomic_add_int(&stcb->asoc.refcnt, 1);
 	SCTP_TCB_UNLOCK(stcb);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 801000
 	CURVNET_SET(head->so_vnet);
 #endif
 	newso = sonewconn(head, SS_ISCONNECTED
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	    , NULL
 #elif defined(__Panda__)
 	    /* place this socket in the assoc's vrf id */
 	    , NULL, stcb->asoc.vrf_id
 #endif
 		);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 801000
 	CURVNET_RESTORE();
 #endif
 	if (newso == NULL) {
@@ -227,7 +227,7 @@ sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
 		return (NULL);
 
 	}
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	  else {
 		SCTP_SOCKET_LOCK(newso, 1);
 	}
@@ -288,7 +288,7 @@ sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
 	SOCK_UNLOCK(newso);
 	/* We remove it right away */
 
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(SCTP_KERNEL_FreeBSD) || defined(SCTP_KERNEL_APPLE) || defined(__Windows__) || defined(__Userspace__)
 #ifdef SCTP_LOCK_LOGGING
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LOCK_LOGGING_ENABLE) {
 		sctp_log_lock(inp, (struct sctp_tcb *)NULL, SCTP_LOG_LOCK_SOCK);
@@ -318,7 +318,7 @@ sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
 	 * And now the final hack. We move data in the pending side i.e.
 	 * head to the new socket buffer. Let the GRUBBING begin :-0
 	 */
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	sctp_pull_off_control_to_new_inp(inp, n_inp, stcb, SBL_WAIT);
 #else
 	sctp_pull_off_control_to_new_inp(inp, n_inp, stcb, M_WAITOK);

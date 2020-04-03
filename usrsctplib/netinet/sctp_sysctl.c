@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#ifdef SCTP_KERNEL_FreeBSD
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 356357 2020-01-04 20:33:12Z tuexen $");
 #endif
@@ -44,15 +44,15 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.c 356357 2020-01-04 20:33:12Z t
 #include <netinet/sctp_pcb.h>
 #include <netinet/sctputil.h>
 #include <netinet/sctp_output.h>
-#ifdef __FreeBSD__
+#ifdef SCTP_KERNEL_FreeBSD
 #include <sys/smp.h>
 #include <sys/sysctl.h>
 #endif
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 #include <netinet/sctp_bsd_addr.h>
 #endif
 
-#ifdef __FreeBSD__
+#ifdef SCTP_KERNEL_FreeBSD
 FEATURE(sctp, "Stream Control Transmission Protocol");
 #endif
 
@@ -74,7 +74,7 @@ sctp_init_sysctls()
 	SCTP_BASE_SYSCTL(sctp_reconfig_enable) = SCTPCTL_RECONFIG_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_nrsack_enable) = SCTPCTL_NRSACK_ENABLE_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_pktdrop_enable) = SCTPCTL_PKTDROP_ENABLE_DEFAULT;
-#if !(defined(__FreeBSD__) && __FreeBSD_version >= 800000)
+#if !(defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 800000)
 	SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) = SCTPCTL_LOOPBACK_NOCSUM_DEFAULT;
 #endif
 	SCTP_BASE_SYSCTL(sctp_peer_chunk_oh) = SCTPCTL_PEER_CHKOH_DEFAULT;
@@ -165,13 +165,13 @@ sctp_init_sysctls()
 #if defined(SCTP_DEBUG)
 	SCTP_BASE_SYSCTL(sctp_debug_on) = SCTPCTL_DEBUG_DEFAULT;
 #endif
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	SCTP_BASE_SYSCTL(sctp_ignore_vmware_interfaces) = SCTPCTL_IGNORE_VMWARE_INTERFACES_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_main_timer) = SCTPCTL_MAIN_TIMER_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_addr_watchdog_limit) = SCTPCTL_ADDR_WATCHDOG_LIMIT_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_vtag_watchdog_limit) = SCTPCTL_VTAG_WATCHDOG_LIMIT_DEFAULT;
 #endif
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 	SCTP_BASE_SYSCTL(sctp_output_unlocked) = SCTPCTL_OUTPUT_UNLOCKED_DEFAULT;
 #endif
 }
@@ -189,7 +189,7 @@ sctp_finish_sysctls()
 }
 #endif
 
-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__Windows__)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_KERNEL_FreeBSD) || defined(__Windows__)
 /* It returns an upper limit. No filtering is done here */
 static unsigned int
 sctp_sysctl_number_of_addresses(struct sctp_inpcb *inp)
@@ -329,7 +329,7 @@ sctp_sysctl_copy_out_local_addresses(struct sctp_inpcb *inp, struct sctp_tcb *st
 						sin = &sctp_ifa->address.sin;
 						if (sin->sin_addr.s_addr == 0)
 							continue;
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 						if (prison_check_ip4(inp->ip_inp.inp.inp_cred,
 						                     &sin->sin_addr) != 0) {
 							continue;
@@ -350,7 +350,7 @@ sctp_sysctl_copy_out_local_addresses(struct sctp_inpcb *inp, struct sctp_tcb *st
 						sin6 = &sctp_ifa->address.sin6;
 						if (IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr))
 							continue;
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 						if (prison_check_ip6(inp->ip_inp.inp.inp_cred,
 						                     &sin6->sin6_addr) != 0) {
 							continue;
@@ -428,7 +428,7 @@ sctp_sysctl_copy_out_local_addresses(struct sctp_inpcb *inp, struct sctp_tcb *st
 /*
  * sysctl functions
  */
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 static int
 sctp_sysctl_handle_assoclist SYSCTL_HANDLER_ARGS
 {
@@ -458,7 +458,7 @@ sctp_sysctl_handle_assoclist(SYSCTL_HANDLER_ARGS)
 	number_of_remote_addresses = 0;
 
 	SCTP_INP_INFO_RLOCK();
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	if (req->oldptr == USER_ADDR_NULL) {
 #else
 	if (req->oldptr == NULL) {
@@ -490,7 +490,7 @@ sctp_sysctl_handle_assoclist(SYSCTL_HANDLER_ARGS)
 #endif
 		return (0);
 	}
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	if (req->newptr != USER_ADDR_NULL) {
 #else
 	if (req->newptr != NULL) {
@@ -511,7 +511,7 @@ sctp_sysctl_handle_assoclist(SYSCTL_HANDLER_ARGS)
 		xinpcb.last = 0;
 		xinpcb.local_port = ntohs(inp->sctp_lport);
 		xinpcb.flags = inp->sctp_flags;
-#if defined(__FreeBSD__) && __FreeBSD_version < 1000048
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version < 1000048
 		xinpcb.features = (uint32_t)inp->sctp_features;
 #else
 		xinpcb.features = inp->sctp_features;
@@ -520,7 +520,7 @@ sctp_sysctl_handle_assoclist(SYSCTL_HANDLER_ARGS)
 		xinpcb.total_recvs = inp->total_recvs;
 		xinpcb.total_nospaces = inp->total_nospaces;
 		xinpcb.fragmentation_point = inp->sctp_frag_point;
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 		xinpcb.socket = (uintptr_t)inp->sctp_socket;
 #else
 		xinpcb.socket = inp->sctp_socket;
@@ -532,12 +532,12 @@ sctp_sysctl_handle_assoclist(SYSCTL_HANDLER_ARGS)
 			xinpcb.qlen = 0;
 			xinpcb.maxqlen = 0;
 		} else {
-#if defined(__FreeBSD__) && __FreeBSD_version >= 1200034
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 1200034
 			xinpcb.qlen = so->sol_qlen;
 #else
 			xinpcb.qlen = so->so_qlen;
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_version > 1100096
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version > 1100096
 #if __FreeBSD_version >= 1200034
 			xinpcb.qlen_old = so->sol_qlen > USHRT_MAX ?
 			    USHRT_MAX : (uint16_t) so->sol_qlen;
@@ -546,12 +546,12 @@ sctp_sysctl_handle_assoclist(SYSCTL_HANDLER_ARGS)
 			    USHRT_MAX : (uint16_t) so->so_qlen;
 #endif
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_version >= 1200034
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 1200034
 			xinpcb.maxqlen = so->sol_qlimit;
 #else
 			xinpcb.maxqlen = so->so_qlimit;
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_version > 1100096
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version > 1100096
 #if __FreeBSD_version >= 1200034
 			xinpcb.maxqlen_old = so->sol_qlimit > USHRT_MAX ?
 			    USHRT_MAX : (uint16_t) so->sol_qlimit;
@@ -587,7 +587,7 @@ sctp_sysctl_handle_assoclist(SYSCTL_HANDLER_ARGS)
 				xstcb.primary_addr = stcb->asoc.primary_destination->ro._l_addr;
 			xstcb.heartbeat_interval = stcb->asoc.heart_beat_delay;
 			xstcb.state = (uint32_t)sctp_map_assoc_state(stcb->asoc.state);
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 #if __FreeBSD_version >= 800000
 			/* 7.0 does not support these */
 			xstcb.assoc_id = sctp_get_associd(stcb);
@@ -648,7 +648,7 @@ sctp_sysctl_handle_assoclist(SYSCTL_HANDLER_ARGS)
 				xraddr.cwnd = net->cwnd;
 				xraddr.flight_size = net->flight_size;
 				xraddr.mtu = net->mtu;
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 #if __FreeBSD_version >= 800000
 				xraddr.rtt = net->rtt / 1000;
 				xraddr.heartbeat_interval = net->heart_beat_delay;
@@ -721,7 +721,7 @@ skip:
 	return (error);
 }
 
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 static int
 sctp_sysctl_handle_udp_tunneling SYSCTL_HANDLER_ARGS
 {
@@ -738,7 +738,7 @@ sctp_sysctl_handle_udp_tunneling(SYSCTL_HANDLER_ARGS)
 	old = SCTP_BASE_SYSCTL(sctp_udp_tunneling_port);
 	SCTP_INP_INFO_RUNLOCK();
 	new = old;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800056 && __FreeBSD_version < 1000100
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 800056 && __FreeBSD_version < 1000100
 #ifdef VIMAGE
 	error = vnet_sysctl_handle_int(oidp, &new, 0, req);
 #else
@@ -748,7 +748,7 @@ sctp_sysctl_handle_udp_tunneling(SYSCTL_HANDLER_ARGS)
 	error = sysctl_handle_int(oidp, &new, 0, req);
 #endif
 	if ((error == 0) &&
-#if defined (__APPLE__)
+#if defined (SCTP_KERNEL_APPLE)
 	    (req->newptr != USER_ADDR_NULL)) {
 #else
 	    (req->newptr != NULL)) {
@@ -781,7 +781,7 @@ sctp_sysctl_handle_udp_tunneling(SYSCTL_HANDLER_ARGS)
 	return (error);
 }
 
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 int sctp_is_vmware_interface(struct ifnet *);
 
 static int
@@ -814,7 +814,7 @@ sctp_sysctl_handle_vmware_interfaces SYSCTL_HANDLER_ARGS
 }
 #endif
 
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 static int
 sctp_sysctl_handle_auth SYSCTL_HANDLER_ARGS
 {
@@ -828,7 +828,7 @@ sctp_sysctl_handle_auth(SYSCTL_HANDLER_ARGS)
 	uint32_t new;
 
 	new = SCTP_BASE_SYSCTL(sctp_auth_enable);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800056 && __FreeBSD_version < 1000100
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 800056 && __FreeBSD_version < 1000100
 #ifdef VIMAGE
 	error = vnet_sysctl_handle_int(oidp, &new, 0, req);
 #else
@@ -838,7 +838,7 @@ sctp_sysctl_handle_auth(SYSCTL_HANDLER_ARGS)
 	error = sysctl_handle_int(oidp, &new, 0, req);
 #endif
 	if ((error == 0) &&
-#if defined (__APPLE__)
+#if defined (SCTP_KERNEL_APPLE)
 	    (req->newptr != USER_ADDR_NULL)) {
 #else
 	    (req->newptr != NULL)) {
@@ -859,7 +859,7 @@ sctp_sysctl_handle_auth(SYSCTL_HANDLER_ARGS)
 	return (error);
 }
 
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 static int
 sctp_sysctl_handle_asconf SYSCTL_HANDLER_ARGS
 {
@@ -873,7 +873,7 @@ sctp_sysctl_handle_asconf(SYSCTL_HANDLER_ARGS)
 	uint32_t new;
 
 	new = SCTP_BASE_SYSCTL(sctp_asconf_enable);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800056 && __FreeBSD_version < 1000100
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 800056 && __FreeBSD_version < 1000100
 #ifdef VIMAGE
 	error = vnet_sysctl_handle_int(oidp, &new, 0, req);
 #else
@@ -883,7 +883,7 @@ sctp_sysctl_handle_asconf(SYSCTL_HANDLER_ARGS)
 	error = sysctl_handle_int(oidp, &new, 0, req);
 #endif
 	if ((error == 0) &&
-#if defined (__APPLE__)
+#if defined (SCTP_KERNEL_APPLE)
 	    (req->newptr != USER_ADDR_NULL)) {
 #else
 	    (req->newptr != NULL)) {
@@ -904,7 +904,7 @@ sctp_sysctl_handle_asconf(SYSCTL_HANDLER_ARGS)
 	return (error);
 }
 
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 static int
 sctp_sysctl_handle_stats SYSCTL_HANDLER_ARGS
 {
@@ -915,7 +915,7 @@ sctp_sysctl_handle_stats(SYSCTL_HANDLER_ARGS)
 {
 #endif
 	int error;
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 #if defined(SMP) && defined(SCTP_USE_PERCPU_STAT)
 	struct sctpstat *sarry;
 	struct sctpstat sb;
@@ -924,7 +924,7 @@ sctp_sysctl_handle_stats(SYSCTL_HANDLER_ARGS)
 	struct sctpstat sb_temp;
 #endif
 
-#if defined (__APPLE__)
+#if defined (SCTP_KERNEL_APPLE)
 	if ((req->newptr != USER_ADDR_NULL) &&
 #else
 	if ((req->newptr != NULL) &&
@@ -932,7 +932,7 @@ sctp_sysctl_handle_stats(SYSCTL_HANDLER_ARGS)
 	    (req->newlen != sizeof(struct sctpstat))) {
 		return (EINVAL);
 	}
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	memset(&sb_temp, 0, sizeof(struct sctpstat));
 
 	if (req->newptr != NULL) {
@@ -1089,7 +1089,7 @@ sctp_sysctl_handle_stats(SYSCTL_HANDLER_ARGS)
 }
 
 #if defined(SCTP_LOCAL_TRACE_BUF)
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 static int
 sctp_sysctl_handle_trace_log SYSCTL_HANDLER_ARGS
 {
@@ -1109,7 +1109,7 @@ sctp_sysctl_handle_trace_log(SYSCTL_HANDLER_ARGS)
 	return (error);
 }
 
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 static int
 sctp_sysctl_handle_trace_log_clear SYSCTL_HANDLER_ARGS
 {
@@ -1138,8 +1138,8 @@ sctp_sysctl_handle_trace_log_clear(SYSCTL_HANDLER_ARGS)
 }
 #endif
 
-#if defined(__APPLE__) || defined(__FreeBSD__)
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_KERNEL_FreeBSD)
+#if defined(SCTP_KERNEL_FreeBSD)
 #if __FreeBSD_version >= 800056 && __FreeBSD_version < 1000100
 #ifdef VIMAGE
 #define SCTP_UINT_SYSCTL(name, var_name, prefix)			\
@@ -1258,7 +1258,7 @@ SYSCTL_PROC(_net_inet_sctp, OID_AUTO, asconf_enable, CTLFLAG_VNET|CTLTYPE_UINT|C
 SCTP_UINT_SYSCTL(reconfig_enable, sctp_reconfig_enable, SCTPCTL_RECONFIG_ENABLE)
 SCTP_UINT_SYSCTL(nrsack_enable, sctp_nrsack_enable, SCTPCTL_NRSACK_ENABLE)
 SCTP_UINT_SYSCTL(pktdrop_enable, sctp_pktdrop_enable, SCTPCTL_PKTDROP_ENABLE)
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 SCTP_UINT_SYSCTL(loopback_nocsum, sctp_no_csum_on_loopback, SCTPCTL_LOOPBACK_NOCSUM)
 #endif
 SCTP_UINT_SYSCTL(peer_chkoh, sctp_peer_chunk_oh, SCTPCTL_PEER_CHKOH)
@@ -1330,14 +1330,14 @@ SCTP_UINT_SYSCTL(diag_info_code, sctp_diag_info_code, SCTPCTL_DIAG_INFO_CODE)
 #ifdef SCTP_DEBUG
 SCTP_UINT_SYSCTL(debug, sctp_debug_on, SCTPCTL_DEBUG)
 #endif
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 SCTP_UINT_SYSCTL(main_timer, sctp_main_timer, SCTPCTL_MAIN_TIMER)
 SYSCTL_PROC(_net_inet_sctp, OID_AUTO, ignore_vmware_interfaces, CTLTYPE_UINT|CTLFLAG_RW,
             NULL, 0, sctp_sysctl_handle_vmware_interfaces, "IU", SCTPCTL_IGNORE_VMWARE_INTERFACES_DESC);
 SCTP_UINT_SYSCTL(addr_watchdog_limit, sctp_addr_watchdog_limit, SCTPCTL_ADDR_WATCHDOG_LIMIT)
 SCTP_UINT_SYSCTL(vtag_watchdog_limit, sctp_vtag_watchdog_limit, SCTPCTL_VTAG_WATCHDOG_LIMIT)
 #endif
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_SO_LOCK_TESTING)
 SCTP_UINT_SYSCTL(output_unlocked, sctp_output_unlocked, SCTPCTL_OUTPUT_UNLOCKED)
 #endif
 SYSCTL_PROC(_net_inet_sctp, OID_AUTO, stats, CTLFLAG_VNET|CTLTYPE_STRUCT|CTLFLAG_RW,

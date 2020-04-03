@@ -59,7 +59,7 @@
 /*
  * Callout/Timer routines for OS that doesn't have them
  */
-#if defined(__APPLE__) || defined(__Userspace__)
+#if defined(SCTP_KERNEL_APPLE) || defined(__Userspace__)
 static uint32_t ticks = 0;
 #else
 extern int ticks;
@@ -180,7 +180,7 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 	SCTP_TIMERQ_UNLOCK();
 }
 
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 void
 sctp_timeout(void *arg SCTP_UNUSED)
 {

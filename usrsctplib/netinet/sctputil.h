@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#ifdef SCTP_KERNEL_FreeBSD
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 359405 2020-03-28 20:25:45Z tuexen $");
 #endif
@@ -57,7 +57,7 @@ void sctp_m_freem(struct mbuf *m);
 #define sctp_m_freem m_freem
 #endif
 
-#if defined(SCTP_LOCAL_TRACE_BUF) || defined(__APPLE__)
+#if defined(SCTP_LOCAL_TRACE_BUF) || defined(SCTP_KERNEL_APPLE)
 void
 sctp_log_trace(uint32_t fr, const char *str SCTP_UNUSED, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e, uint32_t f);
 #endif
@@ -111,7 +111,7 @@ sctp_mtu_size_reset(struct sctp_inpcb *, struct sctp_association *, uint32_t);
 void
 sctp_wakeup_the_read_socket(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
     int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
 );
@@ -131,7 +131,7 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
     int end,
     int inpread_locked,
     int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
     );
@@ -163,7 +163,7 @@ struct mbuf *
 sctp_pad_lastmbuf(struct mbuf *, int, struct mbuf *);
 
 void sctp_ulp_notify(uint32_t, struct sctp_tcb *, uint32_t, void *, int
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
     );
@@ -180,7 +180,7 @@ void sctp_stop_timers_for_shutdown(struct sctp_tcb *);
 void sctp_stop_association_timers(struct sctp_tcb *, bool);
 
 void sctp_report_all_outbound(struct sctp_tcb *, uint16_t, int, int
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
     );
@@ -189,7 +189,7 @@ int sctp_expand_mapping_array(struct sctp_association *, uint32_t);
 
 void sctp_abort_notification(struct sctp_tcb *, uint8_t, uint16_t,
 			     struct sctp_abort_chunk *, int
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
     );
@@ -199,7 +199,7 @@ void
 sctp_abort_association(struct sctp_inpcb *, struct sctp_tcb *, struct mbuf *,
                        int, struct sockaddr *, struct sockaddr *,
                        struct sctphdr *, struct mbuf *,
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
                        uint8_t, uint32_t,
 #endif
                        uint32_t, uint16_t);
@@ -209,7 +209,7 @@ sctp_abort_association(struct sctp_inpcb *, struct sctp_tcb *, struct mbuf *,
 void
 sctp_abort_an_association(struct sctp_inpcb *, struct sctp_tcb *,
     struct mbuf *, int
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
 );
@@ -218,7 +218,7 @@ void sctp_handle_ootb(struct mbuf *, int, int,
                       struct sockaddr *, struct sockaddr *,
                       struct sctphdr *, struct sctp_inpcb *,
                       struct mbuf *,
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
                       uint8_t, uint32_t, uint16_t,
 #endif
                       uint32_t, uint16_t);
@@ -280,7 +280,7 @@ void sctp_print_address(struct sockaddr *);
 int
 sctp_release_pr_sctp_chunk(struct sctp_tcb *, struct sctp_tmit_chunk *,
     uint8_t, int
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
 );
@@ -355,7 +355,7 @@ do { \
 } while (0)
 
 /* functions to start/stop udp tunneling */
-#if defined(__APPLE__) || defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_APPLE) || defined(SCTP_KERNEL_FreeBSD)
 void sctp_over_udp_stop(void);
 int sctp_over_udp_start(void);
 #endif
@@ -424,7 +424,7 @@ void sctp_audit_log(uint8_t, uint8_t);
 
 #endif
 uint32_t sctp_min_mtu(uint32_t, uint32_t, uint32_t);
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 void sctp_hc_set_mtu(union sctp_sockstore *, uint16_t, uint32_t);
 uint32_t sctp_hc_get_mtu(union sctp_sockstore *, uint16_t);
 #endif

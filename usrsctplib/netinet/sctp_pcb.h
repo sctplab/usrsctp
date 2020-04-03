@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#ifdef SCTP_KERNEL_FreeBSD
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 359379 2020-03-27 21:48:52Z tuexen $");
 #endif
@@ -149,7 +149,7 @@ struct sctp_tagblock {
 
 
 struct sctp_epinfo {
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 #ifdef INET
 	struct socket *udp4_tun_socket;
 #endif
@@ -189,7 +189,7 @@ struct sctp_epinfo {
 	struct sctppcbhead listhead;
 	struct sctpladdr addr_wq;
 
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	struct inpcbhead inplisthead;
 	struct inpcbinfo sctbinfo;
 #endif
@@ -204,7 +204,7 @@ struct sctp_epinfo {
 	sctp_zone_t ipi_zone_asconf;
 	sctp_zone_t ipi_zone_asconf_ack;
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 503000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 503000
 #if __FreeBSD_version <= 602000
 	struct mtx ipi_ep_mtx;
 #else
@@ -224,7 +224,7 @@ struct sctp_epinfo {
 	userland_mutex_t ipi_count_mtx;
 	userland_mutex_t ipi_pktlog_mtx;
 	userland_mutex_t wq_addr_mtx;
-#elif defined(__APPLE__)
+#elif defined(SCTP_KERNEL_APPLE)
 #ifdef _KERN_LOCKS_H_
 	lck_mtx_t *ipi_addr_mtx;
 	lck_mtx_t *ipi_count_mtx;
@@ -292,7 +292,7 @@ struct sctp_base_info {
 	 * anchor the system must be here.
 	 */
 	struct sctp_epinfo sctppcbinfo;
-#if defined(__FreeBSD__) && defined(SMP) && defined(SCTP_USE_PERCPU_STAT)
+#if defined(SCTP_KERNEL_FreeBSD) && defined(SMP) && defined(SCTP_USE_PERCPU_STAT)
 	struct sctpstat    *sctpstat;
 #else
 	struct sctpstat    sctpstat;
@@ -305,10 +305,10 @@ struct sctp_base_info {
 	int packet_log_end;
 	uint8_t packet_log_buffer[SCTP_PACKET_LOG_SIZE];
 #endif
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
 	eventhandler_tag eh_tag;
 #endif
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	int sctp_main_timer_ticks;
 #endif
 #if defined(__Userspace__)
@@ -457,7 +457,7 @@ struct sctp_inpcb {
 		        ~SCTP_ALIGNM1];
 	}     ip_inp;
 
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	/* leave some space in case i386 inpcb is bigger than ppc */
 	uint8_t		padding[128];
 #endif
@@ -520,7 +520,7 @@ struct sctp_inpcb {
 #endif
 	struct mbuf *pkt, *pkt_last;
 	struct mbuf *control;
-#if !(defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__))
+#if !(defined(SCTP_KERNEL_FreeBSD) || defined(SCTP_KERNEL_APPLE) || defined(__Windows__) || defined(__Userspace__))
 #ifndef INP_IPV6
 #define INP_IPV6	0x1
 #endif
@@ -533,7 +533,7 @@ struct sctp_inpcb {
         uint8_t inp_ip_tos;    /* defined as macro in user_inpcb.h */
 	uint8_t inp_ip_resv;
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_version >= 503000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 503000
 	struct mtx inp_mtx;
 	struct mtx inp_create_mtx;
 	struct mtx inp_rdata_mtx;
@@ -543,7 +543,7 @@ struct sctp_inpcb {
 	userland_mutex_t inp_create_mtx;
 	userland_mutex_t inp_rdata_mtx;
 	int32_t refcount;
-#elif defined(__APPLE__)
+#elif defined(SCTP_KERNEL_APPLE)
 #if defined(SCTP_APPLE_RWLOCK)
 	lck_rw_t *inp_mtx;
 #else
@@ -560,7 +560,7 @@ struct sctp_inpcb {
     /* TODO decide on __Userspace__ locks */
 	int32_t refcount;
 #endif
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	int32_t refcount;
 
 	uint32_t lock_caller1;
@@ -641,13 +641,13 @@ struct sctp_tcb {
 	int freed_from_where;
 	uint16_t rport;		/* remote port in network format */
 	uint16_t resv;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 503000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 503000
 	struct mtx tcb_mtx;
 	struct mtx tcb_send_mtx;
 #elif defined(SCTP_PROCESS_LEVEL_LOCKS)
 	userland_mutex_t tcb_mtx;
 	userland_mutex_t tcb_send_mtx;
-#elif defined(__APPLE__)
+#elif defined(SCTP_KERNEL_APPLE)
 	lck_mtx_t* tcb_mtx;
 	lck_mtx_t* tcb_send_mtx;
 #elif defined(__Windows__)
@@ -656,7 +656,7 @@ struct sctp_tcb {
 #elif defined(__Userspace__)
     /* TODO decide on __Userspace__ locks */
 #endif
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 	uint32_t caller1;
 	uint32_t caller2;
 	uint32_t caller3;
@@ -664,11 +664,11 @@ struct sctp_tcb {
 };
 
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 503000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 503000
 
 #include <netinet/sctp_lock_bsd.h>
 
-#elif defined(__APPLE__)
+#elif defined(SCTP_KERNEL_APPLE)
 /*
  * Apple MacOS X 10.4 "Tiger"
  */
@@ -701,7 +701,7 @@ struct sctp_tcb {
  * goes with the base info. sctp_pcb.c has
  * the real definition.
  */
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 801000
 VNET_DECLARE(struct sctp_base_info, system_base_info) ;
 #else
 extern struct sctp_base_info system_base_info;
@@ -754,7 +754,7 @@ struct sctp_nets *sctp_findnet(struct sctp_tcb *, struct sockaddr *);
 
 struct sctp_inpcb *sctp_pcb_findep(struct sockaddr *, int, int, uint32_t);
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 500000
 int sctp_inpcb_bind(struct socket *, struct sockaddr *,
 		    struct sctp_ifa *,struct thread *);
 #elif defined(__Windows__)
@@ -811,7 +811,7 @@ void sctp_inpcb_free(struct sctp_inpcb *, int, int);
 #define SCTP_DONT_INITIALIZE_AUTH_PARAMS	0
 #define SCTP_INITIALIZE_AUTH_PARAMS		1
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 500000
 struct sctp_tcb *
 sctp_aloc_assoc(struct sctp_inpcb *, struct sockaddr *,
                 int *, uint32_t, uint32_t, uint16_t, uint16_t, struct thread *,
@@ -891,7 +891,7 @@ sctp_initiate_iterator(inp_func inpf,
 		       end_func ef,
 		       struct sctp_inpcb *,
 		       uint8_t co_off);
-#if defined(__FreeBSD__) && defined(SCTP_MCORE_INPUT) && defined(SMP)
+#if defined(SCTP_KERNEL_FreeBSD) && defined(SCTP_MCORE_INPUT) && defined(SMP)
 void
 sctp_queue_to_mcore(struct mbuf *m, int off, int cpu_to_use);
 

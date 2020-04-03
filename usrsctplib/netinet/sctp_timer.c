@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#ifdef SCTP_KERNEL_FreeBSD
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 359405 2020-03-28 20:25:45Z tuexen $");
 #endif
@@ -62,7 +62,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 359405 2020-03-28 20:25:45Z tu
 #endif
 #endif
 
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 #define APPLE_FILE_NO 6
 #endif
 
@@ -517,7 +517,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 	}
 	tv.tv_sec = cur_rto / 1000000;
 	tv.tv_usec = cur_rto % 1000000;
-#ifndef __FreeBSD__
+#ifndef SCTP_KERNEL_FreeBSD
 	timersub(&now, &tv, &min_wait);
 #else
 	min_wait = now;
@@ -614,7 +614,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 			}
 			if (stcb->asoc.prsctp_supported && PR_SCTP_TTL_ENABLED(chk->flags)) {
 				/* Is it expired? */
-#ifndef __FreeBSD__
+#ifndef SCTP_KERNEL_FreeBSD
 				if (timercmp(&now, &chk->rec.data.timetodrop, >)) {
 #else
 				if (timevalcmp(&now, &chk->rec.data.timetodrop, >)) {
@@ -1442,7 +1442,7 @@ sctp_heartbeat_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 
 		if ((net->last_sent_time.tv_sec > 0) ||
 		    (net->last_sent_time.tv_usec > 0)) {
-#ifdef __FreeBSD__
+#ifdef SCTP_KERNEL_FreeBSD
 			struct timeval diff;
 
 			SCTP_GETTIME_TIMEVAL(&diff);
@@ -1488,7 +1488,7 @@ sctp_pathmtu_timer(struct sctp_inpcb *inp,
 				if (net->ro._l_addr.sa.sa_family == AF_INET6) {
 					struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&net->ro._l_addr;
 					/* KAME hack: embed scopeid */
-#if defined(__APPLE__)
+#if defined(SCTP_KERNEL_APPLE)
 #if defined(APPLE_LEOPARD) || defined(APPLE_SNOWLEOPARD)
 					(void)in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL);
 #else

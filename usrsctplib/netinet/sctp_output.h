@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#ifdef SCTP_KERNEL_FreeBSD
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_output.h 351654 2019-09-01 10:09:53Z tuexen $");
 #endif
@@ -71,7 +71,7 @@ sctp_source_address_selection(struct sctp_inpcb *inp,
 			      sctp_route_t *ro, struct sctp_nets *net,
 			      int non_asoc_addr_ok, uint32_t vrf_id);
 
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Userspace__)
+#if defined(SCTP_KERNEL_FreeBSD) || defined(SCTP_KERNEL_APPLE) || defined(__Userspace__)
 int
 sctp_v6src_match_nexthop(struct sockaddr_in6 *src6, sctp_route_t *ro);
 int
@@ -79,7 +79,7 @@ sctp_v4src_match_nexthop(struct sctp_ifa *sifa, sctp_route_t *ro);
 #endif
 
 void sctp_send_initiate(struct sctp_inpcb *, struct sctp_tcb *, int
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
     );
@@ -90,7 +90,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *, struct sctp_tcb *,
                        int, int,
                        struct sockaddr *, struct sockaddr *,
                        struct sctphdr *, struct sctp_init_chunk *,
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
                        uint8_t, uint32_t,
 #endif
                        uint32_t, uint16_t);
@@ -124,7 +124,7 @@ void sctp_send_shutdown_complete(struct sctp_tcb *, struct sctp_nets *, int);
 
 void sctp_send_shutdown_complete2(struct sockaddr *, struct sockaddr *,
                                   struct sctphdr *,
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
                                   uint8_t, uint32_t, uint16_t,
 #endif
                                   uint32_t, uint16_t);
@@ -148,7 +148,7 @@ void sctp_move_chunks_from_net(struct sctp_tcb *stcb, struct sctp_nets *net);
 					sizeof(struct sctp_idata_chunk) : \
 					sizeof(struct sctp_data_chunk))
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 500000
 int
 sctp_output(struct sctp_inpcb *, struct mbuf *, struct sockaddr *,
     struct mbuf *, struct thread *, int);
@@ -176,12 +176,12 @@ sctp_output(struct sctp_inpcb *,
 #endif
 
 void sctp_chunk_output(struct sctp_inpcb *, struct sctp_tcb *, int, int
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
     );
 void sctp_send_abort_tcb(struct sctp_tcb *, struct mbuf *, int
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(SCTP_KERNEL_APPLE) && !defined(SCTP_SO_LOCK_TESTING)
     SCTP_UNUSED
 #endif
     );
@@ -225,14 +225,14 @@ sctp_send_str_reset_req(struct sctp_tcb *, uint16_t , uint16_t *,
 void
 sctp_send_abort(struct mbuf *, int, struct sockaddr *, struct sockaddr *,
                 struct sctphdr *, uint32_t, struct mbuf *,
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
                 uint8_t, uint32_t, uint16_t,
 #endif
                 uint32_t, uint16_t);
 
 void sctp_send_operr_to(struct sockaddr *, struct sockaddr *,
                         struct sctphdr *, uint32_t, struct mbuf *,
-#if defined(__FreeBSD__)
+#if defined(SCTP_KERNEL_FreeBSD)
                         uint8_t, uint32_t, uint16_t,
 #endif
                         uint32_t, uint16_t);
@@ -251,11 +251,11 @@ sctp_sosend(struct socket *so,
     struct mbuf *top,
     struct mbuf *control,
 #endif
-#if defined(__APPLE__) || defined(__Panda__)
+#if defined(SCTP_KERNEL_APPLE) || defined(__Panda__)
     int flags
 #else
     int flags,
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(SCTP_KERNEL_FreeBSD) && __FreeBSD_version >= 500000
     struct thread *p
 #elif defined(__Windows__)
     PKTHREAD p
