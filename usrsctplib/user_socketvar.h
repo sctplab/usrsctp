@@ -376,7 +376,7 @@ extern userland_cond_t accept_cond;
 /*
  * Externalized form of struct socket used by the sysctl(3) interface.
  */
-struct xsocket {
+struct usr_xsocket {
 	size_t	xso_len;	/* length of this structure */
 	struct	socket *xso_so;	/* makes a convenient handle sometimes */
 	short	so_type;
@@ -678,7 +678,7 @@ int	sosend_generic(struct socket *so, struct sockaddr *addr,
 	    int flags, struct thread *td);
 int	sosetopt(struct socket *so, struct sockopt *sopt);
 int	soshutdown(struct socket *so, int how);
-void	sotoxsocket(struct socket *so, struct xsocket *xso);
+void	sotoxsocket(struct socket *so, struct usr_xsocket *xso);
 void	sowakeup(struct socket *so, struct sockbuf *sb);
 
 #ifdef SOCKBUF_DEBUG
