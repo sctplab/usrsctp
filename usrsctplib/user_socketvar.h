@@ -393,7 +393,7 @@ struct usr_xsocket {
 	u_short	so_error;
 	pid_t	so_pgid;
 	u_long	so_oobmark;
-	struct xsockbuf {
+	struct usr_xsockbuf {
 		u_int	sb_cc;
 		u_int	sb_hiwat;
 		u_int	sb_mbcnt;
@@ -616,7 +616,7 @@ int	sbreserve_locked(struct sockbuf *sb, u_long cc, struct socket *so,
 	    struct thread *td);
 struct mbuf *
 	sbsndptr(struct sockbuf *sb, u_int off, u_int len, u_int *moff);
-void	sbtoxsockbuf(struct sockbuf *sb, struct xsockbuf *xsb);
+void	sbtoxsockbuf(struct sockbuf *sb, struct usr_xsockbuf *xsb);
 int	sbwait(struct sockbuf *sb);
 int	sblock(struct sockbuf *sb, int flags);
 void	sbunlock(struct sockbuf *sb);
