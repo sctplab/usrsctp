@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 359156 2020-03-19 23:07:52Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 359809 2020-04-11 20:36:54Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -13011,6 +13011,8 @@ sctp_send_str_reset_req(struct sctp_tcb *stcb,
 			/* now anything on those queues? */
 			TAILQ_FOREACH_SAFE(sp, &oldstream[i].outqueue, next, nsp) {
 				TAILQ_REMOVE(&oldstream[i].outqueue, sp, next);
+				sp->ss_next.tqe_next = NULL;
+				sp->ss_next.tqe_prev = NULL;
 				TAILQ_INSERT_TAIL(&stcb->asoc.strmout[i].outqueue, sp, next);
 			}
 
