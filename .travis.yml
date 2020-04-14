@@ -11,6 +11,22 @@ matrix:
 
    # ###### Ubuntu Linux ####################################################
 
+   # ====== Ubuntu 20.04 (Focal Fossum) =====================================
+   - name: "Ubuntu 20.04 (Focal Fossum) with GCC"
+     os: linux
+     dist: xenial
+     group: travis_latest
+     env: DOCKER="ubuntu:eoan" VARIANT="ubuntu" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+   - name: "Ubuntu 20.04 (Focal Fossum) with Clang"
+     os: linux
+     dist: xenial
+     group: travis_latest
+     env: DOCKER="ubuntu:eoan" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   - name: "Ubuntu 20.04 (Focal Fossum) packaging with pbuilder"
+     dist: xenial
+     group: travis_latest
+     env: DOCKER="ubuntu:eoan" VARIANT="ubuntu" TOOL="pbuilder"
+
    # ====== Ubuntu 19.10 (Eoan Ermine) ======================================
    - name: "Ubuntu 19.10 (Eoan Ermine) with GCC"
      os: linux
@@ -168,6 +184,18 @@ matrix:
 
    # ###### FreeBSD #########################################################
 
+   # ====== FreeBSD 12.1-RELEASE ============================================
+   - name: "FreeBSD 12.1-RELEASE with Clang"
+     os: linux
+     dist: bionic
+     group: travis_latest
+     env: QEMU="FreeBSD" VARIANT="12.1-RELEASE" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   - name: "FreeBSD 12.1-RELEASE with GCC"
+     os: linux
+     dist: bionic
+     group: travis_latest
+     env: QEMU="FreeBSD" VARIANT="12.1-RELEASE" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+
    # ====== FreeBSD 12.0-RELEASE ============================================
    - name: "FreeBSD 12.0-RELEASE with Clang"
      os: linux
@@ -192,37 +220,25 @@ matrix:
      group: travis_latest
      env: QEMU="FreeBSD" VARIANT="11.3-RELEASE" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
 
-   # ====== FreeBSD 11.2-RELEASE ============================================
-   - name: "FreeBSD 11.2-RELEASE with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: QEMU="FreeBSD" VARIANT="11.2-RELEASE" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "FreeBSD 11.2-RELEASE with GCC"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: QEMU="FreeBSD" VARIANT="11.2-RELEASE" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-
 
    # ###### Fedora Linux ####################################################
 
-   ## ====== Fedora 31 =======================================================
-   #- name: "Fedora 31 with GCC"
-     #os: linux
-     #dist: bionic
-     #group: travis_latest
-     #env: DOCKER="fedora:31" VARIANT="fedora" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   #- name: "Fedora 31 with Clang"
-     #os: linux
-     #dist: bionic
-     #group: travis_latest
-     #env: DOCKER="fedora:31" VARIANT="fedora" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   #- name: "Fedora 31 packaging with mock"
-     #os: linux
-     #dist: bionic
-     #group: travis_latest
-     #env: DOCKER="fedora:31" VARIANT="fedora" TOOL="mock"
+   # ====== Fedora 31 =======================================================
+   - name: "Fedora 31 with GCC"
+     os: linux
+     dist: bionic
+     group: travis_latest
+     env: DOCKER="fedora:31" VARIANT="fedora" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+   - name: "Fedora 31 with Clang"
+     os: linux
+     dist: bionic
+     group: travis_latest
+     env: DOCKER="fedora:31" VARIANT="fedora" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   - name: "Fedora 31 packaging with mock"
+     os: linux
+     dist: bionic
+     group: travis_latest
+     env: DOCKER="fedora:31" VARIANT="fedora" TOOL="mock"
 
    # ====== Fedora 30 =======================================================
    - name: "Fedora 30 with GCC"
@@ -240,23 +256,6 @@ matrix:
      dist: bionic
      group: travis_latest
      env: DOCKER="fedora:30" VARIANT="fedora" TOOL="mock"
-
-   # ====== Fedora 29 =======================================================
-   - name: "Fedora 29 with GCC"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="fedora:29" VARIANT="fedora" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   - name: "Fedora 29 with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="fedora:29" VARIANT="fedora" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "Fedora 29 packaging with mock"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="fedora:29" VARIANT="fedora" TOOL="mock"
 
    # ====== Fedora Rawhide ==================================================
    # - name: "Fedora Rawhide with GCC"
