@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 357500 2020-02-04 12:34:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 359152 2020-03-19 21:01:16Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2649,7 +2649,8 @@ sctp_sack_check(struct sctp_tcb *stcb, int was_a_gap)
 				 * first packet OR there are gaps or
 				 * duplicates.
 				 */
-				(void)SCTP_OS_TIMER_STOP(&stcb->asoc.dack_timer.timer);
+				sctp_timer_stop(SCTP_TIMER_TYPE_RECV, stcb->sctp_ep, stcb, NULL,
+				                SCTP_FROM_SCTP_INDATA + SCTP_LOC_19);
 				sctp_send_sack(stcb, SCTP_SO_NOT_LOCKED);
 			}
 		} else {
@@ -4377,7 +4378,7 @@ again:
 			sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWN,
 					 stcb->sctp_ep, stcb, netp);
 			sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD,
-					 stcb->sctp_ep, stcb, netp);
+					 stcb->sctp_ep, stcb, NULL);
 		} else if ((SCTP_GET_STATE(stcb) == SCTP_STATE_SHUTDOWN_RECEIVED) &&
 			   (asoc->stream_queue_cnt == 0)) {
 			struct sctp_nets *netp;
@@ -5093,7 +5094,7 @@ sctp_handle_sack(struct mbuf *m, int offset_seg, int offset_dup,
 			sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWN,
 					 stcb->sctp_ep, stcb, netp);
 			sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD,
-					 stcb->sctp_ep, stcb, netp);
+					 stcb->sctp_ep, stcb, NULL);
 			return;
 		} else if ((SCTP_GET_STATE(stcb) == SCTP_STATE_SHUTDOWN_RECEIVED) &&
 			   (asoc->stream_queue_cnt == 0)) {

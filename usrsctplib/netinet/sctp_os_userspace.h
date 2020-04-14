@@ -436,6 +436,7 @@ struct sx {int dummy;};
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 /* #include <sys/param.h>  in FreeBSD defines MSIZE */
 /* #include <sys/ktr.h> */
 /* #include <sys/systm.h> */

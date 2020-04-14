@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 357197 2020-01-28 10:09:05Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 359809 2020-04-11 20:36:54Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7222,7 +7222,7 @@ sctp_sendall_iterator(struct sctp_inpcb *inp, struct sctp_tcb *stcb, void *ptr,
 					sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWN, stcb->sctp_ep, stcb,
 							 net);
 					sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD, stcb->sctp_ep, stcb,
-							 asoc->primary_destination);
+					                 NULL);
 					added_control = 1;
 					do_chunk_output = 0;
 				}
@@ -7262,7 +7262,7 @@ sctp_sendall_iterator(struct sctp_inpcb *inp, struct sctp_tcb *stcb, void *ptr,
 						goto no_chunk_output;
 					}
 					sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD, stcb->sctp_ep, stcb,
-							 asoc->primary_destination);
+					                 NULL);
 				}
 			}
 
@@ -8961,7 +8961,7 @@ again_one_more_time:
 						/* turn off the timer */
 						if (SCTP_OS_TIMER_PENDING(&stcb->asoc.dack_timer.timer)) {
 							sctp_timer_stop(SCTP_TIMER_TYPE_RECV,
-									inp, stcb, net,
+							                inp, stcb, NULL,
 							                SCTP_FROM_SCTP_OUTPUT + SCTP_LOC_1);
 						}
 					}
@@ -10477,7 +10477,7 @@ sctp_chunk_retransmission(struct sctp_inpcb *inp,
 						 * t3-expiring.
 						 */
 						sctp_timer_stop(SCTP_TIMER_TYPE_SEND, inp, stcb, net,
-								SCTP_FROM_SCTP_OUTPUT + SCTP_LOC_2);
+						                SCTP_FROM_SCTP_OUTPUT + SCTP_LOC_2);
 						sctp_timer_start(SCTP_TIMER_TYPE_SEND, inp, stcb, net);
 					}
 				}
@@ -10603,7 +10603,8 @@ do_it_again:
 	 */
 	if (SCTP_OS_TIMER_PENDING(&stcb->asoc.dack_timer.timer)) {
 		sctp_send_sack(stcb, so_locked);
-		(void)SCTP_OS_TIMER_STOP(&stcb->asoc.dack_timer.timer);
+		sctp_timer_stop(SCTP_TIMER_TYPE_RECV, stcb->sctp_ep, stcb, NULL,
+		                SCTP_FROM_SCTP_OUTPUT + SCTP_LOC_3);
 	}
 	while (asoc->sent_queue_retran_cnt) {
 		/*-
@@ -13010,6 +13011,8 @@ sctp_send_str_reset_req(struct sctp_tcb *stcb,
 			/* now anything on those queues? */
 			TAILQ_FOREACH_SAFE(sp, &oldstream[i].outqueue, next, nsp) {
 				TAILQ_REMOVE(&oldstream[i].outqueue, sp, next);
+				sp->ss_next.tqe_next = NULL;
+				sp->ss_next.tqe_prev = NULL;
 				TAILQ_INSERT_TAIL(&stcb->asoc.strmout[i].outqueue, sp, next);
 			}
 
@@ -13530,6 +13533,9 @@ sctp_lower_sosend(struct socket *so,
 #endif
 	)
 {
+#if defined(__FreeBSD__)
+	struct epoch_tracker et;
+#endif
 	ssize_t sndlen = 0, max_len, local_add_more;
 	int error, len;
 	struct mbuf *top = NULL;
@@ -14119,7 +14125,13 @@ sctp_lower_sosend(struct socket *so,
 		atomic_add_int(&stcb->asoc.refcnt, -1);
 		free_cnt_applied = 0;
 		/* release this lock, otherwise we hang on ourselves */
+#if defined(__FreeBSD__)
+		NET_EPOCH_ENTER(et);
+#endif
 		sctp_abort_an_association(stcb->sctp_ep, stcb, mm, SCTP_SO_LOCKED);
+#if defined(__FreeBSD__)
+		NET_EPOCH_EXIT(et);
+#endif
 		/* now relock the stcb so everything is sane */
 		hold_tcblock = 0;
 		stcb = NULL;
@@ -14465,7 +14477,13 @@ skip_preblock:
 					/* a collision took us forward? */
 					queue_only = 0;
 				} else {
+#if defined(__FreeBSD__)
+					NET_EPOCH_ENTER(et);
+#endif
 					sctp_send_initiate(inp, stcb, SCTP_SO_LOCKED);
+#if defined(__FreeBSD__)
+					NET_EPOCH_EXIT(et);
+#endif
 					SCTP_SET_STATE(stcb, SCTP_STATE_COOKIE_WAIT);
 					queue_only = 1;
 				}
@@ -14523,6 +14541,9 @@ skip_preblock:
 				 * the input via the net is happening
 				 * and I don't need to start output :-D
 				 */
+#if defined(__FreeBSD__)
+				NET_EPOCH_ENTER(et);
+#endif
 				if (hold_tcblock == 0) {
 					if (SCTP_TCB_TRYLOCK(stcb)) {
 						hold_tcblock = 1;
@@ -14535,6 +14556,9 @@ skip_preblock:
 							  stcb,
 							  SCTP_OUTPUT_FROM_USR_SEND, SCTP_SO_LOCKED);
 				}
+#if defined(__FreeBSD__)
+				NET_EPOCH_EXIT(et);
+#endif
 			}
 			if (hold_tcblock == 1) {
 				SCTP_TCB_UNLOCK(stcb);
@@ -14695,7 +14719,7 @@ dataless_eof:
 				sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWN, stcb->sctp_ep, stcb,
 				                 netp);
 				sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD, stcb->sctp_ep, stcb,
-				                 asoc->primary_destination);
+				                 NULL);
 			}
 		} else {
 			/*-
@@ -14734,15 +14758,21 @@ dataless_eof:
 					         "%s:%d at %s", __FILE__, __LINE__, __func__);
 					op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
 					                             msg);
+#if defined(__FreeBSD__)
+					NET_EPOCH_ENTER(et);
+#endif
 					sctp_abort_an_association(stcb->sctp_ep, stcb,
 					                          op_err, SCTP_SO_LOCKED);
+#if defined(__FreeBSD__)
+					NET_EPOCH_EXIT(et);
+#endif
 					/* now relock the stcb so everything is sane */
 					hold_tcblock = 0;
 					stcb = NULL;
 					goto out;
 				}
 				sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD, stcb->sctp_ep, stcb,
-				                 asoc->primary_destination);
+				                 NULL);
 				sctp_feature_off(inp, SCTP_PCB_FLAGS_NODELAY);
 			}
 		}
@@ -14760,7 +14790,13 @@ skip_out_eof:
 			/* a collision took us forward? */
 			queue_only = 0;
 		} else {
+#if defined(__FreeBSD__)
+			NET_EPOCH_ENTER(et);
+#endif
 			sctp_send_initiate(inp, stcb, SCTP_SO_LOCKED);
+#if defined(__FreeBSD__)
+			NET_EPOCH_EXIT(et);
+#endif
 			SCTP_SET_STATE(stcb, SCTP_STATE_COOKIE_WAIT);
 			queue_only = 1;
 		}
@@ -14806,6 +14842,9 @@ skip_out_eof:
 		               stcb->asoc.total_flight,
 		               stcb->asoc.chunks_on_out_queue, stcb->asoc.total_flight_count);
 	}
+#if defined(__FreeBSD__)
+	NET_EPOCH_ENTER(et);
+#endif
 	if ((queue_only == 0) && (nagle_applies == 0) && (stcb->asoc.peers_rwnd && un_sent)) {
 		/* we can attempt to send too. */
 		if (hold_tcblock == 0) {
@@ -14838,6 +14877,9 @@ skip_out_eof:
 		(void)sctp_med_chunk_output(inp, stcb, &stcb->asoc, &num_out,
 		                            &reason, 1, 1, &now, &now_filled, frag_point, SCTP_SO_LOCKED);
 	}
+#if defined(__FreeBSD__)
+	NET_EPOCH_EXIT(et);
+#endif
 	SCTPDBG(SCTP_DEBUG_OUTPUT1, "USR Send complete qo:%d prw:%d unsent:%d tf:%d cooq:%d toqs:%d err:%d\n",
 	        queue_only, stcb->asoc.peers_rwnd, un_sent,
 		stcb->asoc.total_flight, stcb->asoc.chunks_on_out_queue,
