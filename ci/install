@@ -226,7 +226,7 @@ EOF\""
          arch=`sudo docker exec -t ${CONTAINER} env LANG=C.UTF-8 uname -m | sed -e "s/[^0-9a-zA-Z_+-]//g"`
          if ! sudo docker exec ${CONTAINER} grep "^\[copr-dreibh-ppa\]" /etc/mock/fedora-${release}-${arch}.cfg ; then
             shopt -s extglob
-            ppa="config_opts['yum.conf'] += \"\"\"\n[copr-dreibh-ppa]\nname=Copr repo for ppa owned by dreibh\nbaseurl=https://copr-be.cloud.fedoraproject.org/results/dreibh/ppa/fedora-\$releasever-\$basearch/\ntype=rpm-md\nskip_if_unavailable=True\ngpgcheck=1\ngpgkey=https://copr-be.cloud.fedoraproject.org/results/dreibh/ppa/pubkey.gpg\nrepo_gpgcheck=0\nenabled=1\n\"\"\""
+            ppa="config_opts['dnf.conf'] += \"\"\"\n[copr-dreibh-ppa]\nname=Copr repo for ppa owned by dreibh\nbaseurl=https://copr-be.cloud.fedoraproject.org/results/dreibh/ppa/fedora-\$releasever-\$basearch/\ntype=rpm-md\nskip_if_unavailable=True\ngpgcheck=1\ngpgkey=https://copr-be.cloud.fedoraproject.org/results/dreibh/ppa/pubkey.gpg\nrepo_gpgcheck=0\nenabled=1\n\"\"\""
             ppa="${ppa//+( )$/\\n}"
             echo -e "${ppa}" | sudo docker exec -i ${CONTAINER} tee -a /etc/mock/fedora-${release}-${arch}.cfg
             if ! sudo docker exec ${CONTAINER} grep "^\[copr-dreibh-ppa\]" /etc/mock/fedora-${release}-${arch}.cfg ; then
@@ -368,7 +368,7 @@ elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
       sudo mount --bind `pwd` /travis
       sudo bash -c "echo \"/travis 192.168.100.0/24(rw,no_root_squash)\" >/etc/exports"
       env LANG=C.UTF-8 ci/retry -t ${RETRY_MAXTRIALS} -p ${RETRY_PAUSE} -- \
-         sudo apt-get install -y qemu-kvm nfs-kernel-server
+         sudo env LANG=C.UTF-8 DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-kvm nfs-kernel-server
       sudo exportfs -v
       sudo service nfs-kernel-server restart
 
@@ -424,7 +424,7 @@ elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
       # ---    "portsnap --interactive fetch extract | grep -v ^/usr/ports"
       # Using Git is much faster:
       ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost \
-         "rm -rf /usr/ports ; git clone --depth=1 --filter=tree:0 https://github.com/freebsd/freebsd-ports /usr/ports"
+         "rm -rf /usr/ports ; git clone --depth=1 https://github.com/freebsd/freebsd-ports /usr/ports"
 
       # Package's dependencies:
       ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost \
