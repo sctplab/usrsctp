@@ -254,14 +254,16 @@ sctp_finish(void)
 #endif
 	}
 #endif
-	atomic_cmpset_int(&SCTP_BASE_VAR(timer_thread_should_exit), 0, 1);
-	if (SCTP_BASE_VAR(timer_thread_started)) {
+	if (SCTP_BASE_VAR(timer_thread)) {
+		atomic_cmpset_int(&SCTP_BASE_VAR(timer_thread_should_exit), 0, 1);
+		if (SCTP_BASE_VAR(timer_thread_started)) {
 #if defined(__Userspace_os_Windows)
-		WaitForSingleObject(SCTP_BASE_VAR(timer_thread), INFINITE);
-		CloseHandle(SCTP_BASE_VAR(timer_thread));
+			WaitForSingleObject(SCTP_BASE_VAR(timer_thread), INFINITE);
+			CloseHandle(SCTP_BASE_VAR(timer_thread));
 #else
-		pthread_join(SCTP_BASE_VAR(timer_thread), NULL);
+			pthread_join(SCTP_BASE_VAR(timer_thread), NULL);
 #endif
+		}
 	}
 #endif
 	sctp_pcb_finish();
