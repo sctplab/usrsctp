@@ -43,22 +43,6 @@ matrix:
      group: travis_latest
      env: DOCKER="ubuntu:eoan" VARIANT="ubuntu" TOOL="pbuilder"
 
-   # ====== Ubuntu 19.04 (Disco Dingo) ======================================
-   - name: "Ubuntu 19.04 (Disco Dingo) with GCC"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:disco" VARIANT="ubuntu" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   - name: "Ubuntu 19.04 (Disco Dingo) with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:disco" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "Ubuntu 19.04 (Disco Dingo) packaging with pbuilder"
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:disco" VARIANT="ubuntu" TOOL="pbuilder"
-
    # ====== Ubuntu 18.04 (Bionic Beaver) ====================================
    - name: "Ubuntu 18.04 (Bionic Beaver) with GCC"
      os: linux
