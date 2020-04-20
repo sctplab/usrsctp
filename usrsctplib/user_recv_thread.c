@@ -591,7 +591,8 @@ recv_function_raw6(void *arg)
 		src.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 		src.sin6_port = sh->src_port;
-		if (memcmp(&src.sin6_addr, &dst.sin6_addr, sizeof(struct in6_addr)) == 0) {
+		if (SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) &&
+		    (memcmp(&src.sin6_addr, &dst.sin6_addr, sizeof(struct in6_addr)) == 0)) {
 			compute_crc = 0;
 			SCTP_STAT_INCR(sctps_recvhwcrc);
 		} else {
@@ -796,7 +797,8 @@ recv_function_udp(void *arg)
 		port = src.sin_port;
 		src.sin_port = sh->src_port;
 		dst.sin_port = sh->dest_port;
-		if (src.sin_addr.s_addr == dst.sin_addr.s_addr) {
+		if (SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) &&
+		    (src.sin_addr.s_addr == dst.sin_addr.s_addr)) {
 			compute_crc = 0;
 			SCTP_STAT_INCR(sctps_recvhwcrc);
 		} else {
@@ -983,7 +985,8 @@ recv_function_udp6(void *arg)
 		port = src.sin6_port;
 		src.sin6_port = sh->src_port;
 		dst.sin6_port = sh->dest_port;
-		if ((memcmp(&src.sin6_addr, &dst.sin6_addr, sizeof(struct in6_addr)) == 0)) {
+		if (SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) &&
+		    (memcmp(&src.sin6_addr, &dst.sin6_addr, sizeof(struct in6_addr)) == 0)) {
 			compute_crc = 0;
 			SCTP_STAT_INCR(sctps_recvhwcrc);
 		} else {
