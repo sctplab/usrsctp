@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 359405 2020-03-28 20:25:45Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 360193 2020-04-22 12:47:46Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2377,8 +2377,11 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 	if (auth_skipped) {
 		struct sctp_auth_chunk *auth;
 
-		auth = (struct sctp_auth_chunk *)
-		    sctp_m_getptr(m, auth_offset, auth_len, auth_chunk_buf);
+		if (auth_len <= SCTP_PARAM_BUFFER_SIZE) {
+			auth = (struct sctp_auth_chunk *)sctp_m_getptr(m, auth_offset, auth_len, auth_chunk_buf);
+		} else {
+			auth = NULL;
+		}
 		if ((auth == NULL) || sctp_handle_auth(stcb, auth, m, auth_offset)) {
 			/* auth HMAC failed, dump the assoc and packet */
 			SCTPDBG(SCTP_DEBUG_AUTH1,
