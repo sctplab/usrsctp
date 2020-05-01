@@ -1456,6 +1456,7 @@ recv_thread_destroy(void)
 #if defined(INET) || defined(INET6)
 	if (SCTP_BASE_VAR(userspace_route) != -1) {
 		close(SCTP_BASE_VAR(userspace_route));
+		pthread_join(SCTP_BASE_VAR(recvthreadroute), NULL);
 	}
 #endif
 #endif
@@ -1463,15 +1464,25 @@ recv_thread_destroy(void)
 	if (SCTP_BASE_VAR(userspace_rawsctp) != -1) {
 #if defined(__Userspace_os_Windows)
 		closesocket(SCTP_BASE_VAR(userspace_rawsctp));
+		SCTP_BASE_VAR(userspace_rawsctp) = -1;
+		WaitForSingleObject(SCTP_BASE_VAR(recvthreadraw), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(recvthreadraw));
 #else
 		close(SCTP_BASE_VAR(userspace_rawsctp));
+		SCTP_BASE_VAR(userspace_rawsctp) = -1;
+		pthread_join(SCTP_BASE_VAR(recvthreadraw), NULL);
 #endif
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp) != -1) {
 #if defined(__Userspace_os_Windows)
 		closesocket(SCTP_BASE_VAR(userspace_udpsctp));
+		SCTP_BASE_VAR(userspace_udpsctp) = -1;
+		WaitForSingleObject(SCTP_BASE_VAR(recvthreadudp), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(recvthreadudp));
 #else
 		close(SCTP_BASE_VAR(userspace_udpsctp));
+		SCTP_BASE_VAR(userspace_udpsctp) = -1;
+		pthread_join(SCTP_BASE_VAR(recvthreadudp), NULL);
 #endif
 	}
 #endif
@@ -1479,15 +1490,25 @@ recv_thread_destroy(void)
 	if (SCTP_BASE_VAR(userspace_rawsctp6) != -1) {
 #if defined(__Userspace_os_Windows)
 		closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
+		SCTP_BASE_VAR(userspace_rawsctp6) = -1;
+		WaitForSingleObject(SCTP_BASE_VAR(recvthreadraw6), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(recvthreadraw6));
 #else
 		close(SCTP_BASE_VAR(userspace_rawsctp6));
+		SCTP_BASE_VAR(userspace_rawsctp6) = -1;
+		pthread_join(SCTP_BASE_VAR(recvthreadraw6), NULL);
 #endif
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp6) != -1) {
 #if defined(__Userspace_os_Windows)
+		SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 		closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
+		WaitForSingleObject(SCTP_BASE_VAR(recvthreadudp6), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(recvthreadudp6));
 #else
 		close(SCTP_BASE_VAR(userspace_udpsctp6));
+		SCTP_BASE_VAR(userspace_udpsctp6) = -1;
+		pthread_join(SCTP_BASE_VAR(recvthreadudp6), NULL);
 #endif
 	}
 #endif
