@@ -120,4 +120,8 @@ foreach (source_file ${check_programs})
 		${programs_link_library}
 		${CMAKE_THREAD_LIBS_INIT}
 	)
+
+	install(TARGETS ${source_file_we}
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+		BUNDLE DESTINATION  ${CMAKE_INSTALL_BINDIR})
 endforeach ()

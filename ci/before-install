@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+#
+# Travis CI Scripts
+# Copyright (C) 2018-2020 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+
+# Bash options:
+set -e
+
+
+. `dirname $0`/get-container
+
+
+# ###### Linux as-is ########################################################
+if [ "${TRAVIS_OS_NAME}" == "linux" -a "${DOCKER}" == "" -a "${QEMU}" == "" ] ; then
+
+   # Nothing to be done here.
+   true
+
+
+# ###### Linux via Docker ###################################################
+elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${DOCKER}" != "" -a "${QEMU}" == "" ] ; then
+
+      # NOTE: Using tmpfs for pbuilder and mock!
+      # The build machine therefore needs a sufficient amount of RAM!
+      sudo docker rm -f ${CONTAINER} || true
+      sudo docker run -d \
+         --name ${CONTAINER} \
+         --tmpfs /var/cache/pbuilder:rw,exec,dev,size=4g \
+         --tmpfs /var/lib/mock:rw,exec,dev,size=4g \
+         --cap-add=SYS_ADMIN --cap-add=NET_ADMIN \
+         --security-opt apparmor:unconfined \
+         -v $(pwd):/travis -w /travis \
+         $DOCKER tail -f /dev/null
+      sudo docker ps
+
+
+# ###### FreeBSD via QEMU ###################################################
+elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
+   if [ "${VARIANT}" != "" ] ; then
+
+      sudo mkdir -p /vservers/qemu-freebsd
+      sudo chown $USER:$USER /vservers/qemu-freebsd
+      mkdir -p /vservers/qemu-freebsd/mnt
+      cd /vservers/qemu-freebsd
+
+      # ====== Download image ============================================
+      imageName="FreeBSD-${VARIANT}-amd64.raw"
+      if [ -e ${imageName}.xz -a ! -e ${imageName} ] ; then
+         echo "Extracting existing ${imageName}.xz ..."
+         xz -T0 -dk ${imageName}.xz
+      elif [ ! -e ${imageName}.xz -o ! -e ${imageName} ] ; then
+         imageURL="https://download.freebsd.org/ftp/releases/VM-IMAGES/${VARIANT}/amd64/Latest/${imageName}.xz"
+         echo "Downloading FreeBSD VM image from ${imageURL} ..."
+         curl "${imageURL}" | tee ${imageName}.xz.tmp | xz -T0 -d - >${imageName}
+         mv ${imageName}.xz.tmp ${imageName}.xz
+      fi
+
+      # ====== Download fuse-ufs2 ========================================
+      if [ ! -d fuse-ufs2/ ] ; then
+         echo "Downloading fuse-ufs2 ..."
+         git clone https://github.com/dreibh/fuse-ufs2 -b dreibh/ubuntu-disco-fix
+         # git clone https://github.com/mkatiyar/fuse-ufs2
+      fi
+   fi
+
+
+# ###### MacOS X ############################################################
+elif [ "${TRAVIS_OS_NAME}" == "osx" ] ; then
+
+   # Nothing to be done here.
+   true
+
+
+# ###### Error ##############################################################
+else
+   echo >&2 "ERROR: Invalid setting of TRAVIS_OS_NAME=${TRAVIS_OS_NAME}, DOCKER=${DOCKER}, QEMU=${QEMU}!"
+   exit 1
+fi

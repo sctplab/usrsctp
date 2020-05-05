@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+#
+# Travis CI Scripts
+# Copyright (C) 2018-2020 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+
+# Bash options:
+set -e
+
+
+# ====== Get settings =======================================================
+export TRAVIS_OS_NAME="linux"
+
+if [[ "$1" =~ ^(debian|ubuntu|fedora|freebsd)_([a-zA-Z0-9]*|[0-9\.]*)-(pbuilder|mock|compile)(|-gcc|-clang)$ ]] ; then
+   if [ "${BASH_REMATCH[1]}" == "freebsd" ] ; then
+      export DOCKER=""
+      export QEMU="FreeBSD"
+      export VARIANT="${BASH_REMATCH[2]}-RELEASE"
+   else
+      export DOCKER="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}"
+      export VARIANT="${BASH_REMATCH[1]}"
+   fi
+   export TOOL="${BASH_REMATCH[3]}"
+   COMPILER="${BASH_REMATCH[4]}"
+   echo "DOCKER=${DOCKER}"
+   echo "QEMU=${QEMU}"
+   echo "VARIANT=${VARIANT}"
+   echo "TOOL=${TOOL}"
+   if [ "${TOOL}" == "compile" -a "${COMPILER}" != "" ] ; then
+      if [ "${COMPILER}" == "-gcc" ] ; then
+         export COMPILER_C=gcc
+         export COMPILER_CXX=g++
+      elif [ "${COMPILER}" == "-clang" ] ; then
+         export COMPILER_C=clang
+         export COMPILER_CXX=clang++
+      else
+         echo >&2 "ERROR: Bad compiler setting!"
+         exit 1
+      fi
+      echo "COMPILER_C=${COMPILER_C}"
+      echo "COMPILER_CXX=${COMPILER_CXX}"
+   fi
+
+elif [ "$1" == "" ] ; then
+   # ------ Use defaults ----------------------------------
+   export DOCKER="ubuntu:bionic"
+   export VARIANT="ubuntu"
+   export TOOL="pbuilder"
+
+else
+   echo >&2 "Usage: $0 [ubuntu|fedora|freebsd]_[release]-[pbuilder|mock|compile-[gcc|clang]]"
+   exit 1
+fi
+
+
+# ====== Run test ===========================================================
+SCRIPTS="before-install install build test"
+# SCRIPTS="test"
+
+for script in $SCRIPTS ; do
+   echo "###### Running $script ... ######"
+   sudo env \
+      TRAVIS_OS_NAME="$TRAVIS_OS_NAME" \
+      DOCKER="$DOCKER" QEMU="$QEMU" \
+      VARIANT="$VARIANT" \
+      TOOL="$TOOL" \
+      COMPILER_C="$COMPILER_C" \
+      COMPILER_CXX="$COMPILER_CXX" \
+      ci/${script} \
+   || {
+      echo ""
+      echo "====== Something went wrong! Getting shell into the container! ======"
+      echo ""
+      sudo env \
+         TRAVIS_OS_NAME="$TRAVIS_OS_NAME" \
+         DOCKER="$DOCKER" QEMU="$QEMU" \
+         VARIANT="$VARIANT" \
+         TOOL="$TOOL" \
+         COMPILER_C="$COMPILER_C" \
+         COMPILER_CXX="$COMPILER_CXX" \
+         ci/enter
+      exit 1
+   }
+done
+echo "###### Build test completed! ######"

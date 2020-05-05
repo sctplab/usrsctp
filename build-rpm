@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+#
+# Packaging Scripts
+# Copyright (C) 2017-2020 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+
+# Bash options:
+set -e
+
+
+# ---------------------------------------------------------------------------
+# USAGE:
+# ./make-rpm                       => Use current distribution and architecture
+# ./make-rpm fedora-30-x86_64      => F30, amd64
+# ./make-rpm fedora-rawhide-i386   => F30, i386
+# ...
+# ---------------------------------------------------------------------------
+
+
+DISTRIBUTIONS=`\
+( \
+while [ x$1 != "x" ] ; do \
+   echo $1
+   shift
+done \
+) | sort -u`
+if [ "${DISTRIBUTIONS}" == "" ] ; then
+   release=`cat /etc/fedora-release | sed -e "s/^\(.*\) release \([0-9]*\) (\(.*\))$/\2/g"`
+   arch=`uname -m`
+
+   DISTRIBUTIONS="fedora-${release}-${arch}"
+fi
+
+PACKAGE=`grep "^Name:" rpm/*.spec | head -n1 | sed -e "s/Name://g" -e "s/[ \t]*//g"`
+PACKAGE_VERSION=`grep "^Version:" rpm/*.spec | head -n1 | sed -e "s/Version://g" -e "s/[ \t]*//g"`
+
+echo -e "\x1b[34m###########################################\x1b[0m"
+echo -e "\x1b[34mPACKAGE:           ${PACKAGE}\x1b[0m"
+echo -e "\x1b[34mPACKAGE_VERSION:   ${PACKAGE_VERSION}\x1b[0m"
+echo -e "\x1b[34m###########################################\x1b[0m"
+
+
+# ====== Create source RPM ==================================================
+./make-srpm
+
+PACKAGE_SRPM=`find $HOME/rpmbuild/SRPMS/ -name "${PACKAGE}-*-*.src.rpm"`
+if [ ! -e "${PACKAGE_SRPM}" ] ; then
+   echo >&2 "ERROR: Cannot find SRPM ${PACKAGE}-*-*.src.rpm in $HOME/rpmbuild/SRPMS!"
+   exit 1
+fi
+
+
+# ====== Build binary RPMs ==================================================
+# Create binary RPMs
+for DISTRIBUTION in ${DISTRIBUTIONS} ; do
+   echo -e ""
+   echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Creating binary RPM for ${DISTRIBUTION} ==========\x1b[0m"
+   echo -e ""
+
+   # NOTE: DISTRIBUTION may point to another directory (e.g. "rawhide" instead of "30")!
+   if [ ! -e "/etc/mock/${DISTRIBUTION}.cfg" ] ; then
+      echo >&2 "ERROR: Cannot find /etc/mock/${DISTRIBUTION}.cfg!"
+      exit 1
+   fi
+   distribution=`grep "config_opts..root.. =" /etc/mock/${DISTRIBUTION}.cfg | sed -e "s/^.* = //g" -e "s/'//g"`
+
+   # Remove old files
+   find /var/lib/mock/${DISTRIBUTION}/result -name "${PACKAGE}-*.rpm" | xargs --no-run-if-empty rm -f
+
+   # Build the binary RPM
+   # NOTE: using old chroot instead of container, to allow running it inside a container!
+   mock -r ${DISTRIBUTION} --old-chroot --init
+   mock -r ${DISTRIBUTION} --old-chroot --installdeps ${PACKAGE_SRPM}
+   mock -r ${DISTRIBUTION} --old-chroot --install openssl pesign
+   mock -r ${DISTRIBUTION} --old-chroot --no-clean --rebuild ${PACKAGE_SRPM}
+
+   # Check whether files are at the right location
+   PACKAGE_RPMS=`find /var/lib/mock/${distribution}/result -name "${PACKAGE}-*-*.rpm" | grep -v "${PACKAGE}-*-*.src.rpm" || true`
+   if [ "${PACKAGE_RPMS}" == "" ] ; then
+      echo >&2 "ERROR: Cannot find RPMs!"
+      exit 1
+   fi
+done

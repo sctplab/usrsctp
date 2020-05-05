@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+#
+# Packaging Scripts
+# Copyright (C) 2017-2020 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+
+# Bash options:
+set -e
+
+
+# ---------------------------------------------------------------------------
+# USAGE:
+# ./make-srpm
+# ---------------------------------------------------------------------------
+
+
+# ====== Obtain package and version information =============================
+PACKAGE=`grep "^Name:" rpm/*.spec | head -n1 | sed -e "s/Name://g" -e "s/[ \t]*//g"`
+PACKAGE_VERSION=`grep "^Version:" rpm/*.spec | head -n1 | sed -e "s/Version://g" -e "s/[ \t]*//g"`
+PACKAGE_RELEASE=`grep "^Release:" rpm/*.spec | head -n1 | sed -e "s/Release://g" -e "s/[ \t]*//g"`
+
+echo -e "\x1b[34m###########################################\x1b[0m"
+echo -e "\x1b[34mPACKAGE:           ${PACKAGE}\x1b[0m"
+echo -e "\x1b[34mPACKAGE_VERSION:   ${PACKAGE_VERSION}\x1b[0m"
+echo -e "\x1b[34mPACKAGE_RELEASE:   ${PACKAGE}_RELEASE\x1b[0m"
+echo -e "\x1b[34m###########################################\x1b[0m"
+
+# ====== Check with Debian package's version ================================
+if [ -e debian/changelog ] ; then
+   DEBIAN_CHANGELOG_HEADER="`head -n1 debian/changelog`"
+
+   # The package name, e.g. MyApplication
+   DEBIAN_PACKAGE=`echo ${DEBIAN_CHANGELOG_HEADER} | sed -e "s/(.*//" -e "s/ //g"`
+   # The package distribution, e.g. precise, raring, ...
+   DEBIAN_PACKAGE_DISTRIBUTION=`echo ${DEBIAN_CHANGELOG_HEADER} | sed -e "s/[^)]*)//" -e "s/;.*//g" -e "s/ //g"`
+   # The package's version, e.g. 1.2.3-1ubuntu1
+   DEBIAN_PACKAGE_VERSION=`echo ${DEBIAN_CHANGELOG_HEADER} | sed -e "s/.*(//" -e "s/).*//" -e "s/ //g" -e "s/ //g" -e "s/^[0-9]://g"`
+   # The package's output version, e.g. 1.2.3-1ubuntu
+   DEBIAN_OUTPUT_VERSION=`echo ${DEBIAN_PACKAGE_VERSION}   | sed -e "s/\(ubuntu\|ppa\)[0-9]*$/\1/"`
+   # The package's Debian version, e.g. 1.2.3-1
+   DEBIAN_VERSION=`echo ${DEBIAN_OUTPUT_VERSION}    | sed -e "s/\(ubuntu\|ppa\)$//1"`
+   # The package's upstream version, e.g. 1.2.3
+   DEBIAN_UPSTREAM_VERSION=`echo ${DEBIAN_VERSION}  | sed -e "s/-[0-9]*$//"`
+
+   if [ "${PACKAGE}-${PACKAGE_VERSION}" != "${DEBIAN_PACKAGE}-${DEBIAN_UPSTREAM_VERSION}" ] ; then
+      echo >&2 "ERROR: RPM version and Debian version do not match -> ${PACKAGE}-${PACKAGE_VERSION} vs. ${DEBIAN_PACKAGE}-${DEBIAN_UPSTREAM_VERSION}!"
+#       exit 1
+   fi
+fi
+
+if [ -e packaging.conf ] ; then
+   . ./packaging.conf
+fi
+
+
+# ====== Create upstream source package =====================================
+echo -e ""
+echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Creating upstream package ======================================\x1b[0m"
+echo -e ""
+if [ "${SKIP_PACKAGE_SIGNING}" != "" -a ${SKIP_PACKAGE_SIGNING} -eq 1 -o "${OVERRIDE_SKIP_PACKAGE_SIGNING}" == "1" ] ; then
+   ./make-upstream-package ${PACKAGE} ${PACKAGE_VERSION} "${MAKE_DIST}" -skip-signing
+else
+   ./make-upstream-package ${PACKAGE} ${PACKAGE_VERSION} "${MAKE_DIST}"
+fi
+
+for UPSTREAM_PACKAGE_TYPE in xz bz2 gz ; do
+   UPSTREAM_PACKAGE="`find . -maxdepth 1 -name "${PACKAGE}-*.tar.${UPSTREAM_PACKAGE_TYPE}" -printf '%f'`"
+   if [ -e "${UPSTREAM_PACKAGE}" ] ; then
+      break
+   fi
+done
+if [ ! -e "${UPSTREAM_PACKAGE}" ] ; then
+   echo -e "\x1b[34mERROR: No upstream package (${PACKAGE}-*.tar.*) found!\x1b[0m"
+   exit 1
+fi
+
+
+# ====== Create source RPM ==================================================
+echo -e ""
+echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Creating source RPM ============================\x1b[0m"
+echo -e ""
+
+# ------ Initialise RPM build directories -----------------------------------
+for subdir in BUILD BUILDROOT RPMS SOURCES SPECS SRPMS ; do
+   mkdir -p ${HOME}/rpmbuild/${subdir}
+done
+find ${HOME}/rpmbuild/SRPMS -name "${PACKAGE}*.rpm" | xargs --no-run-if-empty rm -f
+find ${HOME}/rpmbuild/RPMS  -name "${PACKAGE}*.rpm" | xargs --no-run-if-empty rm -f
+# Copy upstream sources
+cp ${UPSTREAM_PACKAGE} ${HOME}/rpmbuild/SOURCES/
+# Patches
+if [ -e original ] ; then
+   find original -name "*" -type f | grep -v "~$" | grep -v ".spec$" | xargs -n1 -i§ cp "§" ${HOME}/rpmbuild/SOURCES/
+fi
+# Further patches
+find rpm -name "*" -type f | grep -v "~$" | grep -v ".spec$" | xargs -n1 -i§ cp "§" ${HOME}/rpmbuild/SOURCES/
+# The .spec file
+cp rpm/${PACKAGE}.spec ${HOME}/rpmbuild/SPECS/
+
+# ------ Create source RPM --------------------------------------------------
+rpmbuild -bs rpm/${PACKAGE}.spec
+PACKAGE_SRPM=`find ${HOME}/rpmbuild/SRPMS/ -name "${PACKAGE}-*-*.src.rpm"`
+if [ ! -e "${PACKAGE_SRPM}" ] ; then
+   echo >&2 "ERROR: Cannot find SRPM ${PACKAGE_SRPM}!"
+   exit 1
+fi
