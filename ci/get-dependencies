@@ -27,14 +27,15 @@ import subprocess
 import sys
 
 
-# ###### Write dependency ###################################################
-dep = re.compile(r'^([a-zA-Z0-9-+\.]+)[\s]*(|\|.*|\(.*)[\s]*$')
+# ###### Extract dependencies ###############################################
+depLine = re.compile(r'^(.*:[ \t]*)(.*)$')
+depItem = re.compile(r'^([a-zA-Z0-9-+\.]+)[\s]*(|\|.*|\(.*)[\s]*$')
 
 def extractDependencies(line, system):
    dependencies = []
 
    # Remove "build-depends:", etc.:
-   m = re.match(r'^(.*:[ \t]*)([a-zA-Z0-9-+]*)(.*)$', line)
+   m = depLine.match(line)
    if m != None:
       line = m.group(2)
    line = line.strip()
@@ -42,7 +43,7 @@ def extractDependencies(line, system):
    # Split into segments
    for l in line.split(','):
       l = l.strip()
-      m = dep.match(l)
+      m = depItem.match(l)
       if m != None:
          dependency = m.group(1)
 
