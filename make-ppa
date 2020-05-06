@@ -25,7 +25,7 @@ COPR=0
 DPUT=0
 
 # NOTE: These are the supported distributions by Ubuntu Launchpad and Debian:
-DPUT_DISTRIBUTIONS="precise trusty xenial bionic disco eoan focal   unstable"
+DPUT_DISTRIBUTIONS="precise trusty xenial bionic eoan focal groovy   unstable"
 
 while [ $# -gt 0 ] ; do
    if [ "$1" == "dput" ] ; then
