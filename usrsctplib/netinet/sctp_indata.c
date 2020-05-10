@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 359152 2020-03-19 21:01:16Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 360878 2020-05-10 17:19:19Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4425,10 +4425,15 @@ again:
 				}
 			}
 		}
-		if (lchk) {
+		for (; lchk != NULL; lchk = TAILQ_NEXT(lchk, sctp_next)) {
+			if (lchk->whoTo != NULL) {
+				break;
+			}
+		}
+		if (lchk != NULL) {
 			/* Assure a timer is up */
 			sctp_timer_start(SCTP_TIMER_TYPE_SEND,
-					 stcb->sctp_ep, stcb, lchk->whoTo);
+			                 stcb->sctp_ep, stcb, lchk->whoTo);
 		}
 	}
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_SACK_RWND_LOGGING_ENABLE) {
@@ -5282,7 +5287,12 @@ again:
 				}
 			}
 		}
-		if (lchk) {
+		for (; lchk != NULL; lchk = TAILQ_NEXT(lchk, sctp_next)) {
+			if (lchk->whoTo != NULL) {
+				break;
+			}
+		}
+		if (lchk != NULL) {
 			/* Assure a timer is up */
 			sctp_timer_start(SCTP_TIMER_TYPE_SEND,
 			                 stcb->sctp_ep, stcb, lchk->whoTo);

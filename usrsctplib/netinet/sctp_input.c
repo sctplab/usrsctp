@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 360209 2020-04-22 21:22:33Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 360878 2020-05-10 17:19:19Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3142,6 +3142,7 @@ sctp_handle_cookie_ack(struct sctp_cookie_ack_chunk *cp SCTP_UNUSED,
 {
 	/* cp must not be used, others call this without a c-ack :-) */
 	struct sctp_association *asoc;
+	struct sctp_tmit_chunk *chk;
 
 	SCTPDBG(SCTP_DEBUG_INPUT2,
 		"sctp_handle_cookie_ack: handling COOKIE-ACK\n");
@@ -3244,11 +3245,13 @@ sctp_handle_cookie_ack(struct sctp_cookie_ack_chunk *cp SCTP_UNUSED,
 closed_socket:
 	/* Toss the cookie if I can */
 	sctp_toss_old_cookies(stcb, asoc);
-	if (!TAILQ_EMPTY(&asoc->sent_queue)) {
-		/* Restart the timer if we have pending data */
-		struct sctp_tmit_chunk *chk;
-
-		chk = TAILQ_FIRST(&asoc->sent_queue);
+	/* Restart the timer if we have pending data */
+	TAILQ_FOREACH(chk, &asoc->sent_queue, sctp_next) {
+		if (chk->whoTo != NULL) {
+			break;
+		}
+	}
+	if (chk != NULL) {
 		sctp_timer_start(SCTP_TIMER_TYPE_SEND, stcb->sctp_ep, stcb, chk->whoTo);
 	}
 }
@@ -5354,6 +5357,8 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 			} else {
 				struct mbuf *ret_buf;
 				struct sctp_inpcb *linp;
+				struct sctp_tmit_chunk *chk;
+
 				if (stcb) {
 					linp = NULL;
 				} else {
@@ -5416,14 +5421,13 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 					got_auth = 1;
 					auth_skipped = 0;
 				}
-				if (!TAILQ_EMPTY(&stcb->asoc.sent_queue)) {
-					/*
-					 * Restart the timer if we have
-					 * pending data
-					 */
-					struct sctp_tmit_chunk *chk;
-
-					chk = TAILQ_FIRST(&stcb->asoc.sent_queue);
+				/* Restart the timer if we have pending data */
+				TAILQ_FOREACH(chk, &asoc->sent_queue, sctp_next) {
+					if (chk->whoTo != NULL) {
+						break;
+					}
+				}
+				if (chk != NULL) {
 					sctp_timer_start(SCTP_TIMER_TYPE_SEND, stcb->sctp_ep, stcb, chk->whoTo);
 				}
 			}

@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 359657 2020-04-06 13:58:13Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 360878 2020-05-10 17:19:19Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1932,14 +1932,19 @@ sctp_timeout_handler(void *t)
 			struct sctp_tmit_chunk *chk;
 
 			/*
-			 * safeguard. If there on some on the sent queue
+			 * Safeguard. If there on some on the sent queue
 			 * somewhere but no timers running something is
 			 * wrong... so we start a timer on the first chunk
 			 * on the send queue on whatever net it is sent to.
 			 */
-			chk = TAILQ_FIRST(&stcb->asoc.sent_queue);
-			sctp_timer_start(SCTP_TIMER_TYPE_SEND, inp, stcb,
-			    chk->whoTo);
+			TAILQ_FOREACH(chk, &stcb->asoc.sent_queue, sctp_next) {
+				if (chk->whoTo != NULL) {
+					break;
+				}
+			}
+			if (chk != NULL) {
+				sctp_timer_start(SCTP_TIMER_TYPE_SEND, stcb->sctp_ep, stcb, chk->whoTo);
+			}
 		}
 		break;
 	case SCTP_TIMER_TYPE_INIT:
