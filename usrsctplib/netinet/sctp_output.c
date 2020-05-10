@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 360671 2020-05-05 19:54:30Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 360869 2020-05-10 10:03:10Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6690,11 +6690,11 @@ sctp_prune_prsctp(struct sctp_tcb *stcb,
 				 * This one is PR-SCTP AND buffer space
 				 * limited type
 				 */
-				if (chk->rec.data.timetodrop.tv_sec >= (long)srcv->sinfo_timetolive) {
+				if (chk->rec.data.timetodrop.tv_sec > (long)srcv->sinfo_timetolive) {
 					/*
 					 * Lower numbers equates to higher
 					 * priority so if the one we are
-					 * looking at has a larger or equal
+					 * looking at has a larger
 					 * priority we want to drop the data
 					 * and NOT retransmit it.
 					 */
@@ -6725,7 +6725,7 @@ sctp_prune_prsctp(struct sctp_tcb *stcb,
 		TAILQ_FOREACH_SAFE(chk, &asoc->send_queue, sctp_next, nchk) {
 			/* Here we must move to the sent queue and mark */
 			if (PR_SCTP_BUF_ENABLED(chk->flags)) {
-				if (chk->rec.data.timetodrop.tv_sec >= (long)srcv->sinfo_timetolive) {
+				if (chk->rec.data.timetodrop.tv_sec > (long)srcv->sinfo_timetolive) {
 					if (chk->data) {
 						/*
 						 * We release the book_size
@@ -13640,8 +13640,8 @@ sctp_lower_sosend(struct socket *so,
 		sndlen = SCTP_HEADER_LEN(i_pak);
 #endif
 	}
-	SCTPDBG(SCTP_DEBUG_OUTPUT1, "Send called addr:%p send length %zu\n",
-		(void *)addr,
+	SCTPDBG(SCTP_DEBUG_OUTPUT1, "Send called addr:%p send length %zd\n",
+	        (void *)addr,
 	        sndlen);
 #ifdef __Panda__
 	if (i_control) {
