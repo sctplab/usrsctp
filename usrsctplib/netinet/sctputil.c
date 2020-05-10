@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 360878 2020-05-10 17:19:19Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 360885 2020-05-10 22:54:30Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1543,6 +1543,7 @@ select_a_new_ep:
 		}
 		tinp = it->inp;
 		it->inp = LIST_NEXT(it->inp, sctp_list);
+		it->stcb = NULL;
 		SCTP_INP_RUNLOCK(tinp);
 		if (it->inp == NULL) {
 			goto done_with_iterator;
@@ -1618,6 +1619,9 @@ select_a_new_ep:
 			atomic_add_int(&it->stcb->asoc.refcnt, -1);
 			iteration_count = 0;
 		}
+		KASSERT(it->inp == it->stcb->sctp_ep,
+		        ("%s: stcb %p does not belong to inp %p, but inp %p",
+		         __func__, it->stcb, it->inp, it->stcb->sctp_ep));
 
 		/* run function on this one */
 		(*it->function_assoc)(it->inp, it->stcb, it->pointer, it->val);
@@ -1650,6 +1654,7 @@ select_a_new_ep:
 	} else {
 		it->inp = LIST_NEXT(it->inp, sctp_list);
 	}
+	it->stcb = NULL;
 	if (it->inp == NULL) {
 		goto done_with_iterator;
 	}
