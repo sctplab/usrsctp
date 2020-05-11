@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 360878 2020-05-10 17:19:19Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 360942 2020-05-11 22:47:20Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5422,7 +5422,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 					auth_skipped = 0;
 				}
 				/* Restart the timer if we have pending data */
-				TAILQ_FOREACH(chk, &asoc->sent_queue, sctp_next) {
+				TAILQ_FOREACH(chk, &stcb->asoc.sent_queue, sctp_next) {
 					if (chk->whoTo != NULL) {
 						break;
 					}
