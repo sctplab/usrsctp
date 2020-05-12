@@ -3406,15 +3406,15 @@ usrsctp_dumppacket(const void *buf, size_t len, int outbound)
 	localtime_s(&t, &tb.time);
 #if defined(__MINGW32__)
 	if (snprintf(dump_buf, PREAMBLE_LENGTH + 1, PREAMBLE_FORMAT,
-	            outbound ? 'O' : 'I',
-	            t.tm_hour, t.tm_min, t.tm_sec, (long)(1000 * tb.millitm)) < 0) {
+	             outbound ? 'O' : 'I',
+	             t.tm_hour, t.tm_min, t.tm_sec, (long)(1000 * tb.millitm)) < 0) {
 		free(dump_buf);
 		return (NULL);
 	}
 #else
 	if (_snprintf_s(dump_buf, PREAMBLE_LENGTH + 1, PREAMBLE_LENGTH, PREAMBLE_FORMAT,
-	            outbound ? 'O' : 'I',
-	            t.tm_hour, t.tm_min, t.tm_sec, (long)(1000 * tb.millitm)) < 0) {
+	                outbound ? 'O' : 'I',
+	                t.tm_hour, t.tm_min, t.tm_sec, (long)(1000 * tb.millitm)) < 0) {
 		free(dump_buf);
 		return (NULL);
 	}
@@ -3424,8 +3424,8 @@ usrsctp_dumppacket(const void *buf, size_t len, int outbound)
 	sec = (time_t)tv.tv_sec;
 	localtime_r((const time_t *)&sec, &t);
 	if (snprintf(dump_buf, PREAMBLE_LENGTH + 1, PREAMBLE_FORMAT,
-	         outbound ? 'O' : 'I',
-	         t.tm_hour, t.tm_min, t.tm_sec, (long)tv.tv_usec) < 0) {
+	             outbound ? 'O' : 'I',
+	             t.tm_hour, t.tm_min, t.tm_sec, (long)tv.tv_usec) < 0) {
 		free(dump_buf);
 		return (NULL);
 	}
