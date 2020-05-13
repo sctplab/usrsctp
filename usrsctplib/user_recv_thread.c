@@ -591,7 +591,8 @@ recv_function_raw6(void *arg)
 		src.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 		src.sin6_port = sh->src_port;
-		if (memcmp(&src.sin6_addr, &dst.sin6_addr, sizeof(struct in6_addr)) == 0) {
+		if (SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) &&
+		    (memcmp(&src.sin6_addr, &dst.sin6_addr, sizeof(struct in6_addr)) == 0)) {
 			compute_crc = 0;
 			SCTP_STAT_INCR(sctps_recvhwcrc);
 		} else {
@@ -796,7 +797,8 @@ recv_function_udp(void *arg)
 		port = src.sin_port;
 		src.sin_port = sh->src_port;
 		dst.sin_port = sh->dest_port;
-		if (src.sin_addr.s_addr == dst.sin_addr.s_addr) {
+		if (SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) &&
+		    (src.sin_addr.s_addr == dst.sin_addr.s_addr)) {
 			compute_crc = 0;
 			SCTP_STAT_INCR(sctps_recvhwcrc);
 		} else {
@@ -983,7 +985,8 @@ recv_function_udp6(void *arg)
 		port = src.sin6_port;
 		src.sin6_port = sh->src_port;
 		dst.sin6_port = sh->dest_port;
-		if ((memcmp(&src.sin6_addr, &dst.sin6_addr, sizeof(struct in6_addr)) == 0)) {
+		if (SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) &&
+		    (memcmp(&src.sin6_addr, &dst.sin6_addr, sizeof(struct in6_addr)) == 0)) {
 			compute_crc = 0;
 			SCTP_STAT_INCR(sctps_recvhwcrc);
 		} else {
@@ -1453,6 +1456,7 @@ recv_thread_destroy(void)
 #if defined(INET) || defined(INET6)
 	if (SCTP_BASE_VAR(userspace_route) != -1) {
 		close(SCTP_BASE_VAR(userspace_route));
+		pthread_join(SCTP_BASE_VAR(recvthreadroute), NULL);
 	}
 #endif
 #endif
@@ -1460,15 +1464,25 @@ recv_thread_destroy(void)
 	if (SCTP_BASE_VAR(userspace_rawsctp) != -1) {
 #if defined(__Userspace_os_Windows)
 		closesocket(SCTP_BASE_VAR(userspace_rawsctp));
+		SCTP_BASE_VAR(userspace_rawsctp) = -1;
+		WaitForSingleObject(SCTP_BASE_VAR(recvthreadraw), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(recvthreadraw));
 #else
 		close(SCTP_BASE_VAR(userspace_rawsctp));
+		SCTP_BASE_VAR(userspace_rawsctp) = -1;
+		pthread_join(SCTP_BASE_VAR(recvthreadraw), NULL);
 #endif
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp) != -1) {
 #if defined(__Userspace_os_Windows)
 		closesocket(SCTP_BASE_VAR(userspace_udpsctp));
+		SCTP_BASE_VAR(userspace_udpsctp) = -1;
+		WaitForSingleObject(SCTP_BASE_VAR(recvthreadudp), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(recvthreadudp));
 #else
 		close(SCTP_BASE_VAR(userspace_udpsctp));
+		SCTP_BASE_VAR(userspace_udpsctp) = -1;
+		pthread_join(SCTP_BASE_VAR(recvthreadudp), NULL);
 #endif
 	}
 #endif
@@ -1476,15 +1490,25 @@ recv_thread_destroy(void)
 	if (SCTP_BASE_VAR(userspace_rawsctp6) != -1) {
 #if defined(__Userspace_os_Windows)
 		closesocket(SCTP_BASE_VAR(userspace_rawsctp6));
+		SCTP_BASE_VAR(userspace_rawsctp6) = -1;
+		WaitForSingleObject(SCTP_BASE_VAR(recvthreadraw6), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(recvthreadraw6));
 #else
 		close(SCTP_BASE_VAR(userspace_rawsctp6));
+		SCTP_BASE_VAR(userspace_rawsctp6) = -1;
+		pthread_join(SCTP_BASE_VAR(recvthreadraw6), NULL);
 #endif
 	}
 	if (SCTP_BASE_VAR(userspace_udpsctp6) != -1) {
 #if defined(__Userspace_os_Windows)
+		SCTP_BASE_VAR(userspace_udpsctp6) = -1;
 		closesocket(SCTP_BASE_VAR(userspace_udpsctp6));
+		WaitForSingleObject(SCTP_BASE_VAR(recvthreadudp6), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(recvthreadudp6));
 #else
 		close(SCTP_BASE_VAR(userspace_udpsctp6));
+		SCTP_BASE_VAR(userspace_udpsctp6) = -1;
+		pthread_join(SCTP_BASE_VAR(recvthreadudp6), NULL);
 #endif
 	}
 #endif
