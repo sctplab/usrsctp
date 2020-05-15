@@ -2583,6 +2583,13 @@ usrsctp_set_ulpinfo(struct socket *so, void *ulp_info)
 	return (register_ulp_info(so, ulp_info));
 }
 
+
+int
+usrsctp_get_ulpinfo(struct socket *so, void **pulp_info)
+{
+	return (retrieve_ulp_info(so, pulp_info));
+}
+
 int
 usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 {

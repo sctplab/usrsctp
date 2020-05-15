@@ -614,6 +614,7 @@ int register_recv_cb (struct socket *,
                               struct sctp_rcvinfo, int, void *));
 int register_send_cb (struct socket *, uint32_t, int (*)(struct socket *, uint32_t));
 int register_ulp_info (struct socket *, void *);
+int retrieve_ulp_info (struct socket *, void **);
 
 #endif
 struct sctp_tcb {

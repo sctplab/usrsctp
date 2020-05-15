@@ -9205,4 +9205,23 @@ register_ulp_info (struct socket *so, void *ulp_info)
 	SCTP_INP_WUNLOCK(inp);
 	return (1);
 }
+
+int
+retrieve_ulp_info (struct socket *so, void **pulp_info)
+{
+	struct sctp_inpcb *inp;
+
+	if (pulp_info == NULL) {
+		return (0);
+	}
+
+	inp = (struct sctp_inpcb *) so->so_pcb;
+	if (inp == NULL) {
+		return (0);
+	}
+	SCTP_INP_RLOCK(inp);
+	*pulp_info = inp->ulp_info;
+	SCTP_INP_RUNLOCK(inp);
+	return (1);
+}
 #endif
