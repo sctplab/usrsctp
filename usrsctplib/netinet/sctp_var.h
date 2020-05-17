@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_var.h 357708 2020-02-09 22:40:05Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_var.h 360292 2020-04-25 09:06:11Z melifaro $");
 #endif
 
 #ifndef _NETINET_SCTP_VAR_H_
@@ -186,16 +186,13 @@ extern struct pr_usrreqs sctp_usrreqs;
 	} \
 }
 
-#if defined(__FreeBSD__) && __FreeBSD_version > 500000
+#if defined(__FreeBSD__)
 
 #define sctp_free_remote_addr(__net) { \
 	if ((__net)) {  \
 		if (SCTP_DECREMENT_AND_CHECK_REFCOUNT(&(__net)->ref_count)) { \
 			(void)SCTP_OS_TIMER_STOP(&(__net)->rxt_timer.timer); \
-			if ((__net)->ro.ro_rt) { \
-				RTFREE((__net)->ro.ro_rt); \
-				(__net)->ro.ro_rt = NULL; \
-			} \
+			RO_NHFREE(&(__net)->ro); \
 			if ((__net)->src_addr_selected) { \
 				sctp_free_ifa((__net)->ro._s_addr); \
 				(__net)->ro._s_addr = NULL; \

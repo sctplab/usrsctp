@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 359405 2020-03-28 20:25:45Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 361145 2020-05-17 22:31:38Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4670,18 +4670,22 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 			} else {
 				imtu = 0;
 			}
-			rmtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._l_addr.sa, net->ro.ro_rt);
 #if defined(__FreeBSD__)
+			rmtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._l_addr.sa, net->ro.ro_nh);
 			hcmtu = sctp_hc_get_mtu(&net->ro._l_addr, stcb->sctp_ep->fibnum);
 #else
+			rmtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._l_addr.sa, net->ro.ro_rt);
 			hcmtu = 0;
 #endif
 			net->mtu = sctp_min_mtu(hcmtu, rmtu, imtu);
+#if defined(__FreeBSD__)
+#else
 			if (rmtu == 0) {
 				/* Start things off to match mtu of interface please. */
 				SCTP_SET_MTU_OF_ROUTE(&net->ro._l_addr.sa,
 				                      net->ro.ro_rt, net->mtu);
 			}
+#endif
 		}
 	}
 #endif
@@ -4781,26 +4785,36 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 		*netp = net;
 	}
 	netfirst = TAILQ_FIRST(&stcb->asoc.nets);
+#if defined(__FreeBSD__)
+	if (net->ro.ro_nh == NULL) {
+#else
 	if (net->ro.ro_rt == NULL) {
+#endif
 		/* Since we have no route put it at the back */
 		TAILQ_INSERT_TAIL(&stcb->asoc.nets, net, sctp_next);
 	} else if (netfirst == NULL) {
 		/* We are the first one in the pool. */
 		TAILQ_INSERT_HEAD(&stcb->asoc.nets, net, sctp_next);
+#if defined(__FreeBSD__)
+	} else if (netfirst->ro.ro_nh == NULL) {
+#else
 	} else if (netfirst->ro.ro_rt == NULL) {
+#endif
 		/*
 		 * First one has NO route. Place this one ahead of the first
 		 * one.
 		 */
 		TAILQ_INSERT_HEAD(&stcb->asoc.nets, net, sctp_next);
-#ifndef __Panda__
+#if defined(__FreeBSD__)
+	} else if (net->ro.ro_nh->nh_ifp != netfirst->ro.ro_nh->nh_ifp) {
+#else
 	} else if (net->ro.ro_rt->rt_ifp != netfirst->ro.ro_rt->rt_ifp) {
+#endif
 		/*
 		 * This one has a different interface than the one at the
 		 * top of the list. Place it ahead.
 		 */
 		TAILQ_INSERT_HEAD(&stcb->asoc.nets, net, sctp_next);
-#endif
 	} else {
 		/*
 		 * Ok we have the same interface as the first one. Move
@@ -4816,34 +4830,39 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 				/* End of the list */
 				TAILQ_INSERT_TAIL(&stcb->asoc.nets, net, sctp_next);
 				break;
+#if defined(__FreeBSD__)
+			} else if (netlook->ro.ro_nh == NULL) {
+#else
 			} else if (netlook->ro.ro_rt == NULL) {
+#endif
 				/* next one has NO route */
 				TAILQ_INSERT_BEFORE(netfirst, net, sctp_next);
 				break;
-			}
-#ifndef __Panda__
-			else if (netlook->ro.ro_rt->rt_ifp != net->ro.ro_rt->rt_ifp)
+#if defined(__FreeBSD__)
+			} else if (netlook->ro.ro_nh->nh_ifp != net->ro.ro_nh->nh_ifp) {
 #else
-			else
+			} else if (netlook->ro.ro_rt->rt_ifp != net->ro.ro_rt->rt_ifp) {
 #endif
-			{
 				TAILQ_INSERT_AFTER(&stcb->asoc.nets, netlook,
-						   net, sctp_next);
+				                   net, sctp_next);
 				break;
 			}
-#ifndef __Panda__
 			/* Shift forward */
 			netfirst = netlook;
-#endif
 		} while (netlook != NULL);
 	}
 
 	/* got to have a primary set */
 	if (stcb->asoc.primary_destination == 0) {
 		stcb->asoc.primary_destination = net;
+#if defined(__FreeBSD__)
+	} else if ((stcb->asoc.primary_destination->ro.ro_nh == NULL) &&
+	           (net->ro.ro_nh) &&
+#else
 	} else if ((stcb->asoc.primary_destination->ro.ro_rt == NULL) &&
-		    (net->ro.ro_rt) &&
-	    ((net->dest_state & SCTP_ADDR_UNCONFIRMED) == 0)) {
+	           (net->ro.ro_rt) &&
+#endif
+	           ((net->dest_state & SCTP_ADDR_UNCONFIRMED) == 0)) {
 		/* No route to current primary adopt new primary */
 		stcb->asoc.primary_destination = net;
 	}
@@ -6273,6 +6292,9 @@ sctp_del_local_addr_ep(struct sctp_inpcb *inp, struct sctp_ifa *ifa)
 			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 				if (net->ro._s_addr == laddr->ifa) {
 					/* Yep, purge src address selected */
+#if defined(__FreeBSD__)
+					RO_NHFREE(&net->ro);
+#else
 					sctp_rtentry_t *rt;
 
 					/* delete this address if cached */
@@ -6281,6 +6303,7 @@ sctp_del_local_addr_ep(struct sctp_inpcb *inp, struct sctp_ifa *ifa)
 						RTFREE(rt);
 						net->ro.ro_rt = NULL;
 					}
+#endif
 					sctp_free_ifa(net->ro._s_addr);
 					net->ro._s_addr = NULL;
 					net->src_addr_selected = 0;

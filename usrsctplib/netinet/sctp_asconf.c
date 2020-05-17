@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 360878 2020-05-10 17:19:19Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 361145 2020-05-17 22:31:38Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -996,8 +996,12 @@ sctp_asconf_nets_cleanup(struct sctp_tcb *stcb, struct sctp_ifn *ifn)
 		    ((ifn == NULL) ||
 		     (SCTP_GET_IF_INDEX_FROM_ROUTE(&net->ro) != ifn->ifn_index))) {
 			/* clear any cached route */
+#if defined(__FreeBSD__)
+			RO_NHFREE(&net->ro);
+#else
 			RTFREE(net->ro.ro_rt);
 			net->ro.ro_rt = NULL;
+#endif
 		}
 		/* clear any cached source address */
 		if (net->src_addr_selected) {
@@ -1111,10 +1115,14 @@ sctp_path_check_and_react(struct sctp_tcb *stcb, struct sctp_ifa *newifa)
 	if (addrnum == 1) {
 		TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 			/* clear any cached route and source address */
+#if defined(__FreeBSD__)
+			RO_NHFREE(&net->ro);
+#else
 			if (net->ro.ro_rt) {
 				RTFREE(net->ro.ro_rt);
 				net->ro.ro_rt = NULL;
 			}
+#endif
 			if (net->src_addr_selected) {
 				sctp_free_ifa(net->ro._s_addr);
 				net->ro._s_addr = NULL;
@@ -1133,10 +1141,14 @@ sctp_path_check_and_react(struct sctp_tcb *stcb, struct sctp_ifa *newifa)
 	/* Multiple local addresses exsist in the association.  */
 	TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 		/* clear any cached route and source address */
+#if defined(__FreeBSD__)
+		RO_NHFREE(&net->ro);
+#else
 		if (net->ro.ro_rt) {
 			RTFREE(net->ro.ro_rt);
 			net->ro.ro_rt = NULL;
 		}
+#endif
 		if (net->src_addr_selected) {
 			sctp_free_ifa(net->ro._s_addr);
 			net->ro._s_addr = NULL;
@@ -1151,7 +1163,11 @@ sctp_path_check_and_react(struct sctp_tcb *stcb, struct sctp_ifa *newifa)
 		SCTP_RTALLOC((sctp_route_t *)&net->ro,
 			     stcb->sctp_ep->def_vrf_id,
 			     stcb->sctp_ep->fibnum);
+#if defined(__FreeBSD__)
+		if (net->ro.ro_nh == NULL)
+#else
 		if (net->ro.ro_rt == NULL)
+#endif
 			continue;
 
 		changed = 0;
@@ -2240,18 +2256,19 @@ sctp_asconf_iterator_stcb(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		} else if (type == SCTP_DEL_IP_ADDRESS) {
 			struct sctp_nets *net;
 			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
-				sctp_rtentry_t *rt;
-
 				/* delete this address if cached */
 				if (net->ro._s_addr == ifa) {
 					sctp_free_ifa(net->ro._s_addr);
 					net->ro._s_addr = NULL;
 					net->src_addr_selected = 0;
-					rt = net->ro.ro_rt;
-					if (rt) {
-						RTFREE(rt);
+#if defined(__FreeBSD__)
+					RO_NHFREE(&net->ro);
+#else
+					if (net->ro.ro_rt) {
+						RTFREE(net->ro.ro_rt);
 						net->ro.ro_rt = NULL;
 					}
+#endif
 					/*
 					 * Now we deleted our src address,
 					 * should we not also now reset the

@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 360869 2020-05-10 10:03:10Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 361145 2020-05-17 22:31:38Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3474,13 +3474,21 @@ sctp_source_address_selection(struct sctp_inpcb *inp,
 	 *   addresses. If the bound set is NOT assigned to the interface then
 	 *   we must use rotation amongst the bound addresses..
 	 */
+#if defined(__FreeBSD__)
+	if (ro->ro_nh == NULL) {
+#else
 	if (ro->ro_rt == NULL) {
+#endif
 		/*
 		 * Need a route to cache.
 		 */
 		SCTP_RTALLOC(ro, vrf_id, inp->fibnum);
 	}
+#if defined(__FreeBSD__)
+	if (ro->ro_nh == NULL) {
+#else
 	if (ro->ro_rt == NULL) {
+#endif
 		return (NULL);
 	}
 #if defined(__Userspace_os_Windows)
@@ -4305,10 +4313,14 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 				sctp_free_ifa(net->ro._s_addr);
 				net->ro._s_addr = NULL;
 				net->src_addr_selected = 0;
+#if defined(__FreeBSD__)
+				RO_NHFREE(ro);
+#else
 				if (ro->ro_rt) {
 					RTFREE(ro->ro_rt);
 					ro->ro_rt = NULL;
 				}
+#endif
 			}
 			if (net->src_addr_selected == 0) {
 				/* Cache the source address */
@@ -4388,7 +4400,11 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		 * that somewhere and abort the association right away
 		 * (assuming this is an INIT being sent).
 		 */
+#if defined(__FreeBSD__)
+		if (ro->ro_nh == NULL) {
+#else
 		if (ro->ro_rt == NULL) {
+#endif
 			/*
 			 * src addr selection failed to find a route (or
 			 * valid source addr), so we can't get there from
@@ -4406,8 +4422,13 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			(uint32_t) (ntohl(ip->ip_src.s_addr)));
 		SCTPDBG(SCTP_DEBUG_OUTPUT3, "Destination is %x\n",
 			(uint32_t)(ntohl(ip->ip_dst.s_addr)));
+#if defined(__FreeBSD__)
+		SCTPDBG(SCTP_DEBUG_OUTPUT3, "RTP route is %p through\n",
+			(void *)ro->ro_nh);
+#else
 		SCTPDBG(SCTP_DEBUG_OUTPUT3, "RTP route is %p through\n",
 			(void *)ro->ro_rt);
+#endif
 
 		if (SCTP_GET_HEADER_FOR_OUTPUT(o_pak)) {
 			/* failed to prepend data, give up */
@@ -4480,8 +4501,8 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		SCTPDBG(SCTP_DEBUG_OUTPUT3, "IP output returns %d\n", ret);
 		if (net == NULL) {
 			/* free tempy routes */
-#if defined(__FreeBSD__) && __FreeBSD_version > 901000
-			RO_RTFREE(ro);
+#if defined(__FreeBSD__)
+			RO_NHFREE(ro);
 #else
 			if (ro->ro_rt) {
 				RTFREE(ro->ro_rt);
@@ -4489,11 +4510,19 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			}
 #endif
 		} else {
+#if defined(__FreeBSD__)
+			if ((ro->ro_nh != NULL) && (net->ro._s_addr) &&
+#else
 			if ((ro->ro_rt != NULL) && (net->ro._s_addr) &&
+#endif
 			    ((net->dest_state & SCTP_ADDR_NO_PMTUD) == 0)) {
 				uint32_t mtu;
 
+#if defined(__FreeBSD__)
+				mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._l_addr.sa, ro->ro_nh);
+#else
 				mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._l_addr.sa, ro->ro_rt);
+#endif
 				if (mtu > 0) {
 					if (net->port) {
 						mtu -= sizeof(struct udphdr);
@@ -4505,7 +4534,11 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 						net->mtu = mtu;
 					}
 				}
+#if defined(__FreeBSD__)
+			} else if (ro->ro_nh == NULL) {
+#else
 			} else if (ro->ro_rt == NULL) {
+#endif
 				/* route was freed */
 				if (net->ro._s_addr &&
 				    net->src_addr_selected) {
@@ -4667,10 +4700,14 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 				sctp_free_ifa(net->ro._s_addr);
 				net->ro._s_addr = NULL;
 				net->src_addr_selected = 0;
+#if defined(__FreeBSD__)
+				RO_NHFREE(ro);
+#else
 				if (ro->ro_rt) {
 					RTFREE(ro->ro_rt);
 					ro->ro_rt = NULL;
 				}
+#endif
 			}
 			if (net->src_addr_selected == 0) {
 #ifdef SCTP_EMBEDDED_V6_SCOPE
@@ -4768,7 +4805,11 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		}
 		lsa6->sin6_port = inp->sctp_lport;
 
+#if defined(__FreeBSD__)
+		if (ro->ro_nh == NULL) {
+#else
 		if (ro->ro_rt == NULL) {
+#endif
 			/*
 			 * src addr selection failed to find a route (or
 			 * valid source addr), so we can't get there from
@@ -4945,8 +4986,8 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		}
 		if (net == NULL) {
 			/* Now if we had a temp route free it */
-#if defined(__FreeBSD__) && __FreeBSD_version > 901000
-			RO_RTFREE(ro);
+#if defined(__FreeBSD__)
+			RO_NHFREE(ro);
 #else
 			if (ro->ro_rt) {
 				RTFREE(ro->ro_rt);
@@ -4955,7 +4996,11 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #endif
 		} else {
 			/* PMTU check versus smallest asoc MTU goes here */
+#if defined(__FreeBSD__)
+			if (ro->ro_nh == NULL) {
+#else
 			if (ro->ro_rt == NULL) {
+#endif
 				/* Route was freed */
 				if (net->ro._s_addr &&
 				    net->src_addr_selected) {
@@ -4964,11 +5009,19 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 				}
 				net->src_addr_selected = 0;
 			}
+#if defined(__FreeBSD__)
+			if ((ro->ro_nh != NULL) && (net->ro._s_addr) &&
+#else
 			if ((ro->ro_rt != NULL) && (net->ro._s_addr) &&
+#endif
 			    ((net->dest_state & SCTP_ADDR_NO_PMTUD) == 0)) {
 				uint32_t mtu;
 
+#if defined(__FreeBSD__)
+				mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._l_addr.sa, ro->ro_nh);
+#else
 				mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._l_addr.sa, ro->ro_rt);
+#endif
 				if (mtu > 0) {
 					if (net->port) {
 						mtu -= sizeof(struct udphdr);
@@ -6693,10 +6746,10 @@ sctp_prune_prsctp(struct sctp_tcb *stcb,
 				if (chk->rec.data.timetodrop.tv_sec > (long)srcv->sinfo_timetolive) {
 					/*
 					 * Lower numbers equates to higher
-					 * priority so if the one we are
-					 * looking at has a larger
-					 * priority we want to drop the data
-					 * and NOT retransmit it.
+					 * priority. So if the one we are
+					 * looking at has a larger priority,
+					 * we want to drop the data and NOT
+					 * retransmit it.
 					 */
 					if (chk->data) {
 						/*
@@ -15021,7 +15074,11 @@ sctp_v6src_match_nexthop(struct sockaddr_in6 *src6, sctp_route_t *ro)
 	struct nd_pfxrouter *pfxrtr = NULL;
 	struct sockaddr_in6 gw6;
 
+#if defined(__FreeBSD__)
+	if (ro == NULL || ro->ro_nh == NULL || src6->sin6_family != AF_INET6)
+#else
 	if (ro == NULL || ro->ro_rt == NULL || src6->sin6_family != AF_INET6)
+#endif
 		return (0);
 
 	/* get prefix entry of address */
@@ -15060,10 +15117,16 @@ sctp_v6src_match_nexthop(struct sockaddr_in6 *src6, sctp_route_t *ro)
 		SCTPDBG(SCTP_DEBUG_OUTPUT2, "prefix router is ");
 		SCTPDBG_ADDR(SCTP_DEBUG_OUTPUT2, (struct sockaddr *)&gw6);
 		SCTPDBG(SCTP_DEBUG_OUTPUT2, "installed router is ");
-		SCTPDBG_ADDR(SCTP_DEBUG_OUTPUT2, ro->ro_rt->rt_gateway);
-		if (sctp_cmpaddr((struct sockaddr *)&gw6, ro->ro_rt->rt_gateway)) {
 #if defined(__FreeBSD__)
+		SCTPDBG_ADDR(SCTP_DEBUG_OUTPUT2, &ro->ro_nh->gw_sa);
+#else
+		SCTPDBG_ADDR(SCTP_DEBUG_OUTPUT2, ro->ro_rt->rt_gateway);
+#endif
+#if defined(__FreeBSD__)
+		if (sctp_cmpaddr((struct sockaddr *)&gw6, &ro->ro_nh->gw_sa)) {
 			ND6_RUNLOCK();
+#else
+		if (sctp_cmpaddr((struct sockaddr *)&gw6, ro->ro_rt->rt_gateway)) {
 #endif
 			SCTPDBG(SCTP_DEBUG_OUTPUT2, "pfxrouter is installed\n");
 			return (1);
@@ -15085,7 +15148,11 @@ sctp_v4src_match_nexthop(struct sctp_ifa *sifa, sctp_route_t *ro)
 	struct ifaddr *ifa;
 	struct in_addr srcnetaddr, gwnetaddr;
 
+#if defined(__FreeBSD__)
+	if (ro == NULL || ro->ro_nh == NULL ||
+#else
 	if (ro == NULL || ro->ro_rt == NULL ||
+#endif
 	    sifa->address.sa.sa_family != AF_INET) {
 		return (0);
 	}
@@ -15097,10 +15164,18 @@ sctp_v4src_match_nexthop(struct sctp_ifa *sifa, sctp_route_t *ro)
 	SCTPDBG_ADDR(SCTP_DEBUG_OUTPUT2, &sifa->address.sa);
 	SCTPDBG(SCTP_DEBUG_OUTPUT1, "network address is %x\n", srcnetaddr.s_addr);
 
+#if defined(__FreeBSD__)
+	sin = &ro->ro_nh->gw4_sa;
+#else
 	sin = (struct sockaddr_in *)ro->ro_rt->rt_gateway;
+#endif
 	gwnetaddr.s_addr = (sin->sin_addr.s_addr & mask->sin_addr.s_addr);
 	SCTPDBG(SCTP_DEBUG_OUTPUT1, "match_nexthop4: nexthop is ");
+#if defined(__FreeBSD__)
+	SCTPDBG_ADDR(SCTP_DEBUG_OUTPUT2, &ro->ro_nh->gw_sa);
+#else
 	SCTPDBG_ADDR(SCTP_DEBUG_OUTPUT2, ro->ro_rt->rt_gateway);
+#endif
 	SCTPDBG(SCTP_DEBUG_OUTPUT1, "network address is %x\n", gwnetaddr.s_addr);
 	if (srcnetaddr.s_addr == gwnetaddr.s_addr) {
 		return (1);

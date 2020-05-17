@@ -348,7 +348,11 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 				return (NULL);
 			}
 		}
+#if defined(__FreeBSD__)
+		if (alt->ro.ro_nh == NULL) {
+#else
 		if (alt->ro.ro_rt == NULL) {
+#endif
 			if (alt->ro._s_addr) {
 				sctp_free_ifa(alt->ro._s_addr);
 				alt->ro._s_addr = NULL;
@@ -356,7 +360,11 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 			alt->src_addr_selected = 0;
 		}
 		if (((alt->dest_state & SCTP_ADDR_REACHABLE) == SCTP_ADDR_REACHABLE) &&
+#if defined(__FreeBSD__)
+		    (alt->ro.ro_nh != NULL) &&
+#else
 		    (alt->ro.ro_rt != NULL) &&
+#endif
 		    (!(alt->dest_state & SCTP_ADDR_UNCONFIRMED))) {
 			/* Found a reachable address */
 			break;
@@ -942,10 +950,14 @@ sctp_t3rxt_timer(struct sctp_inpcb *inp,
 		net->src_addr_selected = 0;
 
 		/* Force a route allocation too */
+#if defined(__FreeBSD__)
+		RO_NHFREE(&net->ro);
+#else
 		if (net->ro.ro_rt) {
 			RTFREE(net->ro.ro_rt);
 			net->ro.ro_rt = NULL;
 		}
+#endif
 
 		/* Was it our primary? */
 		if ((stcb->asoc.primary_destination == net) && (alt != net)) {
@@ -1526,7 +1538,11 @@ sctp_pathmtu_timer(struct sctp_inpcb *inp,
 				net->src_addr_selected = 1;
 		}
 		if (net->ro._s_addr) {
+#if defined(__FreeBSD__)
+			mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._s_addr.sa, net->ro.ro_nh);
+#else
 			mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._s_addr.sa, net->ro.ro_rt);
+#endif
 #if defined(INET) || defined(INET6)
 			if (net->port) {
 				mtu -= sizeof(struct udphdr);
