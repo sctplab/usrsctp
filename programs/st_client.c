@@ -182,7 +182,7 @@ on_socket_readable(struct socket* s) {
 		if (flags & MSG_NOTIFICATION) {
 			printf("Notification of length %d received.\n", (int)retval);
 		} else {
-			printf("Msg of length %d received via %p:%u on stream %d with SSN %u and TSN %u, PPID %d, context %u.\n",
+			printf("Msg of length %d received via %p:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u.\n",
 			       (int)retval,
 			       addr.sconn.sconn_addr,
 			       ntohs(addr.sconn.sconn_port),
@@ -281,7 +281,7 @@ main(int argc, char *argv[])
 	/* set up a connected UDP socket */
 #ifdef _WIN32
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
-		printf("socket() failed with error: %ld\n", WSAGetLastError());
+		printf("socket() failed with error: %d\n", WSAGetLastError());
 		return (-1);
 	}
 #else
@@ -302,7 +302,7 @@ main(int argc, char *argv[])
 	}
 #ifdef _WIN32
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
-		printf("bind() failed with error: %ld\n", WSAGetLastError());
+		printf("bind() failed with error: %d\n", WSAGetLastError());
 		return (-1);
 	}
 #else
@@ -323,7 +323,7 @@ main(int argc, char *argv[])
 	}
 #ifdef _WIN32
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
-		printf("connect() failed with error: %ld\n", WSAGetLastError());
+		printf("connect() failed with error: %d\n", WSAGetLastError());
 		return (-1);
 	}
 #else
