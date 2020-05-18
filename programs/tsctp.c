@@ -218,7 +218,7 @@ static int
 send_cb(struct socket *sock, uint32_t sb_free) {
 	struct sctp_sndinfo sndinfo;
 
-	if ((cb_messages == 0) & verbose) {
+	if ((cb_messages == 0) && verbose) {
 		printf("Start sending ");
 		if (number_of_messages > 0) {
 			printf("%ld messages ", (long)number_of_messages);
