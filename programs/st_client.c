@@ -274,7 +274,7 @@ main(int argc, char *argv[])
 #ifdef _WIN32
 	if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
 		printf("WSAStartup failed\n");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 #endif
 	usrsctp_init_nothreads(0, conn_output, debug_printf_stack);
@@ -282,12 +282,12 @@ main(int argc, char *argv[])
 #ifdef _WIN32
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
 		printf("socket() failed with error: %d\n", WSAGetLastError());
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 #else
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 		perror("socket");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 #endif
 	memset(&sin, 0, sizeof(struct sockaddr_in));
@@ -298,17 +298,17 @@ main(int argc, char *argv[])
 	sin.sin_port = htons(atoi(argv[2]));
 	if (!inet_pton(AF_INET, argv[1], &sin.sin_addr.s_addr)){
 		printf("error: invalid address\n");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 #ifdef _WIN32
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
 		printf("bind() failed with error: %d\n", WSAGetLastError());
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 #else
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
 		perror("bind");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 #endif
 	memset(&sin, 0, sizeof(struct sockaddr_in));
@@ -319,17 +319,17 @@ main(int argc, char *argv[])
 	sin.sin_port = htons(atoi(argv[4]));
 	if (!inet_pton(AF_INET, argv[3], &sin.sin_addr.s_addr)){
 		printf("error: invalid address\n");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 #ifdef _WIN32
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
 		printf("connect() failed with error: %d\n", WSAGetLastError());
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 #else
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
 		perror("connect");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 #endif
 #ifdef SCTP_DEBUG
@@ -340,7 +340,7 @@ main(int argc, char *argv[])
 
 	if ((s = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 
 	usrsctp_setsockopt(s, IPPROTO_SCTP, SCTP_RECVRCVINFO, &on, sizeof(int));
@@ -356,7 +356,7 @@ main(int argc, char *argv[])
 	sconn.sconn_addr = NULL;
 	if (usrsctp_bind(s, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_bind");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
@@ -371,7 +371,7 @@ main(int argc, char *argv[])
 
 	if (retval < 0 && errno != EWOULDBLOCK && errno != EINPROGRESS) {
 		perror("usrsctp_connect");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 
 	connecting = 1;
