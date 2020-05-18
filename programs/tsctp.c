@@ -111,7 +111,7 @@ char Usage[] =
 #define BUFFERSIZE                 (1<<16)
 
 static int verbose, very_verbose;
-static unsigned int done; 
+static unsigned int done;
 
 void stop_sender(int sig)
 {
@@ -794,7 +794,7 @@ int main(int argc, char **argv)
 		gettimeofday(&time_now, NULL);
 		timersub(&time_now, &time_start, &time_diff);
 		seconds = time_diff.tv_sec + (double)time_diff.tv_usec/1000000;
-		printf("%s of %lu messages of length %u took %f seconds.\n",
+		printf("%s of %lu messages of length %d took %f seconds.\n",
 		       "Sending", messages, length, seconds);
 		throughput = (double)messages * (double)length / seconds;
 		printf("Throughput was %f Byte/sec.\n", throughput);
