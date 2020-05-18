@@ -1361,9 +1361,9 @@ sctp6_getaddr(struct socket *so, struct mbuf *nam)
 	uint32_t vrf_id;
 	struct sctp_ifa *sctp_ifa;
 
-#ifdef SCTP_KAME
+#if defined(SCTP_KAME) && defined(SCTP_EMBEDDED_V6_SCOPE)
 	int error;
-#endif /* SCTP_KAME */
+#endif
 
 	/*
 	 * Do the malloc first in case it blocks.
@@ -1594,7 +1594,9 @@ sctp6_in6getaddr(struct socket *so, struct sockaddr **nam)
 int
 sctp6_in6getaddr(struct socket *so, struct sockaddr *nam, uint32_t *namelen)
 {
+#ifdef INET
 	struct sockaddr *addr = nam;
+#endif
 #elif defined(__Userspace__)
 int
 sctp6_in6getaddr(struct socket *so, struct mbuf *nam)
@@ -1664,7 +1666,9 @@ sctp6_getpeeraddr(struct socket *so, struct sockaddr **nam)
 int
 sctp6_getpeeraddr(struct socket *so, struct sockaddr *nam, uint32_t *namelen)
 {
+#ifdef INET
 	struct sockaddr *addr = (struct sockaddr *)nam;
+#endif
 #elif defined(__Userspace__)
 int
 sctp6_getpeeraddr(struct socket *so, struct mbuf *nam)
@@ -1809,8 +1813,7 @@ sctp6_usrreq(so, req, m, nam, control, p)
 	struct mbuf *m, *nam, *control;
 	struct proc *p;
 {
-	int s;
-	int error = 0;
+	int error;
 	int family;
 	uint32_t vrf_id;
 	family = so->so_proto->pr_domain->dom_family;
@@ -1819,12 +1822,13 @@ sctp6_usrreq(so, req, m, nam, control, p)
 		switch (family) {
 		case PF_INET:
 			error = in_control(so, (long)m, (caddr_t)nam,
-			    (struct ifnet *)control
-			    );
+			    (struct ifnet *)control );
+			break;
 #ifdef INET6
 		case PF_INET6:
 			error = in6_control(so, (long)m, (caddr_t)nam,
 			    (struct ifnet *)control, p);
+			break;
 #endif
 		default:
 			SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP6_USRREQ, EAFNOSUPPORT);
@@ -1908,6 +1912,7 @@ sctp6_usrreq(so, req, m, nam, control, p)
 		error = 0;
 		break;
 	default:
+		error = 0;
 		break;
 	}
 	return (error);
