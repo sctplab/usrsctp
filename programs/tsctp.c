@@ -347,6 +347,7 @@ int main(int argc, char **argv)
 	unsigned long messages = 0;
 #ifdef _WIN32
 	unsigned long srcAddr;
+	HANDLE tid;
 #else
 	in_addr_t srcAddr;
 	pthread_t tid;
@@ -646,7 +647,7 @@ int main(int argc, char **argv)
 					continue;
 				}
 #ifdef _WIN32
-				CreateThread(NULL, 0, &handle_connection, (void *)conn_sock, 0, NULL);
+				tid = CreateThread(NULL, 0, &handle_connection, (void *)conn_sock, 0, NULL);
 #else
 				pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock);
 #endif
