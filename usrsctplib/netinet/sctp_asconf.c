@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 361145 2020-05-17 22:31:38Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 361209 2020-05-18 10:07:01Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1743,8 +1743,9 @@ sctp_handle_asconf_ack(struct mbuf *m, int offset,
 		char msg[SCTP_DIAG_INFO_LEN];
 
 		SCTPDBG(SCTP_DEBUG_ASCONF1, "handle_asconf_ack: got unexpected next serial number! Aborting asoc!\n");
-		snprintf(msg, sizeof(msg), "Never sent serial number %8.8x",
-			 serial_num);
+		if (snprintf(msg, sizeof(msg), "Never sent serial number %8.8x", serial_num) < 0) {
+			msg[0] = '\0';
+		}
 		op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
 		sctp_abort_an_association(stcb->sctp_ep, stcb, op_err, SCTP_SO_NOT_LOCKED);
 		*abort_no_unlock = 1;

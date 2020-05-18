@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 361145 2020-05-17 22:31:38Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 361209 2020-05-18 10:07:01Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6065,7 +6065,9 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		if (op_err == NULL) {
 			char msg[SCTP_DIAG_INFO_LEN];
 
-			snprintf(msg, sizeof(msg), "%s:%d at %s", __FILE__, __LINE__, __func__);
+			if (snprintf(msg, sizeof(msg), "%s:%d at %s", __FILE__, __LINE__, __func__) < 0) {
+				msg[0] = '\0';
+			}
 			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
 			                             msg);
 		}
@@ -7304,8 +7306,10 @@ sctp_sendall_iterator(struct sctp_inpcb *inp, struct sctp_tcb *stcb, void *ptr,
 						char msg[SCTP_DIAG_INFO_LEN];
 
 					abort_anyway:
-						snprintf(msg, sizeof(msg),
-						         "%s:%d at %s", __FILE__, __LINE__, __func__);
+						if (snprintf(msg, sizeof(msg),
+						             "%s:%d at %s", __FILE__, __LINE__, __func__) < 0) {
+							msg[0] = '\0';
+						}
 						op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
 						                             msg);
 						atomic_add_int(&stcb->asoc.refcnt, 1);
@@ -10206,8 +10210,10 @@ sctp_chunk_retransmission(struct sctp_inpcb *inp,
 			struct mbuf *op_err;
 			char msg[SCTP_DIAG_INFO_LEN];
 
-			snprintf(msg, sizeof(msg), "TSN %8.8x retransmitted %d times, giving up",
-				 chk->rec.data.tsn, chk->snd_count);
+			if (snprintf(msg, sizeof(msg), "TSN %8.8x retransmitted %d times, giving up",
+			             chk->rec.data.tsn, chk->snd_count) < 0) {
+				msg[0] = '\0';
+			}
 			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
 			                             msg);
 			atomic_add_int(&stcb->asoc.refcnt, 1);
@@ -14809,8 +14815,10 @@ dataless_eof:
 						atomic_add_int(&stcb->asoc.refcnt, -1);
 						free_cnt_applied = 0;
 					}
-					snprintf(msg, sizeof(msg),
-					         "%s:%d at %s", __FILE__, __LINE__, __func__);
+					if (snprintf(msg, sizeof(msg),
+					             "%s:%d at %s", __FILE__, __LINE__, __func__) < 0) {
+						msg[0] = '\0';
+					}
 					op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
 					                             msg);
 #if defined(__FreeBSD__)

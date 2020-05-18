@@ -137,6 +137,9 @@ on_connect(struct socket* s)
 	/* memset(buffer, 'A', BUFFER_SIZE); */
 	/* bufferlen = BUFFER_SIZE; */
 	bufferlen = snprintf(buffer, BUFFER_SIZE, "GET / HTTP/1.0\r\nUser-agent: libusrsctp\r\nConnection: close\r\n\r\n");
+	if (bufferlen < 0) {
+		return;
+	}
 	sndinfo.snd_sid = 0;
 	sndinfo.snd_flags = 0;
 	sndinfo.snd_ppid = htonl(DISCARD_PPID);

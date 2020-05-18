@@ -542,7 +542,9 @@ sctp_init_ifns_for_vrf(int vrfid)
 			} else {
 				ifa_flags = 0;
 			}
-			snprintf(name, SCTP_IFNAMSIZ, "%s%d", ifnet_name(ifn), ifnet_unit(ifn));
+			if (snprintf(name, SCTP_IFNAMSIZ, "%s%d", ifnet_name(ifn), ifnet_unit(ifn)) < 0) {
+				name[0] = '\0';
+			}
 			sctp_ifa = sctp_add_addr_to_vrf(vrfid,
 			                                (void *)ifn, /* XXX */
 			                                ifnet_index(ifn),

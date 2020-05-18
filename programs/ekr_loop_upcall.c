@@ -121,7 +121,9 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 	FILE *fp;
 	char fname[128];
 	static int pktnum = 0;
-	snprintf(fname, sizeof(fname), "pkt-%d", pktnum++);
+	if (snprintf(fname, sizeof(fname), "pkt-%d", pktnum++) < 0) {
+		fname[0] = '\0';
+	}
 	fp = fopen(fname, "wb");
 	fwrite((char *)buf + 12, 1, length - 12, fp);
 	fclose(fp);

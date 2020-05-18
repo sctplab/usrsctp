@@ -927,10 +927,12 @@ handle_peer_address_change_event(struct sctp_paddr_change *spc)
 		break;
 	default:
 #ifdef _WIN32
-		_snprintf(addr_buf, INET6_ADDRSTRLEN, "Unknown family %d", spc->spc_aaddr.ss_family);
+		if (_snprintf(addr_buf, INET6_ADDRSTRLEN, "Unknown family %d", spc->spc_aaddr.ss_family) < 0) {
 #else
-		snprintf(addr_buf, INET6_ADDRSTRLEN, "Unknown family %d", spc->spc_aaddr.ss_family);
+		if (snprintf(addr_buf, INET6_ADDRSTRLEN, "Unknown family %d", spc->spc_aaddr.ss_family) < 0) {
 #endif
+			addr_buf[0] = '\0';
+		}
 		addr = addr_buf;
 		break;
 	}
