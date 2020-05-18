@@ -888,7 +888,6 @@ static inline void sctp_userspace_rtfree(sctp_rtentry_t *rt)
 		return;
 	}
 	free(rt);
-	rt = NULL;
 }
 #define rtfree(arg1) sctp_userspace_rtfree(arg1)
 

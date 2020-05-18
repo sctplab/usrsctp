@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 355931 2019-12-20 15:25:08Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_auth.c 361227 2020-05-18 19:48:38Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -660,7 +660,6 @@ sctp_free_hmaclist(sctp_hmaclist_t *list)
 {
 	if (list != NULL) {
 		SCTP_FREE(list,SCTP_M_AUTH_HL);
-		list = NULL;
 	}
 }
 

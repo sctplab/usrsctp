@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 361209 2020-05-18 10:07:01Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 361222 2020-05-18 18:32:58Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1834,9 +1834,9 @@ sctp_handle_asconf_ack(struct mbuf *m, int offset,
 		}		/* switch */
 
 		/* update remaining ASCONF-ACK message length to process */
-		ack_length -= SCTP_SIZE32(param_length);
-		if (ack_length <= 0) {
-			/* no more data in the mbuf chain */
+		if (ack_length > SCTP_SIZE32(param_length)) {
+			ack_length -= SCTP_SIZE32(param_length);
+		} else {
 			break;
 		}
 		offset += SCTP_SIZE32(param_length);
@@ -3075,10 +3075,6 @@ sctp_check_address_list_ep(struct sctp_tcb *stcb, struct mbuf *m, int offset,
 		if (laddr->ifa == NULL) {
 			SCTPDBG(SCTP_DEBUG_ASCONF1,
 				"check_addr_list_ep: laddr->ifa is NULL");
-			continue;
-		}
-		if (laddr->ifa == NULL) {
-			SCTPDBG(SCTP_DEBUG_ASCONF1, "check_addr_list_ep: laddr->ifa->ifa_addr is NULL");
 			continue;
 		}
 		/* do i have it implicitly? */

@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 359410 2020-03-28 22:35:04Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 361226 2020-05-18 19:35:46Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1534,7 +1534,7 @@ sctp_fill_up_addresses_vrf(struct sctp_inpcb *inp,
 	struct sctp_vrf *vrf;
 
 	actual = 0;
-	if (limit <= 0)
+	if (limit == 0)
 		return (actual);
 
 	if (stcb) {
@@ -8566,9 +8566,9 @@ sctp_accept(struct socket *so, struct sockaddr **addr)
 	struct sctp_inpcb *inp;
 	union sctp_sockstore store;
 #ifdef INET6
-#ifdef SCTP_KAME
+#if defined(SCTP_KAME) && defined(SCTP_EMBEDDED_V6_SCOPE)
 	int error;
-#endif /* SCTP_KAME */
+#endif
 #endif
 	inp = (struct sctp_inpcb *)so->so_pcb;
 
@@ -9034,8 +9034,6 @@ sctp_usrreq(so, req, m, nam, control)
 	struct mbuf *m, *nam, *control;
 {
 	struct proc *p = curproc;
-	uint32_t vrf_id;
-	struct sctp_vrf *vrf;
 	int error;
 	int family;
 	struct sctp_inpcb *inp = (struct sctp_inpcb *)so->so_pcb;
