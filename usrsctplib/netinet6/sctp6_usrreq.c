@@ -1815,7 +1815,7 @@ sctp6_usrreq(so, req, m, nam, control, p)
 {
 	int error;
 	int family;
-	uint32_t vrf_id;
+
 	family = so->so_proto->pr_domain->dom_family;
 
 	if (req == PRU_CONTROL) {
