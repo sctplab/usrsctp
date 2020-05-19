@@ -3528,9 +3528,9 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	return;
 }
 
-void usrsctp_handle_timers(uint32_t elapsed_msecs)
+void usrsctp_handle_timers(uint32_t elapsed_milliseconds)
 {
-	sctp_handle_tick(MSEC_TO_TICKS(elapsed_msecs));
+	sctp_handle_tick(MSEC_TO_TICKS(elapsed_milliseconds));
 }
 
 int

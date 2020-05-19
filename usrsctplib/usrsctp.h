@@ -1042,7 +1042,7 @@ usrsctp_get_events(struct socket *so);
 
 
 void
-usrsctp_handle_timers(uint32_t elapsed_msecs);
+usrsctp_handle_timers(uint32_t elapsed_milliseconds);
 
 #define SCTP_DUMP_OUTBOUND 1
 #define SCTP_DUMP_INBOUND  0
