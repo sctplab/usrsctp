@@ -221,9 +221,19 @@ typedef char* caddr_t;
 
 #define bzero(buf, len) memset(buf, 0, len)
 #define bcopy(srcKey, dstKey, len) memcpy(dstKey, srcKey, len)
+
 #if defined(_MSC_VER) && (_MSC_VER < 1900) && !defined(__MINGW32__)
-#define snprintf(data, size, format, ...) _snprintf_s(data, size, _TRUNCATE, format, __VA_ARGS__)
+#define SCTP_SNPRINTF(data, size, format, ...) 					\
+	if (_snprintf_s(data, size, _TRUNCATE, format, __VA_ARGS__) < 0) {	\
+		data[0] = '\0';							\
+	}
+#else
+#define SCTP_SNPRINTF(data, ...)						\
+	if (snprintf(data, __VA_ARGS__) < 0 ) {					\
+		data[0] = '\0';							\
+	}
 #endif
+
 #define inline __inline
 #define __inline__ __inline
 #define	MSG_EOR		0x8		/* data completes record */
@@ -829,6 +839,11 @@ sctp_hashfreedestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask);
                                   } else if ((m->m_flags & M_EXT) == 0) { \
                                      M_ALIGN(m, len); \
                                   }
+
+#define SCTP_SNPRINTF(data, ...)						\
+	if (snprintf(data, __VA_ARGS__) < 0) {					\
+		data[0] = '\0';							\
+	}
 
 /* We make it so if you have up to 4 threads
  * writting based on the default size of
