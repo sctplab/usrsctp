@@ -108,6 +108,11 @@ sctp_cleanup_itqueue(void)
 void
 sctp_wakeup_iterator(void)
 {
+	if (!SCTP_BASE_VAR(iterator_thread_started)) {
+		// no dedicated thread stated, so execute
+		// iterator work on current thread
+		return sctp_iterator_worker();
+	}
 #if defined(SCTP_PROCESS_LEVEL_LOCKS)
 #if defined(__Userspace_os_Windows)
 	WakeAllConditionVariable(&sctp_it_ctl.iterator_wakeup);
@@ -177,7 +182,11 @@ sctp_iterator_thread(void *v SCTP_UNUSED)
 }
 
 void
+#if defined(__Userspace__)
+sctp_startup_iterator(int start_threads)
+#else
 sctp_startup_iterator(void)
+#endif
 {
 	if (sctp_it_ctl.thread_proc) {
 		/* You only get one */
@@ -187,6 +196,13 @@ sctp_startup_iterator(void)
 	SCTP_ITERATOR_LOCK_INIT();
 	SCTP_IPI_ITERATOR_WQ_INIT();
 	TAILQ_INIT(&sctp_it_ctl.iteratorhead);
+
+#if defined(__Userspace__)
+	if (!start_threads) {
+		return;
+	}
+#endif
+
 #if defined(__FreeBSD__)
 #if __FreeBSD_version <= 701000
 	kthread_create(sctp_iterator_thread,

@@ -47,7 +47,12 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.h 353480 2019-10-13 18:17:08Z
 extern struct iterator_control sctp_it_ctl;
 void sctp_wakeup_iterator(void);
 
-void sctp_startup_iterator(void);
+void
+#if defined(__Userspace__)
+sctp_startup_iterator(int start_threads);
+#else
+sctp_startup_iterator(void);
+#endif
 
 
 #ifdef INET6
