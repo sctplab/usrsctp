@@ -229,13 +229,32 @@ sctp_finish(void)
 #endif
 
 void
-sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint16_t nxtsz)
+sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint16_t nxtsz, struct sctp_nets *net)
 {
 	struct sctp_tmit_chunk *chk;
-	uint16_t overhead;
+	uint16_t overhead, allow = 0;
+	struct sctp_nets *mnet;
 
-	/* Adjust that too */
-	stcb->asoc.smallest_mtu = nxtsz;
+	if (stcb->asoc.smallest_mtu >= nxtsz) {
+		stcb->asoc.smallest_mtu = nxtsz;
+	} else {
+		if (stcb->asoc.numnets == 1) {
+			stcb->asoc.smallest_mtu = nxtsz;
+		} else {
+			TAILQ_FOREACH(mnet, &stcb->asoc.nets, sctp_next) {
+				if (mnet->mtu > stcb->asoc.smallest_mtu) {
+					allow++;
+				} else {
+					if (mnet == net) {
+						allow++;
+					}
+				}
+			}
+			if (stcb->asoc.numnets == allow) {
+				stcb->asoc.smallest_mtu = nxtsz;
+			}
+		}
+	}
 	/* now off to subtract IP_DF flag if needed */
 	overhead = IP_HDR_SIZE + sizeof(struct sctphdr);
 	if (sctp_auth_is_required_chunk(SCTP_DATA, stcb->asoc.peer_auth_chunks)) {
@@ -379,7 +398,7 @@ sctp_notify(struct sctp_inpcb *inp,
 		}
 		/* Update the association MTU */
 		if (stcb->asoc.smallest_mtu > next_mtu) {
-			sctp_pathmtu_adjustment(stcb, next_mtu);
+			sctp_pathmtu_adjustment(stcb, next_mtu, net);
 		}
 		/* Finally, start the PMTU timer if it was running before. */
 		if (timer_stopped) {
@@ -6302,7 +6321,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 						break;
 					}
 					if (net->mtu < stcb->asoc.smallest_mtu) {
-						sctp_pathmtu_adjustment(stcb, net->mtu);
+						sctp_pathmtu_adjustment(stcb, net->mtu, net);
 					}
 				}
 				if (paddrp->spp_flags & SPP_PMTUD_ENABLE) {
@@ -6450,7 +6469,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 							break;
 						}
 						if (net->mtu < stcb->asoc.smallest_mtu) {
-							sctp_pathmtu_adjustment(stcb, net->mtu);
+							sctp_pathmtu_adjustment(stcb, net->mtu, net);
 						}
 					}
 					stcb->asoc.default_mtu = paddrp->spp_pathmtu;
