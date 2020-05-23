@@ -122,6 +122,9 @@ handle_association_change_event(struct sctp_assoc_change *sac)
 			case SCTP_ASSOC_SUPPORTS_RE_CONFIG:
 				fprintf(stderr, " RE-CONFIG");
 				break;
+			case SCTP_ASSOC_SUPPORTS_INTERLEAVING:
+				fprintf(stderr, " INTERLEAVING");
+				break;
 			default:
 				fprintf(stderr, " UNKNOWN(0x%02x)", sac->sac_info[i]);
 				break;
