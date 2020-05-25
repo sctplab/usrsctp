@@ -29,7 +29,7 @@ jobs:
       shell: bash
       run: |
         cd cmake_build
-        cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_POSITION_INDEPENDENT_CODE=ON -Dsctp_build_programs=ON -Dsctp_build_fuzzer=ON -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/cmake_install ${GITHUB_WORKSPACE}
+        cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_POSITION_INDEPENDENT_CODE=ON -Dsctp_build_programs=ON -Dsctp_build_fuzzer=OFF -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/cmake_install ${GITHUB_WORKSPACE}
         
     - name: Build and install project
       shell: bash
