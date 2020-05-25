@@ -68,9 +68,10 @@ static int connecting = 0;
 static int finish = 0;
 
 static unsigned int
-get_tick_count(void)
+get_milliseconds_count(void)
 {
 #ifdef _WIN32
+	// obtain number of milliseconds since system started
 	return GetTickCount();
 #else
 	struct timeval tv;
@@ -92,9 +93,9 @@ handle_events(int sock, struct socket* s, void* sconn_addr)
 	fd_set rfds;
 	struct timeval tv;
 
-	unsigned next_fire_time = get_tick_count();
+	unsigned next_fire_time = get_milliseconds_count();
 	unsigned last_fire_time = next_fire_time;
-	unsigned now = get_tick_count();
+	unsigned now = get_milliseconds_count();
 	int wait_time;
 
 	while (!finish) {
