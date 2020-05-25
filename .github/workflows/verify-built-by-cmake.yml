@@ -1,0 +1,37 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ master, github-actions ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      
+    - name: Setup CMake
+      uses: jwlawson/actions-setup-cmake@v1.2
+      with:
+        github-api-token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Prepare dirs
+      shell: bash
+      run: |
+        mkdir -p cmake_build
+        madir -p cmake_install
+        
+    - name: Generate CMake project
+      shell: bash
+      run: |
+        cd cmake_build
+        cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_POSITION_INDEPENDENT_CODE=ON -Dsctp_build_programs=ON -Dsctp_build_fuzzer=ON -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/cmake_install
+        
+    - name: Build and install project
+      shell: bash
+      run: |
+        cmake --build cmake_build --config RelWithDebInfo --target install --clean-first
