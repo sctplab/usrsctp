@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: Bulid with CMake
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
       shell: bash
       run: |
         mkdir -p cmake_build
-        madir -p cmake_install
+        mkdir -p cmake_install
         
     - name: Generate CMake project
       shell: bash
