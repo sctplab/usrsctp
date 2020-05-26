@@ -647,9 +647,17 @@ int main(int argc, char **argv)
 					continue;
 				}
 #ifdef _WIN32
-				tid = CreateThread(NULL, 0, &handle_connection, (void *)conn_sock, 0, NULL);
+				if ((tid = CreateThread(NULL, 0, &handle_connection, (void *)conn_sock, 0, NULL)) == NULL) {
+					perror("CreateThread");
+					usrsctp_close(*conn_sock);
+					continue;
+				}
 #else
-				pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock);
+				if (!pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock)) {
+					perror("CreateThread");
+					usrsctp_close(*conn_sock);
+					continue;
+				}
 #endif
 			}
 			if (verbose) {
