@@ -654,7 +654,7 @@ int main(int argc, char **argv)
 				}
 #else
 				if (!pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock)) {
-					perror("CreateThread");
+					perror("pthread_create");
 					usrsctp_close(*conn_sock);
 					continue;
 				}
