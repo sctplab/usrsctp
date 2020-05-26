@@ -329,7 +329,7 @@ client_receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 int main(int argc, char **argv)
 {
 #ifndef _WIN32
-	int c;
+	int c, rc;
 #endif
 	socklen_t addr_len;
 	struct sockaddr_in local_addr;
@@ -647,10 +647,15 @@ int main(int argc, char **argv)
 					continue;
 				}
 #ifdef _WIN32
-				tid = CreateThread(NULL, 0, &handle_connection, (void *)conn_sock, 0, NULL);
+				if ((tid = CreateThread(NULL, 0, &handle_connection, (void *)conn_sock, 0, NULL)) == NULL) {
+					fprintf(stderr, "CreateThread() failed with error: %d\n", GetLastError());
 #else
-				pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock);
+				if ((rc = pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock)) != 0) {
+					fprintf(stderr, "pthread_create: %s\n", strerror(rc));
 #endif
+					usrsctp_close(*conn_sock);
+					continue;
+				}
 			}
 			if (verbose) {
 				/* const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
@@ -725,7 +730,7 @@ int main(int argc, char **argv)
 			signal(SIGALRM, stop_sender);
 			alarm(runtime);
 #else
-			printf("You cannot set the runtime in Windows yet\n");
+			fprintf(stderr, "You cannot set the runtime in Windows yet\n");
 			exit(-1);
 #endif
 		}
