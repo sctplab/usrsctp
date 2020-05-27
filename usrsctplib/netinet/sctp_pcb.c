@@ -6799,7 +6799,12 @@ sctp_pcb_init(void)
 	(void)pthread_cond_init(&sctp_it_ctl.iterator_wakeup, NULL);
 #endif
 #endif
+
+#if defined(__Userspace__)
+	sctp_startup_iterator(start_threads);
+#else
 	sctp_startup_iterator();
+#endif
 
 #if defined(__FreeBSD__) && defined(SCTP_MCORE_INPUT) && defined(SMP)
 	sctp_startup_mcore_threads();
