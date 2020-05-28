@@ -2,7 +2,7 @@ name: Bulid with CMake
 
 on:
   push:
-    branches: [ master, github-actions ]
+    branches: [ master, github-actions-2 ]
   pull_request:
     branches: [ master ]
 
@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-latest, macos-latest, windows-latest]
+        cmake_build_type: [Debug, RelWithDebInfo]
 
     runs-on: ${{ matrix.platform }}
 
@@ -35,9 +36,9 @@ jobs:
       shell: bash
       run: |
         cd cmake_build
-        cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_POSITION_INDEPENDENT_CODE=ON -Dsctp_build_programs=ON -Dsctp_build_fuzzer=OFF -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/cmake_install ${GITHUB_WORKSPACE}/usrsctp_source
+        cmake -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -Dsctp_build_programs=ON -Dsctp_build_fuzzer=OFF -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/cmake_install ${GITHUB_WORKSPACE}/usrsctp_source
         
     - name: Build and install project
       shell: bash
       run: |
-        cmake --build cmake_build --config RelWithDebInfo --target install --clean-first
+        cmake --build cmake_build --config ${{ matrix.cmake_build_type }} --target install --clean-first
