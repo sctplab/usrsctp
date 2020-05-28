@@ -2,7 +2,7 @@ name: Bulid with CMake
 
 on:
   push:
-    branches: [ master, github-actions-2 ]
+    branches: [ master, github-actions ]
   pull_request:
     branches: [ master ]
 
