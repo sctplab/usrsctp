@@ -1,6 +1,8 @@
 # usrsctp
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/13430/badge.svg)](https://scan.coverity.com/projects/usrsctp)
 
+![](https://github.com/{owner}/{repo}/workflows/Bulid%20with%20CMake/badge.svg)
+
 This is a userland SCTP stack supporting FreeBSD, Linux, Mac OS X and Windows.
 
 See [manual](Manual.md) for more information.
