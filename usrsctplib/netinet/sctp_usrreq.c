@@ -87,15 +87,14 @@ sctp_init(struct protosw *pp SCTP_UNUSED, struct domain *dp SCTP_UNUSED)
 sctp_init(void)
 #endif
 {
-#if !defined(__Panda__) && !defined(__Userspace__)
+#if !defined(__Userspace__)
 	u_long sb_max_adj;
 
+#else
+	init_random();
 #endif
 	/* Initialize and modify the sysctled variables */
 	sctp_init_sysctls();
-#if defined(__Userspace__)
-	init_random();
-#endif
 #if defined(__Panda__)
 	sctp_sendspace = SB_MAX;
 	sctp_recvspace = SB_MAX;
