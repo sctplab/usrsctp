@@ -65,16 +65,15 @@ userland_mutex_t atomic_mtx;
  * inside other RNG's, like arc4random(9).
  */
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-static int
-read_random_phony(void *buf, int count)
+int
+read_random(void *buf, int count)
 {
 	memset(buf, 'A', count);
 	return (count);
 }
-#else
-#if defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_OpenBSD) || defined(__Userspace_os_OpenBSD) || defined(__Userspace_os_Darwin)
-static int
-read_random_phony(void *buf, int count)
+#elif defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_OpenBSD) || defined(__Userspace_os_OpenBSD) || defined(__Userspace_os_Darwin)
+int
+read_random(void *buf, int count)
 {
 	if (count >= 0) {
 		arc4random_buf(buf, count);
@@ -82,8 +81,8 @@ read_random_phony(void *buf, int count)
 	return (count);
 }
 #else
-static int
-read_random_phony(void *buf, int count)
+int
+read_random(void *buf, int count)
 {
 	uint32_t randval;
 	int size, i;
@@ -100,14 +99,3 @@ read_random_phony(void *buf, int count)
 	return (count);
 }
 #endif
-#endif
-
-static int (*read_func)(void *, int) = read_random_phony;
-
-/* Userland-visible version of read_random */
-int
-read_random(void *buf, int count)
-{
-	return ((*read_func)(buf, count));
-}
-
