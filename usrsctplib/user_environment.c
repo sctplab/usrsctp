@@ -72,7 +72,7 @@ read_random_phony(void *buf, int count)
 	return (count);
 }
 #else
-#if defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_Darwin)
+#if defined(__Userspace_os_FreeBSD) || defined(__Userspace_os_OpenBSD) || defined(__Userspace_os_OpenBSD) || defined(__Userspace_os_Darwin)
 static int
 read_random_phony(void *buf, int count)
 {
