@@ -61,9 +61,7 @@ int sctp_copy_out_packet_log(uint8_t *target, int length);
 
 #endif
 
-#if !defined(__Panda__)
 void sctp_addr_change(struct ifaddr *ifa, int cmd);
-#endif
 #if defined(__FreeBSD__)
 
 void sctp_addr_change_event_handler(void *, struct ifaddr *, int);

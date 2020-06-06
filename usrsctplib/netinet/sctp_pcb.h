@@ -514,10 +514,6 @@ struct sctp_inpcb {
 	 * they are candidates with sctp_sendm for
 	 * de-supporting.
 	 */
-#ifdef __Panda__
-	pakhandle_type pak_to_read;
-	pakhandle_type pak_to_read_sendq;
-#endif
 	struct mbuf *pkt, *pkt_last;
 	struct mbuf *control;
 #if !(defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__))

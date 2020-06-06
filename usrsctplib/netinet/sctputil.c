@@ -5735,7 +5735,7 @@ sctp_release_pr_sctp_chunk(struct sctp_tcb *stcb, struct sctp_tmit_chunk *tp1,
 				chk->rec.data.context = sp->context;
 				chk->flags = sp->act_flags;
 				chk->whoTo = NULL;
-#if defined(__FreeBSD__) || defined(__Panda__)
+#if defined(__FreeBSD__)
 				chk->rec.data.tsn = atomic_fetchadd_int(&stcb->asoc.sending_seq, 1);
 #else
 				chk->rec.data.tsn = stcb->asoc.sending_seq++;
@@ -7754,7 +7754,7 @@ sctp_bindx_add_address(struct socket *so, struct sctp_inpcb *inp,
 	}
 #endif
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND) {
-#if !(defined(__Panda__) || defined(__Windows__) || defined(__Userspace__))
+#if !(defined(__Windows__) || defined(__Userspace__))
 		if (p == NULL) {
 			/* Can't get proc for Net/Open BSD */
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);

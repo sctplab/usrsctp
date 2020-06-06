@@ -251,31 +251,6 @@ extern struct pr_usrreqs sctp_usrreqs;
 	} \
 }
 
-#if defined(__Panda__)
-#define sctp_sbfree(ctl, stcb, sb, m) { \
-	if ((sb)->sb_cc >= (uint32_t)SCTP_BUF_LEN((m))) { \
-		atomic_subtract_int(&(sb)->sb_cc, SCTP_BUF_LEN((m))); \
-	} else { \
-		(sb)->sb_cc = 0; \
-	} \
-	if (((ctl)->do_not_ref_stcb == 0) && stcb) { \
-		if ((stcb)->asoc.sb_cc >= (uint32_t)SCTP_BUF_LEN((m))) { \
-			atomic_subtract_int(&(stcb)->asoc.sb_cc, SCTP_BUF_LEN((m))); \
-		} else { \
-			(stcb)->asoc.sb_cc = 0; \
-		} \
-	} \
-}
-
-#define sctp_sballoc(stcb, sb, m) { \
-	atomic_add_int(&(sb)->sb_cc, SCTP_BUF_LEN((m))); \
-	if (stcb) { \
-		atomic_add_int(&(stcb)->asoc.sb_cc, SCTP_BUF_LEN((m))); \
-	} \
-}
-
-#else
-
 #define sctp_sbfree(ctl, stcb, sb, m) { \
 	SCTP_SAVE_ATOMIC_DECREMENT(&(sb)->sb_cc, SCTP_BUF_LEN((m))); \
 	SCTP_SAVE_ATOMIC_DECREMENT(&(sb)->sb_mbcnt, MSIZE); \
@@ -293,7 +268,6 @@ extern struct pr_usrreqs sctp_usrreqs;
 		atomic_add_int(&(stcb)->asoc.my_rwnd_control_len, MSIZE); \
 	} \
 }
-#endif
 #endif
 
 #define sctp_ucount_incr(val) { \
@@ -429,9 +403,7 @@ void sctp_input(struct mbuf *, int);
 void sctp_pathmtu_adjustment(struct sctp_tcb *, uint16_t);
 #endif
 #else
-#if defined(__Panda__)
-void sctp_input(pakhandle_type i_pak);
-#elif defined(__Userspace__)
+#if defined(__Userspace__)
 void sctp_pathmtu_adjustment(struct sctp_tcb *, uint16_t);
 #else
 void sctp_input(struct mbuf *,...);
@@ -474,15 +446,11 @@ int sctp_bindx(struct socket *, int, struct sockaddr_storage *,
 int sctp_peeloff(struct socket *, struct socket *, int, caddr_t, int *);
 #if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
 int sctp_ingetaddr(struct socket *, struct sockaddr **);
-#elif defined(__Panda__)
-int sctp_ingetaddr(struct socket *, struct sockaddr *);
 #else
 int sctp_ingetaddr(struct socket *, struct mbuf *);
 #endif
 #if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
 int sctp_peeraddr(struct socket *, struct sockaddr **);
-#elif defined(__Panda__)
-int sctp_peeraddr(struct socket *, struct sockaddr *);
 #else
 int sctp_peeraddr(struct socket *, struct mbuf *);
 #endif
@@ -501,8 +469,6 @@ int sctp_listen(struct socket *, struct proc *);
 #endif
 #if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__)
 int sctp_accept(struct socket *, struct sockaddr **);
-#elif defined(__Panda__)
-int sctp_accept(struct socket *, struct sockaddr *, int *, void *, int *);
 #else
 int sctp_accept(struct socket *, struct mbuf *);
 #endif

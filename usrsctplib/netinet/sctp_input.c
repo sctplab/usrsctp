@@ -2969,9 +2969,6 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 #if defined(__APPLE__)
 			    ,NULL
 #endif
-#ifdef __Panda__
-			     ,NULL , (*inp_p)->def_vrf_id
-#endif
 			    );
 #if (defined(__FreeBSD__) && __FreeBSD_version < 700000)
 			NET_UNLOCK_GIANT();
@@ -4374,10 +4371,8 @@ sctp_handle_str_reset_add_out_strm(struct sctp_tcb *stcb, struct sctp_tmit_chunk
 	}
 }
 
-#if !defined(__Panda__)
 #ifdef __GNUC__
 __attribute__ ((noinline))
-#endif
 #endif
 static int
 sctp_handle_stream_reset(struct sctp_tcb *stcb, struct mbuf *m, int offset,
@@ -4715,10 +4710,8 @@ sctp_handle_packet_dropped(struct sctp_pktdrop_chunk *cp,
  * cookie-echo processing - return NULL to discard the packet (ie. no asoc,
  * bad packet,...) otherwise return the tcb for this packet
  */
-#if !defined(__Panda__)
 #ifdef __GNUC__
 __attribute__ ((noinline))
-#endif
 #endif
 static struct sctp_tcb *
 sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
@@ -6181,9 +6174,6 @@ trigger_send:
 #if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
 void
 sctp_input_with_port(struct mbuf *i_pak, int off, uint16_t port)
-#elif defined(__Panda__)
-void
-sctp_input(pakhandle_type i_pak)
 #else
 void
 #if __STDC__
@@ -6213,21 +6203,12 @@ sctp_input(i_pak, va_alist)
 	uint16_t port = 0;
 #endif
 
-#if defined(__Panda__)
-	/* This is Evil, but its the only way to make panda work right. */
-	iphlen = sizeof(struct ip);
-#else
 	iphlen = off;
-#endif
 	if (SCTP_GET_PKT_VRFID(i_pak, vrf_id)) {
 		SCTP_RELEASE_PKT(i_pak);
 		return;
 	}
 	m = SCTP_HEADER_TO_CHAIN(i_pak);
-#ifdef __Panda__
-	SCTP_DETACH_HEADER_FROM_CHAIN(i_pak);
-	(void)SCTP_RELEASE_HEADER(i_pak);
-#endif
 #ifdef SCTP_MBUF_LOGGING
 	/* Log in any input mbufs */
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_MBUF_LOGGING_ENABLE) {

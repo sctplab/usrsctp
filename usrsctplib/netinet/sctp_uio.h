@@ -1324,16 +1324,11 @@ int
 sctp_lower_sosend(struct socket *so,
     struct sockaddr *addr,
     struct uio *uio,
-#if defined(__Panda__)
-    pakhandle_type i_pak,
-    pakhandle_type i_control,
-#else
     struct mbuf *i_pak,
     struct mbuf *control,
-#endif
     int flags,
     struct sctp_sndrcvinfo *srcv
-#if !(defined(__Panda__) || defined(__Userspace__))
+#if !defined(__Userspace__)
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
     ,struct thread *p
 #elif defined(__Windows__)
@@ -1347,11 +1342,7 @@ sctp_lower_sosend(struct socket *so,
 int
 sctp_sorecvmsg(struct socket *so,
     struct uio *uio,
-#if defined(__Panda__)
-    particletype **mp,
-#else
     struct mbuf **mp,
-#endif
     struct sockaddr *from,
     int fromlen,
     int *msg_flags,

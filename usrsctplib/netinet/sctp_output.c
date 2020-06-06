@@ -1933,14 +1933,12 @@ sctp_is_address_in_scope(struct sctp_ifa *ifa,
 		if (scope->ipv6_addr_legal) {
 			struct sockaddr_in6 *sin6;
 
-#if !defined(__Panda__)
 			/* Must update the flags,  bummer, which
 			 * means any IFA locks must now be applied HERE <->
 			 */
 			if (do_update) {
 				sctp_gather_internal_ifa_flags(ifa);
 			}
-#endif
 			if (ifa->localifa_flags & SCTP_ADDR_IFA_UNUSEABLE) {
 				return (0);
 			}
@@ -4137,9 +4135,6 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 	 *   interface and smallest_mtu size as well.
 	 */
 	/* Will need ifdefs around this */
-#ifdef __Panda__
-	pakhandle_type o_pak;
-#endif
 	struct mbuf *newm;
 	struct sctphdr *sctphdr;
 	int packet_length;
@@ -4148,9 +4143,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 	uint32_t vrf_id;
 #endif
 #if defined(INET) || defined(INET6)
-#if !defined(__Panda__)
 	struct mbuf *o_pak;
-#endif
 	sctp_route_t *ro = NULL;
 	struct udphdr *udp = NULL;
 #endif
@@ -4232,7 +4225,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			 * This means especially, that it is not set at the
 			 * SCTP layer. So use the value from the IP layer.
 			 */
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Panda__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__)
 			tos_value = inp->ip_inp.inp.inp_ip_tos;
 #else
 			tos_value = inp->inp_ip_tos;
@@ -4276,7 +4269,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		ip->ip_id = SCTP_IP_ID(inp)++;
 #endif
 
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Panda__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__)
 		ip->ip_ttl = inp->ip_inp.inp.inp_ip_ttl;
 #else
 		ip->ip_ttl = inp->inp_ip_ttl;
@@ -4557,7 +4550,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		uint32_t flowlabel, flowinfo;
 		struct ip6_hdr *ip6h;
 		struct route_in6 ip6route;
-#if !(defined(__Panda__) || defined(__Userspace__))
+#if !defined(__Userspace__)
 		struct ifnet *ifp;
 #endif
 		struct sockaddr_in6 *sin6, tmp, *lsa6, lsa6_tmp;
@@ -4658,7 +4651,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			 * This means especially, that it is not set at the
 			 * SCTP layer. So use the value from the IP layer.
 			 */
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Panda__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__)
 #if defined(__APPLE__) && (!defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION))
 			tos_value = (ntohl(inp->ip_inp.inp.inp_flow) >> 20) & 0xff;
 #else
@@ -4877,7 +4870,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		 * that our ro pointer is now filled
 		 */
 		ip6h->ip6_hlim = SCTP_GET_HLIM(inp, ro);
-#if !(defined(__Panda__) || defined(__Userspace__))
+#if !defined(__Userspace__)
 		ifp = SCTP_GET_IFN_VOID_FROM_ROUTE(ro);
 #endif
 
@@ -4951,7 +4944,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING)
 			sctp_packet_log(o_pak);
 #endif
-#if !(defined(__Panda__) || defined(__Userspace__))
+#if !defined(__Userspace__)
 #if defined(__FreeBSD__)
 		SCTP_PROBE5(send, NULL, stcb, ip6h, stcb, sctphdr);
 #endif
@@ -5034,7 +5027,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 					}
 				}
 			}
-#if !defined(__Panda__) && !defined(__Userspace__)
+#if !defined(__Userspace__)
 			else if (ifp) {
 #if defined(__Windows__)
 #define ND_IFINFO(ifp)	(ifp)
@@ -7029,12 +7022,7 @@ sctp_copy_mbufchain(struct mbuf *clonechain,
 		appendchain = clonechain;
 	} else {
 		if (!copy_by_ref &&
-#if defined(__Panda__)
-		    0
-#else
-		    (sizeofcpy <= (int)((((SCTP_BASE_SYSCTL(sctp_mbuf_threshold_count) - 1) * MLEN) + MHLEN)))
-#endif
-		    ) {
+		    (sizeofcpy <= (int)((((SCTP_BASE_SYSCTL(sctp_mbuf_threshold_count) - 1) * MLEN) + MHLEN)))) {
 			/* Its not in a cluster */
 			if (*endofchain == NULL) {
 				/* lets get a mbuf cluster */
@@ -8154,7 +8142,7 @@ re_look:
 		sctp_auth_key_acquire(stcb, chk->auth_keyid);
 		chk->holds_key_ref = 1;
 	}
-#if defined(__FreeBSD__) || defined(__Panda__)
+#if defined(__FreeBSD__)
 	chk->rec.data.tsn = atomic_fetchadd_int(&asoc->sending_seq, 1);
 #else
 	chk->rec.data.tsn = asoc->sending_seq++;
@@ -10874,17 +10862,9 @@ do_it_again:
 int
 sctp_output(
 	struct sctp_inpcb *inp,
-#if defined(__Panda__)
-	pakhandle_type m,
-#else
 	struct mbuf *m,
-#endif
 	struct sockaddr *addr,
-#if defined(__Panda__)
-	pakhandle_type control,
-#else
 	struct mbuf *control,
-#endif
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
 	struct thread *p,
 #elif defined(__Windows__)
@@ -10912,7 +10892,7 @@ sctp_output(
 			    (struct uio *)NULL,
 			    m,
 			    control,
-#if defined(__APPLE__) || defined(__Panda__)
+#if defined(__APPLE__)
 			    flags
 #else
 			    flags, p
@@ -11711,11 +11691,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
                    uint32_t vrf_id SCTP_UNUSED, uint16_t port)
 #endif
 {
-#ifdef __Panda__
-	pakhandle_type o_pak;
-#else
 	struct mbuf *o_pak;
-#endif
 	struct mbuf *mout;
 	struct sctphdr *shout;
 	struct sctp_chunkhdr *ch;
@@ -11724,7 +11700,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #endif
 	int ret, len, cause_len, padding_len;
 #ifdef INET
-#if defined(__APPLE__) || defined(__Panda__)
+#if defined(__APPLE__)
 	sctp_route_t ro;
 #endif
 	struct sockaddr_in *src_sin, *dst_sin;
@@ -11942,12 +11918,9 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 	switch (dst->sa_family) {
 #ifdef INET
 	case AF_INET:
-#if defined(__APPLE__) || defined(__Panda__)
+#if defined(__APPLE__)
 		/* zap the stack pointer to the route */
 		memset(&ro, 0, sizeof(sctp_route_t));
-#if defined(__Panda__)
-		ro._l_addr.sa.sa_family = AF_INET;
-#endif
 #endif
 		if (port) {
 #if !defined(__Windows__) && !defined(__Userspace__)
@@ -12002,7 +11975,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 			sctp_packet_log(o_pak);
 		}
 #endif
-#if defined(__APPLE__) || defined(__Panda__)
+#if defined(__APPLE__)
 		SCTP_IP_OUTPUT(ret, o_pak, &ro, NULL, vrf_id);
 		/* Free the route if we got one back */
 		if (ro.ro_rt) {
@@ -13180,20 +13153,7 @@ sctp_copy_resume(struct uio *uio,
 		 uint32_t *sndout,
 		 struct mbuf **new_tail)
 {
-#if defined(__Panda__)
-	struct mbuf *m;
-
-	m = m_uiotombuf(uio, M_WAITOK, max_send_len, 0,
-			(user_marks_eor ? M_EOR : 0));
-	if (m == NULL) {
-		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOBUFS);
-		*error = ENOBUFS;
-	} else {
-		*sndout = m_length(m, NULL);
-		*new_tail = m_last(m);
-	}
-	return (m);
-#elif defined(__FreeBSD__) && __FreeBSD_version > 602000 || defined(__Userspace__)
+#if defined(__FreeBSD__) && __FreeBSD_version > 602000 || defined(__Userspace__)
 	struct mbuf *m;
 
 	m = m_uiotombuf(uio, M_WAITOK, max_send_len, 0,
@@ -13276,17 +13236,7 @@ sctp_copy_one(struct sctp_stream_queue_pending *sp,
               struct uio *uio,
               int resv_upfront)
 {
-#if defined(__Panda__)
-	sp->data = m_uiotombuf(uio, M_WAITOK, sp->length,
-	                       resv_upfront, 0);
-	if (sp->data == NULL) {
-		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, ENOBUFS);
-		return (ENOBUFS);
-	}
-
-	sp->tail_mbuf = m_last(sp->data);
-	return (0);
-#elif defined(__FreeBSD__) && __FreeBSD_version > 602000 || defined(__Userspace__)
+#if defined(__FreeBSD__) && __FreeBSD_version > 602000 || defined(__Userspace__)
 	sp->data = m_uiotombuf(uio, M_WAITOK, sp->length,
 	                       resv_upfront, 0);
 	if (sp->data == NULL) {
@@ -13478,14 +13428,9 @@ int
 sctp_sosend(struct socket *so,
             struct sockaddr *addr,
             struct uio *uio,
-#ifdef __Panda__
-            pakhandle_type top,
-            pakhandle_type icontrol,
-#else
             struct mbuf *top,
             struct mbuf *control,
-#endif
-#if defined(__APPLE__) || defined(__Panda__)
+#if defined(__APPLE__)
             int flags
 #else
             int flags,
@@ -13505,9 +13450,6 @@ sctp_sosend(struct socket *so,
 #endif
 )
 {
-#ifdef __Panda__
-	struct mbuf *control = NULL;
-#endif
 #if defined(__APPLE__)
 	struct proc *p = current_proc();
 #endif
@@ -13520,9 +13462,6 @@ sctp_sosend(struct socket *so,
 
 #if defined(__APPLE__)
 	SCTP_SOCKET_LOCK(so, 1);
-#endif
-#ifdef __Panda__
-	control = SCTP_HEADER_TO_CHAIN(icontrol);
 #endif
 	if (control) {
 		/* process cmsg snd/rcv info (maybe a assoc-id) */
@@ -13545,14 +13484,10 @@ sctp_sosend(struct socket *so,
 	}
 #endif
 	error = sctp_lower_sosend(so, addr_to_use, uio, top,
-#ifdef __Panda__
-				  icontrol,
-#else
 				  control,
-#endif
 				  flags,
 				  use_sndinfo ? &sndrcvninfo: NULL
-#if !(defined(__Panda__) || defined(__Userspace__))
+#if !defined(__Userspace__)
 				  , p
 #endif
 		);
@@ -13567,16 +13502,11 @@ int
 sctp_lower_sosend(struct socket *so,
                   struct sockaddr *addr,
                   struct uio *uio,
-#ifdef __Panda__
-                  pakhandle_type i_pak,
-                  pakhandle_type i_control,
-#else
                   struct mbuf *i_pak,
                   struct mbuf *control,
-#endif
                   int flags,
                   struct sctp_sndrcvinfo *srcv
-#if !(defined( __Panda__) || defined(__Userspace__))
+#if !defined(__Userspace__)
                   ,
 #if defined(__FreeBSD__) && __FreeBSD_version >= 500000
                   struct thread *p
@@ -13594,9 +13524,6 @@ sctp_lower_sosend(struct socket *so,
 	ssize_t sndlen = 0, max_len, local_add_more;
 	int error, len;
 	struct mbuf *top = NULL;
-#ifdef __Panda__
-	struct mbuf *control = NULL;
-#endif
 	int queue_only = 0, queue_only_for_init = 0;
 	int free_cnt_applied = 0;
 	int un_sent;
@@ -13668,39 +13595,11 @@ sctp_lower_sosend(struct socket *so,
 #endif
 	} else {
 		top = SCTP_HEADER_TO_CHAIN(i_pak);
-#ifdef __Panda__
-		/*-
-		 * app len indicates the datalen, dgsize for cases
-		 * of SCTP_EOF/ABORT will not have the right len
-		 */
-		sndlen = SCTP_APP_DATA_LEN(i_pak);
-		/*-
-		 * Set the particle len also to zero to match
-		 * up with app len. We only have one particle
-		 * if app len is zero for Panda. This is ensured
-		 * in the socket lib
-		 */
-		if (sndlen == 0) {
-			SCTP_BUF_LEN(top)  = 0;
-		}
-		/*-
-		 * We delink the chain from header, but keep
-		 * the header around as we will need it in
-		 * EAGAIN case
-		 */
-		SCTP_DETACH_HEADER_FROM_CHAIN(i_pak);
-#else
 		sndlen = SCTP_HEADER_LEN(i_pak);
-#endif
 	}
 	SCTPDBG(SCTP_DEBUG_OUTPUT1, "Send called addr:%p send length %zd\n",
 	        (void *)addr,
 	        sndlen);
-#ifdef __Panda__
-	if (i_control) {
-		control = SCTP_HEADER_TO_CHAIN(i_control);
-	}
-#endif
 	if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) &&
 	    SCTP_IS_LISTENING(inp)) {
 		/* The listener can NOT send */
@@ -13899,7 +13798,7 @@ sctp_lower_sosend(struct socket *so,
 			stcb = sctp_aloc_assoc(inp, addr, &error, 0, vrf_id,
 			                       inp->sctp_ep.pre_open_stream_count,
 			                       inp->sctp_ep.port,
-#if !(defined( __Panda__) || defined(__Userspace__))
+#if !defined(__Userspace__)
 			                       p,
 #else
 			                       (struct proc *)NULL,
@@ -14082,7 +13981,7 @@ sctp_lower_sosend(struct socket *so,
 		}
 	}
 	/* Ok, we will attempt a msgsnd :> */
-#if !(defined(__Panda__) || defined(__Windows__) || defined(__Userspace__))
+#if !(defined(__Windows__) || defined(__Userspace__))
 	if (p) {
 #if defined(__FreeBSD__) && __FreeBSD_version >= 603000
 		p->td_ru.ru_msgsnd++;
@@ -14269,7 +14168,7 @@ sctp_lower_sosend(struct socket *so,
 				sctp_log_block(SCTP_BLOCK_LOG_INTO_BLKA, asoc, sndlen);
 			}
 			be.error = 0;
-#if !defined(__Panda__) && !defined(__Windows__)
+#if !defined(__Windows__)
 			stcb->block_entry = &be;
 #endif
 			error = sbwait(&so->so_snd);
@@ -14652,7 +14551,7 @@ skip_preblock:
 #endif
 				}
 				be.error = 0;
-#if !defined(__Panda__) && !defined(__Windows__)
+#if !defined(__Windows__)
 				stcb->block_entry = &be;
 #endif
 #if defined(__APPLE__)
@@ -14725,12 +14624,6 @@ skip_preblock:
 		error = sctp_msg_append(stcb, net, top, srcv, 0);
 		top = NULL;
 		if (sinfo_flags & SCTP_EOF) {
-			/*
-			 * This should only happen for Panda for the mbuf
-			 * send case, which does NOT yet support EEOR mode.
-			 * Thus, we can just set this flag to do the proper
-			 * EOF handling.
-			 */
 			got_all_of_the_send = 1;
 		}
 	}
@@ -14969,33 +14862,6 @@ out_unlocked:
 		}
 	}
 #endif
-#endif
-#ifdef __Panda__
-	/*
-	 * Handle the EAGAIN/ENOMEM cases to reattach the pak header
-	 * to particle when pak is passed in, so that caller
-	 * can try again with this pak
-	 *
-	 * NOTE: For other cases, including success case,
-	 * we simply want to return the header back to free
-	 * pool
-	 */
-	if (top) {
-		if ((error == EAGAIN) || (error == ENOMEM)) {
-			SCTP_ATTACH_CHAIN(i_pak, top, sndlen);
-			top = NULL;
-		} else {
-			(void)SCTP_RELEASE_HEADER(i_pak);
-		}
-	} else {
-		/* This is to handle cases when top has
-		 * been reset to NULL but pak might not
-		 * be freed
-		 */
-		if (i_pak) {
-			(void)SCTP_RELEASE_HEADER(i_pak);
-		}
-	}
 #endif
 	if (top) {
 		sctp_m_freem(top);

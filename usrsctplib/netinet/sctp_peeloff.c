@@ -178,14 +178,6 @@ sctp_do_peeloff(struct socket *head, struct socket *so, sctp_assoc_t assoc_id)
 struct socket *
 sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
 {
-#if defined(__Userspace__)
-    /* if __Userspace__ chooses to originally not support peeloff, put it here... */
-#endif
-#if defined(__Panda__)
-	SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_PEELOFF, EINVAL);
-	*error = EINVAL;
-	return (NULL);
-#else
 	struct socket *newso;
 	struct sctp_inpcb *inp, *n_inp;
 	struct sctp_tcb *stcb;
@@ -211,9 +203,6 @@ sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
 	newso = sonewconn(head, SS_ISCONNECTED
 #if defined(__APPLE__)
 	    , NULL
-#elif defined(__Panda__)
-	    /* place this socket in the assoc's vrf id */
-	    , NULL, stcb->asoc.vrf_id
 #endif
 		);
 #if defined(__FreeBSD__) && __FreeBSD_version >= 801000
@@ -325,6 +314,5 @@ sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
 #endif
 	atomic_subtract_int(&stcb->asoc.refcnt, 1);
 	return (newso);
-#endif
 }
 #endif

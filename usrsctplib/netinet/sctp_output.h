@@ -161,17 +161,9 @@ sctp_output(struct sctp_inpcb *, struct mbuf *, struct sockaddr *,
 #endif
 int
 sctp_output(struct sctp_inpcb *,
-#if defined(__Panda__)
-    pakhandle_type,
-#else
     struct mbuf *,
-#endif
     struct sockaddr *,
-#if defined(__Panda__)
-    pakhandle_type,
-#else
     struct mbuf *,
-#endif
     struct proc *, int);
 #endif
 
@@ -244,14 +236,9 @@ int
 sctp_sosend(struct socket *so,
     struct sockaddr *addr,
     struct uio *uio,
-#ifdef __Panda__
-    pakhandle_type top,
-    pakhandle_type control,
-#else
     struct mbuf *top,
     struct mbuf *control,
-#endif
-#if defined(__APPLE__) || defined(__Panda__)
+#if defined(__APPLE__)
     int flags
 #else
     int flags,

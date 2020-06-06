@@ -838,8 +838,7 @@ sctp_del_addr_from_vrf(uint32_t vrf_id, struct sockaddr *addr,
 			int valid = 0;
 			/*-
 			 * The name has priority over the ifn_index
-			 * if its given. We do this especially for
-			 * panda who might recycle indexes fast.
+			 * if its given.
 			 */
 			if (if_name) {
 				if (strncmp(if_name, sctp_ifap->ifn_p->ifn_name, SCTP_IFNAMSIZ) == 0) {
@@ -2878,14 +2877,6 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 		SOCK_LOCK(so);
 		SCTP_CLEAR_SO_NBIO(so);
 		SOCK_UNLOCK(so);
-#if defined(__Panda__)
-	} else if (SCTP_SO_TYPE(so) == SOCK_FASTSEQPACKET) {
-		inp->sctp_flags = (SCTP_PCB_FLAGS_UDPTYPE |
-		    SCTP_PCB_FLAGS_UNBOUND);
-	} else if (SCTP_SO_TYPE(so) == SOCK_FASTSTREAM) {
-		inp->sctp_flags = (SCTP_PCB_FLAGS_TCPTYPE |
-		    SCTP_PCB_FLAGS_UNBOUND);
-#endif
 	} else {
 		/*
 		 * unsupported socket type (RAW, etc)- in case we missed it
@@ -3465,15 +3456,6 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 				SCTP_INP_INFO_WUNLOCK();
 				return (error);
 			}
-#if defined(__Panda__)
-			if (!SCTP_IS_PRIVILEDGED(so)) {
-				SCTP_INP_DECR_REF(inp);
-				SCTP_INP_WUNLOCK(inp);
-				SCTP_INP_INFO_WUNLOCK();
-				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EACCES);
-				return (EACCES);
-			}
-#endif
 		}
 #endif /* __Windows__ */
 		SCTP_INP_WUNLOCK(inp);
@@ -3738,7 +3720,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		} else {
 			/* Note for BSD we hit here always other
 			 * O/S's will pass things in via the
-			 * sctp_ifap argument (Panda).
+			 * sctp_ifap argument.
 			 */
 			ifa = sctp_find_ifa_by_addr(&store.sa,
 						    vrf_id, SCTP_ADDR_NOT_LOCKED);
@@ -3888,7 +3870,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	struct socket *so;
 	int being_refed = 0;
 	struct sctp_queued_to_read *sq, *nsq;
-#if !defined(__Panda__) && !defined(__Userspace__)
+#if !defined(__Userspace__)
 #if !defined(__FreeBSD__) || __FreeBSD_version < 500000
 	sctp_rtentry_t *rt;
 #endif
@@ -4186,7 +4168,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	sctp_log_closing(inp, NULL, 5);
 #endif
 
-#if !(defined(__Panda__) || defined(__Windows__) || defined(__Userspace__))
+#if !(defined(__Windows__) || defined(__Userspace__))
 #if !defined(__FreeBSD__) || __FreeBSD_version < 500000
 	rt = ip_pcb->inp_route.ro_rt;
 #endif
@@ -4222,14 +4204,12 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	 * macro here since le_next will get freed as part of the
 	 * sctp_free_assoc() call.
 	 */
-#ifndef __Panda__
 	if (ip_pcb->inp_options) {
 		(void)sctp_m_free(ip_pcb->inp_options);
 		ip_pcb->inp_options = 0;
 	}
-#endif
 
-#if !(defined(__Panda__) || defined(__Windows__) || defined(__Userspace__))
+#if !(defined(__Windows__) || defined(__Userspace__))
 #if !defined(__FreeBSD__) || __FreeBSD_version < 500000
 	if (rt) {
 		RTFREE(rt);
@@ -4247,7 +4227,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 #endif
 
 #ifdef INET6
-#if !(defined(__Panda__) || defined(__Windows__) || defined(__Userspace__))
+#if !(defined(__Windows__) || defined(__Userspace__))
 #if defined(__FreeBSD__) || defined(__APPLE__)
 	if (ip_pcb->inp_vflag & INP_IPV6) {
 #else
@@ -4344,9 +4324,6 @@ sctp_findnet(struct sctp_tcb *stcb, struct sockaddr *addr)
 int
 sctp_is_address_on_local_host(struct sockaddr *addr, uint32_t vrf_id)
 {
-#ifdef __Panda__
-	return (0);
-#else
 	struct sctp_ifa *sctp_ifa;
 	sctp_ifa = sctp_find_ifa_by_addr(addr, vrf_id, SCTP_ADDR_NOT_LOCKED);
 	if (sctp_ifa) {
@@ -4354,7 +4331,6 @@ sctp_is_address_on_local_host(struct sockaddr *addr, uint32_t vrf_id)
 	} else {
 		return (0);
 	}
-#endif
 }
 
 /*
@@ -5086,15 +5062,7 @@ sctp_aloc_assoc(struct sctp_inpcb *inp, struct sockaddr *firstaddr,
 		 * If you have not performed a bind, then we need to do the
 		 * ephemeral bind for you.
 		 */
-		if ((err = sctp_inpcb_bind(inp->sctp_socket,
-		    (struct sockaddr *)NULL,
-		    (struct sctp_ifa *)NULL,
-#ifndef __Panda__
-					   p
-#else
-					   (struct proc *)NULL
-#endif
-		    ))) {
+		if ((err = sctp_inpcb_bind(inp->sctp_socket, NULL, NULL, p))) {
 			/* bind error, probably perm */
 			*error = err;
 			return (NULL);
@@ -5463,10 +5431,6 @@ sctp_clean_up_stream(struct sctp_tcb *stcb, struct sctp_readhead *rh)
 		}
 	}
 }
-
-#ifdef __Panda__
-void panda_wakeup_socket(struct socket *so);
-#endif
 
 /*-
  * Free the association after un-hashing the remote port. This
@@ -6805,14 +6769,12 @@ sctp_pcb_init(void)
 	sctp_startup_mcore_threads();
 #endif
 
-#ifndef __Panda__
 	/*
 	 * INIT the default VRF which for BSD is the only one, other O/S's
 	 * may have more. But initially they must start with one and then
 	 * add the VRF's as addresses are added.
 	 */
 	sctp_init_vrf_list(SCTP_DEFAULT_VRF);
-#endif
 #if defined(__FreeBSD__) && __FreeBSD_cc_version >= 1400000
 	if (ip_register_flow_handler(sctp_netisr_hdlr, IPPROTO_SCTP)) {
 		SCTP_PRINTF("***SCTP- Error can't register netisr handler***\n");
