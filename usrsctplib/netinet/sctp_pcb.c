@@ -34,7 +34,7 @@
 
 #ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 361872 2020-06-06 18:20:09Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 361877 2020-06-06 21:26:34Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6884,7 +6884,7 @@ retry:
 	 * holding the lock.  We won't find it on the list either and
 	 * continue and free/destroy it.  While holding the lock, spin, to
 	 * avoid the race condition as sctp_iterator_worker() will have to
-	 * wait to re-aquire the lock.
+	 * wait to re-acquire the lock.
 	 */
 	if (sctp_it_ctl.iterator_running != 0 || sctp_it_ctl.cur_it != NULL) {
 		SCTP_IPI_ITERATOR_WQ_UNLOCK();
