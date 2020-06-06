@@ -430,7 +430,7 @@ recv_function_raw(void *arg)
 	}
 	/* free the array itself */
 	free(recvmbuf);
-	SCTPDBG(SCTP_DEBUG_USR, "%s: Exiting SCTP/IP4 rcv", __func__);
+	SCTPDBG(SCTP_DEBUG_USR, "%s: Exiting SCTP/IP4 rcv\n", __func__);
 	return (NULL);
 }
 #endif
@@ -616,7 +616,7 @@ recv_function_raw6(void *arg)
 	}
 	/* free the array itself */
 	free(recvmbuf6);
-	SCTPDBG(SCTP_DEBUG_USR, "%s: Exiting SCTP/IP6 rcv", __func__);
+	SCTPDBG(SCTP_DEBUG_USR, "%s: Exiting SCTP/IP6 rcv\n", __func__);
 	return (NULL);
 }
 #endif
@@ -822,7 +822,7 @@ recv_function_udp(void *arg)
 	}
 	/* free the array itself */
 	free(udprecvmbuf);
-	SCTPDBG(SCTP_DEBUG_USR, "%s: Exiting SCTP/UDP/IP4 rcv", __func__);
+	SCTPDBG(SCTP_DEBUG_USR, "%s: Exiting SCTP/UDP/IP4 rcv\n", __func__);
 	return (NULL);
 }
 #endif
@@ -1010,7 +1010,7 @@ recv_function_udp6(void *arg)
 	}
 	/* free the array itself */
 	free(udprecvmbuf6);
-	SCTPDBG(SCTP_DEBUG_USR, "%s: Exiting SCTP/UDP/IP6 rcv", __func__);
+	SCTPDBG(SCTP_DEBUG_USR, "%s: Exiting SCTP/UDP/IP6 rcv\n", __func__);
 	return (NULL);
 }
 #endif
