@@ -373,38 +373,6 @@ extern userland_cond_t accept_cond;
 #define SCTP_EVENT_WRITE	0x0002	/* socket is writeable */
 #define SCTP_EVENT_ERROR	0x0004	/* socket has an error state */
 
-/*
- * Externalized form of struct socket used by the sysctl(3) interface.
- */
-struct xsocket {
-	size_t	xso_len;	/* length of this structure */
-	struct	socket *xso_so;	/* makes a convenient handle sometimes */
-	short	so_type;
-	short	so_options;
-	short	so_linger;
-	short	so_state;
-	caddr_t	so_pcb;		/* another convenient handle */
-	int	xso_protocol;
-	int	xso_family;
-	u_short	so_qlen;
-	u_short	so_incqlen;
-	u_short	so_qlimit;
-	short	so_timeo;
-	u_short	so_error;
-	pid_t	so_pgid;
-	u_long	so_oobmark;
-	struct xsockbuf {
-		u_int	sb_cc;
-		u_int	sb_hiwat;
-		u_int	sb_mbcnt;
-		u_int	sb_mbmax;
-		int	sb_lowat;
-		int	sb_timeo;
-		short	sb_flags;
-	} so_rcv, so_snd;
-	uid_t	so_uid;		/* XXX */
-};
-
 #if defined(_KERNEL)
 
 
@@ -616,7 +584,6 @@ int	sbreserve_locked(struct sockbuf *sb, u_long cc, struct socket *so,
 	    struct thread *td);
 struct mbuf *
 	sbsndptr(struct sockbuf *sb, u_int off, u_int len, u_int *moff);
-void	sbtoxsockbuf(struct sockbuf *sb, struct xsockbuf *xsb);
 int	sbwait(struct sockbuf *sb);
 int	sblock(struct sockbuf *sb, int flags);
 void	sbunlock(struct sockbuf *sb);
@@ -678,7 +645,6 @@ int	sosend_generic(struct socket *so, struct sockaddr *addr,
 	    int flags, struct thread *td);
 int	sosetopt(struct socket *so, struct sockopt *sopt);
 int	soshutdown(struct socket *so, int how);
-void	sotoxsocket(struct socket *so, struct xsocket *xso);
 void	sowakeup(struct socket *so, struct sockbuf *sb);
 
 #ifdef SOCKBUF_DEBUG
