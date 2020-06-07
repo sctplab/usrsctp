@@ -4114,7 +4114,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #if defined(__FreeBSD__)
     uint8_t mflowtype, uint32_t mflowid,
 #endif
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(__APPLE__)
     int so_locked SCTP_UNUSED
 #else
     int so_locked
@@ -4148,7 +4148,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 	struct udphdr *udp = NULL;
 #endif
 	uint8_t tos_value;
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(__APPLE__)
 	struct socket *so = NULL;
 #endif
 
@@ -4462,7 +4462,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			sctp_packet_log(o_pak);
 #endif
 		/* send it out.  table id is taken from stcb */
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(__APPLE__)
 		if ((SCTP_BASE_SYSCTL(sctp_output_unlocked)) && (so_locked)) {
 			so = SCTP_INP_SO(inp);
 			SCTP_SOCKET_UNLOCK(so, 0);
@@ -4472,7 +4472,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		SCTP_PROBE5(send, NULL, stcb, ip, stcb, sctphdr);
 #endif
 		SCTP_IP_OUTPUT(ret, o_pak, ro, stcb, vrf_id);
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(__APPLE__)
 		if ((SCTP_BASE_SYSCTL(sctp_output_unlocked)) && (so_locked)) {
 			atomic_add_int(&stcb->asoc.refcnt, 1);
 			SCTP_TCB_UNLOCK(stcb);
@@ -4934,7 +4934,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #endif
 		}
 		/* send it out. table id is taken from stcb */
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(__APPLE__)
 		if ((SCTP_BASE_SYSCTL(sctp_output_unlocked)) && (so_locked)) {
 			so = SCTP_INP_SO(inp);
 			SCTP_SOCKET_UNLOCK(so, 0);
@@ -4952,7 +4952,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #else
 		SCTP_IP6_OUTPUT(ret, o_pak, (struct route_in6 *)ro, NULL, stcb, vrf_id);
 #endif
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(__APPLE__)
 		if ((SCTP_BASE_SYSCTL(sctp_output_unlocked)) && (so_locked)) {
 			atomic_add_int(&stcb->asoc.refcnt, 1);
 			SCTP_TCB_UNLOCK(stcb);
@@ -5107,7 +5107,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 
 void
 sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(__APPLE__)
     SCTP_UNUSED
 #endif
     )
@@ -7154,7 +7154,7 @@ sctp_med_chunk_output(struct sctp_inpcb *inp,
 		      int *reason_code,
 		      int control_only, int from_where,
 		      struct timeval *now, int *now_filled, int frag_point, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(__APPLE__)
 		      SCTP_UNUSED
 #endif
                       );
@@ -7633,7 +7633,7 @@ sctp_clean_up_datalist(struct sctp_tcb *stcb,
 
 static void
 sctp_clean_up_ctl(struct sctp_tcb *stcb, struct sctp_association *asoc, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(__APPLE__)
 	SCTP_UNUSED
 #endif
 )
@@ -7740,7 +7740,7 @@ sctp_move_to_outqueue(struct sctp_tcb *stcb,
                       int eeor_mode,
                       int *bail,
                       int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(__APPLE__)
                       SCTP_UNUSED
 #endif
 	)
@@ -8266,7 +8266,7 @@ out_of:
 static void
 sctp_fill_outqueue(struct sctp_tcb *stcb,
     struct sctp_nets *net, int frag_point, int eeor_mode, int *quit_now, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(__APPLE__)
 	SCTP_UNUSED
 #endif
 )
@@ -8394,7 +8394,7 @@ sctp_med_chunk_output(struct sctp_inpcb *inp,
 		      int *reason_code,
 		      int control_only, int from_where,
 		      struct timeval *now, int *now_filled, int frag_point, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(__APPLE__)
 		      SCTP_UNUSED
 #endif
 	)
@@ -10018,7 +10018,7 @@ sctp_chunk_retransmission(struct sctp_inpcb *inp,
     struct sctp_tcb *stcb,
     struct sctp_association *asoc,
     int *cnt_out, struct timeval *now, int *now_filled, int *fr_done, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(__APPLE__)
     SCTP_UNUSED
 #endif
     )
@@ -10582,7 +10582,7 @@ sctp_chunk_output(struct sctp_inpcb *inp,
     struct sctp_tcb *stcb,
     int from_where,
     int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(__APPLE__)
     SCTP_UNUSED
 #endif
     )
@@ -11118,7 +11118,7 @@ sctp_fill_in_rest:
 
 void
 sctp_send_sack(struct sctp_tcb *stcb, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(__APPLE__)
 	SCTP_UNUSED
 #endif
 )
@@ -11514,7 +11514,7 @@ sctp_send_sack(struct sctp_tcb *stcb, int so_locked
 
 void
 sctp_send_abort_tcb(struct sctp_tcb *stcb, struct mbuf *operr, int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(__APPLE__)
     SCTP_UNUSED
 #endif
     )
@@ -12097,7 +12097,7 @@ sctp_send_shutdown_complete2(struct sockaddr *src, struct sockaddr *dst,
 
 void
 sctp_send_hb(struct sctp_tcb *stcb, struct sctp_nets *net,int so_locked
-#if !defined(__APPLE__) && !defined(SCTP_SO_LOCK_TESTING)
+#if !defined(__APPLE__)
 	SCTP_UNUSED
 #endif
 )

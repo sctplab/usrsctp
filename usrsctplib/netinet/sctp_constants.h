@@ -964,7 +964,7 @@ extern void getwintimeofday(struct timeval *tv);
 
 /*-
  * defines for socket lock states.
- * Used by __APPLE__ and SCTP_SO_LOCK_TESTING
+ * Used by __APPLE__
  */
 #define SCTP_SO_LOCKED		1
 #define SCTP_SO_NOT_LOCKED	0

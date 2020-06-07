@@ -265,7 +265,7 @@ sctp_notify(struct sctp_inpcb *inp,
             uint16_t ip_len,
             uint32_t next_mtu)
 {
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(__APPLE__)
 	struct socket *so;
 #endif
 	int timer_stopped;
@@ -301,7 +301,7 @@ sctp_notify(struct sctp_inpcb *inp,
 		    (icmp_code == ICMP_UNREACH_PORT)) {
 		/* Treat it like an ABORT. */
 		sctp_abort_notification(stcb, 1, 0, NULL, SCTP_SO_NOT_LOCKED);
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(__APPLE__)
 		so = SCTP_INP_SO(inp);
 		atomic_add_int(&stcb->asoc.refcnt, 1);
 		SCTP_TCB_UNLOCK(stcb);
@@ -311,7 +311,7 @@ sctp_notify(struct sctp_inpcb *inp,
 #endif
 		(void)sctp_free_assoc(inp, stcb, SCTP_NORMAL_PROC,
 		                      SCTP_FROM_SCTP_USRREQ + SCTP_LOC_2);
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(__APPLE__)
 		SCTP_SOCKET_UNLOCK(so, 1);
 		/* SCTP_TCB_UNLOCK(stcb); MT: I think this is not needed.*/
 #endif

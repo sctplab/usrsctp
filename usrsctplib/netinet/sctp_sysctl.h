@@ -135,7 +135,7 @@ struct sctp_sysctl {
 	uint32_t sctp_addr_watchdog_limit;
 	uint32_t sctp_vtag_watchdog_limit;
 #endif
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(__APPLE__)
 	uint32_t sctp_output_unlocked;
 #endif
 };
@@ -597,7 +597,7 @@ struct sctp_sysctl {
 #define SCTPCTL_IGNORE_VMWARE_INTERFACES_DEFAULT	SCTPCTL_IGNORE_VMWARE_INTERFACES_MAX
 #endif
 
-#if defined(__APPLE__) || defined(SCTP_SO_LOCK_TESTING)
+#if defined(__APPLE__)
 #define SCTPCTL_OUTPUT_UNLOCKED_DESC	"Unlock socket when sending packets down to IP"
 #define SCTPCTL_OUTPUT_UNLOCKED_MIN	0
 #define SCTPCTL_OUTPUT_UNLOCKED_MAX	1
