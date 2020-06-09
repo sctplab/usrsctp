@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 360878 2020-05-10 17:19:19Z tuexen $");
 #endif
@@ -1459,7 +1459,7 @@ sctp_heartbeat_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 
 		if ((net->last_sent_time.tv_sec > 0) ||
 		    (net->last_sent_time.tv_usec > 0)) {
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 			struct timeval diff;
 
 			SCTP_GETTIME_TIMEVAL(&diff);

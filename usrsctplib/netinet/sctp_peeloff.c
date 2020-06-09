@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_peeloff.c 337708 2018-08-13 13:58:45Z tuexen $");
 #endif
@@ -197,7 +197,7 @@ sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
 	}
 	atomic_add_int(&stcb->asoc.refcnt, 1);
 	SCTP_TCB_UNLOCK(stcb);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 	CURVNET_SET(head->so_vnet);
 #endif
 	newso = sonewconn(head, SS_ISCONNECTED
@@ -205,7 +205,7 @@ sctp_get_peeloff(struct socket *head, sctp_assoc_t assoc_id, int *error)
 	    , NULL
 #endif
 		);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 	CURVNET_RESTORE();
 #endif
 	if (newso == NULL) {

@@ -32,13 +32,13 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 361895 2020-06-07 14:39:20Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/proc.h>
 #endif
 #include <netinet/sctp_pcb.h>
@@ -486,7 +486,7 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 			sctp_notify(inp, stcb, net,
 			            icmp->icmp_type,
 			            icmp->icmp_code,
-#if defined(__FreeBSD__) && __FreeBSD_version >= 1000000
+#if defined(__FreeBSD__)
 			            ntohs(inner_ip->ip_len),
 #else
 			            inner_ip->ip_len,
@@ -511,16 +511,6 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 			}
 #endif
 		} else {
-#if defined(__FreeBSD__) && __FreeBSD_version < 500000
-			/*
-			 * XXX must be fixed for 5.x and higher, leave for
-			 * 4.x
-			 */
-			if (PRC_IS_REDIRECT(cmd) && (inp != NULL)) {
-				in_rtchange((struct inpcb *)inp,
-				    inetctlerrmap[cmd]);
-			}
-#endif
 			if ((stcb == NULL) && (inp != NULL)) {
 				/* reduce ref-count */
 				SCTP_INP_WLOCK(inp);
@@ -556,14 +546,8 @@ sctp_getcred(SYSCTL_HANDLER_ARGS)
 	/* FIX, for non-bsd is this right? */
 	vrf_id = SCTP_DEFAULT_VRFID;
 
-#if __FreeBSD_version > 602000
 	error = priv_check(req->td, PRIV_NETINET_GETCRED);
 
-#elif __FreeBSD_version >= 500000
-	error = suser(req->td);
-#else
-	error = suser(req->p);
-#endif
 	if (error)
 		return (error);
 
@@ -689,7 +673,7 @@ int
 #else
 static int
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 sctp_attach(struct socket *so, int proto SCTP_UNUSED, struct thread *p SCTP_UNUSED)
 #elif defined(__Userspace__)
 sctp_attach(struct socket *so, int proto SCTP_UNUSED, uint32_t vrf_id)
@@ -731,11 +715,11 @@ sctp_attach(struct socket *so, int proto SCTP_UNUSED, struct proc *p SCTP_UNUSED
 	return (0);
 }
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 static int
 sctp_bind(struct socket *so, struct sockaddr *addr, struct thread *p)
 {
-#elif defined(__FreeBSD__) || defined(__APPLE__)
+#elif defined(__APPLE__)
 static int
 sctp_bind(struct socket *so, struct sockaddr *addr, struct proc *p) {
 #elif defined(__Userspace__)
@@ -834,7 +818,7 @@ sctpconn_bind(struct socket *so, struct sockaddr *addr)
 }
 
 #endif
-#if (defined(__FreeBSD__) && __FreeBSD_version > 690000) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)
 void
 sctp_close(struct socket *so)
 {
@@ -918,7 +902,7 @@ sctp_detach(struct socket *so)
 
 	inp = (struct sctp_inpcb *)so->so_pcb;
 	if (inp == NULL) {
-#if defined(__FreeBSD__) && __FreeBSD_version > 690000
+#if defined(__FreeBSD__)
 		return;
 #else
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
@@ -969,7 +953,7 @@ sctp_detach(struct socket *so)
 			goto sctp_must_try_again;
 		}
 	}
-#if defined(__FreeBSD__) && __FreeBSD_version > 690000
+#if defined(__FreeBSD__)
 	return;
 #else
 	return (0);
@@ -982,7 +966,7 @@ sctp_detach(struct socket *so)
 #endif
 #if !defined(__Windows__)
 int
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 sctp_sendm(struct socket *so, int flags, struct mbuf *m, struct sockaddr *addr,
     struct mbuf *control, struct thread *p);
 
@@ -993,7 +977,7 @@ sctp_sendm(struct socket *so, int flags, struct mbuf *m, struct sockaddr *addr,
 #endif
 
 int
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 sctp_sendm(struct socket *so, int flags, struct mbuf *m, struct sockaddr *addr,
     struct mbuf *control, struct thread *p)
 {
@@ -1321,7 +1305,7 @@ sctp_shutdown(struct socket *so)
 	if (!((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 	      (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL))) {
 		/* Restore the flags that the soshutdown took away. */
-#if (defined(__FreeBSD__) && __FreeBSD_version >= 502115) || defined(__Windows__)
+#if defined(__FreeBSD__) || defined(__Windows__)
 		SOCKBUF_LOCK(&so->so_rcv);
 		so->so_rcv.sb_state &= ~SBS_CANTRCVMORE;
 		SOCKBUF_UNLOCK(&so->so_rcv);
@@ -2045,7 +2029,7 @@ sctp_do_connect_x(struct socket *so, struct sctp_inpcb *inp, void *optval,
 	stcb = sctp_aloc_assoc(inp, sa, &error, 0, vrf_id,
 	                       inp->sctp_ep.pre_open_stream_count,
 	                       inp->sctp_ep.port,
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 	                       (struct thread *)p,
 #elif defined(__Windows__)
 	                       (PKTHREAD)p,
@@ -2661,20 +2645,6 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 	}
 	case SCTP_MAX_BURST:
 	{
-#if defined(__FreeBSD__) && __FreeBSD_version < 900000
-		uint8_t *value;
-
-		SCTP_CHECK_AND_CAST(value, optval, uint8_t, *optsize);
-
-		SCTP_INP_RLOCK(inp);
-		if (inp->sctp_ep.max_burst < 256) {
-			*value = inp->sctp_ep.max_burst;
-		} else {
-			*value = 255;
-		}
-		SCTP_INP_RUNLOCK(inp);
-		*optsize = sizeof(uint8_t);
-#else
 		struct sctp_assoc_value *av;
 
 		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, *optsize);
@@ -2699,7 +2669,6 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		if (error == 0) {
 			*optsize = sizeof(struct sctp_assoc_value);
 		}
-#endif
 		break;
 	}
 	case SCTP_MAXSEG:
@@ -5813,15 +5782,6 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 	}
 	case SCTP_MAX_BURST:
 	{
-#if defined(__FreeBSD__) && __FreeBSD_version < 900000
-		uint8_t *burst;
-
-		SCTP_CHECK_AND_CAST(burst, optval, uint8_t, optsize);
-
-		SCTP_INP_WLOCK(inp);
-		inp->sctp_ep.max_burst = *burst;
-		SCTP_INP_WUNLOCK(inp);
-#else
 		struct sctp_assoc_value *av;
 
 		SCTP_CHECK_AND_CAST(av, optval, struct sctp_assoc_value, optsize);
@@ -5852,7 +5812,6 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				SCTP_INP_RUNLOCK(inp);
 			}
 		}
-#endif
 		break;
 	}
 	case SCTP_MAXSEG:
@@ -6732,15 +6691,9 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 #if defined(__APPLE__)
 		struct proc *proc;
 #endif
-#ifdef __FreeBSD__
-#if __FreeBSD_version > 602000
+#if defined(__FreeBSD__)
 		error = priv_check(curthread,
 				   PRIV_NETINET_RESERVEDPORT);
-#elif __FreeBSD_version >= 500000
-		error = suser((struct thread *)p);
-#else
-		error = suser(p);
-#endif
 #elif defined(__APPLE__)
 		proc = (struct proc *)p;
 		if (p) {
@@ -6890,7 +6843,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 	case SCTP_BINDX_ADD_ADDR:
 	{
 		struct sctp_getaddresses *addrs;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 		struct thread *td;
 
 		td = (struct thread *)p;
@@ -6904,7 +6857,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				error = EINVAL;
 				break;
 			}
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(__FreeBSD__)
 			if (td != NULL && (error = prison_local_ip4(td->td_ucred, &(((struct sockaddr_in *)(addrs->addr))->sin_addr)))) {
 				SCTP_LTRACE_ERR_RET(inp, stcb, NULL, SCTP_FROM_SCTP_USRREQ, error);
 				break;
@@ -6919,7 +6872,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				error = EINVAL;
 				break;
 			}
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(__FreeBSD__)
 			if (td != NULL && (error = prison_local_ip6(td->td_ucred, &(((struct sockaddr_in6 *)(addrs->addr))->sin6_addr),
 											   (SCTP_IPV6_V6ONLY(inp) != 0))) != 0) {
 			  SCTP_LTRACE_ERR_RET(inp, stcb, NULL, SCTP_FROM_SCTP_USRREQ, error);
@@ -6940,7 +6893,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 	case SCTP_BINDX_REM_ADDR:
 	{
 		struct sctp_getaddresses *addrs;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 		struct thread *td;
 		td = (struct thread *)p;
 
@@ -6953,7 +6906,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				error = EINVAL;
 				break;
 			}
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(__FreeBSD__)
 		if (td != NULL && (error = prison_local_ip4(td->td_ucred, &(((struct sockaddr_in *)(addrs->addr))->sin_addr)))) {
 				SCTP_LTRACE_ERR_RET(inp, stcb, NULL, SCTP_FROM_SCTP_USRREQ, error);
 				break;
@@ -6968,7 +6921,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				error = EINVAL;
 				break;
 			}
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(__FreeBSD__)
 			if (td != NULL &&
 			    (error = prison_local_ip6(td->td_ucred,
 			                              &(((struct sockaddr_in6 *)(addrs->addr))->sin6_addr),
@@ -6988,7 +6941,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					  &error);
 		break;
 	}
-#ifdef __APPLE__
+#if defined(__APPLE__)
 	case SCTP_LISTEN_FIX:
 		/* only applies to one-to-many sockets */
 		if (inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) {
@@ -7887,7 +7840,7 @@ sctp_ctloutput(struct socket *so, struct sockopt *sopt)
 			goto out;
 		}
 	}
-#if (defined(__FreeBSD__) && __FreeBSD_version >= 500000) || defined(__Windows__)
+#if defined(__FreeBSD__) || defined(__Windows__)
 	p = (void *)sopt->sopt_td;
 #else
 	p = (void *)sopt->sopt_p;
@@ -7918,12 +7871,12 @@ out:
 #endif
 
 #ifdef INET
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 static int
 sctp_connect(struct socket *so, struct sockaddr *addr, struct thread *p)
 {
 #else
-#if defined(__FreeBSD__) || defined(__APPLE__)
+#if defined(__APPLE__)
 static int
 sctp_connect(struct socket *so, struct sockaddr *addr, struct proc *p)
 {
@@ -7975,7 +7928,7 @@ sctp_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 #ifdef INET6
 	case AF_INET6:
 	{
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(__FreeBSD__)
 		struct sockaddr_in6 *sin6;
 
 #endif
@@ -7983,7 +7936,7 @@ sctp_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			return (EINVAL);
 		}
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(__FreeBSD__)
 		sin6 = (struct sockaddr_in6 *)addr;
 		if (p != NULL && (error = prison_remote_ip6(p->td_ucred, &sin6->sin6_addr)) != 0) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
@@ -7996,7 +7949,7 @@ sctp_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 #ifdef INET
 	case AF_INET:
 	{
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(__FreeBSD__)
 		struct sockaddr_in *sin;
 
 #endif
@@ -8006,7 +7959,7 @@ sctp_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 			return (EINVAL);
 		}
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(__FreeBSD__)
 		sin = (struct sockaddr_in *)addr;
 		if (p != NULL && (error = prison_remote_ip4(p->td_ucred, &sin->sin_addr)) != 0) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
@@ -8307,12 +8260,8 @@ sctpconn_connect(struct socket *so, struct sockaddr *addr)
 }
 #endif
 int
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
-#if __FreeBSD_version >= 700000
+#if defined(__FreeBSD__)
 sctp_listen(struct socket *so, int backlog, struct thread *p)
-#else
-sctp_listen(struct socket *so, struct thread *p)
-#endif
 #elif defined(__Windows__)
 sctp_listen(struct socket *so, int backlog, PKTHREAD p)
 #elif defined(__Userspace__)
@@ -8451,7 +8400,7 @@ sctp_listen(struct socket *so, struct proc *p)
 		sctp_log_lock(inp, (struct sctp_tcb *)NULL, SCTP_LOG_LOCK_SOCK);
 	}
 #endif
-#if (defined(__FreeBSD__) && __FreeBSD_version > 500000) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(__Userspace__)
 	SOCK_LOCK(so);
 	error = solisten_proto_check(so);
 	SOCK_UNLOCK(so);
@@ -8491,25 +8440,17 @@ sctp_listen(struct socket *so, struct proc *p)
 		}
 	}
 	SCTP_INP_WLOCK(inp);
-#if (defined(__FreeBSD__) && __FreeBSD_version > 500000) || defined(__Windows__) || defined(__Userspace__)
-#if __FreeBSD_version >= 1200034
+#if defined(__FreeBSD__)
 	if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) == 0) {
 		SOCK_LOCK(so);
 		solisten_proto(so, backlog);
 		SOCK_UNLOCK(so);
 	}
-#elif __FreeBSD_version >= 700000 || defined(__Windows__) || defined(__Userspace__)
-	/* It appears for 7.0 and on, we must always call this. */
+#elif defined(__Windows__) || defined(__Userspace__)
 	SOCK_LOCK(so);
 	solisten_proto(so, backlog);
-#else
-	SOCK_LOCK(so);
-	if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) == 0) {
-		solisten_proto(so);
-	}
 #endif
-#endif
-#if !defined(__FreeBSD__) || __FreeBSD_version < 1200034
+#if !defined(__FreeBSD__)
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) {
 		/* remove the ACCEPTCONN flag for one-to-many sockets */
 #if defined(__Userspace__)
@@ -8520,7 +8461,7 @@ sctp_listen(struct socket *so, struct proc *p)
 	}
 	SOCK_UNLOCK(so);
 #endif
-#if (defined(__FreeBSD__) && __FreeBSD_version >= 700000) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)
 	if (backlog > 0) {
 		inp->sctp_flags |= SCTP_PCB_FLAGS_ACCEPTING;
 	} else {
@@ -8926,15 +8867,10 @@ struct pr_usrreqs sctp_usrreqs = {
 	.pru_bind = sctp_bind,
 	.pru_connect = sctp_connect,
 	.pru_control = in_control,
-#if __FreeBSD_version >= 690000
 	.pru_close = sctp_close,
 	.pru_detach = sctp_close,
 	.pru_sopoll = sopoll_generic,
 	.pru_flush = sctp_flush,
-#else
-	.pru_detach = sctp_detach,
-	.pru_sopoll = sopoll,
-#endif
 	.pru_disconnect = sctp_disconnect,
 	.pru_listen = sctp_listen,
 	.pru_peeraddr = sctp_peeraddr,

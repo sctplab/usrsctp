@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 361895 2020-06-07 14:39:20Z tuexen $");
 #endif
@@ -2247,7 +2247,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 	                       ntohl(initack_cp->init.initiate_tag), vrf_id,
 	                       ntohs(initack_cp->init.num_outbound_streams),
 	                       port,
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 	                       (struct thread *)NULL,
 #elif defined(__Windows__)
 	                       (PKTHREAD)NULL,
@@ -2950,16 +2950,9 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 				return (m);
 			}
 			oso = (*inp_p)->sctp_socket;
-#if (defined(__FreeBSD__) && __FreeBSD_version < 700000)
-			/*
-			 * We do this to keep the sockets side happy during
-			 * the sonewcon ONLY.
-			 */
-			NET_LOCK_GIANT();
-#endif
 			atomic_add_int(&(*stcb)->asoc.refcnt, 1);
 			SCTP_TCB_UNLOCK((*stcb));
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 			CURVNET_SET(oso->so_vnet);
 #endif
 #if defined(__APPLE__)
@@ -2970,13 +2963,10 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 			    ,NULL
 #endif
 			    );
-#if (defined(__FreeBSD__) && __FreeBSD_version < 700000)
-			NET_UNLOCK_GIANT();
-#endif
 #if defined(__APPLE__)
 			SCTP_SOCKET_UNLOCK(oso, 1);
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 			CURVNET_RESTORE();
 #endif
 			SCTP_TCB_LOCK((*stcb));
@@ -5330,7 +5320,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 			if ((stcb == NULL) &&
 			    (!SCTP_IS_LISTENING(inp) ||
 			     (!(inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
-#if defined(__FreeBSD__) && __FreeBSD_version >= 1200034
+#if defined(__FreeBSD__)
 			      inp->sctp_socket->sol_qlen >= inp->sctp_socket->sol_qlimit))) {
 #else
 			      inp->sctp_socket->so_qlen >= inp->sctp_socket->so_qlimit))) {
@@ -5824,7 +5814,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 		SCTP_PROBE5(receive, NULL, stcb, m, stcb, sh);
 #endif
 		SCTP_STAT_INCR(sctps_noport);
-#if defined(__FreeBSD__) && (((__FreeBSD_version < 900000) && (__FreeBSD_version >= 804000)) || (__FreeBSD_version > 900000))
+#if defined(__FreeBSD__)
 		if (badport_bandlim(BANDLIM_SCTP_OOTB) < 0) {
 			goto out;
 		}
@@ -6221,25 +6211,11 @@ sctp_input(i_pak, va_alist)
 	}
 #endif
 #if defined(__FreeBSD__)
-#if __FreeBSD_version > 1000049
 	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
 	        "sctp_input(): Packet of length %d received on %s with csum_flags 0x%b.\n",
 	        m->m_pkthdr.len,
 	        if_name(m->m_pkthdr.rcvif),
 	        (int)m->m_pkthdr.csum_flags, CSUM_BITS);
-#elif __FreeBSD_version >= 800000
-	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
-	        "sctp_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
-	        m->m_pkthdr.len,
-	        if_name(m->m_pkthdr.rcvif),
-	        m->m_pkthdr.csum_flags);
-#else
-	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
-	        "sctp_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
-	        m->m_pkthdr.len,
-	        m->m_pkthdr.rcvif->if_xname,
-	        m->m_pkthdr.csum_flags);
-#endif
 #endif
 #if defined(__APPLE__)
 	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
@@ -6296,11 +6272,7 @@ sctp_input(i_pak, va_alist)
 	ip->ip_len = ntohs(ip->ip_len);
 #endif
 #if defined(__FreeBSD__)
-#if __FreeBSD_version >= 1000000
 	length = ntohs(ip->ip_len);
-#else
-	length = ip->ip_len + iphlen;
-#endif
 #elif defined(__APPLE__)
 	length = ip->ip_len + iphlen;
 #elif defined(__Userspace__)
@@ -6327,7 +6299,7 @@ sctp_input(i_pak, va_alist)
 		goto out;
 	}
 	ecn_bits = ip->ip_tos;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(__FreeBSD__)
 	if (m->m_pkthdr.csum_flags & CSUM_SCTP_VALID) {
 		SCTP_STAT_INCR(sctps_recvhwcrc);
 		compute_crc = 0;
@@ -6364,7 +6336,7 @@ sctp_input(i_pak, va_alist)
 extern int *sctp_cpuarry;
 #endif
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020
+#if defined(__FreeBSD__)
 int
 sctp_input(struct mbuf **mp, int *offp, int proto SCTP_UNUSED)
 {
@@ -6396,11 +6368,7 @@ sctp_input(struct mbuf *m, int off)
 			if (SCTP_BUF_LEN(m) < offset) {
 				if ((m = m_pullup(m, offset)) == NULL) {
 					SCTP_STAT_INCR(sctps_hdrops);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020
 					return (IPPROTO_DONE);
-#else
-					return;
-#endif
 				}
 			}
 			ip = mtod(m, struct ip *);
@@ -6412,15 +6380,11 @@ sctp_input(struct mbuf *m, int off)
 		}
 		cpu_to_use = sctp_cpuarry[flowid % mp_ncpus];
 		sctp_queue_to_mcore(m, off, cpu_to_use);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020
 		return (IPPROTO_DONE);
-#else
-		return;
-#endif
 	}
 #endif
 	sctp_input_with_port(m, off, 0);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 1100020
+#if defined(__FreeBSD__)
 	return (IPPROTO_DONE);
 #endif
 }

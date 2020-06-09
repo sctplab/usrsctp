@@ -32,9 +32,9 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 361895 2020-06-07 14:39:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 361934 2020-06-08 20:23:20Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -387,7 +387,7 @@ sctp_log_lock(struct sctp_inpcb *inp, struct sctp_tcb *stcb, uint8_t from)
 		sctp_clog.x.lock.sock = (void *) NULL;
 	}
 	sctp_clog.x.lock.inp = (void *) inp;
-#if (defined(__FreeBSD__) && __FreeBSD_version >= 503000) || (defined(__APPLE__))
+#if defined(__FreeBSD__) || (defined(__APPLE__))
 	if (stcb) {
 		sctp_clog.x.lock.tcb_lock = mtx_owned(&stcb->tcb_mtx);
 	} else {
@@ -400,11 +400,7 @@ sctp_log_lock(struct sctp_inpcb *inp, struct sctp_tcb *stcb, uint8_t from)
 		sctp_clog.x.lock.inp_lock = SCTP_LOCK_UNKNOWN;
 		sctp_clog.x.lock.create_lock = SCTP_LOCK_UNKNOWN;
 	}
-#if (defined(__FreeBSD__) && __FreeBSD_version <= 602000)
-	sctp_clog.x.lock.info_lock = mtx_owned(&SCTP_BASE_INFO(ipi_ep_mtx));
-#else
 	sctp_clog.x.lock.info_lock = rw_wowned(&SCTP_BASE_INFO(ipi_ep_mtx));
-#endif
 	if (inp && (inp->sctp_socket)) {
 		sctp_clog.x.lock.sock_lock = mtx_owned(&(inp->sctp_socket->so_rcv.sb_mtx));
 		sctp_clog.x.lock.sockrcvbuf_lock = mtx_owned(&(inp->sctp_socket->so_rcv.sb_mtx));
@@ -1671,11 +1667,11 @@ sctp_iterator_worker(void)
 		/* now lets work on this one */
 		TAILQ_REMOVE(&sctp_it_ctl.iteratorhead, it, sctp_nxt_itr);
 		SCTP_IPI_ITERATOR_WQ_UNLOCK();
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 		CURVNET_SET(it->vn);
 #endif
 		sctp_iterator_work(it);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 		CURVNET_RESTORE();
 #endif
 		SCTP_IPI_ITERATOR_WQ_LOCK();
@@ -1796,7 +1792,7 @@ sctp_timeout_handler(void *t)
 	inp = (struct sctp_inpcb *)tmr->ep;
 	stcb = (struct sctp_tcb *)tmr->tcb;
 	net = (struct sctp_nets *)tmr->net;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 	CURVNET_SET((struct vnet *)tmr->vnet);
 #endif
 	did_output = 1;
@@ -1829,7 +1825,7 @@ sctp_timeout_handler(void *t)
 			SCTPDBG(SCTP_DEBUG_TIMER2,
 			        "Timer type %d handler exiting due to CLOSED association.\n",
 			        type);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 			CURVNET_RESTORE();
 #endif
 			return;
@@ -1847,7 +1843,7 @@ sctp_timeout_handler(void *t)
 		SCTPDBG(SCTP_DEBUG_TIMER2,
 			"Timer type %d handler exiting due to not being active.\n",
 			type);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 		CURVNET_RESTORE();
 #endif
 		return;
@@ -1867,7 +1863,7 @@ sctp_timeout_handler(void *t)
 			SCTPDBG(SCTP_DEBUG_TIMER2,
 			        "Timer type %d handler exiting due to CLOSED association.\n",
 			        type);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 			CURVNET_RESTORE();
 #endif
 			return;
@@ -2231,9 +2227,7 @@ out_decr:
 out_no_decr:
 	SCTPDBG(SCTP_DEBUG_TIMER2, "Timer type %d handler finished.\n", type);
 #if defined(__FreeBSD__)
-#if __FreeBSD_version >= 801000
 	CURVNET_RESTORE();
-#endif
 	NET_EPOCH_EXIT(et);
 #endif
 }
@@ -4259,7 +4253,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		/* If the socket is gone we are out of here */
 		return;
 	}
-#if (defined(__FreeBSD__) && __FreeBSD_version > 500000) || defined(__Windows__)
+#if defined(__FreeBSD__) || defined(__Windows__)
 	if (stcb->sctp_socket->so_rcv.sb_state & SBS_CANTRCVMORE) {
 #else
 	if (stcb->sctp_socket->so_state & SS_CANTRCVMORE) {
@@ -5054,7 +5048,7 @@ void
 sctp_print_address(struct sockaddr *sa)
 {
 #ifdef INET6
-#if defined(__FreeBSD__) && __FreeBSD_version >= 700000
+#if defined(__FreeBSD__)
 	char ip6buf[INET6_ADDRSTRLEN];
 #endif
 #endif
@@ -5079,7 +5073,7 @@ sctp_print_address(struct sockaddr *sa)
 			    ntohs(sin6->sin6_port),
 			    sin6->sin6_scope_id);
 #else
-#if defined(__FreeBSD__) && __FreeBSD_version >= 700000
+#if defined(__FreeBSD__)
 		SCTP_PRINTF("IPv6 address: %s:port:%d scope:%u\n",
 			    ip6_sprintf(ip6buf, &sin6->sin6_addr),
 			    ntohs(sin6->sin6_port),
@@ -5145,13 +5139,7 @@ sctp_pull_off_control_to_new_inp(struct sctp_inpcb *old_inp,
 	new_so = new_inp->sctp_socket;
 	TAILQ_INIT(&tmp_queue);
 #if defined(__FreeBSD__) || defined(__APPLE__)
-#if defined(__FreeBSD__) && __FreeBSD_version < 700000
-	SOCKBUF_LOCK(&(old_so->so_rcv));
-#endif
 	error = sblock(&old_so->so_rcv, waitflags);
-#if defined(__FreeBSD__) && __FreeBSD_version < 700000
-	SOCKBUF_UNLOCK(&(old_so->so_rcv));
-#endif
 	if (error) {
 		/* Gak, can't get sblock, we have a problem.
 		 * data will be left stranded.. and we
@@ -5189,18 +5177,12 @@ sctp_pull_off_control_to_new_inp(struct sctp_inpcb *old_inp,
 	}
 	SCTP_INP_READ_UNLOCK(old_inp);
 	/* Remove the sb-lock on the old socket */
-#if defined(__FreeBSD__) && __FreeBSD_version < 700000
-	SOCKBUF_LOCK(&(old_so->so_rcv));
-#endif
 #if defined(__APPLE__)
 	sbunlock(&old_so->so_rcv, 1);
 #endif
 
 #if defined(__FreeBSD__)
 	sbunlock(&old_so->so_rcv);
-#endif
-#if defined(__FreeBSD__) && __FreeBSD_version < 700000
-	SOCKBUF_UNLOCK(&(old_so->so_rcv));
 #endif
 	/* Now we move them over to the new socket buffer */
 	SCTP_INP_READ_LOCK(new_inp);
@@ -6130,7 +6112,7 @@ sctp_sorecvmsg(struct socket *so,
 	int hold_rlock = 0;
 	ssize_t slen = 0;
 	uint32_t held_length = 0;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 700000
+#if defined(__FreeBSD__)
 	int sockbuf_lock = 0;
 #endif
 
@@ -6166,7 +6148,7 @@ sctp_sorecvmsg(struct socket *so,
 		return (EINVAL);
 	}
 	if ((in_flags & (MSG_DONTWAIT
-#if defined(__FreeBSD__) && __FreeBSD_version > 500000
+#if defined(__FreeBSD__)
 			 | MSG_NBIO
 #endif
 		     )) ||
@@ -6198,7 +6180,7 @@ sctp_sorecvmsg(struct socket *so,
 			       rwnd_req, in_eeor_mode, so->so_rcv.sb_cc, (uint32_t)uio->uio_resid);
 #endif
 	}
-#if (defined(__FreeBSD__) && __FreeBSD_version < 700000) || defined(__Userspace__)
+#if defined(__Userspace__)
 	SOCKBUF_LOCK(&so->so_rcv);
 	hold_sblock = 1;
 #endif
@@ -6227,11 +6209,11 @@ sctp_sorecvmsg(struct socket *so,
 	if (error) {
 		goto release_unlocked;
 	}
-#if defined(__FreeBSD__) && __FreeBSD_version >= 700000
-        sockbuf_lock = 1;
+#if defined(__FreeBSD__)
+	sockbuf_lock = 1;
 #endif
  restart:
-#if (defined(__FreeBSD__) && __FreeBSD_version < 700000) || defined(__Userspace__)
+#if defined(__Userspace__)
 	if (hold_sblock == 0) {
 		SOCKBUF_LOCK(&so->so_rcv);
 		hold_sblock = 1;
@@ -6239,10 +6221,6 @@ sctp_sorecvmsg(struct socket *so,
 #endif
 #if defined(__APPLE__)
 	sbunlock(&so->so_rcv, 1);
-#endif
-
-#if defined(__FreeBSD__) && __FreeBSD_version < 700000
-	sbunlock(&so->so_rcv);
 #endif
 
  restart_nosblocks:
@@ -6254,7 +6232,7 @@ sctp_sorecvmsg(struct socket *so,
 	    (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE)) {
 		goto out;
 	}
-#if (defined(__FreeBSD__) && __FreeBSD_version > 500000) || defined(__Windows__)
+#if defined(__FreeBSD__) || defined(__Windows__)
 	if ((so->so_rcv.sb_state & SBS_CANTRCVMORE) && (so->so_rcv.sb_cc == 0)) {
 #else
 	if ((so->so_state & SS_CANTRCVMORE) && (so->so_rcv.sb_cc == 0)) {
@@ -6324,9 +6302,6 @@ sctp_sorecvmsg(struct socket *so,
 	}
 #if defined(__APPLE__)
 	error = sblock(&so->so_rcv, SBLOCKWAIT(in_flags));
-#endif
-#if defined(__FreeBSD__) && __FreeBSD_version < 700000
-	error = sblock(&so->so_rcv, (block_allowed ? M_WAITOK : 0));
 #endif
 	/* we possibly have data we can read */
 	/*sa_ignore FREED_MEMORY*/
@@ -6929,7 +6904,7 @@ sctp_sorecvmsg(struct socket *so,
 			sctp_user_rcvd(stcb, &freed_so_far, hold_rlock, rwnd_req);
 		}
 	wait_some_more:
-#if (defined(__FreeBSD__) && __FreeBSD_version > 500000) || defined(__Windows__)
+#if defined(__FreeBSD__) || defined(__Windows__)
 		if (so->so_rcv.sb_state & SBS_CANTRCVMORE) {
 			goto release;
 		}
@@ -7077,7 +7052,7 @@ sctp_sorecvmsg(struct socket *so,
 		SCTP_INP_READ_UNLOCK(inp);
 		hold_rlock = 0;
 	}
-#if (defined(__FreeBSD__) && __FreeBSD_version < 700000) || defined(__Userspace__)
+#if defined(__Userspace__)
 	if (hold_sblock == 0) {
 		SOCKBUF_LOCK(&so->so_rcv);
 		hold_sblock = 1;
@@ -7094,9 +7069,7 @@ sctp_sorecvmsg(struct socket *so,
 
 #if defined(__FreeBSD__)
 	sbunlock(&so->so_rcv);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 700000
 	sockbuf_lock = 0;
-#endif
 #endif
 
  release_unlocked:
@@ -7129,7 +7102,7 @@ sctp_sorecvmsg(struct socket *so,
 	if (hold_sblock) {
 		SOCKBUF_UNLOCK(&so->so_rcv);
 	}
-#if defined(__FreeBSD__) && __FreeBSD_version >= 700000
+#if defined(__FreeBSD__)
 	if (sockbuf_lock) {
 		sbunlock(&so->so_rcv);
 	}
@@ -7334,7 +7307,7 @@ sctp_soreceive(	struct socket *so,
 #else
 		if (from) {
 #endif
-#if (defined(__FreeBSD__) && __FreeBSD_version > 500000) || defined(__Windows__)
+#if defined(__FreeBSD__) || defined(__Windows__)
 			*psa = sodupsockaddr(from, M_NOWAIT);
 #else
 			*psa = dup_sockaddr(from, mp0 == 0);
@@ -7350,7 +7323,7 @@ sctp_soreceive(	struct socket *so,
 }
 
 
-#if (defined(__FreeBSD__) && __FreeBSD_version < 603000) || defined(__Windows__)
+#if defined(__Windows__)
 /*
  * General routine to allocate a hash table with control of memory flags.
  * is in 7.0 and beyond for sure :-)
@@ -8152,7 +8125,6 @@ sctp_log_trace(uint32_t subsys, const char *str SCTP_UNUSED, uint32_t a, uint32_
 
 #endif
 #if defined(__FreeBSD__)
-#if __FreeBSD_version >= 800044
 static void
 sctp_recv_udp_tunneled_packet(struct mbuf *m, int off, struct inpcb *inp,
     const struct sockaddr *sa SCTP_UNUSED, void *ctx SCTP_UNUSED)
@@ -8206,29 +8178,17 @@ sctp_recv_udp_tunneled_packet(struct mbuf *m, int off, struct inpcb *inp,
 	 * Since CSUM_DATA_VALID == CSUM_SCTP_VALID this would imply that
 	 * the HW also verified the SCTP checksum. Therefore, clear the bit.
 	 */
-#if __FreeBSD_version > 1000049
 	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
 	        "sctp_recv_udp_tunneled_packet(): Packet of length %d received on %s with csum_flags 0x%b.\n",
 	        m->m_pkthdr.len,
 	        if_name(m->m_pkthdr.rcvif),
 	        (int)m->m_pkthdr.csum_flags, CSUM_BITS);
-#else
-	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
-	        "sctp_recv_udp_tunneled_packet(): Packet of length %d received on %s with csum_flags 0x%x.\n",
-	        m->m_pkthdr.len,
-	        if_name(m->m_pkthdr.rcvif),
-	        m->m_pkthdr.csum_flags);
-#endif
 	m->m_pkthdr.csum_flags &= ~CSUM_DATA_VALID;
 	iph = mtod(m, struct ip *);
 	switch (iph->ip_v) {
 #ifdef INET
 	case IPVERSION:
-#if __FreeBSD_version >= 1000000
 		iph->ip_len = htons(ntohs(iph->ip_len) - sizeof(struct udphdr));
-#else
-		iph->ip_len -= sizeof(struct udphdr);
-#endif
 		sctp_input_with_port(m, off, port);
 		break;
 #endif
@@ -8247,9 +8207,7 @@ sctp_recv_udp_tunneled_packet(struct mbuf *m, int off, struct inpcb *inp,
  out:
 	m_freem(m);
 }
-#endif
 
-#if __FreeBSD_version >= 1100000
 #ifdef INET
 static void
 sctp_recv_icmp_tunneled_packet(int cmd, struct sockaddr *sa, void *vip, void *ctx SCTP_UNUSED)
@@ -8369,16 +8327,6 @@ sctp_recv_icmp_tunneled_packet(int cmd, struct sockaddr *sa, void *vip, void *ct
 		}
 #endif
 	} else {
-#if defined(__FreeBSD__) && __FreeBSD_version < 500000
-		/*
-		 * XXX must be fixed for 5.x and higher, leave for
-		 * 4.x
-		 */
-		if (PRC_IS_REDIRECT(cmd) && (inp != NULL)) {
-			in_rtchange((struct inpcb *)inp,
-			    inetctlerrmap[cmd]);
-		}
-#endif
 		if ((stcb == NULL) && (inp != NULL)) {
 			/* reduce ref-count */
 			SCTP_INP_WLOCK(inp);
@@ -8552,11 +8500,6 @@ sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa, void *d, void *ctx
 		}
 #endif
 	} else {
-#if defined(__FreeBSD__) && __FreeBSD_version < 500000
-		if (PRC_IS_REDIRECT(cmd) && (inp != NULL)) {
-			in6_rtchange(inp, inet6ctlerrmap[cmd]);
-		}
-#endif
 		if ((stcb == NULL) && (inp != NULL)) {
 			/* reduce inp's ref-count */
 			SCTP_INP_WLOCK(inp);
@@ -8568,7 +8511,6 @@ sctp_recv_icmp6_tunneled_packet(int cmd, struct sockaddr *sa, void *d, void *ctx
 		}
 	}
 }
-#endif
 #endif
 
 void
@@ -8594,7 +8536,6 @@ sctp_over_udp_stop(void)
 int
 sctp_over_udp_start(void)
 {
-#if __FreeBSD_version >= 800044
 	uint16_t port;
 	int ret;
 #ifdef INET
@@ -8633,9 +8574,7 @@ sctp_over_udp_start(void)
 	/* Call the special UDP hook. */
 	if ((ret = udp_set_kernel_tunneling(SCTP_BASE_INFO(udp4_tun_socket),
 	                                    sctp_recv_udp_tunneled_packet,
-#if __FreeBSD_version >= 1100000
 	                                    sctp_recv_icmp_tunneled_packet,
-#endif
 	                                    NULL))) {
 		sctp_over_udp_stop();
 		return (ret);
@@ -8661,9 +8600,7 @@ sctp_over_udp_start(void)
 	/* Call the special UDP hook. */
 	if ((ret = udp_set_kernel_tunneling(SCTP_BASE_INFO(udp6_tun_socket),
 	                                    sctp_recv_udp_tunneled_packet,
-#if __FreeBSD_version >= 1100000
 	                                    sctp_recv_icmp6_tunneled_packet,
-#endif
 	                                    NULL))) {
 		sctp_over_udp_stop();
 		return (ret);
@@ -8680,9 +8617,6 @@ sctp_over_udp_start(void)
 	}
 #endif
 	return (0);
-#else
-	return (ENOTSUP);
-#endif
 }
 #endif
 

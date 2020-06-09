@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.h 361895 2020-06-07 14:39:20Z tuexen $");
 #endif
@@ -56,7 +56,7 @@ struct sctp_sysctl {
 	uint32_t sctp_nrsack_enable;
 	uint32_t sctp_pktdrop_enable;
 	uint32_t sctp_fr_max_burst_default;
-#if !(defined(__FreeBSD__) && __FreeBSD_version >= 800000)
+#if !defined(__FreeBSD__)
 	uint32_t sctp_no_csum_on_loopback;
 #endif
 	uint32_t sctp_peer_chunk_oh;

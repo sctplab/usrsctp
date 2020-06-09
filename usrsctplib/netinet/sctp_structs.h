@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 360292 2020-04-25 09:06:11Z melifaro $");
 #endif
@@ -55,7 +55,7 @@ struct sctp_timer {
 	void *ep;
 	void *tcb;
 	void *net;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(__FreeBSD__)
 	void *vnet;
 #endif
 
@@ -117,7 +117,7 @@ typedef void (*end_func) (void *ptr, uint32_t val);
 /* whats on the mcore control struct */
 struct sctp_mcore_queue {
 	TAILQ_ENTRY(sctp_mcore_queue) next;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 	struct vnet *vn;
 #endif
 	struct mbuf *m;
@@ -142,7 +142,7 @@ struct sctp_mcore_ctrl {
 
 struct sctp_iterator {
 	TAILQ_ENTRY(sctp_iterator) sctp_nxt_itr;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 	struct vnet *vn;
 #endif
 	struct sctp_timer tmr;

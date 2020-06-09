@@ -32,14 +32,14 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 361895 2020-06-07 14:39:20Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
 #ifdef INET6
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/proc.h>
 #endif
 #include <netinet/sctp_pcb.h>
@@ -173,25 +173,11 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto)
 	}
 #endif
 #if defined(__FreeBSD__)
-#if __FreeBSD_version > 1000049
 	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
 	        "sctp6_input(): Packet of length %d received on %s with csum_flags 0x%b.\n",
 	        m->m_pkthdr.len,
 	        if_name(m->m_pkthdr.rcvif),
 	        (int)m->m_pkthdr.csum_flags, CSUM_BITS);
-#elif __FreeBSD_version >= 800000
-	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
-	        "sctp6_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
-	        m->m_pkthdr.len,
-	        if_name(m->m_pkthdr.rcvif),
-	        m->m_pkthdr.csum_flags);
-#else
-	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
-	        "sctp6_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
-	        m->m_pkthdr.len,
-	        m->m_pkthdr.rcvif->if_xname,
-	        m->m_pkthdr.csum_flags);
-#endif
 #endif
 #if defined(__APPLE__)
 	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
@@ -277,7 +263,7 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto)
 		goto out;
 	}
 	ecn_bits = ((ntohl(ip6->ip6_flow) >> 20) & 0x000000ff);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(__FreeBSD__)
 	if (m->m_pkthdr.csum_flags & CSUM_SCTP_VALID) {
 		SCTP_STAT_INCR(sctps_recvhwcrc);
 		compute_crc = 0;
@@ -584,11 +570,6 @@ sctp6_ctlinput(int cmd, struct sockaddr *pktdst, void *d)
 			}
 #endif
 		} else {
-#if defined(__FreeBSD__) && __FreeBSD_version < 500000
-			if (PRC_IS_REDIRECT(cmd) && (inp != NULL)) {
-				in6_rtchange(inp, inet6ctlerrmap[cmd]);
-			}
-#endif
 			if ((stcb == NULL) && (inp != NULL)) {
 				/* reduce inp's ref-count */
 				SCTP_INP_WLOCK(inp);
@@ -621,10 +602,8 @@ sctp6_getcred(SYSCTL_HANDLER_ARGS)
 
 	vrf_id = SCTP_DEFAULT_VRFID;
 
-#if defined(__FreeBSD__) && __FreeBSD_version > 602000
+#if defined(__FreeBSD__)
 	error = priv_check(req->td, PRIV_NETINET_GETCRED);
-#elif defined(__FreeBSD__) && __FreeBSD_version >= 500000
-	error = suser(req->td);
 #else
 	error = suser(req->p);
 #endif
@@ -686,7 +665,7 @@ SYSCTL_PROC(_net_inet6_sctp6, OID_AUTO, getcred, CTLTYPE_OPAQUE | CTLFLAG_RW,
 #endif
 
 /* This is the same as the sctp_abort() could be made common */
-#if (defined(__FreeBSD__) && __FreeBSD_version > 690000) || defined(__Windows__)
+#if defined(__FreeBSD__) || defined(__Windows__)
 static void
 #elif defined(__Userspace__)
 int
@@ -704,7 +683,7 @@ sctp6_abort(struct socket *so)
 	inp = (struct sctp_inpcb *)so->so_pcb;
 	if (inp == NULL) {
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP6_USRREQ, EINVAL);
-#if (defined(__FreeBSD__) && __FreeBSD_version > 690000) || defined(__Windows__)
+#if defined(__FreeBSD__) || defined(__Windows__)
 		return;
 #else
 		return (EINVAL);
@@ -744,7 +723,7 @@ sctp6_abort(struct socket *so)
 			goto sctp_must_try_again;
 		}
 	}
-#if (defined(__FreeBSD__) && __FreeBSD_version > 690000) || defined(__Windows__)
+#if defined(__FreeBSD__)
 	NET_EPOCH_EXIT(et);
 	return;
 #else
@@ -752,7 +731,7 @@ sctp6_abort(struct socket *so)
 #endif
 }
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 static int
 sctp6_attach(struct socket *so, int proto SCTP_UNUSED, struct thread *p SCTP_UNUSED)
 #elif defined(__Userspace__)
@@ -809,11 +788,11 @@ sctp6_attach(struct socket *so, int proto SCTP_UNUSED, struct proc *p SCTP_UNUSE
 	return (0);
 }
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 static int
 sctp6_bind(struct socket *so, struct sockaddr *addr, struct thread *p)
 {
-#elif defined(__FreeBSD__) || defined(__APPLE__)
+#elif defined(__APPLE__)
 static int
 sctp6_bind(struct socket *so, struct sockaddr *addr, struct proc *p)
 {
@@ -964,7 +943,7 @@ out:
 }
 
 
-#if (defined(__FreeBSD__) && __FreeBSD_version > 690000) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)
 #if !defined(__Userspace__)
 static void
 #else
@@ -1003,7 +982,7 @@ sctp6_disconnect(struct socket *so)
 
 
 int
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 sctp_sendm(struct socket *so, int flags, struct mbuf *m, struct sockaddr *addr,
     struct mbuf *control, struct thread *p);
 
@@ -1014,12 +993,12 @@ sctp_sendm(struct socket *so, int flags, struct mbuf *m, struct sockaddr *addr,
 #endif
 
 #if !defined(__Windows__) && !defined(__Userspace__)
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 static int
 sctp6_send(struct socket *so, int flags, struct mbuf *m, struct sockaddr *addr,
     struct mbuf *control, struct thread *p)
 {
-#elif defined(__FreeBSD__) || defined(__APPLE__)
+#elif defined(__APPLE__)
 static int
 sctp6_send(struct socket *so, int flags, struct mbuf *m, struct sockaddr *addr,
     struct mbuf *control, struct proc *p)
@@ -1143,11 +1122,11 @@ connected_type:
 }
 #endif
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 static int
 sctp6_connect(struct socket *so, struct sockaddr *addr, struct thread *p)
 {
-#elif defined(__FreeBSD__) || defined(__APPLE__)
+#elif defined(__APPLE__)
 static int
 sctp6_connect(struct socket *so, struct sockaddr *addr, struct proc *p)
 {
@@ -1685,15 +1664,10 @@ struct pr_usrreqs sctp6_usrreqs = {
 	.pru_bind = sctp6_bind,
 	.pru_connect = sctp6_connect,
 	.pru_control = in6_control,
-#if __FreeBSD_version >= 690000
 	.pru_close = sctp6_close,
 	.pru_detach = sctp6_close,
 	.pru_sopoll = sopoll_generic,
 	.pru_flush = sctp_flush,
-#else
-	.pru_detach = sctp6_detach,
-	.pru_sopoll = sopoll,
-#endif
 	.pru_disconnect = sctp6_disconnect,
 	.pru_listen = sctp_listen,
 	.pru_peeraddr = sctp6_getpeeraddr,

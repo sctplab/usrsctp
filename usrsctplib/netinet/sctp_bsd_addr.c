@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 358080 2020-02-18 19:41:55Z tuexen $");
 #endif
@@ -186,11 +186,7 @@ sctp_startup_iterator(void)
 	SCTP_IPI_ITERATOR_WQ_INIT();
 	TAILQ_INIT(&sctp_it_ctl.iteratorhead);
 #if defined(__FreeBSD__)
-#if __FreeBSD_version <= 701000
-	kthread_create(sctp_iterator_thread,
-#else
 	kproc_create(sctp_iterator_thread,
-#endif
 	             (void *)NULL,
 	             &sctp_it_ctl.thread_proc,
 	             RFPROC,
@@ -779,7 +775,7 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header,
 		      int how, int allonebuf, int type)
 {
 	struct mbuf *m = NULL;
-#if defined(__FreeBSD__) && __FreeBSD_version > 1100052 || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(__Userspace__)
 #if defined(__Userspace__)
 	m =  m_getm2(NULL, space_needed, how, type, want_header ? M_PKTHDR : 0, allonebuf);
 #else

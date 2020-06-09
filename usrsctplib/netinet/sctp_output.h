@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_output.h 361895 2020-06-07 14:39:20Z tuexen $");
 #endif
@@ -148,7 +148,7 @@ void sctp_move_chunks_from_net(struct sctp_tcb *stcb, struct sctp_nets *net);
 					sizeof(struct sctp_idata_chunk) : \
 					sizeof(struct sctp_data_chunk))
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 int
 sctp_output(struct sctp_inpcb *, struct mbuf *, struct sockaddr *,
     struct mbuf *, struct thread *, int);
@@ -242,7 +242,7 @@ sctp_sosend(struct socket *so,
     int flags
 #else
     int flags,
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
     struct thread *p
 #elif defined(__Windows__)
     PKTHREAD p

@@ -32,13 +32,13 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 361895 2020-06-07 14:39:20Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/proc.h>
 #endif
 #include <netinet/sctp_var.h>
@@ -71,9 +71,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 361895 2020-06-07 14:39:20Z t
 #include <netinet/in.h>
 #endif
 #if defined(__FreeBSD__)
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
 #include <netinet/udp_var.h>
-#endif
 #include <machine/in_cksum.h>
 #endif
 #if defined(__Userspace__) && defined(INET6)
@@ -4237,18 +4235,14 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		}
 		if ((nofragment_flag) && (port == 0)) {
 #if defined(__FreeBSD__)
-#if __FreeBSD_version >= 1000000
 			ip->ip_off = htons(IP_DF);
-#else
-			ip->ip_off = IP_DF;
-#endif
 #elif defined(WITH_CONVERT_IP_OFF) || defined(__APPLE__) || defined(__Userspace_os_Darwin)
 			ip->ip_off = IP_DF;
 #else
 			ip->ip_off = htons(IP_DF);
 #endif
 		} else {
-#if defined(__FreeBSD__) && __FreeBSD_version >= 1000000
+#if defined(__FreeBSD__)
 			ip->ip_off = htons(0);
 #else
 			ip->ip_off = 0;
@@ -4274,7 +4268,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #else
 		ip->ip_ttl = inp->inp_ip_ttl;
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_version >= 1000000
+#if defined(__FreeBSD__)
 		ip->ip_len = htons(packet_length);
 #else
 		ip->ip_len = packet_length;
@@ -4364,7 +4358,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			udp->uh_dport = port;
 			udp->uh_ulen = htons((uint16_t)(packet_length - sizeof(struct ip)));
 #if !defined(__Windows__) && !defined(__Userspace__)
-#if defined(__FreeBSD__) && ((__FreeBSD_version > 803000 && __FreeBSD_version < 900000) || __FreeBSD_version > 900000)
+#if defined(__FreeBSD__)
 			if (V_udp_cksum) {
 				udp->uh_sum = in_pseudo(ip->ip_src.s_addr, ip->ip_dst.s_addr, udp->uh_ulen + htons(IPPROTO_UDP));
 			} else {
@@ -4434,7 +4428,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			sctphdr->checksum = sctp_calculate_cksum(m, sizeof(struct ip) + sizeof(struct udphdr));
 			SCTP_STAT_INCR(sctps_sendswcrc);
 #if !defined(__Windows__) && !defined(__Userspace__)
-#if defined(__FreeBSD__) && ((__FreeBSD_version > 803000 && __FreeBSD_version < 900000) || __FreeBSD_version > 900000)
+#if defined(__FreeBSD__)
 			if (V_udp_cksum) {
 				SCTP_ENABLE_UDP_CSUM(o_pak);
 			}
@@ -4443,7 +4437,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #endif
 #endif
 		} else {
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(__FreeBSD__)
 			m->m_pkthdr.csum_flags = CSUM_SCTP;
 			m->m_pkthdr.csum_data = offsetof(struct sctphdr, checksum);
 			SCTP_STAT_INCR(sctps_sendhwcrc);
@@ -4910,19 +4904,10 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 			}
 #endif
 		} else {
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
-#if __FreeBSD_version < 900000
-			sctphdr->checksum = sctp_calculate_cksum(m, sizeof(struct ip6_hdr));
-			SCTP_STAT_INCR(sctps_sendswcrc);
-#else
-#if __FreeBSD_version > 901000
+#if defined(__FreeBSD__)
 			m->m_pkthdr.csum_flags = CSUM_SCTP_IPV6;
-#else
-			m->m_pkthdr.csum_flags = CSUM_SCTP;
-#endif
 			m->m_pkthdr.csum_data = offsetof(struct sctphdr, checksum);
 			SCTP_STAT_INCR(sctps_sendhwcrc);
-#endif
 #else
 			if (!(SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) &&
 			      (stcb) && (stcb->asoc.scope.loopback_scope))) {
@@ -6179,7 +6164,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		{
 			stc.addr_type = SCTP_IPV6_ADDRESS;
 			memcpy(&stc.address, &src6->sin6_addr, sizeof(struct in6_addr));
-#if defined(__FreeBSD__) && (((__FreeBSD_version < 900000) && (__FreeBSD_version >= 804000)) || (__FreeBSD_version > 900000))
+#if defined(__FreeBSD__)
 			stc.scope_id = ntohs(in6_getscope(&src6->sin6_addr));
 #else
 			stc.scope_id = 0;
@@ -10865,7 +10850,7 @@ sctp_output(
 	struct mbuf *m,
 	struct sockaddr *addr,
 	struct mbuf *control,
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 	struct thread *p,
 #elif defined(__Windows__)
 	PKTHREAD p,
@@ -11802,11 +11787,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		ip->ip_hl = (sizeof(struct ip) >> 2);
 		ip->ip_tos = 0;
 #if defined(__FreeBSD__)
-#if __FreeBSD_version >= 1000000
 		ip->ip_off = htons(IP_DF);
-#else
-		ip->ip_off = IP_DF;
-#endif
 #elif defined(WITH_CONVERT_IP_OFF) || defined(__APPLE__) || defined(__Userspace_os_Darwin)
 		ip->ip_off = IP_DF;
 #else
@@ -11924,7 +11905,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #endif
 		if (port) {
 #if !defined(__Windows__) && !defined(__Userspace__)
-#if defined(__FreeBSD__) && ((__FreeBSD_version > 803000 && __FreeBSD_version < 900000) || __FreeBSD_version > 900000)
+#if defined(__FreeBSD__)
 			if (V_udp_cksum) {
 				udp->uh_sum = in_pseudo(ip->ip_src.s_addr, ip->ip_dst.s_addr, udp->uh_ulen + htons(IPPROTO_UDP));
 			} else {
@@ -11938,11 +11919,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #endif
 		}
 #if defined(__FreeBSD__)
-#if __FreeBSD_version >= 1000000
 		ip->ip_len = htons(len);
-#else
-		ip->ip_len = len;
-#endif
 #elif defined(__APPLE__) || defined(__Userspace__)
 		ip->ip_len = len;
 #else
@@ -11952,7 +11929,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 			shout->checksum = sctp_calculate_cksum(mout, sizeof(struct ip) + sizeof(struct udphdr));
 			SCTP_STAT_INCR(sctps_sendswcrc);
 #if !defined(__Windows__) && !defined(__Userspace__)
-#if defined(__FreeBSD__) && ((__FreeBSD_version > 803000 && __FreeBSD_version < 900000) || __FreeBSD_version > 900000)
+#if defined(__FreeBSD__)
 			if (V_udp_cksum) {
 				SCTP_ENABLE_UDP_CSUM(o_pak);
 			}
@@ -11961,7 +11938,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #endif
 #endif
 		} else {
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(__FreeBSD__)
 			mout->m_pkthdr.csum_flags = CSUM_SCTP;
 			mout->m_pkthdr.csum_data = offsetof(struct sctphdr, checksum);
 			SCTP_STAT_INCR(sctps_sendhwcrc);
@@ -12004,12 +11981,8 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 			}
 #endif
 		} else {
-#if defined(__FreeBSD__) && __FreeBSD_version >= 900000
-#if __FreeBSD_version > 901000
+#if defined(__FreeBSD__)
 			mout->m_pkthdr.csum_flags = CSUM_SCTP_IPV6;
-#else
-			mout->m_pkthdr.csum_flags = CSUM_SCTP;
-#endif
 			mout->m_pkthdr.csum_data = offsetof(struct sctphdr, checksum);
 			SCTP_STAT_INCR(sctps_sendhwcrc);
 #else
@@ -13146,14 +13119,14 @@ sctp_send_operr_to(struct sockaddr *src, struct sockaddr *dst,
 static struct mbuf *
 sctp_copy_resume(struct uio *uio,
 		 int max_send_len,
-#if (defined(__FreeBSD__) && __FreeBSD_version > 602000) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(__Userspace__)
 		 int user_marks_eor,
 #endif
 		 int *error,
 		 uint32_t *sndout,
 		 struct mbuf **new_tail)
 {
-#if defined(__FreeBSD__) && __FreeBSD_version > 602000 || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(__Userspace__)
 	struct mbuf *m;
 
 	m = m_uiotombuf(uio, M_WAITOK, max_send_len, 0,
@@ -13236,7 +13209,7 @@ sctp_copy_one(struct sctp_stream_queue_pending *sp,
               struct uio *uio,
               int resv_upfront)
 {
-#if defined(__FreeBSD__) && __FreeBSD_version > 602000 || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(__Userspace__)
 	sp->data = m_uiotombuf(uio, M_WAITOK, sp->length,
 	                       resv_upfront, 0);
 	if (sp->data == NULL) {
@@ -13434,7 +13407,7 @@ sctp_sosend(struct socket *so,
             int flags
 #else
             int flags,
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
             struct thread *p
 #elif defined(__Windows__)
             PKTHREAD p
@@ -13508,7 +13481,7 @@ sctp_lower_sosend(struct socket *so,
                   struct sctp_sndrcvinfo *srcv
 #if !defined(__Userspace__)
                   ,
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
                   struct thread *p
 #elif defined(__Windows__)
                   PKTHREAD p
@@ -13894,7 +13867,7 @@ sctp_lower_sosend(struct socket *so,
 	}
 #endif
 	if (SCTP_SO_IS_NBIO(so)
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 	     || (flags & (MSG_NBIO | MSG_DONTWAIT)) != 0
 #endif
 	    ) {
@@ -13983,10 +13956,8 @@ sctp_lower_sosend(struct socket *so,
 	/* Ok, we will attempt a msgsnd :> */
 #if !(defined(__Windows__) || defined(__Userspace__))
 	if (p) {
-#if defined(__FreeBSD__) && __FreeBSD_version >= 603000
+#if defined(__FreeBSD__)
 		p->td_ru.ru_msgsnd++;
-#elif defined(__FreeBSD__) && __FreeBSD_version >= 500000
-		p->td_proc->p_stats->p_ru.ru_msgsnd++;
 #else
 		p->p_stats->p_ru.ru_msgsnd++;
 #endif
@@ -14322,7 +14293,7 @@ skip_preblock:
 #if defined(__APPLE__)
 				SCTP_SOCKET_UNLOCK(so, 0);
 #endif
-#if (defined(__FreeBSD__) && __FreeBSD_version > 602000) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(__Userspace__)
 				mm = sctp_copy_resume(uio, (int)max_len, user_marks_eor, &error, &sndout, &new_tail);
 #else
 				mm = sctp_copy_resume(uio, (int)max_len, &error, &sndout, &new_tail);

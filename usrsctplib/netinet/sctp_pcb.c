@@ -32,13 +32,13 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 361877 2020-06-06 21:26:34Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 361934 2020-06-08 20:23:20Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/proc.h>
 #endif
 #include <netinet/sctp_var.h>
@@ -80,7 +80,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 361877 2020-06-06 21:26:34Z tuex
 #define APPLE_FILE_NO 4
 #endif
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 VNET_DEFINE(struct sctp_base_info, system_base_info);
 #else
 struct sctp_base_info system_base_info;
@@ -2858,12 +2858,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 
 	so->so_pcb = (caddr_t)inp;
 
-#if defined(__FreeBSD__) && __FreeBSD_version < 803000
-	if ((SCTP_SO_TYPE(so) == SOCK_DGRAM) ||
-	    (SCTP_SO_TYPE(so) == SOCK_SEQPACKET)) {
-#else
 	if (SCTP_SO_TYPE(so) == SOCK_SEQPACKET) {
-#endif
 		/* UDP style socket */
 		inp->sctp_flags = (SCTP_PCB_FLAGS_UDPTYPE |
 		    SCTP_PCB_FLAGS_UNBOUND);
@@ -3242,7 +3237,7 @@ extern void in6_sin6_2_sin(struct sockaddr_in *, struct sockaddr_in6 *sin6);
 
 /* sctp_ifap is used to bypass normal local address validation checks */
 int
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
                 struct sctp_ifa *sctp_ifap, struct thread *p)
 #elif defined(__Windows__)
@@ -3287,7 +3282,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
 		return (EINVAL);
 	}
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
 #ifdef INVARIANTS
 	if (p == NULL)
 		panic("null proc/thread");
@@ -3314,7 +3309,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 
 			sin = (struct sockaddr_in *)addr;
 			lport = sin->sin_port;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(__FreeBSD__)
 			/*
 			 * For LOOPBACK the prison_local_ip4() call will transmute the ip address
 			 * to the proper value.
@@ -3345,7 +3340,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 			}
 #endif
 			lport = sin6->sin6_port;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(__FreeBSD__)
 			/*
 			 * For LOOPBACK the prison_local_ip6() call will transmute the ipv6 address
 			 * to the proper value.
@@ -3435,14 +3430,8 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 #if !defined(__Windows__)
 		if (ntohs(lport) < IPPORT_RESERVED) {
 			if ((p != NULL) && ((error =
-#ifdef __FreeBSD__
-#if __FreeBSD_version > 602000
+#if defined(__FreeBSD__)
 				  priv_check(p, PRIV_NETINET_RESERVEDPORT)
-#elif __FreeBSD_version >= 500000
-				  suser_cred(p->td_ucred, 0)
-#else
-				  suser(p)
-#endif
 #elif defined(__APPLE__)
 				  suser(p->p_ucred, &p->p_acflag)
 #elif defined(__Userspace__) /* must be true to use raw socket */
@@ -3552,14 +3541,8 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 			last = MODULE_GLOBAL(ipport_hilastauto);
 		} else if (ip_inp->inp_flags & INP_LOWPORT) {
 			if (p && (error =
-#ifdef __FreeBSD__
-#if __FreeBSD_version > 602000
+#if defined(__FreeBSD__)
 				  priv_check(p, PRIV_NETINET_RESERVEDPORT)
-#elif __FreeBSD_version >= 500000
-				  suser_cred(p->td_ucred, 0)
-#else
-				  suser(p)
-#endif
 #elif defined(__APPLE__)
 				  suser(p->p_ucred, &p->p_acflag)
 #else
@@ -3793,7 +3776,7 @@ sctp_iterator_inp_being_freed(struct sctp_inpcb *inp)
 	 * lock on the inp_info stuff.
 	 */
 	it = sctp_it_ctl.cur_it;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 	if (it && (it->vn != curvnet)) {
 		/* Its not looking at our VNET */
 		return;
@@ -3824,7 +3807,7 @@ sctp_iterator_inp_being_freed(struct sctp_inpcb *inp)
 	 */
 	SCTP_IPI_ITERATOR_WQ_LOCK();
 	TAILQ_FOREACH_SAFE(it, &sctp_it_ctl.iteratorhead, sctp_nxt_itr, nit) {
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 		if (it->vn != curvnet) {
 			continue;
 		}
@@ -3871,7 +3854,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	int being_refed = 0;
 	struct sctp_queued_to_read *sq, *nsq;
 #if !defined(__Userspace__)
-#if !defined(__FreeBSD__) || __FreeBSD_version < 500000
+#if !defined(__FreeBSD__)
 	sctp_rtentry_t *rt;
 #endif
 #endif
@@ -4169,7 +4152,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 #endif
 
 #if !(defined(__Windows__) || defined(__Userspace__))
-#if !defined(__FreeBSD__) || __FreeBSD_version < 500000
+#if !defined(__FreeBSD__)
 	rt = ip_pcb->inp_route.ro_rt;
 #endif
 #endif
@@ -4210,19 +4193,11 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	}
 
 #if !(defined(__Windows__) || defined(__Userspace__))
-#if !defined(__FreeBSD__) || __FreeBSD_version < 500000
+#if !defined(__FreeBSD__)
 	if (rt) {
 		RTFREE(rt);
 		ip_pcb->inp_route.ro_rt = 0;
 	}
-#endif
-#if defined(__FreeBSD__) && __FreeBSD_version < 803000
-#ifdef INET
-	if (ip_pcb->inp_moptions) {
-		inp_freemoptions(ip_pcb->inp_moptions);
-		ip_pcb->inp_moptions = 0;
-	}
-#endif
 #endif
 #endif
 
@@ -4900,7 +4875,7 @@ struct sctp_tcb *
 sctp_aloc_assoc(struct sctp_inpcb *inp, struct sockaddr *firstaddr,
                 int *error, uint32_t override_tag, uint32_t vrf_id,
                 uint16_t o_streams, uint16_t port,
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500000
+#if defined(__FreeBSD__)
                 struct thread *p,
 #elif defined(__Windows__)
                 PKTHREAD p,
@@ -6393,9 +6368,7 @@ sctp_queue_to_mcore(struct mbuf *m, int off, int cpu_to_use)
 		sctp_input_with_port(m, off, 0);
 		return;
 	}
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
 	qent->vn = curvnet;
-#endif
 	qent->m = m;
 	qent->off = off;
 	qent->v6 = 0;
@@ -6447,9 +6420,7 @@ sctp_mcore_thread(void *arg)
 		if (qent) {
 			TAILQ_REMOVE(&wkq->que, qent, next);
 			SCTP_MCORE_QUNLOCK(wkq);
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
 			CURVNET_SET(qent->vn);
-#endif
 			m = qent->m;
 			off = qent->off;
 			v6 = qent->v6;
@@ -6460,9 +6431,7 @@ sctp_mcore_thread(void *arg)
 				SCTP_PRINTF("V6 not yet supported\n");
 				sctp_m_freem(m);
 			}
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
 			CURVNET_RESTORE();
-#endif
 			SCTP_MCORE_QLOCK(wkq);
 		}
 		wkq->running = 0;
@@ -6516,30 +6485,18 @@ sctp_startup_mcore_threads(void)
 			i++;
 		}
 	}
-
 	/* Now start them all */
 	CPU_FOREACH(cpu) {
-#if __FreeBSD_version <= 701000
-		(void)kthread_create(sctp_mcore_thread,
-				     (void *)&sctp_mcore_workers[cpu],
-				     &sctp_mcore_workers[cpu].thread_proc,
-				     RFPROC,
-				     SCTP_KTHREAD_PAGES,
-				     SCTP_MCORE_NAME);
-
-#else
 		(void)kproc_create(sctp_mcore_thread,
 				   (void *)&sctp_mcore_workers[cpu],
 				   &sctp_mcore_workers[cpu].thread_proc,
 				   RFPROC,
 				   SCTP_KTHREAD_PAGES,
 				   SCTP_MCORE_NAME);
-#endif
-
 	}
 }
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_cc_version >= 1400000
+#if defined(__FreeBSD__) && defined(SCTP_NOT_YET)
 static struct mbuf *
 sctp_netisr_hdlr(struct mbuf *m, uintptr_t source)
 {
@@ -6565,7 +6522,7 @@ sctp_netisr_hdlr(struct mbuf *m, uintptr_t source)
 	tag = htonl(sh->v_tag);
 	flowid = tag ^ ntohs(sh->dest_port) ^ ntohs(sh->src_port);
 	m->m_pkthdr.flowid = flowid;
-/* FIX ME */
+	/* FIX ME */
 	m->m_flags |= M_FLOWID;
 	return (m);
 }
@@ -6651,18 +6608,9 @@ sctp_pcb_init(void)
 
 	/* init the hash table of endpoints */
 #if defined(__FreeBSD__)
-#if defined(__FreeBSD_cc_version) && __FreeBSD_cc_version >= 440000
 	TUNABLE_INT_FETCH("net.inet.sctp.tcbhashsize", &SCTP_BASE_SYSCTL(sctp_hashtblsize));
 	TUNABLE_INT_FETCH("net.inet.sctp.pcbhashsize", &SCTP_BASE_SYSCTL(sctp_pcbtblsize));
 	TUNABLE_INT_FETCH("net.inet.sctp.chunkscale", &SCTP_BASE_SYSCTL(sctp_chunkscale));
-#else
-	TUNABLE_INT_FETCH("net.inet.sctp.tcbhashsize", SCTP_TCBHASHSIZE,
-			  SCTP_BASE_SYSCTL(sctp_hashtblsize));
-	TUNABLE_INT_FETCH("net.inet.sctp.pcbhashsize", SCTP_PCBHASHSIZE,
-			  SCTP_BASE_SYSCTL(sctp_pcbtblsize));
-	TUNABLE_INT_FETCH("net.inet.sctp.chunkscale", SCTP_CHUNKQUEUE_SCALE,
-			  SCTP_BASE_SYSCTL(sctp_chunkscale));
-#endif
 #endif
 	SCTP_BASE_INFO(sctp_asochash) = SCTP_HASH_INIT((SCTP_BASE_SYSCTL(sctp_hashtblsize) * 31),
 						       &SCTP_BASE_INFO(hashasocmark));
@@ -6775,7 +6723,7 @@ sctp_pcb_init(void)
 	 * add the VRF's as addresses are added.
 	 */
 	sctp_init_vrf_list(SCTP_DEFAULT_VRF);
-#if defined(__FreeBSD__) && __FreeBSD_cc_version >= 1400000
+#if defined(__FreeBSD__) && defined(SCTP_NOT_YET)
 	if (ip_register_flow_handler(sctp_netisr_hdlr, IPPROTO_SCTP)) {
 		SCTP_PRINTF("***SCTP- Error can't register netisr handler***\n");
 	}
@@ -6895,7 +6843,7 @@ retry:
 	}
 #endif
 	TAILQ_FOREACH_SAFE(it, &sctp_it_ctl.iteratorhead, sctp_nxt_itr, nit) {
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 		if (it->vn != curvnet) {
 			continue;
 		}
@@ -6907,7 +6855,7 @@ retry:
 		SCTP_FREE(it,SCTP_M_ITER);
 	}
 	SCTP_IPI_ITERATOR_WQ_UNLOCK();
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 	SCTP_ITERATOR_LOCK();
 	if ((sctp_it_ctl.cur_it) &&
 	    (sctp_it_ctl.cur_it->vn == curvnet)) {
@@ -8031,7 +7979,7 @@ sctp_drain()
 	 * is LOW on MBUF's and needs help. This is where reneging will
 	 * occur. We really hope this does NOT happen!
 	 */
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 	VNET_ITERATOR_DECL(vnet_iter);
 #else
 	struct sctp_inpcb *inp;
@@ -8042,7 +7990,7 @@ sctp_drain()
 		return;
 	}
 #endif
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 	VNET_LIST_RLOCK_NOSLEEP();
 	VNET_FOREACH(vnet_iter) {
 		CURVNET_SET(vnet_iter);
@@ -8050,7 +7998,7 @@ sctp_drain()
 		struct sctp_tcb *stcb;
 #endif
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 		SCTP_STAT_INCR(sctps_protocol_drain_calls);
 		if (SCTP_BASE_SYSCTL(sctp_do_drain) == 0) {
 #ifdef VIMAGE
@@ -8073,7 +8021,7 @@ sctp_drain()
 			SCTP_INP_RUNLOCK(inp);
 		}
 		SCTP_INP_INFO_RUNLOCK();
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 		CURVNET_RESTORE();
 	}
 	VNET_LIST_RUNLOCK_NOSLEEP();
@@ -8133,7 +8081,7 @@ sctp_initiate_iterator(inp_func inpf,
 	it->asoc_state = asoc_state;
 	it->function_inp_end = inpe;
 	it->no_chunk_output = chunk_output_off;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__)
 	it->vn = curvnet;
 #endif
 	if (s_inp) {

@@ -32,13 +32,13 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 361895 2020-06-07 14:39:20Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <sys/proc.h>
 #endif
 #include <netinet/sctp_var.h>
@@ -55,7 +55,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 361895 2020-06-07 14:39:20Z t
 #include <netinet/sctp_bsd_addr.h>
 #include <netinet/sctp_input.h>
 #include <netinet/sctp_crc32.h>
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 #include <netinet/sctp_lock_bsd.h>
 #endif
 /*
