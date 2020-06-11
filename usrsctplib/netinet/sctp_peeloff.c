@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_peeloff.c 337708 2018-08-13 13:58:45Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_peeloff.c 362054 2020-06-11 13:34:09Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -48,10 +48,6 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_peeloff.c 337708 2018-08-13 13:58:45Z 
 #include <netinet/sctp_peeloff.h>
 #include <netinet/sctputil.h>
 #include <netinet/sctp_auth.h>
-
-#if defined(__APPLE__)
-#define APPLE_FILE_NO 5
-#endif
 
 int
 sctp_can_peel_off(struct socket *head, sctp_assoc_t assoc_id)

@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 361934 2020-06-08 20:23:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 362054 2020-06-11 13:34:09Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -74,10 +74,6 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 361934 2020-06-08 20:23:20Z tuex
 #if !defined(__Userspace_os_Windows)
 #include <netdb.h>
 #endif
-#endif
-
-#if defined(__APPLE__)
-#define APPLE_FILE_NO 4
 #endif
 
 #if defined(__FreeBSD__)

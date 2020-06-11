@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 360878 2020-05-10 17:19:19Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 362054 2020-06-11 13:34:09Z tuexen $");
 #endif
 
 #define _IP_VHL
@@ -60,10 +60,6 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 360878 2020-05-10 17:19:19Z tu
 #if !defined(__Userspace_os_Windows)
 #include <netinet/udp.h>
 #endif
-#endif
-
-#if defined(__APPLE__)
-#define APPLE_FILE_NO 6
 #endif
 
 void

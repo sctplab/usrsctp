@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.h 361895 2020-06-07 14:39:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.h 362054 2020-06-11 13:34:09Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_OUTPUT_H_
@@ -78,11 +78,7 @@ int
 sctp_v4src_match_nexthop(struct sctp_ifa *sifa, sctp_route_t *ro);
 #endif
 
-void sctp_send_initiate(struct sctp_inpcb *, struct sctp_tcb *, int
-#if !defined(__APPLE__)
-    SCTP_UNUSED
-#endif
-    );
+void sctp_send_initiate(struct sctp_inpcb *, struct sctp_tcb *, int);
 
 void
 sctp_send_initiate_ack(struct sctp_inpcb *, struct sctp_tcb *,
@@ -167,16 +163,9 @@ sctp_output(struct sctp_inpcb *,
     struct proc *, int);
 #endif
 
-void sctp_chunk_output(struct sctp_inpcb *, struct sctp_tcb *, int, int
-#if !defined(__APPLE__)
-    SCTP_UNUSED
-#endif
-    );
-void sctp_send_abort_tcb(struct sctp_tcb *, struct mbuf *, int
-#if !defined(__APPLE__)
-    SCTP_UNUSED
-#endif
-    );
+void sctp_chunk_output(struct sctp_inpcb *, struct sctp_tcb *, int, int);
+
+void sctp_send_abort_tcb(struct sctp_tcb *, struct mbuf *, int);
 
 void send_forward_tsn(struct sctp_tcb *, struct sctp_association *);
 
@@ -185,7 +174,6 @@ void sctp_send_sack(struct sctp_tcb *, int);
 void sctp_send_hb(struct sctp_tcb *, struct sctp_nets *, int);
 
 void sctp_send_ecn_echo(struct sctp_tcb *, struct sctp_nets *, uint32_t);
-
 
 void
 sctp_send_packet_dropped(struct sctp_tcb *, struct sctp_nets *, struct mbuf *,

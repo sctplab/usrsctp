@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 361895 2020-06-07 14:39:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 362054 2020-06-11 13:34:09Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -62,11 +62,6 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 361895 2020-06-07 14:39:20Z tu
 #if defined(__FreeBSD__)
 #include <sys/smp.h>
 #endif
-
-#if defined(__APPLE__)
-#define APPLE_FILE_NO 2
-#endif
-
 
 static void
 sctp_stop_all_cookie_timers(struct sctp_tcb *stcb)
@@ -242,11 +237,7 @@ sctp_handle_init(struct mbuf *m, int iphlen, int offset,
  */
 
 int
-sctp_is_there_unsent_data(struct sctp_tcb *stcb, int so_locked
-#if !defined(__APPLE__)
-	SCTP_UNUSED
-#endif
-)
+sctp_is_there_unsent_data(struct sctp_tcb *stcb, int so_locked)
 {
 	int unsent_data;
 	unsigned int i;

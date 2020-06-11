@@ -62,9 +62,6 @@ __FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 361895 2020-06-07 14:39:20Z
 #include <netinet/icmp6.h>
 #include <netinet/udp.h>
 #endif
-#if defined(__APPLE__)
-#define APPLE_FILE_NO 9
-#endif
 #if defined(__Userspace__)
 int ip6_v6only=0;
 #endif

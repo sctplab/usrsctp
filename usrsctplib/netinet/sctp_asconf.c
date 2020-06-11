@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 361243 2020-05-19 07:23:35Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 362054 2020-06-11 13:34:09Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -52,10 +52,6 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 361243 2020-05-19 07:23:35Z t
  * SCTP_DEBUG_ASCONF1: protocol info, general info and errors
  * SCTP_DEBUG_ASCONF2: detailed info
  */
-
-#if defined(__APPLE__)
-#define APPLE_FILE_NO 1
-#endif
 
 /*
  * RFC 5061
@@ -1207,7 +1203,7 @@ sctp_path_check_and_react(struct sctp_tcb *stcb, struct sctp_ifa *newifa)
 		}
 	}
 }
-#endif /* __FreeBSD__  __APPLE__  __Userspace__ */
+#endif
 
 /*
  * process an ADD/DELETE IP ack from peer.
@@ -1239,7 +1235,7 @@ sctp_asconf_addr_mgmt_ack(struct sctp_tcb *stcb, struct sctp_ifa *addr, uint32_t
 			sctp_path_check_and_react(stcb, addr);
 			return;
 		}
-#endif /* __FreeBSD__ __APPLE__ __Userspace__ */
+#endif
 		/* clear any cached/topologically incorrect source addresses */
 		sctp_asconf_nets_cleanup(stcb, addr->ifn_p);
 	}

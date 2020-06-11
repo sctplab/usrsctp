@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 361895 2020-06-07 14:39:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 362054 2020-06-11 13:34:09Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UTIL_H_
@@ -130,11 +130,7 @@ sctp_add_to_readq(struct sctp_inpcb *inp,
     struct sockbuf *sb,
     int end,
     int inpread_locked,
-    int so_locked
-#if !defined(__APPLE__)
-    SCTP_UNUSED
-#endif
-    );
+    int so_locked);
 
 void sctp_iterator_worker(void);
 
@@ -162,11 +158,7 @@ sctp_add_pad_tombuf(struct mbuf *, int);
 struct mbuf *
 sctp_pad_lastmbuf(struct mbuf *, int, struct mbuf *);
 
-void sctp_ulp_notify(uint32_t, struct sctp_tcb *, uint32_t, void *, int
-#if !defined(__APPLE__)
-    SCTP_UNUSED
-#endif
-    );
+void sctp_ulp_notify(uint32_t, struct sctp_tcb *, uint32_t, void *, int);
 
 void
 sctp_pull_off_control_to_new_inp(struct sctp_inpcb *old_inp,
@@ -179,20 +171,12 @@ void sctp_stop_timers_for_shutdown(struct sctp_tcb *);
 /* Stop all timers for association and remote addresses. */
 void sctp_stop_association_timers(struct sctp_tcb *, bool);
 
-void sctp_report_all_outbound(struct sctp_tcb *, uint16_t, int, int
-#if !defined(__APPLE__)
-    SCTP_UNUSED
-#endif
-    );
+void sctp_report_all_outbound(struct sctp_tcb *, uint16_t, int, int);
 
 int sctp_expand_mapping_array(struct sctp_association *, uint32_t);
 
 void sctp_abort_notification(struct sctp_tcb *, uint8_t, uint16_t,
-			     struct sctp_abort_chunk *, int
-#if !defined(__APPLE__)
-    SCTP_UNUSED
-#endif
-    );
+			     struct sctp_abort_chunk *, int);
 
 /* We abort responding to an IP packet for some reason */
 void
@@ -208,11 +192,7 @@ sctp_abort_association(struct sctp_inpcb *, struct sctp_tcb *, struct mbuf *,
 /* We choose to abort via user input */
 void
 sctp_abort_an_association(struct sctp_inpcb *, struct sctp_tcb *,
-    struct mbuf *, int
-#if !defined(__APPLE__)
-    SCTP_UNUSED
-#endif
-);
+    struct mbuf *, int);
 
 void sctp_handle_ootb(struct mbuf *, int, int,
                       struct sockaddr *, struct sockaddr *,
@@ -279,11 +259,7 @@ void sctp_print_address(struct sockaddr *);
 
 int
 sctp_release_pr_sctp_chunk(struct sctp_tcb *, struct sctp_tmit_chunk *,
-    uint8_t, int
-#if !defined(__APPLE__)
-    SCTP_UNUSED
-#endif
-);
+    uint8_t, int);
 
 struct mbuf *sctp_generate_cause(uint16_t, char *);
 struct mbuf *sctp_generate_no_user_data_cause(uint32_t);
