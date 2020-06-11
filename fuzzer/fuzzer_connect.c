@@ -150,6 +150,7 @@ initialize_fuzzer(void) {
 #endif // SCTP_DEBUG
 
 	usrsctp_register_address((void *)1);
+	usrsctp_sysctl_set_sctp_pktdrop_enable(1);
 
 	fuzzer_printf("usrsctp initialized\n");
 	return (1);
