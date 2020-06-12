@@ -32,9 +32,9 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 362054 2020-06-11 13:34:09Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 362090 2020-06-12 10:13:23Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UTIL_H_
@@ -57,7 +57,7 @@ void sctp_m_freem(struct mbuf *m);
 #define sctp_m_freem m_freem
 #endif
 
-#if defined(SCTP_LOCAL_TRACE_BUF) || defined(__APPLE__)
+#if defined(SCTP_LOCAL_TRACE_BUF)
 void
 sctp_log_trace(uint32_t fr, const char *str SCTP_UNUSED, uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e, uint32_t f);
 #endif
@@ -111,7 +111,7 @@ sctp_mtu_size_reset(struct sctp_inpcb *, struct sctp_association *, uint32_t);
 void
 sctp_wakeup_the_read_socket(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
     int so_locked
-#if !defined(__APPLE__)
+#if !(defined(__APPLE__) && !defined(__Userspace__))
     SCTP_UNUSED
 #endif
 );
@@ -183,7 +183,7 @@ void
 sctp_abort_association(struct sctp_inpcb *, struct sctp_tcb *, struct mbuf *,
                        int, struct sockaddr *, struct sockaddr *,
                        struct sctphdr *, struct mbuf *,
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
                        uint8_t, uint32_t,
 #endif
                        uint32_t, uint16_t);
@@ -198,7 +198,7 @@ void sctp_handle_ootb(struct mbuf *, int, int,
                       struct sockaddr *, struct sockaddr *,
                       struct sctphdr *, struct sctp_inpcb *,
                       struct mbuf *,
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
                       uint8_t, uint32_t, uint16_t,
 #endif
                       uint32_t, uint16_t);
@@ -331,7 +331,7 @@ do { \
 } while (0)
 
 /* functions to start/stop udp tunneling */
-#if defined(__APPLE__) || defined(__FreeBSD__)
+#if (defined(__APPLE__) || defined(__FreeBSD__)) && !defined(__Userspace__)
 void sctp_over_udp_stop(void);
 int sctp_over_udp_start(void);
 #endif
@@ -400,7 +400,7 @@ void sctp_audit_log(uint8_t, uint8_t);
 
 #endif
 uint32_t sctp_min_mtu(uint32_t, uint32_t, uint32_t);
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 void sctp_hc_set_mtu(union sctp_sockstore *, uint16_t, uint32_t);
 uint32_t sctp_hc_get_mtu(union sctp_sockstore *, uint16_t);
 #endif

@@ -32,15 +32,15 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 336511 2018-07-19 20:16:33Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 362106 2020-06-12 16:31:13Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UIO_H_
 #define _NETINET_SCTP_UIO_H_
 
-#if (defined(__APPLE__) && defined(KERNEL))
+#if (defined(__APPLE__) && !defined(__Userspace__) && defined(KERNEL))
 #ifndef _KERNEL
 #define _KERNEL
 #endif
@@ -1109,9 +1109,14 @@ struct sctpstat {
 
 #define SCTP_STAT_INCR(_x) SCTP_STAT_INCR_BY(_x,1)
 #define SCTP_STAT_DECR(_x) SCTP_STAT_DECR_BY(_x,1)
-#if defined(__FreeBSD__) && defined(SMP) && defined(SCTP_USE_PERCPU_STAT)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+#if defined(SMP) && defined(SCTP_USE_PERCPU_STAT)
 #define SCTP_STAT_INCR_BY(_x,_d) (SCTP_BASE_STATS[PCPU_GET(cpuid)]._x += _d)
 #define SCTP_STAT_DECR_BY(_x,_d) (SCTP_BASE_STATS[PCPU_GET(cpuid)]._x -= _d)
+#else
+#define SCTP_STAT_INCR_BY(_x,_d) atomic_add_int(&SCTP_BASE_STAT(_x), _d)
+#define SCTP_STAT_DECR_BY(_x,_d) atomic_subtract_int(&SCTP_BASE_STAT(_x), _d)
+#endif
 #else
 #define SCTP_STAT_INCR_BY(_x,_d) atomic_add_int(&SCTP_BASE_STAT(_x), _d)
 #define SCTP_STAT_DECR_BY(_x,_d) atomic_subtract_int(&SCTP_BASE_STAT(_x), _d)
@@ -1138,7 +1143,7 @@ union sctp_sockstore {
 /* And something for us old timers */
 /***********************************/
 
-#ifndef __APPLE__
+#if !(defined(__APPLE__) && !defined(__Userspace__))
 #ifndef __Userspace__
 #ifndef ntohll
 #if defined(__Userspace_os_Linux)
@@ -1177,7 +1182,7 @@ struct xsctp_inpcb {
 	uint32_t total_nospaces;
 	uint32_t fragmentation_point;
 	uint16_t local_port;
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 	uint16_t qlen_old;
 	uint16_t maxqlen_old;
 #else
@@ -1185,12 +1190,12 @@ struct xsctp_inpcb {
 	uint16_t maxqlen;
 #endif
 	uint16_t __spare16;
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 	kvaddr_t socket;
 #else
 	void *socket;
 #endif
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 	uint32_t qlen;
 	uint32_t maxqlen;
 #endif
@@ -1287,7 +1292,7 @@ sctp_lower_sosend(struct socket *so,
     int flags,
     struct sctp_sndrcvinfo *srcv
 #if !defined(__Userspace__)
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
     ,struct thread *p
 #elif defined(__Windows__)
     , PKTHREAD p

@@ -30,7 +30,7 @@
  * SUCH DAMAGE.
  */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 #endif
@@ -106,7 +106,7 @@ void sctp_handle_tick(uint32_t);
 #if defined(__Userspace__)
 void sctp_start_timer(void);
 #endif
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(__Userspace__)
 void sctp_timeout(void *);
 #endif
 

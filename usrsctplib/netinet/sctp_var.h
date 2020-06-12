@@ -32,7 +32,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: head/sys/netinet/sctp_var.h 360292 2020-04-25 09:06:11Z melifaro $");
 #endif
@@ -44,7 +44,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_var.h 360292 2020-04-25 09:06:11Z meli
 
 #if defined(_KERNEL) || defined(__Userspace__)
 
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
+#if !defined(__Userspace__)
 extern struct pr_usrreqs sctp_usrreqs;
 #endif
 
@@ -186,7 +186,7 @@ extern struct pr_usrreqs sctp_usrreqs;
 	} \
 }
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 
 #define sctp_free_remote_addr(__net) { \
 	if ((__net)) {  \
@@ -376,7 +376,7 @@ void sctp_close(struct socket *so);
 int sctp_detach(struct socket *so);
 #endif
 int sctp_disconnect(struct socket *so);
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
+#if !defined(__Userspace__)
 #if defined(__APPLE__) && !defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION) && !defined(APPLE_ELCAPITAN)
 void sctp_ctlinput(int, struct sockaddr *, void *, struct ifnet * SCTP_UNUSED);
 #else
@@ -385,7 +385,7 @@ void sctp_ctlinput(int, struct sockaddr *, void *);
 int sctp_ctloutput(struct socket *, struct sockopt *);
 #ifdef INET
 void sctp_input_with_port(struct mbuf *, int, uint16_t);
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 int sctp_input(struct mbuf **, int *, int);
 #else
 void sctp_input(struct mbuf *, int);
@@ -413,7 +413,7 @@ void sctp_init(void);
 void sctp_notify(struct sctp_inpcb *, struct sctp_tcb *, struct sctp_nets *,
     uint8_t, uint8_t, uint16_t, uint32_t);
 #endif
-#if !defined(__FreeBSD__)
+#if !defined(__FreeBSD__) && !defined(__Userspace__)
 void sctp_finish(void);
 #endif
 #if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)
@@ -424,17 +424,17 @@ int sctp_bindx(struct socket *, int, struct sockaddr_storage *,
 	int, int, struct proc *);
 /* can't use sctp_assoc_t here */
 int sctp_peeloff(struct socket *, struct socket *, int, caddr_t, int *);
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
+#if !defined(__Userspace__)
 int sctp_ingetaddr(struct socket *, struct sockaddr **);
 #else
 int sctp_ingetaddr(struct socket *, struct mbuf *);
 #endif
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__)
+#if !defined(__Userspace__)
 int sctp_peeraddr(struct socket *, struct sockaddr **);
 #else
 int sctp_peeraddr(struct socket *, struct mbuf *);
 #endif
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 int sctp_listen(struct socket *, int, struct thread *);
 #elif defined(__Windows__)
 int sctp_listen(struct socket *, int, PKTHREAD);
@@ -443,11 +443,7 @@ int sctp_listen(struct socket *, int, struct proc *);
 #else
 int sctp_listen(struct socket *, struct proc *);
 #endif
-#if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Windows__) || defined(__Userspace__)
 int sctp_accept(struct socket *, struct sockaddr **);
-#else
-int sctp_accept(struct socket *, struct mbuf *);
-#endif
 
 #endif /* _KERNEL */
 

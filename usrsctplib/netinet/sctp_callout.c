@@ -180,7 +180,7 @@ sctp_handle_tick(uint32_t elapsed_ticks)
 	SCTP_TIMERQ_UNLOCK();
 }
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(__Userspace__)
 void
 sctp_timeout(void *arg SCTP_UNUSED)
 {

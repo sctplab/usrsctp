@@ -64,7 +64,6 @@ if system in ['linux', 'android']
 elif system == 'freebsd'
     add_project_arguments([
         '-D__Userspace_os_FreeBSD',
-        '-U__FreeBSD__',
     ] + compiler.get_supported_arguments([
         '-Wno-address-of-packed-member',
     ]), language: 'c')
@@ -79,17 +78,14 @@ elif system in ['darwin', 'ios']
 elif system == 'dragonfly'
     add_project_arguments([
         '-D__Userspace_os_DragonFly',
-        '-U__DragonFly__',
     ], language: 'c')
 elif system == 'netbsd'
     add_project_arguments([
         '-D__Userspace_os_NetBSD',
-        '-U__NetBSD__',
     ], language: 'c')
 elif system == 'openbsd'
     add_project_arguments([
         '-D__Userspace_os_OpenBSD',
-        '-U__OpenBSD__',
     ], language: 'c')
 elif system == 'windows'
     add_project_arguments('-D__Userspace_os_Windows', language: 'c')

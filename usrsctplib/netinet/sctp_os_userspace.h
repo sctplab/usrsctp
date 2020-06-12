@@ -435,11 +435,11 @@ struct sx {int dummy;};
 #include <user_mbuf.h>
 /* #include <sys/uio.h> */
 /* #include <sys/lock.h> */
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/rwlock.h>
 #endif
 /* #include <sys/kthread.h> */
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/priv.h>
 #endif
 /* #include <sys/random.h> */
@@ -531,7 +531,7 @@ struct sx {int dummy;};
 
 #include "netinet/sctp_sha1.h"
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <netinet/ip_options.h>
 #endif
 
