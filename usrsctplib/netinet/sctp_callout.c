@@ -217,7 +217,7 @@ user_sctp_timer_iterate(void *arg)
 }
 
 void
-sctp_start_timer(void)
+sctp_start_timer_thread(void)
 {
 	/*
 	 * No need to do SCTP_TIMERQ_LOCK_INIT();
@@ -233,4 +233,17 @@ sctp_start_timer(void)
 	}
 }
 
+void
+sctp_stop_timer_thread(void)
+{
+	atomic_cmpset_int(&SCTP_BASE_VAR(timer_thread_should_exit), 0, 1);
+	if (SCTP_BASE_VAR(timer_thread_started)) {
+#if defined(_WIN32)
+		WaitForSingleObject(SCTP_BASE_VAR(timer_thread), INFINITE);
+		CloseHandle(SCTP_BASE_VAR(timer_thread));
+#else
+		pthread_join(SCTP_BASE_VAR(timer_thread), NULL);
+#endif
+	}
+}
 #endif

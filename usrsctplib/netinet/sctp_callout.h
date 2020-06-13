@@ -104,7 +104,8 @@ void sctp_handle_tick(uint32_t);
 #define	SCTP_OS_TIMER_DEACTIVATE(tmr) ((tmr)->c_flags &= ~SCTP_CALLOUT_ACTIVE)
 
 #if defined(__Userspace__)
-void sctp_start_timer(void);
+void sctp_start_timer_thread(void);
+void sctp_stop_timer_thread(void);
 #endif
 #if defined(__APPLE__) && !defined(__Userspace__)
 void sctp_timeout(void *);

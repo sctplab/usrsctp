@@ -141,7 +141,7 @@ sctp_init(void)
 #if defined(__Userspace__)
 	sctp_pcb_init(start_threads);
 	if (start_threads) {
-		sctp_start_timer();
+		sctp_start_timer_thread();
 	}
 #else
 	sctp_pcb_init();
