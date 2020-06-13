@@ -83,28 +83,28 @@ typedef HANDLE userland_thread_t;
 #if !defined(_MSC_VER) || (_MSC_VER >= 1600)
 #include <stdint.h>
 #else
-typedef unsigned __int64 uint64_t
-typedef unsigned __int32 uint32_t
-typedef __int32          int32_t
-typedef unsigned __int16 uint16_t
-typedef __int16          int16_t
-typedef unsigned __int8  uint8_t
-typedef __int8           int8_t
+typedef unsigned __int64 uint64_t;
+typedef unsigned __int32 uint32_t;
+typedef __int32          int32_t;
+typedef unsigned __int16 uint16_t;
+typedef __int16          int16_t;
+typedef unsigned __int8  uint8_t;
+typedef __int8           int8_t;
 #endif
 #ifndef _SIZE_T_DEFINED
-#typedef __int32         size_t
+#typedef __int32         size_t;
 #endif
-typedef unsigned __int64 u_long
-typedef unsigned __int32 u_int
-typedef unsigned __int32 u_int32_t
-typedef unsigned __int16 u_int16_t
-typedef unsigned __int8  u_int8_t
-typedef unsigned char    u_char
-typedef unsigned __int16 n_short
-typedef unsigned __int16 u_short
-typedef unsigned __int32 n_time
-typedef  unsigned __int8 sa_family_t
-typedef __int64          ssize_t
+typedef unsigned __int64 u_long;
+typedef unsigned __int32 u_int;
+typedef unsigned __int32 u_int32_t;
+typedef unsigned __int16 u_int16_t;
+typedef unsigned __int8  u_int8_t;
+typedef unsigned char    u_char;
+typedef unsigned __int16 n_short;
+typedef unsigned __int16 u_short;
+typedef unsigned __int32 n_time;
+typedef  unsigned __int8 sa_family_t;
+typedef __int64          ssize_t;
 #if !defined(__MINGW32__)
 #define __func__	__FUNCTION__
 #endif
