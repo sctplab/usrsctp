@@ -1023,16 +1023,14 @@ m_pulldown(struct mbuf *m, int off, int len, int *offp)
 	 * easy cases first.
 	 * we need to use m_copydata() to get data from <n->m_next, 0>.
 	 */
-	if ((off == 0 || offp) && M_TRAILINGSPACE(n) >= tlen
-	    && writable) {
+	if ((off == 0 || offp) && (M_TRAILINGSPACE(n) >= tlen) && writable) {
 		m_copydata(n->m_next, 0, tlen, mtod(n, caddr_t) + n->m_len);
 		n->m_len += tlen;
 		m_adj(n->m_next, tlen);
 		goto ok;
 	}
 
-	if ((off == 0 || offp) && M_LEADINGSPACE(n->m_next) >= hlen
-	    && writable) {
+	if ((off == 0 || offp) && (M_LEADINGSPACE(n->m_next) >= hlen) && writable) {
 		n->m_next->m_data -= hlen;
 		n->m_next->m_len += hlen;
 		memcpy( mtod(n->m_next, caddr_t), mtod(n, caddr_t) + off,hlen);

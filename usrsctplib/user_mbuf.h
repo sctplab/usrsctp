@@ -341,9 +341,9 @@ extern int max_protohdr; /* Size of largest protocol layer header. See user_mbuf
  * of checking writability of the mbuf data area rests solely with the caller.
  */
 #define	M_LEADINGSPACE(m)						\
-	((m)->m_flags & M_EXT ?						\
+	(((m)->m_flags & M_EXT) ?					\
 	    (M_WRITABLE(m) ? (m)->m_data - (m)->m_ext.ext_buf : 0):	\
-	    (m)->m_flags & M_PKTHDR ? (m)->m_data - (m)->m_pktdat :	\
+	    ((m)->m_flags & M_PKTHDR)? (m)->m_data - (m)->m_pktdat :	\
 	    (m)->m_data - (m)->m_dat)
 
 /*
@@ -353,7 +353,7 @@ extern int max_protohdr; /* Size of largest protocol layer header. See user_mbuf
  * of checking writability of the mbuf data area rests solely with the caller.
  */
 #define	M_TRAILINGSPACE(m)						\
-	((m)->m_flags & M_EXT ?						\
+	(((m)->m_flags & M_EXT) ?					\
 	    (M_WRITABLE(m) ? (m)->m_ext.ext_buf + (m)->m_ext.ext_size	\
 		- ((m)->m_data + (m)->m_len) : 0) :			\
 	    &(m)->m_dat[MLEN] - ((m)->m_data + (m)->m_len))
