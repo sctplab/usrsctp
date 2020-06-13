@@ -97,7 +97,7 @@ typedef __int8           int8_t;
 typedef unsigned __int32 u_int;
 typedef unsigned char    u_char;
 typedef unsigned __int16 u_short;
-typedef  unsigned __int8 sa_family_t;
+typedef unsigned __int8  sa_family_t;
 #ifndef _SSIZE_T_DEFINED
 typedef __int64          ssize_t;
 #endif
