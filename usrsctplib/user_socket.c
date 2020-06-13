@@ -557,28 +557,6 @@ sonewconn(struct socket *head, int connstatus)
 
 }
 
-/* From /src/sys/sys/sysproto.h */
-struct sctp_generic_sendmsg_args {
-	int sd;
-	caddr_t msg;
-	int mlen;
-	caddr_t to;
-	socklen_t tolen;  /* was __socklen_t */
-	struct sctp_sndrcvinfo * sinfo;
-	int flags;
-};
-
-struct sctp_generic_recvmsg_args {
-	int sd;
-	struct iovec *iov;
-	int iovlen;
-	struct sockaddr *from;
-	socklen_t *fromlenaddr; /* was __socklen_t */
-	struct sctp_sndrcvinfo *sinfo;
-	int *msg_flags;
-};
-
-
  /*
    Source: /src/sys/gnu/fs/xfs/FreeBSD/xfs_ioctl.c
  */
