@@ -891,10 +891,6 @@ int sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af);
                                                  rt->rt_rmx.rmx_mtu = mtu; \
                                            } while(0)
 
-/* (de-)register interface event notifications */
-#define SCTP_REGISTER_INTERFACE(ifhandle, af)
-#define SCTP_DEREGISTER_INTERFACE(ifhandle, af)
-
 
 /*************************/
 /* These are for logging */
