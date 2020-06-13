@@ -741,11 +741,11 @@ userspace_sctp_sendmsg(struct socket *so,
                        size_t len,
                        struct sockaddr *to,
                        socklen_t tolen,
-                       u_int32_t ppid,
-                       u_int32_t flags,
-                       u_int16_t stream_no,
-                       u_int32_t timetolive,
-                       u_int32_t context)
+                       uint32_t ppid,
+                       uint32_t flags,
+                       uint16_t stream_no,
+                       uint32_t timetolive,
+                       uint32_t context)
 {
 	struct sctp_sndrcvinfo sndrcvinfo, *sinfo = &sndrcvinfo;
 	struct uio auio;
@@ -925,11 +925,11 @@ userspace_sctp_sendmbuf(struct socket *so,
     size_t len,
     struct sockaddr *to,
     socklen_t tolen,
-    u_int32_t ppid,
-    u_int32_t flags,
-    u_int16_t stream_no,
-    u_int32_t timetolive,
-    u_int32_t context)
+    uint32_t ppid,
+    uint32_t flags,
+    uint16_t stream_no,
+    uint32_t timetolive,
+    uint32_t context)
 {
 
 	struct sctp_sndrcvinfo sndrcvinfo, *sinfo = &sndrcvinfo;

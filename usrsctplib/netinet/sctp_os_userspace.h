@@ -95,15 +95,12 @@ typedef __int8           int8_t;
 #typedef __int32         size_t;
 #endif
 typedef unsigned __int32 u_int;
-typedef unsigned __int32 u_int32_t;
-typedef unsigned __int16 u_int16_t;
-typedef unsigned __int8  u_int8_t;
 typedef unsigned char    u_char;
-typedef unsigned __int16 n_short;
 typedef unsigned __int16 u_short;
-typedef unsigned __int32 n_time;
 typedef  unsigned __int8 sa_family_t;
+#ifndef _SSIZE_T_DEFINED
 typedef __int64          ssize_t;
+#endif
 #if !defined(__MINGW32__)
 #define __func__	__FUNCTION__
 #endif

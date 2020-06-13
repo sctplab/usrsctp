@@ -472,7 +472,7 @@ m_tag_free(struct m_tag *t)
  * XXX probably should be called m_tag_init, but that was already taken.
  */
 static __inline void
-m_tag_setup(struct m_tag *t, u_int32_t cookie, int type, int len)
+m_tag_setup(struct m_tag *t, uint32_t cookie, int type, int len)
 {
 
 	t->m_tag_id = type;
@@ -1239,7 +1239,7 @@ m_tag_copy(struct m_tag *t, int how)
 
 /* Get a packet tag structure along with specified data following. */
 struct m_tag *
-m_tag_alloc(u_int32_t cookie, int type, int len, int wait)
+m_tag_alloc(uint32_t cookie, int type, int len, int wait)
 {
 	struct m_tag *t;
 
