@@ -271,9 +271,9 @@ m_clget(struct mbuf *m, int how)
 		mclust_ret = SCTP_ZONE_GET(zone_clust, char);
 #endif
 		/*mclust_ret = umem_cache_alloc(zone_clust, UMEM_DEFAULT);*/
-		if (NULL == mclust_ret) {
-			SCTPDBG(SCTP_DEBUG_USR, "Memory allocation failure in %s\n", __func__);
-		}
+		/* if (NULL == mclust_ret) { */
+		SCTPDBG(SCTP_DEBUG_USR, "Memory allocation failure in %s\n", __func__);
+		/* } */
 	}
 
 #if USING_MBUF_CONSTRUCTOR
@@ -289,7 +289,7 @@ struct mbuf *
 m_getm2(struct mbuf *m, int len, int how, short type, int flags, int allonebuf)
 {
 	struct mbuf *mb, *nm = NULL, *mtail = NULL;
-	int size = 0, mbuf_threshold, space_needed = len;
+	int size, mbuf_threshold, space_needed = len;
 
 	KASSERT(len >= 0, ("%s: len is < 0", __func__));
 
