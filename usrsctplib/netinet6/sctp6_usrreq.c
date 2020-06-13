@@ -58,7 +58,7 @@ __FBSDID("$FreeBSD: head/sys/netinet6/sctp6_usrreq.c 361895 2020-06-07 14:39:20Z
 #include <netinet/sctp_output.h>
 #include <netinet/sctp_bsd_addr.h>
 #include <netinet/sctp_crc32.h>
-#if !defined(__Userspace_os_Windows)
+#if !defined(_WIN32)
 #include <netinet/icmp6.h>
 #include <netinet/udp.h>
 #endif
@@ -70,7 +70,7 @@ int ip6_v6only=0;
 void
 in6_sin6_2_sin(struct sockaddr_in *sin, struct sockaddr_in6 *sin6)
 {
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	uint32_t temp;
 #endif
 	memset(sin, 0, sizeof(*sin));
@@ -79,7 +79,7 @@ in6_sin6_2_sin(struct sockaddr_in *sin, struct sockaddr_in6 *sin6)
 #endif
 	sin->sin_family = AF_INET;
 	sin->sin_port = sin6->sin6_port;
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	temp = sin6->sin6_addr.s6_addr16[7];
 	temp = temp << 16;
 	temp = temp | sin6->sin6_addr.s6_addr16[6];
@@ -110,7 +110,7 @@ in6_sin_2_v4mapsin6(const struct sockaddr_in *sin, struct sockaddr_in6 *sin6)
 	sin6->sin6_len = sizeof(struct sockaddr_in6);
 #endif
 	sin6->sin6_port = sin->sin_port;
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	((uint32_t *)&sin6->sin6_addr)[0] = 0;
 	((uint32_t *)&sin6->sin6_addr)[1] = 0;
 	((uint32_t *)&sin6->sin6_addr)[2] = htonl(0xffff);
@@ -148,7 +148,7 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto)
 	uint8_t mflowtype;
 	uint16_t fibnum;
 #endif
-#if !(defined(__APPLE__) || defined (__FreeBSD__))
+#if !(defined(__APPLE__) || defined(__FreeBSD__))
 	uint16_t port = 0;
 #endif
 
@@ -184,7 +184,7 @@ sctp6_input(struct mbuf **i_pak, int *offp, int proto)
 	        m->m_pkthdr.rcvif->if_unit,
 	        m->m_pkthdr.csum_flags);
 #endif
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
 	        "sctp6_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
 	        m->m_pkthdr.len,
@@ -664,7 +664,7 @@ SYSCTL_PROC(_net_inet6_sctp6, OID_AUTO, getcred, CTLTYPE_OPAQUE | CTLFLAG_RW,
 /* This is the same as the sctp_abort() could be made common */
 #if defined(__Userspace__)
 int
-#elif defined(__FreeBSD__) || defined(__Windows__)
+#elif defined(__FreeBSD__) || defined(_WIN32)
 static void
 #else
 static int
@@ -680,7 +680,7 @@ sctp6_abort(struct socket *so)
 	inp = (struct sctp_inpcb *)so->so_pcb;
 	if (inp == NULL) {
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP6_USRREQ, EINVAL);
-#if (defined(__FreeBSD__) || defined(__Windows__)) && !defined(__Userspace__)
+#if (defined(__FreeBSD__) || defined(_WIN32)) && !defined(__Userspace__)
 		return;
 #else
 		return (EINVAL);
@@ -734,7 +734,7 @@ sctp6_attach(struct socket *so, int proto SCTP_UNUSED, uint32_t vrf_id)
 #elif defined(__FreeBSD__)
 static int
 sctp6_attach(struct socket *so, int proto SCTP_UNUSED, struct thread *p SCTP_UNUSED)
-#elif defined(__Windows__)
+#elif defined(_WIN32)
 static int
 sctp6_attach(struct socket *so, int proto SCTP_UNUSED, PKTHREAD p SCTP_UNUSED)
 #else
@@ -793,7 +793,7 @@ sctp6_bind(struct socket *so, struct sockaddr *addr, struct thread *p)
 static int
 sctp6_bind(struct socket *so, struct sockaddr *addr, struct proc *p)
 {
-#elif defined(__Windows__)
+#elif defined(_WIN32)
 static int
 sctp6_bind(struct socket *so, struct sockaddr *addr, PKTHREAD p)
 {
@@ -814,7 +814,7 @@ sctp6_bind(struct socket *so, struct mbuf *nam, struct proc *p)
 		return (EINVAL);
 	}
 
-#if !defined(__Windows__)
+#if !(defined(_WIN32) && !defined(__Userspace__))
 	if (addr) {
 		switch (addr->sa_family) {
 #ifdef INET
@@ -912,7 +912,7 @@ out:
 }
 
 
-#if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(_WIN32) || defined(__Userspace__)
 #if !defined(__Userspace__)
 static void
 #else
@@ -961,7 +961,7 @@ sctp_sendm(struct socket *so, int flags, struct mbuf *m, struct sockaddr *addr,
 
 #endif
 
-#if !defined(__Windows__) && !defined(__Userspace__)
+#if !defined(_WIN32) && !defined(__Userspace__)
 #if defined(__FreeBSD__)
 static int
 sctp6_send(struct socket *so, int flags, struct mbuf *m, struct sockaddr *addr,
@@ -1104,7 +1104,7 @@ sctp6_connect(struct socket *so, struct sockaddr *addr, struct thread *p)
 static int
 sctp6_connect(struct socket *so, struct sockaddr *addr, struct proc *p)
 {
-#elif defined(__Windows__)
+#elif defined(_WIN32)
 static int
 sctp6_connect(struct socket *so, struct sockaddr *addr, PKTHREAD p)
 {
@@ -1136,7 +1136,7 @@ sctp6_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP6_USRREQ, EINVAL);
 		return (EINVAL);
 	}
-#if !defined(__Windows__)
+#if !(defined(_WIN32) && !defined(__Userspace__))
 	switch (addr->sa_family) {
 #ifdef INET
 	case AF_INET:
@@ -1666,7 +1666,7 @@ struct pr_usrreqs sctp6_usrreqs = {
 	.pru_sosend = sctp_sosend,
 	.pru_soreceive = sctp_soreceive,
 	.pru_sopoll = sopoll
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
 	sctp6_abort,
 	sctp_accept,
 	sctp6_attach,

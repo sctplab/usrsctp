@@ -113,7 +113,7 @@ struct sctp_sysctl {
 	uint32_t sctp_use_dccc_ecn;
 	uint32_t sctp_diag_info_code;
 #if defined(SCTP_LOCAL_TRACE_BUF)
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 	struct sctp_log *sctp_log;
 #else
 	struct sctp_log sctp_log;
@@ -624,7 +624,7 @@ SYSCTL_DECL(_net_inet_sctp);
 #endif
 
 void sctp_init_sysctls(void);
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 void sctp_finish_sysctls(void);
 #endif
 

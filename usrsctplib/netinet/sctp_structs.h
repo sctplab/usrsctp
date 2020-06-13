@@ -197,7 +197,7 @@ struct iterator_control {
 	pthread_mutex_t it_mtx;
 	pthread_cond_t iterator_wakeup;
 #endif
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
 	struct spinlock it_lock;
 	struct spinlock ipi_iterator_wq_lock;
 	KEVENT iterator_wakeup[2];
@@ -205,7 +205,7 @@ struct iterator_control {
 #else
 	void *it_mtx;
 #endif
-#if !defined(__Windows__)
+#if !(defined(_WIN32) && !defined(__Userspace__))
 #if !defined(__Userspace__)
 	SCTP_PROCESS_STRUCT thread_proc;
 #else

@@ -52,7 +52,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 362106 2020-06-12 16:31:13Z tuex
 #include <netinet/sctp_timer.h>
 #include <netinet/sctp_bsd_addr.h>
 #if defined(INET) || defined(INET6)
-#if !defined(__Userspace_os_Windows)
+#if !defined(_WIN32)
 #include <netinet/udp.h>
 #endif
 #endif
@@ -71,7 +71,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 362106 2020-06-12 16:31:13Z tuex
 #if defined(__Userspace__)
 #include <user_socketvar.h>
 #include <user_atomic.h>
-#if !defined(__Userspace_os_Windows)
+#if !defined(_WIN32)
 #include <netdb.h>
 #endif
 #endif
@@ -2802,7 +2802,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	inp->ip_inp.inp.inp_cred = crhold(so->so_cred);
 #endif
 #ifdef INET6
-#if !defined(__Userspace__) && !defined(__Windows__)
+#if !defined(__Userspace__) && !defined(_WIN32)
 	if (INP_SOCKAF(so) == AF_INET6) {
 		if (MODULE_GLOBAL(ip6_auto_flowlabel)) {
 			inp->ip_inp.inp.inp_flags |= IN6P_AUTOFLOWLABEL;
@@ -3236,7 +3236,7 @@ int
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
                 struct sctp_ifa *sctp_ifap, struct thread *p)
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
 sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
                 struct sctp_ifa *sctp_ifap, PKTHREAD p)
 #else
@@ -3423,7 +3423,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		 * already has this one bound.
 		 */
 		/* got to be root to get at low ports */
-#if !defined(__Windows__)
+#if !(defined(_WIN32) && !defined(__Userspace__))
 		if (ntohs(lport) < IPPORT_RESERVED) {
 			if ((p != NULL) && ((error =
 #if defined(__FreeBSD__) && !defined(__Userspace__)
@@ -3442,7 +3442,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 				return (error);
 			}
 		}
-#endif /* __Windows__ */
+#endif
 		SCTP_INP_WUNLOCK(inp);
 		if (bindall) {
 #ifdef SCTP_MVRF
@@ -3525,7 +3525,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		uint16_t count;
 		int done;
 
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 		first = 1;
 		last = 0xffff;
 #else
@@ -3560,7 +3560,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 #if (defined(__FreeBSD__) || defined(__APPLE__)) && !defined(__Userspace__)
 		}
 #endif
-#endif /* __Windows__ */
+#endif
 		if (first > last) {
 			uint16_t temp;
 
@@ -4147,7 +4147,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	sctp_log_closing(inp, NULL, 5);
 #endif
 
-#if !(defined(__Windows__) || defined(__Userspace__))
+#if !(defined(_WIN32) || defined(__Userspace__))
 #if !(defined(__FreeBSD__)  && !defined(__Userspace__))
 	rt = ip_pcb->inp_route.ro_rt;
 #endif
@@ -4188,7 +4188,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 		ip_pcb->inp_options = 0;
 	}
 
-#if !(defined(__Windows__) || defined(__Userspace__))
+#if !(defined(_WIN32) || defined(__Userspace__))
 #if !defined(__FreeBSD__)
 	if (rt) {
 		RTFREE(rt);
@@ -4198,7 +4198,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 #endif
 
 #ifdef INET6
-#if !(defined(__Windows__) || defined(__Userspace__))
+#if !(defined(_WIN32) || defined(__Userspace__))
 #if (defined(__FreeBSD__) || defined(__APPLE__) && !defined(__Userspace__))
 	if (ip_pcb->inp_vflag & INP_IPV6) {
 #else
@@ -4869,7 +4869,7 @@ sctp_aloc_assoc(struct sctp_inpcb *inp, struct sockaddr *firstaddr,
                 uint16_t o_streams, uint16_t port,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
                 struct thread *p,
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
                 PKTHREAD p,
 #else
 #if defined(__Userspace__)
@@ -6516,7 +6516,7 @@ sctp_pcb_init(void)
 	SCTP_BASE_VAR(sctp_pcb_initialized) = 1;
 
 #if defined(SCTP_PROCESS_LEVEL_LOCKS)
-#if !defined(__Userspace_os_Windows)
+#if !defined(_WIN32)
 	pthread_mutexattr_init(&SCTP_BASE_VAR(mtx_attr));
 #ifdef INVARIANTS
 	pthread_mutexattr_settype(&SCTP_BASE_VAR(mtx_attr), PTHREAD_MUTEX_ERRORCHECK);
@@ -6524,7 +6524,7 @@ sctp_pcb_init(void)
 #endif
 #endif
 #if defined(SCTP_LOCAL_TRACE_BUF)
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 	if (SCTP_BASE_SYSCTL(sctp_log) != NULL) {
 		memset(SCTP_BASE_SYSCTL(sctp_log), 0, sizeof(struct sctp_log));
 	}
@@ -6680,7 +6680,7 @@ sctp_pcb_init(void)
 		LIST_INIT(&SCTP_BASE_INFO(vtag_timewait)[i]);
 	}
 #if defined(SCTP_PROCESS_LEVEL_LOCKS)
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	InitializeConditionVariable(&sctp_it_ctl.iterator_wakeup);
 #else
 	(void)pthread_cond_init(&sctp_it_ctl.iterator_wakeup, NULL);
@@ -6761,7 +6761,7 @@ sctp_pcb_finish(void)
 	thread_deallocate(sctp_it_ctl.thread_proc);
 	SCTP_IPI_ITERATOR_WQ_UNLOCK();
 #endif
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 	if (sctp_it_ctl.iterator_thread_obj != NULL) {
 		NTSTATUS status = STATUS_SUCCESS;
 
@@ -6776,7 +6776,7 @@ sctp_pcb_finish(void)
 #endif
 #if defined(__Userspace__)
 	if (SCTP_BASE_VAR(iterator_thread_started)) {
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 		WaitForSingleObject(sctp_it_ctl.thread_proc, INFINITE);
 		CloseHandle(sctp_it_ctl.thread_proc);
 		sctp_it_ctl.thread_proc = NULL;
@@ -6787,7 +6787,7 @@ sctp_pcb_finish(void)
 	}
 #endif
 #if defined(SCTP_PROCESS_LEVEL_LOCKS)
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	DeleteConditionVariable(&sctp_it_ctl.iterator_wakeup);
 #else
 	pthread_cond_destroy(&sctp_it_ctl.iterator_wakeup);
@@ -6941,7 +6941,7 @@ retry:
 	if (SCTP_BASE_INFO(sctp_tcpephash) != NULL)
 		SCTP_HASH_FREE(SCTP_BASE_INFO(sctp_tcpephash), SCTP_BASE_INFO(hashtcpmark));
 
-#if defined(__Windows__) || defined(__FreeBSD__) || defined(__Userspace__)
+#if defined(_WIN32) || defined(__FreeBSD__) || defined(__Userspace__)
 	SCTP_ZONE_DESTROY(SCTP_BASE_INFO(ipi_zone_ep));
 	SCTP_ZONE_DESTROY(SCTP_BASE_INFO(ipi_zone_asoc));
 	SCTP_ZONE_DESTROY(SCTP_BASE_INFO(ipi_zone_laddr));

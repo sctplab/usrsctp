@@ -55,7 +55,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 362106 2020-06-12 16:31:13Z tu
 #include <netinet/sctp_kdtrace.h>
 #endif
 #if defined(INET) || defined(INET6)
-#if !defined(__Userspace_os_Windows)
+#if !defined(_WIN32)
 #include <netinet/udp.h>
 #endif
 #endif
@@ -2240,7 +2240,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 	                       port,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	                       (struct thread *)NULL,
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
 	                       (PKTHREAD)NULL,
 #else
 	                       (struct proc *)NULL,
@@ -6206,7 +6206,7 @@ sctp_input_with_port(struct mbuf *i_pak, int off, uint16_t port)
 	        m->m_pkthdr.rcvif->if_unit,
 	        m->m_pkthdr.csum_flags);
 #endif
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 	SCTPDBG(SCTP_DEBUG_CRCOFFLOAD,
 	        "sctp_input(): Packet of length %d received on %s with csum_flags 0x%x.\n",
 	        m->m_pkthdr.len,
@@ -6246,14 +6246,14 @@ sctp_input_with_port(struct mbuf *i_pak, int off, uint16_t port)
 #endif
 	dst.sin_port = sh->dest_port;
 	dst.sin_addr = ip->ip_dst;
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 	NTOHS(ip->ip_len);
 #endif
-#if defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
+#if defined(__linux__) || (defined(_WIN32) && defined(__Userspace__))
 	ip->ip_len = ntohs(ip->ip_len);
 #endif
 #if defined(__Userspace__)
-#if defined(__Userspace_os_Linux) || defined(__Userspace_os_Windows)
+#if defined(__linux__) || defined(_WIN32)
 	length = ip->ip_len;
 #else
 	length = ip->ip_len + iphlen;

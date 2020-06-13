@@ -53,7 +53,7 @@ struct icmphdr {
 	u_short	icmp_cksum;		/* ones complement cksum of struct */
 };
 
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 #pragma pack (push, 1)
 struct icmp6_hdr {
 	u_int8_t icmp6_type;

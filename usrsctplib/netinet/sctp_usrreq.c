@@ -118,7 +118,7 @@ sctp_init(void)
 	SCTP_BASE_VAR(first_time) = 0;
 	SCTP_BASE_VAR(sctp_pcb_initialized) = 0;
 #if defined(__Userspace__)
-#if !defined(__Userspace_os_Windows)
+#if !defined(_WIN32)
 #if defined(INET) || defined(INET6)
 	SCTP_BASE_VAR(userspace_route) = -1;
 #endif
@@ -187,7 +187,7 @@ sctp_finish(void)
 #endif
 	atomic_cmpset_int(&SCTP_BASE_VAR(timer_thread_should_exit), 0, 1);
 	if (SCTP_BASE_VAR(timer_thread_started)) {
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 		WaitForSingleObject(SCTP_BASE_VAR(timer_thread), INFINITE);
 		CloseHandle(SCTP_BASE_VAR(timer_thread));
 #else
@@ -196,7 +196,7 @@ sctp_finish(void)
 	}
 #endif
 	sctp_pcb_finish();
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 	sctp_finish_sysctls();
 #endif
 }
@@ -278,7 +278,7 @@ sctp_notify(struct sctp_inpcb *inp,
 	    (icmp_code == ICMP_UNREACH_ISOLATED) ||
 	    (icmp_code == ICMP_UNREACH_NET_PROHIB) ||
 	    (icmp_code == ICMP_UNREACH_HOST_PROHIB) ||
-#if defined(__Userspace_os_NetBSD)
+#if defined(__NetBSD__)
 	    (icmp_code == ICMP_UNREACH_ADMIN_PROHIBIT)) {
 #else
 	    (icmp_code == ICMP_UNREACH_FILTER_PROHIB)) {
@@ -580,7 +580,7 @@ SYSCTL_PROC(_net_inet_sctp, OID_AUTO, getcred,
 
 
 #ifdef INET
-#if defined(__Windows__) || defined(__Userspace__)
+#if defined(_WIN32) || defined(__Userspace__)
 int
 #elif defined(__FreeBSD__)
 static void
@@ -657,7 +657,7 @@ static int
 sctp_attach(struct socket *so, int proto SCTP_UNUSED, uint32_t vrf_id)
 #elif defined(__FreeBSD__)
 sctp_attach(struct socket *so, int proto SCTP_UNUSED, struct thread *p SCTP_UNUSED)
-#elif defined(__Windows__)
+#elif defined(_WIN32)
 sctp_attach(struct socket *so, int proto SCTP_UNUSED, PKTHREAD p SCTP_UNUSED)
 #else
 sctp_attach(struct socket *so, int proto SCTP_UNUSED, struct proc *p SCTP_UNUSED)
@@ -706,7 +706,7 @@ sctp_bind(struct socket *so, struct sockaddr *addr, struct thread *p)
 #elif defined(__APPLE__)
 static int
 sctp_bind(struct socket *so, struct sockaddr *addr, struct proc *p) {
-#elif defined(__Windows__)
+#elif defined(_WIN32)
 static int
 sctp_bind(struct socket *so, struct sockaddr *addr, PKTHREAD p) {
 #else
@@ -798,7 +798,7 @@ sctpconn_bind(struct socket *so, struct sockaddr *addr)
 }
 
 #endif
-#if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(_WIN32) || defined(__Userspace__)
 void
 sctp_close(struct socket *so)
 {
@@ -944,7 +944,7 @@ sctp_detach(struct socket *so)
 #if defined(__Userspace__)
 /* __Userspace__ is not calling sctp_sendm */
 #endif
-#if !defined(__Windows__)
+#if !(defined(_WIN32) && !defined(__Userspace__))
 int
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 sctp_sendm(struct socket *so, int flags, struct mbuf *m, struct sockaddr *addr,
@@ -1219,7 +1219,7 @@ sctp_disconnect(struct socket *so)
 	}
 }
 
-#if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(_WIN32) || defined(__Userspace__)
 int
 sctp_flush(struct socket *so, int how)
 {
@@ -1285,7 +1285,7 @@ sctp_shutdown(struct socket *so)
 	if (!((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 	      (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL))) {
 		/* Restore the flags that the soshutdown took away. */
-#if (defined(__FreeBSD__) || defined(__Windows__)) && !defined(__Userspace__)
+#if (defined(__FreeBSD__) || defined(_WIN32)) && !defined(__Userspace__)
 		SOCKBUF_LOCK(&so->so_rcv);
 		so->so_rcv.sb_state &= ~SBS_CANTRCVMORE;
 		SOCKBUF_UNLOCK(&so->so_rcv);
@@ -2011,7 +2011,7 @@ sctp_do_connect_x(struct socket *so, struct sctp_inpcb *inp, void *optval,
 	                       inp->sctp_ep.port,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	                       (struct thread *)p,
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
 	                       (PKTHREAD)p,
 #else
 	                       (struct proc *)p,
@@ -6667,7 +6667,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 #ifdef SCTP_MVRF
 		int i, fnd = 0;
 #endif
-#if !defined(__Windows__) && !defined(__Userspace__)
+#if !defined(_WIN32) && !defined(__Userspace__)
 #if defined(__APPLE__)
 		struct proc *proc;
 #endif
@@ -7820,7 +7820,7 @@ sctp_ctloutput(struct socket *so, struct sockopt *sopt)
 			goto out;
 		}
 	}
-#if defined(__FreeBSD__) || defined(__Windows__)
+#if defined(__FreeBSD__) || defined(_WIN32)
 	p = (void *)sopt->sopt_td;
 #else
 	p = (void *)sopt->sopt_p;
@@ -7864,7 +7864,7 @@ sctp_connect(struct socket *so, struct sockaddr *addr, struct thread *p)
 static int
 sctp_connect(struct socket *so, struct sockaddr *addr, struct proc *p)
 {
-#elif defined(__Windows__)
+#elif defined(_WIN32)
 static int
 sctp_connect(struct socket *so, struct sockaddr *addr, PKTHREAD p)
 {
@@ -7901,7 +7901,7 @@ sctp_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 #if defined(__Userspace__)
 	/* TODO __Userspace__ falls into this code for IPv6 stuff at the moment... */
 #endif
-#if !defined(__Windows__) && !defined(__Userspace_os_Linux) && !defined(__Userspace_os_Windows)
+#if !defined(_WIN32) && !defined(__linux__)
 	switch (addr->sa_family) {
 #ifdef INET6
 	case AF_INET6:
@@ -7931,7 +7931,7 @@ sctp_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 		struct sockaddr_in *sin;
 
 #endif
-#if !defined(__Userspace_os_Windows)
+#if !defined(_WIN32)
 		if (addr->sa_len != sizeof(struct sockaddr_in)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			return (EINVAL);
@@ -8242,7 +8242,7 @@ int
 sctp_listen(struct socket *so, int backlog, struct proc *p)
 #elif defined(__FreeBSD__)
 sctp_listen(struct socket *so, int backlog, struct thread *p)
-#elif defined(__Windows__)
+#elif defined(_WIN32)
 sctp_listen(struct socket *so, int backlog, PKTHREAD p)
 #else
 sctp_listen(struct socket *so, struct proc *p)
@@ -8424,7 +8424,7 @@ sctp_listen(struct socket *so, struct proc *p)
 		solisten_proto(so, backlog);
 		SOCK_UNLOCK(so);
 	}
-#elif defined(__Windows__) || defined(__Userspace__)
+#elif defined(_WIN32) || defined(__Userspace__)
 	SOCK_LOCK(so);
 	solisten_proto(so, backlog);
 #endif
@@ -8439,7 +8439,7 @@ sctp_listen(struct socket *so, struct proc *p)
 	}
 	SOCK_UNLOCK(so);
 #endif
-#if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(_WIN32) || defined(__Userspace__)
 	if (backlog > 0) {
 		inp->sctp_flags |= SCTP_PCB_FLAGS_ACCEPTING;
 	} else {
@@ -8501,7 +8501,7 @@ sctp_accept(struct socket *so, struct sockaddr **addr)
 #if defined(__Userspace__)
 				/*__Userspace__ calling sowwakup_locked because of SOCKBUF_LOCK above. */
 #endif
-#if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(_WIN32) || defined(__Userspace__)
 				sowwakeup_locked(inp->sctp_socket);
 #else
 #if defined(__APPLE__)
@@ -8521,7 +8521,7 @@ sctp_accept(struct socket *so, struct sockaddr **addr)
 #if defined(__Userspace__)
 				/*__Userspace__ calling sorwakup_locked because of SOCKBUF_LOCK above */
 #endif
-#if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(_WIN32) || defined(__Userspace__)
 				sorwakeup_locked(inp->sctp_socket);
 #else
 #if defined(__APPLE__)
@@ -8860,7 +8860,7 @@ struct pr_usrreqs sctp_usrreqs = {
 	.pru_sosend = sctp_sosend,
 	.pru_soreceive = sctp_soreceive,
 	.pru_sopoll = sopoll
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
 	sctp_abort,
 	sctp_accept,
 	sctp_attach,

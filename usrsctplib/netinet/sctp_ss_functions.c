@@ -949,7 +949,7 @@ default_again:
 const struct sctp_ss_functions sctp_ss_functions[] = {
 /* SCTP_SS_DEFAULT */
 {
-#if defined(__Windows__) || defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	sctp_ss_default_init,
 	sctp_ss_default_clear,
 	sctp_ss_default_init_stream,
@@ -979,7 +979,7 @@ const struct sctp_ss_functions sctp_ss_functions[] = {
 },
 /* SCTP_SS_ROUND_ROBIN */
 {
-#if defined(__Windows__) || defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	sctp_ss_default_init,
 	sctp_ss_default_clear,
 	sctp_ss_default_init_stream,
@@ -1009,7 +1009,7 @@ const struct sctp_ss_functions sctp_ss_functions[] = {
 },
 /* SCTP_SS_ROUND_ROBIN_PACKET */
 {
-#if defined(__Windows__) || defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	sctp_ss_default_init,
 	sctp_ss_default_clear,
 	sctp_ss_default_init_stream,
@@ -1039,7 +1039,7 @@ const struct sctp_ss_functions sctp_ss_functions[] = {
 },
 /* SCTP_SS_PRIORITY */
 {
-#if defined(__Windows__) || defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	sctp_ss_default_init,
 	sctp_ss_prio_clear,
 	sctp_ss_prio_init_stream,
@@ -1069,7 +1069,7 @@ const struct sctp_ss_functions sctp_ss_functions[] = {
 },
 /* SCTP_SS_FAIR_BANDWITH */
 {
-#if defined(__Windows__) || defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	sctp_ss_default_init,
 	sctp_ss_fb_clear,
 	sctp_ss_fb_init_stream,
@@ -1099,7 +1099,7 @@ const struct sctp_ss_functions sctp_ss_functions[] = {
 },
 /* SCTP_SS_FIRST_COME */
 {
-#if defined(__Windows__) || defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	sctp_ss_fcfs_init,
 	sctp_ss_fcfs_clear,
 	sctp_ss_fcfs_init_stream,

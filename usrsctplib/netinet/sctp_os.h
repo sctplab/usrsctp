@@ -78,7 +78,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_os.h 361872 2020-06-06 18:20:09Z tuexe
 #include <netinet/sctp_os_macosx.h>
 #endif
 
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 #include <netinet/sctp_os_windows.h>
 #endif
 

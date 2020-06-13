@@ -59,11 +59,11 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 362054 2020-06-11 13:34:09Z t
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <netinet/sctp_kdtrace.h>
 #endif
-#if defined(__Userspace_os_Linux)
+#if defined(__linux__)
 #define __FAVOR_BSD    /* (on Ubuntu at least) enables UDP header field names like BSD in RFC 768 */
 #endif
 #if defined(INET) || defined(INET6)
-#if !defined(__Userspace_os_Windows)
+#if !defined(_WIN32)
 #include <netinet/udp.h>
 #endif
 #endif
@@ -3485,7 +3485,7 @@ sctp_source_address_selection(struct sctp_inpcb *inp,
 #endif
 		return (NULL);
 	}
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	/* On Windows the sa_family is U_SHORT or ADDRESS_FAMILY */
 	fam = (sa_family_t)ro->ro_dst.sa_family;
 #else
@@ -3511,7 +3511,7 @@ sctp_source_address_selection(struct sctp_inpcb *inp,
 #ifdef INET6
 	case AF_INET6:
 		/* Scope based on outbound address */
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 		if (IN6_IS_ADDR_LOOPBACK(&to6->sin6_addr)) {
 #else
 		if (IN6_IS_ADDR_LOOPBACK(&to6->sin6_addr) ||
@@ -3568,7 +3568,7 @@ sctp_source_address_selection(struct sctp_inpcb *inp,
 static int
 sctp_find_cmsg(int c_type, void *data, struct mbuf *control, size_t cpsize)
 {
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	WSACMSGHDR cmh;
 #else
 	struct cmsghdr cmh;
@@ -3673,7 +3673,7 @@ sctp_find_cmsg(int c_type, void *data, struct mbuf *control, size_t cpsize)
 static int
 sctp_process_cmsgs_for_init(struct sctp_tcb *stcb, struct mbuf *control, int *error)
 {
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	WSACMSGHDR cmh;
 #else
 	struct cmsghdr cmh;
@@ -3851,7 +3851,7 @@ sctp_findassociation_cmsgs(struct sctp_inpcb **inp_p,
                            struct sctp_nets **net_p,
                            int *error)
 {
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	WSACMSGHDR cmh;
 #else
 	struct cmsghdr cmh;
@@ -4342,7 +4342,7 @@ int so_locked)
 			udp->uh_sport = htons(SCTP_BASE_SYSCTL(sctp_udp_tunneling_port));
 			udp->uh_dport = port;
 			udp->uh_ulen = htons((uint16_t)(packet_length - sizeof(struct ip)));
-#if !defined(__Windows__) && !defined(__Userspace__)
+#if !defined(__Userspace__)
 #if defined(__FreeBSD__)
 			if (V_udp_cksum) {
 				udp->uh_sum = in_pseudo(ip->ip_src.s_addr, ip->ip_dst.s_addr, udp->uh_ulen + htons(IPPROTO_UDP));
@@ -4412,7 +4412,7 @@ int so_locked)
 		if (port) {
 			sctphdr->checksum = sctp_calculate_cksum(m, sizeof(struct ip) + sizeof(struct udphdr));
 			SCTP_STAT_INCR(sctps_sendswcrc);
-#if !defined(__Windows__) && !defined(__Userspace__)
+#if !defined(__Userspace__)
 #if defined(__FreeBSD__)
 			if (V_udp_cksum) {
 				SCTP_ENABLE_UDP_CSUM(o_pak);
@@ -4879,12 +4879,14 @@ int so_locked)
 		if (port) {
 			sctphdr->checksum = sctp_calculate_cksum(m, sizeof(struct ip6_hdr) + sizeof(struct udphdr));
 			SCTP_STAT_INCR(sctps_sendswcrc);
-#if defined(__Windows__)
+#if !defined(__Userspace__)
+#if defined(_WIN32)
 			udp->uh_sum = 0;
-#elif !defined(__Userspace__)
+#else
 			if ((udp->uh_sum = in6_cksum(o_pak, IPPROTO_UDP, sizeof(struct ip6_hdr), packet_length - sizeof(struct ip6_hdr))) == 0) {
 				udp->uh_sum = 0xffff;
 			}
+#endif
 #endif
 		} else {
 #if defined(__FreeBSD__) && !defined(__Userspace__)
@@ -4997,7 +4999,7 @@ int so_locked)
 			}
 #if !defined(__Userspace__)
 			else if (ifp) {
-#if defined(__Windows__)
+#if defined(_WIN32)
 #define ND_IFINFO(ifp)	(ifp)
 #define linkmtu		if_mtu
 #endif
@@ -10803,7 +10805,7 @@ sctp_output(
 	struct mbuf *control,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	struct thread *p,
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
 	PKTHREAD p,
 #else
 #if defined(__APPLE__) && !defined(__Userspace__)
@@ -11847,7 +11849,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		memset(&ro, 0, sizeof(sctp_route_t));
 #endif
 		if (port) {
-#if !defined(__Windows__) && !defined(__Userspace__)
+#if !defined(_WIN32) && !defined(__Userspace__)
 #if defined(__FreeBSD__)
 			if (V_udp_cksum) {
 				udp->uh_sum = in_pseudo(ip->ip_src.s_addr, ip->ip_dst.s_addr, udp->uh_ulen + htons(IPPROTO_UDP));
@@ -11871,7 +11873,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		if (port) {
 			shout->checksum = sctp_calculate_cksum(mout, sizeof(struct ip) + sizeof(struct udphdr));
 			SCTP_STAT_INCR(sctps_sendswcrc);
-#if !defined(__Windows__) && !defined(__Userspace__)
+#if !defined(_WIN32) && !defined(__Userspace__)
 #if defined(__FreeBSD__)
 			if (V_udp_cksum) {
 				SCTP_ENABLE_UDP_CSUM(o_pak);
@@ -11916,12 +11918,14 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 		if (port) {
 			shout->checksum = sctp_calculate_cksum(mout, sizeof(struct ip6_hdr) + sizeof(struct udphdr));
 			SCTP_STAT_INCR(sctps_sendswcrc);
-#if defined(__Windows__)
+#if !defined(__Userspace__)
+#if defined(_WIN32)
 			udp->uh_sum = 0;
-#elif !defined(__Userspace__)
+#else
 			if ((udp->uh_sum = in6_cksum(o_pak, IPPROTO_UDP, sizeof(struct ip6_hdr), len - sizeof(struct ip6_hdr))) == 0) {
 				udp->uh_sum = 0xffff;
 			}
+#endif
 #endif
 		} else {
 #if defined(__FreeBSD__) && !defined(__Userspace__)
@@ -13348,7 +13352,7 @@ sctp_sosend(struct socket *so,
             int flags,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
             struct thread *p
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
             PKTHREAD p
 #else
 #if defined(__Userspace__)
@@ -13422,7 +13426,7 @@ sctp_lower_sosend(struct socket *so,
                   ,
 #if defined(__FreeBSD__)
                   struct thread *p
-#elif defined(__Windows__)
+#elif defined(_WIN32)
                   PKTHREAD p
 #else
                   struct proc *p
@@ -13893,7 +13897,7 @@ sctp_lower_sosend(struct socket *so,
 		}
 	}
 	/* Ok, we will attempt a msgsnd :> */
-#if !(defined(__Windows__) || defined(__Userspace__))
+#if !(defined(_WIN32) || defined(__Userspace__))
 	if (p) {
 #if defined(__FreeBSD__)
 		p->td_ru.ru_msgsnd++;
@@ -14078,7 +14082,7 @@ sctp_lower_sosend(struct socket *so,
 				sctp_log_block(SCTP_BLOCK_LOG_INTO_BLKA, asoc, sndlen);
 			}
 			be.error = 0;
-#if !defined(__Windows__)
+#if !(defined(_WIN32) && !defined(__Userspace__))
 			stcb->block_entry = &be;
 #endif
 			error = sbwait(&so->so_snd);
@@ -14461,7 +14465,7 @@ skip_preblock:
 #endif
 				}
 				be.error = 0;
-#if !defined(__Windows__)
+#if !(defined(_WIN32) && !defined(__Userspace__))
 				stcb->block_entry = &be;
 #endif
 #if defined(__APPLE__) && !defined(__Userspace__)

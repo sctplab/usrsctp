@@ -107,7 +107,7 @@ void
 sctp_wakeup_iterator(void)
 {
 #if defined(SCTP_PROCESS_LEVEL_LOCKS)
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	WakeAllConditionVariable(&sctp_it_ctl.iterator_wakeup);
 #else
 	pthread_cond_broadcast(&sctp_it_ctl.iterator_wakeup);
@@ -143,7 +143,7 @@ sctp_iterator_thread(void *v SCTP_UNUSED)
 #endif
 		       0, "waiting_for_work", 0);
 #else
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 		SleepConditionVariableCS(&sctp_it_ctl.iterator_wakeup, &sctp_it_ctl.ipi_iterator_wq_mtx, INFINITE);
 #else
 		pthread_cond_wait(&sctp_it_ctl.iterator_wakeup, &sctp_it_ctl.ipi_iterator_wq_mtx);
@@ -303,7 +303,7 @@ sctp_is_vmware_interface(struct ifnet *ifn)
 }
 #endif
 
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32) && defined(__Userspace__)
 #ifdef MALLOC
 #undef MALLOC
 #define MALLOC(x) HeapAlloc(GetProcessHeap(), 0, (x))

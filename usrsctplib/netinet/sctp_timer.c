@@ -41,7 +41,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 362054 2020-06-11 13:34:09Z tu
 #include <netinet/sctp_os.h>
 #include <netinet/sctp_pcb.h>
 #ifdef INET6
-#if defined(__Userspace_os_FreeBSD)
+#if defined(__FreeBSD__) && defined(__Userspace__)
 #include <netinet6/sctp6_var.h>
 #endif
 #endif
@@ -57,7 +57,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 362054 2020-06-11 13:34:09Z tu
 #include <netinet/sctp.h>
 #include <netinet/sctp_uio.h>
 #if defined(INET) || defined(INET6)
-#if !defined(__Userspace_os_Windows)
+#if !(defined(_WIN32) && defined(__Userspace__))
 #include <netinet/udp.h>
 #endif
 #endif

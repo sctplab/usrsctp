@@ -227,7 +227,7 @@ struct sctp_epinfo {
 	void *ipi_count_mtx;
 	void *logging_mtx;
 #endif /* _KERN_LOCKS_H_ */
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
 	struct rwlock ipi_ep_lock;
 	struct rwlock ipi_addr_lock;
 	struct spinlock ipi_pktlog_mtx;
@@ -312,7 +312,7 @@ struct sctp_base_info {
 	int timer_thread_should_exit;
 	int iterator_thread_started;
 	int timer_thread_started;
-#if !defined(__Userspace_os_Windows)
+#if !defined(_WIN32)
 	pthread_mutexattr_t mtx_attr;
 #if defined(INET) || defined(INET6)
 	int userspace_route;
@@ -320,7 +320,7 @@ struct sctp_base_info {
 #endif
 #endif
 #ifdef INET
-#if defined(__Userspace_os_Windows) && !defined(__MINGW32__)
+#if defined(_WIN32) && !defined(__MINGW32__)
 	SOCKET userspace_rawsctp;
 	SOCKET userspace_udpsctp;
 #else
@@ -331,7 +331,7 @@ struct sctp_base_info {
 	userland_thread_t recvthreadudp;
 #endif
 #ifdef INET6
-#if defined(__Userspace_os_Windows) && !defined(__MINGW32__)
+#if defined(_WIN32) && !defined(__MINGW32__)
 	SOCKET userspace_rawsctp6;
 	SOCKET userspace_udpsctp6;
 #else
@@ -529,7 +529,7 @@ struct sctp_inpcb {
 #endif
 	lck_mtx_t *inp_create_mtx;
 	lck_mtx_t *inp_rdata_mtx;
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
 	struct rwlock inp_lock;
 	struct spinlock inp_create_lock;
 	struct spinlock inp_rdata_lock;
@@ -628,7 +628,7 @@ struct sctp_tcb {
 #elif defined(__APPLE__) && !defined(__Userspace__)
 	lck_mtx_t* tcb_mtx;
 	lck_mtx_t* tcb_send_mtx;
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
 	struct spinlock tcb_lock;
 	struct spinlock tcb_send_lock;
 #elif defined(__Userspace__)
@@ -656,7 +656,7 @@ struct sctp_tcb {
 
 #include <netinet/sctp_process_lock.h>
 
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
 
 #include <netinet/sctp_lock_windows.h>
 
@@ -733,7 +733,7 @@ struct sctp_inpcb *sctp_pcb_findep(struct sockaddr *, int, int, uint32_t);
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 int sctp_inpcb_bind(struct socket *, struct sockaddr *,
 		    struct sctp_ifa *,struct thread *);
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
 int sctp_inpcb_bind(struct socket *, struct sockaddr *,
 		    struct sctp_ifa *,PKTHREAD);
 #else
@@ -792,7 +792,7 @@ struct sctp_tcb *
 sctp_aloc_assoc(struct sctp_inpcb *, struct sockaddr *,
                 int *, uint32_t, uint32_t, uint16_t, uint16_t, struct thread *,
                 int);
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
 struct sctp_tcb *
 sctp_aloc_assoc(struct sctp_inpcb *, struct sockaddr *,
                 int *, uint32_t, uint32_t, uint16_t, uint16_t, PKTHREAD, int);

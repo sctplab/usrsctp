@@ -60,7 +60,7 @@
 #ifndef _USER_IP6_VAR_H_
 #define _USER_IP6_VAR_H_
 
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 struct ip6_hdr {
 	union {
 		struct ip6_hdrctl {
@@ -84,18 +84,18 @@ struct ip6_hdr {
 #define IPV6_VERSION		0x60
 #endif
 
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 #define s6_addr16 u.Word
 #endif
-#if !defined(__Userspace_os_Windows)
-#if !defined(__Userspace_os_Linux)
+#if !defined(_WIN32)
+#if !defined(__linux__)
 #define s6_addr8  __u6_addr.__u6_addr8
 #define s6_addr16 __u6_addr.__u6_addr16
 #define s6_addr32 __u6_addr.__u6_addr32
 #endif
 #endif
 
-#if !defined(__Userspace_os_FreeBSD) && !defined(__Userspace_os_OpenBSD) && !defined(__Userspace_os_DragonFly)
+#if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__DragonFly__)
 struct route_in6 {
 	struct	rtentry *ro_rt;
 	struct	llentry *ro_lle;

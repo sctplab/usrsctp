@@ -44,13 +44,13 @@
 #ifdef INET6
 #include <netinet6/sctp6_var.h>
 #endif
-#if defined(__Userspace_os_FreeBSD)
+#if defined(__FreeBSD__)
 #include <sys/param.h>
 #endif
-#if defined(__Userspace_os_Linux)
+#if defined(__linux__)
 #define __FAVOR_BSD    /* (on Ubuntu at least) enables UDP header field names like BSD in RFC 768 */
 #endif
-#if !defined (__Userspace_os_Windows)
+#if !defined(_WIN32)
 #if defined INET || defined INET6
 #include <netinet/udp.h>
 #endif
@@ -79,7 +79,7 @@ extern int sctp_attach(struct socket *so, int proto, uint32_t vrf_id);
 extern int sctpconn_attach(struct socket *so, int proto, uint32_t vrf_id);
 
 static void init_sync(void) {
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 #if defined(INET) || defined(INET6)
 	WSADATA wsaData;
 
@@ -172,7 +172,7 @@ sbwait(struct sockbuf *sb)
 	SOCKBUF_LOCK_ASSERT(sb);
 
 	sb->sb_flags |= SB_WAIT;
-#if defined (__Userspace_os_Windows)
+#if defined(_WIN32)
 	if (SleepConditionVariableCS(&(sb->sb_cond), &(sb->sb_mtx), INFINITE))
 		return (0);
 	else
@@ -383,7 +383,7 @@ void
 wakeup(void *ident, struct socket *so)
 {
 	SOCK_LOCK(so);
-#if defined (__Userspace_os_Windows)
+#if defined(_WIN32)
 	WakeAllConditionVariable(&(so)->timeo_cond);
 #else
 	pthread_cond_broadcast(&(so)->timeo_cond);
@@ -409,7 +409,7 @@ wakeup_one(void *ident)
 	  subsidiary sockets.
 	 */
 	ACCEPT_LOCK();
-#if defined (__Userspace_os_Windows)
+#if defined(_WIN32)
 	WakeAllConditionVariable(&accept_cond);
 #else
 	pthread_cond_broadcast(&accept_cond);
@@ -1057,7 +1057,7 @@ userspace_sctp_recvmsg(struct socket *so,
 	if (error) {
 		if ((auio.uio_resid != ulen) &&
 		    (error == EINTR ||
-#if !defined(__Userspace_os_NetBSD)
+#if !defined(__NetBSD__)
 		     error == ERESTART ||
 #endif
 		     error == EWOULDBLOCK)) {
@@ -1150,7 +1150,7 @@ usrsctp_recvv(struct socket *so,
 	if (errno) {
 		if ((auio.uio_resid != ulen) &&
 		    (errno == EINTR ||
-#if !defined(__Userspace_os_NetBSD)
+#if !defined(__NetBSD__)
 		     errno == ERESTART ||
 #endif
 		     errno == EWOULDBLOCK)) {
@@ -1457,7 +1457,7 @@ sowakeup(struct socket *so, struct sockbuf *sb)
 	sb->sb_flags &= ~SB_SEL;
 	if (sb->sb_flags & SB_WAIT) {
 		sb->sb_flags &= ~SB_WAIT;
-#if defined (__Userspace_os_Windows)
+#if defined(_WIN32)
 		WakeAllConditionVariable(&(sb)->sb_cond);
 #else
 		pthread_cond_broadcast(&(sb)->sb_cond);
@@ -1636,7 +1636,7 @@ user_accept(struct socket *head,  struct sockaddr **name, socklen_t *namelen, st
 			head->so_error = ECONNABORTED;
 			break;
 		}
-#if defined (__Userspace_os_Windows)
+#if defined(_WIN32)
 		if (SleepConditionVariableCS(&accept_cond, &accept_mtx, INFINITE))
 			error = 0;
 		else
@@ -1957,7 +1957,7 @@ int user_connect(struct socket *so, struct sockaddr *sa)
 
 	SOCK_LOCK(so);
 	while ((so->so_state & SS_ISCONNECTING) && so->so_error == 0) {
-#if defined (__Userspace_os_Windows)
+#if defined(_WIN32)
 		if (SleepConditionVariableCS(SOCK_COND(so), SOCK_MTX(so), INFINITE))
 			error = 0;
 		else
@@ -1966,7 +1966,7 @@ int user_connect(struct socket *so, struct sockaddr *sa)
 		error = pthread_cond_wait(SOCK_COND(so), SOCK_MTX(so));
 #endif
 		if (error) {
-#if defined(__Userspace_os_NetBSD)
+#if defined(__NetBSD__)
 			if (error == EINTR) {
 #else
 			if (error == EINTR || error == ERESTART) {
@@ -1986,7 +1986,7 @@ bad:
 	if (!interrupted) {
 		so->so_state &= ~SS_ISCONNECTING;
 	}
-#if !defined(__Userspace_os_NetBSD)
+#if !defined(__NetBSD__)
 	if (error == ERESTART) {
 		error = EINTR;
 	}
@@ -2096,7 +2096,7 @@ usrsctp_finish(void)
 		return (-1);
 	}
 	sctp_finish();
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	DeleteConditionVariable(&accept_cond);
 	DeleteCriticalSection(&accept_mtx);
 #if defined(INET) || defined(INET6)
@@ -2896,11 +2896,11 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	int send_count;
 	struct ip *ip;
 	struct udphdr *udp;
-#if !defined (__Userspace_os_Windows)
+#if !defined(_WIN32)
 	int res;
 #endif
 	struct sockaddr_in dst;
-#if defined (__Userspace_os_Windows)
+#if defined(_WIN32)
 	WSAMSG win_msg_hdr;
 	DWORD win_sent_len;
 	WSABUF send_iovec[MAXLEN_MBUF_CHAIN];
@@ -2946,7 +2946,7 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 			SCTP_PRINTF("Why did the SCTP implementation did not choose a source address?\n");
 		}
 		/* TODO need to worry about ro->ro_dst as in ip_output? */
-#if defined(__Userspace_os_Linux) || defined (__Userspace_os_Windows) || (defined(__Userspace_os_FreeBSD) && (__FreeBSD_version >= 1100030))
+#if defined(__linux__) || defined(_WIN32) || (defined(__FreeBSD__) && (__FreeBSD_version >= 1100030))
 		/* need to put certain fields into network order for Linux */
 		ip->ip_len = htons(ip->ip_len);
 #endif
@@ -2972,7 +2972,7 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	send_len = SCTP_HEADER_LEN(m); /* length of entire packet */
 	send_count = 0;
 	for (iovcnt = 0; m != NULL && iovcnt < MAXLEN_MBUF_CHAIN; m = m->m_next, iovcnt++) {
-#if !defined (__Userspace_os_Windows)
+#if !defined(_WIN32)
 		send_iovec[iovcnt].iov_base = (caddr_t)m->m_data;
 		send_iovec[iovcnt].iov_len = SCTP_BUF_LEN(m);
 		send_count += send_iovec[iovcnt].iov_len;
@@ -2988,7 +2988,7 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 		goto free_mbuf;
 	}
 
-#if !defined (__Userspace_os_Windows)
+#if !defined(_WIN32)
 	msg_hdr.msg_name = (struct sockaddr *) &dst;
 	msg_hdr.msg_namelen = sizeof(struct sockaddr_in);
 	msg_hdr.msg_iov = send_iovec;
@@ -3037,7 +3037,7 @@ free_mbuf:
 }
 #endif
 
-#if defined (INET6)
+#if defined(INET6)
 void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
                                             struct route_in6 *ro, void *stcb,
                                             uint32_t vrf_id)
@@ -3050,11 +3050,11 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	int send_count;
 	struct ip6_hdr *ip6;
 	struct udphdr *udp;
-#if !defined (__Userspace_os_Windows)
+#if !defined(_WIN32)
 	int res;
 #endif
 	struct sockaddr_in6 dst;
-#if defined (__Userspace_os_Windows)
+#if defined(_WIN32)
 	WSAMSG win_msg_hdr;
 	DWORD win_sent_len;
 	WSABUF send_iovec[MAXLEN_MBUF_CHAIN];
@@ -3127,7 +3127,7 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	send_len = SCTP_HEADER_LEN(m); /* length of entire packet */
 	send_count = 0;
 	for (iovcnt = 0; m != NULL && iovcnt < MAXLEN_MBUF_CHAIN; m = m->m_next, iovcnt++) {
-#if !defined (__Userspace_os_Windows)
+#if !defined(_WIN32)
 		send_iovec[iovcnt].iov_base = (caddr_t)m->m_data;
 		send_iovec[iovcnt].iov_len = SCTP_BUF_LEN(m);
 		send_count += send_iovec[iovcnt].iov_len;
@@ -3142,7 +3142,7 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 		goto free_mbuf;
 	}
 
-#if !defined (__Userspace_os_Windows)
+#if !defined(_WIN32)
 	msg_hdr.msg_name = (struct sockaddr *) &dst;
 	msg_hdr.msg_namelen = sizeof(struct sockaddr_in6);
 	msg_hdr.msg_iov = send_iovec;

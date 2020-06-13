@@ -46,7 +46,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 362106 2020-06-12 16:31:13Z tuex
 #endif
 #endif
 
-#if !(defined(__Windows__)) && !defined(__Userspace_os_Windows)
+#if !defined(_WIN32)
 #if ! defined(_KERNEL)
 #include <stdint.h>
 #endif
@@ -54,7 +54,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 362106 2020-06-12 16:31:13Z tuex
 #include <sys/socket.h>
 #include <netinet/in.h>
 #endif
-#if defined(__Windows__)
+#if defined(_WIN32)
 #pragma warning(push)
 #pragma warning(disable: 4200)
 #if defined(_KERNEL)
@@ -1144,9 +1144,9 @@ union sctp_sockstore {
 /***********************************/
 
 #if !(defined(__APPLE__) && !defined(__Userspace__))
-#ifndef __Userspace__
+#if !defined(__Userspace__)
 #ifndef ntohll
-#if defined(__Userspace_os_Linux)
+#if defined(__linux__)
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
@@ -1158,7 +1158,7 @@ union sctp_sockstore {
 #endif
 
 #ifndef htonll
-#if defined(__Userspace_os_Linux)
+#if defined(__linux__)
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
@@ -1292,9 +1292,9 @@ sctp_lower_sosend(struct socket *so,
     int flags,
     struct sctp_sndrcvinfo *srcv
 #if !defined(__Userspace__)
-#if defined(__FreeBSD__) && !defined(__Userspace__)
+#if defined(__FreeBSD__)
     ,struct thread *p
-#elif defined(__Windows__)
+#elif defined(_WIN32)
     , PKTHREAD p
 #else
     ,struct proc *p

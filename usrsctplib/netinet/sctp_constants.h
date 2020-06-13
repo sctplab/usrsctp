@@ -40,7 +40,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 362107 2020-06-12 16:40:10
 #ifndef _NETINET_SCTP_CONSTANTS_H_
 #define _NETINET_SCTP_CONSTANTS_H_
 
-#if defined(__Userspace_os_Windows)
+#if defined(_Win32) && defined(__Userspace__)
 extern void getwintimeofday(struct timeval *tv);
 #endif
 
@@ -995,7 +995,7 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_SOCKET_OPTION_LIMIT (64 * 1024)
 
 #if defined(__Userspace__)
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 #define SCTP_GETTIME_TIMEVAL(x)	getwintimeofday(x)
 #define SCTP_GETPTIME_TIMEVAL(x) getwintimeofday(x) /* this doesn't seem to ever be used.. */
 #else
@@ -1019,7 +1019,7 @@ do { \
 	} \
 } while (0)
 
-#if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(_WIN32) || defined(__Userspace__)
 #define sctp_sowwakeup_locked(inp, so) \
 do { \
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_DONT_WAKE) { \
@@ -1050,7 +1050,7 @@ do { \
 	} \
 } while (0)
 
-#if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(_WIN32) || defined(__Userspace__)
 #define sctp_sorwakeup_locked(inp, so) \
 do { \
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_DONT_WAKE) { \

@@ -183,7 +183,7 @@ sctp_build_ctl_nchunk(struct sctp_inpcb *inp, struct sctp_sndrcvinfo *sinfo)
 	struct sctp_sndrcvinfo *outinfo;
 	struct sctp_rcvinfo *rcvinfo;
 	struct sctp_nxtinfo *nxtinfo;
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	WSACMSGHDR *cmh;
 #else
 	struct cmsghdr *cmh;
@@ -232,7 +232,7 @@ sctp_build_ctl_nchunk(struct sctp_inpcb *inp, struct sctp_sndrcvinfo *sinfo)
 	SCTP_BUF_LEN(ret) = 0;
 
 	/* We need a CMSG header followed by the struct */
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 	cmh = mtod(ret, WSACMSGHDR *);
 #else
 	cmh = mtod(ret, struct cmsghdr *);
@@ -255,7 +255,7 @@ sctp_build_ctl_nchunk(struct sctp_inpcb *inp, struct sctp_sndrcvinfo *sinfo)
 		rcvinfo->rcv_cumtsn = sinfo->sinfo_cumtsn;
 		rcvinfo->rcv_context = sinfo->sinfo_context;
 		rcvinfo->rcv_assoc_id = sinfo->sinfo_assoc_id;
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 		cmh = (WSACMSGHDR *)((caddr_t)cmh + CMSG_SPACE(sizeof(struct sctp_rcvinfo)));
 #else
 		cmh = (struct cmsghdr *)((caddr_t)cmh + CMSG_SPACE(sizeof(struct sctp_rcvinfo)));
@@ -281,7 +281,7 @@ sctp_build_ctl_nchunk(struct sctp_inpcb *inp, struct sctp_sndrcvinfo *sinfo)
 		nxtinfo->nxt_ppid = seinfo->serinfo_next_ppid;
 		nxtinfo->nxt_length = seinfo->serinfo_next_length;
 		nxtinfo->nxt_assoc_id = seinfo->serinfo_next_aid;
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 		cmh = (WSACMSGHDR *)((caddr_t)cmh + CMSG_SPACE(sizeof(struct sctp_nxtinfo)));
 #else
 		cmh = (struct cmsghdr *)((caddr_t)cmh + CMSG_SPACE(sizeof(struct sctp_nxtinfo)));

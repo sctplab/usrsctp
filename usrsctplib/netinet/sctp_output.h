@@ -148,7 +148,7 @@ void sctp_move_chunks_from_net(struct sctp_tcb *stcb, struct sctp_nets *net);
 int
 sctp_output(struct sctp_inpcb *, struct mbuf *, struct sockaddr *,
     struct mbuf *, struct thread *, int);
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
 sctp_output(struct sctp_inpcb *, struct mbuf *, struct sockaddr *,
     struct mbuf *, PKTHREAD, int);
 #else
@@ -232,7 +232,7 @@ sctp_sosend(struct socket *so,
     int flags,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
     struct thread *p
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
     PKTHREAD p
 #else
 #if defined(__Userspace__)

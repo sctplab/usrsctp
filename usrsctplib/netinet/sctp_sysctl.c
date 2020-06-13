@@ -152,7 +152,7 @@ sctp_init_sysctls()
 	SCTP_BASE_SYSCTL(sctp_sendall_limit) = SCTPCTL_SENDALL_LIMIT_DEFAULT;
 	SCTP_BASE_SYSCTL(sctp_diag_info_code) = SCTPCTL_DIAG_INFO_CODE_DEFAULT;
 #if defined(SCTP_LOCAL_TRACE_BUF)
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 	/* On Windows, the resource for global variables is limited. */
 	MALLOC(SCTP_BASE_SYSCTL(sctp_log), struct sctp_log *, sizeof(struct sctp_log), M_SYSCTL, M_ZERO);
 #else
@@ -176,7 +176,7 @@ sctp_init_sysctls()
 #endif
 }
 
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 void
 sctp_finish_sysctls()
 {
@@ -483,7 +483,7 @@ sctp_sysctl_handle_assoclist(SYSCTL_HANDLER_ARGS)
 		    (number_of_remote_addresses + number_of_associations) * sizeof(struct xsctp_raddr);
 
 		/* request some more memory than needed */
-#if !defined(__Windows__)
+#if !(defined(_WIN32) && !defined(__Userspace__))
 		req->oldidx = (n + n / 8);
 #else
 		req->dataidx = (n + n / 8);
@@ -695,12 +695,12 @@ sctp_sysctl_handle_udp_tunneling(SYSCTL_HANDLER_ARGS)
 	new = old;
 	error = sysctl_handle_int(oidp, &new, 0, req);
 	if ((error == 0) &&
-#if defined (__APPLE__) && !defined(__Userspace__)
+#if defined(__APPLE__) && !defined(__Userspace__)
 	    (req->newptr != USER_ADDR_NULL)) {
 #else
 	    (req->newptr != NULL)) {
 #endif
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 		SCTP_INP_INFO_WLOCK();
 		sctp_over_udp_restart();
 		SCTP_INP_INFO_WUNLOCK();
@@ -777,7 +777,7 @@ sctp_sysctl_handle_auth(SYSCTL_HANDLER_ARGS)
 	new = SCTP_BASE_SYSCTL(sctp_auth_enable);
 	error = sysctl_handle_int(oidp, &new, 0, req);
 	if ((error == 0) &&
-#if defined (__APPLE__) && !defined(__Userspace__)
+#if defined(__APPLE__) && !defined(__Userspace__)
 	    (req->newptr != USER_ADDR_NULL)) {
 #else
 	    (req->newptr != NULL)) {
@@ -814,7 +814,7 @@ sctp_sysctl_handle_asconf(SYSCTL_HANDLER_ARGS)
 	new = SCTP_BASE_SYSCTL(sctp_asconf_enable);
 	error = sysctl_handle_int(oidp, &new, 0, req);
 	if ((error == 0) &&
-#if defined (__APPLE__) && !defined(__Userspace__)
+#if defined(__APPLE__) && !defined(__Userspace__)
 	    (req->newptr != USER_ADDR_NULL)) {
 #else
 	    (req->newptr != NULL)) {
@@ -855,7 +855,7 @@ sctp_sysctl_handle_stats(SYSCTL_HANDLER_ARGS)
 	struct sctpstat sb_temp;
 #endif
 
-#if defined (__APPLE__) && !defined(__Userspace__)
+#if defined(__APPLE__) && !defined(__Userspace__)
 	if ((req->newptr != USER_ADDR_NULL) &&
 #else
 	if ((req->newptr != NULL) &&
@@ -1032,7 +1032,7 @@ sctp_sysctl_handle_trace_log(SYSCTL_HANDLER_ARGS)
 #endif
 	int error;
 
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 	error = SYSCTL_OUT(req, SCTP_BASE_SYSCTL(sctp_log), sizeof(struct sctp_log));
 #else
 	error = SYSCTL_OUT(req, &SCTP_BASE_SYSCTL(sctp_log), sizeof(struct sctp_log));
@@ -1051,7 +1051,7 @@ sctp_sysctl_handle_trace_log_clear(SYSCTL_HANDLER_ARGS)
 {
 #endif
 	int error = 0;
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 	int value = 0;
 
 	if (req->new_data == NULL) {
@@ -1226,7 +1226,7 @@ SYSCTL_PROC(_net_inet_sctp, OID_AUTO, stats, CTLFLAG_VNET|CTLTYPE_STRUCT|CTLFLAG
 SYSCTL_PROC(_net_inet_sctp, OID_AUTO, assoclist, CTLFLAG_VNET|CTLTYPE_OPAQUE|CTLFLAG_RD,
             NULL, 0, sctp_sysctl_handle_assoclist, "S,xassoc", "List of active SCTP associations");
 
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
 
 #define RANGECHK(var, min, max) \
 	if ((var) < (min)) { (var) = (min); } \

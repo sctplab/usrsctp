@@ -71,7 +71,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 362054 2020-06-11 13:34:09Z tuex
 #endif
 #endif
 
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 #if !defined(SCTP_LOCAL_TRACE_BUF)
 #include "eventrace_netinet.h"
 #include "sctputil.tmh" /* this is the file that will be auto generated */
@@ -4221,7 +4221,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		/* If the socket is gone we are out of here */
 		return;
 	}
-#if (defined(__FreeBSD__) || defined(__Windows__)) && !defined(__Userspace__)
+#if (defined(__FreeBSD__) || defined(_WIN32)) && !defined(__Userspace__)
 	if (stcb->sctp_socket->so_rcv.sb_state & SBS_CANTRCVMORE) {
 #else
 	if (stcb->sctp_socket->so_state & SS_CANTRCVMORE) {
@@ -5822,7 +5822,7 @@ sctp_get_ifa_hash_val(struct sockaddr *addr)
 		uint32_t hash_of_addr;
 
 		sin6 = (struct sockaddr_in6 *)addr;
-#if !defined(__Windows__) && !defined(__Userspace_os_FreeBSD) && !defined(__Userspace_os_Darwin) && !defined(__Userspace_os_Windows)
+#if !defined(_WIN32) && !(defined(__FreeBSD__) && defined(__Userspace__)) && !defined(__APPLE__)
 		hash_of_addr = (sin6->sin6_addr.s6_addr32[0] +
 				sin6->sin6_addr.s6_addr32[1] +
 				sin6->sin6_addr.s6_addr32[2] +
@@ -6180,7 +6180,7 @@ sctp_sorecvmsg(struct socket *so,
 	    (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE)) {
 		goto out;
 	}
-#if (defined(__FreeBSD__) || defined(__Windows__)) && !defined(__Userspace__)
+#if (defined(__FreeBSD__) || defined(_WIN32)) && !defined(__Userspace__)
 	if ((so->so_rcv.sb_state & SBS_CANTRCVMORE) && (so->so_rcv.sb_cc == 0)) {
 #else
 	if ((so->so_state & SS_CANTRCVMORE) && (so->so_rcv.sb_cc == 0)) {
@@ -6852,7 +6852,7 @@ sctp_sorecvmsg(struct socket *so,
 			sctp_user_rcvd(stcb, &freed_so_far, hold_rlock, rwnd_req);
 		}
 	wait_some_more:
-#if (defined(__FreeBSD__) || defined(__Windows__)) && !defined(__Userspace__)
+#if (defined(__FreeBSD__) || defined(_WIN32)) && !defined(__Userspace__)
 		if (so->so_rcv.sb_state & SBS_CANTRCVMORE) {
 			goto release;
 		}
@@ -7255,7 +7255,7 @@ sctp_soreceive(	struct socket *so,
 #else
 		if (from) {
 #endif
-#if (defined(__FreeBSD__) || defined(__Windows__)) && !defined(__Userspace__)
+#if (defined(__FreeBSD__) || defined(_WIN32)) && !defined(__Userspace__)
 			*psa = sodupsockaddr(from, M_NOWAIT);
 #else
 			*psa = dup_sockaddr(from, mp0 == 0);
@@ -7271,7 +7271,7 @@ sctp_soreceive(	struct socket *so,
 }
 
 
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 /*
  * General routine to allocate a hash table with control of memory flags.
  * is in 7.0 and beyond for sure :-)
@@ -7675,7 +7675,7 @@ sctp_bindx_add_address(struct socket *so, struct sctp_inpcb *inp,
 	}
 #endif
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND) {
-#if !(defined(__Windows__) || defined(__Userspace__))
+#if !(defined(_WIN32) || defined(__Userspace__))
 		if (p == NULL) {
 			/* Can't get proc for Net/Open BSD */
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTPUTIL, EINVAL);
@@ -7858,7 +7858,7 @@ sctp_local_addr_count(struct sctp_tcb *stcb)
 #if defined(INET)
 	int ipv4_local_scope, ipv4_addr_legal;
 #endif
-#if defined (INET6)
+#if defined(INET6)
 	int local_scope, site_scope, ipv6_addr_legal;
 #endif
 #if defined(__Userspace__)
@@ -8025,7 +8025,7 @@ sctp_log_trace(uint32_t subsys, const char *str SCTP_UNUSED, uint32_t a, uint32_
 {
 	uint32_t saveindex, newindex;
 
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 	if (SCTP_BASE_SYSCTL(sctp_log) == NULL) {
 		return;
 	}

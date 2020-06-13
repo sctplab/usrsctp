@@ -46,7 +46,6 @@ set(CMAKE_MACOSX_RPATH 		1)
 include(CheckCCompilerFlag)
 
 add_definitions(-D__Userspace__)
-add_definitions(-D__Userspace_os_${CMAKE_SYSTEM_NAME})
 add_definitions(-DSCTP_SIMPLE_ALLOCATOR)
 add_definitions(-DSCTP_PROCESS_LEVEL_LOCKS)
 

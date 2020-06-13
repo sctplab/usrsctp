@@ -370,7 +370,7 @@ struct sctp_tcb;
 struct sctphdr;
 
 
-#if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(_WIN32) || defined(__Userspace__)
 void sctp_close(struct socket *so);
 #else
 int sctp_detach(struct socket *so);
@@ -416,7 +416,7 @@ void sctp_notify(struct sctp_inpcb *, struct sctp_tcb *, struct sctp_nets *,
 #if !defined(__FreeBSD__) && !defined(__Userspace__)
 void sctp_finish(void);
 #endif
-#if defined(__FreeBSD__) || defined(__Windows__) || defined(__Userspace__)
+#if defined(__FreeBSD__) || defined(_WIN32) || defined(__Userspace__)
 int sctp_flush(struct socket *, int);
 #endif
 int sctp_shutdown(struct socket *);
@@ -436,7 +436,7 @@ int sctp_peeraddr(struct socket *, struct mbuf *);
 #endif
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 int sctp_listen(struct socket *, int, struct thread *);
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
 int sctp_listen(struct socket *, int, PKTHREAD);
 #elif defined(__Userspace__)
 int sctp_listen(struct socket *, int, struct proc *);

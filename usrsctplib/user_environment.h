@@ -33,12 +33,12 @@
 /* __Userspace__ */
 #include <sys/types.h>
 
-#ifdef __Userspace_os_FreeBSD
+#ifdef __FreeBSD__
 #ifndef _SYS_MUTEX_H_
 #include <sys/mutex.h>
 #endif
 #endif
-#if defined (__Userspace_os_Windows)
+#if defined(_WIN32)
 #include "netinet/sctp_os_userspace.h"
 #endif
 
@@ -83,7 +83,7 @@ int read_random(void *, int);
 /* Source ip_output.c. extern'd in ip_var.h */
 extern u_short ip_id;
 
-#if defined(__Userspace_os_Linux)
+#if defined(__linux__)
 #define IPV6_VERSION            0x60
 #endif
 

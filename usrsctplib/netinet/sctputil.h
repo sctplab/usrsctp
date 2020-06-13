@@ -335,7 +335,7 @@ do { \
 void sctp_over_udp_stop(void);
 int sctp_over_udp_start(void);
 #endif
-#if defined(__Windows__)
+#if defined(_WIN32) && !defined(__Userspace__)
 void sctp_over_udp_restart(void);
 #endif
 
