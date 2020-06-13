@@ -60,7 +60,7 @@
 #include <net/route.h>
 #endif
 /* local macros and datatypes used to get IP addresses system independently */
-#if !defined(IP_PKTINFO ) && ! defined(IP_RECVDSTADDR)
+#if !defined(IP_PKTINFO ) && !defined(IP_RECVDSTADDR)
 # error "Can't determine socket option to use to get UDP IP"
 #endif
 
