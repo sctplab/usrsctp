@@ -94,7 +94,6 @@ typedef __int8           int8_t;
 #ifndef _SIZE_T_DEFINED
 #typedef __int32         size_t;
 #endif
-typedef unsigned __int32 u_long;
 typedef unsigned __int32 u_int;
 typedef unsigned __int32 u_int32_t;
 typedef unsigned __int16 u_int16_t;
