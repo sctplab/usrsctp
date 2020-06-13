@@ -40,7 +40,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_constants.h 362107 2020-06-12 16:40:10
 #ifndef _NETINET_SCTP_CONSTANTS_H_
 #define _NETINET_SCTP_CONSTANTS_H_
 
-#if defined(_Win32) && defined(__Userspace__)
+#if defined(_WIN32) && defined(__Userspace__)
 extern void getwintimeofday(struct timeval *tv);
 #endif
 
