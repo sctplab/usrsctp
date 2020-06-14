@@ -77,7 +77,7 @@ read_random(void *buf, int count)
 	memset(buf, 'A', count);
 	return (count);
 }
-#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
 void
 init_random(void)
 {
