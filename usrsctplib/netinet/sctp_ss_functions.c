@@ -30,7 +30,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_ss_functions.c 358028 2020-02-17 18:05:03Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_ss_functions.c 362173 2020-06-14 09:50:00Z tuexen $");
 #endif
 
 #include <netinet/sctp_pcb.h>
@@ -770,8 +770,8 @@ sctp_ss_fb_scheduled(struct sctp_tcb *stcb, struct sctp_nets *net SCTP_UNUSED,
  */
 static void
 sctp_ss_fcfs_add(struct sctp_tcb *stcb, struct sctp_association *asoc,
-                 struct sctp_stream_out *strq, struct sctp_stream_queue_pending *sp,
-                 int holds_lock);
+                 struct sctp_stream_out *strq SCTP_UNUSED,
+                 struct sctp_stream_queue_pending *sp, int holds_lock);
 
 static void
 sctp_ss_fcfs_init(struct sctp_tcb *stcb, struct sctp_association *asoc,

@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 361895 2020-06-07 14:39:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 362173 2020-06-14 09:50:00Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -72,7 +72,7 @@ sctp_add_chk_to_control(struct sctp_queued_to_read *control,
 			struct sctp_stream_in *strm,
 			struct sctp_tcb *stcb,
 			struct sctp_association *asoc,
-			struct sctp_tmit_chunk *chk, int lock_held);
+			struct sctp_tmit_chunk *chk, int hold_rlock);
 
 
 void

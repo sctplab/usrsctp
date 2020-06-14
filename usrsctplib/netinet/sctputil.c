@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 362054 2020-06-11 13:34:09Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 362173 2020-06-14 09:50:00Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5762,10 +5762,6 @@ sctp_find_ifa_in_ep(struct sctp_inpcb *inp, struct sockaddr *addr,
 			if (((struct sockaddr_in *)addr)->sin_addr.s_addr ==
 			    laddr->ifa->address.sin.sin_addr.s_addr) {
 				/* found him. */
-				if (holds_lock == 0) {
-					SCTP_INP_RUNLOCK(inp);
-				}
-				return (laddr->ifa);
 				break;
 			}
 		}
@@ -5775,10 +5771,6 @@ sctp_find_ifa_in_ep(struct sctp_inpcb *inp, struct sockaddr *addr,
 			if (SCTP6_ARE_ADDR_EQUAL((struct sockaddr_in6 *)addr,
 						 &laddr->ifa->address.sin6)) {
 				/* found him. */
-				if (holds_lock == 0) {
-					SCTP_INP_RUNLOCK(inp);
-				}
-				return (laddr->ifa);
 				break;
 			}
 		}
@@ -5787,10 +5779,6 @@ sctp_find_ifa_in_ep(struct sctp_inpcb *inp, struct sockaddr *addr,
 		if (addr->sa_family == AF_CONN) {
 			if (((struct sockaddr_conn *)addr)->sconn_addr == laddr->ifa->address.sconn.sconn_addr) {
 				/* found him. */
-				if (holds_lock == 0) {
-					SCTP_INP_RUNLOCK(inp);
-				}
-				return (laddr->ifa);
 				break;
 			}
 		}
@@ -5799,7 +5787,7 @@ sctp_find_ifa_in_ep(struct sctp_inpcb *inp, struct sockaddr *addr,
 	if (holds_lock == 0) {
 		SCTP_INP_RUNLOCK(inp);
 	}
-	return (NULL);
+	return (laddr->ifa);
 }
 
 uint32_t
@@ -5894,9 +5882,6 @@ sctp_find_ifa_by_addr(struct sockaddr *addr, uint32_t vrf_id, int holds_lock)
 			if (((struct sockaddr_in *)addr)->sin_addr.s_addr ==
 			    sctp_ifap->address.sin.sin_addr.s_addr) {
 				/* found him. */
-				if (holds_lock == 0)
-					SCTP_IPI_ADDR_RUNLOCK();
-				return (sctp_ifap);
 				break;
 			}
 		}
@@ -5906,9 +5891,6 @@ sctp_find_ifa_by_addr(struct sockaddr *addr, uint32_t vrf_id, int holds_lock)
 			if (SCTP6_ARE_ADDR_EQUAL((struct sockaddr_in6 *)addr,
 						 &sctp_ifap->address.sin6)) {
 				/* found him. */
-				if (holds_lock == 0)
-					SCTP_IPI_ADDR_RUNLOCK();
-				return (sctp_ifap);
 				break;
 			}
 		}
@@ -5917,9 +5899,6 @@ sctp_find_ifa_by_addr(struct sockaddr *addr, uint32_t vrf_id, int holds_lock)
 		if (addr->sa_family == AF_CONN) {
 			if (((struct sockaddr_conn *)addr)->sconn_addr == sctp_ifap->address.sconn.sconn_addr) {
 				/* found him. */
-				if (holds_lock == 0)
-					SCTP_IPI_ADDR_RUNLOCK();
-				return (sctp_ifap);
 				break;
 			}
 		}
@@ -5927,7 +5906,7 @@ sctp_find_ifa_by_addr(struct sockaddr *addr, uint32_t vrf_id, int holds_lock)
 	}
 	if (holds_lock == 0)
 		SCTP_IPI_ADDR_RUNLOCK();
-	return (NULL);
+	return (sctp_ifap);
 }
 
 static void

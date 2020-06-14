@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 362054 2020-06-11 13:34:09Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 362173 2020-06-14 09:50:00Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5569,7 +5569,6 @@ sctp_arethere_unrecognized_parameters(struct mbuf *in_initpkt,
 				}
 			}
 			return (op_err);
-			break;
 		}
 		default:
 			/*
