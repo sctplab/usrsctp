@@ -2625,6 +2625,27 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 		 */
 		return (NULL);
 	}
+#if defined(__Userspace__)
+	/*
+	 * Recover the AF_CONN addresses within the cookie.
+	 * This needs to be done in the buffer provided for later processing
+	 * of the cookie and in the mbuf chain for HMAC validation.
+	 */
+	if ((cookie->addr_type == SCTP_CONN_ADDRESS) && (src->sa_family == AF_CONN)) {
+		struct sockaddr_conn *sconnp = (struct sockaddr_conn *)src;
+
+		memcpy(cookie->address, &sconnp->sconn_addr , sizeof(void *));
+		m_copyback(m, cookie_offset + offsetof(struct sctp_state_cookie, address),
+		           (int)sizeof(void *), (caddr_t)&sconnp->sconn_addr);
+	}
+	if ((cookie->laddr_type == SCTP_CONN_ADDRESS) && (dst->sa_family == AF_CONN)) {
+		struct sockaddr_conn *sconnp = (struct sockaddr_conn *)dst;
+
+		memcpy(cookie->laddress, &sconnp->sconn_addr , sizeof(void *));
+		m_copyback(m, cookie_offset + offsetof(struct sctp_state_cookie, laddress),
+		           (int)sizeof(void *), (caddr_t)&sconnp->sconn_addr);
+	}
+#endif
 	/*
 	 * split off the signature into its own mbuf (since it should not be
 	 * calculated in the sctp_hmac_m() call).

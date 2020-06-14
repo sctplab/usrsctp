@@ -6637,6 +6637,27 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			  (uint8_t *)inp->sctp_ep.secret_key[(int)(inp->sctp_ep.current_secret_number)],
 			  SCTP_SECRET_SIZE, m_cookie, sizeof(struct sctp_paramhdr),
 			  (uint8_t *)signature, SCTP_SIGNATURE_SIZE);
+#if defined(__Userspace__)
+	/*
+	 * Don't put AF_CONN addresses on the wire, in case this is critical
+	 * for the application. However, they are protected by the HMAC and
+	 * need to be reconstructed before checking the HMAC.
+	 * Clearing is only done in the mbuf chain, since the local stc is
+	 * not used anymore.
+	 */
+	if (stc.addr_type == SCTP_CONN_ADDRESS) {
+		const void *p = NULL;
+
+		m_copyback(m_cookie, sizeof(struct sctp_paramhdr) + offsetof(struct sctp_state_cookie, address),
+		           (int)sizeof(void *), (caddr_t)&p);
+	}
+	if (stc.laddr_type == SCTP_CONN_ADDRESS) {
+		const void *p = NULL;
+
+		m_copyback(m_cookie, sizeof(struct sctp_paramhdr) + offsetof(struct sctp_state_cookie, laddress),
+		           (int)sizeof(void *), (caddr_t)&p);
+	}
+#endif
 	/*
 	 * We sifa 0 here to NOT set IP_DF if its IPv4, we ignore the return
 	 * here since the timer will drive a retranmission.
