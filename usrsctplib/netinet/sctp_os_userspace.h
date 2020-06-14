@@ -480,6 +480,8 @@ struct sx {int dummy;};
 
 /* for close, etc. */
 #include <unistd.h>
+/* for gettimeofday */
+#include <sys/time.h>
 #endif
 
 /* lots of errno's used and needed in userspace */
