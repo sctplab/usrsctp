@@ -2874,9 +2874,6 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	int send_count;
 	struct ip *ip;
 	struct udphdr *udp;
-#if !defined(_WIN32)
-	int res;
-#endif
 	struct sockaddr_in dst;
 #if defined(_WIN32)
 	WSAMSG win_msg_hdr;
@@ -2976,12 +2973,12 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	msg_hdr.msg_flags = 0;
 
 	if ((!use_udp_tunneling) && (SCTP_BASE_VAR(userspace_rawsctp) != -1)) {
-		if ((res = sendmsg(SCTP_BASE_VAR(userspace_rawsctp), &msg_hdr, MSG_DONTWAIT)) != send_len) {
+		if (sendmsg(SCTP_BASE_VAR(userspace_rawsctp), &msg_hdr, MSG_DONTWAIT) < 0) {
 			*result = errno;
 		}
 	}
 	if ((use_udp_tunneling) && (SCTP_BASE_VAR(userspace_udpsctp) != -1)) {
-		if ((res = sendmsg(SCTP_BASE_VAR(userspace_udpsctp), &msg_hdr, MSG_DONTWAIT)) != send_len) {
+		if (sendmsg(SCTP_BASE_VAR(userspace_udpsctp), &msg_hdr, MSG_DONTWAIT) < 0) {
 			*result = errno;
 		}
 	}
@@ -3028,9 +3025,6 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	int send_count;
 	struct ip6_hdr *ip6;
 	struct udphdr *udp;
-#if !defined(_WIN32)
-	int res;
-#endif
 	struct sockaddr_in6 dst;
 #if defined(_WIN32)
 	WSAMSG win_msg_hdr;
@@ -3130,12 +3124,12 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	msg_hdr.msg_flags = 0;
 
 	if ((!use_udp_tunneling) && (SCTP_BASE_VAR(userspace_rawsctp6) != -1)) {
-		if ((res = sendmsg(SCTP_BASE_VAR(userspace_rawsctp6), &msg_hdr, MSG_DONTWAIT)) != send_len) {
+		if (sendmsg(SCTP_BASE_VAR(userspace_rawsctp6), &msg_hdr, MSG_DONTWAIT)< 0) {
 			*result = errno;
 		}
 	}
 	if ((use_udp_tunneling) && (SCTP_BASE_VAR(userspace_udpsctp6) != -1)) {
-		if ((res = sendmsg(SCTP_BASE_VAR(userspace_udpsctp6), &msg_hdr, MSG_DONTWAIT)) != send_len) {
+		if (sendmsg(SCTP_BASE_VAR(userspace_udpsctp6), &msg_hdr, MSG_DONTWAIT) < 0) {
 			*result = errno;
 		}
 	}
