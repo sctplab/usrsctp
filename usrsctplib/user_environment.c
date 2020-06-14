@@ -96,12 +96,15 @@ read_random(void *buf, int count)
 void
 init_random(void)
 {
+	struct timeval now;
 	unsigned int seed;
 
-#if defined(_WIN32) || defined(__native_client__)
-	seed = (unsigned int)time(NULL);
-#else
-	seed = getpid();
+	(void)SCTP_GETTIME_TIMEVAL(&now);
+	seed = 0;
+	seed |= (unsigned int)now.tv_sec;
+	seed |= (unsigned int)now.tv_usec;
+#if !defined(_WIN32) &&! defined(__native_client__)
+	seed |= getpid();
 #endif
 #if defined(_WIN32) || defined(__native_client__)
 	srand(seed);
