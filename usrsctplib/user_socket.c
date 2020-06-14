@@ -2869,7 +2869,6 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	struct mbuf *m;
 	struct mbuf *m_orig;
 	int iovcnt;
-	int send_len;
 	int len;
 	int send_count;
 	struct ip *ip;
@@ -2944,7 +2943,6 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 		m_adj(m, sizeof(struct ip) + sizeof(struct udphdr));
 	}
 
-	send_len = SCTP_HEADER_LEN(m); /* length of entire packet */
 	send_count = 0;
 	for (iovcnt = 0; m != NULL && iovcnt < MAXLEN_MBUF_CHAIN; m = m->m_next, iovcnt++) {
 #if !defined(_WIN32)
@@ -2995,14 +2993,10 @@ sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
 	if ((!use_udp_tunneling) && (SCTP_BASE_VAR(userspace_rawsctp) != -1)) {
 		if (WSASendTo(SCTP_BASE_VAR(userspace_rawsctp), (LPWSABUF) send_iovec, iovcnt, &win_sent_len, win_msg_hdr.dwFlags, win_msg_hdr.name, (int) win_msg_hdr.namelen, NULL, NULL) != 0) {
 			*result = WSAGetLastError();
-		} else if ((int)win_sent_len != send_len) {
-			*result = WSAGetLastError();
 		}
 	}
 	if ((use_udp_tunneling) && (SCTP_BASE_VAR(userspace_udpsctp) != -1)) {
 		if (WSASendTo(SCTP_BASE_VAR(userspace_udpsctp), (LPWSABUF) send_iovec, iovcnt, &win_sent_len, win_msg_hdr.dwFlags, win_msg_hdr.name, (int) win_msg_hdr.namelen, NULL, NULL) != 0) {
-			*result = WSAGetLastError();
-		} else if ((int)win_sent_len != send_len) {
 			*result = WSAGetLastError();
 		}
 	}
@@ -3020,7 +3014,6 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	struct mbuf *m;
 	struct mbuf *m_orig;
 	int iovcnt;
-	int send_len;
 	int len;
 	int send_count;
 	struct ip6_hdr *ip6;
@@ -3096,7 +3089,6 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	  m_adj(m, sizeof(struct ip6_hdr));
 	}
 
-	send_len = SCTP_HEADER_LEN(m); /* length of entire packet */
 	send_count = 0;
 	for (iovcnt = 0; m != NULL && iovcnt < MAXLEN_MBUF_CHAIN; m = m->m_next, iovcnt++) {
 #if !defined(_WIN32)
@@ -3146,14 +3138,10 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	if ((!use_udp_tunneling) && (SCTP_BASE_VAR(userspace_rawsctp6) != -1)) {
 		if (WSASendTo(SCTP_BASE_VAR(userspace_rawsctp6), (LPWSABUF) send_iovec, iovcnt, &win_sent_len, win_msg_hdr.dwFlags, win_msg_hdr.name, (int) win_msg_hdr.namelen, NULL, NULL) != 0) {
 			*result = WSAGetLastError();
-		} else if ((int)win_sent_len != send_len) {
-			*result = WSAGetLastError();
 		}
 	}
 	if ((use_udp_tunneling) && (SCTP_BASE_VAR(userspace_udpsctp6) != -1)) {
 		if (WSASendTo(SCTP_BASE_VAR(userspace_udpsctp6), (LPWSABUF) send_iovec, iovcnt, &win_sent_len, win_msg_hdr.dwFlags, win_msg_hdr.name, (int) win_msg_hdr.namelen, NULL, NULL) != 0) {
-			*result = WSAGetLastError();
-		} else if ((int)win_sent_len != send_len) {
 			*result = WSAGetLastError();
 		}
 	}
