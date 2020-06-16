@@ -192,7 +192,7 @@ handle_connection(void *arg)
 			snp = (union sctp_notification *)buf;
 			if (snp->sn_header.sn_type == SCTP_PEER_ADDR_CHANGE) {
 				spc = &snp->sn_paddr_change;
-				printf("SCTP_PEER_ADDR_CHANGE: state=%d, error=%d\n",spc->spc_state, spc->spc_error);
+				printf("SCTP_PEER_ADDR_CHANGE: state=%u, error=%u\n",spc->spc_state, spc->spc_error);
 			}
 		} else {
 			if (very_verbose) {

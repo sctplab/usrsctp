@@ -208,7 +208,7 @@ handle_accept(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 	meta_accepted->par_role = meta_listening->par_role;
 	meta_accepted->par_stats_human = meta_listening->par_stats_human;
 	meta_accepted->buffer = malloc(BUFFERSIZE);
-	
+
 	if (!meta_accepted->buffer) {
 		printf("malloc() failed!\n");
 		exit(EXIT_FAILURE);
@@ -257,13 +257,13 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 					snp = (union sctp_notification *)tsctp_meta->buffer;
 					if (snp->sn_header.sn_type == SCTP_PEER_ADDR_CHANGE) {
 						spc = &snp->sn_paddr_change;
-						printf("SCTP_PEER_ADDR_CHANGE: state=%d, error=%d\n",spc->spc_state, spc->spc_error);
+						printf("SCTP_PEER_ADDR_CHANGE: state=%u, error=%u\n",spc->spc_state, spc->spc_error);
 					}
 				}
 			} else {
 				if (par_very_verbose) {
 					if (infotype == SCTP_RECVV_RCVINFO) {
-						printf("Message received - %zd bytes - %s - sid %u - tsn %u %s\n",				
+						printf("Message received - %zd bytes - %s - sid %u - tsn %u %s\n",
 							n,
 							(rcvinfo->rcv_flags & SCTP_UNORDERED) ? "unordered" : "ordered",
 							rcvinfo->rcv_sid,
