@@ -159,6 +159,9 @@ print_addresses(struct socket *sock)
 {
 	int i, n;
 	struct sockaddr *addrs, *addr;
+#if !defined(HAVE_SA_LEN)
+	int sa_len;
+#endif
 
 	debug_printf("Addresses: ");
 	n = usrsctp_getladdrs(sock, 0, &addrs);
@@ -174,6 +177,9 @@ print_addresses(struct socket *sock)
 			sin = (struct sockaddr_in *)addr;
 			name = inet_ntop(AF_INET, &sin->sin_addr, buf, INET_ADDRSTRLEN);
 			fprintf(stderr, "%s:%d", name, ntohs(sin->sin_port));
+#if !defined(HAVE_SA_LEN)
+			sa_len = (int)sizeof(struct sockaddr_in);
+#endif
 			break;
 		}
 		case AF_INET6:
@@ -185,6 +191,9 @@ print_addresses(struct socket *sock)
 			sin6 = (struct sockaddr_in6 *)addr;
 			name = inet_ntop(AF_INET6, &sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
 			fprintf(stderr, "%s:%d", name, ntohs(sin6->sin6_port));
+#if !defined(HAVE_SA_LEN)
+			sa_len = (int)sizeof(struct sockaddr_in6);
+#endif
 			break;
 		}
 		case AF_CONN:
@@ -193,13 +202,23 @@ print_addresses(struct socket *sock)
 
 			sconn = (struct sockaddr_conn *)addr;
 			fprintf(stderr, "%p:%d", sconn->sconn_addr, ntohs(sconn->sconn_port));
+#if !defined(HAVE_SA_LEN)
+			sa_len = (int)sizeof(struct sockaddr_conn);
+#endif
 			break;
 		}
 		default:
 			fprintf(stderr, "Unknown family: %d", addr->sa_family);
+#if !defined(HAVE_SA_LEN)
+			sa_len = (int)sizeof(struct sockaddr);
+#endif
 			break;
 		}
+#if !defined(HAVE_SA_LEN)
+		addr = (struct sockaddr *)((char *)addr + sa_len);
+#else
 		addr = (struct sockaddr *)((caddr_t)addr + addr->sa_len);
+#endif
 		if (i != n - 1) {
 			fprintf(stderr, ",");
 		}
