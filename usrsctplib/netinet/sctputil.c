@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 362173 2020-06-14 09:50:00Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 362277 2020-06-17 15:27:45Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1799,7 +1799,7 @@ sctp_timeout_handler(void *t)
 #endif
 
 	/* sanity checks... */
-	KASSERT(tmr->self == tmr,
+	KASSERT(tmr->self == NULL || tmr->self == tmr,
 	        ("sctp_timeout_handler: tmr->self corrupted"));
 	KASSERT(SCTP_IS_TIMER_TYPE_VALID(tmr->type),
 	        ("sctp_timeout_handler: invalid timer type %d", tmr->type));
