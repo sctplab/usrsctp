@@ -3307,9 +3307,10 @@ void
 usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bits)
 {
 	struct sockaddr_conn src, dst;
-	struct mbuf *m;
+	struct mbuf *m, *mm;
 	struct sctphdr *sh;
 	struct sctp_chunkhdr *ch;
+	size_t remaining;
 
 	SCTP_STAT_INCR(sctps_recvpackets);
 	SCTP_STAT_INCR_COUNTER64(sctps_inpackets);
@@ -3328,6 +3329,16 @@ usrsctp_conninput(void *addr, const void *buffer, size_t length, uint8_t ecn_bit
 	if ((m = sctp_get_mbuf_for_msg((unsigned int)length, 1, M_NOWAIT, 0, MT_DATA)) == NULL) {
 		return;
 	}
+	/* Set the lengths fields of the mbuf chain.
+	 * This is expected by m_copyback().
+	 */
+	remaining = length;
+	for (mm = m; mm != NULL; mm = mm->m_next) {
+		mm->m_len = min(M_SIZE(mm), remaining);
+		m->m_pkthdr.len += mm->m_len;
+		remaining -= mm->m_len;
+	}
+	KASSERT(remaining == 0, ("usrsctp_conninput: %zu bytes left", remaining));
 	m_copyback(m, 0, (int)length, (caddr_t)buffer);
 	if (SCTP_BUF_LEN(m) < (int)(sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr))) {
 		if ((m = m_pullup(m, sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr))) == NULL) {

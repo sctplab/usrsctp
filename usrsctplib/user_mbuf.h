@@ -405,4 +405,9 @@ extern int max_protohdr; /* Size of largest protocol layer header. See user_mbuf
 	(m)->m_data += (MHLEN - (len)) & ~(sizeof(long) - 1);		\
 } while (0)
 
+#define M_SIZE(m)						\
+		(((m)->m_flags & M_EXT) ? (m)->m_ext.ext_size :	\
+		((m)->m_flags & M_PKTHDR) ? MHLEN :		\
+		MLEN)
+
 #endif
