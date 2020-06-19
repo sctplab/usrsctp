@@ -117,7 +117,6 @@ char Usage[] =
 "        -l             message length\n"
 "        -L             bind to local IP (default INADDR_ANY)\n"
 "        -n             number of messages sent (0 means infinite)/received\n"
-"        -D             turns Nagle off\n"
 "        -p             port number\n"
 "        -P             partial reliability policy to use (0=none (default), 1=ttl, 2=rtx, 3=buf)\n"
 "        -R             socket recv buffer\n"
