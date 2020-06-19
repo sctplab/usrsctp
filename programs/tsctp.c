@@ -234,9 +234,9 @@ handle_connection(void *arg)
 			}
 		}
 		if (round_duration > 0 && round_timeout <= time(NULL)) {
-			gettimeofday(&now, NULL);
-			timersub(&now, &round_start, &diff_time);
-			seconds = diff_time.tv_sec + (double)diff_time.tv_usec/1000000.0;
+			gettimeofday(&time_now, NULL);
+			timersub(&time_now, &round_start, &time_diff);
+			seconds = time_diff.tv_sec + (double)time_diff.tv_usec/1000000.0;
 			fprintf(stdout, "throughput for the last %f seconds: %f B/s\n", seconds, (double)round_bytes / seconds);
 
 			round_bytes = 0;
