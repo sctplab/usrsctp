@@ -586,8 +586,8 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 #define USER_ADDR_NULL	(NULL)		/* FIX ME: temp */
 #endif
 
-#if defined(SCTP_DEBUG)
 #include <netinet/sctp_constants.h>
+#if defined(SCTP_DEBUG)
 #define SCTPDBG(level, ...)					\
 {								\
 	do {							\
