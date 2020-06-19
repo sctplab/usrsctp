@@ -67,6 +67,8 @@ struct socket *psock = NULL;
 
 static struct timeval start_time;
 unsigned int runtime = 0;
+static int policy = 0;
+static unsigned int timetolive = 0;
 static unsigned long cb_messages = 0;
 static unsigned long long cb_first_length = 0;
 static unsigned long long cb_sum = 0;
@@ -234,7 +236,7 @@ handle_connection(void *arg)
 
 static int
 send_cb(struct socket *sock, uint32_t sb_free) {
-	struct sctp_sndinfo sndinfo;
+	struct sctp_sendv_spa sendv_spa;
 
 	if ((cb_messages == 0) && verbose) {
 		printf("Start sending ");
@@ -248,14 +250,44 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 		fflush(stdout);
 	}
 
-	sndinfo.snd_sid = 0;
-	sndinfo.snd_flags = 0;
+	sendv_spa.sendv_flags = SCTP_SEND_SNDINFO_VALID | SCTP_SEND_PRINFO_VALID;
+
+	sendv_spa.sendv_sndinfo.snd_sid = 0;
+	sendv_spa.sendv_sndinfo.snd_flags = 0;
 	if (unordered != 0) {
-		sndinfo.snd_flags |= SCTP_UNORDERED;
+		sendv_spa.sendv_sndinfo.snd_flags |= SCTP_UNORDERED;
 	}
-	sndinfo.snd_ppid = 0;
-	sndinfo.snd_context = 0;
-	sndinfo.snd_assoc_id = 0;
+	sendv_spa.sendv_sndinfo.snd_ppid = 0;
+	sendv_spa.sendv_sndinfo.snd_context = 0;
+	sendv_spa.sendv_sndinfo.snd_assoc_id = 0;
+
+	sendv_spa.sendv_prinfo.pr_policy = 0;
+	switch (policy) {
+	case 0:
+#ifdef SCTP_PR_SCTP_NONE
+		sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_NONE;
+#endif
+		break;
+	case 1:
+#ifdef SCTP_PR_SCTP_TTL
+		sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_TTL;
+#endif
+		break;
+#ifdef SCTP_PR_SCTP_RTX
+	case 2:
+		sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_RTX;
+		break;
+#endif
+#ifdef SCTP_PR_SCTP_BUF
+	case 3:
+		sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_BUF;
+		break;
+#endif
+	default:
+		printf("Unknown PR-SCTP policy.\n");
+		break;
+	}
+	sendv_spa.sendv_prinfo.pr_value = timetolive;
 
 	while (!done && ((number_of_messages == 0) || (cb_messages < (number_of_messages - 1)))) {
 		if (very_verbose) {
@@ -264,7 +296,7 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 
 		if (usrsctp_sendv(psock, buffer, length,
 		                  (struct sockaddr *) &remote_addr, 1,
-		                  (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
+		                  (void *)&sendv_spa, (socklen_t)sizeof(struct sctp_sendv_spa), SCTP_SENDV_SPA,
 		                  0) < 0) {
 			if (errno != EWOULDBLOCK && errno != EAGAIN) {
 				perror("usrsctp_sendv (cb)");
@@ -284,9 +316,9 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 			printf("Sending final message number %lu.\n", cb_messages + 1);
 		}
 
-		sndinfo.snd_flags |= SCTP_EOF;
+		sendv_spa.sendv_sndinfo.snd_flags |= SCTP_EOF;
 		if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
-		                  (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
+		                  (void *)&sendv_spa, (socklen_t)sizeof(struct sctp_sendv_spa), SCTP_SENDV_SPA,
 		                  0) < 0) {
 			if (errno != EWOULDBLOCK && errno != EAGAIN) {
 				perror("usrsctp_sendv (cb)");
@@ -361,7 +393,7 @@ int main(int argc, char **argv)
 	int nodelay = 0;
 	struct sctp_assoc_value av;
 	struct sctp_udpencaps encaps;
-	struct sctp_sndinfo sndinfo;
+	struct sctp_sendv_spa sendv_spa;
 	unsigned long messages = 0;
 #ifdef _WIN32
 	unsigned long srcAddr;
@@ -391,7 +423,7 @@ int main(int argc, char **argv)
 	memset((void *) &local_addr, 0, sizeof(struct sockaddr_in));
 
 #ifndef _WIN32
-	while ((c = getopt(argc, argv, "a:cp:l:E:f:L:n:R:S:T:uU:vVD")) != -1)
+	while ((c = getopt(argc, argv, "a:cDE:f:l:L:n:p:P:R:S:t:T:uU:vV")) != -1)
 		switch(c) {
 			case 'a':
 				ind.ssb_adaptation_ind = atoi(optarg);
@@ -407,6 +439,9 @@ int main(int argc, char **argv)
 				break;
 			case 'p':
 				port = atoi(optarg);
+				break;
+			case 'P':
+				policy = atoi(optarg);
 				break;
 			case 'E':
 				local_udp_port = atoi(optarg);
@@ -424,6 +459,9 @@ int main(int argc, char **argv)
 				break;
 			case 'S':
 				sndbufsize = atoi(optarg);
+				break;
+			case 't':
+				timetolive = atoi(optarg);
 				break;
 			case 'T':
 				runtime = atoi(optarg);
@@ -480,6 +518,14 @@ int main(int argc, char **argv)
 					opt = argv[optind];
 					port = atoi(opt);
 					break;
+				case 'P':
+					if (++optind >= argc) {
+						printf("%s", Usage);
+						exit(1);
+					}
+					opt = argv[optind];
+					policy = atoi(opt);
+					break;
 				case 'n':
 					if (++optind >= argc) {
 						printf("%s", Usage);
@@ -535,6 +581,14 @@ int main(int argc, char **argv)
 					}
 					opt = argv[optind];
 					sndbufsize = atoi(opt);
+					break;
+				case 't':
+					if (++optind >= argc) {
+						printf("%s", Usage);
+						exit(1);
+					}
+					opt = argv[optind];
+					timetolive = atoi(opt);
 					break;
 				case 'T':
 					if (++optind >= argc) {
@@ -762,14 +816,45 @@ int main(int argc, char **argv)
 #endif
 			}
 		} else {
-			sndinfo.snd_sid = 0;
-			sndinfo.snd_flags = 0;
+			sendv_spa.sendv_flags = SCTP_SEND_SNDINFO_VALID | SCTP_SEND_PRINFO_VALID;
+
+			sendv_spa.sendv_sndinfo.snd_sid = 0;
+			sendv_spa.sendv_sndinfo.snd_flags = 0;
 			if (unordered != 0) {
-				sndinfo.snd_flags |= SCTP_UNORDERED;
+				sendv_spa.sendv_sndinfo.snd_flags |= SCTP_UNORDERED;
 			}
-			sndinfo.snd_ppid = 0;
-			sndinfo.snd_context = 0;
-			sndinfo.snd_assoc_id = 0;
+			sendv_spa.sendv_sndinfo.snd_ppid = 0;
+			sendv_spa.sendv_sndinfo.snd_context = 0;
+			sendv_spa.sendv_sndinfo.snd_assoc_id = 0;
+
+			sendv_spa.sendv_prinfo.pr_policy = 0;
+			switch (policy) {
+			case 0:
+#ifdef SCTP_PR_SCTP_NONE
+				sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_NONE;
+#endif
+				break;
+			case 1:
+#ifdef SCTP_PR_SCTP_TTL
+				sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_TTL;
+#endif
+				break;
+#ifdef SCTP_PR_SCTP_RTX
+			case 2:
+				sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_RTX;
+				break;
+#endif
+#ifdef SCTP_PR_SCTP_BUF
+			case 3:
+				sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_BUF;
+				break;
+#endif
+			default:
+				printf("Unknown PR-SCTP policy.\n");
+				break;
+			}
+			sendv_spa.sendv_prinfo.pr_value = timetolive;
+
 			if (verbose) {
 				printf("Start sending ");
 				if (number_of_messages > 0) {
@@ -787,7 +872,7 @@ int main(int argc, char **argv)
 				}
 
 				if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
-				                  (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
+				                  (void *)&sendv_spa, (socklen_t)sizeof(struct sctp_sendv_spa), SCTP_SENDV_SPA,
 				                  0) < 0) {
 					perror("usrsctp_sendv");
 					exit(1);
@@ -798,9 +883,9 @@ int main(int argc, char **argv)
 				printf("Sending message number %lu.\n", messages + 1);
 			}
 
-			sndinfo.snd_flags |= SCTP_EOF;
+			sendv_spa.sendv_sndinfo.snd_flags |= SCTP_EOF;
 			if (usrsctp_sendv(psock, buffer, length, (struct sockaddr *) &remote_addr, 1,
-			                  (void *)&sndinfo, (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO,
+			                  (void *)&sendv_spa, (socklen_t)sizeof(struct sctp_sendv_spa), SCTP_SENDV_SPA,
 			                  0) < 0) {
 				perror("usrsctp_sendv");
 				exit(1);
