@@ -3035,7 +3035,9 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	m->local_hmacs = sctp_default_supported_hmaclist();
 	m->local_auth_chunks = sctp_alloc_chunklist();
 	if (inp->asconf_supported) {
-		sctp_auth_add_chunk(SCTP_ASCONF, m->local_auth_chunks);
+		if (!SCTP_BASE_SYSCTL(sctp_asconf_auth_nochk)) {
+			sctp_auth_add_chunk(SCTP_ASCONF, m->local_auth_chunks);
+		}
 		sctp_auth_add_chunk(SCTP_ASCONF_ACK, m->local_auth_chunks);
 	}
 	m->default_dscp = 0;
