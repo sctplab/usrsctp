@@ -110,6 +110,8 @@ char Usage[] =
 "Options:\n"
 "        -a             set adaptation layer indication\n"
 "        -c             use callback API\n"
+"        -d             time in seconds after which a status update is printed\n"
+"        -D             turns Nagle off\n"
 "        -E             local UDP encapsulation port (default 9899)\n"
 "        -f             fragmentation point\n"
 "        -l             message length\n"
@@ -135,10 +137,20 @@ char Usage[] =
 
 static int verbose, very_verbose;
 static unsigned int done;
+static unsigned int round_duration;
 
 void stop_sender(int sig)
 {
 	done = 1;
+}
+
+static time_t calc_round_timeout(struct timeval round_start)
+{
+	time_t round_timeout = round_start.tv_sec + round_duration;
+	if (round_start.tv_usec >= 500000) {
+		round_timeout++;
+	}
+	return round_timeout;
 }
 
 #ifdef _WIN32
@@ -171,6 +183,9 @@ handle_connection(void *arg)
 	unsigned long messages = 0;
 	unsigned long long first_length = 0;
 	unsigned long long sum = 0;
+	unsigned long round_bytes;
+	struct timeval round_start;
+	time_t round_timeout;
 
 	conn_sock = *(struct socket **)arg;
 
@@ -188,6 +203,11 @@ handle_connection(void *arg)
 	                 &infolen, &infotype, &flags);
 
 	gettimeofday(&time_start, NULL);
+	if (round_duration > 0) {
+		round_bytes = 0;
+		gettimeofday(&round_start, NULL);
+		round_timeout = calc_round_timeout(round_start);
+	}
 	while (n > 0) {
 		recv_calls++;
 		if (flags & MSG_NOTIFICATION) {
@@ -209,7 +229,20 @@ handle_connection(void *arg)
 				if (first_length == 0) {
 					first_length = sum;
 				}
+				if (round_duration > 0) {
+					round_bytes += first_length;
+				}
 			}
+		}
+		if (round_duration > 0 && round_timeout <= time(NULL)) {
+			gettimeofday(&now, NULL);
+			timersub(&now, &round_start, &diff_time);
+			seconds = diff_time.tv_sec + (double)diff_time.tv_usec/1000000.0;
+			fprintf(stdout, "throughput for the last %f seconds: %f B/s\n", seconds, (double)round_bytes / seconds);
+
+			round_bytes = 0;
+			gettimeofday(&round_start, NULL);
+			round_timeout = calc_round_timeout(round_start);
 		}
 		flags = 0;
 		len = (socklen_t)sizeof(struct sockaddr_in);
@@ -421,18 +454,25 @@ int main(int argc, char **argv)
 	verbose = 0;
 	very_verbose = 0;
 	srcAddr = htonl(INADDR_ANY);
+	round_duration = 0;
 
 	memset((void *) &remote_addr, 0, sizeof(struct sockaddr_in));
 	memset((void *) &local_addr, 0, sizeof(struct sockaddr_in));
 
 #ifndef _WIN32
-	while ((c = getopt(argc, argv, "a:cDE:f:l:L:n:p:P:R:S:t:T:uU:vV")) != -1)
+	while ((c = getopt(argc, argv, "a:cd:DE:f:l:L:n:p:P:R:S:t:T:uU:vV")) != -1)
 		switch(c) {
 			case 'a':
 				ind.ssb_adaptation_ind = atoi(optarg);
 				break;
 			case 'c':
 				use_cb = 1;
+				break;
+			case 'd':
+				round_duration = atoi(optarg);
+				break;
+			case 'D':
+				nodelay = 1;
 				break;
 			case 'l':
 				length = atoi(optarg);
@@ -482,9 +522,6 @@ int main(int argc, char **argv)
 			case 'V':
 				verbose = 1;
 				very_verbose = 1;
-				break;
-			case 'D':
-				nodelay = 1;
 				break;
 			default:
 				fprintf(stderr, "%s", Usage);
