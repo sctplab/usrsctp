@@ -2581,7 +2581,7 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 			}
 		}
 #endif
-		if (usrsctp_setsockopt(so, IPPROTO_SCTP, flags, sa, sa_len) != 0) {
+		if (usrsctp_setsockopt(so, IPPROTO_SCTP, flags, sa, (socklen_t)sa_len) != 0) {
 			return (-1);
 		}
 		sa = (struct sockaddr *)((caddr_t)sa + sa_len);
