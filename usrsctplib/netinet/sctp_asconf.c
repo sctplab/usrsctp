@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 362054 2020-06-11 13:34:09Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 362377 2020-06-19 12:35:29Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3217,7 +3217,7 @@ sctp_check_address_list(struct sctp_tcb *stcb, struct mbuf *m, int offset,
  */
 uint32_t
 sctp_addr_mgmt_ep_sa(struct sctp_inpcb *inp, struct sockaddr *sa,
-    uint32_t type, uint32_t vrf_id, struct sctp_ifa *sctp_ifap)
+                     uint32_t type, uint32_t vrf_id)
 {
 	struct sctp_ifa *ifa;
 	struct sctp_laddr *laddr, *nladdr;
@@ -3228,9 +3228,7 @@ sctp_addr_mgmt_ep_sa(struct sctp_inpcb *inp, struct sockaddr *sa,
 		return (EINVAL);
 	}
 #endif
-	if (sctp_ifap) {
-		ifa = sctp_ifap;
-	} else if (type == SCTP_ADD_IP_ADDRESS) {
+	if (type == SCTP_ADD_IP_ADDRESS) {
 		/* For an add the address MUST be on the system */
 		ifa = sctp_find_ifa_by_addr(sa, vrf_id, SCTP_ADDR_NOT_LOCKED);
 	} else if (type == SCTP_DEL_IP_ADDRESS) {

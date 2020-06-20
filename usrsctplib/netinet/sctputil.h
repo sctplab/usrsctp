@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 362090 2020-06-12 10:13:23Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.h 362448 2020-06-20 20:20:16Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_UTIL_H_
@@ -265,11 +265,10 @@ struct mbuf *sctp_generate_cause(uint16_t, char *);
 struct mbuf *sctp_generate_no_user_data_cause(uint32_t);
 
 void sctp_bindx_add_address(struct socket *so, struct sctp_inpcb *inp,
-			    struct sockaddr *sa, sctp_assoc_t assoc_id,
-			    uint32_t vrf_id, int *error, void *p);
-void sctp_bindx_delete_address(struct sctp_inpcb *inp,
-			       struct sockaddr *sa, sctp_assoc_t assoc_id,
-			       uint32_t vrf_id, int *error);
+                            struct sockaddr *sa, uint32_t vrf_id, int *error,
+                            void *p);
+void sctp_bindx_delete_address(struct sctp_inpcb *inp, struct sockaddr *sa,
+                               uint32_t vrf_id, int *error);
 
 int sctp_local_addr_count(struct sctp_tcb *stcb);
 

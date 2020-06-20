@@ -2420,7 +2420,6 @@ usrsctp_get_ulpinfo(struct socket *so, void **pulp_info)
 int
 usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 {
-	struct sctp_getaddresses *gaddrs;
 	struct sockaddr *sa;
 #ifdef INET
 	struct sockaddr_in *sin;
@@ -2429,9 +2428,9 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 	struct sockaddr_in6 *sin6;
 #endif
 	int i;
-	size_t argsz;
 #if defined(INET) || defined(INET6)
-	uint16_t sport = 0;
+	uint16_t sport;
+	bool fix_port;
 #endif
 
 	/* validate the flags */
@@ -2445,6 +2444,10 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 		errno = EINVAL;
 		return (-1);
 	}
+#if defined(INET) || defined(INET6)
+	sport = 0;
+	fix_port = false;
+#endif
 	/* First pre-screen the addresses */
 	sa = addrs;
 	for (i = 0; i < addrcnt; i++) {
@@ -2469,6 +2472,7 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 				} else {
 					/* save off the port */
 					sport = sin->sin_port;
+					fix_port = (i > 0);
 				}
 			}
 #ifndef HAVE_SA_LEN
@@ -2496,6 +2500,7 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 				} else {
 					/* save off the port */
 					sport = sin6->sin6_port;
+					fix_port = (i > 0);
 				}
 			}
 #ifndef HAVE_SA_LEN
@@ -2512,41 +2517,30 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 		sa = (struct sockaddr *)((caddr_t)sa + sa->sa_len);
 #endif
 	}
-	argsz = sizeof(struct sctp_getaddresses) +
-	        sizeof(struct sockaddr_storage);
-	if ((gaddrs = (struct sctp_getaddresses *)malloc(argsz)) == NULL) {
-		errno = ENOMEM;
-		return (-1);
-	}
 	sa = addrs;
 	for (i = 0; i < addrcnt; i++) {
 #ifndef HAVE_SA_LEN
 		size_t sa_len;
+
 #endif
-		memset(gaddrs, 0, argsz);
-		gaddrs->sget_assoc_id = 0;
 #ifdef HAVE_SA_LEN
-		memcpy(gaddrs->addr, sa, sa->sa_len);
 #if defined(INET) || defined(INET6)
-		if ((i == 0) && (sport != 0)) {
-			switch (gaddrs->addr->sa_family) {
+		if (fix_port) {
+			switch (sa->sa_family) {
 #ifdef INET
 			case AF_INET:
-				sin = (struct sockaddr_in *)gaddrs->addr;
-				sin->sin_port = sport;
+				((struct sockaddr_in *)sa)->sin_port = sport;
 				break;
 #endif
 #ifdef INET6
 			case AF_INET6:
-				sin6 = (struct sockaddr_in6 *)gaddrs->addr;
-				sin6->sin6_port = sport;
+				((struct sockaddr_in6 *)sa)->sin6_port = sport;
 				break;
 #endif
 			}
 		}
 #endif
-		if (usrsctp_setsockopt(so, IPPROTO_SCTP, flags, gaddrs, (socklen_t)argsz) != 0) {
-			free(gaddrs);
+		if (usrsctp_setsockopt(so, IPPROTO_SCTP, flags, sa, sa->sa_len) != 0) {
 			return (-1);
 		}
 		sa = (struct sockaddr *)((caddr_t)sa + sa->sa_len);
@@ -2566,38 +2560,33 @@ usrsctp_bindx(struct socket *so, struct sockaddr *addrs, int addrcnt, int flags)
 			sa_len = 0;
 			break;
 		}
-		memcpy(gaddrs->addr, sa, sa_len);
 		/*
 		 * Now, if there was a port mentioned, assure that the
 		 * first address has that port to make sure it fails or
 		 * succeeds correctly.
 		 */
 #if defined(INET) || defined(INET6)
-		if ((i == 0) && (sport != 0)) {
-			switch (gaddrs->addr->sa_family) {
+		if (fix_port) {
+			switch (sa->sa_family) {
 #ifdef INET
 			case AF_INET:
-				sin = (struct sockaddr_in *)gaddrs->addr;
-				sin->sin_port = sport;
+				((struct sockaddr_in *)sa)->sin_port = sport;
 				break;
 #endif
 #ifdef INET6
 			case AF_INET6:
-				sin6 = (struct sockaddr_in6 *)gaddrs->addr;
-				sin6->sin6_port = sport;
+				((struct sockaddr_in6 *)sa)->sin6_port = sport;
 				break;
 #endif
 			}
 		}
 #endif
-		if (usrsctp_setsockopt(so, IPPROTO_SCTP, flags, gaddrs, (socklen_t)argsz) != 0) {
-			free(gaddrs);
+		if (usrsctp_setsockopt(so, IPPROTO_SCTP, flags, sa, sa_len) != 0) {
 			return (-1);
 		}
 		sa = (struct sockaddr *)((caddr_t)sa + sa_len);
 #endif
 	}
-	free(gaddrs);
 	return (0);
 }
 
