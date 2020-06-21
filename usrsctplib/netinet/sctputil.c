@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 362454 2020-06-20 23:48:57Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 362462 2020-06-21 09:56:09Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7767,6 +7767,8 @@ sctp_bindx_delete_address(struct sctp_inpcb *inp,
 		} else {
 			addr_to_use = sa;
 		}
+#else
+		addr_to_use = sa;
 #endif
 		break;
 #endif
