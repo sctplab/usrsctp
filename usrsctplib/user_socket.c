@@ -2722,9 +2722,9 @@ usrsctp_getpaddrs(struct socket *so, sctp_assoc_t id, struct sockaddr **raddrs)
 		free(addrs);
 		return (-1);
 	}
-	*raddrs = (struct sockaddr *)&addrs->addr[0];
+	*raddrs = &addrs->addr[0].sa;
 	cnt = 0;
-	sa = (struct sockaddr *)&addrs->addr[0];
+	sa = &addrs->addr[0].sa;
 	lim = (caddr_t)addrs + opt_len;
 #ifdef HAVE_SA_LEN
 	while (((caddr_t)sa < lim) && (sa->sa_len > 0)) {
@@ -2761,7 +2761,7 @@ usrsctp_freepaddrs(struct sockaddr *addrs)
 	/* Take away the hidden association id */
 	void *fr_addr;
 
-	fr_addr = (void *)((caddr_t)addrs - sizeof(sctp_assoc_t));
+	fr_addr = (void *)((caddr_t)addrs - offsetof(struct sctp_getaddresses, addr));
 	/* Now free it */
 	free(fr_addr);
 }
@@ -2790,9 +2790,7 @@ usrsctp_getladdrs(struct socket *so, sctp_assoc_t id, struct sockaddr **raddrs)
 		errno = ENOTCONN;
 		return (-1);
 	}
-	opt_len = (socklen_t)(size_of_addresses +
-	                      sizeof(struct sockaddr_storage) +
-	                      sizeof(struct sctp_getaddresses));
+	opt_len = (socklen_t)(size_of_addresses + sizeof(struct sctp_getaddresses));
 	addrs = calloc(1, (size_t)opt_len);
 	if (addrs == NULL) {
 		errno = ENOMEM;
@@ -2805,9 +2803,9 @@ usrsctp_getladdrs(struct socket *so, sctp_assoc_t id, struct sockaddr **raddrs)
 		errno = ENOMEM;
 		return (-1);
 	}
-	*raddrs = (struct sockaddr *)&addrs->addr[0];
+	*raddrs = &addrs->addr[0].sa;
 	cnt = 0;
-	sa = (struct sockaddr *)&addrs->addr[0];
+	sa = &addrs->addr[0].sa;
 	lim = (caddr_t)addrs + opt_len;
 #ifdef HAVE_SA_LEN
 	while (((caddr_t)sa < lim) && (sa->sa_len > 0)) {
@@ -2844,7 +2842,7 @@ usrsctp_freeladdrs(struct sockaddr *addrs)
 	/* Take away the hidden association id */
 	void *fr_addr;
 
-	fr_addr = (void *)((caddr_t)addrs - sizeof(sctp_assoc_t));
+	fr_addr = (void *)((caddr_t)addrs - offsetof(struct sctp_getaddresses, addr));
 	/* Now free it */
 	free(fr_addr);
 }
