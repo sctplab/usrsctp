@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 362155 2020-06-13 21:23:26Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 362497 2020-06-22 14:01:31Z markj $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -76,12 +76,10 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 362155 2020-06-13 21:23:26Z tuex
 #endif
 #endif
 
-#if defined(__FreeBSD__) && !defined(__Userspace__)
-VNET_DEFINE(struct sctp_base_info, system_base_info);
-#else
+#if !defined(__FreeBSD__) || defined(__Userspace__)
 struct sctp_base_info system_base_info;
-#endif
 
+#endif
 /* FIX: we don't handle multiple link local scopes */
 /* "scopeless" replacement IN6_ARE_ADDR_EQUAL */
 #ifdef INET6
