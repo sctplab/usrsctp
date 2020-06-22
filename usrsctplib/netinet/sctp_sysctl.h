@@ -52,6 +52,7 @@ struct sctp_sysctl {
 	uint32_t sctp_pr_enable;
 	uint32_t sctp_auth_enable;
 	uint32_t sctp_asconf_enable;
+	uint32_t sctp_asconf_auth_nochk;
 	uint32_t sctp_reconfig_enable;
 	uint32_t sctp_nrsack_enable;
 	uint32_t sctp_pktdrop_enable;
@@ -198,6 +199,12 @@ struct sctp_sysctl {
 #define SCTPCTL_ASCONF_ENABLE_MIN	0
 #define SCTPCTL_ASCONF_ENABLE_MAX	1
 #define SCTPCTL_ASCONF_ENABLE_DEFAULT	1
+
+/* asconf_auth_nochk: Disable SCTP ASCONF AUTH requirement */
+#define SCTPCTL_ASCONF_AUTH_NOCHK_ENABLE_DESC	"Disable SCTP ASCONF AUTH requirement"
+#define SCTPCTL_ASCONF_AUTH_NOCHK_ENABLE_MIN	0
+#define SCTPCTL_ASCONF_AUTH_NOCHK_ENABLE_MAX	1
+#define SCTPCTL_ASCONF_AUTH_NOCHK_ENABLE_DEFAULT	0
 
 /* reconfig_enable: Enable SCTP RE-CONFIG */
 #define SCTPCTL_RECONFIG_ENABLE_DESC	"Enable SCTP RE-CONFIG"
