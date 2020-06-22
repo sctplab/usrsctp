@@ -96,11 +96,11 @@ handle_packets(void *arg)
 				if (received_crc32c == computed_crc32c) {
 					usrsctp_conninput(fdp, buffer, (size_t)length, 0);
 				} else {
-					fprintf(stderr, "Wrong CRC32c: expected %08x received %08x\n",
-					        ntohl(computed_crc32c), ntohl(received_crc32c));
+					debug_printf("Wrong CRC32c: expected %08x received %08x\n",
+					             ntohl(computed_crc32c), ntohl(received_crc32c));
 				}
 			} else {
-				fprintf(stderr, "Packet too short: length %zu", (size_t)length);
+				debug_printf("Packet too short: length %zd", length);
 			}
 		}
 	}
@@ -151,19 +151,19 @@ static int
 receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
            size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
 {
-	printf("Message %p received on sock = %p.\n", data, (void *)sock);
+	debug_printf("Message %p received on sock = %p.\n", data, (void *)sock);
 	if (data) {
 		if ((flags & MSG_NOTIFICATION) == 0) {
-			printf("Message of length %d received via %p:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u, flags %x.\n",
-			       (int)datalen,
-			       addr.sconn.sconn_addr,
-			       ntohs(addr.sconn.sconn_port),
-			       rcv.rcv_sid,
-			       rcv.rcv_ssn,
-			       rcv.rcv_tsn,
-			       ntohl(rcv.rcv_ppid),
-			       rcv.rcv_context,
-			       flags);
+			debug_printf("Message of length %d received via %p:%u on stream %u with SSN %u and TSN %u, PPID %u, context %u, flags %x.\n",
+			             (int)datalen,
+			             addr.sconn.sconn_addr,
+			             ntohs(addr.sconn.sconn_port),
+			             rcv.rcv_sid,
+			             rcv.rcv_ssn,
+			             rcv.rcv_tsn,
+			             ntohl(rcv.rcv_ppid),
+			             rcv.rcv_context,
+			             flags);
 		}
 		free(data);
 	} else {
@@ -173,13 +173,16 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 	return (1);
 }
 
-#if 0
 static void
 print_addresses(struct socket *sock)
 {
 	int i, n;
 	struct sockaddr *addrs, *addr;
+#if !defined(HAVE_SA_LEN)
+	int sa_len;
+#endif
 
+	debug_printf("Addresses: ");
 	n = usrsctp_getladdrs(sock, 0, &addrs);
 	addr = addrs;
 	for (i = 0; i < n; i++) {
@@ -192,7 +195,10 @@ print_addresses(struct socket *sock)
 
 			sin = (struct sockaddr_in *)addr;
 			name = inet_ntop(AF_INET, &sin->sin_addr, buf, INET_ADDRSTRLEN);
-			printf("%s:%d", name, ntohs(sin->sin_port));
+			fprintf(stderr, "%s:%d", name, ntohs(sin->sin_port));
+#if !defined(HAVE_SA_LEN)
+			sa_len = (int)sizeof(struct sockaddr_in);
+#endif
 			break;
 		}
 		case AF_INET6:
@@ -203,7 +209,10 @@ print_addresses(struct socket *sock)
 
 			sin6 = (struct sockaddr_in6 *)addr;
 			name = inet_ntop(AF_INET6, &sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
-			printf("%s:%d", name, ntohs(sin6->sin6_port));
+			fprintf(stderr, "%s:%d", name, ntohs(sin6->sin6_port));
+#if !defined(HAVE_SA_LEN)
+			sa_len = (int)sizeof(struct sockaddr_in6);
+#endif
 			break;
 		}
 		case AF_CONN:
@@ -211,22 +220,32 @@ print_addresses(struct socket *sock)
 			struct sockaddr_conn *sconn;
 
 			sconn = (struct sockaddr_conn *)addr;
-			printf("%p:%d", sconn->sconn_addr, ntohs(sconn->sconn_port));
+			fprintf(stderr, "%p:%d", sconn->sconn_addr, ntohs(sconn->sconn_port));
+#if !defined(HAVE_SA_LEN)
+			sa_len = (int)sizeof(struct sockaddr_conn);
+#endif
 			break;
 		}
 		default:
-			printf("Unknown family: %d", addr->sa_family);
+			fprintf(stderr, "Unknown family: %d", addr->sa_family);
+#if !defined(HAVE_SA_LEN)
+			sa_len = (int)sizeof(struct sockaddr);
+#endif
 			break;
 		}
+#if !defined(HAVE_SA_LEN)
+		addr = (struct sockaddr *)((char *)addr + sa_len);
+#else
 		addr = (struct sockaddr *)((caddr_t)addr + addr->sa_len);
+#endif
 		if (i != n - 1) {
-			printf(",");
+			fprintf(stderr, ",");
 		}
 	}
 	if (n > 0) {
 		usrsctp_freeladdrs(addrs);
 	}
-	printf("<->");
+	fprintf(stderr, "<->");
 	n = usrsctp_getpaddrs(sock, 0, &addrs);
 	addr = addrs;
 	for (i = 0; i < n; i++) {
@@ -239,7 +258,10 @@ print_addresses(struct socket *sock)
 
 			sin = (struct sockaddr_in *)addr;
 			name = inet_ntop(AF_INET, &sin->sin_addr, buf, INET_ADDRSTRLEN);
-			printf("%s:%d", name, ntohs(sin->sin_port));
+			fprintf(stderr, "%s:%d", name, ntohs(sin->sin_port));
+#if !defined(HAVE_SA_LEN)
+			sa_len = (int)sizeof(struct sockaddr_in);
+#endif
 			break;
 		}
 		case AF_INET6:
@@ -250,7 +272,10 @@ print_addresses(struct socket *sock)
 
 			sin6 = (struct sockaddr_in6 *)addr;
 			name = inet_ntop(AF_INET6, &sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
-			printf("%s:%d", name, ntohs(sin6->sin6_port));
+			fprintf(stderr, "%s:%d", name, ntohs(sin6->sin6_port));
+#if !defined(HAVE_SA_LEN)
+			sa_len = (int)sizeof(struct sockaddr_in6);
+#endif
 			break;
 		}
 		case AF_CONN:
@@ -258,24 +283,33 @@ print_addresses(struct socket *sock)
 			struct sockaddr_conn *sconn;
 
 			sconn = (struct sockaddr_conn *)addr;
-			printf("%p:%d", sconn->sconn_addr, ntohs(sconn->sconn_port));
+			fprintf(stderr, "%p:%d", sconn->sconn_addr, ntohs(sconn->sconn_port));
+#if !defined(HAVE_SA_LEN)
+			sa_len = (int)sizeof(struct sockaddr_conn);
+#endif
 			break;
 		}
 		default:
-			printf("Unknown family: %d", addr->sa_family);
+			fprintf(stderr, "Unknown family: %d", addr->sa_family);
+#if !defined(HAVE_SA_LEN)
+			sa_len = (int)sizeof(struct sockaddr);
+#endif
 			break;
 		}
+#if !defined(HAVE_SA_LEN)
+		addr = (struct sockaddr *)((char *)addr + sa_len);
+#else
 		addr = (struct sockaddr *)((caddr_t)addr + addr->sa_len);
+#endif
 		if (i != n - 1) {
-			printf(",");
+			fprintf(stderr, ",");
 		}
 	}
 	if (n > 0) {
 		usrsctp_freepaddrs(addrs);
 	}
-	printf("\n");
+	fprintf(stderr, "\n");
 }
-#endif
 
 int
 main(int argc, char *argv[])
@@ -285,7 +319,7 @@ main(int argc, char *argv[])
 #ifdef _WIN32
 	SOCKET fd_c, fd_s;
 #else
-	int fd_c, fd_s;
+	int fd_c, fd_s, rc;
 #endif
 	struct socket *s_c, *s_s, *s_l;
 #ifdef _WIN32
@@ -310,7 +344,7 @@ main(int argc, char *argv[])
 
 #ifdef _WIN32
 	if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
-		printf("WSAStartup failed\n");
+		fprintf(stderr, "WSAStartup failed\n");
 		exit (EXIT_FAILURE);
 	}
 #endif
@@ -319,11 +353,11 @@ main(int argc, char *argv[])
 	/* set up a connected UDP socket */
 #ifdef _WIN32
 	if ((fd_c = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
-		printf("socket() failed with error: %d\n", WSAGetLastError());
+		fprintf(stderr, "socket() failed with error: %d\n", WSAGetLastError());
 		exit(EXIT_FAILURE);
 	}
 	if ((fd_s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
-		printf("socket() failed with error: %d\n", WSAGetLastError());
+		fprintf(stderr, "socket() failed with error: %d\n", WSAGetLastError());
 		exit(EXIT_FAILURE);
 	}
 #else
@@ -352,11 +386,11 @@ main(int argc, char *argv[])
 	sin_s.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 #ifdef _WIN32
 	if (bind(fd_c, (struct sockaddr *)&sin_c, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
-		printf("bind() failed with error: %d\n", WSAGetLastError());
+		fprintf(stderr, "bind() failed with error: %d\n", WSAGetLastError());
 		exit(EXIT_FAILURE);
 	}
 	if (bind(fd_s, (struct sockaddr *)&sin_s, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
-		printf("bind() failed with error: %d\n", WSAGetLastError());
+		fprintf(stderr, "bind() failed with error: %d\n", WSAGetLastError());
 		exit(EXIT_FAILURE);
 	}
 #else
@@ -371,11 +405,11 @@ main(int argc, char *argv[])
 #endif
 #ifdef _WIN32
 	if (connect(fd_c, (struct sockaddr *)&sin_s, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
-		printf("connect() failed with error: %d\n", WSAGetLastError());
+		fprintf(stderr, "connect() failed with error: %d\n", WSAGetLastError());
 		exit(EXIT_FAILURE);
 	}
 	if (connect(fd_s, (struct sockaddr *)&sin_c, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
-		printf("connect() failed with error: %d\n", WSAGetLastError());
+		fprintf(stderr, "connect() failed with error: %d\n", WSAGetLastError());
 		exit(EXIT_FAILURE);
 	}
 #else
@@ -389,16 +423,22 @@ main(int argc, char *argv[])
 	}
 #endif
 #ifdef _WIN32
-	tid_c = CreateThread(NULL, 0, &handle_packets, (void *)&fd_c, 0, NULL);
-	tid_s = CreateThread(NULL, 0, &handle_packets, (void *)&fd_s, 0, NULL);
+	if ((tid_c = CreateThread(NULL, 0, &handle_packets, (void *)&fd_c, 0, NULL)) == NULL) {
+		fprintf(stderr, "CreateThread() failed with error: %d\n", GetLastError());
+		exit(EXIT_FAILURE);
+	}
+	if ((tid_s = CreateThread(NULL, 0, &handle_packets, (void *)&fd_s, 0, NULL)) == NULL) {
+		fprintf(stderr, "CreateThread() failed with error: %d\n", GetLastError());
+		exit(EXIT_FAILURE);
+	}
 #else
-	if (pthread_create(&tid_c, NULL, &handle_packets, (void *)&fd_c)) {
-		perror("pthread_create tid_c");
+	if ((rc = pthread_create(&tid_c, NULL, &handle_packets, (void *)&fd_c)) != 0) {
+		fprintf(stderr, "pthread_create tid_c: %s\n", strerror(rc));
 		exit(EXIT_FAILURE);
 	}
 
-	if (pthread_create(&tid_s, NULL, &handle_packets, (void *)&fd_s)) {
-		perror("pthread_create tid_s");
+	if ((rc = pthread_create(&tid_s, NULL, &handle_packets, (void *)&fd_s))  != 0) {
+		fprintf(stderr, "pthread_create tid_s: %s\n", strerror(rc));
 		exit(EXIT_FAILURE);
 	};
 #endif
@@ -430,7 +470,7 @@ main(int argc, char *argv[])
 		perror("usrsctp_getsockopt");
 		exit(EXIT_FAILURE);
 	}
-	printf("to %d.\n", cur_buf_size);
+	fprintf(stderr, "to %d.\n", cur_buf_size);
 	if ((s_l = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd_s)) == NULL) {
 		perror("usrsctp_socket");
 		exit(EXIT_FAILURE);
@@ -453,7 +493,7 @@ main(int argc, char *argv[])
 		perror("usrsctp_getsockopt");
 		exit(EXIT_FAILURE);
 	}
-	printf("to %d.\n", cur_buf_size);
+	fprintf(stderr, "to %d.\n", cur_buf_size);
 	/* Bind the client side. */
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
@@ -500,6 +540,8 @@ main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	usrsctp_close(s_l);
+	print_addresses(s_s);
+
 	if ((line = malloc(LINE_LENGTH)) == NULL) {
 		exit(EXIT_FAILURE);
 	}
@@ -509,6 +551,7 @@ main(int argc, char *argv[])
 	sndinfo.snd_ppid = htonl(DISCARD_PPID);
 	sndinfo.snd_context = 0;
 	sndinfo.snd_assoc_id = 0;
+
 	/* Send a 1 MB message */
 	if (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
 	                 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
@@ -531,11 +574,11 @@ main(int argc, char *argv[])
 	TerminateThread(tid_s, 0);
 	WaitForSingleObject(tid_s, INFINITE);
 	if (closesocket(fd_c) == SOCKET_ERROR) {
-		printf("closesocket() failed with error: %d\n", WSAGetLastError());
+		fprintf(stderr, "closesocket() failed with error: %d\n", WSAGetLastError());
 		exit(EXIT_FAILURE);
 	}
 	if (closesocket(fd_s) == SOCKET_ERROR) {
-		printf("closesocket() failed with error: %d\n", WSAGetLastError());
+		fprintf(stderr, "closesocket() failed with error: %d\n", WSAGetLastError());
 		exit(EXIT_FAILURE);
 	}
 	WSACleanup();

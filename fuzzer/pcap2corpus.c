@@ -155,7 +155,9 @@ packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char *byt
 out:
 	nr_read++;
 	if (bytes_out != NULL) {
-		asprintf(&filename, "%s-%06lu", args->filename_prefix, nr_decaps);
+		if (asprintf(&filename, "%s-%06lu", args->filename_prefix, nr_decaps) < 0) {
+			return;
+		}
 		file = fopen(filename, "w");
 		fwrite(&null, 1, PRE_PADDING, file);
 		fwrite(bytes_out, length, 1, file);
@@ -173,7 +175,9 @@ get_filter(int argc, char *argv[])
 	int i;
 
 	if (argc == 3) {
-		asprintf(&result, "%s", "sctp");
+		if (asprintf(&result, "%s", "sctp") < 0) {
+			return (NULL);
+		}
 	} else {
 		len = 0;
 		for (i = 3; i < argc; i++) {

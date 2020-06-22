@@ -76,11 +76,29 @@ static unsigned int use_cb = 0;
 static void
 gettimeofday(struct timeval *tv, void *ignore)
 {
-	struct timeb tb;
+	FILETIME filetime;
+	ULARGE_INTEGER ularge;
 
-	ftime(&tb);
-	tv->tv_sec = (long)tb.time;
-	tv->tv_usec = tb.millitm * 1000;
+	GetSystemTimeAsFileTime(&filetime);
+	ularge.LowPart = filetime.dwLowDateTime;
+	ularge.HighPart = filetime.dwHighDateTime;
+	/* Change base from Jan 1 1601 00:00:00 to Jan 1 1970 00:00:00 */
+#if defined(__MINGW32__)
+	ularge.QuadPart -= 116444736000000000ULL;
+#else
+	ularge.QuadPart -= 116444736000000000UI64;
+#endif
+	/*
+	 * ularge.QuadPart is now the number of 100-nanosecond intervals
+	 * since Jan 1 1970 00:00:00.
+	 */
+#if defined(__MINGW32__)
+	tv->tv_sec = (long)(ularge.QuadPart / 10000000ULL);
+	tv->tv_usec = (long)((ularge.QuadPart % 10000000ULL) / 10ULL);
+#else
+	tv->tv_sec = (long)(ularge.QuadPart / 10000000UI64);
+	tv->tv_usec = (long)((ularge.QuadPart % 10000000UI64) / 10UI64);
+#endif
 }
 #endif
 
@@ -111,7 +129,7 @@ char Usage[] =
 #define BUFFERSIZE                 (1<<16)
 
 static int verbose, very_verbose;
-static unsigned int done; 
+static unsigned int done;
 
 void stop_sender(int sig)
 {
@@ -174,7 +192,7 @@ handle_connection(void *arg)
 			snp = (union sctp_notification *)buf;
 			if (snp->sn_header.sn_type == SCTP_PEER_ADDR_CHANGE) {
 				spc = &snp->sn_paddr_change;
-				printf("SCTP_PEER_ADDR_CHANGE: state=%d, error=%d\n",spc->spc_state, spc->spc_error);
+				printf("SCTP_PEER_ADDR_CHANGE: state=%u, error=%u\n",spc->spc_state, spc->spc_error);
 			}
 		} else {
 			if (very_verbose) {
@@ -218,7 +236,7 @@ static int
 send_cb(struct socket *sock, uint32_t sb_free) {
 	struct sctp_sndinfo sndinfo;
 
-	if ((cb_messages == 0) & verbose) {
+	if ((cb_messages == 0) && verbose) {
 		printf("Start sending ");
 		if (number_of_messages > 0) {
 			printf("%ld messages ", (long)number_of_messages);
@@ -329,7 +347,7 @@ client_receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 int main(int argc, char **argv)
 {
 #ifndef _WIN32
-	int c;
+	int c, rc;
 #endif
 	socklen_t addr_len;
 	struct sockaddr_in local_addr;
@@ -347,6 +365,7 @@ int main(int argc, char **argv)
 	unsigned long messages = 0;
 #ifdef _WIN32
 	unsigned long srcAddr;
+	HANDLE tid;
 #else
 	in_addr_t srcAddr;
 	pthread_t tid;
@@ -646,10 +665,15 @@ int main(int argc, char **argv)
 					continue;
 				}
 #ifdef _WIN32
-				CreateThread(NULL, 0, &handle_connection, (void *)conn_sock, 0, NULL);
+				if ((tid = CreateThread(NULL, 0, &handle_connection, (void *)conn_sock, 0, NULL)) == NULL) {
+					fprintf(stderr, "CreateThread() failed with error: %d\n", GetLastError());
 #else
-				pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock);
+				if ((rc = pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock)) != 0) {
+					fprintf(stderr, "pthread_create: %s\n", strerror(rc));
 #endif
+					usrsctp_close(*conn_sock);
+					continue;
+				}
 			}
 			if (verbose) {
 				/* const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
@@ -724,7 +748,7 @@ int main(int argc, char **argv)
 			signal(SIGALRM, stop_sender);
 			alarm(runtime);
 #else
-			printf("You cannot set the runtime in Windows yet\n");
+			fprintf(stderr, "You cannot set the runtime in Windows yet\n");
 			exit(-1);
 #endif
 		}
@@ -793,7 +817,7 @@ int main(int argc, char **argv)
 		gettimeofday(&time_now, NULL);
 		timersub(&time_now, &time_start, &time_diff);
 		seconds = time_diff.tv_sec + (double)time_diff.tv_usec/1000000;
-		printf("%s of %ld messages of length %u took %f seconds.\n",
+		printf("%s of %lu messages of length %d took %f seconds.\n",
 		       "Sending", messages, length, seconds);
 		throughput = (double)messages * (double)length / seconds;
 		printf("Throughput was %f Byte/sec.\n", throughput);

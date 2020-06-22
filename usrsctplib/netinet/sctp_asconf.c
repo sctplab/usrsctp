@@ -32,9 +32,9 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 360878 2020-05-10 17:19:19Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 362377 2020-06-19 12:35:29Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -52,10 +52,6 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 360878 2020-05-10 17:19:19Z t
  * SCTP_DEBUG_ASCONF1: protocol info, general info and errors
  * SCTP_DEBUG_ASCONF2: detailed info
  */
-
-#if defined(__APPLE__)
-#define APPLE_FILE_NO 1
-#endif
 
 /*
  * RFC 5061
@@ -996,8 +992,12 @@ sctp_asconf_nets_cleanup(struct sctp_tcb *stcb, struct sctp_ifn *ifn)
 		    ((ifn == NULL) ||
 		     (SCTP_GET_IF_INDEX_FROM_ROUTE(&net->ro) != ifn->ifn_index))) {
 			/* clear any cached route */
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+			RO_NHFREE(&net->ro);
+#else
 			RTFREE(net->ro.ro_rt);
 			net->ro.ro_rt = NULL;
+#endif
 		}
 		/* clear any cached source address */
 		if (net->src_addr_selected) {
@@ -1111,10 +1111,14 @@ sctp_path_check_and_react(struct sctp_tcb *stcb, struct sctp_ifa *newifa)
 	if (addrnum == 1) {
 		TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 			/* clear any cached route and source address */
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+			RO_NHFREE(&net->ro);
+#else
 			if (net->ro.ro_rt) {
 				RTFREE(net->ro.ro_rt);
 				net->ro.ro_rt = NULL;
 			}
+#endif
 			if (net->src_addr_selected) {
 				sctp_free_ifa(net->ro._s_addr);
 				net->ro._s_addr = NULL;
@@ -1133,10 +1137,14 @@ sctp_path_check_and_react(struct sctp_tcb *stcb, struct sctp_ifa *newifa)
 	/* Multiple local addresses exsist in the association.  */
 	TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 		/* clear any cached route and source address */
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+		RO_NHFREE(&net->ro);
+#else
 		if (net->ro.ro_rt) {
 			RTFREE(net->ro.ro_rt);
 			net->ro.ro_rt = NULL;
 		}
+#endif
 		if (net->src_addr_selected) {
 			sctp_free_ifa(net->ro._s_addr);
 			net->ro._s_addr = NULL;
@@ -1151,7 +1159,11 @@ sctp_path_check_and_react(struct sctp_tcb *stcb, struct sctp_ifa *newifa)
 		SCTP_RTALLOC((sctp_route_t *)&net->ro,
 			     stcb->sctp_ep->def_vrf_id,
 			     stcb->sctp_ep->fibnum);
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+		if (net->ro.ro_nh == NULL)
+#else
 		if (net->ro.ro_rt == NULL)
+#endif
 			continue;
 
 		changed = 0;
@@ -1191,7 +1203,7 @@ sctp_path_check_and_react(struct sctp_tcb *stcb, struct sctp_ifa *newifa)
 		}
 	}
 }
-#endif /* __FreeBSD__  __APPLE__  __Userspace__ */
+#endif
 
 /*
  * process an ADD/DELETE IP ack from peer.
@@ -1223,7 +1235,7 @@ sctp_asconf_addr_mgmt_ack(struct sctp_tcb *stcb, struct sctp_ifa *addr, uint32_t
 			sctp_path_check_and_react(stcb, addr);
 			return;
 		}
-#endif /* __FreeBSD__ __APPLE__ __Userspace__ */
+#endif
 		/* clear any cached/topologically incorrect source addresses */
 		sctp_asconf_nets_cleanup(stcb, addr->ifn_p);
 	}
@@ -1727,8 +1739,7 @@ sctp_handle_asconf_ack(struct mbuf *m, int offset,
 		char msg[SCTP_DIAG_INFO_LEN];
 
 		SCTPDBG(SCTP_DEBUG_ASCONF1, "handle_asconf_ack: got unexpected next serial number! Aborting asoc!\n");
-		snprintf(msg, sizeof(msg), "Never sent serial number %8.8x",
-			 serial_num);
+		SCTP_SNPRINTF(msg, sizeof(msg), "Never sent serial number %8.8x", serial_num);
 		op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
 		sctp_abort_an_association(stcb->sctp_ep, stcb, op_err, SCTP_SO_NOT_LOCKED);
 		*abort_no_unlock = 1;
@@ -1817,9 +1828,9 @@ sctp_handle_asconf_ack(struct mbuf *m, int offset,
 		}		/* switch */
 
 		/* update remaining ASCONF-ACK message length to process */
-		ack_length -= SCTP_SIZE32(param_length);
-		if (ack_length <= 0) {
-			/* no more data in the mbuf chain */
+		if (ack_length > SCTP_SIZE32(param_length)) {
+			ack_length -= SCTP_SIZE32(param_length);
+		} else {
 			break;
 		}
 		offset += SCTP_SIZE32(param_length);
@@ -1930,7 +1941,7 @@ sctp_addr_mgmt_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	switch (ifa->address.sa.sa_family) {
 #ifdef INET6
 	case AF_INET6:
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 		if (prison_check_ip6(inp->ip_inp.inp.inp_cred,
 		                     &ifa->address.sin6.sin6_addr) != 0) {
 			return;
@@ -1940,7 +1951,7 @@ sctp_addr_mgmt_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 #endif
 #ifdef INET
 	case AF_INET:
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 		if (prison_check_ip4(inp->ip_inp.inp.inp_cred,
 		                     &ifa->address.sin.sin_addr) != 0) {
 			return;
@@ -2169,7 +2180,7 @@ sctp_asconf_iterator_stcb(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				/* we skip unspecifed addresses */
 				continue;
 			}
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 			if (prison_check_ip6(inp->ip_inp.inp.inp_cred,
 			                     &sin6->sin6_addr) != 0) {
 				continue;
@@ -2203,7 +2214,7 @@ sctp_asconf_iterator_stcb(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				/* we skip unspecifed addresses */
 				continue;
 			}
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 			if (prison_check_ip4(inp->ip_inp.inp.inp_cred,
 			                     &sin->sin_addr) != 0) {
 				continue;
@@ -2240,18 +2251,19 @@ sctp_asconf_iterator_stcb(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		} else if (type == SCTP_DEL_IP_ADDRESS) {
 			struct sctp_nets *net;
 			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
-				sctp_rtentry_t *rt;
-
 				/* delete this address if cached */
 				if (net->ro._s_addr == ifa) {
 					sctp_free_ifa(net->ro._s_addr);
 					net->ro._s_addr = NULL;
 					net->src_addr_selected = 0;
-					rt = net->ro.ro_rt;
-					if (rt) {
-						RTFREE(rt);
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+					RO_NHFREE(&net->ro);
+#else
+					if (net->ro.ro_rt) {
+						RTFREE(net->ro.ro_rt);
 						net->ro.ro_rt = NULL;
 					}
+#endif
 					/*
 					 * Now we deleted our src address,
 					 * should we not also now reset the
@@ -2492,7 +2504,7 @@ sctp_find_valid_localaddr(struct sctp_tcb *stcb, int addr_locked)
 						/* skip unspecifed addresses */
 						continue;
 					}
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 					if (prison_check_ip4(stcb->sctp_ep->ip_inp.inp.inp_cred,
 					                     &sin->sin_addr) != 0) {
 						continue;
@@ -2526,7 +2538,7 @@ sctp_find_valid_localaddr(struct sctp_tcb *stcb, int addr_locked)
 						/* we skip unspecifed addresses */
 						continue;
 					}
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 					if (prison_check_ip6(stcb->sctp_ep->ip_inp.inp.inp_cred,
 					                     &sin6->sin6_addr) != 0) {
 						continue;
@@ -3059,10 +3071,6 @@ sctp_check_address_list_ep(struct sctp_tcb *stcb, struct mbuf *m, int offset,
 				"check_addr_list_ep: laddr->ifa is NULL");
 			continue;
 		}
-		if (laddr->ifa == NULL) {
-			SCTPDBG(SCTP_DEBUG_ASCONF1, "check_addr_list_ep: laddr->ifa->ifa_addr is NULL");
-			continue;
-		}
 		/* do i have it implicitly? */
 		if (sctp_cmpaddr(&laddr->ifa->address.sa, init_addr)) {
 			continue;
@@ -3124,7 +3132,7 @@ sctp_check_address_list_all(struct sctp_tcb *stcb, struct mbuf *m, int offset,
 #ifdef INET
 			case AF_INET:
 				sin = &sctp_ifa->address.sin;
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 				if (prison_check_ip4(stcb->sctp_ep->ip_inp.inp.inp_cred,
 				                     &sin->sin_addr) != 0) {
 					continue;
@@ -3140,7 +3148,7 @@ sctp_check_address_list_all(struct sctp_tcb *stcb, struct mbuf *m, int offset,
 #ifdef INET6
 			case AF_INET6:
 				sin6 = &sctp_ifa->address.sin6;
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 				if (prison_check_ip6(stcb->sctp_ep->ip_inp.inp.inp_cred,
 				                     &sin6->sin6_addr) != 0) {
 					continue;
@@ -3209,7 +3217,7 @@ sctp_check_address_list(struct sctp_tcb *stcb, struct mbuf *m, int offset,
  */
 uint32_t
 sctp_addr_mgmt_ep_sa(struct sctp_inpcb *inp, struct sockaddr *sa,
-    uint32_t type, uint32_t vrf_id, struct sctp_ifa *sctp_ifap)
+                     uint32_t type, uint32_t vrf_id)
 {
 	struct sctp_ifa *ifa;
 	struct sctp_laddr *laddr, *nladdr;
@@ -3220,9 +3228,7 @@ sctp_addr_mgmt_ep_sa(struct sctp_inpcb *inp, struct sockaddr *sa,
 		return (EINVAL);
 	}
 #endif
-	if (sctp_ifap) {
-		ifa = sctp_ifap;
-	} else if (type == SCTP_ADD_IP_ADDRESS) {
+	if (type == SCTP_ADD_IP_ADDRESS) {
 		/* For an add the address MUST be on the system */
 		ifa = sctp_find_ifa_by_addr(sa, vrf_id, SCTP_ADDR_NOT_LOCKED);
 	} else if (type == SCTP_DEL_IP_ADDRESS) {
@@ -3450,7 +3456,7 @@ sctp_asconf_send_nat_state_update(struct sctp_tcb *stcb,
 #ifdef INET
 				case AF_INET:
 					to = &sctp_ifap->address.sin;
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 					if (prison_check_ip4(stcb->sctp_ep->ip_inp.inp.inp_cred,
 					                     &to->sin_addr) != 0) {
 						continue;
@@ -3467,7 +3473,7 @@ sctp_asconf_send_nat_state_update(struct sctp_tcb *stcb,
 #ifdef INET6
 				case AF_INET6:
 					to6 = &sctp_ifap->address.sin6;
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 					if (prison_check_ip6(stcb->sctp_ep->ip_inp.inp.inp_cred,
 					                     &to6->sin6_addr) != 0) {
 						continue;

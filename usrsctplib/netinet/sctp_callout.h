@@ -30,7 +30,7 @@
  * SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 #endif
@@ -53,7 +53,7 @@ __FBSDID("$FreeBSD$");
 #define SCTP_TICKS_PER_FASTTIMO 20	/* called about every 20ms */
 
 #if defined(__Userspace__)
-#if defined(__Userspace_os_Windows)
+#if defined(_WIN32)
 #define SCTP_TIMERQ_LOCK()          EnterCriticalSection(&SCTP_BASE_VAR(timer_mtx))
 #define SCTP_TIMERQ_UNLOCK()        LeaveCriticalSection(&SCTP_BASE_VAR(timer_mtx))
 #define SCTP_TIMERQ_LOCK_INIT()     InitializeCriticalSection(&SCTP_BASE_VAR(timer_mtx))
@@ -104,9 +104,10 @@ void sctp_handle_tick(uint32_t);
 #define	SCTP_OS_TIMER_DEACTIVATE(tmr) ((tmr)->c_flags &= ~SCTP_CALLOUT_ACTIVE)
 
 #if defined(__Userspace__)
-void sctp_start_timer(void);
+void sctp_start_timer_thread(void);
+void sctp_stop_timer_thread(void);
 #endif
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(__Userspace__)
 void sctp_timeout(void *);
 #endif
 
