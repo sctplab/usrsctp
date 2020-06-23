@@ -1,4 +1,4 @@
-name: Bulid with CMake
+name: Build with CMake
 
 on:
   push:
