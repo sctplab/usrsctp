@@ -266,16 +266,16 @@ send_cb(struct socket *sock, uint32_t sb_free) {
 
 	sendv_spa.sendv_prinfo.pr_policy = 0;
 	switch (policy) {
-	case 0:
 #ifdef SCTP_PR_SCTP_NONE
+	case 0:
 		sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_NONE;
-#endif
 		break;
-	case 1:
+#endif
 #ifdef SCTP_PR_SCTP_TTL
+	case 1:
 		sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_TTL;
-#endif
 		break;
+#endif
 #ifdef SCTP_PR_SCTP_RTX
 	case 2:
 		sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_RTX;
@@ -832,16 +832,16 @@ int main(int argc, char **argv)
 
 			sendv_spa.sendv_prinfo.pr_policy = 0;
 			switch (policy) {
-			case 0:
 #ifdef SCTP_PR_SCTP_NONE
+			case 0:
 				sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_NONE;
-#endif
 				break;
-			case 1:
+#endif
 #ifdef SCTP_PR_SCTP_TTL
+			case 1:
 				sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_TTL;
-#endif
 				break;
+#endif
 #ifdef SCTP_PR_SCTP_RTX
 			case 2:
 				sendv_spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_RTX;
