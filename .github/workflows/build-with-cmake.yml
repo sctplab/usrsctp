@@ -54,4 +54,9 @@ jobs:
     - name: Build and install project
       shell: bash
       run: |
-        cmake --build cmake_build --config ${{ matrix.cmake_build_type }} --target install --clean-first
+        echo "CPU cores: $(nproc)"
+        cmake --build cmake_build \
+              --parallel $(nproc) \
+              --config ${{ matrix.cmake_build_type }} \
+              --target install \
+              --clean-first
