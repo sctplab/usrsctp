@@ -174,7 +174,6 @@ handle_upcall(struct socket *sock, void *data, int flgs)
 	struct upcall_meta *meta;
 
 	meta = data;
-
 	buf = malloc(MAX_PACKET_SIZE);
 
 	while ((events = usrsctp_get_events(sock)) && (events & SCTP_EVENT_READ)) {
