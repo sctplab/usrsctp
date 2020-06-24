@@ -25,12 +25,6 @@ jobs:
       with:
         path: 'usrsctp_source'
 
-    - name: Setup Ninja
-      uses: ashutoshvarma/setup-ninja@master
-      with:
-        # ninja version to download. Default: 1.10.0
-        version: 1.10.0
- 
     - name: Setup CMake
       uses: jwlawson/actions-setup-cmake@v1.2
       with:
@@ -54,7 +48,6 @@ jobs:
               -Dsctp_inet=${{ matrix.sctp_inet }} \
               -Dsctp_build_programs=ON \
               -Dsctp_build_fuzzer=OFF \
-              -DCMAKE_GENERATOR=Ninja \
               -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/cmake_install \
               ${GITHUB_WORKSPACE}/usrsctp_source
         
@@ -62,7 +55,7 @@ jobs:
       shell: bash
       run: |
         cmake --build cmake_build \
-              --parallel $(nproc) \
+              --parallel $(([ -x "$(command -v nproc)" ] && nproc) || ([ -x "$(command -v sysctl)" ] && sysctl -n hw.ncpu) || $NUMBER_OF_PROCESSORS) \
               --config ${{ matrix.cmake_build_type }} \
               --target install \
               --clean-first
