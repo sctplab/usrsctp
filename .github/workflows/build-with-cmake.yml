@@ -24,18 +24,18 @@ jobs:
     - uses: actions/checkout@v2
       with:
         path: 'usrsctp_source'
-      
-    - name: Setup CMake
-      uses: jwlawson/actions-setup-cmake@v1.2
-      with:
-        github-api-token: ${{ secrets.GITHUB_TOKEN }}
-    
+
     - name: Setup Ninja
       uses: ashutoshvarma/setup-ninja@master
       with:
         # ninja version to download. Default: 1.10.0
         version: 1.10.0
-        
+ 
+    - name: Setup CMake
+      uses: jwlawson/actions-setup-cmake@v1.2
+      with:
+        github-api-token: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Prepare dirs
       shell: bash
       run: |
