@@ -53,7 +53,6 @@ all: \
 	ekr_server \
 	ekr_peer \
 	ekr_loop \
-	ekr_loop_offload \
 	ekr_loop_upcall \
 	test_libmgmt \
 	http_client \
@@ -168,8 +167,6 @@ clean:
 	del /F ekr_peer.obj
 	del /F ekr_loop.exe
 	del /F ekr_loop.obj
-	del /F ekr_loop_offload.exe
-	del /F ekr_loop_offload.obj
 	del /F ekr_loop_upcall.exe
 	del /F ekr_loop_upcall.obj
 	del /F test_libmgmt.exe
