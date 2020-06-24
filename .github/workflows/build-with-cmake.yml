@@ -29,6 +29,12 @@ jobs:
       uses: jwlawson/actions-setup-cmake@v1.2
       with:
         github-api-token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Setup Ninja
+      uses: ashutoshvarma/setup-ninja@master
+      with:
+        # ninja version to download. Default: 1.10.0
+        version: 1.10.0
         
     - name: Prepare dirs
       shell: bash
@@ -48,13 +54,13 @@ jobs:
               -Dsctp_inet=${{ matrix.sctp_inet }} \
               -Dsctp_build_programs=ON \
               -Dsctp_build_fuzzer=OFF \
+              -DCMAKE_GENERATOR=Ninja \
               -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/cmake_install \
               ${GITHUB_WORKSPACE}/usrsctp_source
         
     - name: Build and install project
       shell: bash
       run: |
-        echo "CPU cores: $(nproc)"
         cmake --build cmake_build \
               --parallel $(nproc) \
               --config ${{ matrix.cmake_build_type }} \
