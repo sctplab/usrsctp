@@ -119,10 +119,6 @@ ekr_loop:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c ekr_loop.c
 	link -out:ekr_loop.exe ekr_loop.obj programs_helper.obj $(LINKFLAGS)
 
-ekr_loop_offload:
-	$(CC) $(CFLAGS) $(CVARSDLL) -c ekr_loop_offload.c
-	link -out:ekr_loop_offload.exe ekr_loop_offload.obj programs_helper.obj $(LINKFLAGS)
-
 ekr_loop_upcall:
 	$(CC) $(CFLAGS) $(CVARSDLL) -c ekr_loop_upcall.c
 	link -out:ekr_loop_upcall.exe ekr_loop_upcall.obj programs_helper.obj $(LINKFLAGS)
