@@ -375,6 +375,10 @@ main(int argc, char *argv[])
 #endif
 	usrsctp_init(0, conn_output, debug_printf_stack);
 
+#ifdef SCTP_DEBUG
+	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
+#endif
+
 	if (crc32c_offloading) {
 		usrsctp_enable_crc32c_offload();
 	}
@@ -471,9 +475,7 @@ main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	};
 #endif
-#ifdef SCTP_DEBUG
-	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
-#endif
+
 	usrsctp_sysctl_set_sctp_ecn_enable(0);
 	usrsctp_register_address((void *)&fd_c);
 	usrsctp_register_address((void *)&fd_s);
@@ -627,6 +629,7 @@ main(int argc, char *argv[])
 	usrsctp_shutdown(s_c, SHUT_WR);
 
 	while (usrsctp_finish() != 0) {
+		debug_printf("Waiting for usrsctp_finish()\n");
 #ifdef _WIN32
 		Sleep(1000);
 #else

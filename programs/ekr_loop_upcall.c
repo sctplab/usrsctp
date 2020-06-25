@@ -58,7 +58,7 @@
 #define MAX_PACKET_SIZE (1<<16)
 #define LINE_LENGTH (1<<20)
 #define DISCARD_PPID 39
-#define NUMBER_OF_STEPS 2
+#define NUMBER_OF_STEPS 10
 
 static uint8_t crc32c_offloading = 0;
 
@@ -679,7 +679,7 @@ main(int argc, char *argv[])
 	usrsctp_shutdown(s_c, SHUT_WR);
 
 	while (usrsctp_finish() != 0) {
-		debug_printf("not finshed!\n");
+		debug_printf("Waiting for usrsctp_finish()\n");
 #ifdef _WIN32
 		Sleep(1000);
 #else
