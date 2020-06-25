@@ -184,7 +184,7 @@ handle_connection(void *arg)
 	unsigned long long sum = 0;
 	unsigned long round_bytes;
 	struct timeval round_start;
-	time_t round_timeout;
+	time_t round_timeout = 0;
 
 	conn_sock = *(struct socket **)arg;
 
