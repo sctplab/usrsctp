@@ -12,7 +12,7 @@ elif [ "$(uname)" = "Darwin" ]; then
 	CC=/usr/local/opt/llvm/bin/clang
 elif [ "$(uname)" = "FreeBSD" ]; then
 	NPROC=$(sysctl -n hw.ncpu)
-	CC=clang-devel
+	CC=cc
 else
 	echo "Error: $(uname) not supported, sorry!"
 	exit 1
