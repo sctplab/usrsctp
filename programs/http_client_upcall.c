@@ -103,7 +103,7 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 			} else {
 				result = RETVAL_CATCHALL;
 			}
-			perror("usrsctp_connect");
+			perror("usrsctp_recvv");
 		}
 
 		if (n <= 0){
