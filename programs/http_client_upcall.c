@@ -106,7 +106,7 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 			perror("usrsctp_recvv");
 		}
 
-		if (n <= 0){
+		if (n <= 0) {
 			done = 1;
 			usrsctp_close(sock);
 		} else {
@@ -309,9 +309,6 @@ main(int argc, char *argv[])
 				result = RETVAL_CATCHALL;
 			}
 			perror("usrsctp_connect");
-			usrsctp_close(sock);
-
-			goto out;
 		}
 	}
 
