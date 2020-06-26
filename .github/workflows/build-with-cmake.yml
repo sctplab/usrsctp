@@ -37,6 +37,7 @@ jobs:
         cd cmake_build
         cmake -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
               -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+              -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
               -Dsctp_debug=${{ matrix.sctp_debug }} \
               -Dsctp_invariants=${{ matrix.sctp_invariants }} \
               -Dsctp_inet6=${{ matrix.sctp_inet6 }} \
