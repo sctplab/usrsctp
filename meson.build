@@ -79,7 +79,7 @@ elif system == 'netbsd'
 elif system == 'openbsd'
     add_project_arguments([], language: 'c')
 elif system == 'windows'
-    add_project_arguments([]], language: 'c')
+    add_project_arguments([], language: 'c')
     dependencies += compiler.find_library('ws2_32', required: true)
     dependencies += compiler.find_library('iphlpapi', required: true)
     if compiler.get_id() == 'gcc'
