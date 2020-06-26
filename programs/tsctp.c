@@ -183,7 +183,7 @@ handle_connection(void *arg)
 	unsigned long messages = 0;
 	unsigned long long first_length = 0;
 	unsigned long long sum = 0;
-	unsigned long round_bytes;
+	unsigned long long round_bytes;
 	struct timeval round_start;
 	time_t round_timeout = 0;
 
