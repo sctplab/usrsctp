@@ -29,11 +29,6 @@ jobs:
       with:
         version: '1.10.0'
 
-    - name: Setup CMake
-      uses: jwlawson/actions-setup-cmake@v1.2
-      with:
-        github-api-token: ${{ secrets.GITHUB_TOKEN }}
-
     - name: Prepare dirs
       shell: bash
       run: |
