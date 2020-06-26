@@ -25,10 +25,6 @@ jobs:
       with:
         path: 'usrsctp_source'
 
-    - uses: seanmiddleditch/gha-setup-ninja@v1
-      with:
-        version: '1.10.0'
-
     - name: Prepare dirs
       shell: bash
       run: |
@@ -47,7 +43,6 @@ jobs:
               -Dsctp_inet=${{ matrix.sctp_inet }} \
               -Dsctp_build_programs=ON \
               -Dsctp_build_fuzzer=OFF \
-              -DCMAKE_GENERATOR=Ninja \
               -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/cmake_install \
               ${GITHUB_WORKSPACE}/usrsctp_source
         
@@ -55,6 +50,7 @@ jobs:
       shell: bash
       run: |
         cmake --build cmake_build \
+              --parallel 2 \
               --config ${{ matrix.cmake_build_type }} \
               --target install \
               --clean-first
