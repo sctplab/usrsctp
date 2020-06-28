@@ -162,7 +162,6 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 	static int initialized;
 	char *fuzz_packet_buffer;
-	struct sockaddr_in6 bind6;
 	struct sockaddr_conn sconn;
 	struct socket *socket_client;
 	struct linger so_linger;
@@ -328,15 +327,15 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	}
 #endif // defined(FUZZ_INTERLEAVING)
 
-	memset((void *)&bind6, 0, sizeof(struct sockaddr_in6));
-#ifdef HAVE_SIN_LEN
-	bind6.sin6_len = sizeof(struct sockaddr_in6);
-#endif // HAVE_SIN_LEN
-	bind6.sin6_family = AF_INET6;
-	bind6.sin6_port = htons(5000);
-	bind6.sin6_addr = in6addr_any;
+	memset(&sconn, 0, sizeof(struct sockaddr_conn));
+	sconn.sconn_family = AF_CONN;
+#ifdef HAVE_SCONN_LEN
+	sconn.sconn_len = sizeof(struct sockaddr_conn);
+#endif // HAVE_SCONN_LEN
+	sconn.sconn_port = htons(5000);
+	sconn.sconn_addr = (void *)1;
 
-	result = usrsctp_bind(socket_client, (struct sockaddr *)&bind6, sizeof(bind6));
+	result = usrsctp_bind(socket_client, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn));
 	assert(result == 0);
 
 	// Disable Nagle.

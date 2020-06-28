@@ -61,10 +61,9 @@ if system in ['linux', 'android']
         '-D_GNU_SOURCE',
     ], language: 'c')
 elif system == 'freebsd'
-    add_project_arguments(
-    compiler.get_supported_arguments([
-        '-Wno-address-of-packed-member',
-    ]), language: 'c')
+    add_project_arguments(compiler.get_supported_arguments([
+            '-Wno-address-of-packed-member',
+        ]), language: 'c')
 elif system in ['darwin', 'ios']
     add_project_arguments([
             '-D__APPLE_USE_RFC_2292',
@@ -72,14 +71,7 @@ elif system in ['darwin', 'ios']
             '-Wno-address-of-packed-member',
             '-Wno-deprecated-declarations',
         ]), language: 'c')
-elif system == 'dragonfly'
-    add_project_arguments([], language: 'c')
-elif system == 'netbsd'
-    add_project_arguments([], language: 'c')
-elif system == 'openbsd'
-    add_project_arguments([], language: 'c')
 elif system == 'windows'
-    add_project_arguments([]], language: 'c')
     dependencies += compiler.find_library('ws2_32', required: true)
     dependencies += compiler.find_library('iphlpapi', required: true)
     if compiler.get_id() == 'gcc'
