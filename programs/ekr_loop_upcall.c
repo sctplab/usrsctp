@@ -381,9 +381,19 @@ main(int argc, char *argv[])
 #endif
 	uint16_t client_port = 9900;
 	uint16_t server_port = 9901;
+	FILE *logfile;
 
 	struct upcall_meta upcall_meta_client;
 	struct upcall_meta upcall_meta_server;
+
+	logfile = fopen("ekr_loop_upcall.log", "a+");
+	if (logfile == NULL) {
+		debug_printf("Failed creating logfile\n");
+		exit(EXIT_FAILURE);
+	}
+
+	debug_set_target(logfile);
+
 
 	if (argc > 1) {
 		client_port = atoi(argv[1]);
@@ -499,12 +509,12 @@ main(int argc, char *argv[])
 	}
 #else
 	if ((rc = pthread_create(&tid_c, NULL, &handle_packets, (void *)&fd_c)) != 0) {
-		debug_printf(stderr, "pthread_create tid_c: %s\n", strerror(rc));
+		debug_printf("pthread_create tid_c: %s\n", strerror(rc));
 		exit(EXIT_FAILURE);
 	}
 
 	if ((rc = pthread_create(&tid_s, NULL, &handle_packets, (void *)&fd_s)) != 0) {
-		debug_printf(stderr, "pthread_create tid_s: %s\n", strerror(rc));
+		debug_printf("pthread_create tid_s: %s\n", strerror(rc));
 		exit(EXIT_FAILURE);
 	};
 #endif

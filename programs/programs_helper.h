@@ -78,4 +78,7 @@ debug_printf(const char *format, ...);
 void
 debug_printf_stack(const char *format, ...);
 
+void
+debug_set_target(FILE *fp);
+
 #endif /* __PROGRAMS_HELPER_H__ */
