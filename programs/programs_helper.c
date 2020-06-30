@@ -19,6 +19,8 @@
 
 #include "programs_helper.h"
 
+static FILE *debug_target = NULL;
+
 #ifdef _WIN32
 static void
 gettimeofday(struct timeval *tv, void *ignore)
@@ -50,7 +52,27 @@ gettimeofday(struct timeval *tv, void *ignore)
 #endif
 
 void
-debug_printf_runtime(void) {
+debug_printf_clean(const char *format, ...) {
+	char charbuf[1024];
+	va_list ap;
+
+	if (debug_target == NULL) {
+		debug_target = stderr;
+	}
+
+	va_start(ap, format);
+	if (vsnprintf(charbuf, 1024, format, ap) < 0) {
+		charbuf[0] = '\0';
+	}
+	va_end(ap);
+
+	fprintf(stderr, "%s", charbuf);
+}
+
+void
+debug_printf(const char *format, ...) {
+	va_list ap;
+	char charbuf[1024];
 	static struct timeval time_main;
 	struct timeval time_now;
 	struct timeval time_delta;
@@ -59,12 +81,21 @@ debug_printf_runtime(void) {
 		gettimeofday(&time_main, NULL);
 	}
 
+	if (debug_target == NULL) {
+		debug_target = stderr;
+	}
+
 	gettimeofday(&time_now, NULL);
 	timersub(&time_now, &time_main, &time_delta);
 
-	fprintf(stderr, "[%u.%03u] ", (unsigned int) time_delta.tv_sec, (unsigned int) time_delta.tv_usec / 1000);
-}
+	va_start(ap, format);
+	if (vsnprintf(charbuf, 1024, format, ap) < 0) {
+		charbuf[0] = '\0';
+	}
+	va_end(ap);
 
+	fprintf(stderr, "[S][%u.%03u] %s", (unsigned int) time_delta.tv_sec, (unsigned int) time_delta.tv_usec / 1000, charbuf);
+}
 
 void
 debug_printf_stack(const char *format, ...)
@@ -77,6 +108,10 @@ debug_printf_stack(const char *format, ...)
 
 	if (time_main.tv_sec == 0  && time_main.tv_usec == 0) {
 		gettimeofday(&time_main, NULL);
+	}
+
+	if (debug_target == NULL) {
+		debug_target = stderr;
 	}
 
 	gettimeofday(&time_now, NULL);

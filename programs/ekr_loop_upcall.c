@@ -58,7 +58,7 @@
 #define MAX_PACKET_SIZE (1<<16)
 #define LINE_LENGTH (1<<20)
 #define DISCARD_PPID 39
-#define NUMBER_OF_STEPS 10
+#define NUMBER_OF_STEPS 1
 
 static uint8_t crc32c_offloading = 0;
 
@@ -97,7 +97,7 @@ handle_packets(void *arg)
 		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
 			if ((dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
-				/* fprintf(stderr, "%s", dump_buf); */
+				//fprintf(stderr, "%s", dump_buf);
 				usrsctp_freedumpbuffer(dump_buf);
 			}
 
@@ -499,12 +499,12 @@ main(int argc, char *argv[])
 	}
 #else
 	if ((rc = pthread_create(&tid_c, NULL, &handle_packets, (void *)&fd_c)) != 0) {
-		fprintf(stderr, "pthread_create tid_c: %s\n", strerror(rc));
+		debug_printf(stderr, "pthread_create tid_c: %s\n", strerror(rc));
 		exit(EXIT_FAILURE);
 	}
 
 	if ((rc = pthread_create(&tid_s, NULL, &handle_packets, (void *)&fd_s)) != 0) {
-		fprintf(stderr, "pthread_create tid_s: %s\n", strerror(rc));
+		debug_printf(stderr, "pthread_create tid_s: %s\n", strerror(rc));
 		exit(EXIT_FAILURE);
 	};
 #endif
@@ -655,7 +655,7 @@ main(int argc, char *argv[])
 			debug_printf("usrscp_sendv - step %d - call %d flags %x\n", i, j + 1, sndinfo.snd_flags);
 			while (usrsctp_sendv(s_c, line, LINE_LENGTH, NULL, 0, (void *)&sndinfo,
 					 (socklen_t)sizeof(struct sctp_sndinfo), SCTP_SENDV_SNDINFO, 0) < 0) {
-				fprintf(stderr,"usrsctp_sendv - errno: %d - %s\n", errno, strerror(errno));
+				debug_printf("usrsctp_sendv - errno: %d - %s\n", errno, strerror(errno));
 				if (errno != EWOULDBLOCK || !sendv_retries_left) {
 					exit(EXIT_FAILURE);
 				}
