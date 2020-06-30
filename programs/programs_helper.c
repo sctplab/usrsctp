@@ -19,9 +19,9 @@
 
 #include "programs_helper.h"
 
-static FILE *debug_target = NULL;
-
 #define DEFAULT_TARGET stdout;
+
+static FILE *debug_target = NULL;
 
 #ifdef _WIN32
 static void
@@ -84,12 +84,12 @@ debug_printf(const char *format, ...) {
 	struct timeval time_now;
 	struct timeval time_delta;
 
-	if (time_main.tv_sec == 0  && time_main.tv_usec == 0) {
-		gettimeofday(&time_main, NULL);
-	}
-
 	if (debug_target == NULL) {
 		debug_target = DEFAULT_TARGET;
+	}
+
+	if (time_main.tv_sec == 0  && time_main.tv_usec == 0) {
+		gettimeofday(&time_main, NULL);
 	}
 
 	gettimeofday(&time_now, NULL);
@@ -113,12 +113,12 @@ debug_printf_stack(const char *format, ...)
 	struct timeval time_now;
 	struct timeval time_delta;
 
-	if (time_main.tv_sec == 0  && time_main.tv_usec == 0) {
-		gettimeofday(&time_main, NULL);
-	}
-
 	if (debug_target == NULL) {
 		debug_target = DEFAULT_TARGET;
+	}
+
+	if (time_main.tv_sec == 0  && time_main.tv_usec == 0) {
+		gettimeofday(&time_main, NULL);
 	}
 
 	gettimeofday(&time_now, NULL);
@@ -137,6 +137,10 @@ static void
 handle_association_change_event(struct sctp_assoc_change *sac)
 {
 	unsigned int i, n;
+
+	if (debug_target == NULL) {
+		debug_target = DEFAULT_TARGET;
+	}
 
 	fprintf(debug_target, "Association change ");
 	switch (sac->sac_state) {
@@ -210,6 +214,10 @@ handle_peer_address_change_event(struct sctp_paddr_change *spc)
 	struct sockaddr_in6 *sin6;
 	struct sockaddr_conn *sconn;
 
+	if (debug_target == NULL) {
+		debug_target = DEFAULT_TARGET;
+	}
+
 	switch (spc->spc_aaddr.ss_family) {
 	case AF_INET:
 		sin = (struct sockaddr_in *)&spc->spc_aaddr;
@@ -274,6 +282,10 @@ handle_send_failed_event(struct sctp_send_failed_event *ssfe)
 {
 	size_t i, n;
 
+	if (debug_target == NULL) {
+		debug_target = DEFAULT_TARGET;
+	}
+
 	if (ssfe->ssfe_flags & SCTP_DATA_UNSENT) {
 		fprintf(debug_target, "Unsent ");
 	}
@@ -297,6 +309,10 @@ handle_send_failed_event(struct sctp_send_failed_event *ssfe)
 static void
 handle_adaptation_indication(struct sctp_adaptation_event *sai)
 {
+	if (debug_target == NULL) {
+		debug_target = DEFAULT_TARGET;
+	}
+
 	fprintf(debug_target, "Adaptation indication: %x.\n", sai-> sai_adaptation_ind);
 	return;
 }
@@ -304,6 +320,10 @@ handle_adaptation_indication(struct sctp_adaptation_event *sai)
 static void
 handle_shutdown_event(struct sctp_shutdown_event *sse)
 {
+	if (debug_target == NULL) {
+		debug_target = DEFAULT_TARGET;
+	}
+
 	fprintf(debug_target, "Shutdown event.\n");
 	/* XXX: notify all channels. */
 	return;
@@ -313,6 +333,10 @@ static void
 handle_stream_reset_event(struct sctp_stream_reset_event *strrst)
 {
 	uint32_t n, i;
+
+	if (debug_target == NULL) {
+		debug_target = DEFAULT_TARGET;
+	}
 
 	n = (strrst->strreset_length - sizeof(struct sctp_stream_reset_event)) / sizeof(uint16_t);
 	fprintf(debug_target, "Stream reset event: flags = %x, ", strrst->strreset_flags);
@@ -339,6 +363,10 @@ handle_stream_reset_event(struct sctp_stream_reset_event *strrst)
 static void
 handle_stream_change_event(struct sctp_stream_change_event *strchg)
 {
+	if (debug_target == NULL) {
+		debug_target = DEFAULT_TARGET;
+	}
+
 	fprintf(debug_target, "Stream change event: streams (in/out) = (%u/%u), flags = %x.\n",
 	       strchg->strchange_instrms, strchg->strchange_outstrms, strchg->strchange_flags);
 	return;
@@ -348,6 +376,10 @@ static void
 handle_remote_error_event(struct sctp_remote_error *sre)
 {
 	size_t i, n;
+
+	if (debug_target == NULL) {
+		debug_target = DEFAULT_TARGET;
+	}
 
 	n = sre->sre_length - sizeof(struct sctp_remote_error);
 	fprintf(debug_target, "Remote Error (error = 0x%04x): ", sre->sre_error);
@@ -363,6 +395,10 @@ handle_notification(union sctp_notification *notif, size_t n)
 {
 	if (notif->sn_header.sn_length != (uint32_t)n) {
 		return;
+	}
+
+	if (debug_target == NULL) {
+		debug_target = DEFAULT_TARGET;
 	}
 
 	fprintf(debug_target, "handle_notification : ");

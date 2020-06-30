@@ -97,7 +97,7 @@ handle_packets(void *arg)
 		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
 			if ((dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
-				//debug_printf_clean("%s", dump_buf);
+				//debug_printf_clean("%s\n", dump_buf);
 				usrsctp_freedumpbuffer(dump_buf);
 			}
 
@@ -151,7 +151,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 	}
 
 	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
-		/* debug_printf_clean("%s", dump_buf); */
+		//debug_printf_clean("%s\n", dump_buf);
 		usrsctp_freedumpbuffer(dump_buf);
 	}
 #ifdef _WIN32
