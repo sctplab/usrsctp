@@ -76,6 +76,9 @@ void
 debug_printf(const char *format, ...);
 
 void
+debug_printf_clean(const char *format, ...);
+
+void
 debug_printf_stack(const char *format, ...);
 
 void

@@ -21,6 +21,8 @@
 
 static FILE *debug_target = NULL;
 
+#define DEFAULT_TARGET stdout;
+
 #ifdef _WIN32
 static void
 gettimeofday(struct timeval *tv, void *ignore)
@@ -62,7 +64,7 @@ debug_printf_clean(const char *format, ...) {
 	va_list ap;
 
 	if (debug_target == NULL) {
-		debug_target = stderr;
+		debug_target = DEFAULT_TARGET;
 	}
 
 	va_start(ap, format);
@@ -87,7 +89,7 @@ debug_printf(const char *format, ...) {
 	}
 
 	if (debug_target == NULL) {
-		debug_target = stderr;
+		debug_target = DEFAULT_TARGET;
 	}
 
 	gettimeofday(&time_now, NULL);
@@ -116,7 +118,7 @@ debug_printf_stack(const char *format, ...)
 	}
 
 	if (debug_target == NULL) {
-		debug_target = stderr;
+		debug_target = DEFAULT_TARGET;
 	}
 
 	gettimeofday(&time_now, NULL);

@@ -58,7 +58,7 @@
 #define MAX_PACKET_SIZE (1<<16)
 #define LINE_LENGTH (1<<20)
 #define DISCARD_PPID 39
-#define NUMBER_OF_STEPS 1
+#define NUMBER_OF_STEPS 10
 
 static uint8_t crc32c_offloading = 0;
 
@@ -97,7 +97,7 @@ handle_packets(void *arg)
 		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
 		if (length > 0) {
 			if ((dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND)) != NULL) {
-				//fprintf(stderr, "%s", dump_buf);
+				//debug_printf_clean("%s", dump_buf);
 				usrsctp_freedumpbuffer(dump_buf);
 			}
 
@@ -151,7 +151,7 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 	}
 
 	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
-		/* fprintf(stderr, "%s", dump_buf); */
+		/* debug_printf_clean("%s", dump_buf); */
 		usrsctp_freedumpbuffer(dump_buf);
 	}
 #ifdef _WIN32
@@ -239,7 +239,7 @@ print_addresses(struct socket *sock)
 
 			sin = (struct sockaddr_in *)addr;
 			name = inet_ntop(AF_INET, &sin->sin_addr, buf, INET_ADDRSTRLEN);
-			fprintf(stderr, "%s:%d", name, ntohs(sin->sin_port));
+			debug_printf_clean("%s:%d", name, ntohs(sin->sin_port));
 #if !defined(HAVE_SA_LEN)
 			sa_len = (int)sizeof(struct sockaddr_in);
 #endif
@@ -253,7 +253,7 @@ print_addresses(struct socket *sock)
 
 			sin6 = (struct sockaddr_in6 *)addr;
 			name = inet_ntop(AF_INET6, &sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
-			fprintf(stderr, "%s:%d", name, ntohs(sin6->sin6_port));
+			debug_printf_clean("%s:%d", name, ntohs(sin6->sin6_port));
 #if !defined(HAVE_SA_LEN)
 			sa_len = (int)sizeof(struct sockaddr_in6);
 #endif
@@ -264,14 +264,14 @@ print_addresses(struct socket *sock)
 			struct sockaddr_conn *sconn;
 
 			sconn = (struct sockaddr_conn *)addr;
-			fprintf(stderr, "%p:%d", sconn->sconn_addr, ntohs(sconn->sconn_port));
+			debug_printf_clean("%p:%d", sconn->sconn_addr, ntohs(sconn->sconn_port));
 #if !defined(HAVE_SA_LEN)
 			sa_len = (int)sizeof(struct sockaddr_conn);
 #endif
 			break;
 		}
 		default:
-			fprintf(stderr, "Unknown family: %d", addr->sa_family);
+			debug_printf_clean("Unknown family: %d", addr->sa_family);
 #if !defined(HAVE_SA_LEN)
 			sa_len = (int)sizeof(struct sockaddr);
 #endif
@@ -283,13 +283,13 @@ print_addresses(struct socket *sock)
 		addr = (struct sockaddr *)((caddr_t)addr + addr->sa_len);
 #endif
 		if (i != n - 1) {
-			fprintf(stderr, ",");
+			debug_printf_clean(",");
 		}
 	}
 	if (n > 0) {
 		usrsctp_freeladdrs(addrs);
 	}
-	fprintf(stderr, "<->");
+	debug_printf_clean("<->");
 	n = usrsctp_getpaddrs(sock, 0, &addrs);
 	addr = addrs;
 	for (i = 0; i < n; i++) {
@@ -302,7 +302,7 @@ print_addresses(struct socket *sock)
 
 			sin = (struct sockaddr_in *)addr;
 			name = inet_ntop(AF_INET, &sin->sin_addr, buf, INET_ADDRSTRLEN);
-			fprintf(stderr, "%s:%d", name, ntohs(sin->sin_port));
+			debug_printf_clean("%s:%d", name, ntohs(sin->sin_port));
 #if !defined(HAVE_SA_LEN)
 			sa_len = (int)sizeof(struct sockaddr_in);
 #endif
@@ -316,7 +316,7 @@ print_addresses(struct socket *sock)
 
 			sin6 = (struct sockaddr_in6 *)addr;
 			name = inet_ntop(AF_INET6, &sin6->sin6_addr, buf, INET6_ADDRSTRLEN);
-			fprintf(stderr, "%s:%d", name, ntohs(sin6->sin6_port));
+			debug_printf_clean("%s:%d", name, ntohs(sin6->sin6_port));
 #if !defined(HAVE_SA_LEN)
 			sa_len = (int)sizeof(struct sockaddr_in6);
 #endif
@@ -327,14 +327,14 @@ print_addresses(struct socket *sock)
 			struct sockaddr_conn *sconn;
 
 			sconn = (struct sockaddr_conn *)addr;
-			fprintf(stderr, "%p:%d", sconn->sconn_addr, ntohs(sconn->sconn_port));
+			debug_printf_clean("%p:%d", sconn->sconn_addr, ntohs(sconn->sconn_port));
 #if !defined(HAVE_SA_LEN)
 			sa_len = (int)sizeof(struct sockaddr_conn);
 #endif
 			break;
 		}
 		default:
-			fprintf(stderr, "Unknown family: %d", addr->sa_family);
+			debug_printf_clean("Unknown family: %d", addr->sa_family);
 #if !defined(HAVE_SA_LEN)
 			sa_len = (int)sizeof(struct sockaddr);
 #endif
@@ -346,13 +346,13 @@ print_addresses(struct socket *sock)
 		addr = (struct sockaddr *)((caddr_t)addr + addr->sa_len);
 #endif
 		if (i != n - 1) {
-			fprintf(stderr, ",");
+			debug_printf_clean(",");
 		}
 	}
 	if (n > 0) {
 		usrsctp_freepaddrs(addrs);
 	}
-	fprintf(stderr, "\n");
+	debug_printf_clean("\n");
 }
 
 int
@@ -381,19 +381,20 @@ main(int argc, char *argv[])
 #endif
 	uint16_t client_port = 9900;
 	uint16_t server_port = 9901;
-	FILE *logfile;
+
 
 	struct upcall_meta upcall_meta_client;
 	struct upcall_meta upcall_meta_server;
 
+#ifdef OUTPUT_TO_LOGFILE
+	FILE *logfile;
 	logfile = fopen("ekr_loop_upcall.log", "a+");
 	if (logfile == NULL) {
 		debug_printf("Failed creating logfile\n");
 		exit(EXIT_FAILURE);
 	}
-
 	debug_set_target(logfile);
-
+#endif
 
 	if (argc > 1) {
 		client_port = atoi(argv[1]);
@@ -549,7 +550,7 @@ main(int argc, char *argv[])
 		perror("usrsctp_getsockopt");
 		exit(EXIT_FAILURE);
 	}
-	fprintf(stderr, "to %d.\n", cur_buf_size);
+	debug_printf_clean("to %d.\n", cur_buf_size);
 	memset(&paddrparams, 0, sizeof(struct sctp_paddrparams));
 	paddrparams.spp_address.ss_family = AF_CONN;
 #ifdef HAVE_SCONN_LEN
@@ -583,7 +584,7 @@ main(int argc, char *argv[])
 		perror("usrsctp_getsockopt");
 		exit(EXIT_FAILURE);
 	}
-	fprintf(stderr, "to %d.\n", cur_buf_size);
+	debug_printf_clean("to %d.\n", cur_buf_size);
 
 	on = 1;
 	if (usrsctp_setsockopt(s_l, IPPROTO_SCTP, SCTP_RECVRCVINFO, &on, sizeof(int)) < 0) {
