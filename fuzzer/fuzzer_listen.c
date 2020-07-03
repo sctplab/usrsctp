@@ -37,12 +37,7 @@
 #define FUZZ_FAST 1
 
 #ifdef FUZZ_VERBOSE
-#define fuzzer_printf(...)                       \
-	do {                                        \
-		fprintf(stderr, "[P]");                 \
-		debug_printf_runtime();                 \
-		fprintf(stderr, __VA_ARGS__);           \
-	} while (0)
+#define fuzzer_printf(...) debug_printf(__VA_ARGS__)
 #else
 #define fuzzer_printf(...)
 #endif
