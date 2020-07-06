@@ -146,6 +146,7 @@ initialize_fuzzer(void) {
 
 	usrsctp_register_address((void *)1);
 	usrsctp_sysctl_set_sctp_pktdrop_enable(1);
+	usrsctp_sysctl_set_sctp_nrsack_enable(1);
 
 	fuzzer_printf("usrsctp initialized\n");
 	return (1);
@@ -412,6 +413,10 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 			usrsctp_conninput((void *)1, fuzz_data, 228, 0);
 		}
 	}
+
+	const char *sendbuffer = "Geologie ist keine richtige Wissenschaft!";
+	fuzzer_printf("Calling usrsctp_sendv()\n");
+	usrsctp_sendv(socket_client, sendbuffer, strlen(sendbuffer), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
 
 	fuzz_packet_buffer = malloc(data_size - 1 + COMMON_HEADER_SIZE);
 	memcpy(fuzz_packet_buffer, fuzz_common_header, COMMON_HEADER_SIZE); // common header
