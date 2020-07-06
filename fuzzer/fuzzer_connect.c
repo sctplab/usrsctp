@@ -413,10 +413,15 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 			usrsctp_conninput((void *)1, fuzz_data, 228, 0);
 		}
 	}
-
-	const char *sendbuffer = "Geologie ist keine richtige Wissenschaft!";
-	fuzzer_printf("Calling usrsctp_sendv()\n");
-	usrsctp_sendv(socket_client, sendbuffer, strlen(sendbuffer), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
+	
+	if (data[0] & FUZZ_B_I_DATA_SUPPORT &&
+		data[0] & FUZZ_B_RESERVED1 &&
+		!(data[0] & FUZZ_B_RESERVED2)) {
+			const char *sendbuffer = "Geologie ist keine richtige Wissenschaft!";
+			fuzzer_printf("Calling usrsctp_sendv()\n");
+			usrsctp_sendv(socket_client, sendbuffer, strlen(sendbuffer), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
+		}
+	
 
 	fuzz_packet_buffer = malloc(data_size - 1 + COMMON_HEADER_SIZE);
 	memcpy(fuzz_packet_buffer, fuzz_common_header, COMMON_HEADER_SIZE); // common header
