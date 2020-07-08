@@ -126,10 +126,13 @@ endif ()
 
 set(CMAKE_REQUIRED_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/usrsctplib")
 
+# Needed to avoid #error when including usrsctp.h.
+set(CMAKE_REQUIRED_DEFINITIONS -DHAVE_SCONN_LEN)
 check_include_file(usrsctp.h have_usrsctp_h)
 if (NOT have_usrsctp_h)
 	message(FATAL_ERROR "usrsctp.h not found")
 endif ()
+unset(CMAKE_REQUIRED_DEFINITIONS)
 
 check_struct_has_member("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" have_sa_len)
 if (have_sa_len)
@@ -149,12 +152,14 @@ if (have_sin6_len)
 	add_definitions(-DHAVE_SIN6_LEN)
 endif ()
 
+# Needed to avoid #error when including usrsctp.h.
+set(CMAKE_REQUIRED_DEFINITIONS -DHAVE_SCONN_LEN)
 check_struct_has_member("struct sockaddr_conn" "sconn_len" "usrsctp.h" have_sconn_len)
 if (have_sconn_len)
 	message(STATUS "HAVE_SCONN_LEN")
 	add_definitions(-DHAVE_SCONN_LEN)
 endif ()
-
+unset(CMAKE_REQUIRED_DEFINITIONS)
 
 #################################################
 # COMPILER SETTINGS

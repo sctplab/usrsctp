@@ -121,6 +121,9 @@ struct sctp_common_header {
  */
 #if defined(__APPLE__) || defined(__Bitrig__) || defined(__DragonFly__) || \
     defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
+#ifndef HAVE_SCONN_LEN
+#error "HAVE_SCONN_LEN not defined!"
+#endif
 struct sockaddr_conn {
 	uint8_t sconn_len;
 	uint8_t sconn_family;

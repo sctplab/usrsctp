@@ -167,7 +167,8 @@ AC_CHECK_MEMBER(struct sockaddr_in6.sin6_len,
 
 AC_CHECK_MEMBER(struct sockaddr_conn.sconn_len,
                 AC_DEFINE(HAVE_SCONN_LEN, 1, [Define this if your userland stack has sconn_len in sockaddr_conn struct.]),,
-                [#include "usrsctplib/usrsctp.h"])
+                [#define HAVE_SCONN_LEN // Needed to #avoid error when including usrsctp.h.
+                 #include "usrsctplib/usrsctp.h"])
 
 AC_MSG_CHECKING(for socklen_t)
 AC_TRY_COMPILE([#ifdef HAVE_SYS_TYPES_H
