@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 363010 2020-07-08 15:49:30Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 363012 2020-07-08 16:23:40Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5563,8 +5563,8 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 				if (stcb->asoc.prsctp_supported == 0) {
 					goto unknown_chunk;
 				}
-				if (((asoc->idata_supported == 1) && (ch->chunk_type == SCTP_FORWARD_CUM_TSN)) ||
-				    ((asoc->idata_supported == 0) && (ch->chunk_type == SCTP_IFORWARD_CUM_TSN))) {
+				if (((stcb->asoc.idata_supported == 1) && (ch->chunk_type == SCTP_FORWARD_CUM_TSN)) ||
+				    ((stcb->asoc.idata_supported == 0) && (ch->chunk_type == SCTP_IFORWARD_CUM_TSN))) {
 					if (ch->chunk_type == SCTP_FORWARD_CUM_TSN) {
 						SCTP_SNPRINTF(msg, sizeof(msg), "%s", "FORWARD-TSN chunk received when I-FORWARD-TSN was negotiated");
 					} else {
