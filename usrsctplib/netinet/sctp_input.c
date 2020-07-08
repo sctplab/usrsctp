@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 363008 2020-07-08 12:25:19Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 363010 2020-07-08 15:49:30Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5549,7 +5549,8 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 			break;
 		case SCTP_FORWARD_CUM_TSN:
 		case SCTP_IFORWARD_CUM_TSN:
-			SCTPDBG(SCTP_DEBUG_INPUT3, "SCTP_FWD_TSN\n");
+			SCTPDBG(SCTP_DEBUG_INPUT3, "%s\n",
+				ch->chunk_type == SCTP_FORWARD_CUM_TSN ? "FORWARD_TSN" : "I_FORWARD_TSN");
 			if (chk_length < sizeof(struct sctp_forward_tsn_chunk)) {
 				/* Its not ours */
 				*offset = length;
@@ -5561,6 +5562,18 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 
 				if (stcb->asoc.prsctp_supported == 0) {
 					goto unknown_chunk;
+				}
+				if (((asoc->idata_supported == 1) && (ch->chunk_type == SCTP_FORWARD_CUM_TSN)) ||
+				    ((asoc->idata_supported == 0) && (ch->chunk_type == SCTP_IFORWARD_CUM_TSN))) {
+					if (ch->chunk_type == SCTP_FORWARD_CUM_TSN) {
+						SCTP_SNPRINTF(msg, sizeof(msg), "%s", "FORWARD-TSN chunk received when I-FORWARD-TSN was negotiated");
+					} else {
+						SCTP_SNPRINTF(msg, sizeof(msg), "%s", "I-FORWARD-TSN chunk received when FORWARD-TSN was negotiated");
+					}
+					op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
+					sctp_abort_an_association(inp, stcb, op_err, SCTP_SO_NOT_LOCKED);
+					*offset = length;
+					return (NULL);
 				}
 				*fwd_tsn_seen = 1;
 				if (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) {
