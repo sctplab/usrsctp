@@ -98,7 +98,6 @@ list(APPEND check_programs
 	ekr_server.c
 	http_client.c
 	http_client_upcall.c
-	repro_new.c
 	rtcweb.c
 	st_client.c
 	test_libmgmt.c
