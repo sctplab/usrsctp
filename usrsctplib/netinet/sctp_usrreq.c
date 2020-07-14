@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 362563 2020-06-23 23:05:05Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 363080 2020-07-10 16:59:06Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -167,6 +167,7 @@ sctp_init(void)
 static void
 sctp_finish(void *unused __unused)
 {
+	EVENTHANDLER_DEREGISTER(rt_addrmsg, SCTP_BASE_VAR(eh_tag));
 	sctp_pcb_finish();
 }
 VNET_SYSUNINIT(sctp, SI_SUB_PROTO_DOMAIN, SI_ORDER_FOURTH, sctp_finish, NULL);

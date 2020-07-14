@@ -46,8 +46,8 @@
 #define FUZZ_B_SEND_STREAM_RESET      (1 << 3)
 #define FUZZ_B_INJECT_DATA            (1 << 4)
 #define FUZZ_B_I_DATA_SUPPORT         (1 << 5)
-#define FUZZ_B_RESERVED1              (1 << 6)
-#define FUZZ_B_RESERVED2              (1 << 7)
+#define FUZZ_B_SEND_DATA_FORCE        (1 << 6)
+#define FUZZ_B_RESERVED               (1 << 7)
 
 #define BUFFER_SIZE 4096
 #define COMMON_HEADER_SIZE 12
@@ -55,12 +55,7 @@
 static uint32_t assoc_vtag = 0;
 
 #ifdef FUZZ_VERBOSE
-#define fuzzer_printf(...)                       \
-	do {                                        \
-		fprintf(stderr, "[P]");                 \
-		debug_printf_runtime();                 \
-		fprintf(stderr, __VA_ARGS__);           \
-	} while (0)
+#define fuzzer_printf(...) debug_printf(__VA_ARGS__)
 #else
 #define fuzzer_printf(...)
 #endif
@@ -151,6 +146,7 @@ initialize_fuzzer(void) {
 
 	usrsctp_register_address((void *)1);
 	usrsctp_sysctl_set_sctp_pktdrop_enable(1);
+	usrsctp_sysctl_set_sctp_nrsack_enable(1);
 
 	fuzzer_printf("usrsctp initialized\n");
 	return (1);
@@ -417,6 +413,14 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 			usrsctp_conninput((void *)1, fuzz_data, 228, 0);
 		}
 	}
+
+	if (data[0] & FUZZ_B_I_DATA_SUPPORT &&
+		data[0] & FUZZ_B_SEND_DATA_FORCE) {
+			const char *sendbuffer = "Geologie ist keine richtige Wissenschaft!";
+			fuzzer_printf("Calling usrsctp_sendv()\n");
+			usrsctp_sendv(socket_client, sendbuffer, strlen(sendbuffer), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
+		}
+	
 
 	fuzz_packet_buffer = malloc(data_size - 1 + COMMON_HEADER_SIZE);
 	memcpy(fuzz_packet_buffer, fuzz_common_header, COMMON_HEADER_SIZE); // common header

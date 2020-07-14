@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 362581 2020-06-24 14:47:51Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_indata.c 363076 2020-07-10 11:15:10Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1707,6 +1707,7 @@ sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,
 			  int *break_flag, int last_chunk, uint8_t chk_type)
 {
 	struct sctp_tmit_chunk *chk = NULL; /* make gcc happy */
+	struct sctp_stream_in *strm;
 	uint32_t tsn, fsn, gap, mid;
 	struct mbuf *dmbuf;
 	int the_len;
@@ -2345,12 +2346,13 @@ finish_express_del:
 			/* All can be removed */
 			TAILQ_FOREACH_SAFE(control, &asoc->pending_reply_queue, next, ncontrol) {
 				TAILQ_REMOVE(&asoc->pending_reply_queue, control, next);
+				strm = &asoc->strmin[control->sinfo_stream];
 				sctp_queue_data_to_stream(stcb, asoc, control, abort_flag, &need_reasm_check);
 				if (*abort_flag) {
 					return (0);
 				}
 				if (need_reasm_check) {
-					(void)sctp_deliver_reasm_check(stcb, asoc, &asoc->strmin[control->sinfo_stream], SCTP_READ_LOCK_NOT_HELD);
+					(void)sctp_deliver_reasm_check(stcb, asoc, strm, SCTP_READ_LOCK_NOT_HELD);
 					need_reasm_check = 0;
 				}
 			}
@@ -2365,12 +2367,13 @@ finish_express_del:
 				 * control->sinfo_tsn > liste->tsn
 				 */
 				TAILQ_REMOVE(&asoc->pending_reply_queue, control, next);
+				strm = &asoc->strmin[control->sinfo_stream];
 				sctp_queue_data_to_stream(stcb, asoc, control, abort_flag, &need_reasm_check);
 				if (*abort_flag) {
 					return (0);
 				}
 				if (need_reasm_check) {
-					(void)sctp_deliver_reasm_check(stcb, asoc, &asoc->strmin[control->sinfo_stream], SCTP_READ_LOCK_NOT_HELD);
+					(void)sctp_deliver_reasm_check(stcb, asoc, strm, SCTP_READ_LOCK_NOT_HELD);
 					need_reasm_check = 0;
 				}
 			}
@@ -2765,7 +2768,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 			struct mbuf *op_err;
 			char msg[SCTP_DIAG_INFO_LEN];
 
-			SCTP_SNPRINTF(msg, sizeof(msg), "%s", "I-DATA chunk received when DATA was negotiated");
+			SCTP_SNPRINTF(msg, sizeof(msg), "%s", "DATA chunk received when I-DATA was negotiated");
 			op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
 			stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA + SCTP_LOC_20;
 			sctp_abort_an_association(inp, stcb, op_err, SCTP_SO_NOT_LOCKED);
@@ -2776,7 +2779,7 @@ sctp_process_data(struct mbuf **mm, int iphlen, int *offset, int length,
 			struct mbuf *op_err;
 			char msg[SCTP_DIAG_INFO_LEN];
 
-			SCTP_SNPRINTF(msg, sizeof(msg), "%s", "DATA chunk received when I-DATA was negotiated");
+			SCTP_SNPRINTF(msg, sizeof(msg), "%s", "I-DATA chunk received when DATA was negotiated");
 			op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
 			stcb->sctp_ep->last_abort_code = SCTP_FROM_SCTP_INDATA + SCTP_LOC_21;
 			sctp_abort_an_association(inp, stcb, op_err, SCTP_SO_NOT_LOCKED);
@@ -5480,13 +5483,11 @@ sctp_kick_prsctp_reorder_queue(struct sctp_tcb *stcb,
 
 static void
 sctp_flush_reassm_for_str_seq(struct sctp_tcb *stcb,
-	struct sctp_association *asoc,
-	uint16_t stream, uint32_t mid, int ordered, uint32_t cumtsn)
+	struct sctp_association *asoc, struct sctp_stream_in *strm,
+	struct sctp_queued_to_read *control, int ordered, uint32_t cumtsn)
 {
-	struct sctp_queued_to_read *control;
-	struct sctp_stream_in *strm;
 	struct sctp_tmit_chunk *chk, *nchk;
-	int cnt_removed=0;
+	int cnt_removed = 0;
 
 	/*
 	 * For now large messages held on the stream reasm that are
@@ -5496,12 +5497,6 @@ sctp_flush_reassm_for_str_seq(struct sctp_tcb *stcb,
 	 * delivery function... to see if it can be delivered... But
 	 * for now we just dump everything on the queue.
 	 */
-	strm = &asoc->strmin[stream];
-	control = sctp_find_reasm_entry(strm, mid, ordered, asoc->idata_supported);
-	if (control == NULL) {
-		/* Not found */
-		return;
-	}
 	if (!asoc->idata_supported && !ordered && SCTP_TSN_GT(control->fsn_included, cumtsn)) {
 		return;
 	}
@@ -5675,10 +5670,14 @@ sctp_handle_forward_tsn(struct sctp_tcb *stcb,
 	/* This is now done as part of clearing up the stream/seq */
 	if (asoc->idata_supported == 0) {
 		uint16_t sid;
+
 		/* Flush all the un-ordered data based on cum-tsn */
 		SCTP_INP_READ_LOCK(stcb->sctp_ep);
 		for (sid = 0 ; sid < asoc->streamincnt; sid++) {
-			sctp_flush_reassm_for_str_seq(stcb, asoc, sid, 0, 0, new_cum_tsn);
+			strm = &asoc->strmin[sid];
+			if (!TAILQ_EMPTY(&strm->uno_inqueue)) {
+				sctp_flush_reassm_for_str_seq(stcb, asoc, strm, TAILQ_FIRST(&strm->uno_inqueue), 0, new_cum_tsn);
+			}
 		}
 		SCTP_INP_READ_UNLOCK(stcb->sctp_ep);
 	}
@@ -5690,7 +5689,7 @@ sctp_handle_forward_tsn(struct sctp_tcb *stcb,
 	if (m && fwd_sz) {
 		/* New method. */
 		unsigned int num_str;
-		uint32_t mid, cur_mid;
+		uint32_t mid;
 		uint16_t sid;
 		uint16_t ordered, flags;
 		struct sctp_strseq *stseq, strseqbuf;
@@ -5754,8 +5753,24 @@ sctp_handle_forward_tsn(struct sctp_tcb *stcb,
 				asoc->fragmented_delivery_inprogress = 0;
 			}
 			strm = &asoc->strmin[sid];
-			for (cur_mid = strm->last_mid_delivered; SCTP_MID_GE(asoc->idata_supported, mid, cur_mid); cur_mid++) {
-				sctp_flush_reassm_for_str_seq(stcb, asoc, sid, cur_mid, ordered, new_cum_tsn);
+			if (ordered) {
+				TAILQ_FOREACH(control, &strm->inqueue, next_instrm) {
+					if (SCTP_MID_GE(asoc->idata_supported, mid, control->mid)) {
+						sctp_flush_reassm_for_str_seq(stcb, asoc, strm, control, ordered, new_cum_tsn);
+					}
+				}
+			} else {
+				if (asoc->idata_supported) {
+					TAILQ_FOREACH(control, &strm->uno_inqueue, next_instrm) {
+						if (SCTP_MID_GE(asoc->idata_supported, mid, control->mid)) {
+							sctp_flush_reassm_for_str_seq(stcb, asoc, strm, control, ordered, new_cum_tsn);
+						}
+					}
+				} else {
+					if (!TAILQ_EMPTY(&strm->uno_inqueue)) {
+						sctp_flush_reassm_for_str_seq(stcb, asoc, strm, TAILQ_FIRST(&strm->uno_inqueue), ordered, new_cum_tsn);
+					}
+				}
 			}
 			TAILQ_FOREACH(control, &stcb->sctp_ep->read_queue, next) {
 				if ((control->sinfo_stream == sid) &&

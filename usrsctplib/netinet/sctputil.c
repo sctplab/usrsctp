@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 362462 2020-06-21 09:56:09Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 362813 2020-06-30 21:50:05Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5787,7 +5787,11 @@ sctp_find_ifa_in_ep(struct sctp_inpcb *inp, struct sockaddr *addr,
 	if (holds_lock == 0) {
 		SCTP_INP_RUNLOCK(inp);
 	}
-	return (laddr->ifa);
+	if (laddr != NULL) {
+		return (laddr->ifa);
+	} else {
+		return (NULL);
+	}
 }
 
 uint32_t
