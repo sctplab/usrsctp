@@ -74,6 +74,7 @@ debug_printf_clean(const char *format, ...) {
 	va_end(ap);
 
 	fprintf(debug_target, "%s", charbuf);
+	fflush(debug_target);
 }
 
 void
@@ -102,6 +103,7 @@ debug_printf(const char *format, ...) {
 	va_end(ap);
 
 	fprintf(debug_target, "[P][%u.%03u] %s", (unsigned int) time_delta.tv_sec, (unsigned int) time_delta.tv_usec / 1000, charbuf);
+	fflush(debug_target);
 }
 
 void
@@ -131,6 +133,7 @@ debug_printf_stack(const char *format, ...)
 	va_end(ap);
 
 	fprintf(debug_target, "[S][%u.%03u] %s", (unsigned int) time_delta.tv_sec, (unsigned int) time_delta.tv_usec / 1000, charbuf);
+	fflush(debug_target);
 }
 
 static void
