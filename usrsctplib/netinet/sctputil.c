@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 362813 2020-06-30 21:50:05Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 363275 2020-07-17 15:09:49Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5854,8 +5854,11 @@ sctp_find_ifa_by_addr(struct sockaddr *addr, uint32_t vrf_id, int holds_lock)
 	struct sctp_ifalist *hash_head;
 	uint32_t hash_of_addr;
 
-	if (holds_lock == 0)
+	if (holds_lock == 0) {
 		SCTP_IPI_ADDR_RLOCK();
+	} else {
+		SCTP_IPI_ADDR_LOCK_ASSERT();
+	}
 
 	vrf = sctp_find_vrf(vrf_id);
 	if (vrf == NULL) {
@@ -7125,7 +7128,7 @@ sctp_dynamic_set_primary(struct sockaddr *sa, uint32_t vrf_id)
 	struct sctp_ifa *ifa;
 	struct sctp_laddr *wi;
 
-	ifa = sctp_find_ifa_by_addr(sa, vrf_id, 0);
+	ifa = sctp_find_ifa_by_addr(sa, vrf_id, SCTP_ADDR_NOT_LOCKED);
 	if (ifa == NULL) {
 		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTPUTIL, EADDRNOTAVAIL);
 		return (EADDRNOTAVAIL);
