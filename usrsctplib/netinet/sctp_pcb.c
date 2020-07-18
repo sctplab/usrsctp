@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 363275 2020-07-17 15:09:49Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 363309 2020-07-18 13:10:02Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4144,9 +4144,6 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	 */
 	if (from != SCTP_CALLED_FROM_INPKILL_TIMER) {
 		(void)SCTP_OS_TIMER_STOP_DRAIN(&inp->sctp_ep.signature_change.timer);
-	} else {
-		/* Probably un-needed */
-		(void)SCTP_OS_TIMER_STOP(&inp->sctp_ep.signature_change.timer);
 	}
 
 #ifdef SCTP_LOG_CLOSING
