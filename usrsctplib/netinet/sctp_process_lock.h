@@ -543,6 +543,8 @@
 	EnterCriticalSection(&SCTP_BASE_INFO(ipi_addr_mtx))
 #define SCTP_IPI_ADDR_WUNLOCK() \
 	LeaveCriticalSection(&SCTP_BASE_INFO(ipi_addr_mtx))
+#define SCTP_IPI_ADDR_LOCK_ASSERT()
+#define SCTP_IPI_ADDR_WLOCK_ASSERT()
 
 
 /* iterator locks */
@@ -579,6 +581,10 @@
 	KASSERT(pthread_mutex_lock(&SCTP_BASE_INFO(ipi_addr_mtx)) == 0, ("%s: ipi_addr_mtx already locked", __func__))
 #define SCTP_IPI_ADDR_WUNLOCK() \
 	KASSERT(pthread_mutex_unlock(&SCTP_BASE_INFO(ipi_addr_mtx)) == 0, ("%s: ipi_addr_mtx not locked", __func__))
+#define SCTP_IPI_ADDR_LOCK_ASSERT() \
+	KASSERT(pthread_mutex_trylock(&SCTP_BASE_INFO(ipi_addr_mtx)) == EBUSY, ("%s: ipi_addr_mtx not locked", __func__))
+#define SCTP_IPI_ADDR_WLOCK_ASSERT() \
+	KASSERT(pthread_mutex_trylock(&SCTP_BASE_INFO(ipi_addr_mtx)) == EBUSY, ("%s: ipi_addr_mtx not locked", __func__))
 #else
 #define SCTP_IPI_ADDR_RLOCK() \
 	(void)pthread_mutex_lock(&SCTP_BASE_INFO(ipi_addr_mtx))
@@ -588,6 +594,8 @@
 	(void)pthread_mutex_lock(&SCTP_BASE_INFO(ipi_addr_mtx))
 #define SCTP_IPI_ADDR_WUNLOCK() \
 	(void)pthread_mutex_unlock(&SCTP_BASE_INFO(ipi_addr_mtx))
+#define SCTP_IPI_ADDR_LOCK_ASSERT()
+#define SCTP_IPI_ADDR_WLOCK_ASSERT()
 #endif
 
 /* iterator locks */

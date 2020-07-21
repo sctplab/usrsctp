@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 363080 2020-07-10 16:59:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 363275 2020-07-17 15:09:49Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1441,9 +1441,6 @@ sctp_fill_user_address(struct sockaddr *dst, struct sockaddr *src)
 
 
 
-/*
- * NOTE: assumes addr lock is held
- */
 static size_t
 sctp_fill_up_addresses_vrf(struct sctp_inpcb *inp,
                            struct sctp_tcb *stcb,
@@ -1466,6 +1463,7 @@ sctp_fill_up_addresses_vrf(struct sctp_inpcb *inp,
 #endif
 	struct sctp_vrf *vrf;
 
+	SCTP_IPI_ADDR_LOCK_ASSERT();
 	actual = 0;
 	if (limit == 0)
 		return (actual);
@@ -1794,9 +1792,6 @@ sctp_fill_up_addresses(struct sctp_inpcb *inp,
 	return (size);
 }
 
-/*
- * NOTE: assumes addr lock is held
- */
 static int
 sctp_count_max_addresses_vrf(struct sctp_inpcb *inp, uint32_t vrf_id)
 {
@@ -1810,6 +1805,7 @@ sctp_count_max_addresses_vrf(struct sctp_inpcb *inp, uint32_t vrf_id)
 	 * bound-all case a TCB may NOT include the loopback or other
 	 * addresses as well.
 	 */
+	SCTP_IPI_ADDR_LOCK_ASSERT();
 	vrf = sctp_find_vrf(vrf_id);
 	if (vrf == NULL) {
 		return (0);
