@@ -6,10 +6,10 @@ NPROC=1
 # OS detection
 if [ "$(uname)" = "Linux" ]; then
 	NPROC=$(nproc)
-	CC=clang-9
+	CC=clang-10
 elif [ "$(uname)" = "Darwin" ]; then
 	NPROC=$(sysctl -n hw.ncpu)
-	CC=/usr/local/opt/llvm/bin/clang
+	CC=clang
 elif [ "$(uname)" = "FreeBSD" ]; then
 	NPROC=$(sysctl -n hw.ncpu)
 	CC=cc
