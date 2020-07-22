@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2019 Felix Weinrank
+ * Copyright (C) 2017-2020 Felix Weinrank
  *
  * All rights reserved.
  *
@@ -35,6 +35,8 @@
 #include <assert.h>
 #include <usrsctp.h>
 #include "../programs/programs_helper.h"
+
+//#define FUZZ_ALWAYS_INITIALIZE
 
 //#define FUZZ_VERBOSE
 #define FUZZ_INTERLEAVING
@@ -258,9 +260,13 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 	fuzzer_printf("LLVMFuzzerTestOneInput()\n");
 
+#ifdef FUZZ_ALWAYS_INITIALIZE
+	initialize_fuzzer();
+#else
 	if (!initialized) {
 		initialized = initialize_fuzzer();
 	}
+#endif
 
 	if (data_size < 5 || data_size > 65535) {
 		// Skip too small and too large packets
@@ -437,10 +443,11 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 	fuzzer_printf("Calling usrsctp_close()\n");
 	usrsctp_close(socket_client);
-#if 0
+
+#ifdef FUZZ_ALWAYS_INITIALIZE
 	fuzzer_printf("Calling usrsctp_finish()\n");
-	while (usrsctp_finish() != 0) {
-	}
+	while (usrsctp_finish() != 0) {}
+	printf("finish done!");
 	fuzzer_printf("Done!\n");
 #endif
 
