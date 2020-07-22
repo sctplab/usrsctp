@@ -447,7 +447,6 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 #ifdef FUZZ_ALWAYS_INITIALIZE
 	fuzzer_printf("Calling usrsctp_finish()\n");
 	while (usrsctp_finish() != 0) {}
-	printf("finish done!");
 	fuzzer_printf("Done!\n");
 #endif
 
