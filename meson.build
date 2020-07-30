@@ -186,8 +186,7 @@ else
         dependencies: dependencies,
         include_directories: include_dirs,
         install: true,
-        version: meson.project_version(),
-        c_args: '-U__APPLE__')
+        version: meson.project_version())
 endif
 
 # Declare dependency
