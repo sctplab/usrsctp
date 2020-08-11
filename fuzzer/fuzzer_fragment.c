@@ -9,10 +9,10 @@
 #define FUZZ_B_RESERVED2      		(1 << 1)
 #define FUZZ_B_RESERVED3            (1 << 2)
 #define FUZZ_B_RESERVED4      		(1 << 3)
-#define NR_SACK_FALG                (1 << 4)
-#define FUZZ_B_RESERVED6         	(1 << 5)
-#define I_DATA_FALG                 (1 << 6)
-#define FUZZ_B_RESERVED8            (1 << 7)
+#define NR_SACK_FLAG                (1 << 4)
+#define FUZZ_B_RESERVED5         	(1 << 5)
+#define I_DATA_FLAG                 (1 << 6)
+#define FUZZ_B_RESERVED6            (1 << 7)
 
 #define fuzzer_printf(...)
 #define BUFFER_SIZE 4096
