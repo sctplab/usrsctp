@@ -227,7 +227,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RECVNXTINFO, &optval, sizeof(optval));
 	assert(result == 0);
 
-	if (data[0] & I_DATA_FALG) {
+	if (data[0] & I_DATA_FLAG) {
 		// set the program supporting I-DATA
 		optval = 2;
 		result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &optval, sizeof(optval));
@@ -267,7 +267,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	result = usrsctp_connect(socket_client, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn));
 	assert(result == 0 || errno == EINPROGRESS);
 	
-	if (data[0] & NR_SACK_FALG) {
+	if (data[0] & NR_SACK_FLAG) {
 		common_header = (struct sctp_common_header*) fuzz_init_ack_nrsack_support;
 		common_header->verification_tag = assoc_vtag;
 		usrsctp_conninput((void *)1, fuzz_init_ack_nrsack_support, 448, 0);
@@ -291,7 +291,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		if (fuzz_data_count + data_chunk_size > data_size) {
 			data_chunk_size = data_size - fuzz_data_count;
 		}
-		if (data[fuzz_data_count] & NR_SACK_FALG) {
+		if (data[fuzz_data_count] & NR_SACK_FLAG) {
 			send_data_buffer = malloc(SEND_DATA_SIZE);
 			assert( send_data_buffer != NULL );
 			memset(send_data_buffer,1,SEND_DATA_SIZE);
