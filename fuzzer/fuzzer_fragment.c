@@ -9,16 +9,16 @@
 #define FUZZ_B_RESERVED2      		(1 << 1)
 #define FUZZ_B_RESERVED3            (1 << 2)
 #define FUZZ_B_RESERVED4      		(1 << 3)
-#define FUZZ_B_RESERVED5            (1 << 4)
-#define FUZZ_B_RESERVED6         	(1 << 5)
-#define I_DATA_FALG                 (1 << 6)
-#define FUZZ_B_RESERVED8            (1 << 7)
+#define NR_SACK_FLAG                (1 << 4)
+#define FUZZ_B_RESERVED5         	(1 << 5)
+#define I_DATA_FLAG                 (1 << 6)
+#define FUZZ_B_RESERVED6            (1 << 7)
 
 #define fuzzer_printf(...)
 #define BUFFER_SIZE 4096
 #define COMMON_HEADER_SIZE 12
 #define SCTP_INTERLEAVING_SUPPORTED 0x00001206
-
+#define SEND_DATA_SIZE 4096
 static uint32_t assoc_vtag = 0;
 
 static void
@@ -90,7 +90,7 @@ initialize_fuzzer(void) {
 
 	usrsctp_register_address((void *)1);
 	usrsctp_sysctl_set_sctp_pktdrop_enable(1);
-
+	usrsctp_sysctl_set_sctp_nrsack_enable(1);
 	fuzzer_printf("usrsctp initialized\n");
 
 	return (1);
@@ -112,6 +112,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	int result;
 	int optval;
 	unsigned long i;
+	char* send_data_buffer;
     uint16_t event_types[] = {
 		SCTP_ASSOC_CHANGE,
 		SCTP_PEER_ADDR_CHANGE,
@@ -155,7 +156,34 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		"\xf8\xda\xe9\xa0\x62\x01\x79\xe1\x0d\x5f\x38\xaa\x80\x04\x00\x08" \
 		"\x00\x03\x00\x01\x80\x03\x00\x06\x80\xc1\x00\x00\x81\xe1\x1e\x81" \
 		"\xea\x41\xeb\xf0\x12\xd9\x74\xbe\x13\xfd\x4b\x6c\x5c\xa2\x8f\x00";
-
+	char fuzz_init_ack_nrsack_support[] = "\x13\x89\x13\x88\x49\xa4\xac\xb2\x00\x00\x00\x00\x02\x00\x01\xb4" \
+		"\x2b\xe8\x47\x40\x00\x1c\x71\xc7\xff\xff\xff\xff\xed\x69\x58\xec" \
+		"\xc0\x06\x00\x08\x00\x00\x07\xc4\x80\x00\x00\x04\xc0\x00\x00\x04" \
+		"\x80\x08\x00\x0b\xc0\x10\x0f\xc1\x80\x82\x40\x00\x80\x02\x00\x24" \
+		"\x40\x39\xcf\x32\xd6\x60\xcf\xfa\x3f\x2f\xa9\x52\xed\x2b\xf2\xe6" \
+		"\x2f\xb7\x81\x96\xf8\xda\xe9\xa0\x62\x01\x79\xe1\x0d\x5f\x38\xaa" \
+		"\x80\x04\x00\x08\x00\x03\x00\x01\x80\x03\x00\x06\x80\xc1\x00\x00" \
+		"\x00\x07\x01\x50\x4b\x41\x4d\x45\x2d\x42\x53\x44\x20\x31\x2e\x31" \
+		"\x00\x00\x00\x00\x64\xdb\x63\x00\x00\x00\x00\x00\xc9\x76\x03\x00" \
+		"\x00\x00\x00\x00\x60\xea\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" \
+		"\xb2\xac\xa4\x49\x2b\xe8\x47\x40\xd4\xc9\x79\x52\x00\x00\x00\x00" \
+		"\x00\x00\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00\xd4\xc9\x79\x53" \
+		"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00" \
+		"\x00\x00\x00\x00\x5a\x76\x13\x89\x01\x00\x00\x00\x00\x00\x00\x00" \
+		"\x00\x00\x00\x00\x01\x00\x00\x62\x49\xa4\xac\xb2\x00\x1c\x71\xc7" \
+		"\x00\x01\xff\xff\x82\xe6\xc8\x44\x80\x00\x00\x04\xc0\x00\x00\x04" \
+		"\x80\x08\x00\x0b\xc0\x10\x0f\xc1\x80\x82\x40\x00\x80\x02\x00\x24" \
+		"\xb6\xbb\xb5\x7f\xbb\x4b\x0e\xb5\x42\xf6\x75\x18\x4f\x79\x0f\x24" \
+		"\x1c\x44\x0b\xd6\x62\xa9\x84\xe7\x2c\x3c\x7f\xad\x1b\x67\x81\x57" \
+		"\x80\x04\x00\x08\x00\x03\x00\x01\x80\x03\x00\x06\x80\xc1\x00\x00" \
+		"\x00\x0c\x00\x06\x00\x05\x00\x00\x02\x00\x01\xb4\x2b\xe8\x47\x40" \
+		"\x00\x1c\x71\xc7\x00\x01\xff\xff\xed\x69\x58\xec\xc0\x06\x00\x08" \
+		"\x00\x00\x07\xc4\x80\x00\x00\x04\xc0\x00\x00\x04\x80\x08\x00\x0b" \
+		"\xc0\x10\x0f\xc1\x80\x82\x40\x00\x80\x02\x00\x24\x40\x39\xcf\x32" \
+		"\xd6\x60\xcf\xfa\x3f\x2f\xa9\x52\xed\x2b\xf2\xe6\x2f\xb7\x81\x96" \
+		"\xf8\xda\xe9\xa0\x62\x01\x79\xe1\x0d\x5f\x38\xaa\x80\x04\x00\x08" \
+		"\x00\x03\x00\x01\x80\x03\x00\x06\x80\xc1\x00\x00\x81\xe1\x1e\x81" \
+		"\xea\x41\xeb\xf0\x12\xd9\x74\xbe\x13\xfd\x4b\x6c\x5c\xa2\x8f\x00";
 	char fuzz_cookie_ack[] = "\x13\x89\x13\x88\xb7\x0d\x32\x66\x00\x00\x00\x00\x0b\x00\x00\x04";
 	
 	char data_common_headr[] = "\x13\x89\x13\x88\xb7\x0d\x32\x66\x00\x00\x00\x00";
@@ -199,10 +227,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RECVNXTINFO, &optval, sizeof(optval));
 	assert(result == 0);
 
-	// assoc_val.assoc_id = SCTP_ALL_ASSOC;
-	// assoc_val.assoc_value = SCTP_ENABLE_RESET_STREAM_REQ | SCTP_ENABLE_RESET_ASSOC_REQ | SCTP_ENABLE_CHANGE_ASSOC_REQ;
-	// result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_ENABLE_STREAM_RESET, &assoc_val, sizeof(struct sctp_assoc_value));
-	if (data[0] & I_DATA_FALG) {
+	if (data[0] & I_DATA_FLAG) {
 		// set the program supporting I-DATA
 		optval = 2;
 		result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &optval, sizeof(optval));
@@ -213,7 +238,6 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_INTERLEAVING_SUPPORTED, &assoc_val, sizeof(assoc_val));
 		assert(result == 0);
 	}
-	
 
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
@@ -243,9 +267,16 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	result = usrsctp_connect(socket_client, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn));
 	assert(result == 0 || errno == EINPROGRESS);
 	
-	common_header = (struct sctp_common_header*) fuzz_init_ack;
-	common_header->verification_tag = assoc_vtag;
-	usrsctp_conninput((void *)1, fuzz_init_ack, 448, 0);
+	if (data[0] & NR_SACK_FLAG) {
+		common_header = (struct sctp_common_header*) fuzz_init_ack_nrsack_support;
+		common_header->verification_tag = assoc_vtag;
+		usrsctp_conninput((void *)1, fuzz_init_ack_nrsack_support, 448, 0);
+	} else {
+		common_header = (struct sctp_common_header*) fuzz_init_ack;
+		common_header->verification_tag = assoc_vtag;
+		usrsctp_conninput((void *)1, fuzz_init_ack, 448, 0);
+	}
+	
 
 	common_header = (struct sctp_common_header*) fuzz_cookie_ack;
 	common_header->verification_tag = assoc_vtag;
@@ -259,6 +290,14 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		}
 		if (fuzz_data_count + data_chunk_size > data_size) {
 			data_chunk_size = data_size - fuzz_data_count;
+		}
+		if (data[fuzz_data_count] & NR_SACK_FLAG) {
+			send_data_buffer = malloc(SEND_DATA_SIZE);
+			assert( send_data_buffer != NULL );
+			memset(send_data_buffer,1,SEND_DATA_SIZE);
+			fuzzer_printf("Calling usrsctp_sendv()\n");
+			usrsctp_sendv(socket_client, send_data_buffer, SEND_DATA_SIZE, NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
+			free(send_data_buffer);
 		}
 		fuzz_packet_buffer = malloc(data_chunk_size + COMMON_HEADER_SIZE);
 		memcpy(fuzz_packet_buffer, data_common_headr, COMMON_HEADER_SIZE); // common header
