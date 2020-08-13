@@ -292,7 +292,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 			data_chunk_size = data_size - fuzz_data_count;
 		}
 		if (data[fuzz_data_count] & NR_SACK_FLAG ||
-			data[fuzz_data_count] & SACK_FLAG) {
+		data[fuzz_data_count] & SACK_FLAG) {
 			send_data_buffer = malloc(SEND_DATA_SIZE);
 			assert( send_data_buffer != NULL );
 			memset(send_data_buffer,1,SEND_DATA_SIZE);
