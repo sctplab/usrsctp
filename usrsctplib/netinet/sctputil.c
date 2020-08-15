@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 363323 2020-07-19 12:34:19Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 364247 2020-08-15 11:22:07Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1795,6 +1795,7 @@ sctp_timeout_handler(void *t)
 	net = (struct sctp_nets *)tmr->net;
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	CURVNET_SET((struct vnet *)tmr->vnet);
+	NET_EPOCH_ENTER(et);
 #endif
 	did_output = 1;
 	released_asoc_reference = false;
@@ -1855,9 +1856,6 @@ sctp_timeout_handler(void *t)
 
 	/* Record in stopped_from which timeout occurred. */
 	tmr->stopped_from = type;
-#if defined(__FreeBSD__) && !defined(__Userspace__)
-	NET_EPOCH_ENTER(et);
-#endif
 	/* mark as being serviced now */
 	if (SCTP_OS_TIMER_PENDING(&tmr->timer)) {
 		/*
