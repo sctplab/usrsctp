@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 364247 2020-08-15 11:22:07Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 364268 2020-08-16 11:50:37Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -4443,7 +4443,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 }
 
 void
-sctp_report_all_outbound(struct sctp_tcb *stcb, uint16_t error, int holds_lock, int so_locked)
+sctp_report_all_outbound(struct sctp_tcb *stcb, uint16_t error, int so_locked)
 {
 	struct sctp_association *asoc;
 	struct sctp_stream_out *outs;
@@ -4472,9 +4472,6 @@ sctp_report_all_outbound(struct sctp_tcb *stcb, uint16_t error, int holds_lock, 
 		return;
 	}
 	/* now through all the gunk freeing chunks */
-	if (holds_lock == 0) {
-		SCTP_TCB_SEND_LOCK(stcb);
-	}
 	/* sent queue SHOULD be empty */
 	TAILQ_FOREACH_SAFE(chk, &asoc->sent_queue, sctp_next, nchk) {
 		TAILQ_REMOVE(&asoc->sent_queue, chk, sctp_next);
@@ -4551,10 +4548,6 @@ sctp_report_all_outbound(struct sctp_tcb *stcb, uint16_t error, int holds_lock, 
 			/*sa_ignore FREED_MEMORY*/
 		}
 	}
-
-	if (holds_lock == 0) {
-		SCTP_TCB_SEND_UNLOCK(stcb);
-	}
 }
 
 void
@@ -4581,8 +4574,11 @@ sctp_abort_notification(struct sctp_tcb *stcb, uint8_t from_peer, uint16_t error
 	    (stcb->asoc.state & SCTP_STATE_CLOSED_SOCKET)) {
 		return;
 	}
+	SCTP_TCB_SEND_LOCK(stcb);
+	SCTP_ADD_SUBSTATE(stcb, SCTP_STATE_WAS_ABORTED);
 	/* Tell them we lost the asoc */
-	sctp_report_all_outbound(stcb, error, 0, so_locked);
+	sctp_report_all_outbound(stcb, error, so_locked);
+	SCTP_TCB_SEND_UNLOCK(stcb);
 	if (from_peer) {
 		sctp_ulp_notify(SCTP_NOTIFY_ASSOC_REM_ABORTED, stcb, error, abort, so_locked);
 	} else {
@@ -4618,7 +4614,6 @@ sctp_abort_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	if (stcb != NULL) {
 		/* We have a TCB to abort, send notification too */
 		sctp_abort_notification(stcb, 0, 0, NULL, SCTP_SO_NOT_LOCKED);
-		SCTP_ADD_SUBSTATE(stcb, SCTP_STATE_WAS_ABORTED);
 		/* Ok, now lets free it */
 #if defined(__APPLE__) && !defined(__Userspace__)
 		so = SCTP_INP_SO(inp);
@@ -4740,8 +4735,6 @@ sctp_abort_an_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			}
 		}
 		return;
-	} else {
-		SCTP_ADD_SUBSTATE(stcb, SCTP_STATE_WAS_ABORTED);
 	}
 	/* notify the peer */
 	sctp_send_abort_tcb(stcb, op_err, so_locked);
