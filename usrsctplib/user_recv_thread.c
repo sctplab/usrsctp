@@ -377,7 +377,7 @@ recv_function_raw(void *arg)
 		offset = sizeof(struct ip) + sizeof(struct sctphdr);
 
 		if (iphdr->ip_tos != 0) {
-			ecn = iphdr->ip_tos & 0x02;
+			ecn = iphdr->ip_tos & 0x03;
 		}
 
 		dst.sin_family = AF_INET;
