@@ -185,7 +185,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		"\x00\x03\x00\x01\x80\x03\x00\x06\x80\xc1\x00\x00\x81\xe1\x1e\x81" \
 		"\xea\x41\xeb\xf0\x12\xd9\x74\xbe\x13\xfd\x4b\x6c\x5c\xa2\x8f\x00";
 	char fuzz_cookie_ack[] = "\x13\x89\x13\x88\xb7\x0d\x32\x66\x00\x00\x00\x00\x0b\x00\x00\x04";
-	
+
 	char data_common_headr[] = "\x13\x89\x13\x88\xb7\x0d\x32\x66\x00\x00\x00\x00";
 
 	if (!initialized) {
@@ -266,7 +266,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 	result = usrsctp_connect(socket_client, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn));
 	assert(result == 0 || errno == EINPROGRESS);
-	
+
 	if (data[0] & NR_SACK_FLAG) {
 		common_header = (struct sctp_common_header*) fuzz_init_ack_nrsack_support;
 		common_header->verification_tag = assoc_vtag;
@@ -276,7 +276,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		common_header->verification_tag = assoc_vtag;
 		usrsctp_conninput((void *)1, fuzz_init_ack, 448, 0);
 	}
-	
+
 
 	common_header = (struct sctp_common_header*) fuzz_cookie_ack;
 	common_header->verification_tag = assoc_vtag;
