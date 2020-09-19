@@ -148,10 +148,10 @@ init_random(void)
 	seed = 0;
 	seed |= (unsigned int)now.tv_sec;
 	seed |= (unsigned int)now.tv_usec;
-#if !defined(_WIN32) && !defined(__native_client__)
+#if !defined(__native_client__)
 	seed |= getpid();
 #endif
-#if defined(_WIN32) || defined(__native_client__)
+#if defined(__native_client__)
 	srand(seed);
 #else
 	srandom(seed);
