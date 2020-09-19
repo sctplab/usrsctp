@@ -88,6 +88,47 @@ read_random(void *buf, size_t count)
 {
 	arc4random_buf(buf, count);
 }
+#elif defined(_WIN32)
+init_random(void)
+{
+	return;
+}
+
+void
+read_random(void *buf, size_t size)
+{
+	unsigned int randval;
+	size_t position, remaining;
+
+	position = 0;
+	while (position < size) {
+		if (rand_s(&randval) == 0) {
+			remaining = MIN(count - i, sizeof(unsigned int));
+			memcpy((char *)buf + position, &randval, remaining);
+			position += sizeof(unsigned int)
+		}
+	}
+}
+#elif defined(__linux__)
+init_random(void)
+{
+	return;
+}
+
+void
+read_random(void *buf, size_t size)
+{
+	size_t position;
+	ssize_t n;
+
+	position = 0;
+	while (position < size) {
+		n = getrandom((char *)buf + position, size - position, 0);
+		if (n > 0) {
+			position += n;
+		}
+	}
+}
 #else
 void
 init_random(void)
