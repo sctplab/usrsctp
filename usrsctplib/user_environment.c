@@ -81,6 +81,7 @@ void
 read_random(void *buf, size_t size)
 {
 	memset(buf, 'A', size);
+	return;
 }
 #elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
 void
@@ -93,6 +94,7 @@ void
 read_random(void *buf, size_t size)
 {
 	arc4random_buf(buf, size);
+	return;
 }
 #elif defined(_WIN32)
 void
@@ -115,6 +117,7 @@ read_random(void *buf, size_t size)
 			position += sizeof(unsigned int);
 		}
 	}
+	return;
 }
 #elif defined(__linux__)
 void
@@ -136,6 +139,7 @@ read_random(void *buf, size_t size)
 			position += n;
 		}
 	}
+	return;
 }
 #else
 void
@@ -171,5 +175,6 @@ read_random(void *buf, size_t size)
 		remaining = MIN(size - position, sizeof(uint32_t));
 		memcpy((char *)buf + position, &randval, remaining);
 	}
+	return;
 }
 #endif
