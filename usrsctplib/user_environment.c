@@ -89,6 +89,7 @@ read_random(void *buf, size_t size)
 	arc4random_buf(buf, size);
 }
 #elif defined(_WIN32)
+void
 init_random(void)
 {
 	return;
@@ -110,6 +111,7 @@ read_random(void *buf, size_t size)
 	}
 }
 #elif defined(__linux__)
+void
 init_random(void)
 {
 	return;
