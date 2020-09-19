@@ -109,7 +109,7 @@ read_random(void *buf, size_t size)
 		if (rand_s(&randval) == 0) {
 			remaining = MIN(size - position, sizeof(unsigned int));
 			memcpy((char *)buf + position, &randval, remaining);
-			position += sizeof(unsigned int)
+			position += sizeof(unsigned int);
 		}
 	}
 }
