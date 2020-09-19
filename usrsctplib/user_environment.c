@@ -42,6 +42,9 @@
 #define MIN(arg1,arg2) ((arg1) < (arg2) ? (arg1) : (arg2))
 #endif
 #include <string.h>
+#if defined(__linux__)
+#include <sys/random.h>
+#endif
 
 #define uHZ 1000
 
