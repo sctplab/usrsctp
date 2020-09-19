@@ -71,11 +71,10 @@ init_random(void)
 	return;
 }
 
-int
-read_random(void *buf, int count)
+void
+read_random(void *buf, size_t count)
 {
 	memset(buf, 'A', count);
-	return (count);
 }
 #elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
 void
@@ -84,13 +83,10 @@ init_random(void)
 	return;
 }
 
-int
-read_random(void *buf, int count)
+void
+read_random(void *buf, size_t count)
 {
-	if (count >= 0) {
-		arc4random_buf(buf, count);
-	}
-	return (count);
+	arc4random_buf(buf, count);
 }
 #else
 void
@@ -114,19 +110,17 @@ init_random(void)
 	return;
 }
 
-int
-read_random(void *buf, int count)
+void
+read_random(void *buf, size_t count)
 {
 	uint32_t randval;
-	int size, i;
+	size_t size, i;
 
 	/* Fill buf[] with random(9) output */
-	for (i = 0; i < count; i+= (int)sizeof(uint32_t)) {
+	for (i = 0; i < count; i += sizeof(uint32_t)) {
 		randval = random();
-		size = MIN(count - i, (int)sizeof(uint32_t));
-		memcpy(&((char *)buf)[i], &randval, (size_t)size);
+		size = MIN(count - i, sizeof(uint32_t));
+		memcpy((char *)buf + i, &randval, size);
 	}
-
-	return (count);
 }
 #endif
