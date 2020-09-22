@@ -30,7 +30,7 @@
 
 /* __Userspace__ */
 
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(_CRT_RAND_S)
 #define _CRT_RAND_S
 #endif
 #include <stdlib.h>
