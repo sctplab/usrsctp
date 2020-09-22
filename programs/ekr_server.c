@@ -276,28 +276,5 @@ main(int argc, char *argv[])
 			perror("usrsctp_accept");
 		}
 	}
-	usrsctp_close(s);
-	usrsctp_deregister_address((void *)&fd);
-	while (usrsctp_finish() != 0) {
-#ifdef _WIN32
-		Sleep(SLEEP * 1000);
-#else
-		sleep(SLEEP);
-#endif
-	}
-#ifdef _WIN32
-	TerminateThread(tid, 0);
-	WaitForSingleObject(tid, INFINITE);
-	if (closesocket(fd) == SOCKET_ERROR) {
-		fprintf(stderr, "closesocket() failed with error: %d\n", WSAGetLastError());
-	}
-	WSACleanup();
-#else
-	pthread_cancel(tid);
-	pthread_join(tid, NULL);
-	if (close(fd) < 0) {
-		perror("close");
-	}
-#endif
 	return (0);
 }
