@@ -72,7 +72,7 @@ int inputAvailable(void)
 	tv.tv_usec = 0;
 	FD_ZERO(&fds);
 #if defined(_WIN32) && !defined(__MINGW32__)
-	FD_SET(_fileno(stdin), &fds);
+	FD_SET((SOCKET)_fileno(stdin), &fds);
   	select(_fileno(stdin) + 1, &fds, NULL, NULL, &tv);
 #else
 	FD_SET(STDIN_FILENO, &fds);

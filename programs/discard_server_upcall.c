@@ -128,7 +128,7 @@ handle_upcall(struct socket *sock, void *data, int flgs)
 				       rn.recvv_rcvinfo.rcv_sid,
 				       rn.recvv_rcvinfo.rcv_ssn,
 				       rn.recvv_rcvinfo.rcv_tsn,
-				       ntohl(rn.recvv_rcvinfo.rcv_ppid),
+				       (uint32_t)ntohl(rn.recvv_rcvinfo.rcv_ppid),
 				       rn.recvv_rcvinfo.rcv_context);
 			}
 		}

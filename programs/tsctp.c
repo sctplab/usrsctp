@@ -760,7 +760,7 @@ int main(int argc, char **argv)
 				}
 #ifdef _WIN32
 				if ((tid = CreateThread(NULL, 0, &handle_connection, (void *)conn_sock, 0, NULL)) == NULL) {
-					fprintf(stderr, "CreateThread() failed with error: %d\n", GetLastError());
+					fprintf(stderr, "CreateThread() failed with error: %lu\n", GetLastError());
 #else
 				if ((rc = pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock)) != 0) {
 					fprintf(stderr, "pthread_create: %s\n", strerror(rc));
