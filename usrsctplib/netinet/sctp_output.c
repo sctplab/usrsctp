@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 364937 2020-08-28 20:05:18Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 366114 2020-09-24 12:26:06Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -79,7 +79,6 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 364937 2020-08-28 20:05:18Z t
 #if defined(__Userspace__) && defined(INET6)
 #include <netinet6/sctp6_var.h>
 #endif
-
 #if defined(__APPLE__) && !defined(__Userspace__)
 #if !(defined(APPLE_LEOPARD) || defined(APPLE_SNOWLEOPARD))
 #define SCTP_MAX_LINKHDR 16
@@ -1890,7 +1889,6 @@ const struct sack_track sack_array[256] = {
 	}
 };
 
-
 int
 sctp_is_address_in_scope(struct sctp_ifa *ifa,
                          struct sctp_scoping *scope,
@@ -2058,7 +2056,6 @@ sctp_add_addr_to_mbuf(struct mbuf *m, struct sctp_ifa *ifa, uint16_t *len)
 	return (mret);
 #endif
 }
-
 
 struct mbuf *
 sctp_add_addresses_to_i_ia(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
@@ -2480,7 +2477,6 @@ sctp_is_addr_restricted(struct sctp_tcb *stcb, struct sctp_ifa *ifa)
 	return (0);
 }
 
-
 int
 sctp_is_addr_in_ep(struct sctp_inpcb *inp, struct sctp_ifa *ifa)
 {
@@ -2500,8 +2496,6 @@ sctp_is_addr_in_ep(struct sctp_inpcb *inp, struct sctp_ifa *ifa)
 	}
 	return (0);
 }
-
-
 
 static struct sctp_ifa *
 sctp_choose_boundspecific_inp(struct sctp_inpcb *inp,
@@ -2637,8 +2631,6 @@ sctp_choose_boundspecific_inp(struct sctp_inpcb *inp,
 	return (NULL);
 }
 
-
-
 static struct sctp_ifa *
 sctp_choose_boundspecific_stcb(struct sctp_inpcb *inp,
 			       struct sctp_tcb *stcb,
@@ -2747,7 +2739,6 @@ sctp_choose_boundspecific_stcb(struct sctp_inpcb *inp,
 				return (sifa);
 			}
 		}
-
 	}
 	/*
 	 * if we can't find one like that then we must look at all
@@ -2964,7 +2955,6 @@ sctp_select_nth_preferred_addr_from_ifn_boundall(struct sctp_ifn *ifn,
 	}
 	return (NULL);
 }
-
 
 static int
 sctp_count_num_preferred_boundall(struct sctp_ifn *ifn,
@@ -3384,8 +3374,6 @@ out:
 #endif
 	return (sifa);
 }
-
-
 
 /* tcb may be NULL */
 struct sctp_ifa *
@@ -5068,7 +5056,6 @@ int so_locked)
 	}
 }
 
-
 void
 sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked)
 {
@@ -5654,7 +5641,6 @@ sctp_arethere_unrecognized_parameters(struct mbuf *in_initpkt,
 				at += SCTP_SIZE32(plen);
 			}
 			break;
-
 		}
 		phdr = sctp_get_next_param(mat, at, &params, sizeof(params));
 	}
@@ -6266,7 +6252,6 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				}
 
 				net->src_addr_selected = 1;
-
 			}
 			stc.laddress[0] = net->ro._s_addr->address.sin.sin_addr.s_addr;
 			stc.laddress[1] = 0;
@@ -6691,7 +6676,6 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	SCTP_STAT_INCR_COUNTER64(sctps_outcontrolchunks);
 }
 
-
 static void
 sctp_prune_prsctp(struct sctp_tcb *stcb,
     struct sctp_association *asoc,
@@ -6976,7 +6960,6 @@ out_now:
 	}
 	return (error);
 }
-
 
 static struct mbuf *
 sctp_copy_mbufchain(struct mbuf *clonechain,
@@ -7282,7 +7265,6 @@ sctp_sendall_iterator(struct sctp_inpcb *inp, struct sctp_tcb *stcb, void *ptr,
 					                 NULL);
 				}
 			}
-
 		}
 	}
 	un_sent = ((stcb->asoc.total_output_queue_size - stcb->asoc.total_flight) +
@@ -7466,7 +7448,6 @@ sctp_sendall(struct sctp_inpcb *inp, struct uio *uio, struct mbuf *m,
 	return (0);
 }
 
-
 void
 sctp_toss_old_cookies(struct sctp_tcb *stcb, struct sctp_association *asoc)
 {
@@ -7513,7 +7494,6 @@ sctp_toss_old_asconf(struct sctp_tcb *stcb)
 		}
 	}
 }
-
 
 static void
 sctp_clean_up_datalist(struct sctp_tcb *stcb,
@@ -7970,7 +7950,6 @@ re_look:
 				sp->tail_mbuf = sp->data = NULL;
 				sp->length = 0;
 #endif
-
 			}
 			sctp_m_free(m);
 			m = sp->data;
@@ -8230,7 +8209,6 @@ out_of:
 	return (to_move);
 }
 
-
 static void
 sctp_fill_outqueue(struct sctp_tcb *stcb,
     struct sctp_nets *net, int frag_point, int eeor_mode, int *quit_now, int so_locked)
@@ -8477,7 +8455,6 @@ sctp_med_chunk_output(struct sctp_inpcb *inp,
 				break;
 			}
 		}
-
 	}
 	if ((no_data_chunks == 0) &&
 	    (skip_fill_up == 0) &&
@@ -9721,7 +9698,6 @@ sctp_send_cookie_ack(struct sctp_tcb *stcb)
 	return;
 }
 
-
 void
 sctp_send_shutdown_ack(struct sctp_tcb *stcb, struct sctp_nets *net)
 {
@@ -9971,7 +9947,6 @@ sctp_send_asconf_ack(struct sctp_tcb *stcb)
 	}
 	return;
 }
-
 
 static int
 sctp_chunk_retransmission(struct sctp_inpcb *inp,
@@ -10439,8 +10414,6 @@ sctp_chunk_retransmission(struct sctp_inpcb *inp,
 					 */
 					atomic_add_int(&((asoc)->total_output_queue_size),data_list[i]->book_size);
 					data_list[i]->book_size *= 2;
-
-
 				} else {
 					if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LOG_RWND_ENABLE) {
 						sctp_log_rwnd(SCTP_DECREASE_PEER_RWND,
@@ -10720,7 +10693,6 @@ do_it_again:
 				}
 			}
 		}
-
 	}
 	burst_cnt = 0;
 	do {
@@ -10809,7 +10781,6 @@ do_it_again:
 	}
 	return;
 }
-
 
 int
 sctp_output(
@@ -11334,7 +11305,6 @@ sctp_send_sack(struct sctp_tcb *stcb, int so_locked)
 	}
 	if ((type == SCTP_NR_SELECTIVE_ACK) &&
 	    (limit_reached == 0)) {
-
 		mergeable = 0;
 
 		if (asoc->highest_tsn_inside_nr_map > asoc->mapping_array_base_tsn) {
@@ -12973,7 +12943,6 @@ sctp_send_str_reset_req(struct sctp_tcb *stcb,
 				TAILQ_REMOVE(&oldstream[i].outqueue, sp, next);
 				TAILQ_INSERT_TAIL(&stcb->asoc.strmout[i].outqueue, sp, next);
 			}
-
 		}
 		/* now the new streams */
 		stcb->asoc.ss_functions.sctp_ss_init(stcb, &stcb->asoc, 1);
@@ -13231,8 +13200,6 @@ sctp_copy_one(struct sctp_stream_queue_pending *sp,
 #endif
 }
 
-
-
 static struct sctp_stream_queue_pending *
 sctp_copy_it_in(struct sctp_tcb *stcb,
     struct sctp_association *asoc,
@@ -13353,7 +13320,6 @@ out_now:
 	return (sp);
 }
 
-
 int
 sctp_sosend(struct socket *so,
             struct sockaddr *addr,
@@ -13426,7 +13392,6 @@ sctp_sosend(struct socket *so,
 #endif
 	return (error);
 }
-
 
 int
 sctp_lower_sosend(struct socket *so,
@@ -13665,7 +13630,6 @@ sctp_lower_sosend(struct socket *so,
 			SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_OUTPUT, EINVAL);
 			error = EINVAL;
 			goto out_unlocked;
-
 		}
 		if (((inp->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) == 0) &&
 		    (addr->sa_family == AF_INET6)) {
@@ -14206,7 +14170,6 @@ skip_preblock:
 				strm->last_msg_incomplete = 0;
 #endif
 				goto do_a_copy_in;
-
 			}
 			if (sp->processing) {
 				SCTP_TCB_SEND_UNLOCK(stcb);
@@ -14406,7 +14369,6 @@ skip_preblock:
 			    (stcb->asoc.total_flight > 0) &&
 			    (stcb->asoc.stream_queue_cnt < SCTP_MAX_DATA_BUNDLING) &&
 			    (un_sent < (int)(stcb->asoc.smallest_mtu - SCTP_MIN_OVERHEAD))) {
-
 				/*-
 				 * Ok, Nagle is set on and we have data outstanding.
 				 * Don't send anything and let SACKs drive out the
@@ -14426,7 +14388,6 @@ skip_preblock:
 				nagle_applies = 0;
 			}
 			if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_BLK_LOGGING_ENABLE) {
-
 				sctp_misc_ints(SCTP_CWNDLOG_PRESEND, queue_only_for_init, queue_only,
 					       nagle_applies, un_sent);
 				sctp_misc_ints(SCTP_CWNDLOG_PRESEND, stcb->asoc.total_output_queue_size,
@@ -14832,7 +14793,6 @@ out_unlocked:
 	}
 	return (error);
 }
-
 
 /*
  * generate an AUTHentication chunk, if required

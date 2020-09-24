@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 364268 2020-08-16 11:50:37Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 365071 2020-09-01 21:19:14Z mjg $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -324,7 +324,6 @@ sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb)
 			if (SCTP_BASE_SYSCTL(sctp_logging_level) & (SCTP_CWND_MONITOR_ENABLE|SCTP_CWND_LOGGING_ENABLE)) {
 				sctp_log_cwnd(stcb, lnet, 0, SCTP_CWND_INITIALIZATION);
 			}
-
 		}
 	}
 	SCTP_TCB_SEND_LOCK(stcb);
@@ -755,19 +754,18 @@ sctp_handle_heartbeat_ack(struct sctp_heartbeat_chunk *cp,
 		                                SCTP_MOBILITY_FASTHANDOFF)) &&
 		    sctp_is_mobility_feature_on(stcb->sctp_ep,
 		                                SCTP_MOBILITY_PRIM_DELETED)) {
-
 			sctp_timer_stop(SCTP_TIMER_TYPE_PRIM_DELETED,
 			                stcb->sctp_ep, stcb, NULL,
 			                SCTP_FROM_SCTP_INPUT + SCTP_LOC_6);
 			if (sctp_is_mobility_feature_on(stcb->sctp_ep,
-					SCTP_MOBILITY_FASTHANDOFF)) {
+			                                SCTP_MOBILITY_FASTHANDOFF)) {
 				sctp_assoc_immediate_retrans(stcb,
-					stcb->asoc.primary_destination);
+				                             stcb->asoc.primary_destination);
 			}
 			if (sctp_is_mobility_feature_on(stcb->sctp_ep,
-					SCTP_MOBILITY_BASE)) {
+				                        SCTP_MOBILITY_BASE)) {
 				sctp_move_chunks_from_net(stcb,
-					stcb->asoc.deleted_primary);
+				                          stcb->asoc.deleted_primary);
 			}
 			sctp_delete_prim_timer(stcb->sctp_ep, stcb);
 		}
@@ -841,7 +839,6 @@ sctp_handle_nat_missing_state(struct sctp_tcb *stcb,
 	sctp_asconf_send_nat_state_update(stcb, net);
 	return (1);
 }
-
 
 /* Returns 1 if the stcb was aborted, 0 otherwise */
 static int
@@ -944,7 +941,6 @@ sctp_start_net_timers(struct sctp_tcb *stcb)
 				  SCTP_SO_NOT_LOCKED);
 	}
 }
-
 
 static void
 sctp_handle_shutdown(struct sctp_shutdown_chunk *cp,
@@ -1573,7 +1569,6 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 #endif
     uint32_t vrf_id, uint16_t port);
 
-
 /*
  * handle a state cookie for an existing association m: input packet mbuf
  * chain-- assumes a pullup on IP/SCTP/COOKIE-ECHO chunk note: this is a
@@ -1685,7 +1680,6 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 17;
 			return (NULL);
-
 		}
 		switch (SCTP_GET_STATE(stcb)) {
 			case SCTP_STATE_COOKIE_WAIT:
@@ -1901,7 +1895,6 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 					spec_flag++;
 				}
 			}
-
 		}
 		/* process the INIT info (peer's info) */
 		retval = sctp_process_init(init_cp, stcb);
@@ -2143,7 +2136,6 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 	/* all other cases... */
 	return (NULL);
 }
-
 
 /*
  * handle a state cookie for a new association m: input packet mbuf chain--
@@ -2535,7 +2527,6 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 	    initack_limit - (initack_offset + sizeof(struct sctp_init_ack_chunk)),
 	    &store.sa, cookie->local_scope, cookie->site_scope,
 	    cookie->ipv4_scope, cookie->loopback_scope);
-
 
 	return (stcb);
 }
@@ -3087,7 +3078,6 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 			SCTP_TCB_LOCK((*stcb));
 			atomic_subtract_int(&(*stcb)->asoc.refcnt, 1);
 
-
 			/* now we must check to see if we were aborted while
 			 * the move was going on and the lock/unlock happened.
 			 */
@@ -3167,7 +3157,6 @@ sctp_handle_cookie_ack(struct sctp_cookie_ack_chunk *cp SCTP_UNUSED,
 		if (asoc->state & SCTP_STATE_SHUTDOWN_PENDING) {
 			sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD,
 			                 stcb->sctp_ep, stcb, NULL);
-
 		}
 		/* update RTO */
 		SCTP_STAT_INCR_COUNTER32(sctps_activeestab);
@@ -3215,7 +3204,6 @@ sctp_handle_cookie_ack(struct sctp_cookie_ack_chunk *cp SCTP_UNUSED,
 
 		sctp_timer_start(SCTP_TIMER_TYPE_HEARTBEAT, stcb->sctp_ep,
 		    stcb, net);
-
 
 		if (stcb->asoc.sctp_autoclose_ticks &&
 		    sctp_is_feature_on(stcb->sctp_ep, SCTP_PCB_FLAGS_AUTOCLOSE)) {
@@ -3778,7 +3766,6 @@ sctp_reset_clear_pending(struct sctp_tcb *stcb, uint32_t number_entries, uint16_
 	}
 }
 
-
 struct sctp_stream_reset_request *
 sctp_find_stream_reset(struct sctp_tcb *stcb, uint32_t seq, struct sctp_tmit_chunk **bchk)
 {
@@ -3846,7 +3833,6 @@ sctp_clean_up_stream_reset(struct sctp_tcb *stcb)
 	}
 	sctp_free_a_chunk(stcb, chk, SCTP_SO_NOT_LOCKED);
 }
-
 
 static int
 sctp_handle_stream_reset_response(struct sctp_tcb *stcb,
@@ -4308,7 +4294,6 @@ sctp_handle_str_reset_add_strm(struct sctp_tcb *stcb, struct sctp_tmit_chunk *ch
 		sctp_add_stream_reset_result(chk, seq, asoc->last_reset_action[1]);
 	} else {
 		sctp_add_stream_reset_result(chk, seq, SCTP_STREAM_RESET_RESULT_ERR_BAD_SEQNO);
-
 	}
 }
 
@@ -5717,7 +5702,6 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 			break;
 		}		/* switch (ch->chunk_type) */
 
-
 	next_chunk:
 		/* get the next chunk */
 		*offset += SCTP_SIZE32(chk_length);
@@ -5738,7 +5722,6 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 	}
 	return (stcb);
 }
-
 
 /*
  * common input chunk processing (v4 and v6)

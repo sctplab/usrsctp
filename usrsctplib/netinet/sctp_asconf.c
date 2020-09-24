@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 363194 2020-07-14 20:32:50Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_asconf.c 365071 2020-09-01 21:19:14Z mjg $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -584,7 +584,6 @@ sctp_process_asconf_set_primary(struct sockaddr *src,
 		                                SCTP_MOBILITY_PRIM_DELETED) &&
 		    (stcb->asoc.primary_destination->dest_state &
 		     SCTP_ADDR_UNCONFIRMED) == 0) {
-
 			sctp_timer_stop(SCTP_TIMER_TYPE_PRIM_DELETED,
 			                stcb->sctp_ep, stcb, NULL,
 			                SCTP_FROM_SCTP_ASCONF + SCTP_LOC_1);
@@ -1008,7 +1007,6 @@ sctp_asconf_nets_cleanup(struct sctp_tcb *stcb, struct sctp_ifn *ifn)
 	}
 }
 
-
 void
 sctp_assoc_immediate_retrans(struct sctp_tcb *stcb, struct sctp_nets *dstnet)
 {
@@ -1368,7 +1366,6 @@ sctp_asconf_queue_mgmt(struct sctp_tcb *stcb, struct sctp_ifa *ifa,
 
 	return (0);
 }
-
 
 /*
  * add an asconf operation for the given ifa and type.
@@ -2061,7 +2058,6 @@ sctp_addr_mgmt_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	}
 }
 
-
 int
 sctp_asconf_iterator_ep(struct sctp_inpcb *inp, void *ptr, uint32_t val SCTP_UNUSED)
 {
@@ -2125,7 +2121,6 @@ sctp_asconf_iterator_ep_end(struct sctp_inpcb *inp, void *ptr, uint32_t val SCTP
 					laddr->action = 0;
 					break;
 				}
-
 			}
 		} else if (l->action == SCTP_DEL_IP_ADDRESS) {
 			LIST_FOREACH_SAFE(laddr, &inp->sctp_addr_list, sctp_nxt_addr, nladdr) {
@@ -2272,7 +2267,6 @@ sctp_asconf_iterator_stcb(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 					 */
 					stcb->asoc.cc_functions.sctp_set_initial_cc_param(stcb, net);
 					net->RTO = 0;
-
 				}
 			}
 		} else if (type == SCTP_SET_PRIM_ADDR) {

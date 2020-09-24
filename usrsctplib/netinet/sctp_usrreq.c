@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 364353 2020-08-18 19:25:03Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 366114 2020-09-24 12:26:06Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -64,7 +64,6 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 364353 2020-08-18 19:25:03Z t
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/eventhandler.h>
 #endif
-
 #if defined(HAVE_SCTP_PEELOFF_SOCKOPT)
 #include <netinet/sctp_peeloff.h>
 #endif				/* HAVE_SCTP_PEELOFF_SOCKOPT */
@@ -571,7 +570,6 @@ SYSCTL_PROC(_net_inet_sctp, OID_AUTO, getcred,
     "Get the ucred of a SCTP connection");
 #endif
 
-
 #ifdef INET
 #if defined(_WIN32) || defined(__Userspace__)
 int
@@ -863,10 +861,7 @@ sctp_close(struct socket *so)
 #endif
 	return;
 }
-
 #else
-
-
 int
 sctp_detach(struct socket *so)
 {
@@ -948,7 +943,6 @@ sctp_sendm(struct socket *so, int flags, struct mbuf *m, struct sockaddr *addr,
     struct mbuf *control, struct proc *p);
 
 #endif
-
 int
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 sctp_sendm(struct socket *so, int flags, struct mbuf *m, struct sockaddr *addr,
@@ -1257,7 +1251,6 @@ sctp_flush(struct socket *so, int how)
 		so->so_snd.sb_cc = 0;
 		so->so_snd.sb_mbcnt = 0;
 		so->so_snd.sb_mb = NULL;
-
 	}
 	return (0);
 }
@@ -1438,8 +1431,6 @@ sctp_fill_user_address(struct sockaddr *dst, struct sockaddr *src)
 #endif
 	return (0);
 }
-
-
 
 static size_t
 sctp_fill_up_addresses_vrf(struct sctp_inpcb *inp,
@@ -1993,7 +1984,6 @@ sctp_do_connect_x(struct socket *so, struct sctp_inpcb *inp, void *optval,
 	/* FIX ME: do we want to pass in a vrf on the connect call? */
 	vrf_id = inp->def_vrf_id;
 
-
 	/* We are GOOD to go */
 	stcb = sctp_aloc_assoc(inp, sa, &error, 0, vrf_id,
 	                       inp->sctp_ep.pre_open_stream_count,
@@ -2078,7 +2068,6 @@ sctp_do_connect_x(struct socket *so, struct sctp_inpcb *inp, void *optval,
 		stcb = NULL; \
 	} \
 }
-
 
 #define SCTP_CHECK_AND_CAST(destp, srcp, type, size) {\
 	if (size < sizeof(type)) { \
@@ -3243,8 +3232,6 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		 */
 		sstat->sstat_penddata = (stcb->asoc.cnt_on_reasm_queue +
 					 stcb->asoc.cnt_on_all_streams);
-
-
 		sstat->sstat_instrms = stcb->asoc.streamincnt;
 		sstat->sstat_outstrms = stcb->asoc.streamoutcnt;
 		sstat->sstat_fragmentation_point = sctp_get_frag_point(stcb, &stcb->asoc);
@@ -5432,7 +5419,6 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				}
 				SCTP_INP_RUNLOCK(inp);
 			}
-
 		}
 		break;
 	}
@@ -6080,8 +6066,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		if ((stcb != NULL) && (net == NULL)) {
 #ifdef INET
 			if (addr->sa_family == AF_INET) {
-
 				struct sockaddr_in *sin;
+
 				sin = (struct sockaddr_in *)addr;
 				if (sin->sin_addr.s_addr != INADDR_ANY) {
 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
@@ -7223,8 +7209,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		if ((stcb != NULL) && (net == NULL)) {
 #ifdef INET
 			if (addr->sa_family == AF_INET) {
-
 				struct sockaddr_in *sin;
+
 				sin = (struct sockaddr_in *)addr;
 				if (sin->sin_addr.s_addr != INADDR_ANY) {
 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
@@ -7404,8 +7390,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		if ((stcb != NULL) && (net == NULL)) {
 #ifdef INET
 			if (addr->sa_family == AF_INET) {
-
 				struct sockaddr_in *sin;
+
 				sin = (struct sockaddr_in *)addr;
 				if (sin->sin_addr.s_addr != INADDR_ANY) {
 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);

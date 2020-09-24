@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.h 361895 2020-06-07 14:39:20Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_sysctl.h 365071 2020-09-01 21:19:14Z mjg $");
 #endif
 
 #ifndef _NETINET_SCTP_SYSCTL_H_
@@ -240,7 +240,6 @@ struct sctp_sysctl {
 #define SCTPCTL_FRMAXBURST_MIN		0
 #define SCTPCTL_FRMAXBURST_MAX		0xFFFFFFFF
 #define SCTPCTL_FRMAXBURST_DEFAULT	SCTP_DEF_FRMAX_BURST
-
 
 /* maxchunks: Default max chunks on queue per asoc */
 #define SCTPCTL_MAXCHUNKS_DESC		"Default max chunks on queue per asoc"
@@ -595,16 +594,12 @@ struct sctp_sysctl {
 #define SCTPCTL_IGNORE_VMWARE_INTERFACES_MIN		0
 #define SCTPCTL_IGNORE_VMWARE_INTERFACES_MAX		1
 #define SCTPCTL_IGNORE_VMWARE_INTERFACES_DEFAULT	SCTPCTL_IGNORE_VMWARE_INTERFACES_MAX
-#endif
 
-#if defined(__APPLE__) && !defined(__Userspace__)
 #define SCTPCTL_OUTPUT_UNLOCKED_DESC	"Unlock socket when sending packets down to IP"
 #define SCTPCTL_OUTPUT_UNLOCKED_MIN	0
 #define SCTPCTL_OUTPUT_UNLOCKED_MAX	1
 #define SCTPCTL_OUTPUT_UNLOCKED_DEFAULT	SCTPCTL_OUTPUT_UNLOCKED_MIN
-#endif
 
-#if defined(__APPLE__) && !defined(__Userspace__)
 #define	SCTPCTL_ADDR_WATCHDOG_LIMIT_DESC	"Address watchdog limit"
 #define	SCTPCTL_ADDR_WATCHDOG_LIMIT_MIN		0
 #define	SCTPCTL_ADDR_WATCHDOG_LIMIT_MAX		0xFFFFFFFF
@@ -614,8 +609,8 @@ struct sctp_sysctl {
 #define	SCTPCTL_VTAG_WATCHDOG_LIMIT_MIN		0
 #define	SCTPCTL_VTAG_WATCHDOG_LIMIT_MAX		0xFFFFFFFF
 #define	SCTPCTL_VTAG_WATCHDOG_LIMIT_DEFAULT	SCTPCTL_VTAG_WATCHDOG_LIMIT_MIN
-#endif
 
+#endif
 #if defined(_KERNEL) || defined(__Userspace__)
 #if defined(__FreeBSD__) || defined(__APPLE__) || defined(__Userspace__)
 #if defined(SYSCTL_DECL)

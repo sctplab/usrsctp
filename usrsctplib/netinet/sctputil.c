@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 364268 2020-08-16 11:50:37Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 365071 2020-09-01 21:19:14Z mjg $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -760,7 +760,6 @@ sctp_auditing(int from, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			    stcb->asoc.total_flight, tot_out);
 		/* now corrective action */
 		TAILQ_FOREACH(lnet, &stcb->asoc.nets, sctp_next) {
-
 			tot_out = 0;
 			TAILQ_FOREACH(chk, &stcb->asoc.sent_queue, sctp_next) {
 				if ((chk->whoTo == lnet) &&
@@ -1480,7 +1479,6 @@ sctp_expand_mapping_array(struct sctp_association *asoc, uint32_t needed)
 	return (0);
 }
 
-
 static void
 sctp_iterator_work(struct sctp_iterator *it)
 {
@@ -1681,7 +1679,6 @@ sctp_iterator_worker(void)
 	sctp_it_ctl.iterator_running = 0;
 	return;
 }
-
 
 static void
 sctp_handle_addr_wq(void)
@@ -3032,7 +3029,6 @@ sctp_mtu_size_reset(struct sctp_inpcb *inp,
 	}
 }
 
-
 /*
  * Given an association and starting time of the current RTT period, update
  * RTO in number of msecs. net should point to the current network.
@@ -3194,8 +3190,6 @@ sctp_m_getptr(struct mbuf *m, int off, int len, uint8_t * in_ptr)
 	}
 }
 
-
-
 struct sctp_paramhdr *
 sctp_get_next_param(struct mbuf *m,
     int offset,
@@ -3206,7 +3200,6 @@ sctp_get_next_param(struct mbuf *m,
 	return ((struct sctp_paramhdr *)sctp_m_getptr(m, offset, pull_limit,
 	    (uint8_t *) pull));
 }
-
 
 struct mbuf *
 sctp_add_pad_tombuf(struct mbuf *m, int padlen)
@@ -3515,7 +3508,6 @@ sctp_notify_peer_addr_change(struct sctp_tcb *stcb, uint32_t state,
 	                  so_locked);
 }
 
-
 static void
 sctp_notify_send_failed(struct sctp_tcb *stcb, uint8_t sent, uint32_t error,
     struct sctp_tmit_chunk *chk, int so_locked)
@@ -3647,7 +3639,6 @@ sctp_notify_send_failed(struct sctp_tcb *stcb, uint8_t sent, uint32_t error,
 	                  so_locked);
 }
 
-
 static void
 sctp_notify_send_failed2(struct sctp_tcb *stcb, uint32_t error,
 			 struct sctp_stream_queue_pending *sp, int so_locked)
@@ -3743,8 +3734,6 @@ sctp_notify_send_failed2(struct sctp_tcb *stcb, uint32_t error,
 	    control,
 	    &stcb->sctp_socket->so_rcv, 1, SCTP_READ_LOCK_NOT_HELD, so_locked);
 }
-
-
 
 static void
 sctp_notify_adaptation_layer(struct sctp_tcb *stcb)
@@ -4000,7 +3989,6 @@ sctp_notify_sender_dry_event(struct sctp_tcb *stcb,
 	                  &stcb->sctp_socket->so_rcv, 1, SCTP_READ_LOCK_NOT_HELD, so_locked);
 }
 
-
 void
 sctp_notify_stream_reset_add(struct sctp_tcb *stcb, uint16_t numberin, uint16_t numberout, int flag)
 {
@@ -4107,8 +4095,6 @@ sctp_notify_stream_reset_tsn(struct sctp_tcb *stcb, uint32_t sending_tsn, uint32
 	    &stcb->sctp_socket->so_rcv, 1, SCTP_READ_LOCK_NOT_HELD, SCTP_SO_NOT_LOCKED);
 }
 
-
-
 static void
 sctp_notify_stream_reset(struct sctp_tcb *stcb,
     int number_entries, uint16_t * list, int flag)
@@ -4173,7 +4159,6 @@ sctp_notify_stream_reset(struct sctp_tcb *stcb,
 	                  &stcb->sctp_socket->so_rcv, 1, SCTP_READ_LOCK_NOT_HELD, SCTP_SO_NOT_LOCKED);
 }
 
-
 static void
 sctp_notify_remote_error(struct sctp_tcb *stcb, uint16_t error, struct sctp_error_chunk *chunk)
 {
@@ -4233,12 +4218,11 @@ sctp_notify_remote_error(struct sctp_tcb *stcb, uint16_t error, struct sctp_erro
 		sctp_add_to_readq(stcb->sctp_ep, stcb,
 		                  control,
 		                  &stcb->sctp_socket->so_rcv, 1,
-				  SCTP_READ_LOCK_NOT_HELD, SCTP_SO_NOT_LOCKED);
+		                  SCTP_READ_LOCK_NOT_HELD, SCTP_SO_NOT_LOCKED);
 	} else {
 		sctp_m_freem(m_notify);
 	}
 }
-
 
 void
 sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
@@ -5510,7 +5494,6 @@ sctp_free_bufspace(struct sctp_tcb *stcb, struct sctp_association *asoc,
 			stcb->sctp_socket->so_snd.sb_cc -= tp1->book_size;
 		} else {
 			stcb->sctp_socket->so_snd.sb_cc = 0;
-
 		}
 	}
 }
@@ -6159,7 +6142,6 @@ sctp_sorecvmsg(struct socket *so,
 #if defined(__APPLE__) && !defined(__Userspace__)
 	error = sblock(&so->so_rcv, SBLOCKWAIT(in_flags));
 #endif
-
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	error = sblock(&so->so_rcv, (block_allowed ? SBL_WAIT : 0));
 #endif
@@ -7122,7 +7104,6 @@ sctp_sorecvmsg(struct socket *so,
 	return (error);
 }
 
-
 #ifdef SCTP_MBUF_LOGGING
 struct mbuf *
 sctp_m_free(struct mbuf *m)
@@ -7190,7 +7171,6 @@ sctp_dynamic_set_primary(struct sockaddr *sa, uint32_t vrf_id)
 #if defined(__Userspace__)
 /* no sctp_soreceive for __Userspace__ now */
 #endif
-
 #if !defined(__Userspace__)
 int
 sctp_soreceive(	struct socket *so,
@@ -7279,7 +7259,6 @@ sctp_soreceive(	struct socket *so,
 	return (error);
 }
 
-
 #if defined(_WIN32) && !defined(__Userspace__)
 /*
  * General routine to allocate a hash table with control of memory flags.
@@ -7327,7 +7306,6 @@ sctp_hashinit_flags(int elements, struct malloc_type *type,
 	return (hashtbl);
 }
 #endif
-
 #else /*  __Userspace__ ifdef above sctp_soreceive */
 /*
  * __Userspace__ Defining sctp_hashinit_flags() and sctp_hashdestroy() for userland.
@@ -7378,7 +7356,6 @@ sctp_hashinit_flags(int elements, struct malloc_type *type,
 	return (hashtbl);
 }
 
-
 void
 sctp_hashdestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask)
 {
@@ -7392,7 +7369,6 @@ sctp_hashdestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask)
 		}
 	FREE(hashtbl, type);
 }
-
 
 void
 sctp_hashfreedestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask)
@@ -7418,10 +7394,7 @@ sctp_hashfreedestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask)
 	FREE(hashtbl, type);
 }
 
-
 #endif
-
-
 int
 sctp_connectx_helper_add(struct sctp_tcb *stcb, struct sockaddr *addr,
 			 int totaddr, int *error)
