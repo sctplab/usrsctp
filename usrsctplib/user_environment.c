@@ -30,7 +30,7 @@
 
 /* __Userspace__ */
 
-#if defined(_WIN32) && !defined(_CRT_RAND_S)
+#if defined(_WIN32) && !defined(_CRT_RAND_S) && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
 #define _CRT_RAND_S
 #endif
 #include <stdlib.h>
@@ -45,7 +45,7 @@
 #define MIN(arg1,arg2) ((arg1) < (arg2) ? (arg1) : (arg2))
 #endif
 #include <string.h>
-#if defined(__linux__)
+#if defined(__linux__) && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
 #include <sys/random.h>
 #endif
 
