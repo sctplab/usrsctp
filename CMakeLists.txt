@@ -39,6 +39,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 include(CheckStructHasMember)
+include(CheckFunctionExists)
 include(CheckIncludeFile)
 include(CheckIncludeFiles)
 include(CheckCCompilerFlag)
@@ -119,6 +120,13 @@ if (have_stdatomic_h)
 	add_definitions(-DHAVE_STDATOMIC_H)
 endif ()
 
+set(CMAKE_REQUIRED_INCLUDES "<sys/random.h>")
+check_function_exists(getrandom have_getrandom)
+if (have_getrandom)
+	message(STATUS "have_getrandom")
+	add_definitions(-DHAVE_GETRANDOM)
+endif ()
+unset(CMAKE_REQUIRED_INCLUDES)
 
 #################################################
 # CHECK STRUCT MEMBERS

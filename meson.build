@@ -114,6 +114,12 @@ if compiler.has_header('stdatomic.h')
     add_project_arguments('-DHAVE_STDATOMIC_H', language: 'c')
 endif
 
+# Feature: getrandom
+have_getrandom = compiler.has_function('getrandom', prefix: '#include <sys/random.h>')
+if have_getrandom
+    add_project_arguments('-DHAVE_GETRANDOM', language: 'c')
+endif
+
 # Feature: sockaddr.sa_len
 prefix = '''
 #include <sys/types.h>

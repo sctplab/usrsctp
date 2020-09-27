@@ -45,7 +45,7 @@
 #define MIN(arg1,arg2) ((arg1) < (arg2) ? (arg1) : (arg2))
 #endif
 #include <string.h>
-#if defined(__linux__) && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
+#if defined(HAVE_GETRANDOM) && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
 #include <sys/random.h>
 #endif
 
@@ -119,7 +119,7 @@ read_random(void *buf, size_t size)
 	}
 	return;
 }
-#elif defined(__linux__)
+#elif defined(HAVE_GETRANDOM)
 void
 init_random(void)
 {
