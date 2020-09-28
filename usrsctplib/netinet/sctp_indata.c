@@ -403,7 +403,7 @@ sctp_place_control_in_stream(struct sctp_stream_in *strm,
 				if (unordered) {
 					control->on_strm_q = SCTP_ON_UNORDERED;
 				} else {
-					control->on_strm_q = SCTP_ON_ORDERED ;
+					control->on_strm_q = SCTP_ON_ORDERED;
 				}
 				break;
 			} else if (SCTP_MID_EQ(asoc->idata_supported, at->mid, control->mid)) {
@@ -424,9 +424,9 @@ sctp_place_control_in_stream(struct sctp_stream_in *strm,
 					}
 					TAILQ_INSERT_AFTER(q, at, control, next_instrm);
 					if (unordered) {
-						control->on_strm_q = SCTP_ON_UNORDERED ;
+						control->on_strm_q = SCTP_ON_UNORDERED;
 					} else {
-						control->on_strm_q = SCTP_ON_ORDERED ;
+						control->on_strm_q = SCTP_ON_ORDERED;
 					}
 					break;
 				}
@@ -5648,7 +5648,7 @@ sctp_handle_forward_tsn(struct sctp_tcb *stcb,
 
 		/* Flush all the un-ordered data based on cum-tsn */
 		SCTP_INP_READ_LOCK(stcb->sctp_ep);
-		for (sid = 0 ; sid < asoc->streamincnt; sid++) {
+		for (sid = 0; sid < asoc->streamincnt; sid++) {
 			strm = &asoc->strmin[sid];
 			if (!TAILQ_EMPTY(&strm->uno_inqueue)) {
 				sctp_flush_reassm_for_str_seq(stcb, asoc, strm, TAILQ_FIRST(&strm->uno_inqueue), 0, new_cum_tsn);

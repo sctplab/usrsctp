@@ -8542,7 +8542,7 @@ sctp_med_chunk_output(struct sctp_inpcb *inp,
 	}
 	old_start_at = NULL;
 again_one_more_time:
-	for (net = start_at ; net != NULL; net = TAILQ_NEXT(net, sctp_next)) {
+	for (net = start_at; net != NULL; net = TAILQ_NEXT(net, sctp_next)) {
 		/* how much can we send? */
 		/* SCTPDBG("Examine for sending net:%x\n", (uint32_t)net); */
 		if (old_start_at && (old_start_at == net)) {

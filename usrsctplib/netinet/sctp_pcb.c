@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 366114 2020-09-24 12:26:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 366226 2020-09-28 14:11:53Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -7498,7 +7498,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 			   (ptype == SCTP_DEL_IP_ADDRESS) ||
 			   (ptype == SCTP_ERROR_CAUSE_IND) ||
 			   (ptype == SCTP_SUCCESS_REPORT)) {
-			/* don't care */ ;
+			/* don't care */
 		} else {
 			if ((ptype & 0x8000) == 0x0000) {
 				/*
