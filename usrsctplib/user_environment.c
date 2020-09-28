@@ -48,6 +48,9 @@
 #if defined(__linux__) && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
 #include <sys/random.h>
 #endif
+#if defined(__Fuchsia__) && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
+#include <zircon/syscalls.h>
+#endif
 
 #define uHZ 1000
 
@@ -139,6 +142,19 @@ read_random(void *buf, size_t size)
 			position += n;
 		}
 	}
+	return;
+}
+#elif defined(__Fuchsia__)
+void
+init_random(void)
+{
+	return;
+}
+
+void
+read_random(void *buf, size_t size)
+{
+	zx_cprng_draw(buf, size);
 	return;
 }
 #else
