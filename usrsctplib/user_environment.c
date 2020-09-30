@@ -30,10 +30,6 @@
 
 /* __Userspace__ */
 
-#if defined(_WIN32) && !defined(_CRT_RAND_S) && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
-#define _CRT_RAND_S
-#endif
-#include <stdlib.h>
 #if !defined(_WIN32)
 #include <stdint.h>
 #include <netinet/sctp_os_userspace.h>
@@ -43,13 +39,6 @@
 /* #include <sys/param.h> defines MIN */
 #if !defined(MIN)
 #define MIN(arg1,arg2) ((arg1) < (arg2) ? (arg1) : (arg2))
-#endif
-#include <string.h>
-#if defined(__linux__) && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
-#include <sys/random.h>
-#endif
-#if defined(__Fuchsia__) && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
-#include <zircon/syscalls.h>
 #endif
 
 #define uHZ 1000
@@ -74,6 +63,8 @@ userland_mutex_t atomic_mtx;
  * inside other RNG's, like arc4random(9).
  */
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#include <string.h>
+
 void
 init_random(void)
 {
@@ -93,6 +84,8 @@ finish_random(void)
 	return;
 }
 #elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
+#include <stdlib.h>
+
 void
 init_random(void)
 {
@@ -112,6 +105,11 @@ finish_random(void)
 	return;
 }
 #elif defined(_WIN32)
+#if !defined(_CRT_RAND_S)
+#define _CRT_RAND_S
+#endif
+#include <stdlib.h>
+
 void
 init_random(void)
 {
@@ -141,6 +139,8 @@ finish_random(void)
 	return;
 }
 #elif defined(__linux__)
+#include <sys/random.h>
+
 void
 init_random(void)
 {
@@ -169,6 +169,8 @@ finish_random(void)
 	return;
 }
 #elif defined(__Fuchsia__)
+#include <zircon/syscalls.h>
+
 void
 init_random(void)
 {
@@ -188,6 +190,9 @@ finish_random(void)
 	return;
 }
 #else
+#include <stdlib.h>
+#include <unistd.h>
+
 void
 init_random(void)
 {
