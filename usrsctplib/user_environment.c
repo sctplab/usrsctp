@@ -138,6 +138,71 @@ finish_random(void)
 {
 	return;
 }
+#elif defined(__ANDROID__)
+#if (__ANDROID_API__ < 28)
+#include <fcntl.h>
+
+static int fd = -1;
+
+void
+init_random(void)
+{
+	fd = open("/dev/urandom", O_RDONLY);
+	return;
+}
+
+void
+read_random(void *buf, size_t size)
+{
+	size_t position;
+	ssize_t n;
+
+	position = 0;
+	while (position < size) {
+		n = read(fd, (char *)buf + position, size - position);
+		if (n > 0) {
+			position += n;
+		}
+	}
+	return;
+}
+
+void
+finish_random(void)
+{
+	close(fd);
+	return;
+}
+#else
+#include <sys/random.h>
+
+init_random(void)
+{
+	return;
+}
+
+void
+read_random(void *buf, size_t size)
+{
+	size_t position;
+	ssize_t n;
+
+	position = 0;
+	while (position < size) {
+		n = getrandom((char *)buf + position, size - position, 0);
+		if (n > 0) {
+			position += n;
+		}
+	}
+	return;
+}
+
+void
+finish_random(void)
+{
+	return;
+}
+#endif
 #elif defined(__linux__)
 #include <sys/random.h>
 
