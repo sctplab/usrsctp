@@ -86,6 +86,12 @@ read_random(void *buf, size_t size)
 	memset(buf, 'A', size);
 	return;
 }
+
+void
+finish_random(void)
+{
+	return;
+}
 #elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
 void
 init_random(void)
@@ -97,6 +103,12 @@ void
 read_random(void *buf, size_t size)
 {
 	arc4random_buf(buf, size);
+	return;
+}
+
+void
+finish_random(void)
+{
 	return;
 }
 #elif defined(_WIN32)
@@ -122,6 +134,12 @@ read_random(void *buf, size_t size)
 	}
 	return;
 }
+
+void
+finish_random(void)
+{
+	return;
+}
 #elif defined(__linux__)
 void
 init_random(void)
@@ -144,6 +162,12 @@ read_random(void *buf, size_t size)
 	}
 	return;
 }
+
+void
+finish_random(void)
+{
+	return;
+}
 #elif defined(__Fuchsia__)
 void
 init_random(void)
@@ -155,6 +179,12 @@ void
 read_random(void *buf, size_t size)
 {
 	zx_cprng_draw(buf, size);
+	return;
+}
+
+void
+finish_random(void)
+{
 	return;
 }
 #else
@@ -191,6 +221,12 @@ read_random(void *buf, size_t size)
 		remaining = MIN(size - position, sizeof(uint32_t));
 		memcpy((char *)buf + position, &randval, remaining);
 	}
+	return;
+}
+
+void
+finish_random(void)
+{
 	return;
 }
 #endif

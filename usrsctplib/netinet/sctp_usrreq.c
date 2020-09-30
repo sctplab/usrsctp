@@ -191,6 +191,9 @@ sctp_finish(void)
 #if defined(_WIN32) && !defined(__Userspace__)
 	sctp_finish_sysctls();
 #endif
+#if defined(__Userspace__)
+	finish_random();
+#endif
 }
 #endif
 
