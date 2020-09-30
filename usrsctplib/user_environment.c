@@ -177,6 +177,7 @@ finish_random(void)
 #else
 #include <sys/random.h>
 
+void
 init_random(void)
 {
 	return;
