@@ -30,7 +30,11 @@
 
 /* __Userspace__ */
 
-#if !defined(_WIN32)
+#if defined(_WIN32)
+#if !defined(_CRT_RAND_S) && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
+#define _CRT_RAND_S
+#endif
+#else
 #include <stdint.h>
 #include <netinet/sctp_os_userspace.h>
 #endif
@@ -62,7 +66,7 @@ userland_mutex_t atomic_mtx;
  * provide _some_ kind of randomness. This should only be used
  * inside other RNG's, like arc4random(9).
  */
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#if defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
 #include <string.h>
 
 void
@@ -105,9 +109,6 @@ finish_random(void)
 	return;
 }
 #elif defined(_WIN32)
-#if !defined(_CRT_RAND_S)
-#define _CRT_RAND_S
-#endif
 #include <stdlib.h>
 
 void
