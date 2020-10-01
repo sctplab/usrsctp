@@ -1200,7 +1200,7 @@ recv_thread_init(void)
 			}
 		}
 	}
-	if (SCTP_BASE_VAR(userspace_udpsctp) == -1) {
+	if ((SCTP_BASE_VAR(userspace_udpsctp) == -1) && (SCTP_BASE_SYSCTL(sctp_udp_tunneling_port) != 0)) {
 		if ((SCTP_BASE_VAR(userspace_udpsctp) = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
 #if defined(_WIN32)
 			SCTPDBG(SCTP_DEBUG_USR, "Can't create socket for SCTP/UDP/IPv4 (errno = %d).\n", WSAGetLastError());
@@ -1337,7 +1337,7 @@ recv_thread_init(void)
 			}
 		}
 	}
-	if (SCTP_BASE_VAR(userspace_udpsctp6) == -1) {
+	if ((SCTP_BASE_VAR(userspace_udpsctp6) == -1) && (SCTP_BASE_SYSCTL(sctp_udp_tunneling_port) != 0)) {
 		if ((SCTP_BASE_VAR(userspace_udpsctp6) = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
 #if defined(_WIN32)
 			SCTPDBG(SCTP_DEBUG_USR, "Can't create socket for SCTP/UDP/IPv6 (errno = %d).\n", WSAGetLastError());
