@@ -223,7 +223,7 @@ read_random(void *buf, size_t size)
 
 	position = 0;
 	while (position < size) {
-    // Using syscall directly because getrandom isn't present in glibc < 2.25.
+		/* Using syscall directly because getrandom isn't present in glibc < 2.25. */
 		n = syscall(__NR_getrandom, (char *)buf + position, size - position, 0);
 		if (n > 0) {
 			position += n;
