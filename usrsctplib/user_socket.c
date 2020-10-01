@@ -114,6 +114,16 @@ usrsctp_init(uint16_t port,
 
 
 void
+usrsctp_init_noudpthread(uint16_t port,
+		       int (*conn_output)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df),
+		       void (*debug_printf)(const char *format, ...))
+{
+	init_sync();
+	sctp_init(port, conn_output, debug_printf, 2);
+}
+
+
+void
 usrsctp_init_nothreads(uint16_t port,
 		       int (*conn_output)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df),
 		       void (*debug_printf)(const char *format, ...))
