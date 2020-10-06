@@ -2563,7 +2563,11 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 	struct mbuf *m_sig;
 	uint8_t calc_sig[SCTP_SIGNATURE_SIZE], tmp_sig[SCTP_SIGNATURE_SIZE];
 	uint8_t *sig;
+#if defined(__Userspace__) && defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
+	uint8_t cookie_ok = 1;
+#else
 	uint8_t cookie_ok = 0;
+#endif
 	unsigned int sig_offset, cookie_offset;
 	unsigned int cookie_len;
 	struct timeval now;
