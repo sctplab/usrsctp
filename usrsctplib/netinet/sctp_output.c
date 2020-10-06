@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 366114 2020-09-24 12:26:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 366482 2020-10-06 11:08:52Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -9384,7 +9384,7 @@ again_one_more_time:
 				 * the top of the for, but just to make sure
 				 * I will reset these again here.
 				 */
-				ctl_cnt = bundle_at = 0;
+				ctl_cnt = 0;
 				continue; /* This takes us back to the for() for the nets. */
 			} else {
 				asoc->ifp_had_enobuf = 0;
@@ -9989,7 +9989,7 @@ sctp_chunk_retransmission(struct sctp_inpcb *inp,
 	}
 #endif
 	SCTP_TCB_LOCK_ASSERT(stcb);
-	tmr_started = ctl_cnt = bundle_at = error = 0;
+	tmr_started = ctl_cnt = 0;
 	no_fragmentflg = 1;
 	fwd_tsn = 0;
 	*cnt_out = 0;

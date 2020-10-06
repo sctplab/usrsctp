@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 366248 2020-09-29 09:36:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.c 366482 2020-10-06 11:08:52Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5083,7 +5083,7 @@ sctp_aloc_assoc(struct sctp_inpcb *inp, struct sockaddr *firstaddr,
 	LIST_INSERT_HEAD(head, stcb, sctp_asocs);
 	SCTP_INP_INFO_WUNLOCK();
 
-	if ((err = sctp_add_remote_addr(stcb, firstaddr, NULL, port, SCTP_DO_SETSCOPE, SCTP_ALLOC_ASOC))) {
+	if (sctp_add_remote_addr(stcb, firstaddr, NULL, port, SCTP_DO_SETSCOPE, SCTP_ALLOC_ASOC)) {
 		/* failure.. memory error? */
 		if (asoc->strmout) {
 			SCTP_FREE(asoc->strmout, SCTP_M_STRMO);
