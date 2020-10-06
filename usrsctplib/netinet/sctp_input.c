@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 366248 2020-09-29 09:36:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 366474 2020-10-06 09:51:40Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1671,7 +1671,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			 *   ----INIT-ACK(tag=t)-->
 			 *   ----INIT(tag=t)------> *1
 			 *   <---INIT-ACK(tag=a)---
-                         *   <----CE(tag=t)------------- *2
+			 *   <----CE(tag=t)------------- *2
 			 *
 			 * At point *1 we should be generating a different
 			 * tag t'. Which means we would throw away the CE and send
@@ -1763,7 +1763,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 				if (stcb->asoc.sctp_autoclose_ticks &&
 				    (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_AUTOCLOSE))) {
 					sctp_timer_start(SCTP_TIMER_TYPE_AUTOCLOSE,
-							 inp, stcb, NULL);
+					                 inp, stcb, NULL);
 				}
 				break;
 			default:
@@ -1780,8 +1780,8 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		 * really should not fail.
 		 */
 		if (sctp_load_addresses_from_init(stcb, m,
-						  init_offset + sizeof(struct sctp_init_chunk),
-						  initack_offset, src, dst, init_src, stcb->asoc.port)) {
+			                          init_offset + sizeof(struct sctp_init_chunk),
+			                          initack_offset, src, dst, init_src, stcb->asoc.port)) {
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 4;
 			return (NULL);
@@ -1872,7 +1872,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		if (stcb->asoc.sctp_autoclose_ticks &&
 		    sctp_is_feature_on(inp, SCTP_PCB_FLAGS_AUTOCLOSE)) {
 			sctp_timer_start(SCTP_TIMER_TYPE_AUTOCLOSE, inp, stcb,
-					 NULL);
+			                 NULL);
 		}
 		asoc->my_rwnd = ntohl(initack_cp->init.a_rwnd);
 		asoc->pre_open_streams = ntohs(initack_cp->init.num_outbound_streams);
@@ -1886,7 +1886,8 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			 * to move these.. but it can't hurt to mark them.
 			 */
 			struct sctp_tmit_chunk *chk;
-		        TAILQ_FOREACH(chk, &stcb->asoc.sent_queue, sctp_next) {
+
+			TAILQ_FOREACH(chk, &stcb->asoc.sent_queue, sctp_next) {
 				if (chk->sent < SCTP_DATAGRAM_RESEND) {
 					chk->sent = SCTP_DATAGRAM_RESEND;
 					sctp_flight_size_decrease(chk);
@@ -1904,8 +1905,8 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			return (NULL);
 		}
 		if (sctp_load_addresses_from_init(stcb, m,
-						  init_offset + sizeof(struct sctp_init_chunk),
-						  initack_offset, src, dst, init_src, stcb->asoc.port)) {
+		                                  init_offset + sizeof(struct sctp_init_chunk),
+		                                  initack_offset, src, dst, init_src, stcb->asoc.port)) {
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 10;
 			return (NULL);
@@ -1920,8 +1921,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 #if defined(__APPLE__) && !defined(__Userspace__)
 				struct socket *so;
 #endif
-				stcb->sctp_ep->sctp_flags |=
-					SCTP_PCB_FLAGS_CONNECTED;
+				stcb->sctp_ep->sctp_flags |= SCTP_PCB_FLAGS_CONNECTED;
 #if defined(__APPLE__) && !defined(__Userspace__)
 				so = SCTP_INP_SO(stcb->sctp_ep);
 				atomic_add_int(&stcb->asoc.refcnt, 1);
@@ -2030,7 +2030,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			SCTP_SET_STATE(stcb, SCTP_STATE_OPEN);
 		}
 		asoc->pre_open_streams =
-			ntohs(initack_cp->init.num_outbound_streams);
+		    ntohs(initack_cp->init.num_outbound_streams);
 		asoc->init_seq_number = ntohl(initack_cp->init.initial_tsn);
 		asoc->sending_seq = asoc->asconf_seq_out = asoc->str_reset_seq_out = asoc->init_seq_number;
 		asoc->asconf_seq_out_acked = asoc->asconf_seq_out - 1;
@@ -2085,7 +2085,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		LIST_REMOVE(stcb, sctp_asocs);
 		/* re-insert to new vtag position */
 		head = &SCTP_BASE_INFO(sctp_asochash)[SCTP_PCBHASH_ASOC(stcb->asoc.my_vtag,
-								    SCTP_BASE_INFO(hashasocmark))];
+		                                                        SCTP_BASE_INFO(hashasocmark))];
 		/*
 		 * put it in the bucket in the vtag hash of assoc's for the
 		 * system
@@ -2115,8 +2115,8 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		net->hb_responded = 1;
 
 		if (sctp_load_addresses_from_init(stcb, m,
-						  init_offset + sizeof(struct sctp_init_chunk),
-						  initack_offset, src, dst, init_src, stcb->asoc.port)) {
+		                                  init_offset + sizeof(struct sctp_init_chunk),
+		                                  initack_offset, src, dst, init_src, stcb->asoc.port)) {
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 14;
 
