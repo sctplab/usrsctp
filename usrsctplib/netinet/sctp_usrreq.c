@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 366114 2020-09-24 12:26:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 366480 2020-10-06 10:41:04Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -3743,43 +3743,27 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		break;
 	}
 	case SCTP_RECVRCVINFO:
-	{
-		int onoff;
-
 		if (*optsize < sizeof(int)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			error = EINVAL;
 		} else {
 			SCTP_INP_RLOCK(inp);
-			onoff = sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVRCVINFO);
+			*(int *)optval = sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVRCVINFO);
 			SCTP_INP_RUNLOCK(inp);
-		}
-		if (error == 0) {
-			/* return the option value */
-			*(int *)optval = onoff;
 			*optsize = sizeof(int);
 		}
 		break;
-	}
 	case SCTP_RECVNXTINFO:
-	{
-		int onoff;
-
 		if (*optsize < sizeof(int)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			error = EINVAL;
 		} else {
 			SCTP_INP_RLOCK(inp);
-			onoff = sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVNXTINFO);
+			*(int *)optval = sctp_is_feature_on(inp, SCTP_PCB_FLAGS_RECVNXTINFO);
 			SCTP_INP_RUNLOCK(inp);
-		}
-		if (error == 0) {
-			/* return the option value */
-			*(int *)optval = onoff;
 			*optsize = sizeof(int);
 		}
 		break;
-	}
 	case SCTP_DEFAULT_SNDINFO:
 	{
 		struct sctp_sndinfo *info;
