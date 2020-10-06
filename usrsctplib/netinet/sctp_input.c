@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 366482 2020-10-06 11:08:52Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 366483 2020-10-06 11:29:08Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6087,7 +6087,9 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 			stcb = NULL;
 			goto out;
 		}
-		data_processed = 1;
+		if (retval == 0) {
+			data_processed = 1;
+		}
 		/*
 		 * Anything important needs to have been m_copy'ed in
 		 * process_data
