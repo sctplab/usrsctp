@@ -258,42 +258,26 @@ finish_random(void)
 {
 	return;
 }
-#else
-#include <stdlib.h>
-#include <unistd.h>
+#elif defined(__native_client__)
+#include <nacl/nacl_random.h>
 
 void
 init_random(void)
 {
-	struct timeval now;
-	unsigned int seed;
-
-	(void)SCTP_GETTIME_TIMEVAL(&now);
-	seed = 0;
-	seed |= (unsigned int)now.tv_sec;
-	seed |= (unsigned int)now.tv_usec;
-#if !defined(__native_client__)
-	seed |= getpid();
-#endif
-#if defined(__native_client__)
-	srand(seed);
-#else
-	srandom(seed);
-#endif
 	return;
 }
 
 void
 read_random(void *buf, size_t size)
 {
-	uint32_t randval;
-	size_t position, remaining;
+	size_t position;
+	size_t n;
 
-	/* Fill buf[] with random(9) output */
-	for (position = 0; position < size; position += sizeof(uint32_t)) {
-		randval = random();
-		remaining = MIN(size - position, sizeof(uint32_t));
-		memcpy((char *)buf + position, &randval, remaining);
+	position = 0;
+	while (position < size) {
+		if (nacl_secure_random((char *)buf + position, size - position, &n) == 0)
+			position += n;
+		}
 	}
 	return;
 }
@@ -303,4 +287,6 @@ finish_random(void)
 {
 	return;
 }
+#else
+#error "Unknown platform. Please provide platform specific RNG."
 #endif
