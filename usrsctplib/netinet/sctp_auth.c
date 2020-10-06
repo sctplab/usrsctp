@@ -1637,10 +1637,8 @@ sctp_handle_auth(struct sctp_tcb *stcb, struct sctp_auth_chunk *auth,
 		"SCTP AUTH Chunk: shared key %u, HMAC id %u\n",
 		shared_key_id, hmac_id);
 
-#if defined(__Userspace__)
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#if defined(__Userspace__) && defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
 	return (0);
-#endif
 #endif
 	/* is the indicated HMAC supported? */
 	if (!sctp_auth_is_supported_hmac(stcb->asoc.local_hmacs, hmac_id)) {
