@@ -91,7 +91,11 @@ extern u_short ip_id;
 #if defined(INVARIANTS)
 #include <stdlib.h>
 
+#if defined(_WIN32)
 static inline void
+#else
+static inline void __attribute__((__noreturn__))
+#endif
 terminate_non_graceful(void) {
 	abort();
 }
