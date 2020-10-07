@@ -1703,7 +1703,7 @@ sctp6_usrreq(so, req, m, nam, control, p)
 		switch (family) {
 		case PF_INET:
 			error = in_control(so, (long)m, (caddr_t)nam,
-			    (struct ifnet *)control );
+			    (struct ifnet *)control);
 			break;
 #ifdef INET6
 		case PF_INET6:

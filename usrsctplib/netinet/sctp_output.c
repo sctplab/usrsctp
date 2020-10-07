@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 366482 2020-10-06 11:08:52Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 366517 2020-10-07 15:22:48Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2659,7 +2659,7 @@ sctp_choose_boundspecific_stcb(struct sctp_inpcb *inp,
 
 	ifn = SCTP_GET_IFN_VOID_FROM_ROUTE(ro);
 	ifn_index = SCTP_GET_IF_INDEX_FROM_ROUTE(ro);
-	sctp_ifn = sctp_find_ifn( ifn, ifn_index);
+	sctp_ifn = sctp_find_ifn(ifn, ifn_index);
 
 	/*
 	 * first question, is the ifn we will emit on in our list?  If so,
@@ -2830,14 +2830,13 @@ sctp_select_nth_preferred_addr_from_ifn_boundall(struct sctp_ifn *ifn,
 #else
                                                  struct sctp_inpcb *inp SCTP_UNUSED,
 #endif
-						 struct sctp_tcb *stcb,
-						 int non_asoc_addr_ok,
-						 uint8_t dest_is_loop,
-						 uint8_t dest_is_priv,
-						 int addr_wanted,
-						 sa_family_t fam,
-						 sctp_route_t *ro
-						 )
+                                                 struct sctp_tcb *stcb,
+                                                 int non_asoc_addr_ok,
+                                                 uint8_t dest_is_loop,
+                                                 uint8_t dest_is_priv,
+                                                 int addr_wanted,
+                                                 sa_family_t fam,
+                                                 sctp_route_t *ro)
 {
 	struct sctp_ifa *ifa, *sifa;
 	int num_eligible_addr = 0;

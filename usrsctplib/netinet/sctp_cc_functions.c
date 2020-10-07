@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_cc_functions.c 366114 2020-09-24 12:26:06Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_cc_functions.c 366517 2020-10-07 15:22:48Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -2070,19 +2070,19 @@ htcp_alpha_update(struct htcp *ca)
 
 	if (diff > (uint32_t)hz) {
 		diff -= hz;
-		factor = 1+ ( 10*diff + ((diff/2)*(diff/2)/hz))/hz;
+		factor = 1+ (10 * diff + ((diff / 2) * (diff / 2) / hz)) / hz;
 	}
 
 	if (use_rtt_scaling && minRTT) {
-		uint32_t scale = (hz<<3)/(10*minRTT);
-		scale = min(max(scale, 1U<<2), 10U<<3); /* clamping ratio to interval [0.5,10]<<3 */
-		factor = (factor<<3)/scale;
-		if (!factor)
+		uint32_t scale = (hz << 3) / (10 * minRTT);
+		scale = min(max(scale, 1U << 2), 10U << 3); /* clamping ratio to interval [0.5,10]<<3 */
+		factor = (factor << 3) / scale;
+		if (factor != 0)
 			factor = 1;
 	}
 
-	ca->alpha = 2*factor*((1<<7)-ca->beta);
-	if (!ca->alpha)
+	ca->alpha = 2 * factor * ((1 << 7) - ca->beta);
+	if (ca->alpha != 0)
 		ca->alpha = ALPHA_BASE;
 }
 
