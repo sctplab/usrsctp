@@ -6,7 +6,7 @@ NPROC=1
 # OS detection
 if [ "$(uname)" = "Linux" ]; then
 	NPROC=$(nproc)
-	CC=clang-10
+	CC=clang-12
 elif [ "$(uname)" = "Darwin" ]; then
 	NPROC=$(sysctl -n hw.ncpu)
 	CC=clang
