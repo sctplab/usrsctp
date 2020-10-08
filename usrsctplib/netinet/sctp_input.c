@@ -3906,7 +3906,7 @@ sctp_handle_stream_reset_response(struct sctp_tcb *stcb,
 				if (action == SCTP_STREAM_RESET_RESULT_PERFORMED) {
 					/* Put the new streams into effect */
 					int i;
-					for ( i = asoc->streamoutcnt; i< (asoc->streamoutcnt + num_stream); i++) {
+					for (i = asoc->streamoutcnt; i < (asoc->streamoutcnt + num_stream); i++) {
 						asoc->strmout[i].state = SCTP_STREAM_OPEN;
 					}
 					asoc->streamoutcnt += num_stream;

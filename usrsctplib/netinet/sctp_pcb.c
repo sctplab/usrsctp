@@ -7770,7 +7770,7 @@ sctp_drain_mbufs(struct sctp_tcb *stcb)
 	for (strmat = 0; strmat < asoc->streamincnt; strmat++) {
 		TAILQ_FOREACH_SAFE(control, &asoc->strmin[strmat].inqueue, next_instrm, ncontrol) {
 #ifdef INVARIANTS
-			if (control->on_strm_q != SCTP_ON_ORDERED ) {
+			if (control->on_strm_q != SCTP_ON_ORDERED) {
 				panic("Huh control: %p on_q: %d -- not ordered?",
 				      control, control->on_strm_q);
 			}
@@ -7830,7 +7830,7 @@ sctp_drain_mbufs(struct sctp_tcb *stcb)
 		}
 		TAILQ_FOREACH_SAFE(control, &asoc->strmin[strmat].uno_inqueue, next_instrm, ncontrol) {
 #ifdef INVARIANTS
-			if (control->on_strm_q != SCTP_ON_UNORDERED ) {
+			if (control->on_strm_q != SCTP_ON_UNORDERED) {
 				panic("Huh control: %p on_q: %d -- not unordered?",
 				      control, control->on_strm_q);
 			}

@@ -5644,7 +5644,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			break;
 		}
 		/* Do any streams have data queued? */
-		for ( i = 0; i< stcb->asoc.streamoutcnt; i++) {
+		for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
 			if (!TAILQ_EMPTY(&stcb->asoc.strmout[i].outqueue)) {
 				goto busy_out;
 			}

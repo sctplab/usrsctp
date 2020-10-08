@@ -2173,7 +2173,7 @@ sctp_timeout_handler(void *t)
 	if (inp != NULL)
 		sctp_auditing(5, inp, stcb, net);
 #endif
-	if (did_output && (stcb != NULL) ) {
+	if (did_output && (stcb != NULL)) {
 		/*
 		 * Now we need to clean up the control chunk chain if an
 		 * ECNE is on it. It must be marked as UNSENT again so next
