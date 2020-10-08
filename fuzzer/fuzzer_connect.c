@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2019 Felix Weinrank
+ * Copyright (C) 2017-2020 Felix Weinrank
  *
  * All rights reserved.
  *
@@ -36,6 +36,8 @@
 #include <usrsctp.h>
 #include "../programs/programs_helper.h"
 
+//#define FUZZ_ALWAYS_INITIALIZE
+
 //#define FUZZ_VERBOSE
 #define FUZZ_INTERLEAVING
 #define FUZZ_STREAM_RESET
@@ -46,8 +48,8 @@
 #define FUZZ_B_SEND_STREAM_RESET      (1 << 3)
 #define FUZZ_B_INJECT_DATA            (1 << 4)
 #define FUZZ_B_I_DATA_SUPPORT         (1 << 5)
-#define FUZZ_B_RESERVED1              (1 << 6)
-#define FUZZ_B_RESERVED2              (1 << 7)
+#define FUZZ_B_SEND_DATA_FORCE        (1 << 6)
+#define FUZZ_B_RESERVED               (1 << 7)
 
 #define BUFFER_SIZE 4096
 #define COMMON_HEADER_SIZE 12
@@ -55,12 +57,7 @@
 static uint32_t assoc_vtag = 0;
 
 #ifdef FUZZ_VERBOSE
-#define fuzzer_printf(...)                       \
-	do {                                        \
-		fprintf(stderr, "[P]");                 \
-		debug_printf_runtime();                 \
-		fprintf(stderr, __VA_ARGS__);           \
-	} while (0)
+#define fuzzer_printf(...) debug_printf(__VA_ARGS__)
 #else
 #define fuzzer_printf(...)
 #endif
@@ -150,6 +147,8 @@ initialize_fuzzer(void) {
 #endif // SCTP_DEBUG
 
 	usrsctp_register_address((void *)1);
+	usrsctp_sysctl_set_sctp_pktdrop_enable(1);
+	usrsctp_sysctl_set_sctp_nrsack_enable(1);
 
 	fuzzer_printf("usrsctp initialized\n");
 	return (1);
@@ -161,7 +160,6 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 {
 	static int initialized;
 	char *fuzz_packet_buffer;
-	struct sockaddr_in6 bind6;
 	struct sockaddr_conn sconn;
 	struct socket *socket_client;
 	struct linger so_linger;
@@ -262,9 +260,13 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 	fuzzer_printf("LLVMFuzzerTestOneInput()\n");
 
+#ifdef FUZZ_ALWAYS_INITIALIZE
+	initialize_fuzzer();
+#else
 	if (!initialized) {
 		initialized = initialize_fuzzer();
 	}
+#endif
 
 	if (data_size < 5 || data_size > 65535) {
 		// Skip too small and too large packets
@@ -327,15 +329,15 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	}
 #endif // defined(FUZZ_INTERLEAVING)
 
-	memset((void *)&bind6, 0, sizeof(struct sockaddr_in6));
-#ifdef HAVE_SIN_LEN
-	bind6.sin6_len = sizeof(struct sockaddr_in6);
-#endif // HAVE_SIN_LEN
-	bind6.sin6_family = AF_INET6;
-	bind6.sin6_port = htons(5000);
-	bind6.sin6_addr = in6addr_any;
+	memset(&sconn, 0, sizeof(struct sockaddr_conn));
+	sconn.sconn_family = AF_CONN;
+#ifdef HAVE_SCONN_LEN
+	sconn.sconn_len = sizeof(struct sockaddr_conn);
+#endif // HAVE_SCONN_LEN
+	sconn.sconn_port = htons(5000);
+	sconn.sconn_addr = (void *)1;
 
-	result = usrsctp_bind(socket_client, (struct sockaddr *)&bind6, sizeof(bind6));
+	result = usrsctp_bind(socket_client, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn));
 	assert(result == 0);
 
 	// Disable Nagle.
@@ -418,6 +420,14 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		}
 	}
 
+	if (data[0] & FUZZ_B_I_DATA_SUPPORT &&
+		data[0] & FUZZ_B_SEND_DATA_FORCE) {
+			const char *sendbuffer = "Geologie ist keine richtige Wissenschaft!";
+			fuzzer_printf("Calling usrsctp_sendv()\n");
+			usrsctp_sendv(socket_client, sendbuffer, strlen(sendbuffer), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
+		}
+	
+
 	fuzz_packet_buffer = malloc(data_size - 1 + COMMON_HEADER_SIZE);
 	memcpy(fuzz_packet_buffer, fuzz_common_header, COMMON_HEADER_SIZE); // common header
 	memcpy(fuzz_packet_buffer + COMMON_HEADER_SIZE, data + 1, data_size - 1);
@@ -433,10 +443,10 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 	fuzzer_printf("Calling usrsctp_close()\n");
 	usrsctp_close(socket_client);
-#if 0
+
+#ifdef FUZZ_ALWAYS_INITIALIZE
 	fuzzer_printf("Calling usrsctp_finish()\n");
-	while (usrsctp_finish() != 0) {
-	}
+	while (usrsctp_finish() != 0) {}
 	fuzzer_printf("Done!\n");
 #endif
 

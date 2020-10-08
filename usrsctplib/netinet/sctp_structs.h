@@ -32,9 +32,9 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 359379 2020-03-27 21:48:52Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_structs.h 365071 2020-09-01 21:19:14Z mjg $");
 #endif
 
 #ifndef _NETINET_SCTP_STRUCTS_H_
@@ -55,7 +55,7 @@ struct sctp_timer {
 	void *ep;
 	void *tcb;
 	void *net;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 800000
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 	void *vnet;
 #endif
 
@@ -65,14 +65,12 @@ struct sctp_timer {
 	uint32_t stopped_from;
 };
 
-
 struct sctp_foo_stuff {
 	struct sctp_inpcb *inp;
 	uint32_t        lineno;
 	uint32_t        ticks;
 	int             updown;
 };
-
 
 /*
  * This is the information we track on each interface that we know about from
@@ -113,13 +111,12 @@ typedef void (*asoc_func) (struct sctp_inpcb *, struct sctp_tcb *, void *ptr,
 typedef int (*inp_func) (struct sctp_inpcb *, void *ptr, uint32_t val);
 typedef void (*end_func) (void *ptr, uint32_t val);
 
-#if defined(__FreeBSD__) && defined(SCTP_MCORE_INPUT) && defined(SMP)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+#if defined(SCTP_MCORE_INPUT) && defined(SMP)
 /* whats on the mcore control struct */
 struct sctp_mcore_queue {
 	TAILQ_ENTRY(sctp_mcore_queue) next;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
 	struct vnet *vn;
-#endif
 	struct mbuf *m;
 	int off;
 	int v6;
@@ -135,14 +132,12 @@ struct sctp_mcore_ctrl {
 	int running;
 	int cpuid;
 };
-
-
 #endif
-
+#endif
 
 struct sctp_iterator {
 	TAILQ_ENTRY(sctp_iterator) sctp_nxt_itr;
-#if defined(__FreeBSD__) && __FreeBSD_version >= 801000
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 	struct vnet *vn;
 #endif
 	struct sctp_timer tmr;
@@ -166,7 +161,6 @@ struct sctp_iterator {
 #define SCTP_ITERATOR_DO_ALL_INP	0x00000001
 #define SCTP_ITERATOR_DO_SINGLE_INP	0x00000002
 
-
 TAILQ_HEAD(sctpiterators, sctp_iterator);
 
 struct sctp_copy_all {
@@ -184,10 +178,10 @@ struct sctp_asconf_iterator {
 };
 
 struct iterator_control {
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 	struct mtx ipi_iterator_wq_mtx;
 	struct mtx it_mtx;
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) && !defined(__Userspace__)
 	lck_mtx_t *ipi_iterator_wq_mtx;
 	lck_mtx_t *it_mtx;
 #elif defined(SCTP_PROCESS_LEVEL_LOCKS)
@@ -200,7 +194,7 @@ struct iterator_control {
 	pthread_mutex_t it_mtx;
 	pthread_cond_t iterator_wakeup;
 #endif
-#elif defined(__Windows__)
+#elif defined(_WIN32) && !defined(__Userspace__)
 	struct spinlock it_lock;
 	struct spinlock ipi_iterator_wq_lock;
 	KEVENT iterator_wakeup[2];
@@ -208,7 +202,7 @@ struct iterator_control {
 #else
 	void *it_mtx;
 #endif
-#if !defined(__Windows__)
+#if !(defined(_WIN32) && !defined(__Userspace__))
 #if !defined(__Userspace__)
 	SCTP_PROCESS_STRUCT thread_proc;
 #else
@@ -220,7 +214,7 @@ struct iterator_control {
 	uint32_t iterator_running;
 	uint32_t iterator_flags;
 };
-#if !defined(__FreeBSD__)
+#if !(defined(__FreeBSD__) && !defined(__Userspace__))
 #define SCTP_ITERATOR_MUST_EXIT		0x00000001
 #define SCTP_ITERATOR_EXITED		0x00000002
 #endif
@@ -228,28 +222,18 @@ struct iterator_control {
 #define SCTP_ITERATOR_STOP_CUR_INP	0x00000008
 
 struct sctp_net_route {
-	sctp_rtentry_t *ro_rt;
-#if defined(__FreeBSD__)
-#if __FreeBSD_version < 1100093
-#if __FreeBSD_version >= 800000
-	void *ro_lle;
-#endif
-#if __FreeBSD_version >= 900000
-	void *ro_ia;
-	int ro_flags;
-#endif
-#else
-#if __FreeBSD_version >= 1100116
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+	struct nhop_object *ro_nh;
 	struct llentry *ro_lle;
-#endif
 	char		*ro_prepend;
 	uint16_t	ro_plen;
 	uint16_t	ro_flags;
 	uint16_t	ro_mtu;
 	uint16_t	spare;
+#else
+	sctp_rtentry_t *ro_rt;
 #endif
-#endif
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(__Userspace__)
 #if !defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION) && !defined(APPLE_ELCAPITAN)
 	struct llentry	*ro_lle;
 #endif
@@ -305,7 +289,6 @@ struct rtcc_cc {
 	uint8_t  rtt_set_this_sack; /* Flag saying this sack had RTT calc on it */
 	uint8_t  last_inst_ind; /* Last saved inst indication */
 };
-
 
 struct sctp_nets {
 	TAILQ_ENTRY(sctp_nets) sctp_next;	/* next link */
@@ -443,12 +426,11 @@ struct sctp_nets {
 	uint8_t last_hs_used;	/* index into the last HS table entry we used */
 	uint8_t lan_type;
 	uint8_t rto_needed;
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 	uint32_t flowid;
 	uint8_t flowtype;
 #endif
 };
-
 
 struct sctp_data_chunkrec {
 	uint32_t tsn;		/* the TSN of this transmit */
@@ -487,7 +469,6 @@ struct chk_id {
 	uint8_t id;
 	uint8_t can_take_data;
 };
-
 
 struct sctp_tmit_chunk {
 	union {
@@ -597,6 +578,7 @@ struct sctp_stream_queue_pending {
 	uint8_t  sender_all_done;
 	uint8_t  put_last_out;
 	uint8_t  discard_rest;
+	uint8_t  processing;
 };
 
 /*
@@ -615,7 +597,6 @@ struct sctp_stream_in {
 
 TAILQ_HEAD(sctpwheel_listhead, sctp_stream_out);
 TAILQ_HEAD(sctplist_listhead, sctp_stream_queue_pending);
-
 
 /* Round-robin schedulers */
 struct ss_rr {
@@ -933,7 +914,6 @@ struct sctp_association {
 	/* last place I got a control from */
 	struct sctp_nets *last_control_chunk_from;
 
-
 	/*
 	 * wait to the point the cum-ack passes req->send_reset_at_tsn for
 	 * any req on the list.
@@ -996,7 +976,6 @@ struct sctp_association {
 
 	/* Original seq number I used ??questionable to keep?? */
 	uint32_t init_seq_number;
-
 
 	/* The Advanced Peer Ack Point, as required by the PR-SCTP */
 	/* (A1 in Section 4.2) */

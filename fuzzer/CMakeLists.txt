@@ -79,6 +79,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer")
 add_executable(fuzzer_listen fuzzer_listen.c ../programs/programs_helper.c)
 target_link_libraries(fuzzer_listen usrsctp-static)
 
+add_executable(fuzzer_fragment fuzzer_fragment.c ../programs/programs_helper.c)
+target_link_libraries(fuzzer_fragment usrsctp-static)
+
 add_executable(fuzzer_connect_multi fuzzer_connect.c ../programs/programs_helper.c)
 target_compile_definitions(fuzzer_connect_multi PRIVATE FUZZING_STAGE=0)
 target_link_libraries(fuzzer_connect_multi usrsctp-static)
