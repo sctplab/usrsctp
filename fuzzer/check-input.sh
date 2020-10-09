@@ -18,7 +18,7 @@ echo "########## Beginning Fuzzer Chain"
 echo ""
 
 set +e
-./fuzzer_listen -timeout=10 $1 > $1.log 2>&1
+./fuzzer_listen_verbose -timeout=10 $1 > $1.log 2>&1
 #./fuzzer_connect_multi_verbose -timeout=10 $1 > $1.log 2>&1
 FUZZER_RETVAL=$?
 set -e

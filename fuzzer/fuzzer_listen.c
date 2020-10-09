@@ -45,16 +45,22 @@
 struct sockaddr_conn sconn;
 struct socket *s_l;
 
-static int
-conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
+static void
+dump_packet(const void *buffer, size_t bufferlen, int inout)
 {
-#if 0
-	char *dump_buf;
-	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
+#ifdef FUZZ_VERBOSE
+	static char *dump_buf;
+	if ((dump_buf = usrsctp_dumppacket(buffer, bufferlen, inout)) != NULL) {
 		fprintf(stderr, "%s", dump_buf);
 		usrsctp_freedumpbuffer(dump_buf);
 	}
-#endif
+#endif // FUZZ_VERBOSE
+}
+
+static int
+conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
+{
+	dump_packet(buf, length, SCTP_DUMP_OUTBOUND);
 	return (0);
 }
 
@@ -150,6 +156,9 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		// Skip too small and too large packets
 		return (0);
 	}
+
+	dump_packet(data, data_size, SCTP_DUMP_INBOUND);
+
 	usrsctp_conninput((void *)1, data, data_size, 0);
 
 #if !defined(FUZZ_FAST)

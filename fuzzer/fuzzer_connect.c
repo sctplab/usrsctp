@@ -63,7 +63,8 @@ static uint32_t assoc_vtag = 0;
 #endif
 
 static void
-dump_packet(const void *buffer, size_t bufferlen, int inout) {
+dump_packet(const void *buffer, size_t bufferlen, int inout)
+{
 #ifdef FUZZ_VERBOSE
 	static char *dump_buf;
 	if ((dump_buf = usrsctp_dumppacket(buffer, bufferlen, inout)) != NULL) {
