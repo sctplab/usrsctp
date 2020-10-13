@@ -116,7 +116,11 @@ handle_events(int sock, struct socket* s, void* sconn_addr)
 		FD_ZERO(&rfds);
 		FD_SET(sock, &rfds);
 
+#ifdef _WIN32
+		select(0 /* ignored */, &rfds, NULL, NULL, &tv);
+#else
 		select(sock + 1, &rfds, NULL, NULL, &tv);
+#endif
 
 		if (FD_ISSET(sock, &rfds)) {
 			length = recv(sock, buf, MAX_PACKET_SIZE, 0);
