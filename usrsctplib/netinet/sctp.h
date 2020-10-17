@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 365071 2020-09-01 21:19:14Z mjg $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp.h 366750 2020-10-16 10:44:48Z tuexen $");
 #endif
 
 #ifndef _NETINET_SCTP_H_
@@ -626,6 +626,7 @@ struct sctp_error_auth_invalid_hmac {
  */
 #define SCTP_MAX_SACK_DELAY 500 /* per RFC4960 */
 #define SCTP_MAX_HB_INTERVAL 14400000 /* 4 hours in ms */
+#define SCTP_MIN_COOKIE_LIFE     1000 /* 1 second in ms */
 #define SCTP_MAX_COOKIE_LIFE  3600000 /* 1 hour in ms */
 
 /* Types of logging/KTR tracing  that can be enabled via the
