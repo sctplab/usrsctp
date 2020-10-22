@@ -329,6 +329,10 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	}
 #endif // defined(FUZZ_INTERLEAVING)
 
+	optval = 1;
+	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_REUSE_PORT, &optval, sizeof(optval));
+	assert(result == 0);
+
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
 #ifdef HAVE_SCONN_LEN
