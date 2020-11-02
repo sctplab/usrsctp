@@ -183,7 +183,7 @@ handle_connection(void *arg)
 	unsigned long messages = 0;
 	unsigned long long first_length = 0;
 	unsigned long long sum = 0;
-	unsigned long long round_bytes;
+	unsigned long long round_bytes = 0;
 	struct timeval round_start;
 	time_t round_timeout = 0;
 
@@ -204,10 +204,10 @@ handle_connection(void *arg)
 
 	gettimeofday(&time_start, NULL);
 	if (round_duration > 0) {
-		round_bytes = 0;
 		gettimeofday(&round_start, NULL);
 		round_timeout = calc_round_timeout(round_start);
 	}
+
 	while (n > 0) {
 		recv_calls++;
 		if (flags & MSG_NOTIFICATION) {
