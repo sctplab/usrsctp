@@ -172,7 +172,7 @@ target_include_directories(usrsctp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 if (WIN32)
 	message(STATUS "link library: ws2_32")
-	target_link_libraries(usrsctp ws2_32 iphlpapi.lib)
+	target_link_libraries(usrsctp ws2_32 iphlpapi)
 endif ()
 
 set_target_properties(usrsctp PROPERTIES IMPORT_SUFFIX "_import.lib")
