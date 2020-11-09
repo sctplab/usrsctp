@@ -81,7 +81,7 @@ target_link_libraries(fuzzer_listen usrsctp)
 
 add_executable(fuzzer_listen_verbose fuzzer_listen.c ../programs/programs_helper.c)
 target_compile_definitions(fuzzer_listen_verbose PRIVATE FUZZ_VERBOSE)
-target_link_libraries(fuzzer_listen_verbose usrsctp-static)
+target_link_libraries(fuzzer_listen_verbose usrsctp)
 
 add_executable(fuzzer_fragment fuzzer_fragment.c ../programs/programs_helper.c)
 target_link_libraries(fuzzer_fragment usrsctp)
