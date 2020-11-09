@@ -69,7 +69,7 @@ endif ()
 
 option(sctp_werror "Treat warning as error" 1)
 
-option(sctp_link_programs_static "Link example programs static" 0)
+option(sctp_build_shared_lib "Build USRSCTP as shared library" 0)
 
 option(sctp_build_programs "Build example programs" 1)
 
@@ -81,12 +81,6 @@ option(sctp_build_fuzzer "Compile in clang fuzzing mode" 0)
 
 if (sctp_sanitizer_address AND sctp_sanitizer_memory)
 	message(FATAL_ERROR "Can not compile with both sanitizer options")
-endif ()
-
-if (sctp_link_programs_static OR WIN32)
-	set(programs_link_library "usrsctp-static")
-else ()
-	set(programs_link_library "usrsctp")
 endif ()
 
 
