@@ -139,8 +139,7 @@ finish_random(void)
 {
 	return;
 }
-#elif defined(__ANDROID__)
-#if (__ANDROID_API__ < 28)
+#elif (defined(__ANDROID__) && (__ANDROID_API__ < 28)) || defined(__EMSCRIPTEN__)
 #include <fcntl.h>
 
 static int fd = -1;
@@ -174,7 +173,7 @@ finish_random(void)
 	close(fd);
 	return;
 }
-#else
+#elif defined(__ANDROID__) && (__ANDROID_API__ >= 28)
 #include <sys/random.h>
 
 void
@@ -204,7 +203,6 @@ finish_random(void)
 {
 	return;
 }
-#endif
 #elif defined(__linux__)
 #include <unistd.h>
 #include <sys/syscall.h>
