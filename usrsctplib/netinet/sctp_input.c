@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 366489 2020-10-06 14:26:05Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_input.c 366750 2020-10-16 10:44:48Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1294,13 +1294,10 @@ sctp_handle_error(struct sctp_chunkhdr *ch,
 				struct sctp_error_stale_cookie *stale_cookie;
 
 				stale_cookie = (struct sctp_error_stale_cookie *)cause;
-				asoc->cookie_preserve_req = ntohl(stale_cookie->stale_time);
-				/* Double it to be more robust on RTX */
-				if (asoc->cookie_preserve_req <= UINT32_MAX / 2) {
-					asoc->cookie_preserve_req *= 2;
-				} else {
-					asoc->cookie_preserve_req = UINT32_MAX;
-				}
+				/* stable_time is in usec, convert to msec. */
+				asoc->cookie_preserve_req = ntohl(stale_cookie->stale_time) / 1000;
+				/* Double it to be more robust on RTX. */
+				asoc->cookie_preserve_req *= 2;
 				asoc->stale_cookie_count++;
 				if (asoc->stale_cookie_count >
 				    asoc->max_init_times) {
@@ -2568,7 +2565,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 	unsigned int sig_offset, cookie_offset;
 	unsigned int cookie_len;
 	struct timeval now;
-	struct timeval time_expires;
+	struct timeval time_entered, time_expires;
 	int notification = 0;
 	struct sctp_nets *netl;
 	int had_a_existing_tcb = 0;
@@ -2720,13 +2717,34 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 		return (NULL);
 	}
 
-	/*
-	 * check the cookie timestamps to be sure it's not stale
-	 */
+	if (sctp_ticks_to_msecs(cookie->cookie_life) > SCTP_MAX_COOKIE_LIFE) {
+		SCTPDBG(SCTP_DEBUG_INPUT2, "handle_cookie_echo: Invalid cookie lifetime\n");
+		return (NULL);
+	}
+	time_entered.tv_sec = cookie->time_entered.tv_sec;
+	time_entered.tv_usec = cookie->time_entered.tv_usec;
+	if ((time_entered.tv_sec < 0) ||
+	    (time_entered.tv_usec < 0) ||
+	    (time_entered.tv_usec >= 1000000)) {
+		/* Invalid time stamp. Cookie must have been modified. */
+		SCTPDBG(SCTP_DEBUG_INPUT2, "handle_cookie_echo: Invalid time stamp\n");
+		return (NULL);
+	}
 	(void)SCTP_GETTIME_TIMEVAL(&now);
-	/* Expire time is in Ticks, so we convert to seconds */
-	time_expires.tv_sec = cookie->time_entered.tv_sec + sctp_ticks_to_secs(cookie->cookie_life);
-	time_expires.tv_usec = cookie->time_entered.tv_usec;
+#if !(defined(__FreeBSD__) && !defined(__Userspace__))
+	if (timercmp(&now, &time_entered, <)) {
+#else
+	if (timevalcmp(&now, &time_entered, <)) {
+#endif
+		SCTPDBG(SCTP_DEBUG_INPUT2, "handle_cookie_echo: cookie generated in the future!\n");
+		return (NULL);
+	}
+	/*
+	 * Check the cookie timestamps to be sure it's not stale.
+	 * cookie_life is in ticks, so we convert to seconds.
+	 */
+	time_expires.tv_sec = time_entered.tv_sec + sctp_ticks_to_secs(cookie->cookie_life);
+	time_expires.tv_usec = time_entered.tv_usec;
 #if !(defined(__FreeBSD__) && !defined(__Userspace__))
 	if (timercmp(&now, &time_expires, >))
 #else
@@ -2749,8 +2767,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 		SCTP_BUF_LEN(op_err) = sizeof(struct sctp_error_stale_cookie);
 		cause = mtod(op_err, struct sctp_error_stale_cookie *);
 		cause->cause.code = htons(SCTP_CAUSE_STALE_COOKIE);
-		cause->cause.length = htons((sizeof(struct sctp_paramhdr) +
-		    (sizeof(uint32_t))));
+		cause->cause.length = htons(sizeof(struct sctp_error_stale_cookie));
 #if !(defined(__FreeBSD__) && !defined(__Userspace__))
 		timersub(&now, &time_expires, &diff);
 #else
@@ -5670,7 +5687,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 				if (op_err != NULL) {
 					len = min(SCTP_SIZE32(chk_length), (uint32_t)(length - *offset));
 					cause = mtod(op_err, struct sctp_gen_error_cause *);
-					cause->code =  htons(SCTP_CAUSE_UNRECOG_CHUNK);
+					cause->code = htons(SCTP_CAUSE_UNRECOG_CHUNK);
 					cause->length = htons((uint16_t)(len + sizeof(struct sctp_gen_error_cause)));
 					SCTP_BUF_LEN(op_err) = sizeof(struct sctp_gen_error_cause);
 					SCTP_BUF_NEXT(op_err) = SCTP_M_COPYM(m, *offset, len, M_NOWAIT);

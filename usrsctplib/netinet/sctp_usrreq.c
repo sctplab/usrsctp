@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 366480 2020-10-06 10:41:04Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_usrreq.c 366750 2020-10-16 10:44:48Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -6493,18 +6493,20 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 
 		SCTP_CHECK_AND_CAST(sasoc, optval, struct sctp_assocparams, optsize);
 		SCTP_FIND_STCB(inp, stcb, sasoc->sasoc_assoc_id);
-		if (sasoc->sasoc_cookie_life) {
+		if (sasoc->sasoc_cookie_life > 0) {
 			/* boundary check the cookie life */
-			if (sasoc->sasoc_cookie_life < 1000)
-				sasoc->sasoc_cookie_life = 1000;
+			if (sasoc->sasoc_cookie_life < SCTP_MIN_COOKIE_LIFE) {
+				sasoc->sasoc_cookie_life = SCTP_MIN_COOKIE_LIFE;
+			}
 			if (sasoc->sasoc_cookie_life > SCTP_MAX_COOKIE_LIFE) {
 				sasoc->sasoc_cookie_life = SCTP_MAX_COOKIE_LIFE;
 			}
 		}
 		if (stcb) {
-			if (sasoc->sasoc_asocmaxrxt)
+			if (sasoc->sasoc_asocmaxrxt > 0) {
 				stcb->asoc.max_send_times = sasoc->sasoc_asocmaxrxt;
-			if (sasoc->sasoc_cookie_life) {
+			}
+			if (sasoc->sasoc_cookie_life > 0) {
 				stcb->asoc.cookie_life = sctp_msecs_to_ticks(sasoc->sasoc_cookie_life);
 			}
 			SCTP_TCB_UNLOCK(stcb);
@@ -6514,9 +6516,10 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			    ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) &&
 			     (sasoc->sasoc_assoc_id == SCTP_FUTURE_ASSOC))) {
 				SCTP_INP_WLOCK(inp);
-				if (sasoc->sasoc_asocmaxrxt)
+				if (sasoc->sasoc_asocmaxrxt > 0) {
 					inp->sctp_ep.max_send_times = sasoc->sasoc_asocmaxrxt;
-				if (sasoc->sasoc_cookie_life) {
+				}
+				if (sasoc->sasoc_cookie_life > 0) {
 					inp->sctp_ep.def_cookie_life = sctp_msecs_to_ticks(sasoc->sasoc_cookie_life);
 				}
 				SCTP_INP_WUNLOCK(inp);

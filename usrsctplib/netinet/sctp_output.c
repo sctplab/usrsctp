@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 366517 2020-10-07 15:22:48Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_output.c 366750 2020-10-16 10:44:48Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -5263,7 +5263,7 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked)
 	}
 
 	/* now any cookie time extensions */
-	if (stcb->asoc.cookie_preserve_req) {
+	if (stcb->asoc.cookie_preserve_req > 0) {
 		struct sctp_cookie_perserve_param *cookie_preserve;
 
 		if (padding_len > 0) {
