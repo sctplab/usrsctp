@@ -67,7 +67,19 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 static void
 handle_upcall(struct socket *sock, void *arg, int flgs)
 {
-	usrsctp_close(sock);
+	struct socket *conn_sock;
+	struct sockaddr_in remote_addr;
+	socklen_t addr_len = sizeof(struct sockaddr_in);
+
+	memset(&remote_addr, 0, sizeof(struct sockaddr_in));
+	if (((conn_sock = usrsctp_accept(sock, (struct sockaddr *) &remote_addr, &addr_len)) == NULL) && (errno != EINPROGRESS)) {
+		perror("usrsctp_accept");
+	}
+
+	exit(EXIT_FAILURE);
+	printf("Open!\n");
+
+	usrsctp_close(conn_sock);
 }
 
 int
@@ -83,6 +95,8 @@ init_fuzzer(void) {
 		SCTP_ADAPTATION_INDICATION,
 		SCTP_PARTIAL_DELIVERY_EVENT};
 	unsigned long i;
+	struct linger so_linger;
+	int result;
 
 #if defined(FUZZ_FAST)
 	if (initialized) {
@@ -138,6 +152,11 @@ init_fuzzer(void) {
 		perror("usrsctp_listen");
 		exit(EXIT_FAILURE);
 	}
+
+	so_linger.l_onoff = 1;
+	so_linger.l_linger = 0;
+	result = usrsctp_setsockopt(s_l, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger));
+	USRSCTP_ASSERT(result == 0);
 
 	usrsctp_set_upcall(s_l, handle_upcall, NULL);
 

@@ -29,7 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include <assert.h>
 #include <usrsctp.h>
 #include "../programs/programs_helper.h"
 #define FUZZ_B_RESERVED1        	(1 << 0)
@@ -226,18 +225,18 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	}
 
 	socket_client = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, 0);
-	assert(socket_client != NULL);
+	USRSCTP_ASSERT(socket_client != NULL);
 
 	usrsctp_set_non_blocking(socket_client, 1);
 
 	memset(&initmsg, 1, sizeof(struct sctp_initmsg));
 	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_INITMSG, &initmsg, sizeof(struct sctp_initmsg));
-	assert(result == 0);
+	USRSCTP_ASSERT(result == 0);
 
 	so_linger.l_onoff = 1;
 	so_linger.l_linger = 0;
 	result = usrsctp_setsockopt(socket_client, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger));
-	assert(result == 0);
+	USRSCTP_ASSERT(result == 0);
 
 	memset(&event, 0, sizeof(event));
 	event.se_on = 1;
@@ -248,27 +247,27 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 
 	optval = 1;
 	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RECVRCVINFO, &optval, sizeof(optval));
-	assert(result == 0);
+	USRSCTP_ASSERT(result == 0);
 
 	optval = 1;
 	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_RECVNXTINFO, &optval, sizeof(optval));
-	assert(result == 0);
+	USRSCTP_ASSERT(result == 0);
 
 	if (data[0] & I_DATA_FLAG) {
 		// set the program supporting I-DATA
 		optval = 2;
 		result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &optval, sizeof(optval));
-		assert(result == 0);
+		USRSCTP_ASSERT(result == 0);
 
 		memset(&assoc_val, 0, sizeof(assoc_val));
 		assoc_val.assoc_value = 1;
 		result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_INTERLEAVING_SUPPORTED, &assoc_val, sizeof(assoc_val));
-		assert(result == 0);
+		USRSCTP_ASSERT(result == 0);
 	}
 
 	optval = 1;
 	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_REUSE_PORT, &optval, sizeof(optval));
-	assert(result == 0);
+	USRSCTP_ASSERT(result == 0);
 
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
 	sconn.sconn_family = AF_CONN;
@@ -279,11 +278,11 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	sconn.sconn_addr = (void *)1;
 
 	result = usrsctp_bind(socket_client, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn));
-	assert(result == 0);
+	USRSCTP_ASSERT(result == 0);
 
 	optval = 1;
 	result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_NODELAY, &optval, sizeof(optval));
-	assert(result == 0);
+	USRSCTP_ASSERT(result == 0);
 
 	usrsctp_set_upcall(socket_client, handle_upcall, NULL);
 
@@ -296,7 +295,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	sconn.sconn_addr = (void *)1;
 
 	result = usrsctp_connect(socket_client, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn));
-	assert(result == 0 || errno == EINPROGRESS);
+	USRSCTP_ASSERT(result == 0 || errno == EINPROGRESS);
 
 	if (data[0] & NR_SACK_FLAG) {
 		common_header = (struct sctp_common_header*) fuzz_init_ack_nrsack_support;
@@ -324,8 +323,8 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		}
 		if (data[fuzz_data_count] & NR_SACK_FLAG) {
 			send_data_buffer = malloc(SEND_DATA_SIZE);
-			assert( send_data_buffer != NULL );
-			memset(send_data_buffer,1,SEND_DATA_SIZE);
+			USRSCTP_ASSERT(send_data_buffer != NULL );
+			memset(send_data_buffer, 1, SEND_DATA_SIZE);
 			fuzzer_printf("Calling usrsctp_sendv()\n");
 			usrsctp_sendv(socket_client, send_data_buffer, SEND_DATA_SIZE, NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
 			free(send_data_buffer);
