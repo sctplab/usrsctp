@@ -34,9 +34,9 @@
 #define FUZZ_B_RESERVED1        	(1 << 0)
 #define FUZZ_B_RESERVED2      		(1 << 1)
 #define FUZZ_B_RESERVED3            (1 << 2)
-#define FUZZ_B_RESERVED4      		(1 << 3)
+#define FUZZ_B_RESERVED4            (1 << 3)
 #define NR_SACK_FLAG                (1 << 4)
-#define FUZZ_B_RESERVED5         	(1 << 5)
+#define FUZZ_B_RESERVED5            (1 << 5)
 #define I_DATA_FLAG                 (1 << 6)
 #define FUZZ_B_RESERVED6            (1 << 7)
 
@@ -139,7 +139,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	int optval;
 	unsigned long i;
 	char* send_data_buffer;
-    uint16_t event_types[] = {
+	uint16_t event_types[] = {
 		SCTP_ASSOC_CHANGE,
 		SCTP_PEER_ADDR_CHANGE,
 		SCTP_REMOTE_ERROR,

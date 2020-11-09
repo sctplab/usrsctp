@@ -76,9 +76,6 @@ handle_upcall(struct socket *sock, void *arg, int flgs)
 		perror("usrsctp_accept");
 	}
 
-	exit(EXIT_FAILURE);
-	printf("Open!\n");
-
 	usrsctp_close(conn_sock);
 }
 
