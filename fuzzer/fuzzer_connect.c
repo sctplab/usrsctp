@@ -343,9 +343,7 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 	sconn.sconn_addr = (void *)1;
 
 	result = usrsctp_bind(socket_client, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn));
-	USRSCTP_ASSERT(result == 1);
-	printf("should not see me!\n");
-	exit(EXIT_FAILURE);
+	USRSCTP_ASSERT(result == 0);
 
 	// Disable Nagle.
 	optval = 1;
