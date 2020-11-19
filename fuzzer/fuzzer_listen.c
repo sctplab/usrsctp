@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2019 Felix Weinrank
+ * Copyright (C) 2017-2020 Felix Weinrank
  *
  * All rights reserved.
  *
@@ -49,7 +49,8 @@ static void
 dump_packet(const void *buffer, size_t bufferlen, int inout)
 {
 #ifdef FUZZ_VERBOSE
-	static char *dump_buf;
+	char *dump_buf;
+
 	if ((dump_buf = usrsctp_dumppacket(buffer, bufferlen, inout)) != NULL) {
 		fprintf(stderr, "%s", dump_buf);
 		usrsctp_freedumpbuffer(dump_buf);
@@ -153,7 +154,7 @@ init_fuzzer(void) {
 	so_linger.l_onoff = 1;
 	so_linger.l_linger = 0;
 	result = usrsctp_setsockopt(s_l, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger));
-	USRSCTP_ASSERT(result == 0);
+	FUZZER_ASSERT(result == 0);
 
 	usrsctp_set_upcall(s_l, handle_upcall, NULL);
 
