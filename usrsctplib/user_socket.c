@@ -1328,7 +1328,7 @@ usrsctp_socket(int domain, int type, int protocol,
 	       uint32_t sb_threshold,
 	       void *ulp_info)
 {
-	struct socket *so;
+	struct socket *so = NULL;
 
 	if ((protocol == IPPROTO_SCTP) && (SCTP_BASE_VAR(sctp_pcb_initialized) == 0)) {
 		errno = EPROTONOSUPPORT;

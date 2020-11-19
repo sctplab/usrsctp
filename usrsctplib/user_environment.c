@@ -139,8 +139,7 @@ finish_random(void)
 {
 	return;
 }
-#elif defined(__ANDROID__)
-#if (__ANDROID_API__ < 28)
+#elif (defined(__ANDROID__) && (__ANDROID_API__ < 28)) || defined(__EMSCRIPTEN__)
 #include <fcntl.h>
 
 static int fd = -1;
@@ -174,7 +173,7 @@ finish_random(void)
 	close(fd);
 	return;
 }
-#else
+#elif defined(__ANDROID__) && (__ANDROID_API__ >= 28)
 #include <sys/random.h>
 
 void
@@ -204,10 +203,15 @@ finish_random(void)
 {
 	return;
 }
-#endif
 #elif defined(__linux__)
 #include <unistd.h>
 #include <sys/syscall.h>
+
+#if defined(__has_feature)
+#if __has_feature(memory_sanitizer)
+void __msan_unpoison(void *, size_t);
+#endif
+#endif
 
 void
 init_random(void)
@@ -229,6 +233,14 @@ read_random(void *buf, size_t size)
 			position += n;
 		}
 	}
+#if defined(__has_feature)
+#if __has_feature(memory_sanitizer)
+	/* Need to do this because MSan doesn't realize that syscall has
+	 * initialized the output buffer.
+	 */
+	__msan_unpoison(buf, size);
+#endif
+#endif
 	return;
 }
 
