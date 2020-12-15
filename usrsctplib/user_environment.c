@@ -30,10 +30,6 @@
 
 /* __Userspace__ */
 
-#ifdef INVARIANTS
-#include <netinet/sctp_pcb.h>
-#endif
-
 #if defined(_WIN32)
 #if !defined(_CRT_RAND_S) && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
 #define _CRT_RAND_S
@@ -41,6 +37,9 @@
 #else
 #include <stdint.h>
 #include <netinet/sctp_os_userspace.h>
+#endif
+#ifdef INVARIANTS
+#include <netinet/sctp_pcb.h>
 #endif
 #include <user_environment.h>
 #include <sys/types.h>
@@ -219,14 +218,36 @@ void __msan_unpoison(void *, size_t);
 #endif
 
 #ifdef __NR_getrandom
-static int getrandom_available = 1;
+#if !defined(GRND_NONBLOCK)
+#define GRND_NONBLOCK 1
+#endif
+static int getrandom_available = 0;
 #endif
 static int fd = -1;
 
 void
 init_random(void)
 {
-	fd = open("/dev/urandom", O_RDONLY);
+#ifdef __NR_getrandom
+	char dummy;
+	ssize_t n = syscall(__NR_getrandom, &dummy, sizeof(dummy), GRND_NONBLOCK);
+	if (n > 0 || errno == EINTR || errno == EAGAIN) {
+		/* Either getrandom succeeded, was interrupted or is waiting for entropy;
+		 * all of which mean the syscall is available.
+		 */
+		getrandom_available = 1;
+	} else {
+#ifdef INVARIANTS
+		if (errno != ENOSYS) {
+			panic("getrandom syscall returned unexpected error: %d", errno);
+		}
+#endif
+		/* If the syscall isn't available, fall back to /dev/urandom. */
+#endif
+		fd = open("/dev/urandom", O_RDONLY);
+#ifdef __NR_getrandom
+	}
+#endif
 	return;
 }
 
@@ -254,12 +275,8 @@ read_random(void *buf, size_t size)
 #endif
 				position += n;
 			} else if (errno != EINTR && errno != EAGAIN) {
-				/* Fall back to using /dev/urandom. */
-				getrandom_available = 0;
 #ifdef INVARIANTS
-				if (errno != ENOSYS) {
-					panic("getrandom syscall returned unexpected error: %d", errno);
-				}
+				panic("getrandom syscall returned unexpected error: %d", errno);
 #endif
 			}
 		} else
@@ -277,7 +294,9 @@ read_random(void *buf, size_t size)
 void
 finish_random(void)
 {
-	close(fd);
+	if (fd != -1) {
+		close(fd);
+	}
 	return;
 }
 #elif defined(__Fuchsia__)
