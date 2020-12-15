@@ -30,6 +30,10 @@
 
 /* __Userspace__ */
 
+#ifdef INVARIANTS
+#include <netinet/sctp_pcb.h>
+#endif
+
 #if defined(_WIN32)
 #if !defined(_CRT_RAND_S) && !defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
 #define _CRT_RAND_S
@@ -204,6 +208,7 @@ finish_random(void)
 	return;
 }
 #elif defined(__linux__)
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/syscall.h>
 
@@ -213,9 +218,15 @@ void __msan_unpoison(void *, size_t);
 #endif
 #endif
 
+#ifdef __NR_getrandom
+static int getrandom_available = 1;
+#endif
+static int fd = -1;
+
 void
 init_random(void)
 {
+	fd = open("/dev/urandom", O_RDONLY);
 	return;
 }
 
@@ -227,26 +238,46 @@ read_random(void *buf, size_t size)
 
 	position = 0;
 	while (position < size) {
-		/* Using syscall directly because getrandom isn't present in glibc < 2.25. */
-		n = syscall(__NR_getrandom, (char *)buf + position, size - position, 0);
-		if (n > 0) {
-			position += n;
-		}
-	}
+#ifdef __NR_getrandom
+		if (getrandom_available) {
+			/* Using syscall directly because getrandom isn't present in glibc < 2.25.
+			 */
+			n = syscall(__NR_getrandom, (char *)buf + position, size - position, 0);
+			if (n > 0) {
 #if defined(__has_feature)
 #if __has_feature(memory_sanitizer)
-	/* Need to do this because MSan doesn't realize that syscall has
-	 * initialized the output buffer.
-	 */
-	__msan_unpoison(buf, size);
+				/* Need to do this because MSan doesn't realize that syscall has
+				 * initialized the output buffer.
+				 */
+				__msan_unpoison(buf + position, n);
 #endif
 #endif
+				position += n;
+			} else if (errno != EINTR && errno != EAGAIN) {
+				/* Fall back to using /dev/urandom. */
+				getrandom_available = 0;
+#ifdef INVARIANTS
+				if (errno != ENOSYS) {
+					panic("getrandom syscall returned unexpected error: %d", errno);
+				}
+#endif
+			}
+		} else
+#endif /* __NR_getrandom */
+		{
+			n = read(fd, (char *)buf + position, size - position);
+			if (n > 0) {
+				position += n;
+			}
+		}
+	}
 	return;
 }
 
 void
 finish_random(void)
 {
+	close(fd);
 	return;
 }
 #elif defined(__Fuchsia__)
