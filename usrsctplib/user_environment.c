@@ -90,6 +90,36 @@ finish_random(void)
 {
 	return;
 }
+/* This define can be used to optionally use OpenSSL's random number utility,
+ * which is capable of bypassing the chromium sandbox which normally would
+ * prevent opening files, including /dev/urandom.
+ */
+#elif defined(SCTP_USE_OPENSSL_RAND)
+#include <openssl/rand.h>
+
+/* Requiring BoringSSL because it guarantees that RAND_bytes will succeed. */
+#ifndef OPENSSL_IS_BORINGSSL
+#error Only BoringSSL is supported with SCTP_USE_OPENSSL_RAND.
+#endif
+
+void
+init_random(void)
+{
+	return;
+}
+
+void
+read_random(void *buf, size_t size)
+{
+	RAND_bytes((uint8_t *)buf, size);
+	return;
+}
+
+void
+finish_random(void)
+{
+	return;
+}
 #elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__) || defined(__Bitrig__)
 #include <stdlib.h>
 
