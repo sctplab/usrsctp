@@ -38,6 +38,9 @@
 #include <stdint.h>
 #include <netinet/sctp_os_userspace.h>
 #endif
+#ifdef INVARIANTS
+#include <netinet/sctp_pcb.h>
+#endif
 #include <user_environment.h>
 #include <sys/types.h>
 /* #include <sys/param.h> defines MIN */
@@ -204,6 +207,7 @@ finish_random(void)
 	return;
 }
 #elif defined(__linux__)
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/syscall.h>
 
@@ -213,9 +217,37 @@ void __msan_unpoison(void *, size_t);
 #endif
 #endif
 
+#ifdef __NR_getrandom
+#if !defined(GRND_NONBLOCK)
+#define GRND_NONBLOCK 1
+#endif
+static int getrandom_available = 0;
+#endif
+static int fd = -1;
+
 void
 init_random(void)
 {
+#ifdef __NR_getrandom
+	char dummy;
+	ssize_t n = syscall(__NR_getrandom, &dummy, sizeof(dummy), GRND_NONBLOCK);
+	if (n > 0 || errno == EINTR || errno == EAGAIN) {
+		/* Either getrandom succeeded, was interrupted or is waiting for entropy;
+		 * all of which mean the syscall is available.
+		 */
+		getrandom_available = 1;
+	} else {
+#ifdef INVARIANTS
+		if (errno != ENOSYS) {
+			panic("getrandom syscall returned unexpected error: %d", errno);
+		}
+#endif
+		/* If the syscall isn't available, fall back to /dev/urandom. */
+#endif
+		fd = open("/dev/urandom", O_RDONLY);
+#ifdef __NR_getrandom
+	}
+#endif
 	return;
 }
 
@@ -227,26 +259,44 @@ read_random(void *buf, size_t size)
 
 	position = 0;
 	while (position < size) {
-		/* Using syscall directly because getrandom isn't present in glibc < 2.25. */
-		n = syscall(__NR_getrandom, (char *)buf + position, size - position, 0);
-		if (n > 0) {
-			position += n;
-		}
-	}
+#ifdef __NR_getrandom
+		if (getrandom_available) {
+			/* Using syscall directly because getrandom isn't present in glibc < 2.25.
+			 */
+			n = syscall(__NR_getrandom, (char *)buf + position, size - position, 0);
+			if (n > 0) {
 #if defined(__has_feature)
 #if __has_feature(memory_sanitizer)
-	/* Need to do this because MSan doesn't realize that syscall has
-	 * initialized the output buffer.
-	 */
-	__msan_unpoison(buf, size);
+				/* Need to do this because MSan doesn't realize that syscall has
+				 * initialized the output buffer.
+				 */
+				__msan_unpoison(buf + position, n);
 #endif
 #endif
+				position += n;
+			} else if (errno != EINTR && errno != EAGAIN) {
+#ifdef INVARIANTS
+				panic("getrandom syscall returned unexpected error: %d", errno);
+#endif
+			}
+		} else
+#endif /* __NR_getrandom */
+		{
+			n = read(fd, (char *)buf + position, size - position);
+			if (n > 0) {
+				position += n;
+			}
+		}
+	}
 	return;
 }
 
 void
 finish_random(void)
 {
+	if (fd != -1) {
+		close(fd);
+	}
 	return;
 }
 #elif defined(__Fuchsia__)
