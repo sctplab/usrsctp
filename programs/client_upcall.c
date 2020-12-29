@@ -308,7 +308,6 @@ main(int argc, char *argv[])
 	while (!done && !input_done) {
 		if (inputAvailable()) {
 			if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
-				buffer[strlen(buffer)] = '\0';
 				usrsctp_sendv(sock, buffer, strlen(buffer), NULL, 0, NULL, 0, SCTP_SENDV_NOINFO, 0);
 			} else {
 				if (usrsctp_shutdown(sock, SHUT_WR) < 0) {
