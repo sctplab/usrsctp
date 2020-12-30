@@ -32,7 +32,7 @@
 #include <sys/timeb.h>
 #include <iphlpapi.h>
 #if !defined(__MINGW32__)
-#pragma comment(lib, "IPHLPAPI.lib")
+#pragma comment(lib, "iphlpapi.lib")
 #endif
 #endif
 #include <netinet/sctp_os_userspace.h>
