@@ -32,7 +32,7 @@
 #include <usrsctp.h>
 #include "../programs/programs_helper.h"
 #define FUZZ_B_RESERVED1        	(1 << 0)
-#define FUZZ_B_RESERVED2      		(1 << 1)
+#define SACK_FLAG      		        (1 << 1)
 #define FUZZ_B_RESERVED3            (1 << 2)
 #define FUZZ_B_RESERVED4            (1 << 3)
 #define NR_SACK_FLAG                (1 << 4)
@@ -321,7 +321,8 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		if (fuzz_data_count + data_chunk_size > data_size) {
 			data_chunk_size = data_size - fuzz_data_count;
 		}
-		if (data[fuzz_data_count] & NR_SACK_FLAG) {
+		if (data[fuzz_data_count] & NR_SACK_FLAG ||
+		    data[fuzz_data_count] & SACK_FLAG) {
 			send_data_buffer = malloc(SEND_DATA_SIZE);
 			FUZZER_ASSERT(send_data_buffer != NULL );
 			memset(send_data_buffer, 1, SEND_DATA_SIZE);
