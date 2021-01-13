@@ -34,7 +34,12 @@
 # INCLUDE MODULES AND SETTINGS
 #################################################
 
-set(VERSION "1.0.0")
+set(VERSION "0.9.5.0")
+
+# Shared library API and ABI versions
+# Notice: shared library version must be in X.Y.Z format only
+set(SOVERSION_FULL "2.0.0")
+set(SOVERSION_SHORT "2")
 
 include(GNUInstallDirs)
 set(prefix ${CMAKE_INSTALL_PREFIX})
@@ -177,7 +182,7 @@ if (WIN32)
 endif ()
 
 set_target_properties(usrsctp PROPERTIES IMPORT_SUFFIX "_import.lib")
-set_target_properties(usrsctp PROPERTIES SOVERSION 1 VERSION 1.0.0)
+set_target_properties(usrsctp PROPERTIES SOVERSION ${SOVERSION_SHORT} VERSION ${SOVERSION_FULL})
 
 #################################################
 # INSTALL LIBRARY AND HEADER
