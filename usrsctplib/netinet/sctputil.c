@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctputil.c 366482 2020-10-06 11:08:52Z tuexen $");
+__FBSDID("$FreeBSD$");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -1333,9 +1333,8 @@ sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		 * that were dropped must be notified to the upper layer as
 		 * failed to send.
 		 */
-		asoc->strmout[i].next_mid_ordered = 0;
-		asoc->strmout[i].next_mid_unordered = 0;
 		TAILQ_INIT(&asoc->strmout[i].outqueue);
+		asoc->ss_functions.sctp_ss_init_stream(stcb, &asoc->strmout[i], NULL);
 		asoc->strmout[i].chunks_on_queues = 0;
 #if defined(SCTP_DETAILED_STR_STATS)
 		for (j = 0; j < SCTP_PR_SCTP_MAX + 1; j++) {
@@ -1346,10 +1345,11 @@ sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		asoc->strmout[i].abandoned_sent[0] = 0;
 		asoc->strmout[i].abandoned_unsent[0] = 0;
 #endif
+		asoc->strmout[i].next_mid_ordered = 0;
+		asoc->strmout[i].next_mid_unordered = 0;
 		asoc->strmout[i].sid = i;
 		asoc->strmout[i].last_msg_incomplete = 0;
 		asoc->strmout[i].state = SCTP_STREAM_OPENING;
-		asoc->ss_functions.sctp_ss_init_stream(stcb, &asoc->strmout[i], NULL);
 	}
 	asoc->ss_functions.sctp_ss_init(stcb, asoc, 0);
 

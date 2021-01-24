@@ -3736,9 +3736,8 @@ sctp_process_cmsgs_for_init(struct sctp_tcb *stcb, struct mbuf *control, int *er
 					}
 					for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
 						TAILQ_INIT(&stcb->asoc.strmout[i].outqueue);
+						stcb->asoc.ss_functions.sctp_ss_init_stream(stcb, &stcb->asoc.strmout[i], NULL);
 						stcb->asoc.strmout[i].chunks_on_queues = 0;
-						stcb->asoc.strmout[i].next_mid_ordered = 0;
-						stcb->asoc.strmout[i].next_mid_unordered = 0;
 #if defined(SCTP_DETAILED_STR_STATS)
 						for (j = 0; j < SCTP_PR_SCTP_MAX + 1; j++) {
 							stcb->asoc.strmout[i].abandoned_sent[j] = 0;
@@ -3748,10 +3747,11 @@ sctp_process_cmsgs_for_init(struct sctp_tcb *stcb, struct mbuf *control, int *er
 						stcb->asoc.strmout[i].abandoned_sent[0] = 0;
 						stcb->asoc.strmout[i].abandoned_unsent[0] = 0;
 #endif
+						stcb->asoc.strmout[i].next_mid_ordered = 0;
+						stcb->asoc.strmout[i].next_mid_unordered = 0;
 						stcb->asoc.strmout[i].sid = i;
 						stcb->asoc.strmout[i].last_msg_incomplete = 0;
 						stcb->asoc.strmout[i].state = SCTP_STREAM_OPENING;
-						stcb->asoc.ss_functions.sctp_ss_init_stream(stcb, &stcb->asoc.strmout[i], NULL);
 					}
 				}
 				break;
@@ -12928,15 +12928,24 @@ sctp_send_str_reset_req(struct sctp_tcb *stcb,
 		stcb->asoc.ss_functions.sctp_ss_clear(stcb, &stcb->asoc, 0, 1);
 		for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
 			TAILQ_INIT(&stcb->asoc.strmout[i].outqueue);
+			/* FIX ME FIX ME */
+			/* This should be a SS_COPY operation FIX ME STREAM SCHEDULER EXPERT */
+			stcb->asoc.ss_functions.sctp_ss_init_stream(stcb, &stcb->asoc.strmout[i], &oldstream[i]);
 			stcb->asoc.strmout[i].chunks_on_queues = oldstream[i].chunks_on_queues;
+#if defined(SCTP_DETAILED_STR_STATS)
+			for (j = 0; j < SCTP_PR_SCTP_MAX + 1; j++) {
+				stcb->asoc.strmout[i].abandoned_sent[j] = oldstream[i].abandoned_sent[j];
+				stcb->asoc.strmout[i].abandoned_unsent[j] = oldstream[i].abandoned_unsent[j];
+			}
+#else
+			stcb->asoc.strmout[i].abandoned_sent[0] = oldstream[i].abandoned_sent[0];
+			stcb->asoc.strmout[i].abandoned_unsent[0] = oldstream[i].abandoned_unsent[0];
+#endif
 			stcb->asoc.strmout[i].next_mid_ordered = oldstream[i].next_mid_ordered;
 			stcb->asoc.strmout[i].next_mid_unordered = oldstream[i].next_mid_unordered;
 			stcb->asoc.strmout[i].last_msg_incomplete = oldstream[i].last_msg_incomplete;
 			stcb->asoc.strmout[i].sid = i;
 			stcb->asoc.strmout[i].state = oldstream[i].state;
-			/* FIX ME FIX ME */
-			/* This should be a SS_COPY operation FIX ME STREAM SCHEDULER EXPERT */
-			stcb->asoc.ss_functions.sctp_ss_init_stream(stcb, &stcb->asoc.strmout[i], &oldstream[i]);
 			/* now anything on those queues? */
 			TAILQ_FOREACH_SAFE(sp, &oldstream[i].outqueue, next, nsp) {
 				TAILQ_REMOVE(&oldstream[i].outqueue, sp, next);
