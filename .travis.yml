@@ -11,21 +11,21 @@ matrix:
 
    # ###### Ubuntu Linux ####################################################
 
-   # ====== Ubuntu 19.10 (Eoan Ermine) ======================================
-   - name: "Ubuntu 19.10 (Eoan Ermine) with GCC"
+   # ====== Ubuntu 20.10 (Groovy Gorilla) ======================================
+   - name: "Ubuntu 20.10 (Groovy Gorilla) with GCC"
      os: linux
      dist: bionic
      group: travis_latest
-     env: DOCKER="ubuntu:eoan" VARIANT="ubuntu" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   - name: "Ubuntu 19.10 (Eoan Ermine) with Clang"
+     env: DOCKER="ubuntu:groovy" VARIANT="ubuntu" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
+   - name: "Ubuntu 20.10 (Groovy Gorilla) with Clang"
      os: linux
      dist: bionic
      group: travis_latest
-     env: DOCKER="ubuntu:eoan" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
-   - name: "Ubuntu 19.10 (Eoan Ermine) packaging with pbuilder"
+     env: DOCKER="ubuntu:groovy" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   - name: "Ubuntu 20.10 (Groovy Gorilla) packaging with pbuilder"
      dist: bionic
      group: travis_latest
-     env: DOCKER="ubuntu:eoan" VARIANT="ubuntu" TOOL="pbuilder"
+     env: DOCKER="ubuntu:groovy" VARIANT="ubuntu" TOOL="pbuilder"
 
    # ====== Ubuntu 19.04 (Disco Dingo) ======================================
    - name: "Ubuntu 19.04 (Disco Dingo) with GCC"
