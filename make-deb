@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Debian Packaging Scripts
-# Copyright (C) 2002-2019 by Thomas Dreibholz
+# Debian/Ubuntu Packaging Scripts
+# Copyright (C) 2002-2020 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ set -e
 # Set current Debian debhelper version here
 # for building unstable/testing/stable packages
 # (See https://packages.qa.debian.org/d/debhelper.html for latest version!)
-DEBHELPER_LATEST_VERSION="12"
+DEBHELPER_LATEST_VERSION="13"
 
 
 # ====== Obtain package and version information =============================
@@ -253,10 +253,14 @@ for DISTRIBUTION in ${DISTRIBUTIONS} ; do
    fi
    if [ ${SKIP_PACKAGE_SIGNING} -eq 1 -o "${OVERRIDE_SKIP_PACKAGE_SIGNING}" == "1" ] ; then
       # Build source package without signature:
-      debuild ${opt} -us -uc -S "-k${MAINTAINER}" -i || exit 1
+      debuild ${opt} -us -uc -S -i || exit 1
    else
       # Build source package including signature:
-      debuild ${opt} -sa -S "-k${MAINTAINER}" -i || exit 1
+      if [ "${MAINTAINER_KEY}" == "" ] ; then
+         echo >&2 "ERROR: MAINTAINER_KEY is not set!"
+         exit 1
+      fi
+      debuild ${opt} -sa -S "-k${MAINTAINER_KEY}" -i || exit 1
    fi
 
    # Important: In /etc/pbuilderrc, set COMPONENTS="main universe"!

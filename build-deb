@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Debian Packaging Scripts
-# Copyright (C) 2002-2019 by Thomas Dreibholz
+# Debian/Ubuntu Packaging Scripts
+# Copyright (C) 2002-2020 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -119,5 +119,5 @@ if [ "${PACKAGE_DISTRIBUTION}" == "unstable" -o \
      "${PACKAGE_DISTRIBUTION}" == "stable" ] ; then
    profile="debian"
 fi
-echo "Calling: lintian -iIEv --pedantic --profile ${profile} ${changesFile}"
-lintian -iIEv --pedantic --profile ${profile} ${changesFile} || true
+echo "Calling: lintian -iIEv --pedantic --suppress-tags file-references-package-build-path --profile ${profile} ${changesFile}"
+lintian -iIEv --pedantic --suppress-tags file-references-package-build-path --profile ${profile} ${changesFile} || true
