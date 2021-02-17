@@ -68,9 +68,10 @@ static int connecting = 0;
 static int finish = 0;
 
 static unsigned int
-get_tick_count(void)
+get_milliseconds_count(void)
 {
 #ifdef _WIN32
+	// obtain number of milliseconds since system started
 	return GetTickCount();
 #else
 	struct timeval tv;
@@ -83,7 +84,11 @@ get_tick_count(void)
 }
 
 static void
+#ifdef _WIN32
+handle_events(SOCKET sock, struct socket* s, void* sconn_addr)
+#else
 handle_events(int sock, struct socket* s, void* sconn_addr)
+#endif
 {
 	char *dump_buf;
 	ssize_t length;
@@ -92,9 +97,9 @@ handle_events(int sock, struct socket* s, void* sconn_addr)
 	fd_set rfds;
 	struct timeval tv;
 
-	unsigned next_fire_time = get_tick_count();
+	unsigned next_fire_time = get_milliseconds_count();
 	unsigned last_fire_time = next_fire_time;
-	unsigned now = get_tick_count();
+	unsigned now = get_milliseconds_count();
 	int wait_time;
 
 	while (!finish) {
@@ -111,7 +116,11 @@ handle_events(int sock, struct socket* s, void* sconn_addr)
 		FD_ZERO(&rfds);
 		FD_SET(sock, &rfds);
 
+#ifdef _WIN32
+		select(0 /* ignored */, &rfds, NULL, NULL, &tv);
+#else
 		select(sock + 1, &rfds, NULL, NULL, &tv);
+#endif
 
 		if (FD_ISSET(sock, &rfds)) {
 			length = recv(sock, buf, MAX_PACKET_SIZE, 0);
@@ -137,6 +146,9 @@ on_connect(struct socket* s)
 	/* memset(buffer, 'A', BUFFER_SIZE); */
 	/* bufferlen = BUFFER_SIZE; */
 	bufferlen = snprintf(buffer, BUFFER_SIZE, "GET / HTTP/1.0\r\nUser-agent: libusrsctp\r\nConnection: close\r\n\r\n");
+	if (bufferlen < 0) {
+		return;
+	}
 	sndinfo.snd_sid = 0;
 	sndinfo.snd_flags = 0;
 	sndinfo.snd_ppid = htonl(DISCARD_PPID);
@@ -179,14 +191,14 @@ on_socket_readable(struct socket* s) {
 		if (flags & MSG_NOTIFICATION) {
 			printf("Notification of length %d received.\n", (int)retval);
 		} else {
-			printf("Msg of length %d received via %p:%u on stream %d with SSN %u and TSN %u, PPID %d, context %u.\n",
+			printf("Msg of length %d received via %p:%u on stream %d with SSN %u and TSN %u, PPID %u, context %u.\n",
 			       (int)retval,
 			       addr.sconn.sconn_addr,
 			       ntohs(addr.sconn.sconn_port),
 			       rcv_info.rcv_sid,
 			       rcv_info.rcv_ssn,
 			       rcv_info.rcv_tsn,
-			       ntohl(rcv_info.rcv_ppid),
+			       (uint32_t)ntohl(rcv_info.rcv_ppid),
 			       rcv_info.rcv_context);
 		}
 	}
@@ -195,7 +207,7 @@ on_socket_readable(struct socket* s) {
 static void
 handle_upcall(struct socket *s, void *arg, int flags)
 {
-    int events = usrsctp_get_events(s);
+	int events = usrsctp_get_events(s);
 
 	if (connecting) {
 		if (events & SCTP_EVENT_ERROR) {
@@ -271,20 +283,20 @@ main(int argc, char *argv[])
 #ifdef _WIN32
 	if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
 		printf("WSAStartup failed\n");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 #endif
-	usrsctp_init_nothreads(0, conn_output, debug_printf);
+	usrsctp_init_nothreads(0, conn_output, debug_printf_stack);
 	/* set up a connected UDP socket */
 #ifdef _WIN32
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
-		printf("socket() failed with error: %ld\n", WSAGetLastError());
-		return (-1);
+		printf("socket() failed with error: %d\n", WSAGetLastError());
+		exit(EXIT_FAILURE);
 	}
 #else
 	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
 		perror("socket");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 #endif
 	memset(&sin, 0, sizeof(struct sockaddr_in));
@@ -295,17 +307,17 @@ main(int argc, char *argv[])
 	sin.sin_port = htons(atoi(argv[2]));
 	if (!inet_pton(AF_INET, argv[1], &sin.sin_addr.s_addr)){
 		printf("error: invalid address\n");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 #ifdef _WIN32
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
-		printf("bind() failed with error: %ld\n", WSAGetLastError());
-		return (-1);
+		printf("bind() failed with error: %d\n", WSAGetLastError());
+		exit(EXIT_FAILURE);
 	}
 #else
 	if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
 		perror("bind");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 #endif
 	memset(&sin, 0, sizeof(struct sockaddr_in));
@@ -316,17 +328,17 @@ main(int argc, char *argv[])
 	sin.sin_port = htons(atoi(argv[4]));
 	if (!inet_pton(AF_INET, argv[3], &sin.sin_addr.s_addr)){
 		printf("error: invalid address\n");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 #ifdef _WIN32
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) == SOCKET_ERROR) {
-		printf("connect() failed with error: %ld\n", WSAGetLastError());
-		return (-1);
+		printf("connect() failed with error: %d\n", WSAGetLastError());
+		exit(EXIT_FAILURE);
 	}
 #else
 	if (connect(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
 		perror("connect");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 #endif
 #ifdef SCTP_DEBUG
@@ -337,7 +349,7 @@ main(int argc, char *argv[])
 
 	if ((s = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 
 	usrsctp_setsockopt(s, IPPROTO_SCTP, SCTP_RECVRCVINFO, &on, sizeof(int));
@@ -353,7 +365,7 @@ main(int argc, char *argv[])
 	sconn.sconn_addr = NULL;
 	if (usrsctp_bind(s, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
 		perror("usrsctp_bind");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 
 	memset(&sconn, 0, sizeof(struct sockaddr_conn));
@@ -368,7 +380,7 @@ main(int argc, char *argv[])
 
 	if (retval < 0 && errno != EWOULDBLOCK && errno != EINPROGRESS) {
 		perror("usrsctp_connect");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 
 	connecting = 1;

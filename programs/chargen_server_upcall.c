@@ -41,10 +41,10 @@
 #include <stdarg.h>
 #include <sys/types.h>
 #ifndef _WIN32
+#include <sys/socket.h>
 #include <unistd.h>
 #include <time.h>
-#include <sys/socket.h>
-#include <sys/errno.h>
+#include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #endif
@@ -159,9 +159,9 @@ main(int argc, char *argv[])
 	const int on = 1;
 
 	if (argc > 1) {
-		usrsctp_init(atoi(argv[1]), NULL, debug_printf);
+		usrsctp_init(atoi(argv[1]), NULL, debug_printf_stack);
 	} else {
-		usrsctp_init(9899, NULL, debug_printf);
+		usrsctp_init(9899, NULL, debug_printf_stack);
 	}
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
@@ -215,14 +215,6 @@ main(int argc, char *argv[])
 	while (1) {
 #ifdef _WIN32
 		Sleep(1*1000);
-#else
-		sleep(1);
-#endif
-	}
-	usrsctp_close(listening_socket);
-	while (usrsctp_finish() != 0) {
-#ifdef _WIN32
-		Sleep(1000);
 #else
 		sleep(1);
 #endif

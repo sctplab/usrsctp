@@ -159,9 +159,9 @@ main(int argc, char *argv[])
 	}
 
 	if (argc > 4) {
-		usrsctp_init(atoi(argv[4]), NULL, debug_printf);
+		usrsctp_init(atoi(argv[4]), NULL, debug_printf_stack);
 	} else {
-		usrsctp_init(9899, NULL, debug_printf);
+		usrsctp_init(9899, NULL, debug_printf_stack);
 	}
 
 #ifdef SCTP_DEBUG
@@ -256,16 +256,20 @@ main(int argc, char *argv[])
 
 	if (argc > 6) {
 #ifdef _WIN32
-		_snprintf(request, sizeof(request), "%s %s %s", request_prefix, argv[6], request_postfix);
+		if (_snprintf(request, sizeof(request), "%s %s %s", request_prefix, argv[6], request_postfix) < 0) {
 #else
-		snprintf(request, sizeof(request), "%s %s %s", request_prefix, argv[6], request_postfix);
+		if (snprintf(request, sizeof(request), "%s %s %s", request_prefix, argv[6], request_postfix) < 0) {
 #endif
+			request[0] = '\0';
+		}
 	} else {
 #ifdef _WIN32
-		_snprintf(request, sizeof(request), "%s %s %s", request_prefix, "/", request_postfix);
+		if (_snprintf(request, sizeof(request), "%s %s %s", request_prefix, "/", request_postfix) < 0) {
 #else
-		snprintf(request, sizeof(request), "%s %s %s", request_prefix, "/", request_postfix);
+		if (snprintf(request, sizeof(request), "%s %s %s", request_prefix, "/", request_postfix) < 0) {
 #endif
+			request[0] = '\0';
+		}
 	}
 
 	printf("\nHTTP request:\n%s\n", request);

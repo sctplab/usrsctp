@@ -130,7 +130,7 @@ handle_upcall(struct socket *sock, void *data, int flgs)
 				       rn.recvv_rcvinfo.rcv_sid,
 				       rn.recvv_rcvinfo.rcv_ssn,
 				       rn.recvv_rcvinfo.rcv_tsn,
-				       ntohl(rn.recvv_rcvinfo.rcv_ppid),
+				       (uint32_t)ntohl(rn.recvv_rcvinfo.rcv_ppid),
 				       rn.recvv_rcvinfo.rcv_context);
 				if (flags & MSG_EOR) {
 					struct sctp_sndinfo snd_info;
@@ -172,9 +172,9 @@ main(int argc, char *argv[])
 	const int on = 1;
 
 	if (argc > 1) {
-		usrsctp_init(atoi(argv[1]), NULL, debug_printf);
+		usrsctp_init(atoi(argv[1]), NULL, debug_printf_stack);
 	} else {
-		usrsctp_init(9899, NULL, debug_printf);
+		usrsctp_init(9899, NULL, debug_printf_stack);
 	}
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
@@ -235,14 +235,6 @@ main(int argc, char *argv[])
 	while (1) {
 #ifdef _WIN32
 		Sleep(1*1000);
-#else
-		sleep(1);
-#endif
-	}
-	usrsctp_close(sock);
-	while (usrsctp_finish() != 0) {
-#ifdef _WIN32
-		Sleep(1000);
 #else
 		sleep(1);
 #endif

@@ -281,12 +281,13 @@ struct sctp_assoc_change {
 #define SCTP_CANT_STR_ASSOC 0x0005
 
 /* sac_info values */
-#define SCTP_ASSOC_SUPPORTS_PR        0x01
-#define SCTP_ASSOC_SUPPORTS_AUTH      0x02
-#define SCTP_ASSOC_SUPPORTS_ASCONF    0x03
-#define SCTP_ASSOC_SUPPORTS_MULTIBUF  0x04
-#define SCTP_ASSOC_SUPPORTS_RE_CONFIG 0x05
-#define SCTP_ASSOC_SUPPORTS_MAX       0x05
+#define SCTP_ASSOC_SUPPORTS_PR           0x01
+#define SCTP_ASSOC_SUPPORTS_AUTH         0x02
+#define SCTP_ASSOC_SUPPORTS_ASCONF       0x03
+#define SCTP_ASSOC_SUPPORTS_MULTIBUF     0x04
+#define SCTP_ASSOC_SUPPORTS_RE_CONFIG    0x05
+#define SCTP_ASSOC_SUPPORTS_INTERLEAVING 0x06
+#define SCTP_ASSOC_SUPPORTS_MAX          0x06
 
 /* Address event */
 struct sctp_paddr_change {
@@ -315,7 +316,7 @@ struct sctp_remote_error {
 	uint32_t sre_length;
 	uint16_t sre_error;
 	sctp_assoc_t sre_assoc_id;
-	uint8_t sre_data[4];
+	uint8_t sre_data[];
 };
 
 /* shutdown event */
@@ -903,7 +904,7 @@ struct socket *
 usrsctp_socket(int domain, int type, int protocol,
                int (*receive_cb)(struct socket *sock, union sctp_sockstore addr, void *data,
                                  size_t datalen, struct sctp_rcvinfo, int flags, void *ulp_info),
-               int (*send_cb)(struct socket *sock, uint32_t sb_free),
+               int (*send_cb)(struct socket *sock, uint32_t sb_free, void *ulp_info),
                uint32_t sb_threshold,
                void *ulp_info);
 
@@ -1033,6 +1034,9 @@ int
 usrsctp_set_ulpinfo(struct socket *, void *);
 
 int
+usrsctp_get_ulpinfo(struct socket *, void **);
+
+int
 usrsctp_set_upcall(struct socket *so,
                    void (*upcall)(struct socket *, void *, int),
                    void *arg);
@@ -1042,7 +1046,7 @@ usrsctp_get_events(struct socket *so);
 
 
 void
-usrsctp_handle_timers(int delta);
+usrsctp_handle_timers(uint32_t elapsed_milliseconds);
 
 #define SCTP_DUMP_OUTBOUND 1
 #define SCTP_DUMP_INBOUND  0
@@ -1130,6 +1134,7 @@ USRSCTP_SYSCTL_DECL(sctp_udp_tunneling_port)
 USRSCTP_SYSCTL_DECL(sctp_enable_sack_immediately)
 USRSCTP_SYSCTL_DECL(sctp_vtag_time_wait)
 USRSCTP_SYSCTL_DECL(sctp_blackhole)
+USRSCTP_SYSCTL_DECL(sctp_sendall_limit)
 USRSCTP_SYSCTL_DECL(sctp_diag_info_code)
 USRSCTP_SYSCTL_DECL(sctp_fr_max_burst_default)
 USRSCTP_SYSCTL_DECL(sctp_path_pf_threshold)

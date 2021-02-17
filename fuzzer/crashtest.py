@@ -2,9 +2,9 @@
 import glob
 import subprocess
 import os
+import re
 
 reportdir = "reports/"
-fuzzer = "./fuzzer_connected"
 
 class bcolors:
 	HEADER = '\033[95m'
@@ -21,26 +21,23 @@ print("Testing crashfiles")
 
 FNULL = open(os.devnull, "w")
 crashfiles = []
-crashfiles.extend(glob.glob("crash-*"))
-crashfiles.extend(glob.glob("timeout-*"))
+crashfiles.extend(glob.glob("*"))
+pattern = re.compile("^(leak-|timeout-|crash-)\w+$")
 
-if not os.path.exists(reportdir):
-	os.makedirs(reportdir)
-
-num_files = len(crashfiles)
 filecounter = 1
+
+FNULL = open(os.devnull, 'w')
+
 for filename in crashfiles:
-	filename_report = '{}{}{}'.format(reportdir, filename, '.report')
-	reportfile = open(filename_report, "w")
-	fuzzer_retval = subprocess.call([fuzzer, "-timeout=6", filename], stdout=reportfile, stderr=reportfile)
+
+	if not pattern.match(filename):
+		continue
+
+	fuzzer_retval = subprocess.call(["./check-input.sh", filename, "batchmode"], stdout=FNULL, stderr=subprocess.STDOUT)
+	
 	if fuzzer_retval == 0:
-		print(bcolors.FAIL, "[", filecounter, "/", num_files, "]", filename,"- not reproducable", bcolors.ENDC)
-		reportfile.close()
-		os.remove(filename_report)
+		print(bcolors.FAIL, "[", filecounter, "]", filename,"- not reproducable", bcolors.ENDC)
 	else:
-		print(bcolors.OKGREEN, "[", filecounter, "/", num_files, "]", filename, "- reproducable", bcolors.ENDC)
-		reportfile.write("\n>> HEXDUMP <<\n\n")
-		reportfile.flush()
-		subprocess.call(["hexdump", "-Cv", filename], stdout=reportfile)
+		print(bcolors.OKGREEN, "[", filecounter, "]", filename, "- reproducable", bcolors.ENDC)
 
 	filecounter = filecounter + 1

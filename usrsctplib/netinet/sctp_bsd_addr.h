@@ -32,9 +32,9 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.h 310590 2016-12-26 11:06:41Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.h 365071 2020-09-01 21:19:14Z mjg $");
 #endif
 
 #ifndef _NETINET_SCTP_BSD_ADDR_H_
@@ -49,7 +49,6 @@ void sctp_wakeup_iterator(void);
 
 void sctp_startup_iterator(void);
 
-
 #ifdef INET6
 void sctp_gather_internal_ifa_flags(struct sctp_ifa *ifa);
 #endif
@@ -61,8 +60,10 @@ int sctp_copy_out_packet_log(uint8_t *target, int length);
 
 #endif
 
-#if !defined(__Panda__)
 void sctp_addr_change(struct ifaddr *ifa, int cmd);
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+
+void sctp_addr_change_event_handler(void *, struct ifaddr *, int);
 #endif
 
 void sctp_add_or_del_interfaces(int (*pred)(struct ifnet *), int add);

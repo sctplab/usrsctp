@@ -20,3 +20,4 @@ usr/bin/test_libmgmt
 usr/bin/test_timer
 usr/bin/tsctp
 usr/bin/tsctp_upcall
+usr/bin/st_client

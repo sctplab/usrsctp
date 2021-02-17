@@ -30,7 +30,7 @@
 
 /*
  * Usage: daytime_server [local_encaps_port] [remote_encaps_port]
- * 
+ *
  * Example
  * Server: $ ./daytime_server 11111 22222
  * Client: $ ./client 127.0.0.1 13 0 22222 11111
@@ -70,9 +70,9 @@ main(int argc, char *argv[])
 	struct sctp_sndinfo sndinfo;
 
 	if (argc > 1) {
-		usrsctp_init(atoi(argv[1]), NULL, debug_printf);
+		usrsctp_init(atoi(argv[1]), NULL, debug_printf_stack);
 	} else {
-		usrsctp_init(9899, NULL, debug_printf);
+		usrsctp_init(9899, NULL, debug_printf_stack);
 	}
 #ifdef SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
@@ -111,10 +111,12 @@ main(int argc, char *argv[])
 		}
 		time(&now);
 #ifdef _WIN32
-		_snprintf(buffer, sizeof(buffer), "%s", ctime(&now));
+		if (_snprintf(buffer, sizeof(buffer), "%s", ctime(&now)) < 0) {
 #else
-		snprintf(buffer, sizeof(buffer), "%s", ctime(&now));
+		if (snprintf(buffer, sizeof(buffer), "%s", ctime(&now)) < 0) {
 #endif
+			buffer[0] = '\0';
+		}
 		sndinfo.snd_sid = 0;
 		sndinfo.snd_flags = 0;
 		sndinfo.snd_ppid = htonl(DAYTIME_PPID);
@@ -125,14 +127,6 @@ main(int argc, char *argv[])
 			perror("usrsctp_sendv");
 		}
 		usrsctp_close(conn_sock);
-	}
-	usrsctp_close(sock);
-	while (usrsctp_finish() != 0) {
-#ifdef _WIN32
-		Sleep(SLEEP * 1000);
-#else
-		sleep(SLEEP);
-#endif
 	}
 	return (0);
 }
