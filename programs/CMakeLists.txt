@@ -116,7 +116,7 @@ foreach (source_file ${check_programs})
 
 	target_link_libraries(
 		${source_file_we}
-		"usrsctp"
+		usrsctp-shared
 		${CMAKE_THREAD_LIBS_INIT}
 	)
 

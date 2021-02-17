@@ -177,23 +177,30 @@ list(APPEND usrsctp_sources
 	user_socket.c
 )
 
-add_library(usrsctp ${usrsctp_sources} ${usrsctp_headers})
+add_library(usrsctp-shared SHARED ${usrsctp_sources} ${usrsctp_headers})
+add_library(usrsctp-static STATIC ${usrsctp_sources} ${usrsctp_headers})
 
-target_include_directories(usrsctp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+foreach(TYPE shared;static)
+   target_include_directories(usrsctp-${TYPE} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-if (WIN32)
-	message(STATUS "link library: ws2_32")
-	target_link_libraries(usrsctp ws2_32 iphlpapi)
-endif ()
+   if (WIN32)
+      message(STATUS "link library: ws2_32")
+      target_link_libraries(usrsctp-${TYPE} ws2_32 iphlpapi)
+   endif ()
 
-set_target_properties(usrsctp PROPERTIES IMPORT_SUFFIX "_import.lib")
-set_target_properties(usrsctp PROPERTIES SOVERSION ${SOVERSION_SHORT} VERSION ${SOVERSION_FULL})
+   set_target_properties(usrsctp-${TYPE} PROPERTIES IMPORT_SUFFIX "_import.lib")
+   set_target_properties(usrsctp-${TYPE} PROPERTIES SOVERSION ${SOVERSION_SHORT} VERSION ${SOVERSION_FULL})
+   set_target_properties(usrsctp-${TYPE} PROPERTIES OUTPUT_NAME usrsctp CLEAN_DIRECT_OUTPUT 1)
+
+endforeach()
 
 #################################################
 # INSTALL LIBRARY AND HEADER
 #################################################
 
-install(TARGETS usrsctp DESTINATION ${CMAKE_INSTALL_LIBDIR})
+foreach(TYPE shared;static)
+   install(TARGETS usrsctp-${TYPE} DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endforeach()
 install(FILES usrsctp.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #################################################
