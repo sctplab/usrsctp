@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 365071 2020-09-01 21:19:14Z mjg $");
 #endif
 
 #define _IP_VHL
@@ -171,8 +171,8 @@ sctp_threshold_management(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 }
 
 /*
- * sctp_find_alternate_net() returns a non-NULL pointer as long as there
- * exists nets, which are not being deleted.
+ * sctp_find_alternate_net() returns a non-NULL pointer as long
+ * the argument net is non-NULL.
  */
 struct sctp_nets *
 sctp_find_alternate_net(struct sctp_tcb *stcb,
@@ -181,13 +181,13 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 {
 	/* Find and return an alternate network if possible */
 	struct sctp_nets *alt, *mnet, *min_errors_net = NULL , *max_cwnd_net = NULL;
-	bool looped;
+	int once;
 	/* JRS 5/14/07 - Initialize min_errors to an impossible value. */
 	int min_errors = -1;
 	uint32_t max_cwnd = 0;
 
 	if (stcb->asoc.numnets == 1) {
-		/* No selection can be made. */
+		/* No others but net */
 		return (TAILQ_FIRST(&stcb->asoc.nets));
 	}
 	/*
@@ -323,22 +323,25 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 			return (max_cwnd_net);
 		}
 	}
-	/* Look for an alternate net, which is active. */
-	if ((net != NULL) && ((net->dest_state & SCTP_ADDR_BEING_DELETED) == 0)) {
-		alt = TAILQ_NEXT(net, sctp_next);;
-	} else {
-		alt = TAILQ_FIRST(&stcb->asoc.nets);
+	mnet = net;
+	once = 0;
+
+	if (mnet == NULL) {
+		mnet = TAILQ_FIRST(&stcb->asoc.nets);
+		if (mnet == NULL) {
+			return (NULL);
+		}
 	}
-	looped = false;
 	for (;;) {
+		alt = TAILQ_NEXT(mnet, sctp_next);
 		if (alt == NULL) {
-			if (!looped) {
-				alt = TAILQ_FIRST(&stcb->asoc.nets);
-				looped = true;
-			}
-			/* Definitely out of candidates. */
-			if (alt == NULL) {
+			once++;
+			if (once > 1) {
 				break;
+			}
+			alt = TAILQ_FIRST(&stcb->asoc.nets);
+			if (alt == NULL) {
+				return (NULL);
 			}
 		}
 #if defined(__FreeBSD__) && !defined(__Userspace__)
@@ -358,56 +361,43 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 #else
 		    (alt->ro.ro_rt != NULL) &&
 #endif
-		    (!(alt->dest_state & SCTP_ADDR_UNCONFIRMED)) &&
-		    (alt != net)) {
-			/* Found an alternate net, which is reachable. */
+		    (!(alt->dest_state & SCTP_ADDR_UNCONFIRMED))) {
+			/* Found a reachable address */
 			break;
 		}
-		alt = TAILQ_NEXT(alt, sctp_next);
+		mnet = alt;
 	}
 
 	if (alt == NULL) {
-		/*
-		 * In case no active alternate net has been found, look for
-		 * an alternate net, which is confirmed.
-		 */
-		if ((net != NULL) && ((net->dest_state & SCTP_ADDR_BEING_DELETED) == 0)) {
-			alt = TAILQ_NEXT(net, sctp_next);;
-		} else {
-			alt = TAILQ_FIRST(&stcb->asoc.nets);
-		}
-		looped = false;
+		/* Case where NO insv network exists (dormant state) */
+		/* we rotate destinations */
+		once = 0;
+		mnet = net;
 		for (;;) {
+			if (mnet == NULL) {
+				return (TAILQ_FIRST(&stcb->asoc.nets));
+			}
+			alt = TAILQ_NEXT(mnet, sctp_next);
 			if (alt == NULL) {
-				if (!looped) {
-					alt = TAILQ_FIRST(&stcb->asoc.nets);
-					looped = true;
+				once++;
+				if (once > 1) {
+					break;
 				}
-				/* Definitely out of candidates. */
+				alt = TAILQ_FIRST(&stcb->asoc.nets);
 				if (alt == NULL) {
 					break;
 				}
 			}
 			if ((!(alt->dest_state & SCTP_ADDR_UNCONFIRMED)) &&
 			    (alt != net)) {
-				/* Found an alternate net, which is confirmed. */
+				/* Found an alternate address */
 				break;
 			}
-			alt = TAILQ_NEXT(alt, sctp_next);
+			mnet = alt;
 		}
 	}
 	if (alt == NULL) {
-		/*
-		 * In case no confirmed alternate net has been found, just
-		 * return net, if it is not being deleted. In the other case
-		 * just return the first net.
-		 */
-		if ((net != NULL) && ((net->dest_state & SCTP_ADDR_BEING_DELETED) == 0)) {
-			alt = net;
-		}
-		if (alt == NULL) {
-			alt = TAILQ_FIRST(&stcb->asoc.nets);
-		}
+		return (net);
 	}
 	return (alt);
 }
