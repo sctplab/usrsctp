@@ -41,7 +41,7 @@ pwd
 find . -iwholename '*cmake*' -not -name CMakeLists.txt -delete
 
 # Build with ASAN / MSAN
-cmake -Dsctp_build_fuzzer=1 -Dsctp_build_programs=0 -Dsctp_invariants=1 -Dsctp_sanitizer_address=1 -DCMAKE_LINKER="$CC" -DCMAKE_C_COMPILER="$CC" .
+cmake -Dsctp_build_shared_lib=1 -Dsctp_build_fuzzer=1 -Dsctp_build_programs=0 -Dsctp_invariants=1 -Dsctp_sanitizer_address=1 -DCMAKE_LINKER="$CC" -DCMAKE_C_COMPILER="$CC" .
 #cmake -Dsctp_build_fuzzer=1 -Dsctp_build_programs=0 -Dsctp_invariants=1 -Dsctp_sanitizer_memory=1 -DCMAKE_LINKER="$CC" -DCMAKE_C_COMPILER="$CC" .
 
 make -j"$NPROC"
