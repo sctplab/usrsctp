@@ -35,18 +35,34 @@ if [ "${TRAVIS_OS_NAME}" == "linux" -a "${DOCKER}" == "" -a "${QEMU}" == "" ] ; 
 # ###### Linux via Docker ###################################################
 elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${DOCKER}" != "" -a "${QEMU}" == "" ] ; then
 
-      # NOTE: Using tmpfs for pbuilder and mock!
-      # The build machine therefore needs a sufficient amount of RAM!
-      sudo docker rm -f ${CONTAINER} || true
-      sudo docker run -d \
-         --name ${CONTAINER} \
-         --tmpfs /var/cache/pbuilder:rw,exec,dev,size=4g \
-         --tmpfs /var/lib/mock:rw,exec,dev,size=4g \
-         --cap-add=SYS_ADMIN --cap-add=NET_ADMIN \
-         --security-opt apparmor:unconfined \
-         -v $(pwd):/travis -w /travis \
-         $DOCKER tail -f /dev/null
-      sudo docker ps
+   # Work-around for DockerHub's download limitation:
+   if [ "$DOCKER_USERNAME" != "" -a "$DOCKER_PASSWORD" != "" ] ; then
+      echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+   else
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+      echo "DOCKER_PASSWORD and/or DOCKER_PASSWORD are not set!"
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+   fi
+
+   # tmpDaemonConfiguration=$(mktemp)
+   # sudo jq '."registry-mirrors" += ["https://mirror.gcr.io"]' /etc/docker/daemon.json >${tmpDaemonConfiguration}
+   # sudo mv ${tmpDaemonConfiguration} /etc/docker/daemon.json
+   # sudo systemctl daemon-reload
+   # sudo systemctl restart docker
+   # sudo docker system info
+
+   # NOTE: Using tmpfs for pbuilder and mock!
+   # The build machine therefore needs a sufficient amount of RAM!
+   sudo docker rm -f ${CONTAINER} || true
+   sudo docker run -d \
+      --name ${CONTAINER} \
+      --tmpfs /var/cache/pbuilder:rw,exec,dev,size=4g \
+      --tmpfs /var/lib/mock:rw,exec,dev,size=4g \
+      --cap-add=SYS_ADMIN --cap-add=NET_ADMIN \
+      --security-opt apparmor:unconfined \
+      -v $(pwd):/travis -w /travis \
+      $DOCKER tail -f /dev/null
+   sudo docker ps
 
 
 # ###### FreeBSD via QEMU ###################################################
