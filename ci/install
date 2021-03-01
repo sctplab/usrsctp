@@ -282,7 +282,10 @@ elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
       # ~~~~~ Grow image ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       truncate -s 128G ${imageName}
       echo -e "w\nY\nY\n" | LANG=C gdisk ${imageName}
-      parted -s ${imageName} resizepart 3 100%
+      # FreeBSD 12.2 uses 4 partitions, earlier versions use 3 partitions. Try
+      # to enlarge 4th partition first. If this fails, try to enlarge the 3rd
+      # partition instead:
+      parted -s ${imageName} resizepart 4 100% || parted -s ${imageName} resizepart 3 100%
       parted -s ${imageName} print
 
       # ~~~~~~ Mount ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -299,8 +302,11 @@ elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
       sudo losetup -j ${imageName}
       LOOPDEV=`sudo losetup -j ${imageName} | awk '{ print $1 }' | sed -e "s/:$//g"`
 
-      echo "sudo fuse-ufs2/fuse-ufs/fuse-ufs ${LOOPDEV}p3 ${mountPoint} -o rw"
-      sudo fuse-ufs2/fuse-ufs/fuse-ufs ${LOOPDEV}p3 ${mountPoint} -o rw
+      # FreeBSD 12.2 uses 4 partitions, earlier versions use 3 partitions. Try
+      # to mount 4th partition first. If this fails, try to mount the 3rd
+      # partition instead:
+      sudo fuse-ufs2/fuse-ufs/fuse-ufs ${LOOPDEV}p4 ${mountPoint} -o rw || \
+         sudo fuse-ufs2/fuse-ufs/fuse-ufs ${LOOPDEV}p3 ${mountPoint} -o rw
 
       # ~~~~~~ Modify ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       # Set up networking:
