@@ -339,6 +339,9 @@ elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
       sudo bash -c "echo \"PermitRootLogin prohibit-password\" >>${mountPoint}/etc/ssh/sshd_config"
       # sudo tail -n 6 ${mountPoint}/etc/ssh/sshd_config
 
+      # Make sure the boot output goes into the serial console:
+      sudo bash -c "echo \"console=\\\"comconsole\\\"\" >>${mountPoint}/boot/loader.conf"
+
       # Set up NFS:
       sudo mkdir -p ${mountPoint}/travis
       sudo sed -e "/^.*\/travis.*$/d" -i~ ${mountPoint}/etc/fstab
@@ -384,6 +387,7 @@ elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
       ssh-keygen -R "[localhost]:8829" -f ~/.ssh/known_hosts
       # Non-KVM execution: qemu-system-x86_64 \
       sudo qemu-system-x86_64 -machine type=pc,accel=kvm -nographic \
+         -serial mon:stdio \
          -m 6144 -cpu host -smp $(nproc) \
          -drive if=virtio,media=disk,file=/vservers/qemu-freebsd/${imageName},format=raw \
          -netdev user,id=mynet0,hostfwd=tcp:127.0.0.1:8829-:22 -device virtio-net-pci,netdev=mynet0 \
