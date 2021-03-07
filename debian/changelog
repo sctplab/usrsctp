@@ -1,0 +1,6 @@
+libusrsctp (1.0.0~td130-1ubuntu1) disco; urgency=medium
+
+  * Initial release.
+  * debian/control: Updated standards version to 4.5.1.0.
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 17 Feb 2021 17:49:14 +0100
