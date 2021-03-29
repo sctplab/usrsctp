@@ -5975,6 +5975,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 	if ((stcb != NULL) &&
 	    !(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) &&
 	    (stcb->sctp_socket != NULL)) {
+		ACCEPT_LOCK();
 		if (stcb->sctp_socket->so_head != NULL) {
 			upcall_socket = stcb->sctp_socket->so_head;
 		} else {
@@ -5983,6 +5984,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 		SOCK_LOCK(upcall_socket);
 		soref(upcall_socket);
 		SOCK_UNLOCK(upcall_socket);
+		ACCEPT_UNLOCK();
 	}
 #endif
 	if (IS_SCTP_CONTROL(ch)) {
@@ -6078,6 +6080,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 	if ((upcall_socket == NULL) &&
 	    !(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) &&
 	    (stcb->sctp_socket != NULL)) {
+		ACCEPT_LOCK();
 		if (stcb->sctp_socket->so_head != NULL) {
 			upcall_socket = stcb->sctp_socket->so_head;
 		} else {
@@ -6086,6 +6089,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 		SOCK_LOCK(upcall_socket);
 		soref(upcall_socket);
 		SOCK_UNLOCK(upcall_socket);
+		ACCEPT_UNLOCK();
 	}
 #endif
 
