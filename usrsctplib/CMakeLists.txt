@@ -53,7 +53,7 @@ set(CMAKE_MACOSX_RPATH 1)
 include(CheckCCompilerFlag)
 
 
-option(SCTP_USE_MBEDTLS_SHA1 "Build with mbedtls sha1 support." ON)
+option(SCTP_USE_MBEDTLS_SHA1 "Build with mbedtls sha1 support." OFF)
 
 add_definitions(-D__Userspace__)
 add_definitions(-DSCTP_SIMPLE_ALLOCATOR)
