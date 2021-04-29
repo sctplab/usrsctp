@@ -55,6 +55,9 @@ include(CheckCCompilerFlag)
 add_definitions(-D__Userspace__)
 add_definitions(-DSCTP_SIMPLE_ALLOCATOR)
 add_definitions(-DSCTP_PROCESS_LEVEL_LOCKS)
+if(NOT sctp_use_lwip)
+	add_definitions(-D__native_client__)
+endif()
 
 
 #################################################
@@ -119,6 +122,7 @@ list(APPEND usrsctp_netinet_headers
 	netinet/sctp_header.h
 	netinet/sctp_indata.h
 	netinet/sctp_input.h
+	netinet/sctp_ip_port.h
 	netinet/sctp_lock_userspace.h
 	netinet/sctp_os_userspace.h
 	netinet/sctp_os.h
@@ -130,6 +134,8 @@ list(APPEND usrsctp_netinet_headers
 	netinet/sctp_structs.h
 	netinet/sctp_sysctl.h
 	netinet/sctp_timer.h
+	netinet/sctp_udp_port.h
+	netinet/sctp_in_port.h
 	netinet/sctp_uio.h
 	netinet/sctp_var.h
 	netinet/sctputil.h

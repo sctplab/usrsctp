@@ -79,6 +79,12 @@ option(sctp_sanitizer_memory "Compile with memory sanitizer" 0)
 
 option(sctp_build_fuzzer "Compile in clang fuzzing mode" 0)
 
+option(sctp_use_lwip "build with lwip" ON)
+
+if(sctp_use_lwip)
+	add_definitions(-DSCTP_USE_LWIP)
+endif()
+
 if (sctp_sanitizer_address AND sctp_sanitizer_memory)
 	message(FATAL_ERROR "Can not compile with both sanitizer options")
 endif ()
@@ -122,7 +128,9 @@ set(CMAKE_REQUIRED_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/usrsctplib")
 
 check_include_file(usrsctp.h have_usrsctp_h)
 if (NOT have_usrsctp_h)
-	message(FATAL_ERROR "usrsctp.h not found")
+	if(NOT sctp_use_lwip)
+		message(FATAL_ERROR "usrsctp.h not found")
+	endif()
 endif ()
 
 check_struct_has_member("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" have_sa_len)
@@ -144,7 +152,7 @@ if (have_sin6_len)
 endif ()
 
 check_struct_has_member("struct sockaddr_conn" "sconn_len" "usrsctp.h" have_sconn_len)
-if (have_sconn_len)
+if (have_sconn_len OR sctp_use_lwip)
 	message(STATUS "HAVE_SCONN_LEN")
 	add_definitions(-DHAVE_SCONN_LEN)
 endif ()
