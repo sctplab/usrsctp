@@ -469,26 +469,34 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 	asoc = &stcb->asoc;
 	asoc->peer_supports_nat = (uint8_t)nat_friendly;
 	/* process the peer's parameters in the INIT-ACK */
-	retval = sctp_process_init((struct sctp_init_chunk *)cp, stcb);
-	if (retval < 0) {
+	if (sctp_process_init((struct sctp_init_chunk *)cp, stcb) < 0) {
 		if (op_err != NULL) {
 			sctp_m_freem(op_err);
 		}
-		return (retval);
+		op_err = sctp_generate_cause(SCTP_CAUSE_OUT_OF_RESC, "");
+		SCTPDBG(SCTP_DEBUG_INPUT1, "sctp_process_init() failed\n");
+		sctp_abort_association(stcb->sctp_ep, stcb, m, iphlen,
+		                       src, dst, sh, op_err,
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+		                       mflowtype, mflowid,
+#endif
+		                       vrf_id, net->port);
+		*abort_no_unlock = 1;
+		return (-1);
 	}
 	initack_limit = offset + ntohs(cp->ch.chunk_length);
 	/* load all addresses */
 	if ((retval = sctp_load_addresses_from_init(stcb, m,
-	    (offset + sizeof(struct sctp_init_chunk)), initack_limit,
-	    src, dst, NULL, stcb->asoc.port))) {
+	                                            offset + sizeof(struct sctp_init_chunk),
+	                                            initack_limit, src, dst, NULL, stcb->asoc.port)) < 0) {
 		if (op_err != NULL) {
 			sctp_m_freem(op_err);
 		}
 		op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
 		                             "Problem with address parameters");
 		SCTPDBG(SCTP_DEBUG_INPUT1,
-			"Load addresses from INIT causes an abort %d\n",
-			retval);
+		        "Load addresses from INIT causes an abort %d\n",
+		        retval);
 		sctp_abort_association(stcb->sctp_ep, stcb, m, iphlen,
 		                       src, dst, sh, op_err,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
@@ -1603,10 +1611,17 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 				 * have the right seq no's.
 				 */
 				/* First we must process the INIT !! */
-				retval = sctp_process_init(init_cp, stcb);
-				if (retval < 0) {
+				if (sctp_process_init(init_cp, stcb) < 0) {
 					if (how_indx < sizeof(asoc->cookie_how))
 						asoc->cookie_how[how_indx] = 3;
+					op_err = sctp_generate_cause(SCTP_CAUSE_OUT_OF_RESC, "");
+					SCTPDBG(SCTP_DEBUG_INPUT1, "sctp_process_init() failed\n");
+					sctp_abort_association(stcb->sctp_ep, stcb, m, iphlen,
+					                       src, dst, sh, op_err,
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+					                       mflowtype, mflowid,
+#endif
+					                       vrf_id, net->port);
 					return (NULL);
 				}
 				/* we have already processed the INIT so no problem */
@@ -1686,16 +1701,22 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 				break;
 		}	/* end switch */
 		sctp_stop_all_cookie_timers(stcb);
-		/*
-		 * We ignore the return code here.. not sure if we should
-		 * somehow abort.. but we do have an existing asoc. This
-		 * really should not fail.
-		 */
-		if (sctp_load_addresses_from_init(stcb, m,
-			                          init_offset + sizeof(struct sctp_init_chunk),
-			                          initack_offset, src, dst, init_src, stcb->asoc.port)) {
+		if ((ret = sctp_load_addresses_from_init(stcb, m,
+			                                 init_offset + sizeof(struct sctp_init_chunk),
+			                                 initack_offset, src, dst, init_src, stcb->asoc.port)) < 0) {
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 4;
+			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+			                             "Problem with address parameters");
+			SCTPDBG(SCTP_DEBUG_INPUT1,
+			        "Load addresses from INIT causes an abort %d\n",
+			        retval);
+			sctp_abort_association(stcb->sctp_ep, stcb, m, iphlen,
+			                       src, dst, sh, op_err,
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+			                       mflowtype, mflowid,
+#endif
+			                       vrf_id, net->port);
 			return (NULL);
 		}
 		/* respond with a COOKIE-ACK */
@@ -1811,17 +1832,35 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			}
 		}
 		/* process the INIT info (peer's info) */
-		retval = sctp_process_init(init_cp, stcb);
-		if (retval < 0) {
+		if (sctp_process_init(init_cp, stcb) < 0) {
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 9;
+			op_err = sctp_generate_cause(SCTP_CAUSE_OUT_OF_RESC, "");
+			SCTPDBG(SCTP_DEBUG_INPUT1, "sctp_process_init() failed\n");
+			sctp_abort_association(stcb->sctp_ep, stcb, m, iphlen,
+			                       src, dst, sh, op_err,
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+			                       mflowtype, mflowid,
+#endif
+			                       vrf_id, net->port);
 			return (NULL);
 		}
-		if (sctp_load_addresses_from_init(stcb, m,
-		                                  init_offset + sizeof(struct sctp_init_chunk),
-		                                  initack_offset, src, dst, init_src, stcb->asoc.port)) {
+		if ((retval = sctp_load_addresses_from_init(stcb, m,
+		                                            init_offset + sizeof(struct sctp_init_chunk),
+		                                            initack_offset, src, dst, init_src, stcb->asoc.port)) < 0) {
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 10;
+			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+			                             "Problem with address parameters");
+			SCTPDBG(SCTP_DEBUG_INPUT1,
+			        "Load addresses from INIT causes an abort %d\n",
+			        retval);
+			sctp_abort_association(stcb->sctp_ep, stcb, m, iphlen,
+			                       src, dst, sh, op_err,
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+			                       mflowtype, mflowid,
+#endif
+			                       vrf_id, net->port);
 			return (NULL);
 		}
 		if ((SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_WAIT) ||
@@ -2064,11 +2103,17 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		asoc->total_flight = 0;
 		asoc->total_flight_count = 0;
 		/* process the INIT info (peer's info) */
-		retval = sctp_process_init(init_cp, stcb);
-		if (retval < 0) {
+		if (sctp_process_init(init_cp, stcb) < 0) {
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 13;
-
+			op_err = sctp_generate_cause(SCTP_CAUSE_OUT_OF_RESC, "");
+			SCTPDBG(SCTP_DEBUG_INPUT1, "sctp_process_init() failed\n");
+			sctp_abort_association(stcb->sctp_ep, stcb, m, iphlen,
+			                       src, dst, sh, op_err,
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+			                       mflowtype, mflowid,
+#endif
+			                       vrf_id, net->port);
 			return (NULL);
 		}
 		/*
@@ -2077,12 +2122,22 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		 */
 		net->hb_responded = 1;
 
-		if (sctp_load_addresses_from_init(stcb, m,
-		                                  init_offset + sizeof(struct sctp_init_chunk),
-		                                  initack_offset, src, dst, init_src, stcb->asoc.port)) {
+		if ((retval = sctp_load_addresses_from_init(stcb, m,
+		                                            init_offset + sizeof(struct sctp_init_chunk),
+		                                            initack_offset, src, dst, init_src, stcb->asoc.port)) < 0) {
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 14;
-
+			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+			                             "Problem with address parameters");
+			SCTPDBG(SCTP_DEBUG_INPUT1,
+			        "Load addresses from INIT causes an abort %d\n",
+			        retval);
+			sctp_abort_association(stcb->sctp_ep, stcb, m, iphlen,
+			                       src, dst, sh, op_err,
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+			                       mflowtype, mflowid,
+#endif
+			                       vrf_id, net->port);
 			return (NULL);
 		}
 		/* respond with a COOKIE-ACK */
@@ -2270,8 +2325,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 	asoc->advanced_peer_ack_point = asoc->last_acked_seq;
 
 	/* process the INIT info (peer's info) */
-	retval = sctp_process_init(init_cp, stcb);
-	if (retval < 0) {
+	if (sctp_process_init(init_cp, stcb) < 0) {
 #if defined(__APPLE__) && !defined(__Userspace__)
 		atomic_add_int(&stcb->asoc.refcnt, 1);
 		SCTP_TCB_UNLOCK(stcb);
@@ -2287,9 +2341,9 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 		return (NULL);
 	}
 	/* load all addresses */
-	if (sctp_load_addresses_from_init(stcb, m,
-	    init_offset + sizeof(struct sctp_init_chunk), initack_offset,
-	    src, dst, init_src, port)) {
+	if ((retval = sctp_load_addresses_from_init(stcb, m,
+	                                            init_offset + sizeof(struct sctp_init_chunk),
+	                                            initack_offset, src, dst, init_src, port)) < 0) {
 #if defined(__APPLE__) && !defined(__Userspace__)
 		atomic_add_int(&stcb->asoc.refcnt, 1);
 		SCTP_TCB_UNLOCK(stcb);
@@ -2866,12 +2920,15 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 		had_a_existing_tcb = 1;
 		*stcb = sctp_process_cookie_existing(m, iphlen, offset,
 		                                     src, dst, sh,
-						     cookie, cookie_len, *inp_p, *stcb, netp, to,
-						     &notification, auth_skipped, auth_offset, auth_len,
+		                                     cookie, cookie_len, *inp_p, *stcb, netp, to,
+		                                     &notification, auth_skipped, auth_offset, auth_len,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 		                                     mflowtype, mflowid,
 #endif
 		                                     vrf_id, port);
+		if (*stcb == NULL) {
+			*locked_tcb = NULL;
+		}
 	}
 
 	if (*stcb == NULL) {
