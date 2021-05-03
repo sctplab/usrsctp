@@ -1701,9 +1701,9 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 				break;
 		}	/* end switch */
 		sctp_stop_all_cookie_timers(stcb);
-		if ((ret = sctp_load_addresses_from_init(stcb, m,
-			                                 init_offset + sizeof(struct sctp_init_chunk),
-			                                 initack_offset, src, dst, init_src, stcb->asoc.port)) < 0) {
+		if ((retval = sctp_load_addresses_from_init(stcb, m,
+			                                    init_offset + sizeof(struct sctp_init_chunk),
+			                                    initack_offset, src, dst, init_src, stcb->asoc.port)) < 0) {
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 4;
 			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
