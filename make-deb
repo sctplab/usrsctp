@@ -165,10 +165,10 @@ for DISTRIBUTION in ${DISTRIBUTIONS} ; do
              <debian/changelog | ../filter-empty-entries "$DEBIAN_LAST_ENTRY" >debian/changelog.new
       else
          # Ubuntu PPA
-         # Naming example: 2.7.7-0ubuntu1~natty1~ppa0
+         # Naming example: 2.7.7-1ubuntu~focal1
          # Ubuntu: Also remove Debian Bug IDs.
          sed -e "s/${PACKAGE_DISTRIBUTION};/${DISTRIBUTION};/1" \
-             -e "s/${PACKAGE_VERSION}/${PACKAGE_VERSION}~${DISTRIBUTION}1~ppa0/1" \
+             -e "s/${PACKAGE_VERSION}/${OUTPUT_VERSION}~${DISTRIBUTION}1/1" \
              -e "/(Closes: #/D" \
              <debian/changelog | ../filter-empty-entries "$UBUNTU_LAST_ENTRY" >debian/changelog.new
 
@@ -280,7 +280,7 @@ for DISTRIBUTION in ${DISTRIBUTIONS} ; do
       fi
       dscFile=`ls ${PACKAGE}_${version}.dsc | tail -n1`
    else
-      dscFile=`ls ${PACKAGE}_${PACKAGE_VERSION}~${DISTRIBUTION}[0-9]~ppa[0-9].dsc | tail -n1`
+      dscFile=`ls ${PACKAGE}_${OUTPUT_VERSION}~${DISTRIBUTION}[0-9].dsc | tail -n1`
    fi
    if [ ! -e "${dscFile}" ] ; then
       echo -e "\x1b[34mERROR: ${dscFile} has not been generated successfully -> Aborting!\x1b[0m"
@@ -311,7 +311,7 @@ for DISTRIBUTION in ${DISTRIBUTIONS} ; do
       changesFile=`ls ${PACKAGE}_${version}_source.changes | tail -n1`
    else
       ppa="ppa"
-      changesFile=`ls ${PACKAGE}_${PACKAGE_VERSION}~${DISTRIBUTION}[0-9]~ppa[0-9]_source.changes | tail -n1`
+      changesFile=`ls ${PACKAGE}_${OUTPUT_VERSION}~${DISTRIBUTION}[0-9]_source.changes | tail -n1`
    fi
    echo -e "\x1b[34m   dput ${ppa} $changesFile\x1b[0m"
 done
@@ -338,8 +338,8 @@ for DISTRIBUTION in ${DISTRIBUTIONS} ; do
       changesFilesPattern="${PACKAGE}_${version}_*.changes"
       dscFile=`ls ${PACKAGE}_${version}.dsc | tail -n1`
    else
-      changesFilesPattern="${PACKAGE}_${PACKAGE_VERSION}~${DISTRIBUTION}[0-9]~ppa[0-9]_*.changes"
-      dscFile=`ls ${PACKAGE}_${PACKAGE_VERSION}~${DISTRIBUTION}[0-9]~ppa[0-9].dsc | tail -n1`
+      changesFilesPattern="${PACKAGE}_${OUTPUT_VERSION}~${DISTRIBUTION}[0-9]_*.changes"
+      dscFile=`ls ${PACKAGE}_${OUTPUT_VERSION}~${DISTRIBUTION}[0-9].dsc | tail -n1`
    fi
    profile="ubuntu"
    if [ "${DISTRIBUTION}" == "unstable" -o \

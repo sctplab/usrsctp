@@ -85,8 +85,8 @@ if [ "${PACKAGE_DISTRIBUTION}" == "unstable" -o \
    changesFilesPattern="${PACKAGE}_${version}_*.changes"
    dscFile=`ls ${PACKAGE}_${version}.dsc | tail -n1`
 else
-   changesFilesPattern="${PACKAGE}_${PACKAGE_VERSION}~${PACKAGE_DISTRIBUTION}[0-9]~ppa[0-9]_*.changes"
-   dscFile=`ls ${PACKAGE}_${PACKAGE_VERSION}~${PACKAGE_DISTRIBUTION}[0-9]~ppa[0-9].dsc | tail -n1`
+   changesFilesPattern="${PACKAGE}_${OUTPUT_VERSION}~${PACKAGE_DISTRIBUTION}[0-9]_*.changes"
+   dscFile=`ls ${PACKAGE}_${OUTPUT_VERSION}~${PACKAGE_DISTRIBUTION}[0-9].dsc | tail -n1`
 fi
 
 

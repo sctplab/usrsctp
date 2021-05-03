@@ -54,7 +54,7 @@ echo -e ""
 echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Creating upstream package ======================================\x1b[0m"
 echo -e ""
 for UPSTREAM_PACKAGE_TYPE in xz bz2 gz ; do
-   echo -n "Looking for ${PACKAGE}-*.tar.${UPSTREAM_PACKAGE_TYPE} ... "
+   printf "Looking for ${PACKAGE}-*.tar.${UPSTREAM_PACKAGE_TYPE} ... "
    UPSTREAM_PACKAGE="`find . -maxdepth 1 -name "${PACKAGE}-*.tar.${UPSTREAM_PACKAGE_TYPE}" -printf '%f'`"
    if [ -e "${UPSTREAM_PACKAGE}" ] ; then
       echo "found!"
