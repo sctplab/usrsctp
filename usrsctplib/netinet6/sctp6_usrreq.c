@@ -1012,18 +1012,22 @@ sctp6_send(struct socket *so, int flags, struct mbuf *m, struct mbuf *nam,
 	switch (addr->sa_family) {
 #ifdef INET
 	case AF_INET:
+#if defined(HAVE_SA_LEN)
 		if (addr->sa_len != sizeof(struct sockaddr_in)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP6_USRREQ, EINVAL);
 			return (EINVAL);
 		}
+#endif
 		break;
 #endif
 #ifdef INET6
 	case AF_INET6:
+#if defined(HAVE_SA_LEN)
 		if (addr->sa_len != sizeof(struct sockaddr_in6)) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP6_USRREQ, EINVAL);
 			return (EINVAL);
 		}
+#endif
 		break;
 #endif
 	default:

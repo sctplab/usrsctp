@@ -983,9 +983,11 @@ sctp_sendm(struct socket *so, int flags, struct mbuf *m, struct sockaddr *addr,
 	} else if (addr->sa_family != AF_INET) {
 		SCTP_LTRACE_ERR_RET_PKT(m, inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EAFNOSUPPORT);
 		error = EAFNOSUPPORT;
+#if defined(HAVE_SA_LEN)
 	} else if (addr->sa_len != sizeof(struct sockaddr_in)) {
 		SCTP_LTRACE_ERR_RET_PKT(m, inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 		error = EINVAL;
+#endif
 	}
 	if (error != 0) {
 		sctp_m_freem(m);
