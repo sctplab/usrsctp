@@ -45,6 +45,7 @@
 #include <netinet/sctp_var.h>
 #include <netinet/sctp_pcb.h>
 #include <netinet/sctp_input.h>
+#include <netinet/sctp_in_port.h>
 #if 0
 #if defined(__linux__)
 #include <linux/netlink.h>
@@ -266,7 +267,7 @@ static void *
 recv_function_raw(void *arg)
 {
 	struct mbuf **recvmbuf;
-	struct ip *iphdr;
+	STRUCT_IP_HDR  *iphdr;
 	struct sctphdr *sh;
 	uint16_t port;
 	int offset, ecn = 0;
@@ -371,34 +372,35 @@ recv_function_raw(void *arg)
 			} while (ncounter > 0);
 		}
 
-		offset = sizeof(struct ip) + sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr);
+		offset = sizeof(STRUCT_IP_HDR) + sizeof(struct sctphdr) + sizeof(struct sctp_chunkhdr);
 		if (SCTP_BUF_LEN(recvmbuf[0]) < offset) {
 				if ((recvmbuf[0] = m_pullup(recvmbuf[0], offset)) == NULL) {
 				SCTP_STAT_INCR(sctps_hdrops);
 				continue;
 			}
 		}
-		iphdr = mtod(recvmbuf[0], struct ip *);
-		sh = (struct sctphdr *)((caddr_t)iphdr + sizeof(struct ip));
+		iphdr = mtod(recvmbuf[0], STRUCT_IP_HDR *);
+		sh = (struct sctphdr *)((caddr_t)iphdr + sizeof(STRUCT_IP_HDR));
 		ch = (struct sctp_chunkhdr *)((caddr_t)sh + sizeof(struct sctphdr));
 		offset -= sizeof(struct sctp_chunkhdr);
 
-		if (iphdr->ip_tos != 0) {
-			ecn = iphdr->ip_tos & 0x03;
+		if (GET_IP_TOS(iphdr) != 0) {
+			ecn = GET_IP_TOS(iphdr) & 0x03;
+
 		}
 
 		dst.sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
 		dst.sin_len = sizeof(struct sockaddr_in);
 #endif
-		dst.sin_addr = iphdr->ip_dst;
+		dst.sin_addr.s_addr = GET_IP_DEST_ADDR(iphdr);
 		dst.sin_port = sh->dest_port;
 
 		src.sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
 		src.sin_len = sizeof(struct sockaddr_in);
 #endif
-		src.sin_addr = iphdr->ip_src;
+		src.sin_addr.s_addr = GET_IP_SRC_ADDR(iphdr);
 		src.sin_port = sh->src_port;
 
 		/* SCTP does not allow broadcasts or multicasts */
@@ -424,7 +426,7 @@ recv_function_raw(void *arg)
 		}
 		SCTPDBG(SCTP_DEBUG_USR, "%s: Received %d bytes.", __func__, n);
 		SCTPDBG(SCTP_DEBUG_USR, " - calling sctp_common_input_processing with off=%d\n", offset);
-		sctp_common_input_processing(&recvmbuf[0], sizeof(struct ip), offset, n,
+		sctp_common_input_processing(&recvmbuf[0], sizeof(STRUCT_IP_HDR), offset, n,
 		                             (struct sockaddr *)&src,
 		                             (struct sockaddr *)&dst,
 		                             sh, ch,
@@ -1081,6 +1083,9 @@ setSendBufferSize(int sfd, int new_size)
 		SCTPDBG(SCTP_DEBUG_USR, "Can't set send-buffers size (errno = %d).\n", WSAGetLastError());
 #else
 		SCTPDBG(SCTP_DEBUG_USR, "Can't set send-buffers size (errno = %d).\n", errno);
+#endif
+#if defined(SCTP_USE_LWIP)
+		SCTP_PRINTF("lwIP does not support this socket option(SO_SNDBUF:%d), so you need to control this by yourself.", new_size);
 #endif
 	}
 	return;

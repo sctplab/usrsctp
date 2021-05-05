@@ -56,11 +56,8 @@ __FBSDID("$FreeBSD$");
 #include <netinet/sctp_input.h>
 #include <netinet/sctp.h>
 #include <netinet/sctp_uio.h>
-#if defined(INET) || defined(INET6)
-#if !(defined(_WIN32) && defined(__Userspace__))
-#include <netinet/udp.h>
-#endif
-#endif
+
+#include <netinet/sctp_udp_port.h>
 
 void
 sctp_audit_retranmission_queue(struct sctp_association *asoc)
@@ -1549,7 +1546,7 @@ sctp_pathmtu_timer(struct sctp_inpcb *inp,
 #endif
 #if defined(INET) || defined(INET6)
 			if (net->port) {
-				mtu -= sizeof(struct udphdr);
+				mtu -= sizeof(STRUCT_UDP_HDR);
 			}
 #endif
 			if (mtu > next_mtu) {

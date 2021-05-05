@@ -45,7 +45,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#if !defined(SCTP_USE_LWIP)
 #include <errno.h>
+#else
+#include "lwip/errno.h"
+#endif
 #include <user_atomic.h>
 #include <netinet/sctp_sysctl.h>
 #include <netinet/sctp_pcb.h>
@@ -199,6 +203,8 @@ user_sctp_timer_iterate(void *arg)
 	for (;;) {
 #if defined(_WIN32)
 		Sleep(TIMEOUT_INTERVAL);
+#elif defined(SCTP_USE_LWIP)
+		usleep(TIMEOUT_INTERVAL*1000);
 #else
 		struct timespec amount, remaining;
 
