@@ -182,7 +182,7 @@ sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)
 		if ((Err = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
 			if ((Err != ERROR_BUFFER_OVERFLOW) && (Err != ERROR_INSUFFICIENT_BUFFER)) {
 				SCTPDBG(SCTP_DEBUG_USR, "GetAdaptersAddresses() sizing failed with error code %d, AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
-				ret = -1;
+				mtu = -1;
 				goto cleanup;
 			}
 		}
