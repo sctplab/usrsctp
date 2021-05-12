@@ -1542,6 +1542,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		                   vrf_id, net->port);
 		if (how_indx < sizeof(asoc->cookie_how))
 			asoc->cookie_how[how_indx] = 2;
+		SCTP_TCB_UNLOCK(stcb);
 		return (NULL);
 	}
 	/*
@@ -1556,9 +1557,11 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			      (uint8_t *) & init_buf);
 	if (init_cp == NULL) {
 		/* could not pull a INIT chunk in cookie */
+		SCTP_TCB_UNLOCK(stcb);
 		return (NULL);
 	}
 	if (init_cp->ch.chunk_type != SCTP_INITIATION) {
+		SCTP_TCB_UNLOCK(stcb);
 		return (NULL);
 	}
 	/*
@@ -1571,9 +1574,11 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			      (uint8_t *) & initack_buf);
 	if (initack_cp == NULL) {
 		/* could not pull INIT-ACK chunk in cookie */
+		SCTP_TCB_UNLOCK(stcb);
 		return (NULL);
 	}
 	if (initack_cp->ch.chunk_type != SCTP_INITIATION_ACK) {
+		SCTP_TCB_UNLOCK(stcb);
 		return (NULL);
 	}
 	if ((ntohl(initack_cp->init.initiate_tag) == asoc->my_vtag) &&
@@ -1599,6 +1604,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			 */
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 17;
+			SCTP_TCB_UNLOCK(stcb);
 			return (NULL);
 		}
 		switch (SCTP_GET_STATE(stcb)) {
@@ -1666,6 +1672,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 					SCTP_TCB_LOCK(stcb);
 					atomic_add_int(&stcb->asoc.refcnt, -1);
 					if (stcb->asoc.state & SCTP_STATE_CLOSED_SOCKET) {
+						SCTP_TCB_UNLOCK(stcb);
 						SCTP_SOCKET_UNLOCK(so, 1);
 						return (NULL);
 					}
@@ -1736,6 +1743,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		 */
 		if (how_indx < sizeof(asoc->cookie_how))
 			asoc->cookie_how[how_indx] = 6;
+		SCTP_TCB_UNLOCK(stcb);
 		return (NULL);
 	}
 	/* If nat support, and the below and stcb is established,
@@ -1761,6 +1769,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		                mflowtype, mflowid, inp->fibnum,
 #endif
 		                vrf_id, port);
+		SCTP_TCB_UNLOCK(stcb);
 		return (NULL);
 	}
 	if ((ntohl(initack_cp->init.initiate_tag) == asoc->my_vtag) &&
@@ -1790,6 +1799,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 7;
 
+			SCTP_TCB_UNLOCK(stcb);
 			return (NULL);
 		}
 		if (how_indx < sizeof(asoc->cookie_how))
@@ -1882,6 +1892,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 				SCTP_TCB_LOCK(stcb);
 				atomic_add_int(&stcb->asoc.refcnt, -1);
 				if (stcb->asoc.state & SCTP_STATE_CLOSED_SOCKET) {
+					SCTP_TCB_UNLOCK(stcb);
 					SCTP_SOCKET_UNLOCK(so, 1);
 					return (NULL);
 				}
@@ -2156,6 +2167,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 	if (how_indx < sizeof(asoc->cookie_how))
 		asoc->cookie_how[how_indx] = 16;
 	/* all other cases... */
+	SCTP_TCB_UNLOCK(stcb);
 	return (NULL);
 }
 
