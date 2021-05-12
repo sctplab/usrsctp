@@ -1489,6 +1489,9 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
  * chain-- assumes a pullup on IP/SCTP/COOKIE-ECHO chunk note: this is a
  * "split" mbuf and the cookie signature does not exist offset: offset into
  * mbuf to the cookie-echo chunk
+ *
+ * Requires that stcb is non-null and locked; returns with stcb still locked if
+ * and only if the return value is non-null.
  */
 static struct sctp_tcb *
 sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
@@ -1502,6 +1505,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 #endif
     uint32_t vrf_id, uint16_t port)
 {
+	struct sctp_tcb *new_stcb;
 	struct sctp_association *asoc;
 	struct sctp_init_chunk *init_cp, init_buf;
 	struct sctp_init_ack_chunk *initack_cp, initack_buf;
@@ -1950,14 +1954,19 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			 * are allowing a duplicate association.
 			 * I hope this works...
 			 */
-			return (sctp_process_cookie_new(m, iphlen, offset, src, dst,
-			                                sh, cookie, cookie_len,
-			                                inp, netp, init_src,notification,
-			                                auth_skipped, auth_offset, auth_len,
+			new_stcb = sctp_process_cookie_new(m, iphlen, offset, src, dst,
+			                                   sh, cookie, cookie_len,
+			                                   inp, netp, init_src,
+			                                   notification, auth_skipped,
+			                                   auth_offset, auth_len,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
-			                                mflowtype, mflowid,
+			                                   mflowtype, mflowid,
 #endif
-			                                vrf_id, port));
+			                                   vrf_id, port);
+			if (new_stcb == NULL) {
+				SCTP_TCB_UNLOCK(stcb);
+			}
+			return new_stcb;
 		}
 		/*
 		 * case A in Section 5.2.4 Table 2: XXMM (peer restarted)
