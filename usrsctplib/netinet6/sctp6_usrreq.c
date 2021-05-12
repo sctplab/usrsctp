@@ -1014,6 +1014,11 @@ sctp6_send(struct socket *so, int flags, struct mbuf *m, struct mbuf *nam,
 	case AF_INET:
 #if defined(HAVE_SA_LEN)
 		if (addr->sa_len != sizeof(struct sockaddr_in)) {
+			if (control) {
+				SCTP_RELEASE_PKT(control);
+				control = NULL;
+			}
+			SCTP_RELEASE_PKT(m);
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP6_USRREQ, EINVAL);
 			return (EINVAL);
 		}
@@ -1024,6 +1029,11 @@ sctp6_send(struct socket *so, int flags, struct mbuf *m, struct mbuf *nam,
 	case AF_INET6:
 #if defined(HAVE_SA_LEN)
 		if (addr->sa_len != sizeof(struct sockaddr_in6)) {
+			if (control) {
+				SCTP_RELEASE_PKT(control);
+				control = NULL;
+			}
+			SCTP_RELEASE_PKT(m);
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP6_USRREQ, EINVAL);
 			return (EINVAL);
 		}
@@ -1031,6 +1041,11 @@ sctp6_send(struct socket *so, int flags, struct mbuf *m, struct mbuf *nam,
 		break;
 #endif
 	default:
+		if (control) {
+			SCTP_RELEASE_PKT(control);
+			control = NULL;
+		}
+		SCTP_RELEASE_PKT(m);
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP6_USRREQ, EINVAL);
 		return (EINVAL);
 	}
@@ -1042,10 +1057,20 @@ sctp6_send(struct socket *so, int flags, struct mbuf *m, struct mbuf *nam,
 		 * v4 addr or v4-mapped addr
 		 */
 		if (addr->sa_family == AF_INET) {
+			if (control) {
+				SCTP_RELEASE_PKT(control);
+				control = NULL;
+			}
+			SCTP_RELEASE_PKT(m);
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP6_USRREQ, EINVAL);
 			return (EINVAL);
 		}
 		if (IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr)) {
+			if (control) {
+				SCTP_RELEASE_PKT(control);
+				control = NULL;
+			}
+			SCTP_RELEASE_PKT(m);
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP6_USRREQ, EINVAL);
 			return (EINVAL);
 		}
