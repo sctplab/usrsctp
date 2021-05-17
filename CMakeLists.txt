@@ -44,6 +44,7 @@ include(CheckStructHasMember)
 include(CheckIncludeFile)
 include(CheckIncludeFiles)
 include(CheckCCompilerFlag)
+include(CheckSymbolExists)
 
 #################################################
 # CHECK OPTIONS
@@ -89,6 +90,11 @@ endif ()
 #################################################
 # CHECK FOR TYPES AND FUNCTIONS
 #################################################
+
+check_symbol_exists(getifaddrs ifaddrs.h have_getifaddrs)
+if (have_getifaddrs)
+	add_definitions(-DHAVE_GETIFADDRS)
+endif ()
 
 check_include_files("sys/queue.h" have_sys_queue_h)
 if (have_sys_queue_h)

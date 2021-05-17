@@ -475,7 +475,7 @@ struct sx {int dummy;};
 /* for getifaddrs */
 #include <sys/types.h>
 #if !defined(_WIN32)
-#if defined(INET) || defined(INET6)
+#if (defined(INET) || defined(INET6)) && defined(HAVE_GETIFADDRS)
 #include <ifaddrs.h>
 #endif
 

@@ -415,7 +415,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 static void
 sctp_init_ifns_for_vrf(int vrfid)
 {
-#if defined(INET) || defined(INET6)
+#if (defined(INET) || defined(INET6)) && defined(HAVE_GETIFADDRS)
 	int rc;
 	struct ifaddrs *ifa, *ifas;
 	struct sctp_ifa *sctp_ifa;

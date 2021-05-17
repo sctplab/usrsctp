@@ -89,6 +89,11 @@ else
     error('Unknown system: @0@'.format(system))
 endif
 
+# Feature: getifaddrs()
+if compiler.has_function('getifaddrs', prefix: '#include <ifaddrs.h>')
+    add_project_arguments('-DHAVE_GETIFADDRS', language: 'c')
+endif
+
 # Feature: sys/queue
 if compiler.has_header('sys/queue.h')
     add_project_arguments('-DHAVE_SYS_QUEUE_H', language: 'c')

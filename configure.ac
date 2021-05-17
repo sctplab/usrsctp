@@ -137,6 +137,7 @@ AC_CHECK_TYPE(ssize_t)
 
 AC_CHECK_FUNCS(socket, , AC_CHECK_LIB(socket, socket))
 AC_CHECK_FUNCS(inet_addr, , AC_CHECK_LIB(nsl, inet_addr))
+AC_CHECK_FUNCS(getifaddrs)
 
 AC_CHECK_HEADERS(stdatomic.h)
 AC_CHECK_HEADERS(sys/queue.h)
