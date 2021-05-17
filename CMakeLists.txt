@@ -110,6 +110,11 @@ if (have_netinet_ip_icmp_h)
 	add_definitions(-DHAVE_NETINET_IP_ICMP_H)
 endif ()
 
+check_include_files("net/route.h" have_net_route_h)
+if (have_net_route_h)
+	add_definitions(-DHAVE_NET_ROUTE_H)
+endif ()
+
 check_include_files("stdatomic.h" have_stdatomic_h)
 if (have_stdatomic_h)
 	add_definitions(-DHAVE_STDATOMIC_H)
