@@ -2821,7 +2821,7 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 		if ((uint32_t)diff.tv_sec > UINT32_MAX / 1000000) {
 			staleness = UINT32_MAX;
 		} else {
-			staleness = diff.tv_sec * 1000000;
+			staleness = (uint32_t)diff.tv_sec * 1000000;
 		}
 		if (UINT32_MAX - staleness >= (uint32_t)diff.tv_usec) {
 			staleness += diff.tv_usec;

@@ -3004,7 +3004,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 
 	/* Setup the initial secret */
 	(void)SCTP_GETTIME_TIMEVAL(&time);
-	m->time_of_secret_change = time.tv_sec;
+	m->time_of_secret_change = (unsigned int)time.tv_sec;
 
 	for (i = 0; i < SCTP_NUMBER_OF_SECRETS; i++) {
 		m->secret_key[0][i] = sctp_select_initial_TSN(m);
@@ -5311,7 +5311,7 @@ sctp_add_vtag_to_timewait(uint32_t tag, uint32_t time, uint16_t lport, uint16_t 
 			if ((twait_block->vtag_block[i].v_tag == 0) &&
 			    !set) {
 				twait_block->vtag_block[i].tv_sec_at_expire =
-					now.tv_sec + time;
+					(uint32_t)now.tv_sec + time;
 				twait_block->vtag_block[i].v_tag = tag;
 				twait_block->vtag_block[i].lport = lport;
 				twait_block->vtag_block[i].rport = rport;
@@ -5325,7 +5325,7 @@ sctp_add_vtag_to_timewait(uint32_t tag, uint32_t time, uint16_t lport, uint16_t 
 				twait_block->vtag_block[i].rport = 0;
 				if (set == 0) {
 					/* Reuse it for my new tag */
-					twait_block->vtag_block[i].tv_sec_at_expire = now.tv_sec + time;
+					twait_block->vtag_block[i].tv_sec_at_expire = (uint32_t)now.tv_sec + time;
 					twait_block->vtag_block[i].v_tag = tag;
 					twait_block->vtag_block[i].lport = lport;
 					twait_block->vtag_block[i].rport = rport;
@@ -5350,7 +5350,7 @@ sctp_add_vtag_to_timewait(uint32_t tag, uint32_t time, uint16_t lport, uint16_t 
 		}
 		memset(twait_block, 0, sizeof(struct sctp_tagblock));
 		LIST_INSERT_HEAD(chain, twait_block, sctp_nxt_tagblock);
-		twait_block->vtag_block[0].tv_sec_at_expire = now.tv_sec + time;
+		twait_block->vtag_block[0].tv_sec_at_expire = (uint32_t)now.tv_sec + time;
 		twait_block->vtag_block[0].v_tag = tag;
 		twait_block->vtag_block[0].lport = lport;
 		twait_block->vtag_block[0].rport = rport;
