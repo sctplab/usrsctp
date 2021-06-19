@@ -117,7 +117,7 @@ packet_handler(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char *byt
 
 	args = (struct args *)(void *)user;
 	bytes_out = NULL;
-	if (pcap_offline_filter(&args->bpf_prog, pkthdr, bytes_in)  == 0) {
+	if (pcap_offline_filter(&args->bpf_prog, pkthdr, bytes_in) == 0) {
 		goto out;
 	}
 	if (pkthdr->caplen < args->offset) {
@@ -183,15 +183,10 @@ get_filter(int argc, char *argv[])
 		for (i = 3; i < argc; i++) {
 			len += strlen(argv[i]) + 1;
 		}
-		len -= 1;
 		result = malloc(len);
 		c = result;
 		for (i = 3; i < argc; i++) {
-			size_t arg_len;
-
-			arg_len = strlen(argv[i]);
-			memcpy(c, argv[i], arg_len);
-			c += arg_len;
+			c = stpcpy(c, argv[i]);
 			if (i < argc - 1) {
 				*c++ = ' ';
 			}
@@ -236,7 +231,7 @@ main(int argc, char *argv[])
 		return (-1);
 	}
 	filter = get_filter(argc, argv);
-	if (pcap_compile(pcap_reader, &args.bpf_prog, filter, 0, PCAP_NETMASK_UNKNOWN) < 0) {
+	if (pcap_compile(pcap_reader, &args.bpf_prog, filter, 1, PCAP_NETMASK_UNKNOWN) < 0) {
 		fprintf(stderr, "Can't compile filter %s: %s\n", filter, pcap_geterr(pcap_reader));
 		free(filter);
 		pcap_close(pcap_reader);
