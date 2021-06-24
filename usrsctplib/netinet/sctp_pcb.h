@@ -111,6 +111,7 @@ struct sctp_ifa {
 				 * appropriate locks. This is for V6.
 				 */
 	union sctp_sockstore address;
+	void (*destroy_address)(void *);
 	uint32_t refcount;	/* number of folks referring to this */
 	uint32_t flags;
 	uint32_t localifa_flags;
@@ -707,6 +708,13 @@ sctp_add_addr_to_vrf(uint32_t vrfid,
 		     const char *if_name,
 		     void *ifa, struct sockaddr *addr, uint32_t ifa_flags,
 		     int dynamic_add);
+
+struct sctp_ifa *
+sctp_add_addr_to_vrf_full(uint32_t vrfid,
+		     void *ifn, uint32_t ifn_index, uint32_t ifn_type,
+		     const char *if_name,
+		     void *ifa, struct sockaddr *addr, uint32_t ifa_flags,
+		     int dynamic_add, void (*destroy)(void *));
 
 void sctp_update_ifn_mtu(uint32_t ifn_index, uint32_t mtu);
 
