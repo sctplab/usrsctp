@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_pcb.h 365071 2020-09-01 21:19:14Z mjg $");
+__FBSDID("$FreeBSD$");
 #endif
 
 #ifndef _NETINET_SCTP_PCB_H_
@@ -780,18 +780,17 @@ void sctp_inpcb_free(struct sctp_inpcb *, int, int);
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 struct sctp_tcb *
 sctp_aloc_assoc(struct sctp_inpcb *, struct sockaddr *,
-                int *, uint32_t, uint32_t, uint16_t, uint16_t, struct thread *,
-                int);
+                int *, uint32_t, uint32_t, uint32_t, uint16_t, uint16_t,
+                struct thread *, int);
 #elif defined(_WIN32) && !defined(__Userspace__)
 struct sctp_tcb *
-sctp_aloc_assoc(struct sctp_inpcb *, struct sockaddr *,
-                int *, uint32_t, uint32_t, uint16_t, uint16_t, PKTHREAD, int);
+sctp_aloc_assoc(struct sctp_inpcb *, struct sockaddr *, int *, uint32_t,
+                uint32_t, uint32_t, uint16_t, uint16_t, PKTHREAD, int);
 #else
 /* proc will be NULL for __Userspace__ */
 struct sctp_tcb *
-sctp_aloc_assoc(struct sctp_inpcb *, struct sockaddr *,
-                int *, uint32_t, uint32_t, uint16_t, uint16_t, struct proc *,
-                int);
+sctp_aloc_assoc(struct sctp_inpcb *, struct sockaddr *, int *, uint32_t,
+                uint32_t, uint32_t, uint16_t, uint16_t, struct proc *, int);
 #endif
 
 int sctp_free_assoc(struct sctp_inpcb *, struct sctp_tcb *, int, int);
