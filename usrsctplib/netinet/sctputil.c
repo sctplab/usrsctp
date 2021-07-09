@@ -4594,10 +4594,18 @@ sctp_abort_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	uint32_t vtag;
 	uint16_t cause_code;
 
-	vtag = 0;
 	if (stcb != NULL) {
 		vtag = stcb->asoc.peer_vtag;
 		vrf_id = stcb->asoc.vrf_id;
+		if (op_err != NULL) {
+			/* Read the cause code from the error cause. */
+			cause = mtod(op_err, struct sctp_gen_error_cause *);
+			cause_code = ntohs(cause->code);
+		} else {
+			cause_code = 0;
+		}
+	} else {
+		vtag = 0;
 	}
 	sctp_send_abort(m, iphlen, src, dst, sh, vtag, op_err,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
@@ -4606,14 +4614,6 @@ sctp_abort_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	                vrf_id, port);
 	if (stcb != NULL) {
 		/* We have a TCB to abort, send notification too */
-
-		if (op_err != NULL) {
-			/* Read the cause code from the error cause */
-			cause = mtod(op_err, struct sctp_gen_error_cause *);
-			cause_code = ntohs(cause->code);
-		} else {
-			cause_code = 0;
-		}
 		sctp_abort_notification(stcb, 0, cause_code, NULL, SCTP_SO_NOT_LOCKED);
 		/* Ok, now lets free it */
 #if defined(__APPLE__) && !defined(__Userspace__)
@@ -4739,15 +4739,13 @@ sctp_abort_an_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		}
 		return;
 	}
-
 	if (op_err != NULL) {
-		/* Read the cause code from the error cause */
+		/* Read the cause code from the error cause. */
 		cause = mtod(op_err, struct sctp_gen_error_cause *);
 		cause_code = ntohs(cause->code);
 	} else {
 		cause_code = 0;
 	}
-
 	/* notify the peer */
 	sctp_send_abort_tcb(stcb, op_err, so_locked);
 	SCTP_STAT_INCR_COUNTER32(sctps_aborted);
