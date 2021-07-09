@@ -432,7 +432,7 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 						       &nat_friendly, &cookie_found);
 	if (abort_flag) {
 		/* Send an abort and notify peer */
-		sctp_abort_an_association(stcb->sctp_ep, stcb, op_err, SCTP_SO_NOT_LOCKED);
+		sctp_abort_an_association(stcb->sctp_ep, stcb, op_err, false, SCTP_SO_NOT_LOCKED);
 		*abort_no_unlock = 1;
 		return (-1);
 	}
@@ -848,7 +848,7 @@ sctp_handle_abort(struct sctp_abort_chunk *abort,
 	sctp_timer_stop(SCTP_TIMER_TYPE_RECV, stcb->sctp_ep, stcb, NULL,
 	                SCTP_FROM_SCTP_INPUT + SCTP_LOC_7);
 	/* notify user of the abort and clean up... */
-	sctp_abort_notification(stcb, 1, error, abort, SCTP_SO_NOT_LOCKED);
+	sctp_abort_notification(stcb, true, false, error, abort, SCTP_SO_NOT_LOCKED);
 	/* free the tcb */
 	SCTP_STAT_INCR_COUNTER32(sctps_aborted);
 	if ((SCTP_GET_STATE(stcb) == SCTP_STATE_OPEN) ||
@@ -1264,7 +1264,7 @@ sctp_handle_error(struct sctp_chunkhdr *ch,
 				asoc->stale_cookie_count++;
 				if (asoc->stale_cookie_count >
 				    asoc->max_init_times) {
-					sctp_abort_notification(stcb, 0, 0, NULL, SCTP_SO_NOT_LOCKED);
+					sctp_abort_notification(stcb, false, true, 0, NULL, SCTP_SO_NOT_LOCKED);
 					/* now free the asoc */
 #if defined(__APPLE__) && !defined(__Userspace__)
 					so = SCTP_INP_SO(stcb->sctp_ep);
@@ -5573,7 +5573,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 					SCTP_SNPRINTF(msg, sizeof(msg), "%s", "I-FORWARD-TSN chunk received when FORWARD-TSN was negotiated");
 				}
 				op_err = sctp_generate_cause(SCTP_CAUSE_PROTOCOL_VIOLATION, msg);
-				sctp_abort_an_association(inp, stcb, op_err, SCTP_SO_NOT_LOCKED);
+				sctp_abort_an_association(inp, stcb, op_err, false, SCTP_SO_NOT_LOCKED);
 				*offset = length;
 				return (NULL);
 			}

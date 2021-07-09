@@ -734,6 +734,7 @@ extern void getwintimeofday(struct timeval *tv);
 #define SCTP_NOTIFY_NO_PEER_AUTH                25
 #define SCTP_NOTIFY_SENDER_DRY                  26
 #define SCTP_NOTIFY_REMOTE_ERROR                27
+#define SCTP_NOTIFY_ASSOC_TIMEDOUT              28
 
 /* This is the value for messages that are NOT completely
  * copied down where we will start to split the message.

@@ -7202,7 +7202,7 @@ sctp_sendall_iterator(struct sctp_inpcb *inp, struct sctp_tcb *stcb, void *ptr,
 		 * dis-appearing on us.
 		 */
 		atomic_add_int(&stcb->asoc.refcnt, 1);
-		sctp_abort_an_association(inp, stcb, m, SCTP_SO_NOT_LOCKED);
+		sctp_abort_an_association(inp, stcb, m, false, SCTP_SO_NOT_LOCKED);
 		/* sctp_abort_an_association calls sctp_free_asoc()
 		 * free association will NOT free it since we
 		 * incremented the refcnt .. we do this to prevent
@@ -7280,7 +7280,7 @@ sctp_sendall_iterator(struct sctp_inpcb *inp, struct sctp_tcb *stcb, void *ptr,
 						                             msg);
 						atomic_add_int(&stcb->asoc.refcnt, 1);
 						sctp_abort_an_association(stcb->sctp_ep, stcb,
-									  op_err, SCTP_SO_NOT_LOCKED);
+						                          op_err, false, SCTP_SO_NOT_LOCKED);
 						atomic_add_int(&stcb->asoc.refcnt, -1);
 						goto no_chunk_output;
 					}
@@ -10154,7 +10154,7 @@ sctp_chunk_retransmission(struct sctp_inpcb *inp,
 			                             msg);
 			atomic_add_int(&stcb->asoc.refcnt, 1);
 			sctp_abort_an_association(stcb->sctp_ep, stcb, op_err,
-			                          so_locked);
+			                          false, so_locked);
 			SCTP_TCB_LOCK(stcb);
 			atomic_subtract_int(&stcb->asoc.refcnt, 1);
 			return (SCTP_RETRAN_EXIT);
@@ -14006,7 +14006,7 @@ sctp_lower_sosend(struct socket *so,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 		NET_EPOCH_ENTER(et);
 #endif
-		sctp_abort_an_association(stcb->sctp_ep, stcb, mm, SCTP_SO_LOCKED);
+		sctp_abort_an_association(stcb->sctp_ep, stcb, mm, false, SCTP_SO_LOCKED);
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 		NET_EPOCH_EXIT(et);
 #endif
@@ -14663,7 +14663,7 @@ dataless_eof:
 					NET_EPOCH_ENTER(et);
 #endif
 					sctp_abort_an_association(stcb->sctp_ep, stcb,
-					                          op_err, SCTP_SO_LOCKED);
+					                          op_err, false, SCTP_SO_LOCKED);
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 					NET_EPOCH_EXIT(et);
 #endif
