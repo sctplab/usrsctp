@@ -32,6 +32,9 @@
 #include <sys/types.h>
 #if !defined(_WIN32)
 #include <sys/socket.h>
+#if defined(__APPLE__) && !defined(__APPLE_USE_RFC_2292)
+# define __APPLE_USE_RFC_2292
+#endif
 #include <netinet/in.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -346,7 +349,7 @@ recv_function_raw(void *arg)
 		msg.msg_iovlen = MAXLEN_MBUF_CHAIN;
 		msg.msg_control = NULL;
 		msg.msg_controllen = 0;
-		ncounter = n = recvmsg(SCTP_BASE_VAR(userspace_rawsctp), &msg, 0);
+		ncounter = n = (int)recvmsg(SCTP_BASE_VAR(userspace_rawsctp), &msg, 0);
 		if (n < 0) {
 			if (errno == EAGAIN || errno == EINTR) {
 				continue;
@@ -545,7 +548,7 @@ recv_function_raw6(void *arg)
 		msg.msg_controllen = (socklen_t)CMSG_SPACE(sizeof (struct in6_pktinfo));
 		msg.msg_flags = 0;
 
-		ncounter = n = recvmsg(SCTP_BASE_VAR(userspace_rawsctp6), &msg, 0);
+		ncounter = n = (int)recvmsg(SCTP_BASE_VAR(userspace_rawsctp6), &msg, 0);
 		if (n < 0) {
 			if (errno == EAGAIN || errno == EINTR) {
 				continue;
@@ -721,7 +724,7 @@ recv_function_udp(void *arg)
 		msg.msg_controllen = sizeof(cmsgbuf);
 		msg.msg_flags = 0;
 
-		ncounter = n = recvmsg(SCTP_BASE_VAR(userspace_udpsctp), &msg, 0);
+		ncounter = n = (int)recvmsg(SCTP_BASE_VAR(userspace_udpsctp), &msg, 0);
 		if (n < 0) {
 			if (errno == EAGAIN || errno == EINTR) {
 				continue;
@@ -930,7 +933,7 @@ recv_function_udp6(void *arg)
 		msg.msg_controllen = (socklen_t)CMSG_SPACE(sizeof (struct in6_pktinfo));
 		msg.msg_flags = 0;
 
-		ncounter = n = recvmsg(SCTP_BASE_VAR(userspace_udpsctp6), &msg, 0);
+		ncounter = n = (int)recvmsg(SCTP_BASE_VAR(userspace_udpsctp6), &msg, 0);
 		if (n < 0) {
 			if (errno == EAGAIN || errno == EINTR) {
 				continue;

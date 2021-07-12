@@ -78,7 +78,7 @@ get_milliseconds_count(void)
 	unsigned int milliseconds;
 
 	gettimeofday(&tv, NULL); /* get current time */
-	milliseconds = tv.tv_sec*1000LL + tv.tv_usec/1000; /* calculate milliseconds */
+	milliseconds = (unsigned int)(tv.tv_sec*1000LL + tv.tv_usec/1000); /* calculate milliseconds */
 	return (milliseconds);
 #endif
 }
