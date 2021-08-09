@@ -7577,17 +7577,17 @@ sctp_connectx_helper_find(struct sctp_inpcb *inp, struct sockaddr *addr,
 		{
 			struct sockaddr_in6 *sin6;
 
-			sin6 = (struct sockaddr_in6 *)sa;
-			if (IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr)) {
-				/* Must be non-mapped for connectx */
-				return (EINVAL);
-			}
 			incr = (unsigned int)sizeof(struct sockaddr_in6);
 #ifdef HAVE_SA_LEN
 			if (sa->sa_len != incr) {
 				return (EINVAL);
 			}
 #endif
+			sin6 = (struct sockaddr_in6 *)sa;
+			if (IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr)) {
+				/* Must be non-mapped for connectx */
+				return (EINVAL);
+			}
 			(*num_v6) += 1;
 			break;
 		}
