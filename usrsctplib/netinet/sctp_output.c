@@ -13455,7 +13455,7 @@ sctp_lower_sosend(struct socket *so,
 	struct epoch_tracker et;
 #endif
 	ssize_t sndlen = 0, max_len, local_add_more;
-	int error, len;
+	int error;
 	struct mbuf *top = NULL;
 	int queue_only = 0, queue_only_for_init = 0;
 	int free_cnt_applied = 0;
@@ -14074,7 +14074,6 @@ sctp_lower_sosend(struct socket *so,
 		 */
 		local_add_more = sndlen;
 	}
-	len = 0;
 	if (non_blocking) {
 		goto skip_preblock;
 	}
@@ -14304,7 +14303,6 @@ skip_preblock:
 				}
 				sctp_snd_sb_alloc(stcb, sndout);
 				atomic_add_int(&sp->length, sndout);
-				len += sndout;
 				if (sinfo_flags & SCTP_SACK_IMMEDIATELY) {
 					sp->sinfo_flags |= SCTP_SACK_IMMEDIATELY;
 				}

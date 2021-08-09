@@ -764,7 +764,7 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	int old_cwnd;
 #endif
-	uint32_t t_ssthresh, t_cwnd, incr;
+	uint32_t t_ssthresh, incr;
 	uint64_t t_ucwnd_sbw;
 	uint64_t t_path_mptcp;
 	uint64_t mptcp_like_alpha;
@@ -773,7 +773,6 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 
 	/* MT FIXME: Don't compute this over and over again */
 	t_ssthresh = 0;
-	t_cwnd = 0;
 	t_ucwnd_sbw = 0;
 	t_path_mptcp = 0;
 	mptcp_like_alpha = 1;
@@ -783,7 +782,6 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 		max_path = 0;
 		TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 			t_ssthresh += net->ssthresh;
-			t_cwnd += net->cwnd;
 			/* lastsa>>3;  we don't need to devide ...*/
 			srtt = net->lastsa;
 			if (srtt > 0) {
