@@ -721,8 +721,12 @@ struct sctp_nets *sctp_findnet(struct sctp_tcb *, struct sockaddr *);
 struct sctp_inpcb *sctp_pcb_findep(struct sockaddr *, int, int, uint32_t);
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
-int sctp_inpcb_bind(struct socket *, struct sockaddr *,
-		    struct sctp_ifa *,struct thread *);
+int 
+sctp_inpcb_bind(struct socket *, struct sockaddr *,
+                struct sctp_ifa *,struct thread *);
+int
+sctp_inpcb_bind_locked(struct sctp_inpcb *, struct sockaddr *,
+                       struct sctp_ifa *, struct thread *);
 #elif defined(_WIN32) && !defined(__Userspace__)
 int sctp_inpcb_bind(struct socket *, struct sockaddr *,
 		    struct sctp_ifa *,PKTHREAD);

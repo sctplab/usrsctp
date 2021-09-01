@@ -3236,22 +3236,27 @@ sctp_remove_laddr(struct sctp_laddr *laddr)
 extern void in6_sin6_2_sin(struct sockaddr_in *, struct sockaddr_in6 *sin6);
 #endif
 
-/* sctp_ifap is used to bypass normal local address validation checks */
+/*
+ * Bind the socket, with the PCB and global info locks held.  Note, if a
+ * socket address is specified, the PCB lock may be dropped and re-acquired.
+ *
+ * sctp_ifap is used to bypass normal local address validation checks.
+ */
 int
 #if defined(__FreeBSD__) && !defined(__Userspace__)
-sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
-                struct sctp_ifa *sctp_ifap, struct thread *td)
+sctp_inpcb_bind_locked(struct sctp_inpcb *inp, struct sockaddr *addr,
+                       struct sctp_ifa *sctp_ifap, struct thread *td)
 #elif defined(_WIN32) && !defined(__Userspace__)
-sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
-                struct sctp_ifa *sctp_ifap, PKTHREAD p)
+sctp_inpcb_bind_locked(struct sctp_inpcb *inp, struct sockaddr *addr,
+                       struct sctp_ifa *sctp_ifap, PKTHREAD p)
 #else
-sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
-                struct sctp_ifa *sctp_ifap, struct proc *p)
+sctp_inpcb_bind_locked(struct sctp_inpcb *inp, struct sockaddr *addr,
+                       struct sctp_ifa *sctp_ifap, struct proc *p)
 #endif
 {
 	/* bind a ep to a socket address */
 	struct sctppcbhead *head;
-	struct sctp_inpcb *inp, *inp_tmp;
+	struct sctp_inpcb *inp_tmp;
 #if (defined(__FreeBSD__) || defined(__APPLE__)) && !defined(__Userspace__)
 	struct inpcb *ip_inp;
 #endif
@@ -3271,10 +3276,13 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 	error = 0;
 	lport = 0;
 	bindall = 1;
-	inp = (struct sctp_inpcb *)so->so_pcb;
 #if (defined(__FreeBSD__) || defined(__APPLE__)) && !defined(__Userspace__)
-	ip_inp = (struct inpcb *)so->so_pcb;
+	ip_inp = &inp->ip_inp.inp;
 #endif
+
+	SCTP_INP_INFO_WLOCK_ASSERT();
+	SCTP_INP_WLOCK_ASSERT(inp);
+
 #ifdef SCTP_DEBUG
 	if (addr) {
 		SCTPDBG(SCTP_DEBUG_PCB1, "Bind called port: %d\n",
@@ -3283,8 +3291,6 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		SCTPDBG_ADDR(SCTP_DEBUG_PCB1, addr);
 	}
 #endif
-	SCTP_INP_INFO_WLOCK();
-	SCTP_INP_WLOCK(inp);
 	if ((inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND) == 0) {
 		error = EINVAL;
 		/* already did a bind, subsequent binds NOT allowed ! */
@@ -3429,31 +3435,27 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 	vrf_id = inp->def_vrf_id;
 
 	if (lport) {
-		/* increase our count due to the unlock we do */
-		SCTP_INP_INCR_REF(inp);
-
 		/*
 		 * Did the caller specify a port? if so we must see if an ep
 		 * already has this one bound.
 		 */
 		/* got to be root to get at low ports */
 #if !(defined(_WIN32) && !defined(__Userspace__))
-		if (ntohs(lport) < IPPORT_RESERVED) {
+		if (ntohs(lport) < IPPORT_RESERVED &&
 #if defined(__FreeBSD__) && !defined(__Userspace__)
-			if ((error = priv_check(td, PRIV_NETINET_RESERVEDPORT)) != 0) {
+		    (error = priv_check(td, PRIV_NETINET_RESERVEDPORT)) != 0) {
 #elif defined(__APPLE__) && !defined(__Userspace__)
-			if ((error = suser(p->p_ucred, &p->p_acflag) != 0)) {
+		    (error = suser(p->p_ucred, &p->p_acflag)) != 0) {
 #elif defined(__Userspace__)
 			/* TODO ensure uid is 0, etc... */
-			if (0) {
+		    0) {
 #else
-			if ((error = suser(p, 0)) != 0)) {
+		    (error = suser(p, 0)) != 0) {
 #endif
-				SCTP_INP_DECR_REF(inp);
-				goto out;
-			}
+			goto out;
 		}
 #endif
+		SCTP_INP_INCR_REF(inp);
 		SCTP_INP_WUNLOCK(inp);
 		if (bindall) {
 #ifdef SCTP_MVRF
@@ -3480,10 +3482,11 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 						port_reuse_active = 1;
 						goto continue_anyway;
 					}
+					SCTP_INP_WLOCK(inp);
 					SCTP_INP_DECR_REF(inp);
 					error = EADDRINUSE;
 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
-					goto out_inp_unlocked;
+					goto out;
 				}
 #ifdef SCTP_MVRF
 			}
@@ -3506,10 +3509,11 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 					port_reuse_active = 1;
 					goto continue_anyway;
 				}
+				SCTP_INP_WLOCK(inp);
 				SCTP_INP_DECR_REF(inp);
 				error = EADDRINUSE;
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
-				goto out_inp_unlocked;
+				goto out;
 			}
 		}
 	continue_anyway:
@@ -3747,8 +3751,33 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 	    ("%s: inp %p is already bound", __func__, inp));
 	inp->sctp_flags &= ~SCTP_PCB_FLAGS_UNBOUND;
 out:
+	return (error);
+}
+
+int
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
+                struct sctp_ifa *sctp_ifap, struct thread *td)
+#elif defined(_WIN32) && !defined(__Userspace__)
+sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
+                struct sctp_ifa *sctp_ifap, PKTHREAD p)
+#else
+sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
+                struct sctp_ifa *sctp_ifap, struct proc *p)
+#endif
+{
+	struct sctp_inpcb *inp;
+	int error;
+
+	inp = so->so_pcb;
+	SCTP_INP_INFO_WLOCK();
+	SCTP_INP_WLOCK(inp);
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+	error = sctp_inpcb_bind_locked(inp, addr, sctp_ifap, td);
+#else
+	error = sctp_inpcb_bind_locked(inp, addr, sctp_ifap, p);
+#endif
 	SCTP_INP_WUNLOCK(inp);
-out_inp_unlocked:
 	SCTP_INP_INFO_WUNLOCK();
 	return (error);
 }
@@ -5523,8 +5552,6 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 			SCTP_CLEAR_SUBSTATE(stcb, SCTP_STATE_IN_ACCEPT_QUEUE);
 			sctp_timer_start(SCTP_TIMER_TYPE_ASOCKILL, inp, stcb, NULL);
 		}
-		SCTP_TCB_SEND_UNLOCK(stcb);
-		SCTP_TCB_UNLOCK(stcb);
 		if ((inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) ||
 		    (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE))
 			/* nothing around */
@@ -5534,6 +5561,8 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 			sctp_sorwakeup(inp, so);
 			sctp_sowwakeup(inp, so);
 		}
+		SCTP_TCB_SEND_UNLOCK(stcb);
+		SCTP_TCB_UNLOCK(stcb);
 
 #ifdef SCTP_LOG_CLOSING
 		sctp_log_closing(inp, stcb, 9);
@@ -5628,6 +5657,9 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 	}
 	if (stcb->asoc.in_asocid_hash) {
 		LIST_REMOVE(stcb, sctp_tcbasocidhash);
+	}
+	if (inp->sctp_socket == NULL) {
+		stcb->sctp_socket = NULL;
 	}
 	/* Now lets remove it from the list of ALL associations in the EP */
 	LIST_REMOVE(stcb, sctp_tcblist);
