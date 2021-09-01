@@ -3240,7 +3240,7 @@ extern void in6_sin6_2_sin(struct sockaddr_in *, struct sockaddr_in6 *sin6);
 int
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
-                struct sctp_ifa *sctp_ifap, struct thread *p)
+                struct sctp_ifa *sctp_ifap, struct thread *td)
 #elif defined(_WIN32) && !defined(__Userspace__)
 sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
                 struct sctp_ifa *sctp_ifap, PKTHREAD p)
@@ -3264,6 +3264,11 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 	int error;
 	uint32_t vrf_id;
 
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+	KASSERT(td != NULL, ("%s: null thread", __func__));
+
+#endif
+	error = 0;
 	lport = 0;
 	bindall = 1;
 	inp = (struct sctp_inpcb *)so->so_pcb;
@@ -3278,17 +3283,14 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		SCTPDBG_ADDR(SCTP_DEBUG_PCB1, addr);
 	}
 #endif
+	SCTP_INP_INFO_WLOCK();
+	SCTP_INP_WLOCK(inp);
 	if ((inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND) == 0) {
+		error = EINVAL;
 		/* already did a bind, subsequent binds NOT allowed ! */
-		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
-		return (EINVAL);
+		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+		goto out;
 	}
-#if defined(__FreeBSD__) && !defined(__Userspace__)
-#ifdef INVARIANTS
-	if (p == NULL)
-		panic("null proc/thread");
-#endif
-#endif
 	if (addr != NULL) {
 		switch (addr->sa_family) {
 #ifdef INET
@@ -3298,13 +3300,15 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 
 			/* IPV6_V6ONLY socket? */
 			if (SCTP_IPV6_V6ONLY(inp)) {
-				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
-				return (EINVAL);
+				error = EINVAL;
+				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+				goto out;
 			}
 #ifdef HAVE_SA_LEN
 			if (addr->sa_len != sizeof(*sin)) {
-				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
-				return (EINVAL);
+				error = EINVAL;
+				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+				goto out;
 			}
 #endif
 
@@ -3315,9 +3319,9 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 			 * For LOOPBACK the prison_local_ip4() call will transmute the ip address
 			 * to the proper value.
 			 */
-			if (p && (error = prison_local_ip4(p->td_ucred, &sin->sin_addr)) != 0) {
+			if ((error = prison_local_ip4(td->td_ucred, &sin->sin_addr)) != 0) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
-				return (error);
+				goto out;
 			}
 #endif
 			if (sin->sin_addr.s_addr != INADDR_ANY) {
@@ -3333,11 +3337,11 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 			struct sockaddr_in6 *sin6;
 
 			sin6 = (struct sockaddr_in6 *)addr;
-
 #ifdef HAVE_SA_LEN
 			if (addr->sa_len != sizeof(*sin6)) {
-				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
-				return (EINVAL);
+				error = EINVAL;
+				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+				goto out;
 			}
 #endif
 			lport = sin6->sin6_port;
@@ -3346,10 +3350,10 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 			 * For LOOPBACK the prison_local_ip6() call will transmute the ipv6 address
 			 * to the proper value.
 			 */
-			if (p && (error = prison_local_ip6(p->td_ucred, &sin6->sin6_addr,
+			if ((error = prison_local_ip6(td->td_ucred, &sin6->sin6_addr,
 			    (SCTP_IPV6_V6ONLY(inp) != 0))) != 0) {
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
-				return (error);
+				goto out;
 			}
 #endif
 			if (!IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
@@ -3358,8 +3362,9 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 				/* KAME hack: embed scopeid */
 #if defined(SCTP_KAME)
 				if (sa6_embedscope(sin6, MODULE_GLOBAL(ip6_use_defzone)) != 0) {
-					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
-					return (EINVAL);
+					error = EINVAL;
+					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+					goto out;
 				}
 #elif defined(__APPLE__) && !defined(__Userspace__)
 #if defined(APPLE_LEOPARD) || defined(APPLE_SNOWLEOPARD)
@@ -3367,19 +3372,22 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 #else
 				if (in6_embedscope(&sin6->sin6_addr, sin6, ip_inp, NULL, NULL) != 0) {
 #endif
-					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
-					return (EINVAL);
+					error = EINVAL;
+					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+					goto out;
 				}
 #elif defined(__FreeBSD__) && !defined(__Userspace__)
 				error = scope6_check_id(sin6, MODULE_GLOBAL(ip6_use_defzone));
 				if (error != 0) {
+					error = EINVAL;
 					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
-					return (error);
+					goto out;
 				}
 #else
 				if (in6_embedscope(&sin6->sin6_addr, sin6) != 0) {
-					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
-					return (EINVAL);
+					error = EINVAL;
+					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+					goto out;
 				}
 #endif
 #endif /* SCTP_EMBEDDED_V6_SCOPE */
@@ -3398,8 +3406,9 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 
 #ifdef HAVE_SA_LEN
 			if (addr->sa_len != sizeof(struct sockaddr_conn)) {
-				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
-				return (EINVAL);
+				error = EINVAL;
+				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+				goto out;
 			}
 #endif
 			sconn = (struct sockaddr_conn *)addr;
@@ -3411,18 +3420,18 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		}
 #endif
 		default:
-			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EAFNOSUPPORT);
-			return (EAFNOSUPPORT);
+			error = EAFNOSUPPORT;
+			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+			goto out;
 		}
 	}
-	SCTP_INP_INFO_WLOCK();
-	SCTP_INP_WLOCK(inp);
 	/* Setup a vrf_id to be the default for the non-bind-all case. */
 	vrf_id = inp->def_vrf_id;
 
-	/* increase our count due to the unlock we do */
-	SCTP_INP_INCR_REF(inp);
 	if (lport) {
+		/* increase our count due to the unlock we do */
+		SCTP_INP_INCR_REF(inp);
+
 		/*
 		 * Did the caller specify a port? if so we must see if an ep
 		 * already has this one bound.
@@ -3430,21 +3439,18 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		/* got to be root to get at low ports */
 #if !(defined(_WIN32) && !defined(__Userspace__))
 		if (ntohs(lport) < IPPORT_RESERVED) {
-			if ((p != NULL) && ((error =
 #if defined(__FreeBSD__) && !defined(__Userspace__)
-				  priv_check(p, PRIV_NETINET_RESERVEDPORT)
+			if ((error = priv_check(td, PRIV_NETINET_RESERVEDPORT)) != 0) {
 #elif defined(__APPLE__) && !defined(__Userspace__)
-				  suser(p->p_ucred, &p->p_acflag)
-#elif defined(__Userspace__) /* must be true to use raw socket */
-				  1
+			if ((error = suser(p->p_ucred, &p->p_acflag) != 0)) {
+#elif defined(__Userspace__)
+			/* TODO ensure uid is 0, etc... */
+			if (0) {
 #else
-				  suser(p, 0)
+			if ((error = suser(p, 0)) != 0)) {
 #endif
-				    ) != 0)) {
 				SCTP_INP_DECR_REF(inp);
-				SCTP_INP_WUNLOCK(inp);
-				SCTP_INP_INFO_WUNLOCK();
-				return (error);
+				goto out;
 			}
 		}
 #endif
@@ -3475,9 +3481,9 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 						goto continue_anyway;
 					}
 					SCTP_INP_DECR_REF(inp);
-					SCTP_INP_INFO_WUNLOCK();
-					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EADDRINUSE);
-					return (EADDRINUSE);
+					error = EADDRINUSE;
+					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+					goto out_inp_unlocked;
 				}
 #ifdef SCTP_MVRF
 			}
@@ -3501,13 +3507,14 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 					goto continue_anyway;
 				}
 				SCTP_INP_DECR_REF(inp);
-				SCTP_INP_INFO_WUNLOCK();
-				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EADDRINUSE);
-				return (EADDRINUSE);
+				error = EADDRINUSE;
+				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+				goto out_inp_unlocked;
 			}
 		}
 	continue_anyway:
 		SCTP_INP_WLOCK(inp);
+		SCTP_INP_DECR_REF(inp);
 		if (bindall) {
 			/* verify that no lport is not used by a singleton */
 			if ((port_reuse_active == 0) &&
@@ -3517,54 +3524,41 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 				    (sctp_is_feature_on(inp_tmp, SCTP_PCB_FLAGS_PORTREUSE))) {
 					port_reuse_active = 1;
 				} else {
-					SCTP_INP_DECR_REF(inp);
-					SCTP_INP_WUNLOCK(inp);
-					SCTP_INP_INFO_WUNLOCK();
-					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EADDRINUSE);
-					return (EADDRINUSE);
+					error = EADDRINUSE;
+					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+					goto out;
 				}
 			}
 		}
 	} else {
 		uint16_t first, last, candidate;
 		uint16_t count;
-		int done;
 
-#if defined(_WIN32) && !defined(__Userspace__)
+#if defined(__Userspace__)
+		first = MODULE_GLOBAL(ipport_firstauto);
+		last = MODULE_GLOBAL(ipport_lastauto);
+#elif defined(_WIN32)
 		first = 1;
 		last = 0xffff;
-#else
-#if defined(__Userspace__)
-		/* TODO ensure uid is 0, etc... */
-#elif (defined(__FreeBSD__) || defined(__APPLE__)) && !defined(__Userspace__)
+#elif defined(__FreeBSD__) || defined(__APPLE__)
 		if (ip_inp->inp_flags & INP_HIGHPORT) {
 			first = MODULE_GLOBAL(ipport_hifirstauto);
 			last = MODULE_GLOBAL(ipport_hilastauto);
 		} else if (ip_inp->inp_flags & INP_LOWPORT) {
-			if (p && (error =
 #if defined(__FreeBSD__)
-				  priv_check(p, PRIV_NETINET_RESERVEDPORT)
-#elif defined(__APPLE__)
-				  suser(p->p_ucred, &p->p_acflag)
+			if ((error = priv_check(td, PRIV_NETINET_RESERVEDPORT)) != 0) {
 #else
-				  suser(p, 0)
+			if ((error = suser(p->p_ucred, &p->p_acflag)) != 0) {
 #endif
-				    )) {
-				SCTP_INP_DECR_REF(inp);
-				SCTP_INP_WUNLOCK(inp);
-				SCTP_INP_INFO_WUNLOCK();
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
-				return (error);
+				goto out;
 			}
 			first = MODULE_GLOBAL(ipport_lowfirstauto);
 			last = MODULE_GLOBAL(ipport_lowlastauto);
 		} else {
-#endif
 			first = MODULE_GLOBAL(ipport_firstauto);
 			last = MODULE_GLOBAL(ipport_lastauto);
-#if (defined(__FreeBSD__) || defined(__APPLE__)) && !defined(__Userspace__)
 		}
-#endif
 #endif
 		if (first > last) {
 			uint16_t temp;
@@ -3576,8 +3570,7 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 		count = last - first + 1; /* number of candidates */
 		candidate = first + sctp_select_initial_TSN(&inp->sctp_ep) % (count);
 
-		done = 0;
-		while (!done) {
+		for (;;) {
 #ifdef SCTP_MVRF
 			for (i = 0; i < inp->num_vrfs; i++) {
 				if (sctp_isport_inuse(inp, htons(candidate), inp->m_vrf_ids[i]) != NULL) {
@@ -3585,40 +3578,35 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 				}
 			}
 			if (i == inp->num_vrfs) {
-				done = 1;
+				lport = htons(candidate);
+				break;
 			}
 #else
 			if (sctp_isport_inuse(inp, htons(candidate), inp->def_vrf_id) == NULL) {
-				done = 1;
+				lport = htons(candidate);
+				break;
 			}
 #endif
-			if (!done) {
-				if (--count == 0) {
-					SCTP_INP_DECR_REF(inp);
-					SCTP_INP_WUNLOCK(inp);
-					SCTP_INP_INFO_WUNLOCK();
-					SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EADDRINUSE);
-					return (EADDRINUSE);
-				}
-				if (candidate == last)
-					candidate = first;
-				else
-					candidate = candidate + 1;
+			if (--count == 0) {
+				error = EADDRINUSE;
+				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+				goto out;
 			}
+			if (candidate == last)
+				candidate = first;
+			else
+				candidate = candidate + 1;
 		}
-		lport = htons(candidate);
 	}
-	SCTP_INP_DECR_REF(inp);
 	if (inp->sctp_flags & (SCTP_PCB_FLAGS_SOCKET_GONE |
 			       SCTP_PCB_FLAGS_SOCKET_ALLGONE)) {
 		/*
 		 * this really should not happen. The guy did a non-blocking
 		 * bind and then did a close at the same time.
 		 */
-		SCTP_INP_WUNLOCK(inp);
-		SCTP_INP_INFO_WUNLOCK();
-		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
-		return (EINVAL);
+		error = EINVAL;
+		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+		goto out;
 	}
 	/* ok we look clear to give out this port, so lets setup the binding */
 	if (bindall) {
@@ -3710,21 +3698,19 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 						    vrf_id, SCTP_ADDR_NOT_LOCKED);
 		}
 		if (ifa == NULL) {
+			error = EADDRNOTAVAIL;
 			/* Can't find an interface with that address */
-			SCTP_INP_WUNLOCK(inp);
-			SCTP_INP_INFO_WUNLOCK();
-			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EADDRNOTAVAIL);
-			return (EADDRNOTAVAIL);
+			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+			goto out;
 		}
 #ifdef INET6
 		if (addr->sa_family == AF_INET6) {
 			/* GAK, more FIXME IFA lock? */
 			if (ifa->localifa_flags & SCTP_ADDR_IFA_UNUSEABLE) {
 				/* Can't bind a non-existent addr. */
-				SCTP_INP_WUNLOCK(inp);
-				SCTP_INP_INFO_WUNLOCK();
-				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, EINVAL);
-				return (EINVAL);
+				error = EINVAL;
+				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, error);
+				goto out;
 			}
 		}
 #endif
@@ -3737,11 +3723,8 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 
 		/* add this address to the endpoint list */
 		error = sctp_insert_laddr(&inp->sctp_addr_list, ifa, 0);
-		if (error != 0) {
-			SCTP_INP_WUNLOCK(inp);
-			SCTP_INP_INFO_WUNLOCK();
-			return (error);
-		}
+		if (error != 0)
+			goto out;
 		inp->laddr_count++;
 	}
 	/* find the bucket */
@@ -3760,10 +3743,14 @@ sctp_inpcb_bind(struct socket *so, struct sockaddr *addr,
 	inp->sctp_lport = lport;
 
 	/* turn off just the unbound flag */
+	KASSERT((inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND) != 0,
+	    ("%s: inp %p is already bound", __func__, inp));
 	inp->sctp_flags &= ~SCTP_PCB_FLAGS_UNBOUND;
+out:
 	SCTP_INP_WUNLOCK(inp);
+out_inp_unlocked:
 	SCTP_INP_INFO_WUNLOCK();
-	return (0);
+	return (error);
 }
 
 static void
