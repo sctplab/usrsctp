@@ -67,19 +67,17 @@
 static int connecting = 0;
 static int finish = 0;
 
-static unsigned int
+static uint64_t
 get_milliseconds_count(void)
 {
 #ifdef _WIN32
 	// obtain number of milliseconds since system started
-	return GetTickCount();
+	return GetTickCount64();
 #else
 	struct timeval tv;
-	unsigned int milliseconds;
 
 	gettimeofday(&tv, NULL); /* get current time */
-	milliseconds = tv.tv_sec*1000LL + tv.tv_usec/1000; /* calculate milliseconds */
-	return (milliseconds);
+	return (tv.tv_sec * 1000LL + tv.tv_usec / 1000);
 #endif
 }
 
@@ -97,19 +95,19 @@ handle_events(int sock, struct socket* s, void* sconn_addr)
 	fd_set rfds;
 	struct timeval tv;
 
-	unsigned next_fire_time = get_milliseconds_count();
-	unsigned last_fire_time = next_fire_time;
-	unsigned now = get_milliseconds_count();
-	int wait_time;
+	uint64_t next_fire_time = get_milliseconds_count();
+	uint64_t last_fire_time = next_fire_time;
+	uint64_t now = get_milliseconds_count();
+	uint32_t wait_time;
 
 	while (!finish) {
-		if ((int) (now - next_fire_time) > 0) {
-			usrsctp_handle_timers(now - last_fire_time);
+		if (now > next_fire_time) {
+			usrsctp_handle_timers((uint32_t)(now - last_fire_time));
 			last_fire_time = now;
 			next_fire_time = now + TIMER_INTERVAL_MSECS;
 		}
 
-		wait_time = next_fire_time - now;
+		wait_time = (uint32_t)(next_fire_time - now);
 		tv.tv_sec = wait_time / 1000;
 		tv.tv_usec = (wait_time % 1000) * 1000;
 
