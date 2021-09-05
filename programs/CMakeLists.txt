@@ -119,4 +119,13 @@ foreach (source_file ${check_programs})
 		"usrsctp"
 		${CMAKE_THREAD_LIBS_INIT}
 	)
+
+	if (APPLE)
+		set_target_properties(
+			${source_file_we}
+			PROPERTIES
+			XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER
+			com.github.sctplab.usrsctp.${source_file_we}
+		)
+	endif()
 endforeach ()
