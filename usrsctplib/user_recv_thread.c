@@ -280,6 +280,7 @@ recv_function_raw(void *arg)
 	struct sctp_chunkhdr *ch;
 	struct sockaddr_in src, dst;
 #if !defined(_WIN32)
+	ssize_t res;
 	unsigned int ncounter;
 	struct msghdr msg;
 	struct iovec recv_iovec[MAXLEN_MBUF_CHAIN];
@@ -346,14 +347,16 @@ recv_function_raw(void *arg)
 		msg.msg_iovlen = MAXLEN_MBUF_CHAIN;
 		msg.msg_control = NULL;
 		msg.msg_controllen = 0;
-		ncounter = n = recvmsg(SCTP_BASE_VAR(userspace_rawsctp), &msg, 0);
-		if (n < 0) {
+		res = recvmsg(SCTP_BASE_VAR(userspace_rawsctp), &msg, 0);
+		if (res < 0) {
 			if (errno == EAGAIN || errno == EINTR) {
 				continue;
 			} else {
 				break;
 			}
 		}
+		ncounter = (unsigned int)res;
+		n = (int)res;
 #endif
 		SCTP_HEADER_LEN(recvmbuf[0]) = n; /* length of total packet */
 		SCTP_STAT_INCR(sctps_recvpackets);
@@ -457,7 +460,8 @@ recv_function_raw6(void *arg)
 {
 	struct mbuf **recvmbuf6;
 #if !defined(_WIN32)
-	unsigned int ncounter = 0;
+	ssize_t res;
+	unsigned int ncounter;
 	struct iovec recv_iovec[MAXLEN_MBUF_CHAIN];
 	struct msghdr msg;
 	struct cmsghdr *cmsgptr;
@@ -544,15 +548,16 @@ recv_function_raw6(void *arg)
 		msg.msg_control = (void *)cmsgbuf;
 		msg.msg_controllen = (socklen_t)CMSG_SPACE(sizeof (struct in6_pktinfo));
 		msg.msg_flags = 0;
-
-		ncounter = n = recvmsg(SCTP_BASE_VAR(userspace_rawsctp6), &msg, 0);
-		if (n < 0) {
+		res = recvmsg(SCTP_BASE_VAR(userspace_rawsctp6), &msg, 0);
+		if (res < 0) {
 			if (errno == EAGAIN || errno == EINTR) {
 				continue;
 			} else {
 				break;
 			}
 		}
+		ncounter = (unsigned int)res;
+		n = (int)res;
 #endif
 		SCTP_HEADER_LEN(recvmbuf6[0]) = n; /* length of total packet */
 		SCTP_STAT_INCR(sctps_recvpackets);
@@ -668,6 +673,7 @@ recv_function_udp(void *arg)
 #endif
 	int compute_crc = 1;
 #if !defined(_WIN32)
+	ssize_t res;
 	unsigned int ncounter;
 	struct iovec iov[MAXLEN_MBUF_CHAIN];
 	struct msghdr msg;
@@ -721,14 +727,16 @@ recv_function_udp(void *arg)
 		msg.msg_controllen = sizeof(cmsgbuf);
 		msg.msg_flags = 0;
 
-		ncounter = n = recvmsg(SCTP_BASE_VAR(userspace_udpsctp), &msg, 0);
-		if (n < 0) {
+		res = recvmsg(SCTP_BASE_VAR(userspace_udpsctp), &msg, 0);
+		if (res < 0) {
 			if (errno == EAGAIN || errno == EINTR) {
 				continue;
 			} else {
 				break;
 			}
 		}
+		ncounter = (unsigned int)res;
+		n = (int)res;
 #else
 		nResult = WSAIoctl(SCTP_BASE_VAR(userspace_udpsctp), SIO_GET_EXTENSION_FUNCTION_POINTER,
 		 &WSARecvMsg_GUID, sizeof WSARecvMsg_GUID,
@@ -880,6 +888,7 @@ recv_function_udp6(void *arg)
 	struct iovec iov[MAXLEN_MBUF_CHAIN];
 	struct msghdr msg;
 	struct cmsghdr *cmsgptr;
+	ssize_t res;
 	unsigned int ncounter;
 #else
 	GUID WSARecvMsg_GUID = WSAID_WSARECVMSG;
@@ -930,14 +939,16 @@ recv_function_udp6(void *arg)
 		msg.msg_controllen = (socklen_t)CMSG_SPACE(sizeof (struct in6_pktinfo));
 		msg.msg_flags = 0;
 
-		ncounter = n = recvmsg(SCTP_BASE_VAR(userspace_udpsctp6), &msg, 0);
-		if (n < 0) {
+		res = recvmsg(SCTP_BASE_VAR(userspace_udpsctp6), &msg, 0);
+		if (res < 0) {
 			if (errno == EAGAIN || errno == EINTR) {
 				continue;
 			} else {
 				break;
 			}
 		}
+		ncounter = (unsigned int)res;
+		n = (int)res;
 #else
 		nResult = WSAIoctl(SCTP_BASE_VAR(userspace_udpsctp6), SIO_GET_EXTENSION_FUNCTION_POINTER,
 		                   &WSARecvMsg_GUID, sizeof WSARecvMsg_GUID,
