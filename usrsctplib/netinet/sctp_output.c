@@ -10435,7 +10435,7 @@ sctp_chunk_retransmission(struct sctp_inpcb *inp,
 					 * also double the output queue size, since this
 					 * get shrunk when we free by this amount.
 					 */
-					atomic_add_int(&((asoc)->total_output_queue_size),data_list[i]->book_size);
+					atomic_add_int(&((asoc)->total_output_queue_size), data_list[i]->book_size);
 					data_list[i]->book_size *= 2;
 				} else {
 					if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LOG_RWND_ENABLE) {
@@ -13859,7 +13859,7 @@ sctp_lower_sosend(struct socket *so,
 		SCTP_TCB_UNLOCK(stcb);
 		hold_tcblock = 0;
 	} else {
-		atomic_add_int(&stcb->asoc.sb_send_resv, sndlen);
+		atomic_add_int(&stcb->asoc.sb_send_resv, (int)sndlen);
 	}
 	local_soresv = sndlen;
 	if (stcb->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED) {
@@ -14797,7 +14797,7 @@ out:
 out_unlocked:
 
 	if (local_soresv && stcb) {
-		atomic_subtract_int(&stcb->asoc.sb_send_resv, sndlen);
+		atomic_subtract_int(&stcb->asoc.sb_send_resv, (int)sndlen);
 	}
 	if (create_lock_applied) {
 		SCTP_ASOC_CREATE_UNLOCK(inp);
