@@ -3502,7 +3502,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 	{
 		struct sctp_hmacalgo *shmac;
 		sctp_hmaclist_t *hmaclist;
-		uint32_t size;
+		size_t size;
 		int i;
 
 		SCTP_CHECK_AND_CAST(shmac, optval, struct sctp_hmacalgo, *optsize);
@@ -3517,8 +3517,8 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		}
 		/* is there room for all of the hmac ids? */
 		size = sizeof(*shmac) + (hmaclist->num_algo *
-					 sizeof(shmac->shmac_idents[0]));
-		if ((size_t)(*optsize) < size) {
+		                         sizeof(shmac->shmac_idents[0]));
+		if (*optsize < size) {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 			error = EINVAL;
 			SCTP_INP_RUNLOCK(inp);
