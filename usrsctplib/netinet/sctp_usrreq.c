@@ -8340,14 +8340,6 @@ sctp_listen(struct socket *so, struct proc *p)
 		sctp_log_lock(inp, (struct sctp_tcb *)NULL, SCTP_LOG_LOCK_SOCK);
 	}
 #endif
-#if defined(__FreeBSD__) || defined(__Userspace__)
-	SOCK_LOCK(so);
-	error = solisten_proto_check(so);
-	if (error) {
-		SOCK_UNLOCK(so);
-		goto out;
-	}
-#endif
 	if ((sctp_is_feature_on(inp, SCTP_PCB_FLAGS_PORTREUSE)) &&
 	    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL)) {
 		/* The unlucky case
@@ -8357,16 +8349,19 @@ sctp_listen(struct socket *so, struct proc *p)
 		 * - We must then move the guy that was listener to the TCP Pool.
 		 */
 		if (sctp_swap_inpcb_for_listen(inp)) {
-			SOCK_UNLOCK(so);
-#if defined(__FreeBSD__) && !defined(__Userspace__)
-			solisten_proto_abort(so);
-#endif
 			error = EADDRINUSE;
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
 			goto out;
 		}
 	}
-
+#if defined(__FreeBSD__) || defined(__Userspace__)
+	SOCK_LOCK(so);
+	error = solisten_proto_check(so);
+	if (error) {
+		SOCK_UNLOCK(so);
+		goto out;
+	}
+#endif
 	if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) &&
 	    (inp->sctp_flags & SCTP_PCB_FLAGS_CONNECTED)) {
 		SOCK_UNLOCK(so);

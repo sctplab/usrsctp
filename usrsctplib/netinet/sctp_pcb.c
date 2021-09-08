@@ -2175,6 +2175,9 @@ sctp_swap_inpcb_for_listen(struct sctp_inpcb *inp)
 	struct sctppcbhead *head;
 	struct sctp_inpcb *tinp, *ninp;
 
+	SCTP_INP_INFO_WLOCK_ASSERT();
+	SCTP_INP_WLOCK_ASSERT(inp);
+
 	if (sctp_is_feature_off(inp, SCTP_PCB_FLAGS_PORTREUSE)) {
 		/* only works with port reuse on */
 		return (-1);
@@ -2182,8 +2185,7 @@ sctp_swap_inpcb_for_listen(struct sctp_inpcb *inp)
 	if ((inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL) == 0) {
 		return (0);
 	}
-	SCTP_INP_RUNLOCK(inp);
-	SCTP_INP_INFO_WLOCK();
+	SCTP_INP_WUNLOCK(inp);
 	head = &SCTP_BASE_INFO(sctp_ephash)[SCTP_PCBHASH_ALLADDR(inp->sctp_lport,
 	                                    SCTP_BASE_INFO(hashmark))];
 	/* Kick out all non-listeners to the TCP hash */
@@ -2213,9 +2215,6 @@ sctp_swap_inpcb_for_listen(struct sctp_inpcb *inp)
 	inp->sctp_flags &= ~SCTP_PCB_FLAGS_IN_TCPPOOL;
 	head = &SCTP_BASE_INFO(sctp_ephash)[SCTP_PCBHASH_ALLADDR(inp->sctp_lport, SCTP_BASE_INFO(hashmark))];
 	LIST_INSERT_HEAD(head, inp, sctp_hash);
-	SCTP_INP_WUNLOCK(inp);
-	SCTP_INP_RLOCK(inp);
-	SCTP_INP_INFO_WUNLOCK();
 	return (0);
 }
 
