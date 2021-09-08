@@ -5149,9 +5149,13 @@ sctp_pull_off_control_to_new_inp(struct sctp_inpcb *old_inp,
 	new_so = new_inp->sctp_socket;
 	TAILQ_INIT(&tmp_queue);
 #if (defined(__FreeBSD__) || defined(__APPLE__)) && !defined(__Userspace__)
+#if defined(__FreeBSD__)
+	error = SOCK_IO_RECV_LOCK(old_so, waitflags);
+#else
 	error = sblock(&old_so->so_rcv, waitflags);
+#endif
 	if (error) {
-		/* Gak, can't get sblock, we have a problem.
+		/* Gak, can't get I/O lock, we have a problem.
 		 * data will be left stranded.. and we
 		 * don't dare look at it since the
 		 * other thread may be reading something.

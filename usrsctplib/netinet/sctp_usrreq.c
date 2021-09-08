@@ -587,7 +587,6 @@ sctp_abort(struct socket *so)
 	struct epoch_tracker et;
 #endif
 	struct sctp_inpcb *inp;
-	uint32_t flags;
 
 	inp = (struct sctp_inpcb *)so->so_pcb;
 	if (inp == NULL) {
@@ -599,19 +598,19 @@ sctp_abort(struct socket *so)
 #endif
 	}
 
+	SCTP_INP_WLOCK(inp);
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	NET_EPOCH_ENTER(et);
 #endif
- sctp_must_try_again:
-	flags = inp->sctp_flags;
 #ifdef SCTP_LOG_CLOSING
 	sctp_log_closing(inp, NULL, 17);
 #endif
-	if (((flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
-	    (atomic_cmpset_int(&inp->sctp_flags, flags, (flags | SCTP_PCB_FLAGS_SOCKET_GONE | SCTP_PCB_FLAGS_CLOSE_IP)))) {
+	if (((inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0)) {
+		inp->sctp_flags |= SCTP_PCB_FLAGS_SOCKET_GONE | SCTP_PCB_FLAGS_CLOSE_IP;
 #ifdef SCTP_LOG_CLOSING
 		sctp_log_closing(inp, NULL, 16);
 #endif
+		SCTP_INP_WUNLOCK(inp);
 		sctp_inpcb_free(inp, SCTP_FREE_SHOULD_USE_ABORT,
 				SCTP_CALLED_AFTER_CMPSET_OFCLOSE);
 		SOCK_LOCK(so);
@@ -629,14 +628,10 @@ sctp_abort(struct socket *so)
 #endif
 		SOCK_UNLOCK(so);
 	} else {
-		flags = inp->sctp_flags;
-		if ((flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) {
-			goto sctp_must_try_again;
-		}
+		SCTP_INP_WUNLOCK(inp);
 	}
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	NET_EPOCH_EXIT(et);
-	return;
 #else
 	return (0);
 #endif
@@ -8342,7 +8337,8 @@ sctp_listen(struct socket *so, struct proc *p)
 			}
 		}
 	}
-	SCTP_INP_RLOCK(inp);
+	SCTP_INP_INFO_WLOCK();
+	SCTP_INP_WLOCK(inp);
 #ifdef SCTP_LOCK_LOGGING
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LOCK_LOGGING_ENABLE) {
 		sctp_log_lock(inp, (struct sctp_tcb *)NULL, SCTP_LOG_LOCK_SOCK);
@@ -8351,10 +8347,9 @@ sctp_listen(struct socket *so, struct proc *p)
 #if defined(__FreeBSD__) || defined(__Userspace__)
 	SOCK_LOCK(so);
 	error = solisten_proto_check(so);
-	SOCK_UNLOCK(so);
 	if (error) {
-		SCTP_INP_RUNLOCK(inp);
-		return (error);
+		SOCK_UNLOCK(so);
+		goto out;
 	}
 #endif
 	if ((sctp_is_feature_on(inp, SCTP_PCB_FLAGS_PORTREUSE)) &&
@@ -8366,36 +8361,51 @@ sctp_listen(struct socket *so, struct proc *p)
 		 * - We must then move the guy that was listener to the TCP Pool.
 		 */
 		if (sctp_swap_inpcb_for_listen(inp)) {
-			SCTP_INP_RUNLOCK(inp);
-			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EADDRINUSE);
-			return (EADDRINUSE);
+			SOCK_UNLOCK(so);
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+			solisten_proto_abort(so);
+#endif
+			error = EADDRINUSE;
+			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
+			goto out;
 		}
 	}
 
 	if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) &&
 	    (inp->sctp_flags & SCTP_PCB_FLAGS_CONNECTED)) {
 		/* We are already connected AND the TCP model */
-		SCTP_INP_RUNLOCK(inp);
-		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EADDRINUSE);
-		return (EADDRINUSE);
+		SOCK_UNLOCK(so);
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+		solisten_proto_abort(so);
+#endif
+		error = EADDRINUSE;
+		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, error);
+		goto out;
 	}
-	SCTP_INP_RUNLOCK(inp);
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND) {
-		/* We must do a bind. */
-		if ((error = sctp_inpcb_bind(so, NULL, NULL, p))) {
+		if ((error = sctp_inpcb_bind_locked(inp, NULL, NULL, p))) {
+			SOCK_UNLOCK(so);
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+			solisten_proto_abort(so);
+#endif
 			/* bind error, probably perm */
-			return (error);
+			goto out;
 		}
 	}
-	SCTP_INP_WLOCK(inp);
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	if ((inp->sctp_flags & SCTP_PCB_FLAGS_UDPTYPE) == 0) {
-		SOCK_LOCK(so);
 		solisten_proto(so, backlog);
 		SOCK_UNLOCK(so);
+		inp->sctp_flags |= SCTP_PCB_FLAGS_ACCEPTING;
+	} else {
+		SOCK_UNLOCK(so);
+		if (backlog > 0) {
+			inp->sctp_flags |= SCTP_PCB_FLAGS_ACCEPTING;
+		} else {
+			inp->sctp_flags &= ~SCTP_PCB_FLAGS_ACCEPTING;
+		}
 	}
 #elif defined(_WIN32) || defined(__Userspace__)
-	SOCK_LOCK(so);
 	solisten_proto(so, backlog);
 #endif
 #if !(defined(__FreeBSD__) && !defined(__Userspace__))
@@ -8408,17 +8418,15 @@ sctp_listen(struct socket *so, struct proc *p)
 #endif
 	}
 	SOCK_UNLOCK(so);
-#endif
-#if defined(__FreeBSD__) || defined(_WIN32) || defined(__Userspace__)
 	if (backlog > 0) {
 		inp->sctp_flags |= SCTP_PCB_FLAGS_ACCEPTING;
 	} else {
 		inp->sctp_flags &= ~SCTP_PCB_FLAGS_ACCEPTING;
 	}
-#else
-	inp->sctp_flags |= SCTP_PCB_FLAGS_ACCEPTING;
 #endif
+out:
 	SCTP_INP_WUNLOCK(inp);
+	SCTP_INP_INFO_WUNLOCK();
 	return (error);
 }
 

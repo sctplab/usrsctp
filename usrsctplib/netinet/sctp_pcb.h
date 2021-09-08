@@ -481,7 +481,6 @@ struct sctp_inpcb {
 #ifdef SCTP_TRACK_FREED_ASOCS
 	struct sctpasochead sctp_asoc_free_list;
 #endif
-	struct sctp_iterator *inp_starting_point_for_iterator;
 	uint32_t sctp_frag_point;
 	uint32_t partial_delivery_point;
 	uint32_t sctp_context;
@@ -723,17 +722,25 @@ struct sctp_inpcb *sctp_pcb_findep(struct sockaddr *, int, int, uint32_t);
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 int 
 sctp_inpcb_bind(struct socket *, struct sockaddr *,
-                struct sctp_ifa *,struct thread *);
+                struct sctp_ifa *, struct thread *);
 int
 sctp_inpcb_bind_locked(struct sctp_inpcb *, struct sockaddr *,
                        struct sctp_ifa *, struct thread *);
 #elif defined(_WIN32) && !defined(__Userspace__)
-int sctp_inpcb_bind(struct socket *, struct sockaddr *,
-		    struct sctp_ifa *,PKTHREAD);
+int
+sctp_inpcb_bind(struct socket *, struct sockaddr *,
+                struct sctp_ifa *, PKTHREAD);
+int
+sctp_inpcb_bind_locked(struct sctp_inpcb *, struct sockaddr *,
+                       struct sctp_ifa *, PKTHREAD);
 #else
 /* struct proc is a dummy for __Userspace__ */
-int sctp_inpcb_bind(struct socket *, struct sockaddr *,
-		    struct sctp_ifa *, struct proc *);
+int
+sctp_inpcb_bind(struct socket *, struct sockaddr *,
+                struct sctp_ifa *, struct proc *);
+int
+sctp_inpcb_bind_locked(struct sctp_inpcb *, struct sockaddr *,
+                       struct sctp_ifa *, struct proc *);
 #endif
 
 struct sctp_tcb *
