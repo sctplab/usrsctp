@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_peeloff.c 362054 2020-06-11 13:34:09Z tuexen $");
+__FBSDID("$FreeBSD$");
 #endif
 
 #include <netinet/sctp_os.h>
