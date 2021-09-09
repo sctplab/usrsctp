@@ -83,7 +83,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 	add_definitions(-D_GNU_SOURCE)
 endif ()
 
-if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+if (CMAKE_SYSTEM_NAME MATCHES "Darwin" OR CMAKE_SYSTEM_NAME MATCHES "iOS")
 	add_definitions(-D__APPLE_USE_RFC_2292)
 endif ()
 
