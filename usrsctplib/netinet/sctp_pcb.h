@@ -793,15 +793,25 @@ struct sctp_tcb *
 sctp_aloc_assoc(struct sctp_inpcb *, struct sockaddr *,
                 int *, uint32_t, uint32_t, uint32_t, uint16_t, uint16_t,
                 struct thread *, int);
+struct sctp_tcb *
+sctp_aloc_assoc_connected(struct sctp_inpcb *, struct sockaddr *,
+                          int *, uint32_t, uint32_t, uint32_t, uint16_t, uint16_t,
+                          struct thread *, int);
 #elif defined(_WIN32) && !defined(__Userspace__)
 struct sctp_tcb *
 sctp_aloc_assoc(struct sctp_inpcb *, struct sockaddr *, int *, uint32_t,
                 uint32_t, uint32_t, uint16_t, uint16_t, PKTHREAD, int);
+struct sctp_tcb *
+sctp_aloc_assoc_connected(struct sctp_inpcb *, struct sockaddr *, int *, uint32_t,
+                          uint32_t, uint32_t, uint16_t, uint16_t, PKTHREAD, int);
 #else
 /* proc will be NULL for __Userspace__ */
 struct sctp_tcb *
 sctp_aloc_assoc(struct sctp_inpcb *, struct sockaddr *, int *, uint32_t,
                 uint32_t, uint32_t, uint16_t, uint16_t, struct proc *, int);
+struct sctp_tcb *
+sctp_aloc_assoc_connected(struct sctp_inpcb *, struct sockaddr *, int *, uint32_t,
+                          uint32_t, uint32_t, uint16_t, uint16_t, struct proc *, int);
 #endif
 
 int sctp_free_assoc(struct sctp_inpcb *, struct sctp_tcb *, int, int);

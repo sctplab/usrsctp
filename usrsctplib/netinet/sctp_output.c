@@ -6361,7 +6361,9 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			atomic_add_int(&asoc->refcnt, 1);
 			SCTP_TCB_UNLOCK(stcb);
 		new_tag:
+			SCTP_INP_INFO_RLOCK();
 			vtag = sctp_select_a_tag(inp, inp->sctp_lport, sh->src_port, 1);
+			SCTP_INP_INFO_RUNLOCK();
 			if ((asoc->peer_supports_nat)  && (vtag == asoc->my_vtag)) {
 				/* Got a duplicate vtag on some guy behind a nat
 				 * make sure we don't use it.
@@ -6377,7 +6379,9 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		} else {
 			SCTP_INP_INCR_REF(inp);
 			SCTP_INP_RUNLOCK(inp);
+			SCTP_INP_INFO_RLOCK();
 			vtag = sctp_select_a_tag(inp, inp->sctp_lport, sh->src_port, 1);
+			SCTP_INP_INFO_RUNLOCK();
 			initack->init.initiate_tag = htonl(vtag);
 			/* get a TSN to use too */
 			initack->init.initial_tsn = htonl(sctp_select_initial_TSN(&inp->sctp_ep));
@@ -13742,23 +13746,18 @@ sctp_lower_sosend(struct socket *so,
 				panic("Error, should hold create lock and I don't?");
 			}
 #endif
-			stcb = sctp_aloc_assoc(inp, addr, &error, 0, 0, vrf_id,
-			                       inp->sctp_ep.pre_open_stream_count,
-			                       inp->sctp_ep.port,
+			stcb = sctp_aloc_assoc_connected(inp, addr, &error, 0, 0, vrf_id,
+			                                 inp->sctp_ep.pre_open_stream_count,
+			                                 inp->sctp_ep.port,
 #if !defined(__Userspace__)
-			                       p,
+			                                 p,
 #else
-			                       (struct proc *)NULL,
+			                                 (struct proc *)NULL,
 #endif
-			                       SCTP_INITIALIZE_AUTH_PARAMS);
+			                                 SCTP_INITIALIZE_AUTH_PARAMS);
 			if (stcb == NULL) {
 				/* Error is setup for us in the call */
 				goto out_unlocked;
-			}
-			if (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) {
-				stcb->sctp_ep->sctp_flags |= SCTP_PCB_FLAGS_CONNECTED;
-				/* Set the connected flag so we can queue data */
-				soisconnecting(so);
 			}
 			hold_tcblock = 1;
 			if (create_lock_applied) {
