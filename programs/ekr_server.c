@@ -52,7 +52,7 @@
 #include "programs_helper.h"
 
 #define PORT 5001
-#define MAX_PACKET_SIZE (1<<16)
+#define MAX_PACKET_SIZE (1<<14)
 #define SLEEP 1
 
 #ifdef _WIN32

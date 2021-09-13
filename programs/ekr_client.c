@@ -50,7 +50,7 @@
 #include <usrsctp.h>
 #include "programs_helper.h"
 
-#define MAX_PACKET_SIZE (1<<16)
+#define MAX_PACKET_SIZE (1<<14)
 #define BUFFER_SIZE 80
 #define DISCARD_PPID 39
 
