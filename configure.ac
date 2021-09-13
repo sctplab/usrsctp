@@ -143,11 +143,11 @@ AC_CHECK_HEADERS(sys/queue.h)
 AC_CHECK_HEADERS(linux/if_addr.h, [], [], [#include <sys/socket.h>])
 AC_CHECK_HEADERS(linux/rtnetlink.h, [], [], [#include <sys/socket.h>])
 AC_CHECK_HEADERS(netinet/ip_icmp.h, [], [], [#include <netinet/ip.h>])
-AC_CHECK_HEADERS(net/route.h. [], [],
-                 [[#ifdef HAVE_SYS_TYPES_H
-                   #include <sys/types.h>
-                   #endif
-                   #include <sys/socket.h>]])
+AC_CHECK_HEADERS(net/route.h, [], [],
+                 [#ifdef HAVE_SYS_TYPES_H
+                  #include <sys/types.h>
+                  #endif
+                  #include <sys/socket.h>])
 
 
 AC_CHECK_MEMBER(struct sockaddr.sa_len,
