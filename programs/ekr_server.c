@@ -52,7 +52,7 @@
 #include "programs_helper.h"
 
 #define PORT 5001
-#define MAX_PACKET_SIZE (1<<14)
+#define MAX_PACKET_SIZE (1<<16)
 #define SLEEP 1
 
 #ifdef _WIN32
@@ -77,7 +77,7 @@ handle_packets(void *arg)
 	fdp = (int *)arg;
 #endif
 	for (;;) {
-#if defined(__NetBSD__) || defined(__linux__)
+#if defined(__NetBSD__)
 		pthread_testcancel();
 #endif
 		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);

@@ -50,7 +50,7 @@
 #include <usrsctp.h>
 #include "programs_helper.h"
 
-#define MAX_PACKET_SIZE (1<<14)
+#define MAX_PACKET_SIZE (1<<16)
 #define BUFFER_SIZE 80
 #define DISCARD_PPID 39
 
@@ -76,7 +76,7 @@ handle_packets(void *arg)
 	fdp = (int *)arg;
 #endif
 	for (;;) {
-#if defined(__NetBSD__) || defined(__linux__)
+#if defined(__NetBSD__)
 		pthread_testcancel();
 #endif
 		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
