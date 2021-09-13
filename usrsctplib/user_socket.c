@@ -3068,7 +3068,7 @@ void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
 	if (use_udp_tunneling) {
 		m_adj(m, sizeof(struct ip6_hdr) + sizeof(struct udphdr));
 	} else {
-	  m_adj(m, sizeof(struct ip6_hdr));
+		m_adj(m, sizeof(struct ip6_hdr));
 	}
 
 	for (iovcnt = 0; m != NULL && iovcnt < MAXLEN_MBUF_CHAIN; m = m->m_next, iovcnt++) {
