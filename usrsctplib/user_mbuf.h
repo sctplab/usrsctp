@@ -125,9 +125,6 @@ void		 m_copydata(const struct mbuf *, int, int, caddr_t);
 #define MBUF_CLUSTER_MEM_NAME "mbuf_cluster"
 #define	MBUF_EXTREFCNT_MEM_NAME	"mbuf_ext_refcnt"
 
-#define	MT_NOINIT	255	/* Not a type but a flag to allocate
-				   a non-initialized mbuf */
-
 /*
  * Mbufs are of a single size, MSIZE (sys/param.h), which includes overhead.
  * An mbuf may add a single "mbuf cluster" of size MCLBYTES (also in
@@ -292,9 +289,6 @@ struct mbuf {
 #define	MT_CONTROL	14	/* extra-data protocol message */
 #define	MT_OOBDATA	15	/* expedited data  */
 #define	MT_NTYPES	16	/* number of mbuf types for mbtypes[] */
-
-#define	MT_NOINIT	255	/* Not a type but a flag to allocate
-				   a non-initialized mbuf */
 
 /*
  * __Userspace__ flags like M_NOWAIT are defined in malloc.h

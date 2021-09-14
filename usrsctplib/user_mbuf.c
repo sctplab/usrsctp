@@ -80,8 +80,6 @@ static void	mb_dtor_clust(void *, void *);
 static int mbuf_constructor_dup(struct mbuf *m, int pkthdr, short type)
 {
 	int flags = pkthdr;
-	if (type == MT_NOINIT)
-		return (0);
 
 	m->m_next = NULL;
 	m->m_nextpkt = NULL;
@@ -576,13 +574,6 @@ mb_ctor_mbuf(void *mem, void *arg, int flgs)
 	args = (struct mb_args *)arg;
 	flags = args->flags;
 	type = args->type;
-
-	/*
-	 * The mbuf is initialized later.
-	 *
-	 */
-	if (type == MT_NOINIT)
-		return (0);
 
 	m->m_next = NULL;
 	m->m_nextpkt = NULL;
