@@ -6193,7 +6193,7 @@ sctp_sorecvmsg(struct socket *so,
 	error = sblock(&so->so_rcv, SBLOCKWAIT(in_flags));
 #endif
 #if defined(__FreeBSD__) && !defined(__Userspace__)
-	error = SOCK_IO_RECV_LOCK(so, (block_allowed ? SBL_WAIT : 0));
+	error = SOCK_IO_RECV_LOCK(so, SBLOCKWAIT(in_flags));
 #endif
 	if (error) {
 		goto release_unlocked;
