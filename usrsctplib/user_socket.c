@@ -1878,7 +1878,7 @@ soconnect(struct socket *so, struct sockaddr *nam)
 	 * Otherwise, if connected, try to disconnect first.  This allows
 	 * user to disconnect by connecting to, e.g., a null address.
 	 */
-	if (so->so_state & (SS_ISCONNECTED|SS_ISCONNECTING) && (error = sodisconnect(so))) {
+	if (so->so_state & (SS_ISCONNECTED|SS_ISCONNECTING) && (sodisconnect(so) != 0)) {
 		error = EISCONN;
 	} else {
 		/*

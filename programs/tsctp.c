@@ -744,9 +744,7 @@ int main(int argc, char **argv)
 			memset(&remote_addr, 0, sizeof(struct sockaddr_in));
 			addr_len = sizeof(struct sockaddr_in);
 			if (use_cb) {
-				struct socket *conn_sock;
-
-				if ((conn_sock = usrsctp_accept(psock, (struct sockaddr *) &remote_addr, &addr_len)) == NULL) {
+				if (usrsctp_accept(psock, (struct sockaddr *) &remote_addr, &addr_len) == NULL) {
 					perror("usrsctp_accept");
 					continue;
 				}

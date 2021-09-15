@@ -2183,7 +2183,6 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 	union sctp_sockstore store;
 	struct sctp_association *asoc;
 	int init_offset, initack_offset, initack_limit;
-	int retval;
 	int error = 0;
 	uint8_t auth_chunk_buf[SCTP_CHUNK_BUFFER_SIZE];
 #if defined(__APPLE__) && !defined(__Userspace__)
@@ -2337,9 +2336,9 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 		return (NULL);
 	}
 	/* load all addresses */
-	if ((retval = sctp_load_addresses_from_init(stcb, m,
-	                                            init_offset + sizeof(struct sctp_init_chunk),
-	                                            initack_offset, src, dst, init_src, port)) < 0) {
+	if (sctp_load_addresses_from_init(stcb, m,
+	                                  init_offset + sizeof(struct sctp_init_chunk),
+	                                  initack_offset, src, dst, init_src, port) < 0) {
 #if defined(__APPLE__) && !defined(__Userspace__)
 		atomic_add_int(&stcb->asoc.refcnt, 1);
 		SCTP_TCB_UNLOCK(stcb);
