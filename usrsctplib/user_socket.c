@@ -2210,7 +2210,7 @@ usrsctp_getsockopt(struct socket *so, int level, int option_name,
 				int *buf_size;
 
 				buf_size = (int *)option_value;
-				*buf_size = so->so_rcv.sb_hiwat;;
+				*buf_size = so->so_rcv.sb_hiwat;
 				*option_len = (socklen_t)sizeof(int);
 				return (0);
 			}
