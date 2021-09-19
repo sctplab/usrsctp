@@ -30,7 +30,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_ss_functions.c 365071 2020-09-01 21:19:14Z mjg $");
+__FBSDID("$FreeBSD$");
 #endif
 
 #include <netinet/sctp_pcb.h>
@@ -814,23 +814,22 @@ sctp_ss_fcfs_init(struct sctp_tcb *stcb, struct sctp_association *asoc,
 
 static void
 sctp_ss_fcfs_clear(struct sctp_tcb *stcb, struct sctp_association *asoc,
-                   int clear_values, int holds_lock)
+                   int clear_values SCTP_UNUSED, int holds_lock)
 {
 	struct sctp_stream_queue_pending *sp;
 
-	if (clear_values) {
-		if (holds_lock == 0) {
-			SCTP_TCB_SEND_LOCK(stcb);
-		}
-		while (!TAILQ_EMPTY(&asoc->ss_data.out.list)) {
-			sp = TAILQ_FIRST(&asoc->ss_data.out.list);
-			TAILQ_REMOVE(&asoc->ss_data.out.list, sp, ss_next);
-			sp->ss_next.tqe_next = NULL;
-			sp->ss_next.tqe_prev = NULL;
-		}
-		if (holds_lock == 0) {
-			SCTP_TCB_SEND_UNLOCK(stcb);
-		}
+	if (holds_lock == 0) {
+		SCTP_TCB_SEND_LOCK(stcb);
+	}
+	while (!TAILQ_EMPTY(&asoc->ss_data.out.list)) {
+		sp = TAILQ_FIRST(&asoc->ss_data.out.list);
+		TAILQ_REMOVE(&asoc->ss_data.out.list, sp, ss_next);
+		sp->ss_next.tqe_next = NULL;
+		sp->ss_next.tqe_prev = NULL;
+	}
+	asoc->ss_data.last_out_stream = NULL;
+	if (holds_lock == 0) {
+		SCTP_TCB_SEND_UNLOCK(stcb);
 	}
 	return;
 }
