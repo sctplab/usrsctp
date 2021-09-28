@@ -7727,6 +7727,7 @@ sctp_can_we_split_this(struct sctp_tcb *stcb, uint32_t length,
 
 static uint32_t
 sctp_move_to_outqueue(struct sctp_tcb *stcb,
+                      struct sctp_nets *net,
                       struct sctp_stream_out *strq,
                       uint32_t space_left,
                       uint32_t frag_point,
@@ -8131,6 +8132,7 @@ re_look:
 		sctp_auth_key_acquire(stcb, chk->auth_keyid);
 		chk->holds_key_ref = 1;
 	}
+	stcb->asoc.ss_functions.sctp_ss_scheduled(stcb, net, asoc, strq, to_move);
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	chk->rec.data.tsn = atomic_fetchadd_int(&asoc->sending_seq, 1);
 #else
@@ -8252,8 +8254,8 @@ out_of:
 }
 
 static void
-sctp_fill_outqueue(struct sctp_tcb *stcb,
-    struct sctp_nets *net, int frag_point, int eeor_mode, int *quit_now, int so_locked)
+sctp_fill_outqueue(struct sctp_tcb *stcb, struct sctp_nets *net, int frag_point,
+                   int eeor_mode, int *quit_now, int so_locked)
 {
 	struct sctp_association *asoc;
 	struct sctp_stream_out *strq;
@@ -8293,9 +8295,9 @@ sctp_fill_outqueue(struct sctp_tcb *stcb,
 	giveup = 0;
 	bail = 0;
 	while ((space_left > 0) && (strq != NULL)) {
-		moved = sctp_move_to_outqueue(stcb, strq, space_left, frag_point,
-		                              &giveup, eeor_mode, &bail, so_locked);
-		stcb->asoc.ss_functions.sctp_ss_scheduled(stcb, net, asoc, strq, moved);
+		moved = sctp_move_to_outqueue(stcb, net, strq, space_left,
+		                              frag_point, &giveup, eeor_mode,
+		                              &bail, so_locked);
 		if ((giveup != 0) || (bail != 0)) {
 			break;
 		}
