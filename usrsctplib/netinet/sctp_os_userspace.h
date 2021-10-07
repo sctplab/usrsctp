@@ -51,6 +51,7 @@
 #include <windows.h>
 #include "user_environment.h"
 typedef CRITICAL_SECTION userland_mutex_t;
+typedef CRITICAL_SECTION userland_rwlock_t;
 #if WINVER < 0x0600
 enum {
 	C_SIGNAL = 0,
@@ -291,6 +292,7 @@ typedef char* caddr_t;
 #include <pthread.h>
 
 typedef pthread_mutex_t userland_mutex_t;
+typedef pthread_rwlock_t userland_rwlock_t;
 typedef pthread_cond_t userland_cond_t;
 typedef pthread_t userland_thread_t;
 #endif

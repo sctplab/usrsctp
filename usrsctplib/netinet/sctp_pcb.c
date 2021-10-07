@@ -6539,6 +6539,7 @@ sctp_pcb_init(void)
 #if defined(SCTP_PROCESS_LEVEL_LOCKS)
 #if !defined(_WIN32)
 	pthread_mutexattr_init(&SCTP_BASE_VAR(mtx_attr));
+	pthread_rwlockattr_init(&SCTP_BASE_VAR(rwlock_attr));
 #ifdef INVARIANTS
 	pthread_mutexattr_settype(&SCTP_BASE_VAR(mtx_attr), PTHREAD_MUTEX_ERRORCHECK);
 #endif
@@ -6809,6 +6810,7 @@ sctp_pcb_finish(void)
 #else
 	pthread_cond_destroy(&sctp_it_ctl.iterator_wakeup);
 	pthread_mutexattr_destroy(&SCTP_BASE_VAR(mtx_attr));
+	pthread_rwlockattr_destroy(&SCTP_BASE_VAR(rwlock_attr));
 #endif
 #endif
 	/* In FreeBSD the iterator thread never exits
