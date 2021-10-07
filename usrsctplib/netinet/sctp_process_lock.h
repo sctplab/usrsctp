@@ -317,7 +317,7 @@
 #define SCTP_INP_INFO_RLOCK() \
 	(void)pthread_rwlock_rdlock(&SCTP_BASE_INFO(ipi_ep_mtx))
 #define SCTP_INP_INFO_WLOCK() \
-	(void)pthread_rwlock_rdlock(&SCTP_BASE_INFO(ipi_ep_mtx))
+	(void)pthread_rwlock_wrlock(&SCTP_BASE_INFO(ipi_ep_mtx))
 #define SCTP_INP_INFO_RUNLOCK() \
 	(void)pthread_rwlock_unlock(&SCTP_BASE_INFO(ipi_ep_mtx))
 #define SCTP_INP_INFO_WUNLOCK() \
