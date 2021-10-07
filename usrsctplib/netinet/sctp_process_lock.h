@@ -350,57 +350,58 @@
 #endif
 
 #define SCTP_INP_LOCK_INIT(_inp) \
-	(void)pthread_rwlock_init(&(_inp)->inp_mtx, &SCTP_BASE_VAR(rwlock_attr))
+	(void)pthread_mutex_init(&(_inp)->inp_mtx, &SCTP_BASE_VAR(mtx_attr))
 #define SCTP_INP_LOCK_DESTROY(_inp) \
-	(void)pthread_rwlock_destroy(&(_inp)->inp_mtx)
+	(void)pthread_mutex_destroy(&(_inp)->inp_mtx)
 #ifdef INVARIANTS
 #ifdef SCTP_LOCK_LOGGING
 #define SCTP_INP_RLOCK(_inp) do {									\
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LOCK_LOGGING_ENABLE)				\
 		sctp_log_lock(_inp, NULL, SCTP_LOG_LOCK_INP);						\
-	KASSERT(pthread_rwlock_rdlock(&(_inp)->inp_mtx) == 0, ("%s: inp_mtx already locked", __func__))	\
+	KASSERT(pthread_mutex_lock(&(_inp)->inp_mtx) == 0, ("%s: inp_mtx already locked", __func__))	\
 } while (0)
 #define SCTP_INP_WLOCK(_inp) do {									\
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LOCK_LOGGING_ENABLE)				\
 		sctp_log_lock(_inp, NULL, SCTP_LOG_LOCK_INP);						\
-	KASSERT(pthread_rwlock_wrlock(&(_inp)->inp_mtx) == 0, ("%s: inp_mtx already locked", __func__))
+	KASSERT(pthread_mutex_lock(&(_inp)->inp_mtx) == 0, ("%s: inp_mtx already locked", __func__))
 } while (0)
 #else
 #define SCTP_INP_RLOCK(_inp) \
-	KASSERT(pthread_rwlock_rdlock(&(_inp)->inp_mtx) == 0, ("%s: inp_mtx already locked", __func__))
+	KASSERT(pthread_mutex_lock(&(_inp)->inp_mtx) == 0, ("%s: inp_mtx already locked", __func__))
 #define SCTP_INP_WLOCK(_inp) \
-	KASSERT(pthread_rwlock_wrlock(&(_inp)->inp_mtx) == 0, ("%s: inp_mtx already locked", __func__))
+	KASSERT(pthread_mutex_lock(&(_inp)->inp_mtx) == 0, ("%s: inp_mtx already locked", __func__))
 #endif
 #define SCTP_INP_RUNLOCK(_inp) \
-	KASSERT(pthread_rwlock_unlock(&(_inp)->inp_mtx) == 0, ("%s: inp_mtx not locked", __func__))
+	KASSERT(pthread_mutex_unlock(&(_inp)->inp_mtx) == 0, ("%s: inp_mtx not locked", __func__))
 #define SCTP_INP_WUNLOCK(_inp) \
-	KASSERT(pthread_rwlock_unlock(&(_inp)->inp_mtx) == 0, ("%s: inp_mtx not locked", __func__))
+	KASSERT(pthread_mutex_unlock(&(_inp)->inp_mtx) == 0, ("%s: inp_mtx not locked", __func__))
 #else
 #ifdef SCTP_LOCK_LOGGING
 #define SCTP_INP_RLOCK(_inp) do {						\
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LOCK_LOGGING_ENABLE)	\
 		sctp_log_lock(_inp, NULL, SCTP_LOG_LOCK_INP);			\
-	(void)pthread_rwlock_rdlock(&(_inp)->inp_mtx);				\
+	(void)pthread_mutex_lock(&(_inp)->inp_mtx);				\
 } while (0)
 #define SCTP_INP_WLOCK(_inp) do {						\
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LOCK_LOGGING_ENABLE)	\
 		sctp_log_lock(_inp, NULL, SCTP_LOG_LOCK_INP);			\
-	(void)pthread_rwlock_wrlock(&(_inp)->inp_mtx);				\
+	(void)pthread_mutex_lock(&(_inp)->inp_mtx);				\
 } while (0)
 #else
 #define SCTP_INP_RLOCK(_inp) \
-	(void)pthread_rwlock_rdlock(&(_inp)->inp_mtx)
+	(void)pthread_mutex_lock(&(_inp)->inp_mtx)
 #define SCTP_INP_WLOCK(_inp) \
-	(void)pthread_rwlock_wrlock(&(_inp)->inp_mtx)
+	(void)pthread_mutex_lock(&(_inp)->inp_mtx)
 #endif
 #define SCTP_INP_RUNLOCK(_inp) \
-	(void)pthread_rwlock_unlock(&(_inp)->inp_mtx)
+	(void)pthread_mutex_unlock(&(_inp)->inp_mtx)
 #define SCTP_INP_WUNLOCK(_inp) \
-	(void)pthread_rwlock_unlock(&(_inp)->inp_mtx)
+	(void)pthread_mutex_unlock(&(_inp)->inp_mtx)
 #endif
-#define SCTP_INP_RLOCK_ASSERT(_inp)
+#define SCTP_INP_RLOCK_ASSERT(_inp) \
+	KASSERT(pthread_mutex_trylock(&(_inp)->inp_mtx) == EBUSY, ("%s: inp_mtx not locked", __func__))
 #define SCTP_INP_WLOCK_ASSERT(_inp) \
-	KASSERT(pthread_rwlock_trywrlock(&(_inp)->inp_mtx) == EBUSY, ("%s: inp_mtx not locked", __func__))
+	KASSERT(pthread_mutex_trylock(&(_inp)->inp_mtx) == EBUSY, ("%s: inp_mtx not locked", __func__))
 #define SCTP_INP_INCR_REF(_inp) atomic_add_int(&((_inp)->refcount), 1)
 #define SCTP_INP_DECR_REF(_inp) atomic_add_int(&((_inp)->refcount), -1)
 

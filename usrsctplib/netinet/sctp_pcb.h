@@ -513,7 +513,7 @@ struct sctp_inpcb {
 	struct mtx inp_rdata_mtx;
 	int32_t refcount;
 #elif defined(SCTP_PROCESS_LEVEL_LOCKS)
-	userland_rwlock_t inp_mtx;
+	userland_mutex_t inp_mtx;
 	userland_mutex_t inp_create_mtx;
 	userland_mutex_t inp_rdata_mtx;
 	int32_t refcount;
