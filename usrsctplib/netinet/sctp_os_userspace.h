@@ -52,6 +52,7 @@
 #include "user_environment.h"
 typedef CRITICAL_SECTION userland_mutex_t;
 #if WINVER < 0x0600
+typedef CRITICAL_SECTION userland_rwlock_t;
 enum {
 	C_SIGNAL = 0,
 	C_BROADCAST = 1,
@@ -72,6 +73,7 @@ void WakeAllXPConditionVariable(userland_cond_t *);
 #define SleepConditionVariableCS(cond, mtx, time) SleepXPConditionVariable(cond, mtx)
 #define WakeAllConditionVariable(cond) WakeAllXPConditionVariable(cond)
 #else
+typedef SRWLOCK userland_rwlock_t;
 #define DeleteConditionVariable(cond)
 typedef CONDITION_VARIABLE userland_cond_t;
 #endif
@@ -291,6 +293,7 @@ typedef char* caddr_t;
 #include <pthread.h>
 
 typedef pthread_mutex_t userland_mutex_t;
+typedef pthread_rwlock_t userland_rwlock_t;
 typedef pthread_cond_t userland_cond_t;
 typedef pthread_t userland_thread_t;
 #endif

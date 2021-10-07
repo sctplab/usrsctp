@@ -210,8 +210,8 @@ struct sctp_epinfo {
 	struct mtx ipi_pktlog_mtx;
 	struct mtx wq_addr_mtx;
 #elif defined(SCTP_PROCESS_LEVEL_LOCKS)
-	userland_mutex_t ipi_ep_mtx;
-	userland_mutex_t ipi_addr_mtx;
+	userland_rwlock_t ipi_ep_mtx;
+	userland_rwlock_t ipi_addr_mtx;
 	userland_mutex_t ipi_count_mtx;
 	userland_mutex_t ipi_pktlog_mtx;
 	userland_mutex_t wq_addr_mtx;
@@ -312,6 +312,7 @@ struct sctp_base_info {
 	int timer_thread_started;
 #if !defined(_WIN32)
 	pthread_mutexattr_t mtx_attr;
+	pthread_rwlockattr_t rwlock_attr;
 #if defined(INET) || defined(INET6)
 	int userspace_route;
 	userland_thread_t recvthreadroute;
@@ -720,7 +721,7 @@ struct sctp_nets *sctp_findnet(struct sctp_tcb *, struct sockaddr *);
 struct sctp_inpcb *sctp_pcb_findep(struct sockaddr *, int, int, uint32_t);
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
-int 
+int
 sctp_inpcb_bind(struct socket *, struct sockaddr *,
                 struct sctp_ifa *, struct thread *);
 int
