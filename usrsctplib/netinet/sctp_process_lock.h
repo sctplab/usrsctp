@@ -637,7 +637,7 @@
 	KASSERT(pthread_rwlock_unlock(&SCTP_BASE_INFO(ipi_addr_mtx)) == 0, ("%s: ipi_addr_mtx not locked", __func__))
 #define SCTP_IPI_ADDR_LOCK_ASSERT()
 #define SCTP_IPI_ADDR_WLOCK_ASSERT() do {								\
-	int _retval = pthread_rwlock_trywrlock(&SCTP_BASE_INFO(ipi_ep_mtx));				\
+	int _retval = pthread_rwlock_trywrlock(&SCTP_BASE_INFO(ipi_addr_mtx));				\
 	KASSERT(_retval == EDEADLK || _retval == EBUSY, ("%s: ipi_ep_mtx not locked", __func__));	\
 } while (0)
 #else
