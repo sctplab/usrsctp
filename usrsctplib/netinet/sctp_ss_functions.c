@@ -153,6 +153,9 @@ sctp_ss_default_remove(struct sctp_tcb *stcb, struct sctp_association *asoc,
 				asoc->ss_data.last_out_stream = NULL;
 			}
 		}
+		if (asoc->ss_data.locked_on_sending == strq) {
+			asoc->ss_data.locked_on_sending = NULL;
+		}
 		TAILQ_REMOVE(&asoc->ss_data.out.wheel, strq, ss_params.ss.rr.next_spoke);
 		strq->ss_params.scheduled = false;
 	}
@@ -470,6 +473,9 @@ sctp_ss_prio_remove(struct sctp_tcb *stcb, struct sctp_association *asoc,
 				asoc->ss_data.last_out_stream = NULL;
 			}
 		}
+		if (asoc->ss_data.locked_on_sending == strq) {
+			asoc->ss_data.locked_on_sending = NULL;
+		}
 		TAILQ_REMOVE(&asoc->ss_data.out.wheel, strq, ss_params.ss.prio.next_spoke);
 		strq->ss_params.scheduled = false;
 	}
@@ -637,6 +643,9 @@ sctp_ss_fb_remove(struct sctp_tcb *stcb, struct sctp_association *asoc,
 			if (asoc->ss_data.last_out_stream == strq) {
 				asoc->ss_data.last_out_stream = NULL;
 			}
+		}
+		if (asoc->ss_data.locked_on_sending == strq) {
+			asoc->ss_data.locked_on_sending = NULL;
 		}
 		TAILQ_REMOVE(&asoc->ss_data.out.wheel, strq, ss_params.ss.fb.next_spoke);
 		strq->ss_params.scheduled = false;
