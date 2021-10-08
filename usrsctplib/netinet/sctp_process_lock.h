@@ -313,8 +313,6 @@
 	KASSERT(pthread_rwlock_unlock(&SCTP_BASE_INFO(ipi_ep_mtx)) == 0, ("%s:%d: ipi_ep_mtx not locked", __FILE__, __LINE__))
 #define SCTP_INP_INFO_WUNLOCK() \
 	KASSERT(pthread_rwlock_unlock(&SCTP_BASE_INFO(ipi_ep_mtx)) == 0, ("%s:%d: ipi_ep_mtx not locked", __FILE__, __LINE__))
-#define SCTP_INP_INFO_WLOCK_ASSERT() \
-	KASSERT(pthread_rwlock_tryrdlock(&SCTP_BASE_INFO(ipi_ep_mtx)) == EDEADLK, ("%s:%d: ipi_ep_mtx not locked", __FILE__, __LINE__))
 #else
 #define SCTP_INP_INFO_RLOCK() \
 	(void)pthread_rwlock_rdlock(&SCTP_BASE_INFO(ipi_ep_mtx))
@@ -324,10 +322,10 @@
 	(void)pthread_rwlock_unlock(&SCTP_BASE_INFO(ipi_ep_mtx))
 #define SCTP_INP_INFO_WUNLOCK() \
 	(void)pthread_rwlock_unlock(&SCTP_BASE_INFO(ipi_ep_mtx))
-#define SCTP_INP_INFO_WLOCK_ASSERT()
 #endif
 #define SCTP_INP_INFO_LOCK_ASSERT()
 #define SCTP_INP_INFO_RLOCK_ASSERT()
+#define SCTP_INP_INFO_WLOCK_ASSERT()
 #define SCTP_INP_INFO_TRYLOCK() \
 	(!(pthread_rwlock_tryrdlock(&SCTP_BASE_INFO(ipi_ep_mtx))))
 
@@ -633,9 +631,6 @@
 	KASSERT(pthread_rwlock_wrlock(&SCTP_BASE_INFO(ipi_addr_mtx)) == 0, ("%s:%d: ipi_addr_mtx already locked", __FILE__, __LINE__))
 #define SCTP_IPI_ADDR_WUNLOCK() \
 	KASSERT(pthread_rwlock_unlock(&SCTP_BASE_INFO(ipi_addr_mtx)) == 0, ("%s:%d: ipi_addr_mtx not locked", __FILE__, __LINE__))
-#define SCTP_IPI_ADDR_LOCK_ASSERT()
-#define SCTP_IPI_ADDR_WLOCK_ASSERT() \
-	KASSERT(pthread_rwlock_tryrdlock(&SCTP_BASE_INFO(ipi_addr_mtx)) == EDEADLK, ("%s:%d: ipi_addr_mtx not locked", __FILE__, __LINE__))
 #else
 #define SCTP_IPI_ADDR_RLOCK() \
 	(void)pthread_rwlock_rdlock(&SCTP_BASE_INFO(ipi_addr_mtx))
@@ -645,9 +640,9 @@
 	(void)pthread_rwlock_wrlock(&SCTP_BASE_INFO(ipi_addr_mtx))
 #define SCTP_IPI_ADDR_WUNLOCK() \
 	(void)pthread_rwlock_unlock(&SCTP_BASE_INFO(ipi_addr_mtx))
+#endif
 #define SCTP_IPI_ADDR_LOCK_ASSERT()
 #define SCTP_IPI_ADDR_WLOCK_ASSERT()
-#endif
 
 /* iterator locks */
 #define SCTP_ITERATOR_LOCK_INIT() \
