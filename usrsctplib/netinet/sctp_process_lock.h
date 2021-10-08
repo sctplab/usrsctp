@@ -326,7 +326,7 @@
 #define SCTP_INP_INFO_LOCK_ASSERT()
 #define SCTP_INP_INFO_RLOCK_ASSERT()
 #define SCTP_INP_INFO_WLOCK_ASSERT() \
-	KASSERT(pthread_rwlock_trywrlock(&SCTP_BASE_INFO(ipi_ep_mtx)) == EBUSY, ("%s: ipi_ep_mtx not locked", __func__))
+	KASSERT(pthread_rwlock_trywrlock(&SCTP_BASE_INFO(ipi_ep_mtx)) == EDEADLK, ("%s: ipi_ep_mtx not locked", __func__))
 #define SCTP_INP_INFO_TRYLOCK() \
 	(!(pthread_rwlock_tryrdlock(&SCTP_BASE_INFO(ipi_ep_mtx))))
 
@@ -634,7 +634,7 @@
 	KASSERT(pthread_rwlock_unlock(&SCTP_BASE_INFO(ipi_addr_mtx)) == 0, ("%s: ipi_addr_mtx not locked", __func__))
 #define SCTP_IPI_ADDR_LOCK_ASSERT()
 #define SCTP_IPI_ADDR_WLOCK_ASSERT() \
-	KASSERT(pthread_rwlock_trywrlock(&SCTP_BASE_INFO(ipi_addr_mtx)) == EBUSY, ("%s: ipi_addr_mtx not locked", __func__))
+	KASSERT(pthread_rwlock_trywrlock(&SCTP_BASE_INFO(ipi_addr_mtx)) == EDEADLK, ("%s: ipi_addr_mtx not locked", __func__))
 #else
 #define SCTP_IPI_ADDR_RLOCK() \
 	(void)pthread_rwlock_rdlock(&SCTP_BASE_INFO(ipi_addr_mtx))
