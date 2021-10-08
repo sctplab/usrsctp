@@ -326,10 +326,10 @@
 	(void)pthread_rwlock_unlock(&SCTP_BASE_INFO(ipi_ep_mtx))
 #define SCTP_INP_INFO_WUNLOCK() \
 	(void)pthread_rwlock_unlock(&SCTP_BASE_INFO(ipi_ep_mtx))
+#define SCTP_INP_INFO_WLOCK_ASSERT()
 #endif
 #define SCTP_INP_INFO_LOCK_ASSERT()
 #define SCTP_INP_INFO_RLOCK_ASSERT()
-#define SCTP_INP_INFO_WLOCK_ASSERT()
 #define SCTP_INP_INFO_TRYLOCK() \
 	(!(pthread_rwlock_tryrdlock(&SCTP_BASE_INFO(ipi_ep_mtx))))
 
