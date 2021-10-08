@@ -313,6 +313,10 @@
 	KASSERT(pthread_rwlock_unlock(&SCTP_BASE_INFO(ipi_ep_mtx)) == 0, ("%s: ipi_ep_mtx not locked", __func__))
 #define SCTP_INP_INFO_WUNLOCK() \
 	KASSERT(pthread_rwlock_unlock(&SCTP_BASE_INFO(ipi_ep_mtx)) == 0, ("%s: ipi_ep_mtx not locked", __func__))
+#define SCTP_INP_INFO_WLOCK_ASSERT() do {								\
+	int _retval = pthread_rwlock_trywrlock(&SCTP_BASE_INFO(ipi_ep_mtx));				\
+	KASSERT(_retval == EDEADLK || _retval == EBUSY, ("%s: ipi_ep_mtx not locked", __func__));	\
+} while (0)
 #else
 #define SCTP_INP_INFO_RLOCK() \
 	(void)pthread_rwlock_rdlock(&SCTP_BASE_INFO(ipi_ep_mtx))
@@ -325,10 +329,7 @@
 #endif
 #define SCTP_INP_INFO_LOCK_ASSERT()
 #define SCTP_INP_INFO_RLOCK_ASSERT()
-#define SCTP_INP_INFO_WLOCK_ASSERT() do {								\
-	int _retval = pthread_rwlock_trywrlock(&SCTP_BASE_INFO(ipi_ep_mtx));				\
-	KASSERT(_retval == EDEADLK || _retval == EBUSY, ("%s: ipi_ep_mtx not locked", __func__));	\
-} while (0)
+#define SCTP_INP_INFO_WLOCK_ASSERT()
 #define SCTP_INP_INFO_TRYLOCK() \
 	(!(pthread_rwlock_tryrdlock(&SCTP_BASE_INFO(ipi_ep_mtx))))
 
