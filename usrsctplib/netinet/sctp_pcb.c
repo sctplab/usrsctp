@@ -5641,7 +5641,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 	 */
 	/* re-increment the lock */
 	if (from_inpcbfree == SCTP_NORMAL_PROC) {
-		atomic_add_int(&stcb->asoc.refcnt, -1);
+		atomic_subtract_int(&stcb->asoc.refcnt, 1);
 	}
 	if (stcb->asoc.refcnt) {
 		SCTP_CLEAR_SUBSTATE(stcb, SCTP_STATE_IN_ACCEPT_QUEUE);
@@ -7068,7 +7068,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 	inp = stcb->sctp_ep;
 	atomic_add_int(&stcb->asoc.refcnt, 1);
 	stcb_tmp = sctp_findassociation_ep_addr(&inp, sa, &net_tmp, dst, stcb);
-	atomic_add_int(&stcb->asoc.refcnt, -1);
+	atomic_subtract_int(&stcb->asoc.refcnt, 1);
 
 	if ((stcb_tmp == NULL && inp == stcb->sctp_ep) || inp == NULL) {
 		/* we must add the source address */
@@ -7161,7 +7161,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 				atomic_add_int(&stcb->asoc.refcnt, 1);
 				stcb_tmp = sctp_findassociation_ep_addr(&inp, sa, &net,
 									dst, stcb);
-				atomic_add_int(&stcb->asoc.refcnt, -1);
+				atomic_subtract_int(&stcb->asoc.refcnt, 1);
 
 				if ((stcb_tmp == NULL && inp == stcb->sctp_ep) ||
 				    inp == NULL) {
@@ -7254,7 +7254,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 				atomic_add_int(&stcb->asoc.refcnt, 1);
 				stcb_tmp = sctp_findassociation_ep_addr(&inp, sa, &net,
 									dst, stcb);
-				atomic_add_int(&stcb->asoc.refcnt, -1);
+				atomic_subtract_int(&stcb->asoc.refcnt, 1);
 				if (stcb_tmp == NULL &&
 				    (inp == stcb->sctp_ep || inp == NULL)) {
 					/*

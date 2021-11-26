@@ -230,7 +230,7 @@
 #define SCTP_TCB_SEND_LOCK_ASSERT(_tcb)
 
 #define SCTP_INP_INCR_REF(_inp) atomic_add_int(&((_inp)->refcount), 1)
-#define SCTP_INP_DECR_REF(_inp) atomic_add_int(&((_inp)->refcount), -1)
+#define SCTP_INP_DECR_REF(_inp) atomic_subtract_int(&((_inp)->refcount), 1)
 
 #define SCTP_ASOC_CREATE_LOCK_INIT(_inp) \
 	InitializeCriticalSection(&(_inp)->inp_create_mtx)
@@ -421,7 +421,7 @@
 #define SCTP_INP_WLOCK_ASSERT(_inp) \
 	KASSERT(pthread_mutex_trylock(&(_inp)->inp_mtx) == EBUSY, ("%s:%d: inp_mtx not locked", __FILE__, __LINE__))
 #define SCTP_INP_INCR_REF(_inp) atomic_add_int(&((_inp)->refcount), 1)
-#define SCTP_INP_DECR_REF(_inp) atomic_add_int(&((_inp)->refcount), -1)
+#define SCTP_INP_DECR_REF(_inp) atomic_subtract_int(&((_inp)->refcount), 1)
 
 #define SCTP_TCB_SEND_LOCK_INIT(_tcb) \
 	(void)pthread_mutex_init(&(_tcb)->tcb_send_mtx, &SCTP_BASE_VAR(mtx_attr))

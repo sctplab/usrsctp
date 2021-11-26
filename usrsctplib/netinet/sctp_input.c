@@ -1651,7 +1651,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 					SCTP_TCB_UNLOCK(stcb);
 					SCTP_SOCKET_LOCK(so, 1);
 					SCTP_TCB_LOCK(stcb);
-					atomic_add_int(&stcb->asoc.refcnt, -1);
+					atomic_subtract_int(&stcb->asoc.refcnt, 1);
 					if (stcb->asoc.state & SCTP_STATE_CLOSED_SOCKET) {
 						SCTP_TCB_UNLOCK(stcb);
 						SCTP_SOCKET_UNLOCK(so, 1);
@@ -1871,7 +1871,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 				SCTP_TCB_UNLOCK(stcb);
 				SCTP_SOCKET_LOCK(so, 1);
 				SCTP_TCB_LOCK(stcb);
-				atomic_add_int(&stcb->asoc.refcnt, -1);
+				atomic_subtract_int(&stcb->asoc.refcnt, 1);
 				if (stcb->asoc.state & SCTP_STATE_CLOSED_SOCKET) {
 					SCTP_TCB_UNLOCK(stcb);
 					SCTP_SOCKET_UNLOCK(so, 1);
@@ -2005,7 +2005,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		SCTP_INP_INFO_WLOCK();
 		SCTP_INP_WLOCK(stcb->sctp_ep);
 		SCTP_TCB_LOCK(stcb);
-		atomic_add_int(&stcb->asoc.refcnt, -1);
+		atomic_subtract_int(&stcb->asoc.refcnt, 1);
 		/* send up all the data */
 		SCTP_TCB_SEND_LOCK(stcb);
 
