@@ -1566,7 +1566,7 @@ select_a_new_ep:
 		SCTP_INP_RUNLOCK(it->inp);
 		goto no_stcb;
 	}
-	while (it->stcb) {
+	while (it->stcb != NULL) {
 		SCTP_TCB_LOCK(it->stcb);
 		if (it->asoc_state && ((it->stcb->asoc.state & it->asoc_state) != it->asoc_state)) {
 			/* not in the right state... keep looking */
@@ -1619,16 +1619,23 @@ select_a_new_ep:
 		KASSERT(it->inp == it->stcb->sctp_ep,
 		        ("%s: stcb %p does not belong to inp %p, but inp %p",
 		         __func__, it->stcb, it->inp, it->stcb->sctp_ep));
+		SCTP_INP_RLOCK_ASSERT(it->inp);
+		SCTP_TCB_LOCK_ASSERT(it->stcb);
 
 		/* run function on this one */
 		(*it->function_assoc)(it->inp, it->stcb, it->pointer, it->val);
+		SCTP_INP_RLOCK_ASSERT(it->inp);
+		SCTP_TCB_LOCK_ASSERT(it->stcb);
 
 		/*
 		 * we lie here, it really needs to have its own type but
 		 * first I must verify that this won't effect things :-0
 		 */
-		if (it->no_chunk_output == 0)
+		if (it->no_chunk_output == 0) {
 			sctp_chunk_output(it->inp, it->stcb, SCTP_OUTPUT_FROM_T3, SCTP_SO_NOT_LOCKED);
+			SCTP_INP_RLOCK_ASSERT(it->inp);
+			SCTP_TCB_LOCK_ASSERT(it->stcb);
+		}
 
 		SCTP_TCB_UNLOCK(it->stcb);
 	next_assoc:
@@ -8475,7 +8482,7 @@ void
 sctp_over_udp_stop(void)
 {
 	/*
-	 * This function assumes sysctl caller holds sctp_sysctl_info_lock() for writting!
+	 * This function assumes sysctl caller holds sctp_sysctl_info_lock() for writing!
 	 */
 #ifdef INET
 	if (SCTP_BASE_INFO(udp4_tun_socket) != NULL) {
@@ -8503,7 +8510,7 @@ sctp_over_udp_start(void)
 	struct sockaddr_in6 sin6;
 #endif
 	/*
-	 * This function assumes sysctl caller holds sctp_sysctl_info_lock() for writting!
+	 * This function assumes sysctl caller holds sctp_sysctl_info_lock() for writing!
 	 */
 	port = SCTP_BASE_SYSCTL(sctp_udp_tunneling_port);
 	if (ntohs(port) == 0) {
