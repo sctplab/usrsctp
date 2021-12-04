@@ -4431,7 +4431,7 @@ int so_locked)
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 		SCTP_PROBE5(send, NULL, stcb, ip, stcb, sctphdr);
 #endif
-		SCTP_IP_OUTPUT(ret, o_pak, ro, stcb, vrf_id);
+		SCTP_IP_OUTPUT(ret, o_pak, ro, inp, vrf_id);
 #if defined(__APPLE__) && !defined(__Userspace__)
 		if ((SCTP_BASE_SYSCTL(sctp_output_unlocked)) && (so_locked)) {
 			atomic_add_int(&stcb->asoc.refcnt, 1);
@@ -4899,9 +4899,9 @@ int so_locked)
 #if defined(__FreeBSD__)
 		SCTP_PROBE5(send, NULL, stcb, ip6h, stcb, sctphdr);
 #endif
-		SCTP_IP6_OUTPUT(ret, o_pak, (struct route_in6 *)ro, &ifp, stcb, vrf_id);
+		SCTP_IP6_OUTPUT(ret, o_pak, (struct route_in6 *)ro, &ifp, inp, vrf_id);
 #else
-		SCTP_IP6_OUTPUT(ret, o_pak, (struct route_in6 *)ro, NULL, stcb, vrf_id);
+		SCTP_IP6_OUTPUT(ret, o_pak, (struct route_in6 *)ro, NULL, inp, vrf_id);
 #endif
 #if defined(__APPLE__) && !defined(__Userspace__)
 		if ((SCTP_BASE_SYSCTL(sctp_output_unlocked)) && (so_locked)) {

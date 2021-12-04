@@ -1041,13 +1041,13 @@ extern void sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
                                      sctp_route_t *ro, void *stcb,
                                      uint32_t vrf_id);
 
-#define SCTP_IP_OUTPUT(result, o_pak, ro, stcb, vrf_id) sctp_userspace_ip_output(&result, o_pak, ro, stcb, vrf_id);
+#define SCTP_IP_OUTPUT(result, o_pak, ro, inp, vrf_id) sctp_userspace_ip_output(&result, o_pak, ro, inp, vrf_id);
 
 #if defined(INET6)
 extern void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
                                       struct route_in6 *ro, void *stcb,
                                       uint32_t vrf_id);
-#define SCTP_IP6_OUTPUT(result, o_pak, ro, ifp, stcb, vrf_id) sctp_userspace_ip6_output(&result, o_pak, ro, stcb, vrf_id);
+#define SCTP_IP6_OUTPUT(result, o_pak, ro, ifp, inp, vrf_id) sctp_userspace_ip6_output(&result, o_pak, ro, inp, vrf_id);
 #endif
 
 

@@ -2852,7 +2852,7 @@ usrsctp_freeladdrs(struct sockaddr *addrs)
 #ifdef INET
 void
 sctp_userspace_ip_output(int *result, struct mbuf *o_pak,
-                         sctp_route_t *ro, void *stcb,
+                         sctp_route_t *ro, void *inp,
                          uint32_t vrf_id)
 {
 	struct mbuf *m;
@@ -2993,7 +2993,7 @@ free_mbuf:
 
 #if defined(INET6)
 void sctp_userspace_ip6_output(int *result, struct mbuf *o_pak,
-                                            struct route_in6 *ro, void *stcb,
+                                            struct route_in6 *ro, void *inp,
                                             uint32_t vrf_id)
 {
 	struct mbuf *m;
