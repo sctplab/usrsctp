@@ -6784,51 +6784,56 @@ sctp_prune_prsctp(struct sctp_tcb *stcb,
 	}			/* if enabled in asoc */
 }
 
-int
-sctp_get_frag_point(struct sctp_tcb *stcb,
-    struct sctp_association *asoc)
+uint32_t
+sctp_get_frag_point(struct sctp_tcb *stcb)
 {
-	int siz, ovh;
+	struct sctp_association *asoc;
+	uint32_t frag_point, overhead;
 
-	/*
-	 * For endpoints that have both v6 and v4 addresses we must reserve
-	 * room for the ipv6 header, for those that are only dealing with V4
-	 * we use a larger frag point.
-	 */
+	asoc = &stcb->asoc;
+	/* Consider IP header and SCTP common header. */
 	if (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_BOUND_V6) {
-		ovh = SCTP_MIN_OVERHEAD;
+		overhead = SCTP_MIN_OVERHEAD;
 	} else {
 #if defined(__Userspace__)
 		if (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_BOUND_CONN) {
-			ovh = sizeof(struct sctphdr);
+			overhead = sizeof(struct sctphdr);
 		} else {
-			ovh = SCTP_MIN_V4_OVERHEAD;
+			overhead = SCTP_MIN_V4_OVERHEAD;
 		}
 #else
-		ovh = SCTP_MIN_V4_OVERHEAD;
+		overhead = SCTP_MIN_V4_OVERHEAD;
 #endif
 	}
-	ovh += SCTP_DATA_CHUNK_OVERHEAD(stcb);
-	if (stcb->asoc.sctp_frag_point > asoc->smallest_mtu)
-		siz = asoc->smallest_mtu - ovh;
-	else
-		siz = (stcb->asoc.sctp_frag_point - ovh);
-	/*
-	 * if (siz > (MCLBYTES-sizeof(struct sctp_data_chunk))) {
-	 */
-	/* A data chunk MUST fit in a cluster */
-	/* siz = (MCLBYTES - sizeof(struct sctp_data_chunk)); */
-	/* } */
-
-	/* adjust for an AUTH chunk if DATA requires auth */
-	if (sctp_auth_is_required_chunk(SCTP_DATA, stcb->asoc.peer_auth_chunks))
-		siz -= sctp_get_auth_chunk_len(stcb->asoc.peer_hmac_id);
-
-	if (siz % 4) {
-		/* make it an even word boundary please */
-		siz -= (siz % 4);
+	/* Consider DATA/IDATA chunk header and AUTH header, if needed. */
+	if (asoc->idata_supported) {
+		overhead += sizeof(struct sctp_idata_chunk);
+		if (sctp_auth_is_required_chunk(SCTP_IDATA, asoc->peer_auth_chunks)) {
+			overhead += sctp_get_auth_chunk_len(asoc->peer_hmac_id);
+		}
+	} else {
+		overhead += sizeof(struct sctp_idata_chunk);
+		if (sctp_auth_is_required_chunk(SCTP_DATA, asoc->peer_auth_chunks)) {
+			overhead += sctp_get_auth_chunk_len(asoc->peer_hmac_id);
+		}
 	}
-	return (siz);
+	/* Consider padding. */
+	if (asoc->smallest_mtu % 4) {
+		overhead += (asoc->smallest_mtu % 4);
+	}
+	KASSERT(overhead % 4 == 0,
+	        ("overhead (%u) not a multiple of 4", overhead));
+	KASSERT(asoc->smallest_mtu > overhead,
+	        ("Association MTU (%u) too small for overhead (%u)",
+	         asoc->smallest_mtu, overhead));
+
+	frag_point = asoc->smallest_mtu - overhead;
+	/* Honor MAXSEG socket option. */
+	if ((asoc->sctp_frag_point > 0) &&
+	    (asoc->sctp_frag_point < frag_point)) {
+		frag_point = asoc->sctp_frag_point;
+	}
+	return (frag_point);
 }
 
 static void
@@ -7143,7 +7148,8 @@ sctp_med_chunk_output(struct sctp_inpcb *inp,
 		      int *num_out,
 		      int *reason_code,
 		      int control_only, int from_where,
-		      struct timeval *now, int *now_filled, int frag_point, int so_locked);
+		      struct timeval *now, int *now_filled,
+		      uint32_t frag_point, int so_locked);
 
 static void
 sctp_sendall_iterator(struct sctp_inpcb *inp, struct sctp_tcb *stcb, void *ptr,
@@ -7305,13 +7311,13 @@ sctp_sendall_iterator(struct sctp_inpcb *inp, struct sctp_tcb *stcb, void *ptr,
 	if (do_chunk_output)
 		sctp_chunk_output(inp, stcb, SCTP_OUTPUT_FROM_USR_SEND, SCTP_SO_NOT_LOCKED);
 	else if (added_control) {
-		int num_out, reason, now_filled = 0;
 		struct timeval now;
-		int frag_point;
+		int num_out, reason, now_filled = 0;
 
-		frag_point = sctp_get_frag_point(stcb, &stcb->asoc);
 		(void)sctp_med_chunk_output(inp, stcb, &stcb->asoc, &num_out,
-				      &reason, 1, 1, &now, &now_filled, frag_point, SCTP_SO_NOT_LOCKED);
+		                            &reason, 1, 1, &now, &now_filled,
+		                            sctp_get_frag_point(stcb),
+		                            SCTP_SO_NOT_LOCKED);
 	}
  no_chunk_output:
 	if (ret) {
@@ -8254,8 +8260,9 @@ out_of:
 }
 
 static void
-sctp_fill_outqueue(struct sctp_tcb *stcb, struct sctp_nets *net, int frag_point,
-                   int eeor_mode, int *quit_now, int so_locked)
+sctp_fill_outqueue(struct sctp_tcb *stcb, struct sctp_nets *net,
+                   uint32_t frag_point, int eeor_mode, int *quit_now,
+                   int so_locked)
 {
 	struct sctp_association *asoc;
 	struct sctp_stream_out *strq;
@@ -8374,12 +8381,13 @@ sctp_move_chunks_from_net(struct sctp_tcb *stcb, struct sctp_nets *net)
 
 int
 sctp_med_chunk_output(struct sctp_inpcb *inp,
-		      struct sctp_tcb *stcb,
-		      struct sctp_association *asoc,
-		      int *num_out,
-		      int *reason_code,
-		      int control_only, int from_where,
-		      struct timeval *now, int *now_filled, int frag_point, int so_locked)
+                      struct sctp_tcb *stcb,
+                      struct sctp_association *asoc,
+                      int *num_out,
+                      int *reason_code,
+                      int control_only, int from_where,
+                      struct timeval *now, int *now_filled,
+                      uint32_t frag_point, int so_locked)
 {
 	/**
 	 * Ok this is the generic chunk service queue. we must do the
@@ -10576,7 +10584,7 @@ sctp_chunk_output(struct sctp_inpcb *inp,
 	struct timeval now;
 	int now_filled = 0;
 	int nagle_on;
-	int frag_point = sctp_get_frag_point(stcb, &stcb->asoc);
+	uint32_t frag_point = sctp_get_frag_point(stcb);
 	int un_sent = 0;
 	int fr_done;
 	unsigned int tot_frs = 0;
@@ -10632,8 +10640,8 @@ do_it_again:
 			 * and then the next call with get the retran's.
 			 */
 			(void)sctp_med_chunk_output(inp, stcb, asoc, &num_out, &reason_code, 1,
-						    from_where,
-						    &now, &now_filled, frag_point, so_locked);
+			                            from_where,
+			                            &now, &now_filled, frag_point, so_locked);
 			return;
 		} else if (from_where != SCTP_OUTPUT_FROM_HB_TMR) {
 			/* if its not from a HB then do it */
@@ -10657,8 +10665,8 @@ do_it_again:
 			 * if queued too.
 			 */
 			(void)sctp_med_chunk_output(inp, stcb, asoc, &num_out, &reason_code, 1,
-						    from_where,
-						    &now, &now_filled, frag_point, so_locked);
+			                            from_where,
+			                            &now, &now_filled, frag_point, so_locked);
 #ifdef SCTP_AUDITING_ENABLED
 			sctp_auditing(8, inp, stcb, NULL);
 #endif
@@ -10685,7 +10693,7 @@ do_it_again:
 #endif
 			/* Push out any control */
 			(void)sctp_med_chunk_output(inp, stcb, asoc, &num_out, &reason_code, 1, from_where,
-						    &now, &now_filled, frag_point, so_locked);
+			                            &now, &now_filled, frag_point, so_locked);
 			return;
 		}
 		if ((asoc->fr_max_burst > 0) && (tot_frs >= asoc->fr_max_burst)) {
@@ -10741,8 +10749,8 @@ do_it_again:
 	burst_cnt = 0;
 	do {
 		error = sctp_med_chunk_output(inp, stcb, asoc, &num_out,
-					      &reason_code, 0, from_where,
-					      &now, &now_filled, frag_point, so_locked);
+		                              &reason_code, 0, from_where,
+		                              &now, &now_filled, frag_point, so_locked);
 		if (error) {
 			SCTPDBG(SCTP_DEBUG_OUTPUT1, "Error %d was returned from med-c-op\n", error);
 			if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LOG_MAXBURST_ENABLE) {
@@ -14789,16 +14797,17 @@ skip_out_eof:
 		}
 		sctp_chunk_output(inp, stcb, SCTP_OUTPUT_FROM_USR_SEND, SCTP_SO_LOCKED);
 	} else if (some_on_control) {
-		int num_out, reason, frag_point;
+		int num_out, reason;
 
 		/* Here we do control only */
 		if (hold_tcblock == 0) {
 			hold_tcblock = 1;
 			SCTP_TCB_LOCK(stcb);
 		}
-		frag_point = sctp_get_frag_point(stcb, &stcb->asoc);
 		(void)sctp_med_chunk_output(inp, stcb, &stcb->asoc, &num_out,
-		                            &reason, 1, 1, &now, &now_filled, frag_point, SCTP_SO_LOCKED);
+		                            &reason, 1, 1, &now, &now_filled,
+		                            sctp_get_frag_point(stcb),
+		                            SCTP_SO_LOCKED);
 	}
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	NET_EPOCH_EXIT(et);

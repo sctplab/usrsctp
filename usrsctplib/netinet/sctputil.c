@@ -1290,7 +1290,7 @@ sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	asoc->my_rwnd = max(SCTP_SB_LIMIT_RCV(inp->sctp_socket), SCTP_MINIMAL_RWND);
 	asoc->peers_rwnd = SCTP_SB_LIMIT_RCV(inp->sctp_socket);
 
-	asoc->smallest_mtu = inp->sctp_frag_point;
+	asoc->smallest_mtu = 0;
 	asoc->minrto = inp->sctp_ep.sctp_minrto;
 	asoc->maxrto = inp->sctp_ep.sctp_maxrto;
 
@@ -3003,13 +3003,12 @@ sctp_timer_stop(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 uint32_t
 sctp_calculate_len(struct mbuf *m)
 {
-	uint32_t tlen = 0;
 	struct mbuf *at;
+	uint32_t tlen;
 
-	at = m;
-	while (at) {
+	tlen = 0;
+	for (at = m; at != NULL; at = SCTP_BUF_NEXT(at)) {
 		tlen += SCTP_BUF_LEN(at);
-		at = SCTP_BUF_NEXT(at);
 	}
 	return (tlen);
 }
