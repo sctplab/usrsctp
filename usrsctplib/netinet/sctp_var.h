@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_var.h 365071 2020-09-01 21:19:14Z mjg $");
+__FBSDID("$FreeBSD$");
 #endif
 
 #ifndef _NETINET_SCTP_VAR_H_
@@ -384,10 +384,10 @@ int sctp_input(struct mbuf **, int *, int);
 void sctp_input(struct mbuf *, int);
 #endif
 #endif
-void sctp_pathmtu_adjustment(struct sctp_tcb *, uint16_t);
+void sctp_pathmtu_adjustment(struct sctp_tcb *, uint32_t, bool);
 #else
 #if defined(__Userspace__)
-void sctp_pathmtu_adjustment(struct sctp_tcb *, uint16_t);
+void sctp_pathmtu_adjustment(struct sctp_tcb *, uint32_t, bool);
 #else
 void sctp_input(struct mbuf *,...);
 #endif
