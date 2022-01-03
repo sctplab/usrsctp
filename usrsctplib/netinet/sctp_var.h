@@ -402,7 +402,9 @@ void sctp_init(uint16_t,
 #elif defined(__APPLE__) && (!defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) &&!defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION))
 void sctp_init(struct protosw *pp, struct domain *dp);
 #else
+#if !defined(__FreeBSD__)
 void sctp_init(void);
+#endif
 void sctp_notify(struct sctp_inpcb *, struct sctp_tcb *, struct sctp_nets *,
     uint8_t, uint8_t, uint16_t, uint32_t);
 #endif

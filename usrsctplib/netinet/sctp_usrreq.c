@@ -71,14 +71,19 @@ __FBSDID("$FreeBSD$");
 extern const struct sctp_cc_functions sctp_cc_functions[];
 extern const struct sctp_ss_functions sctp_ss_functions[];
 
-void
 #if defined(__Userspace__)
+void
 sctp_init(uint16_t port,
           int (*conn_output)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df),
           void (*debug_printf)(const char *format, ...), int start_threads)
 #elif defined(__APPLE__) && (!defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) &&!defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION))
+void
 sctp_init(struct protosw *pp SCTP_UNUSED, struct domain *dp SCTP_UNUSED)
+#elif defined(__FreeBSD__)
+static void
+sctp_init(void *arg SCTP_UNUSED)
 #else
+void
 sctp_init(void)
 #endif
 {
@@ -160,8 +165,9 @@ sctp_init(void)
 	    sctp_addr_change_event_handler, NULL, EVENTHANDLER_PRI_FIRST);
 #endif
 }
-
 #if defined(__FreeBSD__) && !defined(__Userspace__)
+VNET_SYSINIT(sctp_init, SI_SUB_PROTO_DOMAIN, SI_ORDER_THIRD, sctp_init, NULL);
+
 #ifdef VIMAGE
 static void
 sctp_finish(void *unused __unused)
