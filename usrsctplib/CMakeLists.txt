@@ -95,6 +95,8 @@ if (sctp_build_shared_lib)
 	set(BUILD_SHARED_LIBS 1)
 endif ()
 
+find_package(Threads)
+
 #################################################
 # LIBRARY FILES
 #################################################
@@ -187,6 +189,8 @@ target_include_directories(usrsctp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 if(SCTP_USE_MBEDTLS_SHA1)
 	target_include_directories(usrsctp PRIVATE ${MBEDTLS_INCLUDE_DIRS})
 endif()
+
+target_link_libraries(usrsctp ${CMAKE_THREAD_LIBS_INIT})
 
 if (WIN32)
 	message(STATUS "link library: ws2_32")
