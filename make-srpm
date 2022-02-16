@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Packaging Scripts
-# Copyright (C) 2017-2020 by Thomas Dreibholz
+# Copyright (C) 2017-2022 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -104,10 +104,10 @@ find ${HOME}/rpmbuild/RPMS  -name "${PACKAGE}*.rpm" | xargs --no-run-if-empty rm
 cp ${UPSTREAM_PACKAGE} ${HOME}/rpmbuild/SOURCES/
 # Patches
 if [ -e original ] ; then
-   find original -name "*" -type f | grep -v "~$" | grep -v ".spec$" | xargs -n1 -i§ cp "§" ${HOME}/rpmbuild/SOURCES/
+   find original -name "*" -type f | grep -v "~$" | grep -v ".spec$" | xargs -i§ -n1 cp "§" ${HOME}/rpmbuild/SOURCES/
 fi
 # Further patches
-find rpm -name "*" -type f | grep -v "~$" | grep -v ".spec$" | xargs -n1 -i§ cp "§" ${HOME}/rpmbuild/SOURCES/
+find rpm -name "*" -type f | grep -v "~$" | grep -v ".spec$" | xargs -i§ -n1 cp "§" ${HOME}/rpmbuild/SOURCES/
 # The .spec file
 cp rpm/${PACKAGE}.spec ${HOME}/rpmbuild/SPECS/
 

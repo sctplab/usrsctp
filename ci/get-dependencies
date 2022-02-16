@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # Travis CI Scripts
-# Copyright (C) 2018-2020 by Thomas Dreibholz
+# Copyright (C) 2018-2022 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -105,7 +105,7 @@ if ((system == 'debian') or  (system == 'ubuntu')):
       sys.stdout.write('\n')
 
       if runInstall == True:
-         subprocess.call([ 'apt-get', 'install', '-y' ] + dependencies)
+         subprocess.call([ 'apt-get', 'install', '-qy' ] + dependencies)
 
    else:
       sys.stderr.write('ERROR: Unable to locate Debian control file!\n')

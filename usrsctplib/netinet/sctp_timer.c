@@ -32,16 +32,16 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 359405 2020-03-28 20:25:45Z tuexen $");
+__FBSDID("$FreeBSD$");
 #endif
 
 #define _IP_VHL
 #include <netinet/sctp_os.h>
 #include <netinet/sctp_pcb.h>
 #ifdef INET6
-#if defined(__Userspace_os_FreeBSD)
+#if defined(__FreeBSD__) && defined(__Userspace__)
 #include <netinet6/sctp6_var.h>
 #endif
 #endif
@@ -57,13 +57,9 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 359405 2020-03-28 20:25:45Z tu
 #include <netinet/sctp.h>
 #include <netinet/sctp_uio.h>
 #if defined(INET) || defined(INET6)
-#if !defined(__Userspace_os_Windows)
+#if !(defined(_WIN32) && defined(__Userspace__))
 #include <netinet/udp.h>
 #endif
-#endif
-
-#if defined(__APPLE__)
-#define APPLE_FILE_NO 6
 #endif
 
 void
@@ -168,15 +164,15 @@ sctp_threshold_management(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
 		                             "Association error counter exceeded");
 		inp->last_abort_code = SCTP_FROM_SCTP_TIMER + SCTP_LOC_2;
-		sctp_abort_an_association(inp, stcb, op_err, SCTP_SO_NOT_LOCKED);
+		sctp_abort_an_association(inp, stcb, op_err, true, SCTP_SO_NOT_LOCKED);
 		return (1);
 	}
 	return (0);
 }
 
 /*
- * sctp_find_alternate_net() returns a non-NULL pointer as long
- * the argument net is non-NULL.
+ * sctp_find_alternate_net() returns a non-NULL pointer as long as there
+ * exists nets, which are not being deleted.
  */
 struct sctp_nets *
 sctp_find_alternate_net(struct sctp_tcb *stcb,
@@ -185,13 +181,13 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 {
 	/* Find and return an alternate network if possible */
 	struct sctp_nets *alt, *mnet, *min_errors_net = NULL , *max_cwnd_net = NULL;
-	int once;
+	bool looped;
 	/* JRS 5/14/07 - Initialize min_errors to an impossible value. */
 	int min_errors = -1;
 	uint32_t max_cwnd = 0;
 
 	if (stcb->asoc.numnets == 1) {
-		/* No others but net */
+		/* No selection can be made. */
 		return (TAILQ_FIRST(&stcb->asoc.nets));
 	}
 	/*
@@ -327,28 +323,29 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 			return (max_cwnd_net);
 		}
 	}
-	mnet = net;
-	once = 0;
-
-	if (mnet == NULL) {
-		mnet = TAILQ_FIRST(&stcb->asoc.nets);
-		if (mnet == NULL) {
-			return (NULL);
-		}
+	/* Look for an alternate net, which is active. */
+	if ((net != NULL) && ((net->dest_state & SCTP_ADDR_BEING_DELETED) == 0)) {
+		alt = TAILQ_NEXT(net, sctp_next);
+	} else {
+		alt = TAILQ_FIRST(&stcb->asoc.nets);
 	}
+	looped = false;
 	for (;;) {
-		alt = TAILQ_NEXT(mnet, sctp_next);
 		if (alt == NULL) {
-			once++;
-			if (once > 1) {
+			if (!looped) {
+				alt = TAILQ_FIRST(&stcb->asoc.nets);
+				looped = true;
+			}
+			/* Definitely out of candidates. */
+			if (alt == NULL) {
 				break;
 			}
-			alt = TAILQ_FIRST(&stcb->asoc.nets);
-			if (alt == NULL) {
-				return (NULL);
-			}
 		}
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+		if (alt->ro.ro_nh == NULL) {
+#else
 		if (alt->ro.ro_rt == NULL) {
+#endif
 			if (alt->ro._s_addr) {
 				sctp_free_ifa(alt->ro._s_addr);
 				alt->ro._s_addr = NULL;
@@ -356,44 +353,61 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 			alt->src_addr_selected = 0;
 		}
 		if (((alt->dest_state & SCTP_ADDR_REACHABLE) == SCTP_ADDR_REACHABLE) &&
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+		    (alt->ro.ro_nh != NULL) &&
+#else
 		    (alt->ro.ro_rt != NULL) &&
-		    (!(alt->dest_state & SCTP_ADDR_UNCONFIRMED))) {
-			/* Found a reachable address */
+#endif
+		    (!(alt->dest_state & SCTP_ADDR_UNCONFIRMED)) &&
+		    (alt != net)) {
+			/* Found an alternate net, which is reachable. */
 			break;
 		}
-		mnet = alt;
+		alt = TAILQ_NEXT(alt, sctp_next);
 	}
 
 	if (alt == NULL) {
-		/* Case where NO insv network exists (dormant state) */
-		/* we rotate destinations */
-		once = 0;
-		mnet = net;
+		/*
+		 * In case no active alternate net has been found, look for
+		 * an alternate net, which is confirmed.
+		 */
+		if ((net != NULL) && ((net->dest_state & SCTP_ADDR_BEING_DELETED) == 0)) {
+			alt = TAILQ_NEXT(net, sctp_next);
+		} else {
+			alt = TAILQ_FIRST(&stcb->asoc.nets);
+		}
+		looped = false;
 		for (;;) {
-			if (mnet == NULL) {
-				return (TAILQ_FIRST(&stcb->asoc.nets));
-			}
-			alt = TAILQ_NEXT(mnet, sctp_next);
 			if (alt == NULL) {
-				once++;
-				if (once > 1) {
-					break;
+				if (!looped) {
+					alt = TAILQ_FIRST(&stcb->asoc.nets);
+					looped = true;
 				}
-				alt = TAILQ_FIRST(&stcb->asoc.nets);
+				/* Definitely out of candidates. */
 				if (alt == NULL) {
 					break;
 				}
 			}
 			if ((!(alt->dest_state & SCTP_ADDR_UNCONFIRMED)) &&
 			    (alt != net)) {
-				/* Found an alternate address */
+				/* Found an alternate net, which is confirmed. */
 				break;
 			}
-			mnet = alt;
+			alt = TAILQ_NEXT(alt, sctp_next);
 		}
 	}
 	if (alt == NULL) {
-		return (net);
+		/*
+		 * In case no confirmed alternate net has been found, just
+		 * return net, if it is not being deleted. In the other case
+		 * just return the first net.
+		 */
+		if ((net != NULL) && ((net->dest_state & SCTP_ADDR_BEING_DELETED) == 0)) {
+			alt = net;
+		}
+		if (alt == NULL) {
+			alt = TAILQ_FIRST(&stcb->asoc.nets);
+		}
 	}
 	return (alt);
 }
@@ -495,7 +509,6 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 	uint32_t tsnlast, tsnfirst;
 	int recovery_cnt = 0;
 
-
 	/* none in flight now */
 	audit_tf = 0;
 	fir = 0;
@@ -517,7 +530,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 	}
 	tv.tv_sec = cur_rto / 1000000;
 	tv.tv_usec = cur_rto % 1000000;
-#ifndef __FreeBSD__
+#if !(defined(__FreeBSD__) && !defined(__Userspace__))
 	timersub(&now, &tv, &min_wait);
 #else
 	min_wait = now;
@@ -533,8 +546,8 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 		min_wait.tv_sec = min_wait.tv_usec = 0;
 	}
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_FR_LOGGING_ENABLE) {
-		sctp_log_fr(cur_rto, now.tv_sec, now.tv_usec, SCTP_FR_T3_MARK_TIME);
-		sctp_log_fr(0, min_wait.tv_sec, min_wait.tv_usec, SCTP_FR_T3_MARK_TIME);
+		sctp_log_fr(cur_rto, (uint32_t)now.tv_sec, now.tv_usec, SCTP_FR_T3_MARK_TIME);
+		sctp_log_fr(0, (uint32_t)min_wait.tv_sec, min_wait.tv_usec, SCTP_FR_T3_MARK_TIME);
 	}
 	/*
 	 * Our rwnd will be incorrect here since we are not adding back the
@@ -581,7 +594,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 			/* validate its been outstanding long enough */
 			if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_FR_LOGGING_ENABLE) {
 				sctp_log_fr(chk->rec.data.tsn,
-					    chk->sent_rcv_time.tv_sec,
+					    (uint32_t)chk->sent_rcv_time.tv_sec,
 					    chk->sent_rcv_time.tv_usec,
 					    SCTP_FR_T3_MARK_TIME);
 			}
@@ -593,7 +606,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 				 */
 				if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_FR_LOGGING_ENABLE) {
 					sctp_log_fr(0,
-						    chk->sent_rcv_time.tv_sec,
+						    (uint32_t)chk->sent_rcv_time.tv_sec,
 						    chk->sent_rcv_time.tv_usec,
 						    SCTP_FR_T3_STOPPED);
 				}
@@ -614,7 +627,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 			}
 			if (stcb->asoc.prsctp_supported && PR_SCTP_TTL_ENABLED(chk->flags)) {
 				/* Is it expired? */
-#ifndef __FreeBSD__
+#if !(defined(__FreeBSD__) && !defined(__Userspace__))
 				if (timercmp(&now, &chk->rec.data.timetodrop, >)) {
 #else
 				if (timevalcmp(&now, &chk->rec.data.timetodrop, >)) {
@@ -806,7 +819,6 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 	return (0);
 }
 
-
 int
 sctp_t3rxt_timer(struct sctp_inpcb *inp,
     struct sctp_tcb *stcb,
@@ -848,11 +860,11 @@ sctp_t3rxt_timer(struct sctp_inpcb *inp,
 			if (net != stcb->asoc.primary_destination) {
 				/* send a immediate HB if our RTO is stale */
 				struct timeval now;
-				unsigned int ms_goneby;
+				uint32_t ms_goneby;
 
 				(void)SCTP_GETTIME_TIMEVAL(&now);
 				if (net->last_sent_time.tv_sec) {
-					ms_goneby = (now.tv_sec - net->last_sent_time.tv_sec) * 1000;
+					ms_goneby = (uint32_t)(now.tv_sec - net->last_sent_time.tv_sec) * 1000;
 				} else {
 					ms_goneby = 0;
 				}
@@ -942,10 +954,14 @@ sctp_t3rxt_timer(struct sctp_inpcb *inp,
 		net->src_addr_selected = 0;
 
 		/* Force a route allocation too */
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+		RO_NHFREE(&net->ro);
+#else
 		if (net->ro.ro_rt) {
 			RTFREE(net->ro.ro_rt);
 			net->ro.ro_rt = NULL;
 		}
+#endif
 
 		/* Was it our primary? */
 		if ((stcb->asoc.primary_destination == net) && (alt != net)) {
@@ -982,7 +998,12 @@ sctp_t3rxt_timer(struct sctp_inpcb *inp,
 		/* C3. See if we need to send a Fwd-TSN */
 		if (SCTP_TSN_GT(stcb->asoc.advanced_peer_ack_point, stcb->asoc.last_acked_seq)) {
 			send_forward_tsn(stcb, &stcb->asoc);
-			if (lchk) {
+			for (; lchk != NULL; lchk = TAILQ_NEXT(lchk, sctp_next)) {
+				if (lchk->whoTo != NULL) {
+					break;
+				}
+			}
+			if (lchk != NULL) {
 				/* Assure a timer is up */
 				sctp_timer_start(SCTP_TIMER_TYPE_SEND, stcb->sctp_ep, stcb, lchk->whoTo);
 			}
@@ -1064,7 +1085,7 @@ sctp_cookie_timer(struct sctp_inpcb *inp,
 			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
 			                             "Cookie timer expired, but no cookie");
 			inp->last_abort_code = SCTP_FROM_SCTP_TIMER + SCTP_LOC_3;
-			sctp_abort_an_association(inp, stcb, op_err, SCTP_SO_NOT_LOCKED);
+			sctp_abort_an_association(inp, stcb, op_err, false, SCTP_SO_NOT_LOCKED);
 		} else {
 #ifdef INVARIANTS
 			panic("Cookie timer expires in wrong state?");
@@ -1336,17 +1357,18 @@ sctp_shutdownack_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 }
 
 static void
-sctp_audit_stream_queues_for_size(struct sctp_inpcb *inp,
-    struct sctp_tcb *stcb)
+sctp_audit_stream_queues_for_size(struct sctp_inpcb *inp, struct sctp_tcb *stcb)
 {
 	struct sctp_stream_queue_pending *sp;
 	unsigned int i, chks_in_queue = 0;
 	int being_filled = 0;
-	/*
-	 * This function is ONLY called when the send/sent queues are empty.
-	 */
-	if ((stcb == NULL) || (inp == NULL))
-		return;
+
+	KASSERT(inp != NULL, ("inp is NULL"));
+	KASSERT(stcb != NULL, ("stcb is NULL"));
+
+	SCTP_TCB_SEND_LOCK(stcb);
+	KASSERT(TAILQ_EMPTY(&stcb->asoc.send_queue), ("send_queue not empty"));
+	KASSERT(TAILQ_EMPTY(&stcb->asoc.sent_queue), ("sent_queue not empty"));
 
 	if (stcb->asoc.sent_queue_retran_cnt) {
 		SCTP_PRINTF("Hmm, sent_queue_retran_cnt is non-zero %d\n",
@@ -1355,7 +1377,7 @@ sctp_audit_stream_queues_for_size(struct sctp_inpcb *inp,
 	}
 	if (stcb->asoc.ss_functions.sctp_ss_is_empty(stcb, &stcb->asoc)) {
 		/* No stream scheduler information, initialize scheduler */
-		stcb->asoc.ss_functions.sctp_ss_init(stcb, &stcb->asoc, 0);
+		stcb->asoc.ss_functions.sctp_ss_init(stcb, &stcb->asoc);
 		if (!stcb->asoc.ss_functions.sctp_ss_is_empty(stcb, &stcb->asoc)) {
 			/* yep, we lost a stream or two */
 			SCTP_PRINTF("Found additional streams NOT managed by scheduler, corrected\n");
@@ -1378,6 +1400,7 @@ sctp_audit_stream_queues_for_size(struct sctp_inpcb *inp,
 		SCTP_PRINTF("Hmm, stream queue cnt at %d I counted %d in stream out wheel\n",
 			    stcb->asoc.stream_queue_cnt, chks_in_queue);
 	}
+	SCTP_TCB_SEND_UNLOCK(stcb);
 	if (chks_in_queue) {
 		/* call the output queue function */
 		sctp_chunk_output(inp, stcb, SCTP_OUTPUT_FROM_T3, SCTP_SO_NOT_LOCKED);
@@ -1442,7 +1465,7 @@ sctp_heartbeat_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 
 		if ((net->last_sent_time.tv_sec > 0) ||
 		    (net->last_sent_time.tv_usec > 0)) {
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 			struct timeval diff;
 
 			SCTP_GETTIME_TIMEVAL(&diff);
@@ -1488,7 +1511,7 @@ sctp_pathmtu_timer(struct sctp_inpcb *inp,
 				if (net->ro._l_addr.sa.sa_family == AF_INET6) {
 					struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&net->ro._l_addr;
 					/* KAME hack: embed scopeid */
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(__Userspace__)
 #if defined(APPLE_LEOPARD) || defined(APPLE_SNOWLEOPARD)
 					(void)in6_embedscope(&sin6->sin6_addr, sin6, NULL, NULL);
 #else
@@ -1521,7 +1544,11 @@ sctp_pathmtu_timer(struct sctp_inpcb *inp,
 				net->src_addr_selected = 1;
 		}
 		if (net->ro._s_addr) {
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+			mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._s_addr.sa, net->ro.ro_nh);
+#else
 			mtu = SCTP_GATHER_MTU_FROM_ROUTE(net->ro._s_addr, &net->ro._s_addr.sa, net->ro.ro_rt);
+#endif
 #if defined(INET) || defined(INET6)
 			if (net->port) {
 				mtu -= sizeof(struct udphdr);

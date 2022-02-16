@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2019 Felix Weinrank
+ * Copyright (C) 2017-2020 Felix Weinrank
  *
  * All rights reserved.
  *
@@ -37,12 +37,7 @@
 #define FUZZ_FAST 1
 
 #ifdef FUZZ_VERBOSE
-#define fuzzer_printf(...)                       \
-	do {                                        \
-		fprintf(stderr, "[P]");                 \
-		debug_printf_runtime();                 \
-		fprintf(stderr, __VA_ARGS__);           \
-	} while (0)
+#define fuzzer_printf(...) debug_printf(__VA_ARGS__)
 #else
 #define fuzzer_printf(...)
 #endif
@@ -50,24 +45,39 @@
 struct sockaddr_conn sconn;
 struct socket *s_l;
 
-static int
-conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
+static void
+dump_packet(const void *buffer, size_t bufferlen, int inout)
 {
-#if 0
+#ifdef FUZZ_VERBOSE
 	char *dump_buf;
-	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
+
+	if ((dump_buf = usrsctp_dumppacket(buffer, bufferlen, inout)) != NULL) {
 		fprintf(stderr, "%s", dump_buf);
 		usrsctp_freedumpbuffer(dump_buf);
 	}
-#endif
+#endif // FUZZ_VERBOSE
+}
+
+static int
+conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
+{
+	dump_packet(buf, length, SCTP_DUMP_OUTBOUND);
 	return (0);
 }
 
 static void
 handle_upcall(struct socket *sock, void *arg, int flgs)
 {
-	fuzzer_printf("Listening socket established, implement logic!\n");
-	exit(EXIT_FAILURE);
+	struct socket *conn_sock;
+	struct sockaddr_in remote_addr;
+	socklen_t addr_len = sizeof(struct sockaddr_in);
+
+	memset(&remote_addr, 0, sizeof(struct sockaddr_in));
+	if (((conn_sock = usrsctp_accept(sock, (struct sockaddr *) &remote_addr, &addr_len)) == NULL) && (errno != EINPROGRESS)) {
+		perror("usrsctp_accept");
+	}
+
+	usrsctp_close(conn_sock);
 }
 
 int
@@ -83,6 +93,8 @@ init_fuzzer(void) {
 		SCTP_ADAPTATION_INDICATION,
 		SCTP_PARTIAL_DELIVERY_EVENT};
 	unsigned long i;
+	struct linger so_linger;
+	int result;
 
 #if defined(FUZZ_FAST)
 	if (initialized) {
@@ -139,6 +151,11 @@ init_fuzzer(void) {
 		exit(EXIT_FAILURE);
 	}
 
+	so_linger.l_onoff = 1;
+	so_linger.l_linger = 0;
+	result = usrsctp_setsockopt(s_l, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger));
+	FUZZER_ASSERT(result == 0);
+
 	usrsctp_set_upcall(s_l, handle_upcall, NULL);
 
 	initialized = 1;
@@ -155,6 +172,9 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		// Skip too small and too large packets
 		return (0);
 	}
+
+	dump_packet(data, data_size, SCTP_DUMP_INBOUND);
+
 	usrsctp_conninput((void *)1, data, data_size, 0);
 
 #if !defined(FUZZ_FAST)

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Packaging Scripts
-# Copyright (C) 2017-2020 by Thomas Dreibholz
+# Copyright (C) 2017-2022 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -76,20 +76,19 @@ for DISTRIBUTION in ${DISTRIBUTIONS} ; do
       echo >&2 "ERROR: Cannot find /etc/mock/${DISTRIBUTION}.cfg!"
       exit 1
    fi
-   distribution=`grep "config_opts..root.. =" /etc/mock/${DISTRIBUTION}.cfg | sed -e "s/^.* = //g" -e "s/'//g"`
 
    # Remove old files
    find /var/lib/mock/${DISTRIBUTION}/result -name "${PACKAGE}-*.rpm" | xargs --no-run-if-empty rm -f
 
    # Build the binary RPM
    # NOTE: using old chroot instead of container, to allow running it inside a container!
-   mock -r ${DISTRIBUTION} --old-chroot --init
-   mock -r ${DISTRIBUTION} --old-chroot --installdeps ${PACKAGE_SRPM}
-   mock -r ${DISTRIBUTION} --old-chroot --install openssl pesign
-   mock -r ${DISTRIBUTION} --old-chroot --no-clean --rebuild ${PACKAGE_SRPM}
+   mock -r ${DISTRIBUTION} --isolation=simple --init
+   mock -r ${DISTRIBUTION} --isolation=simple --installdeps ${PACKAGE_SRPM}
+   mock -r ${DISTRIBUTION} --isolation=simple --install openssl pesign
+   mock -r ${DISTRIBUTION} --isolation=simple --no-clean --rebuild ${PACKAGE_SRPM}
 
    # Check whether files are at the right location
-   PACKAGE_RPMS=`find /var/lib/mock/${distribution}/result -name "${PACKAGE}-*-*.rpm" | grep -v "${PACKAGE}-*-*.src.rpm" || true`
+   PACKAGE_RPMS=`find /var/lib/mock/${DISTRIBUTION}/result -name "${PACKAGE}-*-*.rpm" | grep -v "${PACKAGE}-*-*.src.rpm" || true`
    if [ "${PACKAGE_RPMS}" == "" ] ; then
       echo >&2 "ERROR: Cannot find RPMs!"
       exit 1

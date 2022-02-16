@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+#
+# GitHub Actions Scripts
+# Copyright (C) 2021-2022 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+
+# Bash options:
+set -e
+
+
+UNAME=`uname`
+if [ "${UNAME}" == "Linux" ] ; then
+   DISTRIBUTION=`lsb_release -is`
+else
+   DISTRIBUTION="Unknown"
+fi
+
+
+# ###### Linux ##############################################################
+if [ "${UNAME}" == "Linux" ] ; then
+
+   # ====== Ubuntu ==========================================================
+   if [ "${DISTRIBUTION}" == "Ubuntu" -o "${DISTRIBUTION}" == "Debian" ] ; then
+
+      # ====== pbuilder environment =========================================
+      CHANGELOG_HEADER="`head -n1 debian/changelog`"
+      PACKAGE=`echo ${CHANGELOG_HEADER} | sed -e "s/(.*//" -e "s/ //g"`
+      PACKAGE_VERSION=`echo ${CHANGELOG_HEADER} | sed -e "s/.*(//" -e "s/).*//" -e "s/ //g" -e "s/ //g" -e "s/^[0-9]://g"`
+      OUTPUT_VERSION=`echo ${PACKAGE_VERSION}   | sed -e "s/\(ubuntu\|ppa\)[0-9]*$/\1/"`
+      DEBIAN_VERSION=`echo ${OUTPUT_VERSION}    | sed -e "s/\(ubuntu\|ppa\)$//1"`
+
+      packages=""
+      if [ $#  -eq 0 ] ; then
+         echo "Looking for *${DEBIAN_VERSION}*.deb in /var/cache/pbuilder/result ..."
+         packages="`find /var/cache/pbuilder/result -name "*${DEBIAN_VERSION}*.deb"`"
+      fi
+      while [ $# -gt 0 ] ; do
+         echo "Looking for $1*${DEBIAN_VERSION}*.deb in /var/cache/pbuilder/result ..."
+         packages="${packages} `find /var/cache/pbuilder/result -name "$1*${DEBIAN_VERSION}*.deb"`"
+         shift
+      done
+      packages=`echo "${packages}" | xargs -n1 | sort -u | xargs`
+      if [ "${packages}" == "" ] ; then
+         echo >&2 "ERROR: No packages have been found!"
+         exit 1
+      fi
+
+      echo "Installing ${packages} ..."
+      DEBIAN_FRONTEND=noninteractive eatmydata apt-get install -fy ${packages} || {
+         echo "NOTE: apt-get failed -> trying dpkg instead of apt-get for local file!"
+         # NOTE: Older "apt-get" versions do not handle local files!
+         if ! DEBIAN_FRONTEND=noninteractive eatmydata dpkg -i ${packages} ; then
+            echo "There may be some dependencies missing. Trying to install them ..."
+            DEBIAN_FRONTEND=noninteractive eatmydata apt-get install -fy -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" --no-install-recommends
+            echo "Retrying to install ${packages} ..."
+            DEBIAN_FRONTEND=noninteractive eatmydata dpkg -i ${packages}
+         fi
+      }
+      echo "Done!"
+
+
+   # ====== Fedora ==========================================================
+   elif [ "${DISTRIBUTION}" == "Fedora" ] ; then
+
+      # ====== mock environment =============================================
+      PACKAGE=`grep "^Name:" rpm/*.spec | head -n1 | sed -e "s/Name://g" -e "s/[ \t]*//g"`
+      PACKAGE_VERSION=`grep "^Version:" rpm/*.spec | head -n1 | sed -e "s/Version://g" -e "s/[ \t]*//g"`
+
+      release=`bash -c "LANG=C.UTF-8 ; cat /etc/fedora-release | sed -e \"s/^\(.*\) release \([0-9]*\) (\(.*\))$/\2/g\"" | sed -e "s/[^0-9]//g"`
+      arch=`uname -m | sed -e "s/[^0-9a-zA-Z_+-]//g"`
+      if ! cd /var/lib/mock/fedora-${release}-${arch}/result ; then
+         if cd /var/lib/mock/fedora-rawhide-${arch}/result ; then
+            release="rawhide"
+         else
+            echo >&2 "ERROR: No results have been found!"
+            exit 1
+         fi
+      fi
+
+      packages=""
+      if [ $#  -eq 0 ] ; then
+         echo "Looking for *${PACKAGE_VERSION}*.rpm in /var/lib/mock/fedora-${release}-${arch}/result ..."
+         packages="`find /var/lib/mock/fedora-${release}-${arch}/result -name "*${PACKAGE_VERSION}*.rpm" | grep -v "\.src\.rpm$"`"
+      fi
+      while [ $# -gt 0 ] ; do
+         echo "Looking for $1*${PACKAGE_VERSION}*.rpm in /var/lib/mock/fedora-${release}-${arch}/result ..."
+         packages="${packages} `find /var/lib/mock/fedora-${release}-${arch}/result -name "$1*${PACKAGE_VERSION}*.rpm" | grep -v "\.src\.rpm$"`"
+         shift
+      done
+      packages=`echo "${packages}" | xargs -n1 | sort -u | xargs`
+      if [ "${packages}" == "" ] ; then
+         echo >&2 "ERROR: No packages have been found!"
+         exit 1
+      fi
+
+      echo "Installing ${packages} ..."
+      LD_PRELOAD=/usr/lib64/nosync/nosync.so dnf install -y --allowerasing ${packages}
+      echo "Done!"
+
+
+   # ====== Unknown =========================================================
+   else
+      echo >&2 "ERROR: Unknown Linux distribution ${DISTRIBUTION}!"
+      exit 1
+   fi
+
+
+# ###### FreeBSD ############################################################
+elif [ "${UNAME}" == "FreeBSD" ] ; then
+
+   # TDB
+   true
+
+
+# ###### Unknown ############################################################
+else
+
+   echo >&2 "ERROR: Unexpected system ${UNAME}!"
+   exit 1
+
+fi

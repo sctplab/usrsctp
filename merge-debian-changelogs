@@ -1,0 +1,135 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Packaging Scripts
+# Copyright (C) 2021-2022 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@simula.no
+#
+
+import glob
+import os
+import re
+import sys
+import time
+
+
+#  ====== Handle arguments ==================================================
+if len(sys.argv) < 3:
+  sys.stderr.write('Usage: ' + sys.argv[0] + ' ppa_changelog distribution_changelog\n')
+  sys.exit(1)
+
+changelogNamePPA          = sys.argv[1]
+changelogNameDistribution = sys.argv[2]
+
+changelogFilePPA          = open(changelogNamePPA, 'r', encoding='utf-8')
+changelogFileDistribution = open(changelogNameDistribution, 'r', encoding='utf-8')
+
+changelogContentsPPA = changelogFilePPA.readlines()
+changelogContentsDistribution = changelogFileDistribution.readlines()
+
+
+# ====== Merge changelogs ===================================================
+re_entry_header = re.compile(r'^([a-zA-Z0-9-]+ \([0-9a-zA-Z\.~+]+-[0-9]*)')
+re_entry_footer = re.compile(r'^ -- .*')
+re_empty        = re.compile(r'^\S*$')
+
+topics = [
+   { 'regexp': re.compile(r'^  \* .*ew upstream (version|release).*$'), 'count': 0, 'max': 1 },
+   { 'regexp': re.compile(r'^  \* .*standards version.*$'),             'count': 0, 'max': 1 },
+   { 'regexp': re.compile(r'^  \* .*debian/compat:.*$'),                'count': 0, 'max': 0 }
+]
+
+# ------ Get latest entry from distribution changelog -----------------------
+match = re_entry_header.match(changelogContentsDistribution[0])
+if match == None:
+   sys.stderr.write('ERROR: Bad header in ' + changelogNameDistribution + '!\n')
+   sys.exit(1)
+latestDistributionEntry = match.group(1)
+
+# ------ Join all new entries from PPA changelog ----------------------------
+result = []
+
+entries                           = 0
+insideEntry                       = False
+foundLatestDistributionEntryInPPA = False
+firstFooter                       = None
+for line in changelogContentsPPA:
+   # ------ Begin of an entry -----------------------------------------------
+   match = re_entry_header.match(line)
+   if match != None:
+
+      entries = entries + 1
+      if entries == 1:
+         result.append(line)
+         result.append('\n')
+
+      # ------ Done? --------------------------------------------------------
+      elif line[0:len(latestDistributionEntry)] == latestDistributionEntry:
+         foundLatestDistributionEntryInPPA = True
+         break
+
+      continue
+
+   # ------ Empty line ------------------------------------------------------
+   match = re_empty.match(line)
+   if match != None:
+      continue
+
+   # ------ End of an entry -------------------------------------------------
+   match = re_entry_footer.match(line)
+   if match != None:
+      if entries == 1:
+         firstFooter = line
+      continue
+
+   # ------ Topics ----------------------------------------------------------
+   skip = False
+   for topic in topics:
+      match = topic['regexp'].match(line)
+      if match != None:
+         topic['count'] = topic['count'] + 1
+         if topic['count'] > topic['max']:
+            skip = True
+            break
+   if skip == True:
+      continue
+
+   # ------ Add line to output ----------------------------------------------
+   if line[0] == ' ':
+      result.append(line)
+      continue
+
+   # ------ Something is wrong ----------------------------------------------
+   sys.stderr.write('ERROR: Unexpected line: ' + line + '!\n')
+   sys.exit(1)
+
+
+result.append('\n')
+result.append(firstFooter)
+
+
+if foundLatestDistributionEntryInPPA == False:
+   sys.stderr.write('ERROR: Did not found the latest distribution entry in the PPA changelog!\n')
+   sys.exit(1)
+
+
+# ------ Print results ------------------------------------------------------
+for line in result:
+   sys.stdout.write(line)
+sys.stdout.write('\n')
+for line in changelogContentsDistribution:
+   sys.stdout.write(line)

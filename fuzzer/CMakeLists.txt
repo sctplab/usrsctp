@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2015-2019 Felix Weinrank
+# Copyright (C) 2015-2020 Felix Weinrank
 #
 # All rights reserved.
 #
@@ -77,32 +77,39 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer")
 # 5 - DATA RECEIVED
 
 add_executable(fuzzer_listen fuzzer_listen.c ../programs/programs_helper.c)
-target_link_libraries(fuzzer_listen usrsctp-static)
+target_link_libraries(fuzzer_listen usrsctp)
+
+add_executable(fuzzer_listen_verbose fuzzer_listen.c ../programs/programs_helper.c)
+target_compile_definitions(fuzzer_listen_verbose PRIVATE FUZZ_VERBOSE)
+target_link_libraries(fuzzer_listen_verbose usrsctp)
+
+add_executable(fuzzer_fragment fuzzer_fragment.c ../programs/programs_helper.c)
+target_link_libraries(fuzzer_fragment usrsctp)
 
 add_executable(fuzzer_connect_multi fuzzer_connect.c ../programs/programs_helper.c)
 target_compile_definitions(fuzzer_connect_multi PRIVATE FUZZING_STAGE=0)
-target_link_libraries(fuzzer_connect_multi usrsctp-static)
+target_link_libraries(fuzzer_connect_multi usrsctp)
 
 add_executable(fuzzer_connect_multi_verbose fuzzer_connect.c ../programs/programs_helper.c)
 target_compile_definitions(fuzzer_connect_multi_verbose PRIVATE FUZZING_STAGE=0 FUZZ_VERBOSE)
-target_link_libraries(fuzzer_connect_multi_verbose usrsctp-static)
+target_link_libraries(fuzzer_connect_multi_verbose usrsctp)
 
 # add_executable(fuzzer_connect_cookie_wait fuzzer_connect.c)
 # target_compile_definitions(fuzzer_connect_cookie_wait PRIVATE FUZZING_STAGE=1)
-# target_link_libraries(fuzzer_connect_cookie_wait usrsctp-static)
+# target_link_libraries(fuzzer_connect_cookie_wait usrsctp)
 
 # add_executable(fuzzer_connect_cookie_echoed fuzzer_connect.c)
 # target_compile_definitions(fuzzer_connect_cookie_echoed PRIVATE FUZZING_STAGE=2)
-# target_link_libraries(fuzzer_connect_cookie_echoed usrsctp-static)
+# target_link_libraries(fuzzer_connect_cookie_echoed usrsctp)
 
 # add_executable(fuzzer_connect_established fuzzer_connect.c)
 # target_compile_definitions(fuzzer_connect_established PRIVATE FUZZING_STAGE=3)
-# target_link_libraries(fuzzer_connect_established usrsctp-static)
+# target_link_libraries(fuzzer_connect_established usrsctp)
 
 # add_executable(fuzzer_connect_data_sent fuzzer_connect.c)
 # target_compile_definitions(fuzzer_connect_data_sent PRIVATE FUZZING_STAGE=4)
-# target_link_libraries(fuzzer_connect_data_sent usrsctp-static)
+# target_link_libraries(fuzzer_connect_data_sent usrsctp)
 
 # add_executable(fuzzer_connect_data_received fuzzer_connect.c)
 # target_compile_definitions(fuzzer_connect_data_received PRIVATE FUZZING_STAGE=5)
-# target_link_libraries(fuzzer_connect_data_received usrsctp-static)
+# target_link_libraries(fuzzer_connect_data_received usrsctp)

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Debian/Ubuntu Packaging Scripts
-# Copyright (C) 2002-2020 by Thomas Dreibholz
+# Copyright (C) 2002-2022 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -73,20 +73,24 @@ sudo echo ""
 ./clean-deb
 ./make-deb ${PACKAGE_DISTRIBUTION}
 
-if [ "${PACKAGE_DISTRIBUTION}" == "unstable" -o \
-     "${PACKAGE_DISTRIBUTION}" == "testing"  -o \
-     "${PACKAGE_DISTRIBUTION}" == "stable"   -o \
+if [ "${ARCH}" == "" ] ; then
+   ARCH=`dpkg --print-architecture`
+fi
+if [ "${PACKAGE_DISTRIBUTION}" == "unstable"  -o \
+     "${PACKAGE_DISTRIBUTION}" == "testing"   -o \
+     "${PACKAGE_DISTRIBUTION}" == "stable"    -o \
+     "${PACKAGE_DISTRIBUTION}" == "oldstable" -o \
      "${PACKAGE_DISTRIBUTION}" == "default" ] ; then
    if [ "${PACKAGE_DISTRIBUTION}" == "default" ] ; then
       version=${PACKAGE_VERSION}
    else
       version=${DEBIAN_VERSION}
    fi
-   changesFilesPattern="${PACKAGE}_${version}_*.changes"
+   changesFilesPattern="${PACKAGE}_${version}_${ARCH}*.changes"
    dscFile=`ls ${PACKAGE}_${version}.dsc | tail -n1`
 else
-   changesFilesPattern="${PACKAGE}_${PACKAGE_VERSION}~${PACKAGE_DISTRIBUTION}[0-9]~ppa[0-9]_*.changes"
-   dscFile=`ls ${PACKAGE}_${PACKAGE_VERSION}~${PACKAGE_DISTRIBUTION}[0-9]~ppa[0-9].dsc | tail -n1`
+   changesFilesPattern="${PACKAGE}_${OUTPUT_VERSION}~${PACKAGE_DISTRIBUTION}[0-9]_${ARCH}*.changes"
+   dscFile=`ls ${PACKAGE}_${OUTPUT_VERSION}~${PACKAGE_DISTRIBUTION}[0-9].dsc | tail -n1`
 fi
 
 
@@ -99,7 +103,7 @@ if [ ! -e "${dscFile}" ] ; then
     echo >&2 "ERROR: Unable to find description file ${dscFile}!"
     exit 1
 fi
-sudo pbuilder build ${dscFile}
+sudo OS=${OS} DIST=${DIST} ARCH=${ARCH} pbuilder build ${dscFile}
 
 
 # ====== Run lintian ========================================================
@@ -116,8 +120,9 @@ fi
 profile="ubuntu"
 if [ "${PACKAGE_DISTRIBUTION}" == "unstable" -o \
      "${PACKAGE_DISTRIBUTION}" == "testing"  -o \
-     "${PACKAGE_DISTRIBUTION}" == "stable" ] ; then
+     "${PACKAGE_DISTRIBUTION}" == "stable"   -o \
+     "${PACKAGE_DISTRIBUTION}" == "oldstable" ] ; then
    profile="debian"
 fi
-echo "Calling: lintian -iIEv --pedantic --profile ${profile} ${changesFile}"
-lintian -iIEv --pedantic --profile ${profile} ${changesFile} || true
+echo "Calling: lintian -iIEv --pedantic --suppress-tags file-references-package-build-path --profile ${profile} ${changesFile}"
+lintian -iIEv --pedantic --suppress-tags file-references-package-build-path --profile ${profile} ${changesFile} || true

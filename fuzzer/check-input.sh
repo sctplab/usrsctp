@@ -18,7 +18,8 @@ echo "########## Beginning Fuzzer Chain"
 echo ""
 
 set +e
-./fuzzer_connect_multi_verbose -timeout=10 $1 > $1.log 2>&1
+./fuzzer_listen_verbose -timeout=10 $1 > $1.log 2>&1
+#./fuzzer_connect_multi_verbose -timeout=10 $1 > $1.log 2>&1
 FUZZER_RETVAL=$?
 set -e
 
@@ -28,6 +29,7 @@ if [ "$FUZZER_RETVAL" -eq "0" ]; then
 	echo -e "$C_RED"
 	echo "$1 - NOT REPRODUCABLE"
 	echo -e "$C_NOC"
+	exit $FUZZER_RETVAL
 elif [ "$FUZZER_RETVAL" -eq "77" ]; then
 	echo -e "$C_GRN"
 	echo "$1 - REPRODUCABLE"

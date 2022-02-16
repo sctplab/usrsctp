@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Packaging Scripts
+# Copyright (C) 2021-2022 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@simula.no
+#
+
+import glob
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+import urllib.error
+import urllib.request
+
+
+#  ====== Handle arguments ==================================================
+if len(sys.argv) < 2:
+  sys.stderr.write('Usage: ' + sys.argv[0] + ' package [distribution]\n')
+  sys.exit(1)
+
+debianPackage       = sys.argv[1]
+if len(sys.argv) == 2:
+   debianDistribution  = 'unstable'
+else:
+   debianDistribution  = sys.argv[2]
+if debianDistribution in [ 'unstable', 'testing', 'stable', 'oldstable' ]:
+   # Debian
+   statusPageURL = 'https://packages.debian.org/source/' + debianDistribution + '/' + debianPackage
+else:
+   # Ubuntu
+   statusPageURL = 'https://packages.ubuntu.com/source/' + debianDistribution + '/' + debianPackage
+
+debianVersion       = None
+debianLocation      = None
+debianArchive       = None
+debianArchiveFormat = None
+
+
+# ====== Get package status =================================================
+statusPageContents = None
+sys.stderr.write('Looking for package status on ' + statusPageURL + ' ... ')
+sys.stderr.flush()
+try:
+   statusPage = urllib.request.urlopen(statusPageURL)
+   statusPageContents = statusPage.readlines()
+   statusPage.close()
+
+   re_debian_package = re.compile(r'.*Source Package: ' + debianPackage + ' \(([0-9-+~\.a-z]+)\)')
+   re_debian_archive = re.compile(r'.*href="((http|https)://[a-zA-Z0-9\./+-]+/' + \
+                                     debianPackage[0:1] + '/' + \
+                                     debianPackage + '/' + \
+                                     r')(' + debianPackage + r'_[0-9-+~\.a-z]+\.debian\.tar\.[a-zA-Z]+)"')
+   for line in statusPageContents:
+      line = line.decode('utf-8')
+      match = re_debian_package.match(line)
+      if match != None:
+         debianVersion = match.group(1)
+      else:
+         match = re_debian_archive.match(line)
+         if match != None:
+            debianLocation = match.group(1)
+            debianArchive  = match.group(3)
+
+except urllib.error.HTTPError as e:
+   sys.stderr.write('not found (HTTP ' + str(e.code) + ')!\n')
+   sys.exit(1)
+
+if (debianVersion == None) or (debianArchive == None):
+   sys.stderr.write('not found!\n')
+   sys.exit(1)
+
+sys.stderr.write('Version in ' + debianDistribution + ' is ' + debianVersion + '\n')
+
+
+# ====== Determine necessary compression option =============================
+debianArchiveFormat = debianArchive[len(debianArchive) - 2 : len(debianArchive)]
+tarCompressionOption = ''
+if debianArchiveFormat == 'gz':
+   tarCompressionOption = 'z'
+elif debianArchiveFormat == 'bz2':
+   tarCompressionOption = 'j'
+elif debianArchiveFormat == 'xz':
+   tarCompressionOption = 'J'
+
+
+# ====== Fetch debian archive ===============================================
+archiveFileURL =  debianLocation + debianArchive
+sys.stderr.write('Looking for \"debian\" archive at ' + archiveFileURL + ' ... ')
+sys.stderr.flush()
+try:
+   archiveFile = urllib.request.urlopen(archiveFileURL)
+   debianArchiveFile = tempfile.NamedTemporaryFile(delete=False)
+   shutil.copyfileobj(archiveFile, debianArchiveFile)
+   debianArchiveFile.close()
+   archiveFile.close()
+   sys.stderr.write('found!\n')
+
+   try:
+
+      process = subprocess.run([ 'tar', 'x' + tarCompressionOption + 'fO', debianArchiveFile.name, 'debian/changelog'],
+                              stderr=subprocess.PIPE, check=True, universal_newlines=True)
+
+      os.unlink(debianArchiveFile.name)
+
+   except Exception as e:
+      sys.stderr.write('ERROR: Failed to extract debian/changelog from ' + debianArchiveFile.name + ': ' + str(e) + '\n')
+      sys.exit(1)
+
+except urllib.error.HTTPError as e:
+   sys.stderr.write('not found (HTTP ' + str(e.code) + ')!\n')
+   sys.exit(1)
