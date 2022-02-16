@@ -54,6 +54,7 @@ Requires: %{name} = %{version}-%{release}
 %{_includedir}/usrsctp.h
 %{_libdir}/libusrsctp*.a
 %{_libdir}/libusrsctp*.so
+%{_libdir}/pkgconfig/usrsctp.pc
 
 %files examples
 %{_bindir}/chargen_server_upcall
