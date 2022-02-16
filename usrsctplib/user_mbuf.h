@@ -113,6 +113,7 @@ void  m_freem(struct mbuf *);
 struct m_tag	*m_tag_alloc(uint32_t, int, int, int);
 struct mbuf	*m_copym(struct mbuf *, int, int, int);
 void		 m_copyback(struct mbuf *, int, int, caddr_t);
+int		 m_apply(struct mbuf *, int, int, int (*)(void *, void *, u_int), void *arg);
 struct mbuf	*m_pullup(struct mbuf *, int);
 struct mbuf	*m_pulldown(struct mbuf *, int off, int len, int *offp);
 int		 m_dup_pkthdr(struct mbuf *, struct mbuf *, int);
