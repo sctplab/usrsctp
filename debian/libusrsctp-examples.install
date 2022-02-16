@@ -9,13 +9,13 @@ usr/bin/echo_server
 usr/bin/echo_server_upcall
 usr/bin/ekr_client
 usr/bin/ekr_loop
-usr/bin/ekr_loop_offload
 usr/bin/ekr_loop_upcall
 usr/bin/ekr_peer
 usr/bin/ekr_server
 usr/bin/http_client
 usr/bin/http_client_upcall
 usr/bin/rtcweb
+usr/bin/st_client
 usr/bin/test_libmgmt
 usr/bin/test_timer
 usr/bin/tsctp

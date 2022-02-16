@@ -34,7 +34,7 @@ project(libusrsctp C)
 
 SET(BUILD_MAJOR "1")
 SET(BUILD_MINOR "0")
-SET(BUILD_PATCH "0~td132")
+SET(BUILD_PATCH "0~td133")
 set(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
 
 
@@ -310,14 +310,6 @@ message(STATUS "Compiler flags (CMAKE_C_FLAGS): ${CMAKE_C_FLAGS}")
 #################################################
 # INCLUDE SUBDIRS
 #################################################
-
-# Enable verbose output in DEBUG mode
-if (${CMAKE_BUILD_TYPE} MATCHES "DEBUG")
-    message(STATUS "enabling verbose outout")
-    set(CMAKE_VERBOSE_MAKEFILE on)
-endif()
-
-find_package(Threads REQUIRED)
 
 add_subdirectory(usrsctplib)
 
