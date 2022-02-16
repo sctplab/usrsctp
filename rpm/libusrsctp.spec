@@ -41,10 +41,10 @@ Requires: %{name} = %{version}-%{release}
 
 %build
 %cmake -DCMAKE_INSTALL_PREFIX=/usr -Dsctp_build_shared_lib=1 .
-make %{?_smp_mflags}
+%cmake_build
 
 %install
-make install DESTDIR=%{buildroot}
+%cmake_install
 
 
 %files
@@ -67,7 +67,6 @@ make install DESTDIR=%{buildroot}
 %{_bindir}/echo_server_upcall
 %{_bindir}/ekr_client
 %{_bindir}/ekr_loop
-%{_bindir}/ekr_loop_offload
 %{_bindir}/ekr_loop_upcall
 %{_bindir}/ekr_peer
 %{_bindir}/ekr_server
