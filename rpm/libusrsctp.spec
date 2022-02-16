@@ -40,7 +40,7 @@ Requires: %{name} = %{version}-%{release}
 %setup -q
 
 %build
-%cmake -DCMAKE_INSTALL_PREFIX=/usr .
+%cmake -DCMAKE_INSTALL_PREFIX=/usr -Dsctp_build_shared_lib=1 .
 make %{?_smp_mflags}
 
 %install
