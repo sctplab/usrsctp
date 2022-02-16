@@ -327,6 +327,10 @@ extern int max_protohdr; /* Size of largest protocol layer header. See user_mbuf
 			 (!(((m)->m_flags & M_EXT)) ||			\
 			 (*((m)->m_ext.ref_cnt) == 1)) )		\
 
+/* Check if the supplied mbuf has a packet header, or else panic. */
+#define M_ASSERTPKTHDR(m)						\
+	KASSERT((m) != NULL && (m)->m_flags & M_PKTHDR,			\
+	    ("%s: no mbuf packet header!", __func__))
 
 /*
  * Compute the amount of space available before the current start of data in
