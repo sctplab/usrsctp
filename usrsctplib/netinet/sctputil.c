@@ -4590,7 +4590,7 @@ sctp_abort_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 #endif
 	struct sctp_gen_error_cause* cause;
 	uint32_t vtag;
-	uint16_t cause_code;
+	uint16_t cause_code = 0;
 
 	if (stcb != NULL) {
 		vtag = stcb->asoc.peer_vtag;
