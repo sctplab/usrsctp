@@ -5014,6 +5014,7 @@ int so_locked)
 		SCTP_BUF_NEXT(newm) = m;
 		m = newm;
 		packet_length = sctp_calculate_len(m);
+		m->m_pkthdr.len = packet_length;
 		sctphdr = mtod(m, struct sctphdr *);
 		sctphdr->src_port = src_port;
 		sctphdr->dest_port = dest_port;
@@ -8077,7 +8078,7 @@ re_look:
 	if (chk->data == NULL) {
 		/* HELP, TSNH since we assured it would not above? */
 #ifdef INVARIANTS
-		panic("prepend failes HELP?");
+		panic("prepend fails HELP?");
 #else
 		SCTP_PRINTF("prepend fails HELP?\n");
 		sctp_free_a_chunk(stcb, chk, so_locked);
@@ -11050,7 +11051,7 @@ sctp_fill_in_rest:
 	/*-
 	 * Now populate the strseq list. This is done blindly
 	 * without pulling out duplicate stream info. This is
-	 * inefficent but won't harm the process since the peer will
+	 * inefficient but won't harm the process since the peer will
 	 * look at these in sequence and will thus release anything.
 	 * It could mean we exceed the PMTU and chop off some that
 	 * we could have included.. but this is unlikely (aka 1432/4
@@ -11991,7 +11992,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 
 		sconn = (struct sockaddr_conn *)src;
 		if (SCTP_BASE_VAR(crc32c_offloaded) == 0) {
-			shout->checksum = sctp_calculate_cksum(mout, 0);
+			shout->checksum = sctp_calculate_cksum(o_pak, 0);
 			SCTP_STAT_INCR(sctps_sendswcrc);
 		} else {
 			SCTP_STAT_INCR(sctps_sendhwcrc);
@@ -12003,13 +12004,13 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #endif
 		/* Don't alloc/free for each packet */
 		if ((buffer = malloc(len)) != NULL) {
-			m_copydata(mout, 0, len, buffer);
+			m_copydata(o_pak, 0, len, buffer);
 			ret = SCTP_BASE_VAR(conn_output)(sconn->sconn_addr, buffer, len, 0, 0);
 			free(buffer);
 		} else {
 			ret = ENOMEM;
 		}
-		sctp_m_freem(mout);
+		sctp_m_freem(o_pak);
 		break;
 	}
 #endif
