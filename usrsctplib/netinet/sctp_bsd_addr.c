@@ -448,7 +448,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 #if defined(INET6)
 		if ((ifa->ifa_addr->sa_family == AF_INET6) &&
 		    IN6_IS_ADDR_UNSPECIFIED(&((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_addr)) {
-			/* skip unspecifed addresses */
+			/* skip unspecified addresses */
 			continue;
 		}
 #endif
@@ -521,7 +521,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 			}
 			if (ifa->ifa_addr->sa_family == AF_INET6) {
 				if (IN6_IS_ADDR_UNSPECIFIED(&((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_addr)) {
-					/* skip unspecifed addresses */
+					/* skip unspecified addresses */
 					continue;
 				}
 			} else {
@@ -594,7 +594,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 #ifdef INET6
 			case AF_INET6:
 				if (IN6_IS_ADDR_UNSPECIFIED(&((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_addr)) {
-					/* skip unspecifed addresses */
+					/* skip unspecified addresses */
 					continue;
 				}
 				break;
@@ -699,7 +699,7 @@ sctp_addr_change(struct ifaddr *ifa, int cmd)
 	case AF_INET6:
 		ifa_flags = ((struct in6_ifaddr *)ifa)->ia6_flags;
 		if (IN6_IS_ADDR_UNSPECIFIED(&((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_addr)) {
-			/* skip unspecifed addresses */
+			/* skip unspecified addresses */
 			return;
 		}
 		break;
