@@ -1706,20 +1706,24 @@ sctp_handle_addr_wq(void)
 		    sizeof(struct sctp_asconf_iterator), SCTP_M_ASC_IT);
 	if (asc == NULL) {
 		/* Try later, no memory */
+		SCTP_WQ_ADDR_LOCK(); /* this lock might not be necessary as we have only one global WQ_ADDR timer */
 		sctp_timer_start(SCTP_TIMER_TYPE_ADDR_WQ,
 				 (struct sctp_inpcb *)NULL,
 				 (struct sctp_tcb *)NULL,
 				 (struct sctp_nets *)NULL);
+		SCTP_WQ_ADDR_UNLOCK();
 		return;
 	}
 	LIST_INIT(&asc->list_of_work);
 	asc->cnt = 0;
 
+	SCTP_WQ_ADDR_LOCK();
 	LIST_FOREACH_SAFE(wi, &SCTP_BASE_INFO(addr_wq), sctp_nxt_addr, nwi) {
 		LIST_REMOVE(wi, sctp_nxt_addr);
 		LIST_INSERT_HEAD(&asc->list_of_work, wi, sctp_nxt_addr);
 		asc->cnt++;
 	}
+	SCTP_WQ_ADDR_UNLOCK();
 
 	if (asc->cnt == 0) {
 		SCTP_FREE(asc, SCTP_M_ASC_IT);
@@ -1740,9 +1744,11 @@ sctp_handle_addr_wq(void)
 			if (SCTP_BASE_VAR(sctp_pcb_initialized) == 0) {
 				sctp_asconf_iterator_end(asc, 0);
 			} else {
+				SCTP_WQ_ADDR_LOCK();
 				LIST_FOREACH(wi, &asc->list_of_work, sctp_nxt_addr) {
 					LIST_INSERT_HEAD(&SCTP_BASE_INFO(addr_wq), wi, sctp_nxt_addr);
 				}
+				SCTP_WQ_ADDR_UNLOCK();
 				SCTP_FREE(asc, SCTP_M_ASC_IT);
 			}
 		}
@@ -1861,8 +1867,6 @@ sctp_timeout_handler(void *t)
 		}
 	} else if (inp != NULL) {
 		SCTP_INP_WLOCK(inp);
-	} else {
-		SCTP_WQ_ADDR_LOCK();
 	}
 
 	/* Record in stopped_from which timeout occurred. */
@@ -2202,8 +2206,6 @@ out:
 		SCTP_TCB_UNLOCK(stcb);
 	} else if (inp != NULL) {
 		SCTP_INP_WUNLOCK(inp);
-	} else {
-		SCTP_WQ_ADDR_UNLOCK();
 	}
 
 out_decr:
