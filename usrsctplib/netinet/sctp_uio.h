@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 365071 2020-09-01 21:19:14Z mjg $");
+__FBSDID("$FreeBSD$");
 #endif
 
 #ifndef _NETINET_SCTP_UIO_H_
@@ -1277,7 +1277,7 @@ int
 sctp_lower_sosend(struct socket *so,
     struct sockaddr *addr,
     struct uio *uio,
-    struct mbuf *i_pak,
+    struct mbuf *top,
     struct mbuf *control,
     int flags,
     struct sctp_sndrcvinfo *srcv

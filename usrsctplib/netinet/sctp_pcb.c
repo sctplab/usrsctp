@@ -5078,7 +5078,6 @@ sctp_aloc_assoc_locked(struct sctp_inpcb *inp, struct sockaddr *firstaddr,
 	asoc = &stcb->asoc;
 
 	SCTP_TCB_LOCK_INIT(stcb);
-	SCTP_TCB_SEND_LOCK_INIT(stcb);
 	stcb->rport = rport;
 	/* setup back pointer's */
 	stcb->sctp_ep = inp;
@@ -5086,7 +5085,6 @@ sctp_aloc_assoc_locked(struct sctp_inpcb *inp, struct sockaddr *firstaddr,
 	if ((err = sctp_init_asoc(inp, stcb, override_tag, initial_tsn, vrf_id, o_streams))) {
 		/* failed */
 		SCTP_TCB_LOCK_DESTROY(stcb);
-		SCTP_TCB_SEND_LOCK_DESTROY(stcb);
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_asoc), stcb);
 		SCTP_DECR_ASOC_COUNT();
 		*error = err;
@@ -5117,7 +5115,6 @@ sctp_aloc_assoc_locked(struct sctp_inpcb *inp, struct sockaddr *firstaddr,
 		SCTP_DECR_ASOC_COUNT();
 		SCTP_TCB_UNLOCK(stcb);
 		SCTP_TCB_LOCK_DESTROY(stcb);
-		SCTP_TCB_SEND_LOCK_DESTROY(stcb);
 		LIST_REMOVE(stcb, sctp_asocs);
 		LIST_REMOVE(stcb, sctp_tcbasocidhash);
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_asoc), stcb);
@@ -5470,6 +5467,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 #if defined(__APPLE__) && !defined(__Userspace__)
 	sctp_lock_assert(SCTP_INP_SO(inp));
 #endif
+	SCTP_TCB_LOCK_ASSERT(stcb);
 
 #ifdef SCTP_LOG_CLOSING
 	sctp_log_closing(inp, stcb, 6);
@@ -5481,7 +5479,6 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		/* there is no asoc, really TSNH :-0 */
 		return (1);
 	}
-	SCTP_TCB_SEND_LOCK(stcb);
 	if (stcb->asoc.alternate) {
 		sctp_free_remote_addr(stcb->asoc.alternate);
 		stcb->asoc.alternate = NULL;
@@ -5518,7 +5515,6 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 			/* nope, reader or writer in the way */
 			sctp_timer_start(SCTP_TIMER_TYPE_ASOCKILL, inp, stcb, NULL);
 			/* no asoc destroyed */
-			SCTP_TCB_SEND_UNLOCK(stcb);
 			SCTP_TCB_UNLOCK(stcb);
 #ifdef SCTP_LOG_CLOSING
 			sctp_log_closing(inp, stcb, 8);
@@ -5589,7 +5585,6 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 			sctp_sorwakeup(inp, so);
 			sctp_sowwakeup(inp, so);
 		}
-		SCTP_TCB_SEND_UNLOCK(stcb);
 		SCTP_TCB_UNLOCK(stcb);
 
 #ifdef SCTP_LOG_CLOSING
@@ -5619,12 +5614,10 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 	if (from_inpcbfree == SCTP_NORMAL_PROC) {
 		atomic_add_int(&stcb->asoc.refcnt, 1);
 
-		SCTP_TCB_SEND_UNLOCK(stcb);
 		SCTP_TCB_UNLOCK(stcb);
 		SCTP_INP_INFO_WLOCK();
 		SCTP_INP_WLOCK(inp);
 		SCTP_TCB_LOCK(stcb);
-		SCTP_TCB_SEND_LOCK(stcb);
 	}
 	/* Double check the GONE flag */
 	if ((inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) ||
@@ -5675,7 +5668,6 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 			SCTP_INP_INFO_WUNLOCK();
 			SCTP_INP_WUNLOCK(inp);
 		}
-		SCTP_TCB_SEND_UNLOCK(stcb);
 		SCTP_TCB_UNLOCK(stcb);
 		return (0);
 	}
@@ -5940,10 +5932,8 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 	/* Insert new items here :> */
 
 	/* Get rid of LOCK */
-	SCTP_TCB_SEND_UNLOCK(stcb);
 	SCTP_TCB_UNLOCK(stcb);
 	SCTP_TCB_LOCK_DESTROY(stcb);
-	SCTP_TCB_SEND_LOCK_DESTROY(stcb);
 	if (from_inpcbfree == SCTP_NORMAL_PROC) {
 		SCTP_INP_INFO_WUNLOCK();
 		SCTP_INP_RLOCK(inp);
