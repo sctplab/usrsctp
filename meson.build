@@ -77,6 +77,10 @@ elif system in ['darwin', 'ios']
             '-Wno-address-of-packed-member',
             '-Wno-deprecated-declarations',
         ]), language: 'c')
+elif system == 'qnx'
+    add_project_arguments([
+        '-D_QNX_SOURCE',
+    ], language: 'c')
 elif system == 'windows'
     dependencies += compiler.find_library('ws2_32', required: true)
     dependencies += compiler.find_library('iphlpapi', required: true)
@@ -91,7 +95,7 @@ else
 endif
 
 # Feature: sys/queue
-if compiler.has_header('sys/queue.h')
+if system != 'qnx' and compiler.has_header('sys/queue.h')
     add_project_arguments('-DHAVE_SYS_QUEUE_H', language: 'c')
 endif
 
