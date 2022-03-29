@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 366426 2020-10-04 15:37:34Z tuexen $");
+__FBSDID("$FreeBSD$");
 #endif
 
 #include <netinet/sctp_os.h>

@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet6/sctp6_var.h 317457 2017-04-26 19:26:40Z tuexen $");
+__FBSDID("$FreeBSD$");
 #endif
 
 #ifndef _NETINET6_SCTP6_VAR_H_
