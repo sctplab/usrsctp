@@ -489,7 +489,7 @@ When one-2-one hits qlimit abort. Default: 0
 The SACK frequency defines the number of packets that are awaited, before a SACK is sent. The default value is 2.
 
 #### usrsctp_sysctl_set_sctp_delayed_sack_time_default()
-As a SACK (Selective Acknowlegment) is sent after every other packet, a timer is set to send a SACK in case another packet does not arrive in due time. The default value for this timer is 200ms.
+As a SACK (Selective Acknowledgment) is sent after every other packet, a timer is set to send a SACK in case another packet does not arrive in due time. The default value for this timer is 200ms.
 
 #### usrsctp_sysctl_set_sctp_strict_sacks()
 TBD
@@ -703,7 +703,7 @@ sctp_max_chunks_on_queue | Default max chunks on queue per asoc | 512
 sctp_min_split_point | Minimum size when splitting a chunk | 2904
 sctp_chunkscale | Tunable for Scaling of number of chunks and messages | 10
 sctp_mbuf_threshold_count | Maximum number of small mbufs in a chain | 5
-sctp_heartbeat_interval_default | Deafult time between two Heartbeats | 30000ms
+sctp_heartbeat_interval_default | Default time between two Heartbeats | 30000ms
 sctp_pmtu_raise_time_default | Default PMTU raise timer | 600secs
 sctp_shutdown_guard_time_default | Default shutdown guard timer | 180secs
 sctp_secret_lifetime_default | Default secret lifetime | 3600secs
@@ -713,7 +713,7 @@ sctp_cmt_on_off | Turn CMT on or off. | 0
 sctp_cmt_use_dac | Use delayed acknowledgment for CMT | 0
 sctp_fr_max_burst_default | Default max burst for SCTP endpoints when fast retransmitting | 4
 sctp_auto_asconf | Enable SCTP Auto-ASCONF | 1
-sctp_multiple_asconfs | Enable SCTP Muliple-ASCONFs | 0
+sctp_multiple_asconfs | Enable SCTP Multiple-ASCONFs | 0
 sctp_asconf_auth_nochk | Disable SCTP ASCONF AUTH requirement | 0
 sctp_auth_disable | Disable SCTP AUTH function | 0
 sctp_nat_friendly | SCTP NAT friendly operation | 1

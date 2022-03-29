@@ -1229,7 +1229,7 @@ sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	asoc->str_reset_seq_out = asoc->init_seq_number;
 	asoc->sending_seq = asoc->init_seq_number;
 	asoc->asconf_seq_out_acked = asoc->init_seq_number - 1;
-	/* we are optimisitic here */
+	/* we are optimistic here */
 	asoc->peer_supports_nat = 0;
 	asoc->sent_queue_retran_cnt = 0;
 
@@ -2339,7 +2339,7 @@ sctp_timer_start(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	case SCTP_TIMER_TYPE_RECV:
 		/*
 		 * Here we use the Delayed-Ack timer value from the inp,
-		 * ususually about 200ms.
+		 * usually about 200ms.
 		 */
 		if ((inp == NULL) || (stcb == NULL) || (net != NULL)) {
 #ifdef INVARIANTS
@@ -2443,7 +2443,7 @@ sctp_timer_start(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		break;
 	case SCTP_TIMER_TYPE_NEWCOOKIE:
 		/*
-		 * Nothing needed but the endpoint here ususually about 60
+		 * Nothing needed but the endpoint here usually about 60
 		 * minutes.
 		 */
 		if ((inp == NULL) || (stcb != NULL) || (net != NULL)) {
@@ -2459,7 +2459,7 @@ sctp_timer_start(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		break;
 	case SCTP_TIMER_TYPE_PATHMTURAISE:
 		/*
-		 * Here we use the value found in the EP for PMTUD, ususually
+		 * Here we use the value found in the EP for PMTUD, usually
 		 * about 10 minutes.
 		 */
 		if ((inp == NULL) || (stcb == NULL) || (net == NULL)) {
@@ -2574,7 +2574,7 @@ sctp_timer_start(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		break;
 	case SCTP_TIMER_TYPE_INPKILL:
 		/*
-		 * The inp is setup to die. We re-use the signature_chage
+		 * The inp is setup to die. We re-use the signature_change
 		 * timer since that has stopped and we are in the GONE
 		 * state.
 		 */
@@ -2882,7 +2882,7 @@ sctp_timer_stop(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		break;
 	case SCTP_TIMER_TYPE_INPKILL:
 		/*
-		 * The inp is setup to die. We re-use the signature_chage
+		 * The inp is setup to die. We re-use the signature_change
 		 * timer since that has stopped and we are in the GONE
 		 * state.
 		 */
@@ -3097,7 +3097,7 @@ sctp_calculate_rto(struct sctp_tcb *stcb,
 			rto_logging(net, SCTP_LOG_RTTVAR);
 		}
 	} else {
-		/* First RTO measurment */
+		/* First RTO measurement */
 		net->RTO_measured = 1;
 		first_measure = 1;
 		net->lastsa = rtt << SCTP_RTT_SHIFT;
@@ -6320,7 +6320,7 @@ sctp_sorecvmsg(struct socket *so,
 		} else {
 			/* remove it */
 			TAILQ_REMOVE(&inp->read_queue, control, next);
-			/* Add back any hiddend data */
+			/* Add back any hidden data */
 			sctp_free_remote_addr(control->whoFrom);
 			sctp_free_a_readq(stcb, control);
 		}
@@ -6397,7 +6397,7 @@ sctp_sorecvmsg(struct socket *so,
 					 * have the strm interleave feature present. Then if we have
 					 * taken some (pdapi) or we can refer to tht tcb AND we have
 					 * not started a delivery for this stream, we can take it.
-					 * Note we do NOT allow a notificaiton on the same assoc to
+					 * Note we do NOT allow a notification on the same assoc to
 					 * be delivered.
 					 */
 					control = ctl;
@@ -6775,7 +6775,7 @@ sctp_sorecvmsg(struct socket *so,
 #ifdef INVARIANTS
 					panic("control->data not null at read eor?");
 #else
-					SCTP_PRINTF("Strange, data left in the control buffer .. invarients would panic?\n");
+					SCTP_PRINTF("Strange, data left in the control buffer .. invariants would panic?\n");
 					sctp_m_freem(control->data);
 					control->data = NULL;
 #endif
@@ -6786,7 +6786,7 @@ sctp_sorecvmsg(struct socket *so,
 					hold_rlock = 1;
 				}
 				TAILQ_REMOVE(&inp->read_queue, control, next);
-				/* Add back any hiddend data */
+				/* Add back any hidden data */
 				if (control->held_length) {
 					held_length = 0;
 					control->held_length = 0;

@@ -309,7 +309,7 @@ request_more_o_streams(struct peer_connection *pc)
 	}
 	memset(&sas, 0, sizeof(struct sctp_add_streams));
 	sas.sas_instrms = 0;
-	sas.sas_outstrms = (uint16_t)o_streams_needed; /* XXX eror handling */
+	sas.sas_outstrms = (uint16_t)o_streams_needed; /* XXX error handling */
 	if (usrsctp_setsockopt(pc->sock, IPPROTO_SCTP, SCTP_ADD_STREAMS, &sas, (socklen_t)sizeof(struct sctp_add_streams)) < 0) {
 		perror("setsockopt");
 	}

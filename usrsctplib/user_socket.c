@@ -251,7 +251,7 @@ sofree(struct socket *so)
 
 	ACCEPT_LOCK_ASSERT();
 	SOCK_LOCK_ASSERT(so);
-	/* SS_NOFDREF unset in accept call.  this condition seems irrelevent
+	/* SS_NOFDREF unset in accept call.  this condition seems irrelevant
 	 *  for __Userspace__...
 	 */
 	if (so->so_count != 0 ||
@@ -296,7 +296,7 @@ sofree(struct socket *so)
 	 * necessary from sorflush().
 	 *
 	 * Notice that the socket buffer and kqueue state are torn down
-	 * before calling pru_detach.  This means that protocols shold not
+	 * before calling pru_detach.  This means that protocols should not
 	 * assume they can perform socket wakeups, etc, in their detach code.
 	 */
 	sodealloc(so);
