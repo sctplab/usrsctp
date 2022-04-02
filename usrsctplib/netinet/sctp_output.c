@@ -14094,6 +14094,9 @@ skip_preblock:
 
 #if defined(__APPLE__) && !defined(__Userspace__)
 	error = sblock(&so->so_snd, SBLOCKWAIT(flags));
+	if (error != 0) {
+		goto out_unlocked;
+	}
 #endif
 	/* sndlen covers for mbuf case
 	 * uio_resid covers for the non-mbuf case
@@ -14463,26 +14466,7 @@ skip_preblock:
 						error = be.error;
 					}
 				}
-#if defined(__APPLE__) && !defined(__Userspace__)
-				if (error == 0) {
-					error = sblock(&so->so_snd, SBLOCKWAIT(flags));
-				}
-#endif
-				if (error != 0) {
-					SOCKBUF_UNLOCK(&so->so_snd);
-					SCTP_TCB_LOCK(stcb);
-					hold_tcblock = true;
-					stcb->block_entry = NULL;
-					if (((asoc->state & SCTP_STATE_ABOUT_TO_BE_FREED) == 0) &&
-					    ((asoc->state & SCTP_STATE_WAS_ABORTED) == 0) &&
-					    (sp != NULL)) {
-						sp->processing = 0;
-					}
-					goto out_unlocked;
-				}
-			}
-			SOCKBUF_UNLOCK(&so->so_snd);
-			if (!hold_tcblock) {
+				SOCKBUF_UNLOCK(&so->so_snd);
 				SCTP_TCB_LOCK(stcb);
 				hold_tcblock = true;
 				stcb->block_entry = NULL;
@@ -14494,8 +14478,22 @@ skip_preblock:
 					} else {
 						error = ENOTCONN;
 					}
-					goto out;
+					goto out_unlocked;
 				}
+				if (error != 0) {
+					if (sp != NULL) {
+						sp->processing = 0;
+					}
+					goto out_unlocked;
+				}
+#if defined(__APPLE__) && !defined(__Userspace__)
+				error = sblock(&so->so_snd, SBLOCKWAIT(flags));
+				if (error != 0) {
+					goto out_unlocked;
+				}
+#endif
+			} else {
+				SOCKBUF_UNLOCK(&so->so_snd);
 			}
 			if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_BLK_LOGGING_ENABLE) {
 				sctp_log_block(SCTP_BLOCK_LOG_OUTOF_BLK,
