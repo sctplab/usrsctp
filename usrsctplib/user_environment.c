@@ -175,18 +175,12 @@ finish_random(void)
 #elif (defined(__ANDROID__) && (__ANDROID_API__ < 28)) || defined(__QNX__) || defined(__EMSCRIPTEN__)
 #include <fcntl.h>
 
-#ifdef __QNX__
-#define SCTP_RANDOM_DEVICE "/dev/random"
-#else
-#define SCTP_RANDOM_DEVICE "/dev/urandom"
-#endif
-
 static int fd = -1;
 
 void
 init_random(void)
 {
-	fd = open(SCTP_RANDOM_DEVICE, O_RDONLY);
+	fd = open("/dev/urandom", O_RDONLY);
 	return;
 }
 
