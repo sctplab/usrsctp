@@ -617,16 +617,12 @@ struct sctp_tcb {
 	uint16_t resv;
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	struct mtx tcb_mtx;
-	struct mtx tcb_send_mtx;
 #elif defined(SCTP_PROCESS_LEVEL_LOCKS)
 	userland_mutex_t tcb_mtx;
-	userland_mutex_t tcb_send_mtx;
 #elif defined(__APPLE__) && !defined(__Userspace__)
 	lck_mtx_t* tcb_mtx;
-	lck_mtx_t* tcb_send_mtx;
 #elif defined(_WIN32) && !defined(__Userspace__)
 	struct spinlock tcb_lock;
-	struct spinlock tcb_send_lock;
 #elif defined(__Userspace__)
 #endif
 #if defined(__APPLE__) && !defined(__Userspace__)
