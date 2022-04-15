@@ -3939,8 +3939,10 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 		cnt_in_sd = 0;
 		LIST_FOREACH_SAFE(stcb, &inp->sctp_asoc_list, sctp_tcblist, nstcb) {
 			SCTP_TCB_LOCK(stcb);
+			/* Disconnect the socket please. */
+			stcb->sctp_socket = NULL;
+			SCTP_ADD_SUBSTATE(stcb, SCTP_STATE_CLOSED_SOCKET);
 			if (stcb->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED) {
-				stcb->sctp_socket = NULL;
 				/* Skip guys being freed */
 				cnt_in_sd++;
 				if (stcb->asoc.state & SCTP_STATE_IN_ACCEPT_QUEUE) {
@@ -3970,9 +3972,6 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 				}
 				continue;
 			}
-			/* Disconnect the socket please */
-			stcb->sctp_socket = NULL;
-			SCTP_ADD_SUBSTATE(stcb, SCTP_STATE_CLOSED_SOCKET);
 			if ((stcb->asoc.size_on_reasm_queue > 0) ||
 			    (stcb->asoc.control_pdapi) ||
 			    (stcb->asoc.size_on_all_streams > 0) ||
