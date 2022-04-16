@@ -5204,7 +5204,7 @@ sctp_wakeup_the_read_socket(struct sctp_inpcb *inp,
 {
 	if ((inp != NULL) &&
 	    (inp->sctp_socket != NULL) &&
-	    (((stcb->sctp_ep->sctp_flags & (SCTP_PCB_FLAGS_TCPTYPE | SCTP_PCB_FLAGS_IN_TCPPOOL)) == 0) ||
+	    (((inp->sctp_flags & (SCTP_PCB_FLAGS_TCPTYPE | SCTP_PCB_FLAGS_IN_TCPPOOL)) == 0) ||
 	     !SCTP_IS_LISTENING(inp))) {
 #if defined(__APPLE__) && !defined(__Userspace__)
 		struct socket *so;
