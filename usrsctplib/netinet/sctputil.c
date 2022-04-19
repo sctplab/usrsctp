@@ -2977,20 +2977,23 @@ sctp_timer_stop(int t_type, struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		 * that were incremented in sctp_timer_start().
 		 */
 		if (tmr->ep != NULL) {
-			SCTP_INP_DECR_REF(inp);
 			tmr->ep = NULL;
+			SCTP_INP_DECR_REF(inp);
 		}
 		if (tmr->tcb != NULL) {
-			atomic_subtract_int(&stcb->asoc.refcnt, 1);
 			tmr->tcb = NULL;
+			atomic_subtract_int(&stcb->asoc.refcnt, 1);
 		}
 		if (tmr->net != NULL) {
+			struct sctp_nets *tmr_net;
+
 			/*
 			 * Can't use net, since it doesn't work for
 			 * SCTP_TIMER_TYPE_ASCONF.
 			 */
-			sctp_free_remote_addr((struct sctp_nets *)tmr->net);
+			tmr_net = tmr->net;
 			tmr->net = NULL;
+			sctp_free_remote_addr(tmr_net);
 		}
 	} else {
 		SCTPDBG(SCTP_DEBUG_TIMER2,
