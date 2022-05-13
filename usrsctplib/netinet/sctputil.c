@@ -6919,10 +6919,10 @@ sctp_sorecvmsg(struct socket *so,
 			error = sbwait(&so->so_rcv);
 #endif
 			if (error) {
-#if defined(__FreeBSD__) && !defined(__Userspace__)
-				goto release;
-#else
+#if defined(__APPLE__) && !defined(__Userspace__)
 				goto release_unlocked;
+#else
+				goto release;
 #endif
 			}
 			control->held_length = 0;
