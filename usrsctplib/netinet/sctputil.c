@@ -6259,7 +6259,11 @@ sctp_sorecvmsg(struct socket *so,
 			}
 		}
 		if (block_allowed) {
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+			error = sbwait(so, SO_RCV);
+#else
 			error = sbwait(&so->so_rcv);
+#endif
 			if (error) {
 				goto out;
 			}
@@ -6909,7 +6913,11 @@ sctp_sorecvmsg(struct socket *so,
 		sbunlock(&so->so_rcv, 1);
 #endif
 		if (so->so_rcv.sb_cc <= control->held_length) {
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+			error = sbwait(so, SO_RCV);
+#else
 			error = sbwait(&so->so_rcv);
+#endif
 			if (error) {
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 				goto release;

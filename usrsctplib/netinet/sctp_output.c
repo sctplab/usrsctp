@@ -14042,7 +14042,11 @@ sctp_lower_sosend(struct socket *so,
 #endif
 			SCTP_TCB_UNLOCK(stcb);
 			hold_tcblock = false;
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+			error = sbwait(so, SO_SND);
+#else
 			error = sbwait(&so->so_snd);
+#endif
 			if (error == 0) {
 				if (so->so_error != 0) {
 					error = so->so_error;
@@ -14458,7 +14462,11 @@ skip_preblock:
 #if defined(__APPLE__) && !defined(__Userspace__)
 				sbunlock(&so->so_snd, 1);
 #endif
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+				error = sbwait(so, SO_SND);
+#else
 				error = sbwait(&so->so_snd);
+#endif
 				if (error == 0) {
 					if (so->so_error != 0)
 						error = so->so_error;
