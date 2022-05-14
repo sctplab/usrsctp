@@ -2915,8 +2915,7 @@ sctp_select_nth_preferred_addr_from_ifn_boundall(struct sctp_ifn *ifn,
 #ifdef INET6
 		if (stcb && fam == AF_INET6 &&
 		    sctp_is_mobility_feature_on(stcb->sctp_ep, SCTP_MOBILITY_BASE)) {
-			if (sctp_v6src_match_nexthop(&sifa->address.sin6, ro)
-			    == 0) {
+			if (sctp_v6src_match_nexthop(&sifa->address.sin6, ro) == 0) {
 				continue;
 			}
 		}
@@ -4534,7 +4533,7 @@ int so_locked)
 			 * This means especially, that it is not set at the
 			 * SCTP layer. So use the value from the IP layer.
 			 */
-#if defined(__APPLE__)  && !defined(__Userspace__) && (!defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION))
+#if defined(__APPLE__) && !defined(__Userspace__) && (!defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION))
 			flowlabel = ntohl(inp->ip_inp.inp.inp_flow);
 #else
 			flowlabel = ntohl(((struct inpcb *)inp)->inp_flow);
@@ -4611,7 +4610,7 @@ int so_locked)
 			 * This means especially, that it is not set at the
 			 * SCTP layer. So use the value from the IP layer.
 			 */
-#if defined(__APPLE__)  && !defined(__Userspace__) && (!defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION))
+#if defined(__APPLE__) && !defined(__Userspace__) && (!defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION))
 			tos_value = (ntohl(inp->ip_inp.inp.inp_flow) >> 20) & 0xff;
 #else
 			tos_value = (ntohl(((struct inpcb *)inp)->inp_flow) >> 20) & 0xff;
@@ -6363,7 +6362,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			SCTP_INP_INFO_RLOCK();
 			vtag = sctp_select_a_tag(inp, inp->sctp_lport, sh->src_port, 1);
 			SCTP_INP_INFO_RUNLOCK();
-			if ((asoc->peer_supports_nat)  && (vtag == asoc->my_vtag)) {
+			if ((asoc->peer_supports_nat) && (vtag == asoc->my_vtag)) {
 				/* Got a duplicate vtag on some guy behind a nat
 				 * make sure we don't use it.
 				 */
@@ -8462,11 +8461,11 @@ sctp_med_chunk_output(struct sctp_inpcb *inp,
 			net->window_probe = 0;
 			if ((net != stcb->asoc.alternate) &&
 			    ((net->dest_state & SCTP_ADDR_PF) ||
-			     (!(net->dest_state & SCTP_ADDR_REACHABLE)) ||
+			     ((net->dest_state & SCTP_ADDR_REACHABLE) == 0) ||
 			     (net->dest_state & SCTP_ADDR_UNCONFIRMED))) {
 				if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_CWND_LOGGING_ENABLE) {
 					sctp_log_cwnd(stcb, net, 1,
-						      SCTP_CWND_LOG_FILL_OUTQ_CALLED);
+					              SCTP_CWND_LOG_FILL_OUTQ_CALLED);
 				}
 				continue;
 			}
@@ -8478,7 +8477,7 @@ sctp_med_chunk_output(struct sctp_inpcb *inp,
 				/* skip this network, no room - can't fill */
 				if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_CWND_LOGGING_ENABLE) {
 					sctp_log_cwnd(stcb, net, 3,
-						      SCTP_CWND_LOG_FILL_OUTQ_CALLED);
+					              SCTP_CWND_LOG_FILL_OUTQ_CALLED);
 				}
 				continue;
 			}
@@ -10646,7 +10645,7 @@ do_it_again:
 #endif
 	/* Check for bad destinations, if they exist move chunks around. */
 	TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
-		if (!(net->dest_state & SCTP_ADDR_REACHABLE)) {
+		if ((net->dest_state & SCTP_ADDR_REACHABLE) == 0) {
 			/*-
 			 * if possible move things off of this address we
 			 * still may send below due to the dormant state but
@@ -10763,7 +10762,7 @@ do_it_again:
 		sctp_fix_ecn_echo(asoc);
 
 	if (stcb->asoc.trigger_reset) {
-		if (sctp_send_stream_reset_out_if_possible(stcb, so_locked) == 0)  {
+		if (sctp_send_stream_reset_out_if_possible(stcb, so_locked) == 0) {
 			goto do_it_again;
 		}
 	}
@@ -11116,7 +11115,7 @@ sctp_send_sack(struct sctp_tcb *stcb, int so_locked)
 	a_chk->sent = SCTP_DATAGRAM_UNSENT;
 	a_chk->whoTo = NULL;
 
-	if (!(asoc->last_data_chunk_from->dest_state & SCTP_ADDR_REACHABLE)) {
+	if ((asoc->last_data_chunk_from->dest_state & SCTP_ADDR_REACHABLE) == 0) {
 		/*-
 		 * Ok, the destination for the SACK is unreachable, lets see if
 		 * we can select an alternate to asoc->last_data_chunk_from

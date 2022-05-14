@@ -774,9 +774,9 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header,
 	struct mbuf *m = NULL;
 #if defined(__FreeBSD__) || defined(__Userspace__)
 #if defined(__Userspace__)
-	m =  m_getm2(NULL, space_needed, how, type, want_header ? M_PKTHDR : 0, allonebuf);
+	m = m_getm2(NULL, space_needed, how, type, want_header ? M_PKTHDR : 0, allonebuf);
 #else
-	m =  m_getm2(NULL, space_needed, how, type, want_header ? M_PKTHDR : 0);
+	m = m_getm2(NULL, space_needed, how, type, want_header ? M_PKTHDR : 0);
 #endif
 	if (m == NULL) {
 		/* bad, no memory */

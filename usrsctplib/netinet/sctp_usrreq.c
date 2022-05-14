@@ -501,7 +501,7 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 #endif
 			            (uint32_t)ntohs(icmp->icmp_nextmtu));
 #if defined(__Userspace__)
-			if (!(stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) &&
+			if (((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
 			    (stcb->sctp_socket != NULL)) {
 				struct socket *upcall_socket;
 
@@ -1998,8 +1998,7 @@ sctp_do_connect_x(struct socket *so, struct sctp_inpcb *inp, void *optval,
 		}
 	}
 #endif				/* INET6 */
-	if ((inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND) ==
-	    SCTP_PCB_FLAGS_UNBOUND) {
+	if (inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND) {
 		/* Bind a ephemeral port */
 		error = sctp_inpcb_bind(so, NULL, NULL, p);
 		if (error) {
@@ -4536,7 +4535,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 	case SCTP_REUSE_PORT:
 	{
 		SCTP_CHECK_AND_CAST(mopt, optval, uint32_t, optsize);
-		if ((inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND)  == 0) {
+		if ((inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND) == 0) {
 			/* Can't set it after we are bound */
 			error = EINVAL;
 			break;
@@ -4607,7 +4606,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if (av->assoc_value == 0) {
 					inp->idata_supported = 0;
 				} else {
-					if ((sctp_is_feature_on(inp, SCTP_PCB_FLAGS_FRAG_INTERLEAVE))  &&
+					if ((sctp_is_feature_on(inp, SCTP_PCB_FLAGS_FRAG_INTERLEAVE)) &&
 					    (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_INTERLEAVE_STRMS))) {
 						inp->idata_supported = 1;
 					} else {
@@ -6130,10 +6129,10 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if (net != NULL) {
 				/************************NET SPECIFIC SET ******************/
 				if (paddrp->spp_flags & SPP_HB_DISABLE) {
-					if (!(net->dest_state & SCTP_ADDR_UNCONFIRMED) &&
-					    !(net->dest_state & SCTP_ADDR_NOHB)) {
+					if (((net->dest_state & SCTP_ADDR_UNCONFIRMED) == 0) &&
+					    ((net->dest_state & SCTP_ADDR_NOHB) == 0)) {
 						sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT, inp, stcb, net,
-								SCTP_FROM_SCTP_USRREQ + SCTP_LOC_9);
+						                SCTP_FROM_SCTP_USRREQ + SCTP_LOC_9);
 					}
 					net->dest_state |= SCTP_ADDR_NOHB;
 				}
@@ -6158,7 +6157,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if (paddrp->spp_flags & SPP_PMTUD_DISABLE) {
 					if (SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
 						sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net,
-								SCTP_FROM_SCTP_USRREQ + SCTP_LOC_11);
+						                SCTP_FROM_SCTP_USRREQ + SCTP_LOC_11);
 					}
 					net->dest_state |= SCTP_ADDR_NO_PMTUD;
 					if (paddrp->spp_pathmtu > 0) {
@@ -6292,9 +6291,9 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				}
 				if (paddrp->spp_flags & SPP_HB_DISABLE) {
 					TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
-						if (!(net->dest_state & SCTP_ADDR_NOHB)) {
+						if ((net->dest_state & SCTP_ADDR_NOHB) == 0) {
 							net->dest_state |= SCTP_ADDR_NOHB;
-							if (!(net->dest_state & SCTP_ADDR_UNCONFIRMED)) {
+							if ((net->dest_state & SCTP_ADDR_UNCONFIRMED) == 0) {
 								sctp_timer_stop(SCTP_TIMER_TYPE_HEARTBEAT,
 								                inp, stcb, net,
 								                SCTP_FROM_SCTP_USRREQ + SCTP_LOC_15);
@@ -6307,7 +6306,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 						if (SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
 							sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net,
-									SCTP_FROM_SCTP_USRREQ + SCTP_LOC_16);
+							                SCTP_FROM_SCTP_USRREQ + SCTP_LOC_16);
 						}
 						net->dest_state |= SCTP_ADDR_NO_PMTUD;
 						if (paddrp->spp_pathmtu > 0) {
@@ -6609,11 +6608,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 
 		if ((stcb != NULL) && (net != NULL)) {
 			if (net != stcb->asoc.primary_destination) {
-				if (!(net->dest_state & SCTP_ADDR_UNCONFIRMED)) {
+				if ((net->dest_state & SCTP_ADDR_UNCONFIRMED) == 0) {
 					/* Ok we need to set it */
 					if (sctp_set_primary_addr(stcb, (struct sockaddr *)NULL, net) == 0) {
 						if ((stcb->asoc.alternate) &&
-						    (!(net->dest_state & SCTP_ADDR_PF)) &&
+						    ((net->dest_state & SCTP_ADDR_PF) == 0) &&
 						    (net->dest_state & SCTP_ADDR_REACHABLE)) {
 							sctp_free_remote_addr(stcb->asoc.alternate);
 							stcb->asoc.alternate = NULL;
@@ -7956,8 +7955,7 @@ sctp_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 		goto out_now;
 	}
 #endif
-	if ((inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND) ==
-	    SCTP_PCB_FLAGS_UNBOUND) {
+	if (inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND) {
 		/* Bind a ephemeral port */
 		error = sctp_inpcb_bind(so, NULL, NULL, p);
 		if (error) {
@@ -8119,7 +8117,7 @@ sctpconn_connect(struct socket *so, struct sockaddr *addr)
 		goto out_now;
 	}
 #endif
-	if ((inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND) == SCTP_PCB_FLAGS_UNBOUND) {
+	if (inp->sctp_flags & SCTP_PCB_FLAGS_UNBOUND) {
 		/* Bind a ephemeral port */
 		error = sctp_inpcb_bind(so, NULL, NULL, p);
 		if (error) {

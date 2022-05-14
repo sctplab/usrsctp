@@ -3792,7 +3792,7 @@ sctp_try_advance_peer_ack_point(struct sctp_tcb *stcb,
 			 * Now is this one marked for resend and its time is
 			 * now up?
 			 */
-#if !(defined(__FreeBSD__)  && !defined(__Userspace__))
+#if !(defined(__FreeBSD__) && !defined(__Userspace__))
 			if (timercmp(&now, &tp1->rec.data.timetodrop, >)) {
 #else
 			if (timevalcmp(&now, &tp1->rec.data.timetodrop, >)) {
@@ -4204,7 +4204,7 @@ sctp_express_handle_sack(struct sctp_tcb *stcb, uint32_t cumack,
 				 * is optional.
 				 */
 				net->error_count = 0;
-				if (!(net->dest_state & SCTP_ADDR_REACHABLE)) {
+				if ((net->dest_state & SCTP_ADDR_REACHABLE) == 0) {
 					/* addr came good */
 					net->dest_state |= SCTP_ADDR_REACHABLE;
 					sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_UP, stcb,
@@ -4984,7 +4984,7 @@ sctp_handle_sack(struct mbuf *m, int offset_seg, int offset_dup,
 				 * is optional.
 				 */
 				net->error_count = 0;
-				if (!(net->dest_state & SCTP_ADDR_REACHABLE)) {
+				if ((net->dest_state & SCTP_ADDR_REACHABLE) == 0) {
 					/* addr came good */
 					net->dest_state |= SCTP_ADDR_REACHABLE;
 					sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_UP, stcb,
@@ -5328,7 +5328,7 @@ sctp_kick_prsctp_reorder_queue(struct sctp_tcb *stcb,
 	TAILQ_FOREACH_SAFE(control, &strmin->inqueue, next_instrm, ncontrol) {
 		if (SCTP_MID_GE(asoc->idata_supported, mid, control->mid)) {
 			/* this is deliverable now */
-			if (((control->sinfo_flags >> 8) & SCTP_DATA_NOT_FRAG)  == SCTP_DATA_NOT_FRAG) {
+			if (((control->sinfo_flags >> 8) & SCTP_DATA_NOT_FRAG) == SCTP_DATA_NOT_FRAG) {
 				if (control->on_strm_q) {
 					if (control->on_strm_q == SCTP_ON_ORDERED) {
 						TAILQ_REMOVE(&strmin->inqueue, control, next_instrm);
