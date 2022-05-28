@@ -13404,6 +13404,7 @@ sctp_lower_sosend(struct socket *so,
 #endif
 	)
 {
+	struct sctp_nonpad_sndrcvinfo sndrcvninfo;
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	struct epoch_tracker et;
 #endif
@@ -13748,7 +13749,9 @@ sctp_lower_sosend(struct socket *so,
 	atomic_add_int(&asoc->refcnt, 1);
 	free_cnt_applied = true;
 	if (srcv == NULL) {
-		srcv = (struct sctp_sndrcvinfo *)&asoc->def_send;
+		/* Use a local copy to have a consistent view. */
+		sndrcvninfo = asoc->def_send;
+		srcv = (struct sctp_sndrcvinfo *)&sndrcvninfo;
 		sinfo_flags = srcv->sinfo_flags;
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 		if (flags & MSG_EOR) {
