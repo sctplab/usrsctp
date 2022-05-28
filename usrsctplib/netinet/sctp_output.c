@@ -12373,7 +12373,7 @@ sctp_send_cwr(struct sctp_tcb *stcb, struct sctp_nets *net, uint32_t high_tsn, u
 	chk->rec.chunk_id.id = SCTP_ECN_CWR;
 	chk->rec.chunk_id.can_take_data = 1;
 	chk->flags = 0;
-	chk->asoc = &stcb->asoc;
+	chk->asoc = asoc;
 	chk->send_size = sizeof(struct sctp_cwr_chunk);
 	chk->data = sctp_get_mbuf_for_msg(chk->send_size, 0, M_NOWAIT, 1, MT_HEADER);
 	if (chk->data == NULL) {
@@ -12391,7 +12391,7 @@ sctp_send_cwr(struct sctp_tcb *stcb, struct sctp_nets *net, uint32_t high_tsn, u
 	cwr->ch.chunk_flags = override;
 	cwr->ch.chunk_length = htons(sizeof(struct sctp_cwr_chunk));
 	cwr->tsn = htonl(high_tsn);
-	TAILQ_INSERT_TAIL(&stcb->asoc.control_send_queue, chk, sctp_next);
+	TAILQ_INSERT_TAIL(&asoc->control_send_queue, chk, sctp_next);
 	asoc->ctrl_queue_cnt++;
 }
 
@@ -13452,47 +13452,7 @@ sctp_lower_sosend(struct socket *so,
 #if defined(__APPLE__) && !defined(__Userspace__)
 	sctp_lock_assert(so);
 #endif
-	t_inp = inp = (struct sctp_inpcb *)so->so_pcb;
-	if (inp == NULL) {
-		error = EINVAL;
-		goto out_unlocked;
-	}
 	if ((uio == NULL) && (top == NULL)) {
-		error = EINVAL;
-		goto out_unlocked;
-	}
-	user_marks_eor = sctp_is_feature_on(inp, SCTP_PCB_FLAGS_EXPLICIT_EOR);
-	atomic_add_int(&inp->total_sends, 1);
-	if (uio != NULL) {
-#if defined(__APPLE__) && !defined(__Userspace__)
-#if defined(APPLE_LEOPARD)
-		if (uio->uio_resid < 0) {
-#else
-		if (uio_resid(uio) < 0) {
-#endif
-#else
-		if (uio->uio_resid < 0) {
-#endif
-			error = EINVAL;
-			goto out_unlocked;
-		}
-#if defined(__APPLE__) && !defined(__Userspace__)
-#if defined(APPLE_LEOPARD)
-		sndlen = uio->uio_resid;
-#else
-		sndlen = uio_resid(uio);
-#endif
-#else
-		sndlen = uio->uio_resid;
-#endif
-	} else {
-		sndlen = SCTP_HEADER_LEN(top);
-	}
-	SCTPDBG(SCTP_DEBUG_OUTPUT1, "Send called addr:%p send length %zd\n",
-	        (void *)addr, sndlen);
-	if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) &&
-	    SCTP_IS_LISTENING(inp)) {
-		/* The listener can NOT send. */
 		error = EINVAL;
 		goto out_unlocked;
 	}
@@ -13540,6 +13500,55 @@ sctp_lower_sosend(struct socket *so,
 	} else {
 		port = 0;
 	}
+	if (uio != NULL) {
+#if defined(__APPLE__) && !defined(__Userspace__)
+#if defined(APPLE_LEOPARD)
+		if (uio->uio_resid < 0) {
+#else
+		if (uio_resid(uio) < 0) {
+#endif
+#else
+		if (uio->uio_resid < 0) {
+#endif
+			error = EINVAL;
+			goto out_unlocked;
+		}
+#if defined(__APPLE__) && !defined(__Userspace__)
+#if defined(APPLE_LEOPARD)
+		sndlen = uio->uio_resid;
+#else
+		sndlen = uio_resid(uio);
+#endif
+#else
+		sndlen = uio->uio_resid;
+#endif
+	} else {
+		sndlen = SCTP_HEADER_LEN(top);
+	}
+	SCTPDBG(SCTP_DEBUG_OUTPUT1, "Send called addr:%p send length %zd\n",
+	        (void *)addr, sndlen);
+
+	t_inp = inp = (struct sctp_inpcb *)so->so_pcb;
+	if (inp == NULL) {
+		error = EINVAL;
+		goto out_unlocked;
+	}
+	user_marks_eor = sctp_is_feature_on(inp, SCTP_PCB_FLAGS_EXPLICIT_EOR);
+	if ((uio == NULL) && (user_marks_eor != 0)) {
+		/*-
+		 * We do not support eeor mode for
+		 * sending with mbuf chains (like sendfile).
+		 */
+		error = EINVAL;
+		goto out_unlocked;
+	}
+	atomic_add_int(&inp->total_sends, 1);
+	if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) &&
+	    SCTP_IS_LISTENING(inp)) {
+		/* The listener can NOT send. */
+		error = EINVAL;
+		goto out_unlocked;
+	}
 
 	if (srcv != NULL) {
 		sinfo_flags = srcv->sinfo_flags;
@@ -13549,8 +13558,9 @@ sctp_lower_sosend(struct socket *so,
 			error = EINVAL;
 			goto out_unlocked;
 		}
-		if (srcv->sinfo_flags != 0)
+		if (srcv->sinfo_flags != 0) {
 			SCTP_STAT_INCR(sctps_sends_with_flags);
+		}
 	} else {
 		sinfo_flags = inp->def_send.sinfo_flags;
 		sinfo_assoc_id = inp->def_send.sinfo_assoc_id;
@@ -13728,6 +13738,7 @@ sctp_lower_sosend(struct socket *so,
 	KASSERT(stcb != NULL, ("stcb is NULL"));
 	KASSERT(hold_tcblock, ("hold_tcblock is false"));
 	SCTP_TCB_LOCK_ASSERT(stcb);
+
 	asoc = &stcb->asoc;
 	if ((asoc->state & SCTP_STATE_ABOUT_TO_BE_FREED) ||
 	    (asoc->state & SCTP_STATE_WAS_ABORTED)) {
@@ -13739,10 +13750,13 @@ sctp_lower_sosend(struct socket *so,
 		}
 		goto out_unlocked;
 	}
+	if ((SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_WAIT) ||
+	    (SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_ECHOED)) {
+		queue_only = 1;
+	}
 	/* Keep the stcb from being freed under our feet. */
 	atomic_add_int(&asoc->refcnt, 1);
 	free_cnt_applied = true;
-
 	if (srcv == NULL) {
 		srcv = (struct sctp_sndrcvinfo *)&asoc->def_send;
 		sinfo_flags = srcv->sinfo_flags;
@@ -13756,10 +13770,11 @@ sctp_lower_sosend(struct socket *so,
 #endif
 	}
 	if (sinfo_flags & SCTP_ADDR_OVER) {
-		if (addr != NULL)
+		if (addr != NULL) {
 			net = sctp_findnet(stcb, addr);
-		else
+		} else {
 			net = NULL;
+		}
 		if ((net == NULL) ||
 		    ((port != 0) && (port != stcb->rport))) {
 			error = EINVAL;
@@ -13772,27 +13787,43 @@ sctp_lower_sosend(struct socket *so,
 			net = asoc->primary_destination;
 		}
 	}
-	atomic_add_int(&stcb->total_sends, 1);
-
+	/* Is the stream no. valid? */
+	if (srcv->sinfo_stream >= asoc->streamoutcnt) {
+		/* Invalid stream number */
+		error = EINVAL;
+		goto out_unlocked;
+	}
+	if ((asoc->strmout[srcv->sinfo_stream].state != SCTP_STREAM_OPEN) &&
+	    (asoc->strmout[srcv->sinfo_stream].state != SCTP_STREAM_OPENING)) {
+		/*
+		 * Can't queue any data while stream reset is underway.
+		 */
+		if (asoc->strmout[srcv->sinfo_stream].state > SCTP_STREAM_OPEN) {
+			error = EAGAIN;
+		} else {
+			error = EINVAL;
+		}
+		goto out_unlocked;
+	}
 	if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_NO_FRAGMENT)) {
 		if (sndlen > (ssize_t)asoc->smallest_mtu) {
 			error = EMSGSIZE;
 			goto out_unlocked;
 		}
 	}
+	atomic_add_int(&stcb->total_sends, 1);
 #if defined(__Userspace__)
 	if (inp->recv_callback != NULL) {
 		non_blocking = true;
 	}
 #endif
-	if (SCTP_SO_IS_NBIO(so)
 #if defined(__FreeBSD__) && !defined(__Userspace__)
-	     || (flags & (MSG_NBIO | MSG_DONTWAIT)) != 0
+	if (SCTP_SO_IS_NBIO(so) || (flags & (MSG_NBIO | MSG_DONTWAIT)) != 0) {
+#else
+	if (SCTP_SO_IS_NBIO(so)) {
 #endif
-	    ) {
 		non_blocking = true;
 	}
-	/* would we block? */
 	if (non_blocking) {
 		ssize_t amount;
 
@@ -13812,52 +13843,9 @@ sctp_lower_sosend(struct socket *so,
 			}
 			goto out_unlocked;
 		}
-		asoc->sb_send_resv += (uint32_t)sndlen;
-	} else {
-		atomic_add_int(&asoc->sb_send_resv, (int)sndlen);
 	}
+	atomic_add_int(&asoc->sb_send_resv, (int)sndlen);
 	local_soresv = sndlen;
-	/* Is the stream no. valid? */
-	if (srcv->sinfo_stream >= asoc->streamoutcnt) {
-		/* Invalid stream number */
-		error = EINVAL;
-		goto out_unlocked;
-	}
-	if ((asoc->strmout[srcv->sinfo_stream].state != SCTP_STREAM_OPEN) &&
-	    (asoc->strmout[srcv->sinfo_stream].state != SCTP_STREAM_OPENING)) {
-		/*
-		 * Can't queue any data while stream reset is underway.
-		 */
-		if (asoc->strmout[srcv->sinfo_stream].state > SCTP_STREAM_OPEN) {
-			error = EAGAIN;
-		} else {
-			error = EINVAL;
-		}
-		goto out_unlocked;
-	}
-	if ((SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_WAIT) ||
-	    (SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_ECHOED)) {
-		queue_only = 1;
-	}
-	if ((SCTP_GET_STATE(stcb) == SCTP_STATE_SHUTDOWN_SENT) ||
-	    (SCTP_GET_STATE(stcb) == SCTP_STATE_SHUTDOWN_RECEIVED) ||
-	    (SCTP_GET_STATE(stcb) == SCTP_STATE_SHUTDOWN_ACK_SENT) ||
-	    (asoc->state & SCTP_STATE_SHUTDOWN_PENDING)) {
-		if ((sinfo_flags & SCTP_ABORT) == 0) {
-			error = EPIPE;
-			goto out_unlocked;
-		}
-	}
-	/* Ok, we will attempt a msgsnd :> */
-#if !(defined(_WIN32) || defined(__Userspace__))
-	if (p != NULL) {
-#if defined(__FreeBSD__)
-		p->td_ru.ru_msgsnd++;
-#else
-		p->p_stats->p_ru.ru_msgsnd++;
-#endif
-	}
-#endif
 
 	KASSERT(stcb != NULL, ("stcb is NULL"));
 	KASSERT(hold_tcblock, ("hold_tcblock is false"));
@@ -13878,7 +13866,7 @@ sctp_lower_sosend(struct socket *so,
 		    (SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_ECHOED)) {
 			/* It has to be up before we abort. */
 			error = EINVAL;
-			goto out;
+			goto out_unlocked;
 		}
 		/* How big is the user initiated abort? */
 		if (top != NULL) {
@@ -13982,6 +13970,24 @@ sctp_lower_sosend(struct socket *so,
 	KASSERT((asoc->state & SCTP_STATE_WAS_ABORTED) == 0,
 	        ("Association was aborted"));
 
+	if ((SCTP_GET_STATE(stcb) == SCTP_STATE_SHUTDOWN_SENT) ||
+	    (SCTP_GET_STATE(stcb) == SCTP_STATE_SHUTDOWN_RECEIVED) ||
+	    (SCTP_GET_STATE(stcb) == SCTP_STATE_SHUTDOWN_ACK_SENT) ||
+	    (asoc->state & SCTP_STATE_SHUTDOWN_PENDING)) {
+		error = EPIPE;
+		goto out_unlocked;
+	}
+	/* Ok, we will attempt a msgsnd :> */
+#if !(defined(_WIN32) || defined(__Userspace__))
+	if (p != NULL) {
+#if defined(__FreeBSD__)
+		p->td_ru.ru_msgsnd++;
+#else
+		p->p_stats->p_ru.ru_msgsnd++;
+#endif
+	}
+#endif
+
 	/* Calculate the maximum we can send */
 	inqueue_bytes = asoc->total_output_queue_size - (asoc->chunks_on_out_queue * SCTP_DATA_CHUNK_OVERHEAD(stcb));
 	if (SCTP_SB_LIMIT_SND(so) > inqueue_bytes) {
@@ -13996,15 +14002,6 @@ sctp_lower_sosend(struct socket *so,
 		error = EMSGSIZE;
 		goto out_unlocked;
 	}
-	if ((uio == NULL) && (user_marks_eor != 0)) {
-		/*-
-		 * We do not support eeor mode for
-		 * sending with mbuf chains (like sendfile).
-		 */
-		error = EINVAL;
-		goto out_unlocked;
-	}
-
 	if (user_marks_eor != 0) {
 		local_add_more = (ssize_t)min(SCTP_SB_LIMIT_SND(so), SCTP_BASE_SYSCTL(sctp_add_more_threshold));
 	} else {
