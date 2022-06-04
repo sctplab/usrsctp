@@ -1643,8 +1643,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 					 * init/init-ack/cookie done before the
 					 * init-ack came back..
 					 */
-					stcb->sctp_ep->sctp_flags |=
-						SCTP_PCB_FLAGS_CONNECTED;
+					sctp_pcb_add_flags(stcb->sctp_ep, SCTP_PCB_FLAGS_CONNECTED);
 #if defined(__APPLE__) && !defined(__Userspace__)
 					so = SCTP_INP_SO(stcb->sctp_ep);
 					atomic_add_int(&stcb->asoc.refcnt, 1);
@@ -1864,7 +1863,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 #if defined(__APPLE__) && !defined(__Userspace__)
 				struct socket *so;
 #endif
-				stcb->sctp_ep->sctp_flags |= SCTP_PCB_FLAGS_CONNECTED;
+				sctp_pcb_add_flags(stcb->sctp_ep, SCTP_PCB_FLAGS_CONNECTED);
 #if defined(__APPLE__) && !defined(__Userspace__)
 				so = SCTP_INP_SO(stcb->sctp_ep);
 				atomic_add_int(&stcb->asoc.refcnt, 1);
@@ -2476,7 +2475,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 		 *
 		 * XXXMJ unlocked
 		 */
-		stcb->sctp_ep->sctp_flags |= SCTP_PCB_FLAGS_CONNECTED;
+		sctp_pcb_add_flags(stcb->sctp_ep, SCTP_PCB_FLAGS_CONNECTED);
 #if defined(__APPLE__) && !defined(__Userspace__)
 		atomic_add_int(&stcb->asoc.refcnt, 1);
 		SCTP_TCB_UNLOCK(stcb);
@@ -3211,7 +3210,7 @@ sctp_handle_cookie_ack(struct sctp_cookie_ack_chunk *cp SCTP_UNUSED,
 			struct socket *so;
 
 #endif
-			stcb->sctp_ep->sctp_flags |= SCTP_PCB_FLAGS_CONNECTED;
+			sctp_pcb_add_flags(stcb->sctp_ep, SCTP_PCB_FLAGS_CONNECTED);
 #if defined(__APPLE__) && !defined(__Userspace__)
 			so = SCTP_INP_SO(stcb->sctp_ep);
 			atomic_add_int(&stcb->asoc.refcnt, 1);
