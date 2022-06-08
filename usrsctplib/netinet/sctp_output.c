@@ -13757,7 +13757,7 @@ sctp_lower_sosend(struct socket *so,
 		/* Use a local copy to have a consistent view. */
 		sndrcvninfo_buf = asoc->def_send;
 		sndrcvninfo = &sndrcvninfo_buf;
-		sinfo_flags = srcv->sinfo_flags;
+		sinfo_flags = sndrcvninfo->sinfo_flags;
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 		if (flags & MSG_EOR) {
 			sinfo_flags |= SCTP_EOR;
