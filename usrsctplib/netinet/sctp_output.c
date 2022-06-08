@@ -13612,8 +13612,11 @@ sctp_lower_sosend(struct socket *so,
 		SCTP_INP_RUNLOCK(inp);
 	}
 
-	KASSERT((stcb == NULL) || SCTP_TCB_LOCK_ASSERT(stcb),
-	        ("stcb %p not locked", stcb));
+#ifdef INVARIANTS
+	if (stcb != NULL) {
+		SCTP_TCB_LOCK_ASSERT(stcb);
+	}
+#endif
 
 	if ((stcb == NULL) && (addr != NULL)) {
 		/* Possible implicit send? */
