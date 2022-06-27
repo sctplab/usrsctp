@@ -866,10 +866,15 @@ sctp_close(struct socket *so)
 		 * the state of the SCTP association.
 		 */
 		SOCK_LOCK(so);
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 		if (!SOLISTENING(so)) {
 			SCTP_SB_CLEAR(so->so_snd);
 			SCTP_SB_CLEAR(so->so_rcv);
 		}
+#else
+		SCTP_SB_CLEAR(so->so_snd);
+		SCTP_SB_CLEAR(so->so_rcv);
+#endif
 #if !(defined(__APPLE__) && !defined(__Userspace__))
 		/* Now null out the reference, we are completely detached. */
 		so->so_pcb = NULL;
