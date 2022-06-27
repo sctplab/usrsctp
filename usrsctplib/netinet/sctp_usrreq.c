@@ -641,14 +641,14 @@ sctp_abort(struct socket *so)
 #endif
 		SCTP_INP_WUNLOCK(inp);
 		sctp_inpcb_free(inp, SCTP_FREE_SHOULD_USE_ABORT,
-				SCTP_CALLED_AFTER_CMPSET_OFCLOSE);
+		                SCTP_CALLED_AFTER_CMPSET_OFCLOSE);
 		SOCK_LOCK(so);
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+		KASSERT(!SOLISTENING(so),
+		        ("sctp_abort: called on listening socket %p", so));
+#endif
 		SCTP_SB_CLEAR(so->so_snd);
-		/* same for the rcv ones, they are only
-		 * here for the accounting/select.
-		 */
 		SCTP_SB_CLEAR(so->so_rcv);
-
 #if defined(__APPLE__) && !defined(__Userspace__)
 		so->so_usecount--;
 #else
@@ -866,12 +866,10 @@ sctp_close(struct socket *so)
 		 * the state of the SCTP association.
 		 */
 		SOCK_LOCK(so);
-		SCTP_SB_CLEAR(so->so_snd);
-		/* same for the rcv ones, they are only
-		 * here for the accounting/select.
-		 */
-		SCTP_SB_CLEAR(so->so_rcv);
-
+		if (!SOLISTENING(so)) {
+			SCTP_SB_CLEAR(so->so_snd);
+			SCTP_SB_CLEAR(so->so_rcv);
+		}
 #if !(defined(__APPLE__) && !defined(__Userspace__))
 		/* Now null out the reference, we are completely detached. */
 		so->so_pcb = NULL;
@@ -1261,13 +1259,25 @@ sctp_flush(struct socket *so, int how)
 		inp->sctp_flags |= SCTP_PCB_FLAGS_SOCKET_CANT_READ;
 		SCTP_INP_READ_UNLOCK(inp);
 		SCTP_INP_WUNLOCK(inp);
+		SOCK_LOCK(so);
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+		KASSERT(!SOLISTENING(so),
+		        ("sctp_flush: called on listening socket %p", so));
+#endif
 		SCTP_SB_CLEAR(so->so_rcv);
+		SOCK_UNLOCK(so);
 	}
 	if ((how == PRU_FLUSH_WR) || (how == PRU_FLUSH_RDWR)) {
 		/* First make sure the sb will be happy, we don't
 		 * use these except maybe the count
 		 */
+		SOCK_LOCK(so);
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+		KASSERT(!SOLISTENING(so),
+		        ("sctp_flush: called on listening socket %p", so));
+#endif
 		SCTP_SB_CLEAR(so->so_snd);
+		SOCK_UNLOCK(so);
 	}
 	return (0);
 }
