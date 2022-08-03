@@ -4241,7 +4241,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	inp->ip_inp.inp.inp_state = INPCB_STATE_DEAD;
 	if (in_pcb_checkstate(&inp->ip_inp.inp, WNT_STOPUSING, 1) != WNT_STOPUSING) {
 #ifdef INVARIANTS
-		panic("sctp_inpcb_free inp = %p couldn't set to STOPUSING\n", (void *)inp);
+		panic("sctp_inpcb_free inp = %p couldn't set to STOPUSING", (void *)inp);
 #else
 		SCTP_PRINTF("sctp_inpcb_free inp = %p couldn't set to STOPUSING\n", (void *)inp);
 #endif
@@ -7950,7 +7950,7 @@ sctp_drain_mbufs(struct sctp_tcb *stcb)
 }
 
 void
-sctp_drain()
+sctp_drain(void)
 {
 	/*
 	 * We must walk the PCB lists for ALL associations here. The system
