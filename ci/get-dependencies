@@ -83,7 +83,7 @@ for i in range(2, len(sys.argv)):
 dependencies = [ ]
 if ((system == 'debian') or  (system == 'ubuntu')):
    if os.path.exists('debian/control'):
-      with open('debian/control', 'r') as fp:
+      with open('debian/control', 'r', encoding='utf-8') as fp:
          inside = False
          for line in fp:
             if not line:
@@ -116,7 +116,7 @@ if ((system == 'debian') or  (system == 'ubuntu')):
 elif system == 'fedora':
    specFiles = glob.glob('rpm/*.spec')
    if len(specFiles) == 1:
-      with open(specFiles[0], 'r') as fp:
+      with open(specFiles[0], 'r', encoding='utf-8') as fp:
          inside = False
          for line in fp:
             if not line:
