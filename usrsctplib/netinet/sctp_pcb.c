@@ -2797,6 +2797,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	inp->nrsack_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_nrsack_enable);
 	inp->pktdrop_supported = (uint8_t)SCTP_BASE_SYSCTL(sctp_pktdrop_enable);
 	inp->idata_supported = 0;
+	inp->zero_checksum = 0;
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	inp->fibnum = so->so_fibnum;
@@ -7411,6 +7412,14 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 		} else if (ptype == SCTP_PRSCTP_SUPPORTED) {
 			/* Peer supports pr-sctp */
 			peer_supports_prsctp = 1;
+		} else if (ptype == SCTP_ZERO_CHECKSUM_ACCEPTABLE) {
+			/*
+			 * Only send zero checksums if the upper layer has
+			 * also enabled the support for this.
+			 */
+			if (stcb->asoc.zero_checksum == 1) {
+				stcb->asoc.zero_checksum = 2;
+			}
 		} else if (ptype == SCTP_SUPPORTED_CHUNK_EXT) {
 			/* A supported extension chunk */
 			struct sctp_supported_chunk_types_param *pr_supported;
