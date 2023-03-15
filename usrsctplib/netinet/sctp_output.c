@@ -6349,6 +6349,11 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 #endif
 		}
 	}
+	if (asoc != NULL) {
+		stc.zero_checksum = asoc->zero_checksum > 0 ? 1 : 0;
+	} else {
+		stc.zero_checksum = inp->zero_checksum;
+	}
 	/* Now lets put the SCTP header in place */
 	initack = mtod(m, struct sctp_init_ack_chunk *);
 	/* Save it off for quick ref */

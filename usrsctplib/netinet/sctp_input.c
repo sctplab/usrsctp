@@ -2081,6 +2081,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			}
 			SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_asconf_ack), aack);
 		}
+		asoc->zero_checksum = cookie->zero_checksum;
 
 		/* process the INIT-ACK info (my info) */
 		asoc->my_vtag = ntohl(initack_cp->init.initiate_tag);
@@ -2317,6 +2318,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 #endif
 		return (NULL);
 	}
+	asoc->zero_checksum = cookie->zero_checksum;
 	/* process the INIT-ACK info (my info) */
 	asoc->my_rwnd = ntohl(initack_cp->init.a_rwnd);
 
