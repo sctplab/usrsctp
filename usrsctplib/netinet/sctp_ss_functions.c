@@ -975,7 +975,7 @@ const struct sctp_ss_functions sctp_ss_functions[] = {
 	.sctp_ss_is_user_msgs_incomplete = sctp_ss_default_is_user_msgs_incomplete
 #endif
 },
-/* SCTP_SS_ROUND_ROBIN */
+/* SCTP_SS_RR */
 {
 #if defined(_WIN32)
 	sctp_ss_default_init,
@@ -1005,7 +1005,7 @@ const struct sctp_ss_functions sctp_ss_functions[] = {
 	.sctp_ss_is_user_msgs_incomplete = sctp_ss_default_is_user_msgs_incomplete
 #endif
 },
-/* SCTP_SS_ROUND_ROBIN_PACKET */
+/* SCTP_SS_RR_PKT */
 {
 #if defined(_WIN32)
 	sctp_ss_default_init,
@@ -1035,7 +1035,7 @@ const struct sctp_ss_functions sctp_ss_functions[] = {
 	.sctp_ss_is_user_msgs_incomplete = sctp_ss_default_is_user_msgs_incomplete
 #endif
 },
-/* SCTP_SS_PRIORITY */
+/* SCTP_SS_PRIO */
 {
 #if defined(_WIN32)
 	sctp_ss_default_init,
@@ -1065,7 +1065,7 @@ const struct sctp_ss_functions sctp_ss_functions[] = {
 	.sctp_ss_is_user_msgs_incomplete = sctp_ss_default_is_user_msgs_incomplete
 #endif
 },
-/* SCTP_SS_FAIR_BANDWITH */
+/* SCTP_SS_FB */
 {
 #if defined(_WIN32)
 	sctp_ss_default_init,
@@ -1095,7 +1095,7 @@ const struct sctp_ss_functions sctp_ss_functions[] = {
 	.sctp_ss_is_user_msgs_incomplete = sctp_ss_default_is_user_msgs_incomplete
 #endif
 },
-/* SCTP_SS_FIRST_COME */
+/* SCTP_SS_FCFS */
 {
 #if defined(_WIN32)
 	sctp_ss_fcfs_init,
