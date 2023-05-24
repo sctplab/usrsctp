@@ -523,8 +523,6 @@ struct sx {int dummy;};
 #endif
 #if defined(__FreeBSD__)
 #include <netinet6/in6_pcb.h>
-#include <netinet6/ip6protosw.h>
-/* #include <netinet6/nd6.h> was a 0 byte file */
 #include <netinet6/scope6_var.h>
 #endif
 #endif /* INET6 */
