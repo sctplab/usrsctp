@@ -2083,7 +2083,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			}
 			SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_asconf_ack), aack);
 		}
-		asoc->zero_checksum = cookie->zero_checksum;
+		asoc->rcv_edmid = cookie->rcv_edmid;
 
 		/* process the INIT-ACK info (my info) */
 		asoc->my_vtag = ntohl(initack_cp->init.initiate_tag);
@@ -2320,7 +2320,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
 #endif
 		return (NULL);
 	}
-	asoc->zero_checksum = cookie->zero_checksum;
+	asoc->rcv_edmid = cookie->rcv_edmid;
 	/* process the INIT-ACK info (my info) */
 	asoc->my_rwnd = ntohl(initack_cp->init.a_rwnd);
 
@@ -5861,9 +5861,14 @@ validate_cksum:
 			stcb = sctp_findassociation_addr(m, offset, src, dst,
 			                                 sh, ch, &inp, &net, vrf_id);
 			stcb_looked_up = true;
-			if ((stcb == NULL) || (stcb->asoc.zero_checksum == 0)) {
+			if (stcb == NULL) {
 				goto validate_cksum;
 			}
+			if (stcb->asoc.rcv_edmid == SCTP_EDMID_NONE) {
+				goto validate_cksum;
+			}
+			KASSERT(stcb->asoc.rcv_edmid == SCTP_EDMID_LOWER_LAYER_DTLS,
+				("Unexpected EDMID %u", stcb->asoc.rcv_edmid));
 			SCTP_STAT_INCR(sctps_recvzerocrc);
 		}
 	}
