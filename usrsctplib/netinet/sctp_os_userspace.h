@@ -964,9 +964,9 @@ int sctp_userspace_get_mtu_from_ifn(uint32_t if_index);
 {						\
 	atomic_add_int(&(sb)->sb_cc, incr);	\
 }
-#define SCTP_SB_DECR(sb, decr)				\
-{							\
-	SCTP_SAVE_ATOMIC_DECREMENT(&(sb)->sb_cc, decr);	\
+#define SCTP_SB_DECR(sb, decr)					\
+{								\
+	SCTP_SAVE_ATOMIC_DECREMENT(&(sb)->sb_cc, (int)(decr));	\
 }
 /* clear the socket buffer state */
 #define SCTP_SB_CLEAR(sb)	\
