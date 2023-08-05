@@ -902,24 +902,23 @@ sctp_close(struct socket *so)
 		inp->sctp_flags |= SCTP_PCB_FLAGS_SOCKET_GONE | SCTP_PCB_FLAGS_CLOSE_IP;
 #if defined(__Userspace__)
 		if (((so->so_options & SCTP_SO_LINGER) && (so->so_linger == 0)) ||
-		    (SCTP_SBAVAIL(&so->so_rcv) > 0)) {
 #else
 		if (((so->so_options & SO_LINGER) && (so->so_linger == 0)) ||
-		    (SCTP_SBAVAIL(&so->so_rcv) > 0)) {
 #endif
+		    (SCTP_SBAVAIL(&so->so_rcv) > 0)) {
 #ifdef SCTP_LOG_CLOSING
 			sctp_log_closing(inp, NULL, 13);
 #endif
 			SCTP_INP_WUNLOCK(inp);
 			sctp_inpcb_free(inp, SCTP_FREE_SHOULD_USE_ABORT,
-					SCTP_CALLED_AFTER_CMPSET_OFCLOSE);
+			                SCTP_CALLED_AFTER_CMPSET_OFCLOSE);
 		} else {
 #ifdef SCTP_LOG_CLOSING
 			sctp_log_closing(inp, NULL, 14);
 #endif
 			SCTP_INP_WUNLOCK(inp);
 			sctp_inpcb_free(inp, SCTP_FREE_SHOULD_USE_GRACEFUL_CLOSE,
-					SCTP_CALLED_AFTER_CMPSET_OFCLOSE);
+			                SCTP_CALLED_AFTER_CMPSET_OFCLOSE);
 		}
 		/* The socket is now detached, no matter what
 		 * the state of the SCTP association.
@@ -955,12 +954,8 @@ sctp_detach(struct socket *so)
 
 	inp = (struct sctp_inpcb *)so->so_pcb;
 	if (inp == NULL) {
-#if defined(__FreeBSD__) && !defined(__Userspace__)
-		return;
-#else
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
 		return (EINVAL);
-#endif
 	}
  sctp_must_try_again:
 	flags = inp->sctp_flags;
@@ -969,24 +964,19 @@ sctp_detach(struct socket *so)
 #endif
 	if (((flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
 	    (atomic_cmpset_int(&inp->sctp_flags, flags, (flags | SCTP_PCB_FLAGS_SOCKET_GONE | SCTP_PCB_FLAGS_CLOSE_IP)))) {
-#if defined(__Userspace__)
-		if (((so->so_options & SCTP_SO_LINGER) && (so->so_linger == 0)) ||
-		    (SCTP_SBAVAIL(&so->so_rcv) > 0)) {
-#else
 		if (((so->so_options & SO_LINGER) && (so->so_linger == 0)) ||
 		    (SCTP_SBAVAIL(&so->so_rcv) > 0)) {
-#endif
 #ifdef SCTP_LOG_CLOSING
 			sctp_log_closing(inp, NULL, 13);
 #endif
 			sctp_inpcb_free(inp, SCTP_FREE_SHOULD_USE_ABORT,
-					SCTP_CALLED_AFTER_CMPSET_OFCLOSE);
+			                SCTP_CALLED_AFTER_CMPSET_OFCLOSE);
 		} else {
 #ifdef SCTP_LOG_CLOSING
 			sctp_log_closing(inp, NULL, 13);
 #endif
 			sctp_inpcb_free(inp, SCTP_FREE_SHOULD_USE_GRACEFUL_CLOSE,
-					SCTP_CALLED_AFTER_CMPSET_OFCLOSE);
+			                SCTP_CALLED_AFTER_CMPSET_OFCLOSE);
 		}
 		/* The socket is now detached, no matter what
 		 * the state of the SCTP association.
@@ -1006,11 +996,7 @@ sctp_detach(struct socket *so)
 			goto sctp_must_try_again;
 		}
 	}
-#if defined(__FreeBSD__) && !defined(__Userspace__)
-	return;
-#else
 	return (0);
-#endif
 }
 #endif
 
