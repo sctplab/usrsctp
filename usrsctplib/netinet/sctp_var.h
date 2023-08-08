@@ -372,6 +372,11 @@ void sctp_close(struct socket *so);
 #else
 int sctp_detach(struct socket *so);
 #endif
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+void sctp_abort(struct socket *so);
+#else
+int sctp_abort(struct socket *so);
+#endif
 int sctp_disconnect(struct socket *so);
 #if !defined(__Userspace__)
 #if defined(__APPLE__) && !defined(APPLE_LEOPARD) && !defined(APPLE_SNOWLEOPARD) && !defined(APPLE_LION) && !defined(APPLE_MOUNTAINLION) && !defined(APPLE_ELCAPITAN)

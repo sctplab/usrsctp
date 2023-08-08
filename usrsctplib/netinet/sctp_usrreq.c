@@ -661,13 +661,10 @@ SYSCTL_PROC(_net_inet_sctp, OID_AUTO, getcred,
     "Get the ucred of a SCTP connection");
 #endif
 
-#ifdef INET
-#if defined(_WIN32) || defined(__Userspace__)
-int
-#elif defined(__FreeBSD__)
-static void
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+void
 #else
-static int
+int
 #endif
 sctp_abort(struct socket *so)
 {
@@ -725,6 +722,7 @@ sctp_abort(struct socket *so)
 #endif
 }
 
+#ifdef INET
 #if defined(__Userspace__)
 int
 #else
