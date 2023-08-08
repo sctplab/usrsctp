@@ -1010,15 +1010,6 @@ sctp6_detach(struct socket *so)
 
 #endif
 
-#if !defined(__Userspace__)
-static
-#endif
-int
-sctp6_disconnect(struct socket *so)
-{
-	return (sctp_disconnect(so));
-}
-
 int
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 sctp_sendm(struct socket *so, int flags, struct mbuf *m, struct sockaddr *addr,
@@ -1752,7 +1743,7 @@ sctp6_getpeeraddr(struct socket *so, struct mbuf *nam)
 	.pr_detach =	sctp6_close,					\
 	.pr_sopoll =	sopoll_generic,					\
 	.pr_flush =	sctp_flush,					\
-	.pr_disconnect = sctp6_disconnect,				\
+	.pr_disconnect = sctp_disconnect,				\
 	.pr_listen =	sctp_listen,					\
 	.pr_peeraddr =	sctp6_getpeeraddr,				\
 	.pr_send =	sctp6_send,					\
@@ -1783,7 +1774,7 @@ struct pr_usrreqs sctp6_usrreqs = {
 	.pru_connect2 = pru_connect2_notsupp,
 	.pru_control = in6_control,
 	.pru_detach = sctp6_detach,
-	.pru_disconnect = sctp6_disconnect,
+	.pru_disconnect = sctp_disconnect,
 	.pru_listen = sctp_listen,
 	.pru_peeraddr = sctp6_getpeeraddr,
 	.pru_rcvd = NULL,
@@ -1804,7 +1795,7 @@ struct pr_usrreqs sctp6_usrreqs = {
 	pru_connect2_notsupp,
 	NULL,
 	NULL,
-	sctp6_disconnect,
+	sctp_disconnect,
 	sctp_listen,
 	sctp6_getpeeraddr,
 	NULL,
