@@ -92,10 +92,11 @@ __FBSDID("$FreeBSD$");
 #define SCTP_IP_PKTLOG_UNLOCK()
 #define SCTP_IP_PKTLOG_DESTROY()
 
-#define SCTP_INP_READ_INIT(_inp)
-#define SCTP_INP_READ_DESTROY(_inp)
+#define SCTP_INP_READ_LOCK_INIT(_inp)
+#define SCTP_INP_READ_LOCK_DESTROY(_inp)
 #define SCTP_INP_READ_LOCK(_inp)
 #define SCTP_INP_READ_UNLOCK(_inp)
+#define SCTP_INP_READ_LOCK_ASSERT(_inp)
 
 #define SCTP_INP_LOCK_INIT(_inp)
 #define SCTP_ASOC_CREATE_LOCK_INIT(_inp)
