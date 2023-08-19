@@ -909,7 +909,6 @@ static void
 sctp_handle_shutdown(struct sctp_shutdown_chunk *cp,
     struct sctp_tcb *stcb, struct sctp_nets *net, int *abort_flag)
 {
-	struct sctp_association *asoc;
 	int some_on_streamwheel;
 	int old_state;
 #if defined(__APPLE__) && !defined(__Userspace__)
@@ -919,7 +918,6 @@ sctp_handle_shutdown(struct sctp_shutdown_chunk *cp,
 	SCTPDBG(SCTP_DEBUG_INPUT2, "sctp_handle_shutdown: handling SHUTDOWN\n");
 	if (stcb == NULL)
 		return;
-	asoc = &stcb->asoc;
 	if ((SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_WAIT) ||
 	    (SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_ECHOED)) {
 		return;
@@ -947,7 +945,7 @@ sctp_handle_shutdown(struct sctp_shutdown_chunk *cp,
 			sctp_ulp_notify(SCTP_NOTIFY_PEER_SHUTDOWN, stcb, 0, NULL, SCTP_SO_NOT_LOCKED);
 
 			/* reset time */
-			(void)SCTP_GETTIME_TIMEVAL(&asoc->time_entered);
+			(void)SCTP_GETTIME_TIMEVAL(&stcb->asoc.time_entered);
 		}
 	}
 	if (SCTP_GET_STATE(stcb) == SCTP_STATE_SHUTDOWN_SENT) {
@@ -961,8 +959,8 @@ sctp_handle_shutdown(struct sctp_shutdown_chunk *cp,
 	/* Now is there unsent data on a stream somewhere? */
 	some_on_streamwheel = sctp_is_there_unsent_data(stcb, SCTP_SO_NOT_LOCKED);
 
-	if (!TAILQ_EMPTY(&asoc->send_queue) ||
-	    !TAILQ_EMPTY(&asoc->sent_queue) ||
+	if (!TAILQ_EMPTY(&stcb->asoc.send_queue) ||
+	    !TAILQ_EMPTY(&stcb->asoc.sent_queue) ||
 	    some_on_streamwheel) {
 		/* By returning we will push more data out */
 		return;
@@ -991,7 +989,6 @@ sctp_handle_shutdown_ack(struct sctp_shutdown_ack_chunk *cp SCTP_UNUSED,
                          struct sctp_tcb *stcb,
                          struct sctp_nets *net)
 {
-	struct sctp_association *asoc;
 #if defined(__APPLE__) && !defined(__Userspace__)
 	struct socket *so;
 
@@ -1003,7 +1000,6 @@ sctp_handle_shutdown_ack(struct sctp_shutdown_ack_chunk *cp SCTP_UNUSED,
 		return;
 	}
 
-	asoc = &stcb->asoc;
 	/* process according to association state */
 	if ((SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_WAIT) ||
 	    (SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_ECHOED)) {
@@ -1024,8 +1020,8 @@ sctp_handle_shutdown_ack(struct sctp_shutdown_ack_chunk *cp SCTP_UNUSED,
 	 * One way to handle this is to abort the associations in this case.
 	 */
 #ifdef INVARIANTS
-	if (!TAILQ_EMPTY(&asoc->send_queue) ||
-	    !TAILQ_EMPTY(&asoc->sent_queue) ||
+	if (!TAILQ_EMPTY(&stcb->asoc.send_queue) ||
+	    !TAILQ_EMPTY(&stcb->asoc.sent_queue) ||
 	    sctp_is_there_unsent_data(stcb, SCTP_SO_NOT_LOCKED)) {
 		panic("Queues are not empty when handling SHUTDOWN-ACK");
 	}
