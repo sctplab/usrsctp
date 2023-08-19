@@ -32,16 +32,14 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if defined(__FreeBSD__) && !defined(__Userspace__)
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-#endif
-
 #ifndef _NETINET_SCTP_H_
 #define _NETINET_SCTP_H_
 
 #if defined(__APPLE__) || defined(__linux__)
 #include <stdint.h>
+#endif
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+#include <sys/cdefs.h>
 #endif
 #include <sys/types.h>
 
