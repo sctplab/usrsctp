@@ -916,8 +916,7 @@ sctp_handle_shutdown(struct sctp_shutdown_chunk *cp,
 	struct socket *so;
 #endif
 
-	SCTPDBG(SCTP_DEBUG_INPUT2,
-		"sctp_handle_shutdown: handling SHUTDOWN\n");
+	SCTPDBG(SCTP_DEBUG_INPUT2, "sctp_handle_shutdown: handling SHUTDOWN\n");
 	if (stcb == NULL)
 		return;
 	asoc = &stcb->asoc;
@@ -934,56 +933,11 @@ sctp_handle_shutdown(struct sctp_shutdown_chunk *cp,
 	if (*abort_flag) {
 		return;
 	}
-	if (asoc->control_pdapi) {
-		/* With a normal shutdown
-		 * we assume the end of last record.
-		 */
-		SCTP_INP_READ_LOCK(stcb->sctp_ep);
-		if (asoc->control_pdapi->on_strm_q) {
-			struct sctp_stream_in *strm;
-
-			strm = &asoc->strmin[asoc->control_pdapi->sinfo_stream];
-			if (asoc->control_pdapi->on_strm_q == SCTP_ON_UNORDERED) {
-				/* Unordered */
-				TAILQ_REMOVE(&strm->uno_inqueue, asoc->control_pdapi, next_instrm);
-				asoc->control_pdapi->on_strm_q = 0;
-			} else if (asoc->control_pdapi->on_strm_q == SCTP_ON_ORDERED) {
-				/* Ordered */
-				TAILQ_REMOVE(&strm->inqueue, asoc->control_pdapi, next_instrm);
-				asoc->control_pdapi->on_strm_q = 0;
-#ifdef INVARIANTS
-			} else {
-				panic("Unknown state on ctrl:%p on_strm_q:%d",
-				      asoc->control_pdapi,
-				      asoc->control_pdapi->on_strm_q);
-#endif
-			}
-		}
-		asoc->control_pdapi->end_added = 1;
-		asoc->control_pdapi->pdapi_aborted = 1;
-		asoc->control_pdapi = NULL;
-		SCTP_INP_READ_UNLOCK(stcb->sctp_ep);
-#if defined(__APPLE__) && !defined(__Userspace__)
-		so = SCTP_INP_SO(stcb->sctp_ep);
-		atomic_add_int(&stcb->asoc.refcnt, 1);
-		SCTP_TCB_UNLOCK(stcb);
-		SCTP_SOCKET_LOCK(so, 1);
-		SCTP_TCB_LOCK(stcb);
-		atomic_subtract_int(&stcb->asoc.refcnt, 1);
-		if (stcb->asoc.state & SCTP_STATE_CLOSED_SOCKET) {
-			/* assoc was freed while we were unlocked */
-			SCTP_SOCKET_UNLOCK(so, 1);
-			return;
-		}
-#endif
-		if (stcb->sctp_socket) {
-			sctp_sorwakeup(stcb->sctp_ep, stcb->sctp_socket);
-		}
-#if defined(__APPLE__) && !defined(__Userspace__)
-		SCTP_SOCKET_UNLOCK(so, 1);
-#endif
-	}
-	/* goto SHUTDOWN_RECEIVED state to block new requests */
+	/*
+	 * FIXME MT: Handle the case where there are still incomplete received
+	 * user messages or known missing user messages from the peer.
+	 * One way to handle this is to abort the associations in this case.
+	 */
 	if (stcb->sctp_socket) {
 		if ((SCTP_GET_STATE(stcb) != SCTP_STATE_SHUTDOWN_RECEIVED) &&
 		    (SCTP_GET_STATE(stcb) != SCTP_STATE_SHUTDOWN_ACK_SENT) &&
@@ -1044,9 +998,10 @@ sctp_handle_shutdown_ack(struct sctp_shutdown_ack_chunk *cp SCTP_UNUSED,
 	so = SCTP_INP_SO(stcb->sctp_ep);
 #endif
 	SCTPDBG(SCTP_DEBUG_INPUT2,
-		"sctp_handle_shutdown_ack: handling SHUTDOWN ACK\n");
-	if (stcb == NULL)
+	        "sctp_handle_shutdown_ack: handling SHUTDOWN ACK\n");
+	if (stcb == NULL) {
 		return;
+	}
 
 	asoc = &stcb->asoc;
 	/* process according to association state */
@@ -1063,32 +1018,11 @@ sctp_handle_shutdown_ack(struct sctp_shutdown_ack_chunk *cp SCTP_UNUSED,
 		SCTP_TCB_UNLOCK(stcb);
 		return;
 	}
-	if (asoc->control_pdapi) {
-		/* With a normal shutdown
-		 * we assume the end of last record.
-		 */
-		SCTP_INP_READ_LOCK(stcb->sctp_ep);
-		asoc->control_pdapi->end_added = 1;
-		asoc->control_pdapi->pdapi_aborted = 1;
-		asoc->control_pdapi = NULL;
-		SCTP_INP_READ_UNLOCK(stcb->sctp_ep);
-#if defined(__APPLE__) && !defined(__Userspace__)
-		atomic_add_int(&stcb->asoc.refcnt, 1);
-		SCTP_TCB_UNLOCK(stcb);
-		SCTP_SOCKET_LOCK(so, 1);
-		SCTP_TCB_LOCK(stcb);
-		atomic_subtract_int(&stcb->asoc.refcnt, 1);
-		if (stcb->asoc.state & SCTP_STATE_CLOSED_SOCKET) {
-			/* assoc was freed while we were unlocked */
-			SCTP_SOCKET_UNLOCK(so, 1);
-			return;
-		}
-#endif
-		sctp_sorwakeup(stcb->sctp_ep, stcb->sctp_socket);
-#if defined(__APPLE__) && !defined(__Userspace__)
-		SCTP_SOCKET_UNLOCK(so, 1);
-#endif
-	}
+	/*
+	 * FIXME MT: Handle the case where there are still incomplete received
+	 * user messages or known missing user messages from the peer.
+	 * One way to handle this is to abort the associations in this case.
+	 */
 #ifdef INVARIANTS
 	if (!TAILQ_EMPTY(&asoc->send_queue) ||
 	    !TAILQ_EMPTY(&asoc->sent_queue) ||
@@ -1119,7 +1053,7 @@ sctp_handle_shutdown_ack(struct sctp_shutdown_ack_chunk *cp SCTP_UNUSED,
 	atomic_subtract_int(&stcb->asoc.refcnt, 1);
 #endif
 	(void)sctp_free_assoc(stcb->sctp_ep, stcb, SCTP_NORMAL_PROC,
-			      SCTP_FROM_SCTP_INPUT + SCTP_LOC_11);
+	                      SCTP_FROM_SCTP_INPUT + SCTP_LOC_11);
 #if defined(__APPLE__) && !defined(__Userspace__)
 	SCTP_SOCKET_UNLOCK(so, 1);
 #endif
