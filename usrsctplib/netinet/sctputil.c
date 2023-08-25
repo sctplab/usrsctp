@@ -4230,27 +4230,23 @@ void
 sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
     uint32_t error, void *data, int so_locked)
 {
-	if ((stcb == NULL) ||
-	    (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) ||
-	    (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) ||
-	    (stcb->asoc.state & SCTP_STATE_CLOSED_SOCKET)) {
-		/* If the socket is gone we are out of here */
-		return;
-	}
-#if (defined(__FreeBSD__) || defined(_WIN32)) && !defined(__Userspace__)
-	if (stcb->sctp_socket->so_rcv.sb_state & SBS_CANTRCVMORE) {
-#else
-	if (stcb->sctp_socket->so_state & SS_CANTRCVMORE) {
-#endif
-		return;
-	}
+	struct sctp_inpcb *inp;
+	struct sctp_nets *net;
+
+	KASSERT(stcb != NULL, ("stcb == NULL"));
+	SCTP_TCB_LOCK_ASSERT(stcb);
+
+	inp = stcb->sctp_ep;
 #if defined(__APPLE__) && !defined(__Userspace__)
 	if (so_locked) {
-		sctp_lock_assert(SCTP_INP_SO(stcb->sctp_ep));
+		sctp_lock_assert(SCTP_INP_SO(inp));
 	} else {
-		sctp_unlock_assert(SCTP_INP_SO(stcb->sctp_ep));
+		sctp_unlock_assert(SCTP_INP_SO(inp));
 	}
 #endif
+	if (stcb->asoc.state & SCTP_STATE_CLOSED_SOCKET) {
+		return;
+	}
 	if ((SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_WAIT) ||
 	    (SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_ECHOED)) {
 		if ((notification == SCTP_NOTIFY_INTERFACE_DOWN) ||
@@ -4260,6 +4256,12 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 			return;
 		}
 	}
+	if ((inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) ||
+	    (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) ||
+	    (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_CANT_READ)) {
+		return;
+	}
+
 	switch (notification) {
 	case SCTP_NOTIFY_ASSOC_UP:
 		if (stcb->asoc.assoc_up_sent == 0) {
@@ -4277,7 +4279,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 	case SCTP_NOTIFY_ASSOC_DOWN:
 		sctp_notify_assoc_change(SCTP_SHUTDOWN_COMP, stcb, error, NULL, false, false, so_locked);
 #if defined(__Userspace__)
-		if (stcb->sctp_ep->recv_callback) {
+		if (inp->recv_callback) {
 			if (stcb->sctp_socket) {
 				union sctp_sockstore addr;
 				struct sctp_rcvinfo rcv;
@@ -4286,7 +4288,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 				memset(&rcv, 0, sizeof(struct sctp_rcvinfo));
 				atomic_add_int(&stcb->asoc.refcnt, 1);
 				SCTP_TCB_UNLOCK(stcb);
-				stcb->sctp_ep->recv_callback(stcb->sctp_socket, addr, NULL, 0, rcv, 0, stcb->sctp_ep->ulp_info);
+				inp->recv_callback(stcb->sctp_socket, addr, NULL, 0, rcv, 0, inp->ulp_info);
 				SCTP_TCB_LOCK(stcb);
 				atomic_subtract_int(&stcb->asoc.refcnt, 1);
 			}
@@ -4294,32 +4296,20 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 #endif
 		break;
 	case SCTP_NOTIFY_INTERFACE_DOWN:
-		{
-			struct sctp_nets *net;
-
-			net = (struct sctp_nets *)data;
-			sctp_notify_peer_addr_change(stcb, SCTP_ADDR_UNREACHABLE,
-			    (struct sockaddr *)&net->ro._l_addr, error, so_locked);
-			break;
-		}
+		net = (struct sctp_nets *)data;
+		sctp_notify_peer_addr_change(stcb, SCTP_ADDR_UNREACHABLE,
+		                             &net->ro._l_addr.sa, error, so_locked);
+		break;
 	case SCTP_NOTIFY_INTERFACE_UP:
-		{
-			struct sctp_nets *net;
-
-			net = (struct sctp_nets *)data;
-			sctp_notify_peer_addr_change(stcb, SCTP_ADDR_AVAILABLE,
-			    (struct sockaddr *)&net->ro._l_addr, error, so_locked);
-			break;
-		}
+		net = (struct sctp_nets *)data;
+		sctp_notify_peer_addr_change(stcb, SCTP_ADDR_AVAILABLE,
+		                             &net->ro._l_addr.sa, error, so_locked);
+		break;
 	case SCTP_NOTIFY_INTERFACE_CONFIRMED:
-		{
-			struct sctp_nets *net;
-
-			net = (struct sctp_nets *)data;
-			sctp_notify_peer_addr_change(stcb, SCTP_ADDR_CONFIRMED,
-			    (struct sockaddr *)&net->ro._l_addr, error, so_locked);
-			break;
-		}
+		net = (struct sctp_nets *)data;
+		sctp_notify_peer_addr_change(stcb, SCTP_ADDR_CONFIRMED,
+		                             &net->ro._l_addr.sa, error, so_locked);
+		break;
 	case SCTP_NOTIFY_SPECIAL_SP_FAIL:
 		sctp_notify_send_failed2(stcb, error,
 		                         (struct sctp_stream_queue_pending *)data, so_locked);
@@ -4428,9 +4418,9 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		break;
 	default:
 		SCTPDBG(SCTP_DEBUG_UTIL1, "%s: unknown notification %xh (%u)\n",
-			__func__, notification, notification);
+		        __func__, notification, notification);
 		break;
-	}			/* end switch */
+	}
 }
 
 void
