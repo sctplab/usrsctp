@@ -3,7 +3,7 @@
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 %:
-	dh $@ --buildsystem cmake --parallel
+	dh $@ --buildsystem cmake
 
 override_dh_auto_configure:
 	dh_auto_configure -- -Dsctp_build_shared_lib=1
