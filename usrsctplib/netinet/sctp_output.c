@@ -13529,10 +13529,10 @@ sctp_lower_sosend(struct socket *so,
 #endif
 	struct timeval now;
 	struct sctp_block_entry be;
-	struct sctp_inpcb *inp;
+        struct sctp_inpcb *inp = NULL;
 	struct sctp_tcb *stcb = NULL;
 	struct sctp_nets *net;
-	struct sctp_association *asoc;
+	struct sctp_association *asoc = NULL;
 	struct sctp_inpcb *t_inp;
 	struct sctp_nonpad_sndrcvinfo *sndrcvninfo;
 	ssize_t sndlen = 0, max_len, local_add_more;

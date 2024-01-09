@@ -412,7 +412,11 @@ client_receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 	return (1);
 }
 
-int main(int argc, char **argv)
+int
+#ifdef _MSC_VER
+__cdecl
+#endif
+main (int argc, char **argv)
 {
 #ifndef _WIN32
 	int c, rc;

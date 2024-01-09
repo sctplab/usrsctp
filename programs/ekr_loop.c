@@ -326,7 +326,10 @@ print_addresses(struct socket *sock)
 }
 
 int
-main(int argc, char *argv[])
+#ifdef _MSC_VER
+  __cdecl
+#endif
+main (int argc, char *argv[])
 {
 	struct sockaddr_in sin_s, sin_c;
 	struct sockaddr_conn sconn;
