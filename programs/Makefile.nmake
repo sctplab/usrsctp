@@ -28,7 +28,7 @@
 # SUCH DAMAGE.
 #
 
-CFLAGS=/W3 /WX /I..\usrsctplib
+CFLAGS=/I..\usrsctplib /W3 /WX /sdl /MP /Zi /GF /GS /Gv /Gy /GL /arch:AVX /MT /O2 /Ob2 /DNDEBUG /DSCTP_SUPPORT_HMAC_SHA256 /Oi /Ot /Oy /GT /guard:cf
 
 CVARSDLL=-DINET -DINET6
 
