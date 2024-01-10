@@ -2282,7 +2282,10 @@ sctp_test_authkey(void)
 
 #if defined(STANDALONE_HMAC_TEST)
 int
-main(void)
+#ifdef _MSC_VER
+  __cdecl
+#endif
+main (void)
 {
 	sctp_test_hmac_sha1();
 	sctp_test_authkey();

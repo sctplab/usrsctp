@@ -34,7 +34,10 @@
 #include "usrsctp.h"
 
 int
-main(void)
+#ifdef _MSC_VER
+  __cdecl
+#endif
+main (void)
 {
 	int i;
 

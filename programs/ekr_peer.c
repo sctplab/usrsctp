@@ -144,7 +144,10 @@ receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 }
 
 int
-main(int argc, char *argv[])
+#ifdef _MSC_VER
+  __cdecl
+#endif
+main (int argc, char *argv[])
 {
 	struct sockaddr_in sin;
 	struct sockaddr_conn sconn;

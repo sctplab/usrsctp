@@ -380,7 +380,11 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 	return;
 }
 
-int main(int argc, char **argv)
+int
+#ifdef _MSC_VER
+  __cdecl
+#endif
+main (int argc, char **argv)
 {
 #ifndef _WIN32
 	int c;
