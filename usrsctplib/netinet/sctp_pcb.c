@@ -215,8 +215,9 @@ sctp_allocate_vrf(int vrf_id)
 		/* No memory */
 #ifdef INVARIANTS
 		panic("No memory for VRF:%d", vrf_id);
-#endif
+#else
 		return (NULL);
+#endif
 	}
 	/* setup the VRF */
 	memset(vrf, 0, sizeof(struct sctp_vrf));
@@ -233,9 +234,10 @@ sctp_allocate_vrf(int vrf_id)
 		/* No memory */
 #ifdef INVARIANTS
 		panic("No memory for VRF:%d", vrf_id);
-#endif
+#else
 		SCTP_FREE(vrf, SCTP_M_VRF);
 		return (NULL);
+#endif
 	}
 
 	/* Add it to the hash table */
@@ -548,16 +550,18 @@ sctp_add_addr_to_vrf(uint32_t vrf_id, void *ifn, uint32_t ifn_index,
 	if (new_sctp_ifnp == NULL) {
 #ifdef INVARIANTS
 		panic("No memory for IFN");
-#endif
+#else
 		return (NULL);
+#endif
 	}
 	SCTP_MALLOC(new_sctp_ifap, struct sctp_ifa *, sizeof(struct sctp_ifa), SCTP_M_IFA);
 	if (new_sctp_ifap == NULL) {
 #ifdef INVARIANTS
 		panic("No memory for IFA");
-#endif
+#else
 		SCTP_FREE(new_sctp_ifnp, SCTP_M_IFN);
 		return (NULL);
+#endif
 	}
 
 	SCTP_IPI_ADDR_WLOCK();

@@ -8076,10 +8076,10 @@ one_more_time:
 #else
 		SCTP_PRINTF("prepend fails HELP?\n");
 		sctp_free_a_chunk(stcb, chk, so_locked);
-#endif
 		*bail = 1;
 		to_move = 0;
 		goto out_of;
+#endif
 	}
 	sctp_snd_sb_alloc(stcb, SCTP_DATA_CHUNK_OVERHEAD(stcb));
 	chk->book_size = chk->send_size = (uint16_t)(to_move + SCTP_DATA_CHUNK_OVERHEAD(stcb));

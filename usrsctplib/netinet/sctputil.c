@@ -6317,8 +6317,9 @@ sctp_sorecvmsg(struct socket *so,
 		if ((control == NULL) && (SCTP_SBAVAIL(&so->so_rcv) > 0)) {
 #ifdef INVARIANTS
 			panic("Huh, its non zero and nothing on control?");
-#endif
+#else
 			SCTP_SB_CLEAR(so->so_rcv);
+#endif
 		}
 		SCTP_INP_READ_UNLOCK(inp);
 		hold_rlock = 0;
@@ -6984,12 +6985,13 @@ sctp_sorecvmsg(struct socket *so,
 				/* big trouble.. we have the lock and its corrupt? */
 #ifdef INVARIANTS
 				panic ("Impossible data==NULL length !=0");
-#endif
+#else
 				out_flags |= MSG_EOR;
 				out_flags |= MSG_TRUNC;
 				control->length = 0;
 				SCTP_INP_READ_UNLOCK(inp);
 				goto done_with_control;
+#endif
 			}
 			SCTP_INP_READ_UNLOCK(inp);
 			/* We will fall around to get more data */

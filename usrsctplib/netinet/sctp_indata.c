@@ -4853,8 +4853,8 @@ sctp_handle_sack(struct mbuf *m, int offset_seg, int offset_dup,
 #else
 		SCTP_PRINTF("Warning flight size incorrect should be 0 is %d\n",
 		            asoc->total_flight);
-#endif
 		asoc->total_flight = 0;
+#endif
 	}
 
 #if defined(__Userspace__)
