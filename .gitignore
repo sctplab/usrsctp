@@ -83,3 +83,9 @@ callgrind.out*
 
 # cmake build
 /build
+/msvc/.vs
+/lib/x64
+/msvc/x64
+/msvc/usrsctplib.vcxproj.user
+/msvc/chargen_server_upcall/x64/Debug
+/msvc/chargen_server_upcall/x64/Release

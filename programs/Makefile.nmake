@@ -32,7 +32,7 @@ CFLAGS=/I..\usrsctplib /W3 /WX /sdl /MP /Zi /GF /GS /Gv /Gy /GL /arch:AVX /MT /O
 
 CVARSDLL=-DINET -DINET6
 
-LINKFLAGS=/LTCG /DEBUG /LIBPATH:..\usrsctplib usrsctp.lib
+LINKFLAGS=/LTCG /LIBPATH:..\usrsctplib usrsctp.lib
 
 .c.obj::
 	$(CC) $(CVARSDLL) $(CFLAGS) -Fd.\ -c $<
