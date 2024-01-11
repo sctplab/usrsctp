@@ -65,6 +65,7 @@ callgrind.out*
 /msvc/.vs
 /msvc/x64
 
-# build artefacts
+# build and IDE artifacts
 /lib
 /bin
+/msvc/*.vcxproj.user
