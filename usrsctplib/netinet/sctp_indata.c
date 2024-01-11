@@ -1008,7 +1008,7 @@ sctp_inject_old_unordered_data(struct sctp_tcb *stcb,
 			control->data = chk->data;
 			chk->data = tdata;
 			/* Save the lengths */
-			chk->send_size = control->length;
+			chk->send_size = (uint16_t) control->length;
 			/* Recompute length of control and tail pointer */
 			sctp_setup_tail_pointer(control);
 			/* Fix the FSN included */
@@ -2161,7 +2161,7 @@ sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		}
 		SCTP_STAT_INCR(sctps_recvexpress);
 		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_STR_LOGGING_ENABLE) {
-			sctp_log_strm_del_alt(stcb, tsn, mid, sid,
+			sctp_log_strm_del_alt(stcb, tsn, (uint16_t) mid, sid,
 					      SCTP_STR_LOG_FROM_EXPRS_DEL);
 		}
 		control = NULL;
@@ -2190,7 +2190,7 @@ sctp_process_a_data_chunk(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		chk->rec.data.doing_fast_retransmit = 0;
 		chk->rec.data.rcv_flags = chk_flags;
 		chk->asoc = asoc;
-		chk->send_size = the_len;
+		chk->send_size = (uint16_t) the_len;
 		chk->whoTo = net;
 		SCTPDBG(SCTP_DEBUG_XXX, "Building ck: %p for control: %p to be read (MID: %u)\n",
 			chk,
@@ -2309,7 +2309,7 @@ finish_express_del:
 	SCTP_STAT_INCR(sctps_recvdata);
 	/* Set it present please */
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_STR_LOGGING_ENABLE) {
-		sctp_log_strm_del_alt(stcb, tsn, mid, sid, SCTP_STR_LOG_FROM_MARK_TSN);
+		sctp_log_strm_del_alt(stcb, tsn, (uint16_t) mid, sid, SCTP_STR_LOG_FROM_MARK_TSN);
 	}
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_MAP_LOGGING_ENABLE) {
 		sctp_log_map(asoc->mapping_array_base_tsn, asoc->cumulative_tsn,
@@ -3317,7 +3317,7 @@ sctp_strike_gap_ack_chunks(struct sctp_tcb *stcb, struct sctp_association *asoc,
 {
 	struct sctp_tmit_chunk *tp1;
 	int strike_flag = 0;
-	struct timeval now;
+    struct timeval now = { 0, 0 };
 	uint32_t sending_seq;
 	struct sctp_nets *net;
 	int num_dests_sacked = 0;
@@ -3744,7 +3744,7 @@ sctp_try_advance_peer_ack_point(struct sctp_tcb *stcb,
     struct sctp_association *asoc)
 {
 	struct sctp_tmit_chunk *tp1, *tp2, *a_adv = NULL;
-	struct timeval now;
+    struct timeval now = { 0, 0 };
 	int now_filled = 0;
 
 	if (asoc->prsctp_supported == 0) {

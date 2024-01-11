@@ -163,7 +163,7 @@ sctp_serialize_auth_chunks(const sctp_auth_chklist_t *list, uint8_t *ptr)
 
 	for (i = 0; i < 256; i++) {
 		if (list->chunks[i] != 0) {
-			*ptr++ = i;
+			*ptr++ = (uint8_t) i;
 			count++;
 		}
 	}
@@ -182,7 +182,7 @@ sctp_pack_auth_chunks(const sctp_auth_chklist_t *list, uint8_t *ptr)
 		/* just list them, one byte each */
 		for (i = 0; i < 256; i++) {
 			if (list->chunks[i] != 0) {
-				*ptr++ = i;
+				*ptr++ = (uint8_t) i;
 				size++;
 			}
 		}
@@ -225,7 +225,8 @@ sctp_unpack_auth_chunks(const uint8_t *ptr, uint8_t num_chunks,
 		for (index = 0; index < 32; index++) {
 			for (offset = 0; offset < 8; offset++) {
 				if (ptr[index] & (1 << offset)) {
-					(void)sctp_auth_add_chunk((index * 8) + offset, list);
+                                (void) sctp_auth_add_chunk (
+                                  (uint8_t) ((index * 8) + offset), list);
 				}
 			}
 		}
@@ -1973,22 +1974,22 @@ sctp_initialize_auth_params(struct sctp_inpcb *inp, struct sctp_tcb *stcb)
 		ph = (struct sctp_paramhdr *)new_key->key;
 		ph->param_type = htons(SCTP_RANDOM);
 		plen = sizeof(*ph) + random_len;
-		ph->param_length = htons(plen);
+		ph->param_length = htons((u_short) plen);
 		SCTP_READ_RANDOM(new_key->key + sizeof(*ph), random_len);
-		keylen = plen;
+		keylen = (uint16_t) plen;
 
 		/* append in the AUTH chunks */
 		/* NOTE: currently we always have chunks to list */
 		ph = (struct sctp_paramhdr *)(new_key->key + keylen);
 		ph->param_type = htons(SCTP_CHUNK_LIST);
 		plen = sizeof(*ph) + chunks_len;
-		ph->param_length = htons(plen);
+		ph->param_length = htons((u_short) plen);
 		keylen += sizeof(*ph);
 		if (stcb->asoc.local_auth_chunks) {
 			int i;
 			for (i = 0; i < 256; i++) {
 				if (stcb->asoc.local_auth_chunks->chunks[i])
-					new_key->key[keylen++] = i;
+					new_key->key[keylen++] = (uint8_t) i;
 			}
 		}
 
@@ -1996,7 +1997,7 @@ sctp_initialize_auth_params(struct sctp_inpcb *inp, struct sctp_tcb *stcb)
 		ph = (struct sctp_paramhdr *)(new_key->key + keylen);
 		ph->param_type = htons(SCTP_HMAC_LIST);
 		plen = sizeof(*ph) + hmacs_len;
-		ph->param_length = htons(plen);
+		ph->param_length = htons((u_short) plen);
 		keylen += sizeof(*ph);
 		(void)sctp_serialize_hmaclist(stcb->asoc.local_hmacs,
 					new_key->key + keylen);

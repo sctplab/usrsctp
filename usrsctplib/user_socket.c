@@ -738,7 +738,7 @@ userspace_sctp_sendmsg(struct socket *so,
 
 	memset(sinfo, 0, sizeof(struct sctp_sndrcvinfo));
 	sinfo->sinfo_ppid = ppid;
-	sinfo->sinfo_flags = flags;
+	sinfo->sinfo_flags = (uint16_t) flags;
 	sinfo->sinfo_stream = stream_no;
 	sinfo->sinfo_timetolive = timetolive;
 	sinfo->sinfo_context = context;
@@ -925,7 +925,7 @@ userspace_sctp_sendmbuf(struct socket *so,
 	ssize_t retval;
 
 	sinfo->sinfo_ppid = ppid;
-	sinfo->sinfo_flags = flags;
+	sinfo->sinfo_flags = (uint16_t) flags;
 	sinfo->sinfo_stream = stream_no;
 	sinfo->sinfo_timetolive = timetolive;
 	sinfo->sinfo_context = context;
@@ -1247,7 +1247,7 @@ socreate(int dom, struct socket **aso, int type, int proto)
 	 */
 	TAILQ_INIT(&so->so_incomp);
 	TAILQ_INIT(&so->so_comp);
-	so->so_type = type;
+	so->so_type = (short) type;
 	so->so_count = 1;
 	so->so_dom = dom;
 	/*
@@ -1521,7 +1521,7 @@ solisten_proto(struct socket *so, int backlog)
 
 	if (backlog < 0 || backlog > somaxconn)
 		backlog = somaxconn;
-	so->so_qlimit = backlog;
+	so->so_qlimit = (u_short) backlog;
 	so->so_options |= SCTP_SO_ACCEPTCONN;
 }
 

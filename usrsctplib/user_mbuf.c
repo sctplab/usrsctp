@@ -473,8 +473,8 @@ static __inline void
 m_tag_setup(struct m_tag *t, uint32_t cookie, int type, int len)
 {
 
-	t->m_tag_id = type;
-	t->m_tag_len = len;
+	t->m_tag_id = (uint16_t) type;
+    t->m_tag_len = (uint16_t) len;
 	t->m_tag_cookie = cookie;
 }
 

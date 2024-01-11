@@ -1164,7 +1164,7 @@ sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	asoc->fr_max_burst = inp->sctp_ep.fr_max_burst;
 	asoc->heart_beat_delay = sctp_ticks_to_msecs(inp->sctp_ep.sctp_timeoutticks[SCTP_TIMER_HEARTBEAT]);
 	asoc->cookie_life = inp->sctp_ep.def_cookie_life;
-	asoc->sctp_cmt_on_off = inp->sctp_cmt_on_off;
+	asoc->sctp_cmt_on_off = (uint8_t) inp->sctp_cmt_on_off;
 	asoc->ecn_supported = inp->ecn_supported;
 	asoc->prsctp_supported = inp->prsctp_supported;
 	asoc->auth_supported = inp->auth_supported;
@@ -1317,8 +1317,8 @@ sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	 * Now the stream parameters, here we allocate space for all streams
 	 * that we request by default.
 	 */
-	asoc->strm_realoutsize = asoc->streamoutcnt = asoc->pre_open_streams =
-	    o_strms;
+        asoc->strm_realoutsize = asoc->streamoutcnt =
+          (uint16_t) (asoc->pre_open_streams = o_strms);
 	SCTP_MALLOC(asoc->strmout, struct sctp_stream_out *,
 		    asoc->streamoutcnt * sizeof(struct sctp_stream_out),
 		    SCTP_M_STRMO);
@@ -1351,7 +1351,7 @@ sctp_init_asoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 #endif
 		asoc->strmout[i].next_mid_ordered = 0;
 		asoc->strmout[i].next_mid_unordered = 0;
-		asoc->strmout[i].sid = i;
+		asoc->strmout[i].sid = (uint16_t) i;
 		asoc->strmout[i].last_msg_incomplete = 0;
 		asoc->strmout[i].state = SCTP_STREAM_OPENING;
 	}
@@ -1480,7 +1480,7 @@ sctp_expand_mapping_array(struct sctp_association *asoc, uint32_t needed)
 	SCTP_FREE(asoc->nr_mapping_array, SCTP_M_MAP);
 	asoc->mapping_array = new_array1;
 	asoc->nr_mapping_array = new_array2;
-	asoc->mapping_array_size = new_size;
+	asoc->mapping_array_size = (uint16_t) new_size;
 	return (0);
 }
 
@@ -2081,7 +2081,8 @@ sctp_timeout_handler(void *t)
 		        ("timeout of type %d: inp = %p, stcb = %p, net = %p",
 		         type, inp, stcb, net));
 		SCTP_STAT_INCR(sctps_timoshutdownguard);
-		op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+                op_err = sctp_generate_cause (
+                  (uint16_t) SCTP_BASE_SYSCTL (sctp_diag_info_code),
 		                             "Shutdown guard timer expired");
 		sctp_abort_an_association(inp, stcb, op_err, true, SCTP_SO_NOT_LOCKED);
 		/* no need to unlock on tcb its gone */
@@ -3604,7 +3605,7 @@ sctp_notify_send_failed(struct sctp_tcb *stcb, uint8_t sent, uint32_t error,
 			m_adj(chk->data, chkhdr_len);
 			m_adj(chk->data, -padding_len);
 			sctp_mbuf_crush(chk->data);
-			chk->send_size -= (chkhdr_len + padding_len);
+			chk->send_size -= (uint16_t) (chkhdr_len + padding_len);
 		}
 	}
 	SCTP_BUF_NEXT(m_notify) = chk->data;
@@ -4028,7 +4029,7 @@ sctp_notify_stream_reset_add(struct sctp_tcb *stcb, int flag, int so_locked)
 	stradd = mtod(m_notify, struct sctp_stream_change_event *);
 	memset(stradd, 0, sizeof(struct sctp_stream_change_event));
 	stradd->strchange_type = SCTP_STREAM_CHANGE_EVENT;
-	stradd->strchange_flags = flag;
+	stradd->strchange_flags = (uint16_t) flag;
 	stradd->strchange_length = sizeof(struct sctp_stream_change_event);
 	stradd->strchange_assoc_id = sctp_get_associd(stcb);
 	stradd->strchange_instrms = stcb->asoc.streamincnt;
@@ -4082,7 +4083,7 @@ sctp_notify_stream_reset_tsn(struct sctp_tcb *stcb, int flag, int so_locked)
 	strasoc = mtod(m_notify, struct sctp_assoc_reset_event  *);
 	memset(strasoc, 0, sizeof(struct sctp_assoc_reset_event));
 	strasoc->assocreset_type = SCTP_ASSOC_RESET_EVENT;
-	strasoc->assocreset_flags = flag;
+	strasoc->assocreset_flags = (uint16_t) flag;
 	strasoc->assocreset_length = sizeof(struct sctp_assoc_reset_event);
 	strasoc->assocreset_assoc_id= sctp_get_associd(stcb);
 	strasoc->assocreset_local_tsn = stcb->asoc.sending_seq;
@@ -4144,7 +4145,7 @@ sctp_notify_stream_reset(struct sctp_tcb *stcb,
 	strreset = mtod(m_notify, struct sctp_stream_reset_event *);
 	memset(strreset, 0, len);
 	strreset->strreset_type = SCTP_STREAM_RESET_EVENT;
-	strreset->strreset_flags = flag;
+	strreset->strreset_flags = (uint16_t) flag;
 	strreset->strreset_length = len;
 	strreset->strreset_assoc_id = sctp_get_associd(stcb);
 	if (number_entries) {
@@ -4293,7 +4294,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 	switch (notification) {
 	case SCTP_NOTIFY_ASSOC_UP:
 		if (stcb->asoc.assoc_up_sent == 0) {
-			sctp_notify_assoc_change(SCTP_COMM_UP, stcb, error, NULL, false, false, so_locked);
+			sctp_notify_assoc_change(SCTP_COMM_UP, stcb, (uint16_t) error, NULL, false, false, so_locked);
 			stcb->asoc.assoc_up_sent = 1;
 		}
 		if (stcb->asoc.adaptation_needed && (stcb->asoc.adaptation_sent == 0)) {
@@ -4304,7 +4305,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		}
 		break;
 	case SCTP_NOTIFY_ASSOC_DOWN:
-		sctp_notify_assoc_change(SCTP_SHUTDOWN_COMP, stcb, error, NULL, false, false, so_locked);
+		sctp_notify_assoc_change(SCTP_SHUTDOWN_COMP, stcb, (uint16_t) error, NULL, false, false, so_locked);
 #if defined(__Userspace__)
 		if (inp->recv_callback) {
 			if (stcb->sctp_socket) {
@@ -4357,29 +4358,29 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 	case SCTP_NOTIFY_ASSOC_LOC_ABORTED:
 		if ((SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_WAIT) ||
 		    (SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_ECHOED)) {
-			sctp_notify_assoc_change(SCTP_CANT_STR_ASSOC, stcb, error, data, false, false, so_locked);
+			sctp_notify_assoc_change(SCTP_CANT_STR_ASSOC, stcb, (uint16_t) error, data, false, false, so_locked);
 		} else {
-			sctp_notify_assoc_change(SCTP_COMM_LOST, stcb, error, data, false, false, so_locked);
+			sctp_notify_assoc_change(SCTP_COMM_LOST, stcb, (uint16_t) error, data, false, false, so_locked);
 		}
 		break;
 	case SCTP_NOTIFY_ASSOC_REM_ABORTED:
 		if ((SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_WAIT) ||
 		    (SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_ECHOED)) {
-			sctp_notify_assoc_change(SCTP_CANT_STR_ASSOC, stcb, error, data, true, false, so_locked);
+			sctp_notify_assoc_change(SCTP_CANT_STR_ASSOC, stcb, (uint16_t) error, data, true, false, so_locked);
 		} else {
-			sctp_notify_assoc_change(SCTP_COMM_LOST, stcb, error, data, true, false, so_locked);
+			sctp_notify_assoc_change(SCTP_COMM_LOST, stcb, (uint16_t) error, data, true, false, so_locked);
 		}
 		break;
 	case SCTP_NOTIFY_ASSOC_TIMEDOUT:
 		if ((SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_WAIT) ||
 		    (SCTP_GET_STATE(stcb) == SCTP_STATE_COOKIE_ECHOED)) {
-			sctp_notify_assoc_change(SCTP_CANT_STR_ASSOC, stcb, error, data, false, true, so_locked);
+			sctp_notify_assoc_change(SCTP_CANT_STR_ASSOC, stcb, (uint16_t) error, data, false, true, so_locked);
 		} else {
-			sctp_notify_assoc_change(SCTP_COMM_LOST, stcb, error, data, false, true, so_locked);
+			sctp_notify_assoc_change(SCTP_COMM_LOST, stcb, (uint16_t) error, data, false, true, so_locked);
 		}
 		break;
 	case SCTP_NOTIFY_ASSOC_RESTART:
-		sctp_notify_assoc_change(SCTP_RESTART, stcb, error, NULL, false, false, so_locked);
+		sctp_notify_assoc_change(SCTP_RESTART, stcb, (uint16_t) error, NULL, false, false, so_locked);
 		if (stcb->asoc.auth_supported == 0) {
 			sctp_notify_authentication(stcb, SCTP_AUTH_NO_AUTH, 0, so_locked);
 		}
@@ -4443,7 +4444,7 @@ sctp_ulp_notify(uint32_t notification, struct sctp_tcb *stcb,
 		sctp_notify_sender_dry_event(stcb, so_locked);
 		break;
 	case SCTP_NOTIFY_REMOTE_ERROR:
-		sctp_notify_remote_error(stcb, error, data, so_locked);
+		sctp_notify_remote_error(stcb, (uint16_t) error, data, so_locked);
 		break;
 	default:
 		SCTPDBG(SCTP_DEBUG_UTIL1, "%s: unknown notification %xh (%u)\n",
@@ -4619,7 +4620,7 @@ sctp_abort_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 #endif
 	struct sctp_gen_error_cause* cause;
 	uint32_t vtag;
-	uint16_t cause_code;
+	uint16_t cause_code = 0;
 
 	if (stcb != NULL) {
 		vtag = stcb->asoc.peer_vtag;
@@ -4628,8 +4629,6 @@ sctp_abort_association(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			/* Read the cause code from the error cause. */
 			cause = mtod(op_err, struct sctp_gen_error_cause *);
 			cause_code = ntohs(cause->code);
-		} else {
-			cause_code = 0;
 		}
 	} else {
 		vtag = 0;

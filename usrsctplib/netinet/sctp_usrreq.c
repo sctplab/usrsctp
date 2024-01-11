@@ -123,12 +123,12 @@ sctp_init(void)
 #endif
 #endif
 #ifdef INET
-	SCTP_BASE_VAR(userspace_rawsctp) = -1;
-	SCTP_BASE_VAR(userspace_udpsctp) = -1;
+	SCTP_BASE_VAR(userspace_rawsctp) = (SOCKET) -1;
+	SCTP_BASE_VAR(userspace_udpsctp) = (SOCKET) -1;
 #endif
 #ifdef INET6
-	SCTP_BASE_VAR(userspace_rawsctp6) = -1;
-	SCTP_BASE_VAR(userspace_udpsctp6) = -1;
+	SCTP_BASE_VAR(userspace_rawsctp6) = (SOCKET) -1;
+	SCTP_BASE_VAR(userspace_udpsctp6) = (SOCKET) -1;
 #endif
 	SCTP_BASE_VAR(timer_thread_should_exit) = 0;
 	SCTP_BASE_VAR(conn_output) = conn_output;
@@ -760,7 +760,7 @@ sctp_attach(struct socket *so, int proto SCTP_UNUSED, struct proc *p SCTP_UNUSED
 	inp->sctp_flags &= ~SCTP_PCB_FLAGS_BOUND_V6;	/* I'm not v6! */
 	ip_inp = &inp->ip_inp.inp;
 	ip_inp->inp_vflag |= INP_IPV4;
-	ip_inp->inp_ip_ttl = MODULE_GLOBAL(ip_defttl);
+	ip_inp->inp_ip_ttl = (u_char) MODULE_GLOBAL(ip_defttl);
 	SCTP_INP_WUNLOCK(inp);
 	return (0);
 }
@@ -838,7 +838,7 @@ sctpconn_attach(struct socket *so, int proto SCTP_UNUSED, uint32_t vrf_id)
 	inp->sctp_flags |= SCTP_PCB_FLAGS_BOUND_CONN;
 	ip_inp = &inp->ip_inp.inp;
 	ip_inp->inp_vflag |= INP_CONN;
-	ip_inp->inp_ip_ttl = MODULE_GLOBAL(ip_defttl);
+	ip_inp->inp_ip_ttl = (u_char) MODULE_GLOBAL(ip_defttl);
 	SCTP_INP_WUNLOCK(inp);
 	return (0);
 }
@@ -3312,12 +3312,12 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		sstat->sstat_state = sctp_map_assoc_state(stcb->asoc.state);
 		sstat->sstat_assoc_id = sctp_get_associd(stcb);
 		sstat->sstat_rwnd = stcb->asoc.peers_rwnd;
-		sstat->sstat_unackdata = stcb->asoc.sent_queue_cnt;
+		sstat->sstat_unackdata = (uint16_t) stcb->asoc.sent_queue_cnt;
 		/*
 		 * We can't include chunks that have been passed to
 		 * the socket layer. Only things in queue.
 		 */
-		sstat->sstat_penddata = (stcb->asoc.cnt_on_reasm_queue +
+		sstat->sstat_penddata = (uint16_t) (stcb->asoc.cnt_on_reasm_queue +
 					 stcb->asoc.cnt_on_all_streams);
 		sstat->sstat_instrms = stcb->asoc.streamincnt;
 		sstat->sstat_outstrms = stcb->asoc.streamoutcnt;
@@ -3466,7 +3466,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		if (stcb) {
 			sasoc->sasoc_cookie_life = sctp_ticks_to_msecs(stcb->asoc.cookie_life);
 			sasoc->sasoc_asocmaxrxt = stcb->asoc.max_send_times;
-			sasoc->sasoc_number_peer_destinations = stcb->asoc.numnets;
+			sasoc->sasoc_number_peer_destinations = (uint16_t) stcb->asoc.numnets;
 			sasoc->sasoc_peer_rwnd = stcb->asoc.peers_rwnd;
 			sasoc->sasoc_local_rwnd = stcb->asoc.my_rwnd;
 			SCTP_TCB_UNLOCK(stcb);
@@ -3529,7 +3529,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		sinit->sinit_num_ostreams = inp->sctp_ep.pre_open_stream_count;
 		sinit->sinit_max_instreams = inp->sctp_ep.max_open_streams_intome;
 		sinit->sinit_max_attempts = inp->sctp_ep.max_init_times;
-		sinit->sinit_max_init_timeo = inp->sctp_ep.initial_init_rto_max;
+		sinit->sinit_max_init_timeo = (uint16_t) inp->sctp_ep.initial_init_rto_max;
 		SCTP_INP_RUNLOCK(inp);
 		*optsize = sizeof(struct sctp_initmsg);
 		break;
@@ -4695,7 +4695,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			}
 			SCTP_FIND_STCB(inp, stcb, av->assoc_id);
 			if (stcb) {
-				stcb->asoc.sctp_cmt_on_off = av->assoc_value;
+				stcb->asoc.sctp_cmt_on_off = (uint8_t) av->assoc_value;
 				SCTP_TCB_UNLOCK(stcb);
 			} else {
 				if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
@@ -4713,7 +4713,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					SCTP_INP_RLOCK(inp);
 					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
-						stcb->asoc.sctp_cmt_on_off = av->assoc_value;
+						stcb->asoc.sctp_cmt_on_off = (uint8_t) av->assoc_value;
 						SCTP_TCB_UNLOCK(stcb);
 					}
 					SCTP_INP_RUNLOCK(inp);
@@ -5589,7 +5589,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		if (send_in) {
 			error = sctp_send_str_reset_req(stcb, strrst->srs_number_streams,
 							strrst->srs_stream_list,
-							send_in, 0, 0, 0, 0, 0);
+							(uint8_t) send_in, 0, 0, 0, 0, 0);
 		} else {
 			error = sctp_send_stream_reset_out_if_possible(stcb, SCTP_SO_LOCKED);
 		}
@@ -7795,7 +7795,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 		if ((*value == SCTP_EDMID_NONE) ||
 		    (*value == SCTP_EDMID_LOWER_LAYER_DTLS)) {
 			SCTP_INP_WLOCK(inp);
-			inp->rcv_edmid = *value;
+			inp->rcv_edmid = (uint8_t) *value;
 			SCTP_INP_WUNLOCK(inp);
 		} else {
 			SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);

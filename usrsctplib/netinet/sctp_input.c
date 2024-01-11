@@ -123,7 +123,8 @@ sctp_handle_init(struct mbuf *m, int iphlen, int offset,
 	if (sctp_validate_init_auth_params(m, offset + sizeof(*cp),
 					   offset + ntohs(cp->ch.chunk_length))) {
 		/* auth parameter(s) error... send abort */
-		op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+            op_err = sctp_generate_cause (
+              (uint16_t) SCTP_BASE_SYSCTL (sctp_diag_info_code),
 		                             "Problem with AUTH parameters");
 		sctp_send_abort(m, iphlen, src, dst, sh, init->initiate_tag, op_err,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
@@ -150,7 +151,7 @@ sctp_handle_init(struct mbuf *m, int iphlen, int offset,
 		 * this state :-)
 		 */
 		if (SCTP_BASE_SYSCTL(sctp_blackhole) == 0) {
-			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+			op_err = sctp_generate_cause((uint16_t) SCTP_BASE_SYSCTL(sctp_diag_info_code),
 			                             "No listener");
 			sctp_send_abort(m, iphlen, src, dst, sh, 0, op_err,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
@@ -335,7 +336,7 @@ sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb)
 		/* cut back the count */
 		asoc->pre_open_streams = newcnt;
 	}
-	asoc->streamoutcnt = asoc->pre_open_streams;
+	asoc->streamoutcnt = (uint16_t) asoc->pre_open_streams;
 	if (asoc->strmout) {
 		for (i = 0; i < asoc->streamoutcnt; i++) {
 			asoc->strmout[i].state = SCTP_STREAM_OPEN;
@@ -366,7 +367,7 @@ sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb)
 	if (asoc->max_inbound_streams > ntohs(init->num_outbound_streams)) {
 		asoc->streamincnt = ntohs(init->num_outbound_streams);
 	} else {
-		asoc->streamincnt = asoc->max_inbound_streams;
+		asoc->streamincnt = (uint16_t) asoc->max_inbound_streams;
 	}
 	SCTP_MALLOC(asoc->strmin, struct sctp_stream_in *, asoc->streamincnt *
 		    sizeof(struct sctp_stream_in), SCTP_M_STRMI);
@@ -376,7 +377,7 @@ sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb)
 		return (-1);
 	}
 	for (i = 0; i < asoc->streamincnt; i++) {
-		asoc->strmin[i].sid = i;
+		asoc->strmin[i].sid = (uint16_t) i;
 		asoc->strmin[i].last_mid_delivered = 0xffffffff;
 		TAILQ_INIT(&asoc->strmin[i].inqueue);
 		TAILQ_INIT(&asoc->strmin[i].uno_inqueue);
@@ -490,7 +491,7 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 		if (op_err != NULL) {
 			sctp_m_freem(op_err);
 		}
-		op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+		op_err = sctp_generate_cause((uint16_t) SCTP_BASE_SYSCTL(sctp_diag_info_code),
 		                             "Problem with address parameters");
 		SCTPDBG(SCTP_DEBUG_INPUT1,
 		        "Load addresses from INIT causes an abort %d\n",
@@ -785,7 +786,6 @@ sctp_handle_nat_colliding_state(struct sctp_tcb *stcb)
 		sctp_send_initiate(stcb->sctp_ep, stcb, SCTP_SO_NOT_LOCKED);
 		return (1);
 	}
-	return (0);
 }
 
 static int
@@ -1662,7 +1662,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			                                    initack_offset, src, dst, init_src, stcb->asoc.port)) < 0) {
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 4;
-			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+			op_err = sctp_generate_cause((uint16_t) SCTP_BASE_SYSCTL(sctp_diag_info_code),
 			                             "Problem with address parameters");
 			SCTPDBG(SCTP_DEBUG_INPUT1,
 			        "Load addresses from INIT causes an abort %d\n",
@@ -1809,7 +1809,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		                                            initack_offset, src, dst, init_src, stcb->asoc.port)) < 0) {
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 10;
-			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+			op_err = sctp_generate_cause((uint16_t) SCTP_BASE_SYSCTL(sctp_diag_info_code),
 			                             "Problem with address parameters");
 			SCTPDBG(SCTP_DEBUG_INPUT1,
 			        "Load addresses from INIT causes an abort %d\n",
@@ -1983,7 +1983,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 #endif
 			stcb->asoc.strmout[i].next_mid_ordered = 0;
 			stcb->asoc.strmout[i].next_mid_unordered = 0;
-			stcb->asoc.strmout[i].sid = i;
+			stcb->asoc.strmout[i].sid = (uint16_t) i;
 			stcb->asoc.strmout[i].last_msg_incomplete = 0;
 		}
 		TAILQ_FOREACH_SAFE(strrst, &asoc->resetHead, next_resp, nstrrst) {
@@ -2088,7 +2088,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		                                            initack_offset, src, dst, init_src, stcb->asoc.port)) < 0) {
 			if (how_indx < sizeof(asoc->cookie_how))
 				asoc->cookie_how[how_indx] = 14;
-			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+			op_err = sctp_generate_cause((uint16_t) SCTP_BASE_SYSCTL(sctp_diag_info_code),
 			                             "Problem with address parameters");
 			SCTPDBG(SCTP_DEBUG_INPUT1,
 			        "Load addresses from INIT causes an abort %d\n",
@@ -3908,7 +3908,7 @@ sctp_handle_stream_reset_response(struct sctp_tcb *stcb,
 					for (i = asoc->streamoutcnt; i < (asoc->streamoutcnt + num_stream); i++) {
 						asoc->strmout[i].state = SCTP_STREAM_OPEN;
 					}
-					asoc->streamoutcnt += num_stream;
+					asoc->streamoutcnt += (uint16_t) num_stream;
 					sctp_ulp_notify(SCTP_NOTIFY_STR_RESET_ADD, stcb, 0, NULL, SCTP_SO_NOT_LOCKED);
 				} else if (action == SCTP_STREAM_RESET_RESULT_DENIED) {
 					sctp_ulp_notify(SCTP_NOTIFY_STR_RESET_ADD, stcb, SCTP_STREAM_CHANGE_DENIED, NULL, SCTP_SO_NOT_LOCKED);
@@ -4238,7 +4238,7 @@ sctp_handle_str_reset_add_strm(struct sctp_tcb *stcb, struct sctp_tmit_chunk *ch
 			for (i = 0; i < stcb->asoc.streamincnt; i++) {
 				TAILQ_INIT(&stcb->asoc.strmin[i].inqueue);
 				TAILQ_INIT(&stcb->asoc.strmin[i].uno_inqueue);
-				stcb->asoc.strmin[i].sid = i;
+				stcb->asoc.strmin[i].sid = (uint16_t) i;
 				stcb->asoc.strmin[i].last_mid_delivered = oldstrm[i].last_mid_delivered;
 				stcb->asoc.strmin[i].delivery_started = oldstrm[i].delivery_started;
 				stcb->asoc.strmin[i].pd_api_started = oldstrm[i].pd_api_started;
@@ -4256,14 +4256,14 @@ sctp_handle_str_reset_add_strm(struct sctp_tcb *stcb, struct sctp_tmit_chunk *ch
 			for (i = stcb->asoc.streamincnt; i < num_stream; i++) {
 				TAILQ_INIT(&stcb->asoc.strmin[i].inqueue);
 				TAILQ_INIT(&stcb->asoc.strmin[i].uno_inqueue);
-				stcb->asoc.strmin[i].sid = i;
+				stcb->asoc.strmin[i].sid = (uint16_t) i;
 				stcb->asoc.strmin[i].last_mid_delivered = 0xffffffff;
 				stcb->asoc.strmin[i].pd_api_started = 0;
 				stcb->asoc.strmin[i].delivery_started = 0;
 			}
 			SCTP_FREE(oldstrm, SCTP_M_STRMI);
 			/* update the size */
-			stcb->asoc.streamincnt = num_stream;
+			stcb->asoc.streamincnt = (uint16_t) num_stream;
 			stcb->asoc.last_reset_action[0] = SCTP_STREAM_RESET_RESULT_PERFORMED;
 			sctp_ulp_notify(SCTP_NOTIFY_STR_RESET_ADD, stcb, 0, NULL, SCTP_SO_NOT_LOCKED);
 		}
@@ -4850,7 +4850,7 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 		}
 		if (stcb == NULL) {
 			SCTP_SNPRINTF(msg, sizeof(msg), "OOTB, %s:%d at %s", __FILE__, __LINE__, __func__);
-			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+			op_err = sctp_generate_cause((uint16_t) SCTP_BASE_SYSCTL(sctp_diag_info_code),
 			                             msg);
 			/* no association, so it's out of the blue... */
 			sctp_handle_ootb(m, iphlen, *offset, src, dst, sh, inp, op_err,
@@ -5708,7 +5708,7 @@ sctp_common_input_processing(struct mbuf **mm, int iphlen, int offset, int lengt
 #if defined(__Userspace__)
 	struct socket *upcall_socket = NULL;
 #endif
-	uint32_t high_tsn;
+	uint32_t high_tsn = 0;
 	uint32_t cksum_in_hdr;
 	int un_sent;
 	int cnt_ctrl_ready = 0;
@@ -5883,7 +5883,7 @@ cksum_validated:
 			if ((SCTP_BASE_SYSCTL(sctp_blackhole) == 0) ||
 			    ((SCTP_BASE_SYSCTL(sctp_blackhole) == 1) &&
 			     (ch->chunk_type != SCTP_INIT))) {
-				op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+				op_err = sctp_generate_cause((uint16_t) SCTP_BASE_SYSCTL(sctp_diag_info_code),
 				                             "Out of the blue");
 				sctp_send_abort(m, iphlen, src, dst,
 				                sh, 0, op_err,
@@ -5920,7 +5920,7 @@ cksum_validated:
 			SCTP_PROBE5(receive, NULL, stcb, m, stcb, sh);
 #endif
 			SCTP_SNPRINTF(msg, sizeof(msg), "OOTB, %s:%d at %s", __FILE__, __LINE__, __func__);
-			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+			op_err = sctp_generate_cause((uint16_t) SCTP_BASE_SYSCTL(sctp_diag_info_code),
 			                             msg);
 			sctp_handle_ootb(m, iphlen, offset, src, dst, sh, inp, op_err,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
@@ -6003,7 +6003,7 @@ cksum_validated:
 			SCTP_PROBE5(receive, NULL, NULL, m, NULL, sh);
 #endif
 			SCTP_SNPRINTF(msg, sizeof(msg), "OOTB, %s:%d at %s", __FILE__, __LINE__, __func__);
-			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+			op_err = sctp_generate_cause((uint16_t) SCTP_BASE_SYSCTL(sctp_diag_info_code),
 			                             msg);
 			sctp_handle_ootb(m, iphlen, offset, src, dst, sh, inp, op_err,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
@@ -6089,7 +6089,7 @@ cksum_validated:
 			 * We consider OOTB any data sent during asoc setup.
 			 */
 			SCTP_SNPRINTF(msg, sizeof(msg), "OOTB, %s:%d at %s", __FILE__, __LINE__, __func__);
-			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+			op_err = sctp_generate_cause((uint16_t) SCTP_BASE_SYSCTL(sctp_diag_info_code),
 			                             msg);
 			sctp_handle_ootb(m, iphlen, offset, src, dst, sh, inp, op_err,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
