@@ -28,12 +28,7 @@
  * SUCH DAMAGE.
  */
 
-#include <stdlib.h>
 #include <stdio.h>
-#include <stdarg.h>
-#ifndef _WIN32
-#include <unistd.h>
-#endif
 #include <usrsctp.h>
 
 int
