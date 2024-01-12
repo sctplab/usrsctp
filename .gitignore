@@ -62,10 +62,9 @@ callgrind.out*
 # cmake build
 /build
 
-/msvc/.vs
-/msvc/x64
-
-# build and IDE artifacts
-/lib
+# MSVC build and IDE artifacts
 /bin
+/lib
+/obj
+/msvc/.vs
 /msvc/*.vcxproj.user
