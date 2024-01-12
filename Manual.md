@@ -376,7 +376,7 @@ SCTP_RESET_STREAMS | struct sctp_reset_streams | w
 SCTP_RESET_ASSOC | struct sctp_assoc_t | w
 SCTP_ADD_STREAMS | struct sctp_add_streams | w
 
-Further usage details are described in [RFC 6458](https://tools.ietf.org/html/rfc6458), [RFC 6525](https://tools.ietf.org/html/rfc6525), and [draft-ietf-tsvwg-sctp-udp-encaps-03](https://tools.ietf.org/html/draft-ietf-tsvwg-sctp-udp-encaps-03) (work in progress).
+Further usage details are described in [RFC 6458](https://tools.ietf.org/html/rfc6458), [RFC 6525](https://tools.ietf.org/html/rfc6525), and [RFC 6951](https://tools.ietf.org/html/rfc6951).
 
 ## Sysctl variables
 
