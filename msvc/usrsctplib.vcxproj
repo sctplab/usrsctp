@@ -141,22 +141,36 @@
     <OutDir>$(SolutionDir)..\lib\$(Platform)\$(Configuration)\</OutDir>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <TargetName>usrsctp</TargetName>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <ClangTidyChecks>-*,clang-analyzer-core*,-clang-analyzer-deadcode*,-clang-analyzer-nullability*,-clang-analyzer-alpha.clone*,-clang-analyzer-alpha.core*,-clang-analyzer-alpha.deadcode*,-clang-analyzer-alpha.security*</ClangTidyChecks>
+    <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IntDir>$(SolutionDir)..\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)..\lib\$(Platform)\$(Configuration)\</OutDir>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <TargetName>usrsctp</TargetName>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <ClangTidyChecks>-*,clang-analyzer-core*,-clang-analyzer-deadcode*,-clang-analyzer-nullability*,-clang-analyzer-alpha.clone*,-clang-analyzer-alpha.core*,-clang-analyzer-alpha.deadcode*,-clang-analyzer-alpha.security*</ClangTidyChecks>
+    <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>usrsctp</TargetName>
     <OutDir>$(SolutionDir)..\lib\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <ClangTidyChecks>-*,clang-analyzer-core*,-clang-analyzer-deadcode*,-clang-analyzer-nullability*,-clang-analyzer-alpha.clone*,-clang-analyzer-alpha.core*,-clang-analyzer-alpha.deadcode*,-clang-analyzer-alpha.security*</ClangTidyChecks>
+    <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetName>usrsctp</TargetName>
     <OutDir>$(SolutionDir)..\lib\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)..\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <ClangTidyChecks>-*,clang-analyzer-core*,-clang-analyzer-deadcode*,-clang-analyzer-nullability*,-clang-analyzer-alpha.clone*,-clang-analyzer-alpha.core*,-clang-analyzer-alpha.deadcode*,-clang-analyzer-alpha.security*</ClangTidyChecks>
+    <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -164,6 +178,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <EnablePREfast>true</EnablePREfast>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -178,6 +193,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <EnablePREfast>true</EnablePREfast>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -203,6 +219,7 @@
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
       <DisableSpecificWarnings>4100;4127;4200;4706</DisableSpecificWarnings>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <EnablePREfast>true</EnablePREfast>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -235,6 +252,7 @@
       <DisableAnalyzeExternal>true</DisableAnalyzeExternal>
       <DisableSpecificWarnings>4100;4127;4200;4706</DisableSpecificWarnings>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <EnablePREfast>true</EnablePREfast>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
