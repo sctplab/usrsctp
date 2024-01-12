@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{6f50aa5b-3ed7-46b9-b4eb-cb41f9e46bef}</ProjectGuid>
+    <ProjectGuid>{6f50aa5b-3ed7-46b9-b4eb-cb41f9e46c02}</ProjectGuid>
     <RootNamespace>chargenserverupcall</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -148,7 +148,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\programs\discard_server.c" />
+    <ClCompile Include="..\programs\ekr_client.c" />
     <ClCompile Include="..\programs\programs_helper.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
