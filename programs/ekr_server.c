@@ -30,8 +30,8 @@
 
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
+#include <process.h>
 #endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -248,8 +248,8 @@ main (int argc, char *argv[])
 	usrsctp_sysctl_set_sctp_ecn_enable(0);
 	usrsctp_register_address((void *)&fd);
 #ifdef _WIN32
-	if ((tid = CreateThread(NULL, 0, &handle_packets, (void *)&fd, 0, NULL)) == NULL) {
-		fprintf(stderr, "CreateThread() failed with error: %lu\n", GetLastError());
+	if ((tid = (HANDLE) _beginthreadex(NULL, 0, &handle_packets, (void *)&fd, 0, NULL)) == NULL) {
+		fprintf(stderr, "_beginthreadex() failed with error: %lu\n", errno);
 		exit(EXIT_FAILURE);
 	}
 #else

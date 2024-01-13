@@ -35,6 +35,7 @@
 
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
+#include <process.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -120,7 +121,11 @@ handle_packets(void *arg)
 			} else {
 				usrsctp_conninput(fdp, buf, (size_t)length, 0);
 			}
-		}
+#ifdef _WIN32
+        } else if (WSAGetLastError () == WSAEINTR) {
+            break;
+#endif
+        }
 	}
 #ifdef _WIN32
 	return 0;
@@ -503,12 +508,12 @@ main (int argc, char *argv[])
 	}
 #endif
 #ifdef _WIN32
-	if ((tid_c = CreateThread(NULL, 0, &handle_packets, (void *)&fd_c, 0, NULL)) == NULL) {
-		debug_printf("CreateThread() failed with error: %d\n", GetLastError());
+	if ((tid_c = (HANDLE) _beginthreadex(NULL, 0, &handle_packets, (void *)&fd_c, 0, NULL)) == NULL) {
+		debug_printf("_beginthreadex() failed with error: %d\n", errno);
 		exit(EXIT_FAILURE);
 	}
-	if ((tid_s = CreateThread(NULL, 0, &handle_packets, (void *)&fd_s, 0, NULL)) == NULL) {
-		debug_printf("CreateThread() failed with error: %d\n", GetLastError());
+	if ((tid_s = (HANDLE) _beginthreadex(NULL, 0, &handle_packets, (void *)&fd_s, 0, NULL)) == NULL) {
+		debug_printf("_beginthreadex() failed with error: %d\n", errno);
 		exit(EXIT_FAILURE);
 	}
 #else
@@ -700,18 +705,16 @@ main (int argc, char *argv[])
 #endif
 	}
 #ifdef _WIN32
-	TerminateThread(tid_c, 0);
-	WaitForSingleObject(tid_c, INFINITE);
-	TerminateThread(tid_s, 0);
-	WaitForSingleObject(tid_s, INFINITE);
 	if (closesocket(fd_c) == SOCKET_ERROR) {
 		debug_printf("closesocket() failed with error: %d\n", WSAGetLastError());
 		exit(EXIT_FAILURE);
 	}
+	WaitForSingleObject(tid_c, INFINITE);
 	if (closesocket(fd_s) == SOCKET_ERROR) {
 		debug_printf("closesocket() failed with error: %d\n", WSAGetLastError());
 		exit(EXIT_FAILURE);
 	}
+	WaitForSingleObject(tid_s, INFINITE);
 	WSACleanup();
 #else
 	pthread_cancel(tid_c);

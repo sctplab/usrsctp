@@ -30,6 +30,7 @@
 
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
+#include <process.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -86,6 +87,10 @@ handle_packets(void *arg)
 				usrsctp_freedumpbuffer(dump_buf);
 			}
 			usrsctp_conninput(fdp, buf, (size_t)length, 0);
+#ifdef _WIN32
+        } else if (WSAGetLastError () == WSAEINTR) {
+            break;
+#endif
 		}
 	}
 #ifdef _WIN32
@@ -250,8 +255,8 @@ main (int argc, char *argv[])
 	usrsctp_sysctl_set_sctp_ecn_enable(0);
 	usrsctp_register_address((void *)&fd);
 #ifdef _WIN32
-	if ((tid = CreateThread(NULL, 0, &handle_packets, (void *)&fd, 0, NULL)) == NULL) {
-		fprintf(stderr, "CreateThread() failed with error: %lu\n", GetLastError());
+	if ((tid = (HANDLE) _beginthreadex(NULL, 0, &handle_packets, (void *)&fd, 0, NULL)) == NULL) {
+		fprintf(stderr, "_beginthreadex() failed with error: %lu\n", errno);
 		exit(EXIT_FAILURE);
 	}
 #else
@@ -305,11 +310,10 @@ main (int argc, char *argv[])
 #endif
 	}
 #ifdef _WIN32
-	TerminateThread(tid, 0);
-	WaitForSingleObject(tid, INFINITE);
 	if (closesocket(fd) == SOCKET_ERROR) {
 		fprintf(stderr, "closesocket() failed with error: %d\n", WSAGetLastError());
 	}
+	WaitForSingleObject(tid, INFINITE);
 	WSACleanup();
 #else
 	pthread_cancel(tid);

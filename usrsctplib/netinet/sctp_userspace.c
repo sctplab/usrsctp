@@ -31,6 +31,7 @@
 #include <netinet/sctp_pcb.h>
 #include <sys/timeb.h>
 #include <iphlpapi.h>
+#include <process.h>
 #if !defined(__MINGW32__)
 #pragma comment(lib, "iphlpapi.lib")
 #endif
@@ -52,8 +53,9 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #endif
-static DWORD WINAPI
-sctp_create_thread_adapter(void *arg) {
+
+static unsigned __stdcall sctp_create_thread_adapter (void *arg)
+{
 	start_routine_t start_routine = (start_routine_t)arg;
 	return start_routine(NULL) == NULL;
 }
@@ -61,11 +63,13 @@ sctp_create_thread_adapter(void *arg) {
 int
 sctp_userspace_thread_create(userland_thread_t *thread, start_routine_t start_routine)
 {
-	*thread = CreateThread(NULL, 0, sctp_create_thread_adapter,
-			       (void *)start_routine, 0, NULL);
-	if (*thread == NULL)
-		return GetLastError();
-	return 0;
+    *thread = (HANDLE) _beginthreadex (NULL, 0, sctp_create_thread_adapter,
+                                       (void*) start_routine, 0, NULL);
+    if (*thread == NULL) {
+        return errno;
+    }
+
+    return 0;
 }
 
 #if defined(__MINGW32__)
