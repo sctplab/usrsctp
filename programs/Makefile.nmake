@@ -28,11 +28,11 @@
 # SUCH DAMAGE.
 #
 
-CFLAGS=/I..\usrsctplib /W3 /WX /sdl /MP /Zi /GF /GS /Gv /Gy /GL /arch:AVX /MT /O2 /Ob2 /DNDEBUG /Oi /Ot /Oy /GT /guard:cf
+CFLAGS=/W3 /WX /I..\usrsctplib
 
 CVARSDLL=-DINET -DINET6
 
-LINKFLAGS=/LTCG /LIBPATH:..\usrsctplib usrsctp.lib
+LINKFLAGS=/LIBPATH:..\usrsctplib usrsctp.lib
 
 .c.obj::
 	$(CC) $(CVARSDLL) $(CFLAGS) -Fd.\ -c $<
@@ -139,7 +139,6 @@ st_client:
 	link -out:st_client.exe st_client.obj programs_helper.obj $(LINKFLAGS)
 
 clean:
-	del /F programs_helper.obj
 	del /F client.exe
 	del /F client.obj
 	del /F client_upcall.exe
