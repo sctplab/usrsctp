@@ -61,6 +61,7 @@
 userland_mutex_t accept_mtx;
 userland_cond_t accept_cond;
 #ifdef _WIN32
+HCRYPTPROV crypto_provider = 0;
 #include <time.h>
 #include <sys/timeb.h>
 #endif
@@ -90,6 +91,10 @@ static void init_sync(void) {
 #endif
 	InitializeConditionVariable(&accept_cond);
 	InitializeCriticalSection(&accept_mtx);
+    if (!CryptAcquireContext (&crypto_provider, NULL, NULL, PROV_RSA_FULL, 0)) {
+        SCTP_PRINTF ("CryptAcquireContext failed\n");
+        exit (-1);
+    }
 #else
 	pthread_mutexattr_t mutex_attr;
 
@@ -2060,7 +2065,11 @@ usrsctp_finish(void)
 	}
 	sctp_finish();
 #if defined(_WIN32)
-	DeleteConditionVariable(&accept_cond);
+    if (crypto_provider) {
+        CryptReleaseContext (crypto_provider, 0);
+        crypto_provider = 0;
+    }
+    DeleteConditionVariable (&accept_cond);
 	DeleteCriticalSection(&accept_mtx);
 #if defined(INET) || defined(INET6)
 	WSACleanup();
