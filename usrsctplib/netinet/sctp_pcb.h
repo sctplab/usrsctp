@@ -343,7 +343,7 @@ struct sctp_base_info {
 
 /*-
  * Here we have all the relevant information for each SCTP entity created. We
- * will need to modify this as approprate. We also need to figure out how to
+ * will need to modify this as appropriate. We also need to figure out how to
  * access /dev/random.
  */
 struct sctp_pcb {
@@ -387,9 +387,7 @@ struct sctp_pcb {
 	uint16_t max_open_streams_intome;
 
 	/* random number generator */
-	uint32_t random_counter;
-	uint8_t random_numbers[SCTP_SIGNATURE_ALOC_SIZE];
-	uint8_t random_store[SCTP_SIGNATURE_ALOC_SIZE];
+    uint32_t random_store[1024 / sizeof(uint32_t)]; // Count *MUST* be a power of two!
 
 	/*
 	 * This timer is kept running per endpoint.  When it fires it will
@@ -400,7 +398,9 @@ struct sctp_pcb {
 	uint32_t def_cookie_life;
 	/* defaults to 0 */
 	uint32_t auto_close_time;
+#ifdef SCTP_DEBUG
 	uint32_t initial_sequence_debug;
+#endif
 	uint32_t adaptation_layer_indicator;
 	uint8_t adaptation_layer_indicator_provided;
 	uint32_t store_at;

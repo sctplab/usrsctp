@@ -1010,65 +1010,42 @@ sctp_get_next_mtu(uint32_t val)
 void
 sctp_fill_random_store(struct sctp_pcb *m)
 {
-	/*
-	 * Here we use the MD5/SHA-1 to hash with our good randomNumbers and
-	 * our counter. The result becomes our good random numbers and we
-	 * then setup to give these out. Note that we do no locking to
-	 * protect this. This is ok, since if competing folks call this we
-	 * will get more gobbled gook in the random store which is what we
-	 * want. There is a danger that two guys will use the same random
-	 * numbers, but thats ok too since that is random as well :->
-	 */
-	m->store_at = 0;
-#if defined(__Userspace__) && defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
-	for (int i = 0; i < (int) (sizeof(m->random_store) / sizeof(m->random_store[0])); i++) {
-		m->random_store[i] = (uint8_t) rand();
-	}
-#else
-	(void)sctp_hmac(SCTP_HMAC, (uint8_t *)m->random_numbers,
-	    sizeof(m->random_numbers), (uint8_t *)&m->random_counter,
-	    sizeof(m->random_counter), (uint8_t *)m->random_store);
-#endif
-	m->random_counter++;
+    read_random (m->random_store, sizeof(m->random_store));
 }
 
 uint32_t
 sctp_select_initial_TSN(struct sctp_pcb *inp)
 {
-	/*
-	 * A true implementation should use random selection process to get
-	 * the initial stream sequence number, using RFC1750 as a good
-	 * guideline
-	 */
-	uint32_t x, *xp;
-	uint8_t *p;
-	int store_at, new_store;
+	int store_at;
 
-	if (inp->initial_sequence_debug != 0) {
-		uint32_t ret;
-
-		ret = inp->initial_sequence_debug;
+#ifdef SCTP_DEBUG
+    if (inp->initial_sequence_debug != 0) {
+		uint32_t ret = inp->initial_sequence_debug;
 		inp->initial_sequence_debug++;
 		return (ret);
 	}
- retry:
-	store_at = inp->store_at;
-	new_store = store_at + sizeof(uint32_t);
-	if (new_store >= (SCTP_SIGNATURE_SIZE-3)) {
-		new_store = 0;
-	}
-	if (!atomic_cmpset_int(&inp->store_at, store_at, new_store)) {
-		goto retry;
-	}
-	if (new_store == 0) {
-		/* Refill the random store */
+#endif
+
+    store_at = (atomic_increment(&inp->store_at) & ((sizeof(inp->random_store)/sizeof(uint32_t))-1));
+
+   /*
+	* If many threads are here and the index wrapped there
+	* is a risk that some of them re-read the beginning of
+	* the existing sequence while the one that caused the
+	* index to wrap re-fills the random_store.
+	* 
+	* If that is a problem then a lock must be taken before
+	* the increment (which then no longer needs to be atomic)
+	* and held until after the value is tested against 0 and
+	* the buffer filled.
+	*/
+
+	if (store_at == 0) {
 		sctp_fill_random_store(inp);
 	}
-	p = &inp->random_store[store_at];
-	xp = (uint32_t *)p;
-	x = *xp;
-	return (x);
-}
+
+    return (inp->random_store[store_at]);
+ }
 
 uint32_t
 sctp_select_a_tag(struct sctp_inpcb *inp, uint16_t lport, uint16_t rport, int check)

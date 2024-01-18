@@ -2988,9 +2988,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	m->adaptation_layer_indicator_provided = 0;
 
 	/* seed random number generator */
-	m->random_counter = 1;
-	m->store_at = SCTP_SIGNATURE_SIZE;
-	SCTP_READ_RANDOM(m->random_numbers, sizeof(m->random_numbers));
+    m->store_at = 0;
 	sctp_fill_random_store(m);
 
 	/* Minimum cookie size */

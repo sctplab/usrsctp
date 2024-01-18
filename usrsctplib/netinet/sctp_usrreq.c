@@ -2795,7 +2795,8 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		*optsize = sizeof(uint32_t);
 		break;
 	}
-	case SCTP_SET_INITIAL_DBG_SEQ:
+#ifdef SCTP_DEBUG
+        case SCTP_SET_INITIAL_DBG_SEQ:
 	{
 		uint32_t *value;
 
@@ -2806,6 +2807,7 @@ sctp_getopt(struct socket *so, int optname, void *optval, size_t *optsize,
 		*optsize = sizeof(uint32_t);
 		break;
 	}
+#endif
 	case SCTP_GET_LOCAL_ADDR_SIZE:
 	{
 		uint32_t *value;
