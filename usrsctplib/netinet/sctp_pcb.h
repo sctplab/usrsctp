@@ -387,7 +387,9 @@ struct sctp_pcb {
 	uint16_t max_open_streams_intome;
 
 	/* random number generator */
-    uint32_t random_store[1024 / sizeof(uint32_t)]; // Count *MUST* be a power of two!
+    userland_mutex_t random_store_mtx;
+    uint32_t random_store_index;
+    uint32_t random_store[1024]; // *MUST* be a power of two!
 
 	/*
 	 * This timer is kept running per endpoint.  When it fires it will
@@ -403,7 +405,6 @@ struct sctp_pcb {
 #endif
 	uint32_t adaptation_layer_indicator;
 	uint8_t adaptation_layer_indicator_provided;
-	uint32_t store_at;
 	uint32_t max_burst;
 	uint32_t fr_max_burst;
 #ifdef INET6

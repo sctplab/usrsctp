@@ -1014,37 +1014,30 @@ sctp_fill_random_store(struct sctp_pcb *m)
 }
 
 uint32_t
-sctp_select_initial_TSN(struct sctp_pcb *inp)
+sctp_select_initial_TSN(struct sctp_pcb *m)
 {
-	int store_at;
+    uint32_t random_store_index;
 
 #ifdef SCTP_DEBUG
-    if (inp->initial_sequence_debug != 0) {
-		uint32_t ret = inp->initial_sequence_debug;
-		inp->initial_sequence_debug++;
+    if (m->initial_sequence_debug != 0) {
+		uint32_t ret = m->initial_sequence_debug;
+		m->initial_sequence_debug++;
 		return (ret);
 	}
 #endif
 
-    store_at = (atomic_increment(&inp->store_at) & ((sizeof(inp->random_store)/sizeof(uint32_t))-1));
+	SCTP_EP_RANDOM_STORE_LOCK(m);
+    {
+        random_store_index = ((++m->random_store_index)
+            & ((sizeof (m->random_store) / sizeof (uint32_t)) - 1));
 
-   /*
-	* If many threads are here and the index wrapped there
-	* is a risk that some of them re-read the beginning of
-	* the existing sequence while the one that caused the
-	* index to wrap re-fills the random_store.
-	* 
-	* If that is a problem then a lock must be taken before
-	* the increment (which then no longer needs to be atomic)
-	* and held until after the value is tested against 0 and
-	* the buffer filled.
-	*/
+        if (random_store_index == 0) {
+            sctp_fill_random_store(m);
+        }
+    }
+	SCTP_EP_RANDOM_STORE_UNLOCK(m);
 
-	if (store_at == 0) {
-		sctp_fill_random_store(inp);
-	}
-
-    return (inp->random_store[store_at]);
+    return (m->random_store[random_store_index]);
  }
 
 uint32_t

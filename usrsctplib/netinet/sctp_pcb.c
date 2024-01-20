@@ -2987,8 +2987,9 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	m->adaptation_layer_indicator = 0;
 	m->adaptation_layer_indicator_provided = 0;
 
-	/* seed random number generator */
-    m->store_at = 0;
+	/* Seed random number generator */
+    SCTP_EP_RANDOM_STORE_LOCK_INIT(m);
+    m->random_store_index = 0;
 	sctp_fill_random_store(m);
 
 	/* Minimum cookie size */
@@ -4278,6 +4279,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	SCTP_INP_LOCK_DESTROY(inp);
 	SCTP_INP_READ_LOCK_DESTROY(inp);
 	SCTP_ASOC_CREATE_LOCK_DESTROY(inp);
+    SCTP_EP_RANDOM_STORE_LOCK_DESTROY (&inp->sctp_ep);
 #if !(defined(__APPLE__) && !defined(__Userspace__))
 	SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_ep), inp);
 	SCTP_DECR_EP_COUNT();
