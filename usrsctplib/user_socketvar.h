@@ -403,6 +403,7 @@ void	sofree(struct socket *so);
 
 #define	soref(so) do {							\
 	SOCK_LOCK_ASSERT(so);						\
+	KASSERT((so)->so_count > 0, ("soref"));				\
 	++(so)->so_count;						\
 } while (0)
 
