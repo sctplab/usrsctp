@@ -6478,7 +6478,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 
 	/* Zero checksum acceptable parameter */
 	if (((asoc != NULL) && (asoc->rcv_edmid != SCTP_EDMID_NONE)) ||
-	    ((asoc == NULL) && (inp->rcv_edmid != SCTP_EDMID_NONE))) {
+	    ((asoc == NULL) && (inp->snd_edmid != SCTP_EDMID_NONE))) {
 		parameter_len = (uint16_t)sizeof(struct sctp_zero_checksum_acceptable);
 		zero_chksum = (struct sctp_zero_checksum_acceptable *)(mtod(m, caddr_t) + chunk_len);
 		zero_chksum->ph.param_type = htons(SCTP_ZERO_CHECKSUM_ACCEPTABLE);
