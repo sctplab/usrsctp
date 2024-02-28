@@ -791,7 +791,7 @@ sctp_handle_asconf(struct mbuf *m, unsigned int offset,
 		if (m_result != NULL) {
 			SCTP_BUF_NEXT(m_tail) = m_result;
 			m_tail = m_result;
-			ack_cp->ch.chunk_length += SCTP_BUF_LEN(m_result);
+			ack_cp->ch.chunk_length += (uint16_t) SCTP_BUF_LEN(m_result);
 			/* set flag to force success reports */
 			error = 1;
 		}
@@ -826,7 +826,7 @@ sctp_handle_asconf(struct mbuf *m, unsigned int offset,
 	ack->data = m_ack;
 	ack->len = 0;
 	for (n = m_ack; n != NULL; n = SCTP_BUF_NEXT(n)) {
-		ack->len += SCTP_BUF_LEN(n);
+		ack->len += (uint16_t) SCTP_BUF_LEN(n);
 	}
 	TAILQ_INSERT_TAIL(&stcb->asoc.asconf_ack_sent, ack, next);
 
@@ -1821,7 +1821,7 @@ sctp_handle_asconf_ack(struct mbuf *m, int offset,
 
 		/* update remaining ASCONF-ACK message length to process */
 		if (ack_length > SCTP_SIZE32(param_length)) {
-			ack_length -= SCTP_SIZE32(param_length);
+			ack_length -= (uint16_t) SCTP_SIZE32(param_length);
 		} else {
 			break;
 		}
@@ -2280,7 +2280,7 @@ sctp_asconf_iterator_stcb(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_DO_ASCONF) &&
 		    stcb->asoc.asconf_supported == 1) {
 			/* queue an asconf for this addr */
-			status = sctp_asconf_queue_add(stcb, ifa, type);
+			status = sctp_asconf_queue_add(stcb, ifa, (uint16_t) type);
 			/*
 			 * if queued ok, and in the open state, update the
 			 * count of queued params.  If in the non-open state,
@@ -2438,7 +2438,7 @@ sctp_is_addr_pending(struct sctp_tcb *stcb, struct sctp_ifa *sctp_ifa)
 				default:
 					break;
 				}
-				last_param_type = param_type;
+				last_param_type = (uint16_t) param_type;
 			}
 
 			offset += SCTP_SIZE32(param_length);
@@ -2783,7 +2783,7 @@ sctp_compose_asconf(struct sctp_tcb *stcb, int *retlen, int addr_locked)
 	/* chain it all together */
 	SCTP_BUF_NEXT(m_asconf_chk) = m_asconf;
 	*retlen = SCTP_BUF_LEN(m_asconf_chk) + SCTP_BUF_LEN(m_asconf);
-	acp->ch.chunk_length = htons(*retlen);
+	acp->ch.chunk_length = htons((u_short) *retlen);
 
 	return (m_asconf_chk);
 }

@@ -150,7 +150,10 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 }
 
 int
-main(int argc, char *argv[])
+#ifdef _MSC_VER
+  __cdecl
+#endif
+main (int argc, char *argv[])
 {
 	struct socket *listening_socket;
 	struct sockaddr_in6 addr;

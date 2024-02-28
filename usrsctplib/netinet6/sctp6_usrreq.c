@@ -774,7 +774,7 @@ sctp6_attach(struct socket *so, int proto SCTP_UNUSED, struct proc *p SCTP_UNUSE
 	 * socket as well, because the socket may be bound to an IPv6
 	 * wildcard address, which may match an IPv4-mapped IPv6 address.
 	 */
-	inp->ip_inp.inp.inp_ip_ttl = MODULE_GLOBAL(ip_defttl);
+	inp->ip_inp.inp.inp_ip_ttl = (u_char) MODULE_GLOBAL(ip_defttl);
 #endif
 	SCTP_INP_WUNLOCK(inp);
 	return (0);

@@ -84,7 +84,10 @@ debug_printf_stack(const char *format, ...);
 void
 debug_set_target(FILE *fp);
 
+#if !defined(__PRETTY_FUNCTION__) && !defined(__GNUC__)
+#define __PRETTY_FUNCTION__ __FUNCSIG__
+#endif
+
 #define FUZZER_ASSERT(x) if (!(x)) { printf("USRSCTP assertion failed: function %s, file %s, line %d.\n", __PRETTY_FUNCTION__, __FILE__, __LINE__); abort(); }
- 
 
 #endif /* __PROGRAMS_HELPER_H__ */
