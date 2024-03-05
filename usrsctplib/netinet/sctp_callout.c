@@ -150,6 +150,30 @@ sctp_os_timer_stop(sctp_os_timer_t *c)
 	return (1);
 }
 
+int64_t
+sctp_get_next_tick(void)
+{
+	int64_t ret;
+	sctp_os_timer_t *c;
+
+	SCTP_TIMERQ_LOCK();
+	c = TAILQ_FIRST(&SCTP_BASE_INFO(callqueue));
+	if (c) {
+		uint32_t min_delta = UINT32_MAX;
+		while (c) {
+			uint32_t delta = c->c_time - ticks;
+			min_delta = (delta < min_delta) ? delta : min_delta;
+			c = TAILQ_NEXT(c, tqe);
+		}
+		ret = min_delta;
+	} else {
+		ret = -1;
+	}
+	SCTP_TIMERQ_UNLOCK();
+
+	return ret;
+}
+
 void
 sctp_handle_tick(uint32_t elapsed_ticks)
 {

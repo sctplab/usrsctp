@@ -87,6 +87,7 @@ void sctp_os_timer_init(sctp_os_timer_t *tmr);
 int sctp_os_timer_start(sctp_os_timer_t *, uint32_t, void (*)(void *), void *);
 /* Returns 1 if pending timer was stopped, 0 otherwise. */
 int sctp_os_timer_stop(sctp_os_timer_t *);
+int64_t sctp_get_next_tick(void);
 void sctp_handle_tick(uint32_t);
 
 #define SCTP_OS_TIMER_INIT	sctp_os_timer_init
