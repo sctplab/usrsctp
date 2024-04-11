@@ -127,6 +127,9 @@ sctp_log_closing(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int16_t loc)
 	     sctp_clog.x.misc.log3,
 	     sctp_clog.x.misc.log4);
 #endif
+	SCTPDBG(SCTP_DEBUG_CLOSING,
+		"Connection closing: inp=%p, flags=%x, stcb=%p, state=%d, loc=%d\n",
+		inp, inp->sctp_flags, stcb, stcb ? stcb->asoc.state : 0, loc);
 }
 
 void
