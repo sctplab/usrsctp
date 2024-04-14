@@ -503,7 +503,7 @@ In some cases it is not desirable to wait for the SACK timer to expire before a 
 
 #### usrsctp_sysctl_set_sctp_L2_abc_variable()
 TBD
-SCTP ABC max increase per SACK (L). Default: 1
+SCTP ABC max increase per SACK (L). Default: 2
 
 ## Change Max Burst
 Max burst defines the maximum number of packets that may be sent in one flight.
@@ -729,7 +729,7 @@ sctp_default_ss_module | Default stream scheduling module | 0
 sctp_default_frag_interleave | Default fragment interleave level | 1
 sctp_mobility_base | Enable SCTP base mobility | 0
 sctp_mobility_fasthandoff | Enable SCTP fast handoff | 0
-sctp_L2_abc_variable | SCTP ABC max increase per SACK (L) | 1
+sctp_L2_abc_variable | SCTP ABC max increase per SACK (L) | 2
 sctp_vtag_time_wait | Vtag time wait time, 0 disables it. | 60secs
 sctp_blackhole | Enable SCTP blackholing | 0
 sctp_path_pf_threshold | Default potentially failed threshold | 65535
