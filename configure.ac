@@ -105,7 +105,15 @@ AC_ARG_ENABLE(debug,
     enable_debug=$enableval,enable_debug=yes)
 if test x$enable_debug = xyes; then
         AC_DEFINE(SCTP_DEBUG, 1, [Provide debug information])
-        CFLAGS="$CFLAGS -g -O0"
+        CFLAGS="$CFLAGS -g"
+fi
+
+AC_ARG_ENABLE(opt,
+  AC_HELP_STRING( [--enable-opt],
+                  [optimize code @<:@default=yes@:>@]),
+    enable_opt=$enableval,enable_opt=yes)
+if test x$enable_opt != xyes; then
+        CFLAGS="$CFLAGS -O0"
 fi
 
 AC_ARG_ENABLE(inet,
