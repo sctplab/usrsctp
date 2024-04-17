@@ -179,9 +179,12 @@ AC_CHECK_MEMBER(struct sockaddr_in6.sin6_len,
                  #endif
                  #include <netinet/in.h>])
 
+x_save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -I$srcdir"
 AC_CHECK_MEMBER(struct sockaddr_conn.sconn_len,
                 AC_DEFINE(HAVE_SCONN_LEN, 1, [Define this if your userland stack has sconn_len in sockaddr_conn struct.]),,
                 [#include "usrsctplib/usrsctp.h"])
+CFLAGS="$x_save_CFLAGS"
 
 AC_MSG_CHECKING(for socklen_t)
 AC_TRY_COMPILE([#ifdef HAVE_SYS_TYPES_H
