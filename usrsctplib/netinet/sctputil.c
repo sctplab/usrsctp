@@ -1830,7 +1830,8 @@ sctp_timeout_handler(void *t)
 		goto out_decr;
 	}
 	tmr->stopped_from = 0xa002;
-	SCTPDBG(SCTP_DEBUG_TIMER2, "Timer type %d goes off.\n", type);
+	SCTPDBG(SCTP_DEBUG_TIMER2, "Timer type %d goes off: inp=%p, stcb=%p, net=%p.\n",
+		type, inp, stcb, net);
 	if (!SCTP_OS_TIMER_ACTIVE(&tmr->timer)) {
 		SCTPDBG(SCTP_DEBUG_TIMER2,
 			"Timer type %d handler exiting due to not being active.\n",
