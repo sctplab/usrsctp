@@ -106,7 +106,7 @@ sctp_sblog(struct sockbuf *sb, struct sctp_tcb *stcb, int from, int incr)
 void
 sctp_log_closing(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int16_t loc)
 {
-#if defined(SCTP_LOCAL_TRACE_BUF)
+#if defined(SCTP_LOCAL_TRACE_BUF) && defined(SCTP_LOG_CLOSING)
 	struct sctp_cwnd_log sctp_clog;
 
 	sctp_clog.x.close.inp = (void *)inp;
