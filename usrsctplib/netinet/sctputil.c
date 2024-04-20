@@ -1881,14 +1881,7 @@ sctp_timeout_handler(void *t)
 	SCTP_OS_TIMER_DEACTIVATE(&tmr->timer);
 
 #if defined(__Userspace__)
-	if ((stcb != NULL) &&
-	    ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
-	    (stcb->sctp_socket != NULL)) {
-		upcall_socket = stcb->sctp_socket;
-		SOCK_LOCK(upcall_socket);
-		soref(upcall_socket);
-		SOCK_UNLOCK(upcall_socket);
-	}
+	upcall_socket = sctp_get_upcall_socket(stcb);
 #endif
 	/* call the handler for the appropriate timer type */
 	switch (type) {
@@ -2206,15 +2199,7 @@ out:
 
 out_decr:
 #if defined(__Userspace__)
-	if (upcall_socket != NULL) {
-		if ((upcall_socket->so_upcall != NULL) &&
-		    (upcall_socket->so_error != 0)) {
-			(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
-		}
-		ACCEPT_LOCK();
-		SOCK_LOCK(upcall_socket);
-		sorele(upcall_socket);
-	}
+	sctp_do_upcall_socket_if_error(upcall_socket);
 #endif
 	/* These reference counts were incremented in sctp_timer_start(). */
 	if (inp != NULL) {
@@ -8281,22 +8266,7 @@ sctp_recv_icmp_tunneled_packet(udp_tun_icmp_param_t param)
 		            ntohs(inner_ip->ip_len),
 		            (uint32_t)ntohs(icmp->icmp_nextmtu));
 #if defined(__Userspace__)
-		if (((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
-		    (stcb->sctp_socket != NULL)) {
-			struct socket *upcall_socket;
-
-			upcall_socket = stcb->sctp_socket;
-			SOCK_LOCK(upcall_socket);
-			soref(upcall_socket);
-			SOCK_UNLOCK(upcall_socket);
-			if ((upcall_socket->so_upcall != NULL) &&
-			    (upcall_socket->so_error != 0)) {
-				(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
-			}
-			ACCEPT_LOCK();
-			SOCK_LOCK(upcall_socket);
-			sorele(upcall_socket);
-		}
+		sctp_upcall_socket_if_error(stcb);
 #endif
 	} else {
 		if ((stcb == NULL) && (inp != NULL)) {
@@ -8453,22 +8423,7 @@ sctp_recv_icmp6_tunneled_packet(udp_tun_icmp_param_t param)
 		sctp6_notify(inp, stcb, net, type, code,
 			     ntohl(ip6cp->ip6c_icmp6->icmp6_mtu));
 #if defined(__Userspace__)
-		if (((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
-		    (stcb->sctp_socket != NULL)) {
-			struct socket *upcall_socket;
-
-			upcall_socket = stcb->sctp_socket;
-			SOCK_LOCK(upcall_socket);
-			soref(upcall_socket);
-			SOCK_UNLOCK(upcall_socket);
-			if ((upcall_socket->so_upcall != NULL) &&
-			    (upcall_socket->so_error != 0)) {
-				(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
-			}
-			ACCEPT_LOCK();
-			SOCK_LOCK(upcall_socket);
-			sorele(upcall_socket);
-		}
+		sctp_upcall_socket_if_error(stcb);
 #endif
 	} else {
 		if ((stcb == NULL) && (inp != NULL)) {
@@ -8723,3 +8678,76 @@ sctp_add_substate(struct sctp_tcb *stcb, int substate)
 #endif
 }
 
+
+#if defined(__Userspace__)
+struct socket* sctp_get_upcall_socket(struct sctp_tcb * stcb)
+{
+	struct socket* upcall_socket = NULL;
+	if ((stcb != NULL) &&
+	    ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
+	    (stcb->sctp_socket != NULL)) {
+		upcall_socket = stcb->sctp_socket;
+		SOCK_LOCK(upcall_socket);
+		soref(upcall_socket);
+		SOCK_UNLOCK(upcall_socket);
+	}
+	return upcall_socket;
+}
+
+struct socket* sctp_get_upcall_socket_or_accept_head(struct sctp_tcb * stcb)
+{
+	struct socket* upcall_socket = NULL;
+	if ((stcb != NULL) &&
+	    ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
+	    (stcb->sctp_socket != NULL)) {
+		ACCEPT_LOCK();
+		if (stcb->sctp_socket->so_head != NULL) {
+			upcall_socket = stcb->sctp_socket->so_head;
+		} else {
+			upcall_socket = stcb->sctp_socket;
+		}
+		SOCK_LOCK(upcall_socket);
+		soref(upcall_socket);
+		SOCK_UNLOCK(upcall_socket);
+		ACCEPT_UNLOCK();
+	}
+	return upcall_socket;
+}
+
+
+void sctp_do_upcall_socket_if_error(struct socket *upcall_socket)
+{
+	if (upcall_socket != NULL) {
+		if ((upcall_socket->so_upcall != NULL) &&
+		    (upcall_socket->so_error != 0)) {
+			(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
+		}
+		ACCEPT_LOCK();
+		SOCK_LOCK(upcall_socket);
+		sorele(upcall_socket);
+	}
+}
+
+void sctp_do_upcall_socket_if_readable_writeable_or_error(struct socket *upcall_socket)
+{
+	if (upcall_socket != NULL) {
+		if (upcall_socket->so_upcall != NULL) {
+			if (soreadable(upcall_socket) ||
+			    sowriteable(upcall_socket) ||
+			    upcall_socket->so_error != 0) {
+			(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
+			}
+		}
+		ACCEPT_LOCK();
+		SOCK_LOCK(upcall_socket);
+		sorele(upcall_socket);
+	}
+}
+
+void sctp_upcall_socket_if_error(struct sctp_tcb *stcb)
+{
+	struct socket *upcall_socket;
+	upcall_socket = sctp_get_upcall_socket(stcb);
+	sctp_do_upcall_socket_if_error(upcall_socket);
+}
+#endif
