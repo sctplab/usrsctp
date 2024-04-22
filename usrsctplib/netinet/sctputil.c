@@ -8682,6 +8682,9 @@ sctp_add_substate(struct sctp_tcb *stcb, int substate)
 #if defined(__Userspace__)
 struct socket* sctp_get_upcall_socket(struct sctp_tcb * stcb)
 {
+#ifdef DISABLE_UPCALLS
+	return NULL;
+#else
 	struct socket* upcall_socket = NULL;
 	if ((stcb != NULL) &&
 	    ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
@@ -8692,10 +8695,14 @@ struct socket* sctp_get_upcall_socket(struct sctp_tcb * stcb)
 		SOCK_UNLOCK(upcall_socket);
 	}
 	return upcall_socket;
+#endif
 }
 
 struct socket* sctp_get_upcall_socket_or_accept_head(struct sctp_tcb * stcb)
 {
+#ifdef DISABLE_UPCALLS
+	return NULL;
+#else
 	struct socket* upcall_socket = NULL;
 	if ((stcb != NULL) &&
 	    ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
@@ -8712,11 +8719,13 @@ struct socket* sctp_get_upcall_socket_or_accept_head(struct sctp_tcb * stcb)
 		ACCEPT_UNLOCK();
 	}
 	return upcall_socket;
+#endif
 }
 
 
 void sctp_do_upcall_socket_if_error(struct socket *upcall_socket)
 {
+#ifndef DISABLE_UPCALLS
 	if (upcall_socket != NULL) {
 		if ((upcall_socket->so_upcall != NULL) &&
 		    (upcall_socket->so_error != 0)) {
@@ -8726,10 +8735,12 @@ void sctp_do_upcall_socket_if_error(struct socket *upcall_socket)
 		SOCK_LOCK(upcall_socket);
 		sorele(upcall_socket);
 	}
+#endif
 }
 
 void sctp_do_upcall_socket_if_readable_writeable_or_error(struct socket *upcall_socket)
 {
+#ifndef DISABLE_UPCALLS
 	if (upcall_socket != NULL) {
 		if (upcall_socket->so_upcall != NULL) {
 			if (soreadable(upcall_socket) ||
@@ -8742,6 +8753,7 @@ void sctp_do_upcall_socket_if_readable_writeable_or_error(struct socket *upcall_
 		SOCK_LOCK(upcall_socket);
 		sorele(upcall_socket);
 	}
+#endif
 }
 
 void sctp_upcall_socket_if_error(struct sctp_tcb *stcb)

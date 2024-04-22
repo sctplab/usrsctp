@@ -3369,6 +3369,10 @@ usrsctp_set_upcall(struct socket *so, void (*upcall)(struct socket *, void *, in
 		return (-1);
 	}
 
+#ifdef DISABLE_UPCALLS
+	errno = ENOSYS;
+	return -1;
+#else
 	SOCK_LOCK(so);
 	so->so_upcall = upcall;
 	so->so_upcallarg = arg;
@@ -3377,6 +3381,7 @@ usrsctp_set_upcall(struct socket *so, void (*upcall)(struct socket *, void *, in
 	SOCK_UNLOCK(so);
 
 	return (0);
+#endif
 }
 
 #define USRSCTP_TUNABLE_SET_DEF(__field, __prefix)   \
