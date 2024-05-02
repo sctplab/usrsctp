@@ -6269,7 +6269,9 @@ sctp_sorecvmsg(struct socket *so,
 				}
 				so->so_state &= ~(SS_ISCONNECTING |
 						  SS_ISDISCONNECTING |
+#if !(defined(__FreeBSD__) && !defined(__Userspace__))
 						  SS_ISCONFIRMING |
+#endif
 						  SS_ISCONNECTED);
 				if (error == 0) {
 					if ((inp->sctp_flags & SCTP_PCB_FLAGS_WAS_CONNECTED) == 0) {
