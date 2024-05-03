@@ -5931,20 +5931,7 @@ cksum_validated:
 		}
 	}
 #if defined(__Userspace__)
-	if ((stcb != NULL) &&
-	    ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
-	    (stcb->sctp_socket != NULL)) {
-		ACCEPT_LOCK();
-		if (stcb->sctp_socket->so_head != NULL) {
-			upcall_socket = stcb->sctp_socket->so_head;
-		} else {
-			upcall_socket = stcb->sctp_socket;
-		}
-		SOCK_LOCK(upcall_socket);
-		soref(upcall_socket);
-		SOCK_UNLOCK(upcall_socket);
-		ACCEPT_UNLOCK();
-	}
+	upcall_socket = sctp_get_upcall_socket_or_accept_head(stcb);
 #endif
 	if (IS_SCTP_CONTROL(ch)) {
 		/* process the control portion of the SCTP packet */
@@ -6036,19 +6023,8 @@ cksum_validated:
 		goto out;
 	}
 #if defined(__Userspace__)
-	if ((upcall_socket == NULL) &&
-	    ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
-	    (stcb->sctp_socket != NULL)) {
-		ACCEPT_LOCK();
-		if (stcb->sctp_socket->so_head != NULL) {
-			upcall_socket = stcb->sctp_socket->so_head;
-		} else {
-			upcall_socket = stcb->sctp_socket;
-		}
-		SOCK_LOCK(upcall_socket);
-		soref(upcall_socket);
-		SOCK_UNLOCK(upcall_socket);
-		ACCEPT_UNLOCK();
+	if (upcall_socket != NULL) {
+		upcall_socket = sctp_get_upcall_socket_or_accept_head(stcb);
 	}
 #endif
 
@@ -6191,18 +6167,7 @@ trigger_send:
 		SCTP_TCB_UNLOCK(stcb);
 	}
 #if defined(__Userspace__)
-	if (upcall_socket != NULL) {
-		if (upcall_socket->so_upcall != NULL) {
-			if (soreadable(upcall_socket) ||
-			    sowriteable(upcall_socket) ||
-			    upcall_socket->so_error) {
-				(*upcall_socket->so_upcall)(upcall_socket, upcall_socket->so_upcallarg, M_NOWAIT);
-			}
-		}
-		ACCEPT_LOCK();
-		SOCK_LOCK(upcall_socket);
-		sorele(upcall_socket);
-	}
+	sctp_do_upcall_socket_if_readable_writeable_or_error(upcall_socket);
 #endif
 	if (inp_decr != NULL) {
 		/* reduce ref-count */

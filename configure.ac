@@ -140,6 +140,15 @@ AC_ARG_ENABLE(programs,
     enable_programs=$enableval,enable_programs=yes)
 AM_CONDITIONAL([COND_PROGRAMS], [test "$enable_programs" = yes])
 
+AC_ARG_ENABLE(upcalls,
+  AC_HELP_STRING( [--enable-upcalls],
+                  [enable socket upcall support  @<:@default=yes@:>@]),
+   enable_upcalls=$enableval,enable_upcalls=yes)
+if test x$enable_upcalls = xno; then
+         APPCFLAGS="$APPCFLAGS -DDISABLE_UPCALLS"
+         AC_DEFINE(DISABLE_UPCALLS, 1, [Disable upcall support])
+fi
+
 AC_CHECK_TYPE(size_t)
 AC_CHECK_TYPE(ssize_t)
 
