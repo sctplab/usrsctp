@@ -4624,6 +4624,8 @@ sctp_handle_packet_dropped(struct sctp_pktdrop_chunk *cp,
 				SCTP_STAT_INCR(sctps_pdrpmbda);
 			}
 		} else {
+			desc.tsn_ifany = htonl(0);
+			memset(desc.data_bytes, 0, SCTP_NUM_DB_TO_VERIFY);
 			if (pktdrp_flags & SCTP_FROM_MIDDLE_BOX) {
 				SCTP_STAT_INCR(sctps_pdrpmbct);
 			}
@@ -5934,7 +5936,6 @@ cksum_validated:
 	if ((stcb != NULL) &&
 	    ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
 	    (stcb->sctp_socket != NULL)) {
-		ACCEPT_LOCK();
 		if (stcb->sctp_socket->so_head != NULL) {
 			upcall_socket = stcb->sctp_socket->so_head;
 		} else {
@@ -5943,7 +5944,6 @@ cksum_validated:
 		SOCK_LOCK(upcall_socket);
 		soref(upcall_socket);
 		SOCK_UNLOCK(upcall_socket);
-		ACCEPT_UNLOCK();
 	}
 #endif
 	if (IS_SCTP_CONTROL(ch)) {
@@ -6039,7 +6039,6 @@ cksum_validated:
 	if ((upcall_socket == NULL) &&
 	    ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
 	    (stcb->sctp_socket != NULL)) {
-		ACCEPT_LOCK();
 		if (stcb->sctp_socket->so_head != NULL) {
 			upcall_socket = stcb->sctp_socket->so_head;
 		} else {
@@ -6048,7 +6047,6 @@ cksum_validated:
 		SOCK_LOCK(upcall_socket);
 		soref(upcall_socket);
 		SOCK_UNLOCK(upcall_socket);
-		ACCEPT_UNLOCK();
 	}
 #endif
 
