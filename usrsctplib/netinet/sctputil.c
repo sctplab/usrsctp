@@ -1830,8 +1830,7 @@ sctp_timeout_handler(void *t)
 		goto out_decr;
 	}
 	tmr->stopped_from = 0xa002;
-	SCTPDBG(SCTP_DEBUG_TIMER2, "Timer type %d goes off: inp=%p, stcb=%p, net=%p.\n",
-		type, inp, stcb, net);
+	SCTPDBG(SCTP_DEBUG_TIMER2, "Timer type %d goes off.\n", type);
 	if (!SCTP_OS_TIMER_ACTIVE(&tmr->timer)) {
 		SCTPDBG(SCTP_DEBUG_TIMER2,
 			"Timer type %d handler exiting due to not being active.\n",
@@ -2022,7 +2021,7 @@ sctp_timeout_handler(void *t)
 			 type, inp, stcb, net));
 		SCTP_STAT_INCR(sctps_timosecret);
 		(void)SCTP_GETTIME_TIMEVAL(&tv);
-		inp->sctp_ep.time_of_secret_change = (unsigned int)tv.tv_sec;
+		inp->sctp_ep.time_of_secret_change = tv.tv_sec;
 		inp->sctp_ep.last_secret_number =
 		    inp->sctp_ep.current_secret_number;
 		inp->sctp_ep.current_secret_number++;
