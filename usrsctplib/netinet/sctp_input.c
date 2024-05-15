@@ -4959,6 +4959,8 @@ sctp_process_control(struct mbuf *m, int iphlen, int *offset, int length,
 				 */
 				if ((netp != NULL) && (*netp != NULL))
 					stcb->asoc.last_control_chunk_from = *netp;
+				else
+					stcb->asoc.last_control_chunk_from = NULL;
 			}
 		}
 #ifdef SCTP_AUDITING_ENABLED
