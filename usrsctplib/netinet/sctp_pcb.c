@@ -329,6 +329,13 @@ sctp_free_ifa(struct sctp_ifa *sctp_ifap)
 		if (sctp_ifap->ifn_p) {
 			sctp_free_ifn(sctp_ifap->ifn_p);
 		}
+		if (sctp_ifap->destroy_address) {
+			/* sctp_ifap->address is struct sockaddr_conn */
+			if (sctp_ifap->address.sconn.sconn_addr) {
+				sctp_ifap->destroy_address (sctp_ifap->address.sconn.sconn_addr);
+			}
+			sctp_ifap->address.sconn.sconn_addr = NULL;
+		}
 		SCTP_FREE(sctp_ifap, SCTP_M_IFA);
 		atomic_subtract_int(&SCTP_BASE_INFO(ipi_count_ifas), 1);
 	}
@@ -531,6 +538,15 @@ sctp_add_addr_to_vrf(uint32_t vrf_id, void *ifn, uint32_t ifn_index,
 		     struct sockaddr *addr, uint32_t ifa_flags,
 		     int dynamic_add)
 {
+    return sctp_add_addr_to_vrf_full (vrf_id, ifn, ifn_index, ifn_type, if_name, ifa, addr, ifa_flags, dynamic_add, NULL);
+}
+
+struct sctp_ifa *
+sctp_add_addr_to_vrf_full(uint32_t vrf_id, void *ifn, uint32_t ifn_index,
+		     uint32_t ifn_type, const char *if_name, void *ifa,
+		     struct sockaddr *addr, uint32_t ifa_flags,
+		     int dynamic_add, void (*destroy)(void *))
+{
 	struct sctp_vrf *vrf;
 	struct sctp_ifn *sctp_ifnp, *new_sctp_ifnp;
 	struct sctp_ifa *sctp_ifap, *new_sctp_ifap;
@@ -685,6 +701,7 @@ sctp_add_addr_to_vrf(uint32_t vrf_id, void *ifn, uint32_t ifn_index,
 #endif
 	sctp_ifap->localifa_flags = SCTP_ADDR_VALID | SCTP_ADDR_DEFER_USE;
 	sctp_ifap->flags = ifa_flags;
+	sctp_ifap->destroy_address = destroy;
 	/* Set scope */
 	switch (sctp_ifap->address.sa.sa_family) {
 #ifdef INET

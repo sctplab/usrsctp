@@ -1033,6 +1033,9 @@ void
 usrsctp_register_address(void *);
 
 void
+usrsctp_register_address_full(void *, void (*)(void *));
+
+void
 usrsctp_deregister_address(void *);
 
 int
