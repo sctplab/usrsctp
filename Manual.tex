@@ -171,7 +171,10 @@ the memory necessary to administer the data transfer.
 The function prototype is 
 \begin{verbatim}
 void
-usrsctp_init(uint16_t udp_port)
+usrsctp_init(uint16_t udp_port,
+             int (*conn_output)(void *addr, void *buffer,
+                                size_t length, uint8_t tos, uint8_t set_df),
+	     void (*debug_printf)(const char *format, ...))
 \end{verbatim}
 As it is not always possible to send data directly over SCTP because not all NAT boxes can
 process SCTP packets, the data can be sent over UDP. To encapsulate SCTP into UDP
