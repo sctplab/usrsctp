@@ -157,7 +157,10 @@ initialize_fuzzer(void) {
 
 
 int
-LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
+#ifdef _MSC_VER
+  __cdecl
+#endif
+LLVMFuzzerTestOneInput (const uint8_t *data, size_t data_size)
 {
 	static int initialized;
 	char *fuzz_packet_buffer;

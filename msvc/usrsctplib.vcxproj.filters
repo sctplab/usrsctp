@@ -1,0 +1,214 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Source Files\netinet">
+      <UniqueIdentifier>{6c3c8198-b1ad-4431-99c0-a78888c785e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\netinet6">
+      <UniqueIdentifier>{143a47f3-d7b2-4b99-b56f-b442cad030ec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\netinet\Header Files">
+      <UniqueIdentifier>{548e4a89-d6ec-435e-a30d-0fdc3ec7dc92}</UniqueIdentifier>
+      <Extensions>
+      </Extensions>
+    </Filter>
+    <Filter Include="Source Files\netinet6\Header Files">
+      <UniqueIdentifier>{6100795b-a1d7-4838-9e87-0bdd38f4d3b4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\usrsctplib\netinet6\sctp6_usrreq.c">
+      <Filter>Source Files\netinet6</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctp_asconf.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctp_auth.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctp_bsd_addr.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctp_callout.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctp_cc_functions.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctp_crc32.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctp_indata.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctp_input.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctp_output.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctp_pcb.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctp_peeloff.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctp_sha1.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctp_ss_functions.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctp_sysctl.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctp_timer.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctp_userspace.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctp_usrreq.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\netinet\sctputil.c">
+      <Filter>Source Files\netinet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\user_socket.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\user_environment.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\user_mbuf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\usrsctplib\user_recv_thread.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\usrsctplib\usrsctp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\user_atomic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\user_environment.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\user_inpcb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\user_ip_icmp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\user_ip6_var.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\user_malloc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\user_mbuf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\user_queue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\user_recv_thread.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\user_route.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\user_socketvar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\user_uma.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_auth.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_bsd_addr.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_callout.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_constants.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_crc32.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_header.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_asconf.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_indata.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_input.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_lock_userspace.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_os.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_os_userspace.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_output.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_pcb.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_peeloff.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_process_lock.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_sha1.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_structs.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_sysctl.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_timer.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_var.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctputil.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp_uio.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet\sctp.h">
+      <Filter>Source Files\netinet\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\usrsctplib\netinet6\sctp6_var.h">
+      <Filter>Source Files\netinet6\Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

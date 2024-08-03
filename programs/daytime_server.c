@@ -59,7 +59,10 @@
 #define SLEEP 1
 
 int
-main(int argc, char *argv[])
+#ifdef _MSC_VER
+  __cdecl
+#endif
+main (int argc, char *argv[])
 {
 	struct socket *sock, *conn_sock;
 	struct sockaddr_in addr;

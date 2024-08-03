@@ -142,37 +142,34 @@ finish_random(void)
 	return;
 }
 #elif defined(_WIN32)
-#include <stdlib.h>
+#if (_WIN32_WINNT >= 0x0600)
+#include <bcrypt.h>
+#pragma comment(lib, "bcrypt.lib")
+#else
+#include <ntsecapi.h>
+#endif
 
-void
-init_random(void)
+void init_random (void)
 {
-	return;
+    return;
 }
 
-void
-read_random(void *buf, size_t size)
+void read_random (void *buf, size_t size)
 {
-	unsigned int randval;
-	size_t position, remaining;
-
-	position = 0;
-	while (position < size) {
-		if (rand_s(&randval) == 0) {
-			remaining = MIN(size - position, sizeof(unsigned int));
-			memcpy((char *)buf + position, &randval, remaining);
-			position += sizeof(unsigned int);
-		}
-	}
-	return;
+#if (_WIN32_WINNT >= 0x0600)
+    (void) BCryptGenRandom (NULL, buf, (ULONG) size,
+                            BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+#else
+    (void) RtlGenRandom (buf, (ULONG) size);
+#endif
 }
 
-void
-finish_random(void)
+void finish_random (void)
 {
-	return;
+    return;
 }
-#elif (defined(__ANDROID__) && (__ANDROID_API__ < 28)) || defined(__QNX__) || defined(__EMSCRIPTEN__)
+#elif (defined(__ANDROID__) && (__ANDROID_API__ < 28)) || defined(__QNX__)
+  || defined(__EMSCRIPTEN__)
 #include <fcntl.h>
 
 static int fd = -1;
