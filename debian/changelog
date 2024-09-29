@@ -1,0 +1,5 @@
+libusrsctp (1.0.0~rc1-1ubuntu1) focal; urgency=medium
+
+  * Initial release.
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 15 Nov 2023 10:52:49 +0100
