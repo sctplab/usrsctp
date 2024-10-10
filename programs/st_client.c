@@ -257,7 +257,10 @@ conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 
 /* Usage: st_client local_addr local_port remote_addr remote_port remote_sctp_port */
 int
-main(int argc, char *argv[])
+#ifdef _MSC_VER
+  __cdecl
+#endif
+main (int argc, char *argv[])
 {
 	struct sockaddr_in sin;
 	struct sockaddr_conn sconn;

@@ -3,6 +3,8 @@
 *.ko
 *.obj
 *.elf
+*.pdb
+*.ipdb
 
 # Precompiled Headers
 *.gch
@@ -82,3 +84,10 @@ callgrind.out*
 
 # cmake build
 /build
+
+# MSVC build and IDE artifacts
+/bin
+/lib
+/obj
+/msvc/.vs
+/msvc/*.vcxproj.user

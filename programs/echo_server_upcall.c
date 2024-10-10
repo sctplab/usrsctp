@@ -155,7 +155,10 @@ handle_upcall(struct socket *sock, void *data, int flgs)
 }
 
 int
-main(int argc, char *argv[])
+#ifdef _MSC_VER
+  __cdecl
+#endif
+main (int argc, char *argv[])
 {
 	struct socket *sock;
 	struct sockaddr_in6 addr;
