@@ -15074,9 +15074,9 @@ sctp_v4src_match_nexthop(struct sctp_ifa *sifa, sctp_route_t *ro)
 	mask = (struct sockaddr_in *)(ifa->ifa_netmask);
 	sin = &sifa->address.sin;
 	srcnetaddr.s_addr = (sin->sin_addr.s_addr & mask->sin_addr.s_addr);
-	SCTPDBG(SCTP_DEBUG_OUTPUT1, "match_nexthop4: src address is ");
+	SCTPDBG(SCTP_DEBUG_OUTPUT2, "match_nexthop4: src address is ");
 	SCTPDBG_ADDR(SCTP_DEBUG_OUTPUT2, &sifa->address.sa);
-	SCTPDBG(SCTP_DEBUG_OUTPUT1, "network address is %x\n", srcnetaddr.s_addr);
+	SCTPDBG(SCTP_DEBUG_OUTPUT2, "network address is %x\n", srcnetaddr.s_addr);
 
 #if defined(__FreeBSD__)
 	sin = &ro->ro_nh->gw4_sa;
@@ -15084,13 +15084,13 @@ sctp_v4src_match_nexthop(struct sctp_ifa *sifa, sctp_route_t *ro)
 	sin = (struct sockaddr_in *)ro->ro_rt->rt_gateway;
 #endif
 	gwnetaddr.s_addr = (sin->sin_addr.s_addr & mask->sin_addr.s_addr);
-	SCTPDBG(SCTP_DEBUG_OUTPUT1, "match_nexthop4: nexthop is ");
+	SCTPDBG(SCTP_DEBUG_OUTPUT2, "match_nexthop4: nexthop is ");
 #if defined(__FreeBSD__)
 	SCTPDBG_ADDR(SCTP_DEBUG_OUTPUT2, &ro->ro_nh->gw_sa);
 #else
 	SCTPDBG_ADDR(SCTP_DEBUG_OUTPUT2, ro->ro_rt->rt_gateway);
 #endif
-	SCTPDBG(SCTP_DEBUG_OUTPUT1, "network address is %x\n", gwnetaddr.s_addr);
+	SCTPDBG(SCTP_DEBUG_OUTPUT2, "network address is %x\n", gwnetaddr.s_addr);
 	if (srcnetaddr.s_addr == gwnetaddr.s_addr) {
 		return (1);
 	}
