@@ -777,13 +777,14 @@ sctp_del_addr_from_vrf(uint32_t vrf_id, struct sockaddr *addr,
 		       uint32_t ifn_index, const char *if_name)
 {
 	struct sctp_vrf *vrf;
-	struct sctp_ifa *sctp_ifap = NULL;
+	struct sctp_ifa *sctp_ifap;
 
 	SCTP_IPI_ADDR_WLOCK();
 	vrf = sctp_find_vrf(vrf_id);
 	if (vrf == NULL) {
 		SCTPDBG(SCTP_DEBUG_PCB4, "Can't find vrf_id 0x%x\n", vrf_id);
-		goto out_now;
+		SCTP_IPI_ADDR_WUNLOCK();
+		return;
 	}
 
 #ifdef SCTP_DEBUG
@@ -791,10 +792,10 @@ sctp_del_addr_from_vrf(uint32_t vrf_id, struct sockaddr *addr,
 	SCTPDBG_ADDR(SCTP_DEBUG_PCB4, addr);
 #endif
 	sctp_ifap = sctp_find_ifa_by_addr(addr, vrf->vrf_id, SCTP_ADDR_LOCKED);
-	if (sctp_ifap) {
+	if (sctp_ifap != NULL) {
 		/* Validate the delete */
 		if (sctp_ifap->ifn_p) {
-			int valid = 0;
+			bool valid = false;
 			/*-
 			 * The name has priority over the ifn_index
 			 * if its given.
@@ -802,13 +803,13 @@ sctp_del_addr_from_vrf(uint32_t vrf_id, struct sockaddr *addr,
 			if (if_name) {
 				if (strncmp(if_name, sctp_ifap->ifn_p->ifn_name, SCTP_IFNAMSIZ) == 0) {
 					/* They match its a correct delete */
-					valid = 1;
+					valid = true;
 				}
 			}
 			if (!valid) {
 				/* last ditch check ifn_index */
 				if (ifn_index == sctp_ifap->ifn_p->ifn_index) {
-					valid = 1;
+					valid = true;
 				}
 			}
 			if (!valid) {
@@ -841,9 +842,8 @@ sctp_del_addr_from_vrf(uint32_t vrf_id, struct sockaddr *addr,
 	}
 #endif
 
- out_now:
 	SCTP_IPI_ADDR_WUNLOCK();
-	if (sctp_ifap) {
+	if (sctp_ifap != NULL) {
 		struct sctp_laddr *wi;
 
 		wi = SCTP_ZONE_GET(SCTP_BASE_INFO(ipi_zone_laddr), struct sctp_laddr);
