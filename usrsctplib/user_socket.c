@@ -3154,8 +3154,7 @@ usrsctp_deregister_address(void *addr)
 	sconn.sconn_addr = addr;
 	sctp_del_addr_from_vrf(SCTP_DEFAULT_VRFID,
 	                       (struct sockaddr *)&sconn,
-	                       0xffffffff,
-	                       "conn");
+	                       NULL, 0xffffffff);
 }
 
 #define PREAMBLE_FORMAT "\n%c %02d:%02d:%02d.%06ld "
