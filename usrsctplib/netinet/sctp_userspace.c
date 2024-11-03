@@ -31,6 +31,7 @@
 #include <netinet/sctp_pcb.h>
 #include <sys/timeb.h>
 #include <iphlpapi.h>
+#include <process.h>
 #if !defined(__MINGW32__)
 #pragma comment(lib, "iphlpapi.lib")
 #endif
@@ -52,8 +53,9 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #endif
-static DWORD WINAPI
-sctp_create_thread_adapter(void *arg) {
+
+static unsigned __stdcall sctp_create_thread_adapter (void *arg)
+{
 	start_routine_t start_routine = (start_routine_t)arg;
 	return start_routine(NULL) == NULL;
 }
@@ -61,11 +63,13 @@ sctp_create_thread_adapter(void *arg) {
 int
 sctp_userspace_thread_create(userland_thread_t *thread, start_routine_t start_routine)
 {
-	*thread = CreateThread(NULL, 0, sctp_create_thread_adapter,
-			       (void *)start_routine, 0, NULL);
-	if (*thread == NULL)
-		return GetLastError();
-	return 0;
+    *thread = (HANDLE) _beginthreadex (NULL, 0, sctp_create_thread_adapter,
+                                       (void*) start_routine, 0, NULL);
+    if (*thread == NULL) {
+        return errno;
+    }
+
+    return 0;
 }
 
 #if defined(__MINGW32__)
@@ -80,17 +84,60 @@ sctp_userspace_thread_create(userland_thread_t *thread, start_routine_t start_ro
 }
 #endif
 
+#if defined(_MSC_VER)
+
+//
+// https://learn.microsoft.com/en-us/visualstudio/debugger/how-to-set-a-thread-name-in-native-code?view=vs-2022
+//
+
+const DWORD MS_VC_EXCEPTION = 0x406D1388;
+
+#pragma pack(push, 8)
+typedef struct tagTHREADNAME_INFO
+{
+    DWORD dwType;     // Must be 0x1000.
+    LPCSTR szName;    // Pointer to name (in user addr space).
+    DWORD dwThreadID; // Thread ID (-1=caller thread).
+    DWORD dwFlags;    // Reserved for future use, must be zero.
+} THREADNAME_INFO;
+#pragma pack(pop)
+
+void SetThreadName (DWORD dwThreadID, const char *threadName)
+{
+    THREADNAME_INFO info;
+    info.dwType = 0x1000;
+    info.szName = threadName;
+    info.dwThreadID = dwThreadID;
+    info.dwFlags = 0;
+
+#pragma warning(push)
+#pragma warning(disable : 6320 6322)
+    __try {
+        RaiseException (MS_VC_EXCEPTION, 0, sizeof (info) / sizeof (ULONG_PTR),
+                        (ULONG_PTR *) &info);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+    }
+#pragma warning(pop)
+}
+
+#endif
+
 void
 sctp_userspace_set_threadname(const char *name)
 {
+    const char *n = name ? name : "";
+
 #if defined(__APPLE__)
-	pthread_setname_np(name);
-#endif
-#if defined(__linux__)
-	prctl(PR_SET_NAME, name);
-#endif
-#if defined(__FreeBSD__)
-	pthread_set_name_np(pthread_self(), name);
+	pthread_setname_np(n);
+#elif defined(__linux__)
+	prctl(PR_SET_NAME, n);
+#elif defined(__FreeBSD__)
+	pthread_set_name_np(pthread_self(), n);
+#elif defined(_MSC_VER)
+    if (IsDebuggerPresent ()) {
+        SetThreadName(GetCurrentThreadId(), n);
+    }
 #endif
 }
 

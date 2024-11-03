@@ -196,6 +196,9 @@ get_filter(int argc, char *argv[])
 }
 
 int
+#ifdef _MSC_VER
+__cdecl
+#endif
 main(int argc, char *argv[])
 {
 	char errbuf[PCAP_ERRBUF_SIZE];

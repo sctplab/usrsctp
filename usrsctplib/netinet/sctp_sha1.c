@@ -82,13 +82,29 @@ sctp_sha1_final(unsigned char *digest, struct sctp_sha1_context *ctx)
 }
 
 #else
-
-#include <string.h>
 #if defined(_WIN32) && defined(__Userspace__)
-#include <winsock2.h>
+void sctp_sha1_init (struct sctp_sha1_context *ctx)
+{
+    (void) CryptCreateHash (crypto_provider, CALG_SHA1, 0, 0, &ctx->hash);
+}
+
+void sctp_sha1_update (struct sctp_sha1_context *ctx,
+                       const unsigned char *ptr,
+                       unsigned int siz)
+{
+    (void) CryptHashData (ctx->hash, ptr, siz, 0);
+}
+
+void sctp_sha1_final (unsigned char *digest, struct sctp_sha1_context *ctx)
+{
+    DWORD digest_size = 20;		
+	(void) CryptGetHashParam (ctx->hash, HP_HASHVAL, digest, &digest_size, 0);
+    (void) CryptDestroyHash (ctx->hash);
+    ctx->hash = 0;
+}
 #elif !(defined(_WIN32) && !defined(__Userspace__))
+#include <string.h>
 #include <arpa/inet.h>
-#endif
 
 #define F1(B,C,D) (((B & C) | ((~B) & D)))	/* 0  <= t <= 19 */
 #define F2(B,C,D) (B ^ C ^ D)	/* 20 <= t <= 39 */
@@ -326,4 +342,5 @@ sctp_sha1_final(unsigned char *digest, struct sctp_sha1_context *ctx)
 	digest[16] = ((ctx->H4 >> 24) & 0xff);
 }
 
+#endif
 #endif
