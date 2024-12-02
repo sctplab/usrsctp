@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+#
+# GitHub Actions Scripts
+# Copyright (C) 2021-2024 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: thomas.dreibholz@gmail.com
+
+# Bash options:
+set -e
+
+DIRNAME=`dirname $0`
+UNAME=`uname`
+if [ "${UNAME}" == "Linux" ] ; then
+   DISTRIBUTION=`lsb_release -is`
+else
+   DISTRIBUTION="Unknown"
+fi
+
+if [ $# -lt 1 ] ; then
+   echo >&2 "Usage: $0 compile|package|... ..."
+   exit 1
+fi
+
+
+# ###### Configure ##########################################################
+
+# ====== Configure with CMake ===============================================
+if [ -e CMakeLists.txt ] ; then
+   cmake .
+
+# ====== Configure with autoconf/automake (via bootstrap script) ============
+elif [ -e configure.ac -o -e configure.in ] ; then
+   if [ -e autogen.sh ] ; then
+      ./autogen.sh
+   elif [ -e bootstrap ] ; then
+      ./bootstrap
+      ./configure
+   else
+      ./configure
+   fi
+else
+   echo >&2 "WARNING: No build system detected. Trying to just call \"make\" ..."
+fi
+
+if [ ${UNAME} == "Linux" ] ; then
+   cores=`getconf _NPROCESSORS_ONLN 2>/dev/null || true`
+   MAKEFLAGS="-j${cores}"
+elif [ ${UNAME} == "FreeBSD" ] ; then
+   cores=`sysctl -a | grep 'hw.ncpu' | cut -d ':' -f2 | tr -d ' '`
+   MAKEFLAGS="-j${cores}"
+else
+   MAKEFLAGS=""
+fi
+
+
+# ###### Perform builds #####################################################
+while [ $# -gt 0 ] ; do
+   TOOL="$1"
+   shift
+
+
+   # ====== Compile =========================================================
+   if [ "${TOOL}" == "compile" ] ; then
+      MAKEFLAGS=${MAKEFLAGS} make   # VERBOSE=1
+
+
+#    # ====== Coverity Scan ===================================================
+#    elif [ "${TOOL}" == "coverity" ] ; then
+#       # ------ Build --------------------------------------------------------
+#       cd coverity
+#       export PATH="coverity/$(ls -d cov*)/bin:$PATH"
+#       cd ..
+#
+#       MAKEFLAGS=${MAKEFLAGS} cov-build --dir cov-int make
+#       tar czf coverity-results.tar.gz cov-int
+#       ls -l coverity-results.tar.gz
+#
+#       # ------ Upload results -----------------------------------------------
+#       if [ "${TRAVIS_BRANCH}" == "${COVERITY_SCAN_BRANCH}" ] ; then
+#          curl --form token=${COVERITY_SCAN_TOKEN} \
+#               --form email=${COVERITY_SCAN_NOTIFICATION_EMAIL} \
+#               --form file=@coverity-results.tar.gz \
+#               --form version="master branch head" \
+#               --form description="$(git log -1|head -1)" \
+#               https://scan.coverity.com/builds?project=${COVERITY_PROJECT}
+#          CURL_RESULT=$?
+#          echo "curl returned ${CURL_RESULT}"
+#          if [ $CURL_RESULT -ne 0 ]; then
+#             echo >&2 "ERROR: Upload to Coverity Scan failed; curl returned ${CURL_RESULT}!"
+#             exit 1
+#          fi
+#       else
+#          echo >&2 "###### NOTE: This branch \"${TRAVIS_BRANCH}\" is not the scan branch \"${COVERITY_SCAN_BRANCH}\"! Skipping upload! ######"
+#       fi
+
+
+   # ====== Package =======================================================
+   elif [ "${TOOL}" == "package" ] ; then
+      if [ "${DISTRIBUTION}" == "Ubuntu" -o "${DISTRIBUTION}" == "Debian" ] ; then
+        OVERRIDE_SKIP_PACKAGE_SIGNING=1 ./build-deb ${DIST}
+
+      # ====== Fedora ==========================================================
+      elif [ "${DISTRIBUTION}" == "Fedora" ] ; then
+         release=`cat /etc/fedora-release | sed -e "s/^\(.*\) release \([0-9]*\) (\(.*\))$/\2/g" | sed -e "s/[^0-9]//g"`
+         if [ "${ARCH}" == "" ] ; then
+            arch=`uname -m | sed -e "s/[^0-9a-zA-Z_+-]//g"`
+         else
+            arch="${ARCH}"
+         fi
+         LD_PRELOAD=/usr/lib64/nosync/nosync.so OVERRIDE_SKIP_PACKAGE_SIGNING=1 ./build-rpm fedora-${release}-${arch}
+
+      # ====== Unknown =========================================================
+      else
+         echo >&2 "ERROR: Unknown Linux distribution ${DISTRIBUTION}!"
+         exit 1
+      fi
+
+
+   # ====== Invalid setting =================================================
+   else
+      echo >&2 "ERROR: Invalid setting of TOOL=${TOOL}!"
+      exit 1
+   fi
+
+done
