@@ -35,6 +35,11 @@
 extern "C" {
 #endif
 
+#if defined(__QNX__) && !defined(_QNX_SOURCE)
+/* Needed for sockaddr_storage */
+#define _QNX_SOURCE
+#endif
+
 #include <errno.h>
 #include <sys/types.h>
 #ifdef _WIN32
@@ -120,7 +125,8 @@ struct sctp_common_header {
  * tune with other sockaddr_* structures.
  */
 #if defined(__APPLE__) || defined(__Bitrig__) || defined(__DragonFly__) || \
-    defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
+    defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || \
+    defined(__QNX__)
 struct sockaddr_conn {
 	uint8_t sconn_len;
 	uint8_t sconn_family;
