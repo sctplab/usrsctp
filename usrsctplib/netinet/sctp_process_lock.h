@@ -104,6 +104,11 @@
 #define SCTP_INP_READ_UNLOCK(_inp)
 #define SCTP_INP_READ_LOCK_ASSERT(_inp)
 
+#define SCTP_EP_RANDOM_STORE_LOCK_INIT(_ep)
+#define SCTP_EP_RANDOM_STORE_LOCK_DESTROY(_ep)
+#define SCTP_EP_RANDOM_STORE_LOCK(_ep)
+#define SCTP_EP_RANDOM_STORE_UNLOCK(_ep)
+
 /* Lock for TCB */
 #define SCTP_TCB_LOCK_INIT(_tcb)
 #define SCTP_TCB_LOCK_DESTROY(_tcb)
@@ -190,6 +195,15 @@
 #define SCTP_INP_READ_UNLOCK(_inp) \
 	LeaveCriticalSection(&(_inp)->inp_rdata_mtx)
 #define SCTP_INP_READ_LOCK_ASSERT(_inp)
+
+#define SCTP_EP_RANDOM_STORE_LOCK_INIT(_ep) \
+	InitializeCriticalSection (&(_ep)->random_store_mtx)
+#define SCTP_EP_RANDOM_STORE_LOCK_DESTROY(_ep) \
+	DeleteCriticalSection (&(_ep)->random_store_mtx)
+#define SCTP_EP_RANDOM_STORE_LOCK(_ep) \
+	EnterCriticalSection (&(_ep)->random_store_mtx)
+#define SCTP_EP_RANDOM_STORE_UNLOCK(_ep) \
+	LeaveCriticalSection (&(_ep)->random_store_mtx)
 
 #define SCTP_INP_LOCK_INIT(_inp) \
 	InitializeCriticalSection(&(_inp)->inp_mtx)
@@ -354,6 +368,15 @@
 #endif
 #define SCTP_INP_READ_LOCK_ASSERT(_inp) \
 	KASSERT(pthread_mutex_trylock(&(_inp)->inp_rdata_mtx) == EBUSY, ("%s:%d: inp_rdata_mtx not locked", __FILE__, __LINE__))
+
+#define SCTP_EP_RANDOM_STORE_LOCK_INIT(_ep) \
+	(void)pthread_mutex_init(&(_ep)->random_store_mtx, NULL)
+#define SCTP_EP_RANDOM_STORE_LOCK_DESTROY(_ep) \
+	(void)pthread_mutex_destroy(&(_ep)->random_store_mtx)
+#define SCTP_EP_RANDOM_STORE_LOCK(_ep) \
+	(void)pthread_mutex_lock(&(_ep)->random_store_mtx)
+#define SCTP_EP_RANDOM_STORE_UNLOCK(_ep) \
+	(void)pthread_mutex_unlock(&(_ep)->random_store_mtx)
 
 #define SCTP_INP_LOCK_INIT(_inp) \
 	(void)pthread_mutex_init(&(_inp)->inp_mtx, &SCTP_BASE_VAR(mtx_attr))
