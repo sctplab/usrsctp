@@ -792,7 +792,7 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 				t_path_mptcp += (((uint64_t)net->cwnd) << SHIFT_MPTCP_MULTI_Z) /
 				                (((uint64_t)net->mtu) * (uint64_t)srtt);
 				tmp = (((uint64_t)net->cwnd) << SHIFT_MPTCP_MULTI_N) /
-				      ((uint64_t)net->mtu * (uint64_t)(srtt * srtt));
+				      ((uint64_t)net->mtu * srtt * srtt);
 				if (tmp > max_path) {
 					max_path = tmp;
 				}
