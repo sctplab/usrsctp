@@ -120,6 +120,10 @@ foreach (source_file ${check_programs})
 		${CMAKE_THREAD_LIBS_INIT}
 	)
 
+	install(TARGETS ${source_file_we}
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+		BUNDLE DESTINATION  ${CMAKE_INSTALL_BINDIR})
+
 	if (APPLE)
 		set_target_properties(
 			${source_file_we}
