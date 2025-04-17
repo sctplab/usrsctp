@@ -30,7 +30,13 @@
 #
 
 project(usrsctplib C)
-cmake_minimum_required(VERSION 3.0)
+if(${CMAKE_VERSION} VERSION_LESS 3.27.0)
+    cmake_minimum_required(VERSION 3.0)
+elseif(${CMAKE_VERSION} VERSION_LESS 3.31.0)
+    cmake_minimum_required(VERSION 3.5)
+else()
+    cmake_minimum_required(VERSION 3.10)
+endif()
 
 # Debug build type as default
 if (NOT CMAKE_BUILD_TYPE)
