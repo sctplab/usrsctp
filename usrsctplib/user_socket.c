@@ -227,7 +227,7 @@ static void
 sodealloc(struct socket *so)
 {
 
-	KASSERT(so->so_count == 0, ("sodealloc(): so_count %d", so->so_count));
+	KASSERT(so->so_count <= 0, ("sodealloc(): so_count %d", so->so_count));
 	KASSERT(so->so_pcb == NULL, ("sodealloc(): so_pcb != NULL"));
 
 	SOCKBUF_COND_DESTROY(&so->so_snd);
@@ -254,7 +254,7 @@ sofree(struct socket *so)
 	/* SS_NOFDREF unset in accept call.  this condition seems irrelevant
 	 *  for __Userspace__...
 	 */
-	if (so->so_count != 0 ||
+	if (so->so_count > 0 ||
 	    (so->so_state & SS_PROTOREF) || (so->so_qstate & SQ_COMP)) {
 		SOCK_UNLOCK(so);
 		ACCEPT_UNLOCK();
