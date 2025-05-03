@@ -2901,9 +2901,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	null_key = sctp_alloc_sharedkey();
 	sctp_insert_sharedkey(&m->shared_keys, null_key);
 	SCTP_INP_WUNLOCK(inp);
-#ifdef SCTP_LOG_CLOSING
 	sctp_log_closing(inp, NULL, 12);
-#endif
 	return (error);
 }
 
@@ -3768,9 +3766,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 #if defined(__APPLE__) && !defined(__Userspace__)
 	sctp_lock_assert(SCTP_INP_SO(inp));
 #endif
-#ifdef SCTP_LOG_CLOSING
 	sctp_log_closing(inp, NULL, 0);
-#endif
 	SCTP_ITERATOR_LOCK();
 	/* mark any iterators on the list or being processed */
 	sctp_iterator_inp_being_freed(inp);
@@ -3929,9 +3925,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 		}
 		/* now is there some left in our SHUTDOWN state? */
 		if (cnt_in_sd) {
-#ifdef SCTP_LOG_CLOSING
 			sctp_log_closing(inp, NULL, 2);
-#endif
 			inp->sctp_socket = NULL;
 			SCTP_INP_WUNLOCK(inp);
 			SCTP_ASOC_CREATE_UNLOCK(inp);
@@ -3997,9 +3991,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	}
 	if (cnt) {
 		/* Ok we have someone out there that will kill us */
-#ifdef SCTP_LOG_CLOSING
 		sctp_log_closing(inp, NULL, 3);
-#endif
 		SCTP_INP_WUNLOCK(inp);
 		SCTP_ASOC_CREATE_UNLOCK(inp);
 		SCTP_INP_INFO_WUNLOCK();
@@ -4015,9 +4007,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	if ((inp->refcount) ||
 	    (being_refed) ||
 	    (inp->sctp_flags & SCTP_PCB_FLAGS_CLOSE_IP)) {
-#ifdef SCTP_LOG_CLOSING
 		sctp_log_closing(inp, NULL, 4);
-#endif
 		sctp_timer_start(SCTP_TIMER_TYPE_INPKILL, inp, NULL, NULL);
 		SCTP_INP_WUNLOCK(inp);
 		SCTP_ASOC_CREATE_UNLOCK(inp);
@@ -4034,9 +4024,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	SCTP_ASOC_CREATE_UNLOCK(inp);
 	SCTP_INP_INFO_WUNLOCK();
 
-#ifdef SCTP_LOG_CLOSING
 	sctp_log_closing(inp, NULL, 5);
-#endif
 #if !(defined(_WIN32) || defined(__Userspace__))
 #if !(defined(__FreeBSD__) && !defined(__Userspace__))
 	rt = ip_pcb->inp_route.ro_rt;
@@ -5336,13 +5324,9 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 #endif
 	SCTP_TCB_LOCK_ASSERT(stcb);
 
-#ifdef SCTP_LOG_CLOSING
 	sctp_log_closing(inp, stcb, 6);
-#endif
 	if (stcb->asoc.state == 0) {
-#ifdef SCTP_LOG_CLOSING
 		sctp_log_closing(inp, NULL, 7);
-#endif
 		/* there is no asoc, really TSNH :-0 */
 		return (1);
 	}
@@ -5383,9 +5367,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 			sctp_timer_start(SCTP_TIMER_TYPE_ASOCKILL, inp, stcb, NULL);
 			/* no asoc destroyed */
 			SCTP_TCB_UNLOCK(stcb);
-#ifdef SCTP_LOG_CLOSING
 			sctp_log_closing(inp, stcb, 8);
-#endif
 			return (0);
 		}
 	}
@@ -5445,15 +5427,11 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		}
 		SCTP_TCB_UNLOCK(stcb);
 
-#ifdef SCTP_LOG_CLOSING
 		sctp_log_closing(inp, stcb, 9);
-#endif
 		/* no asoc destroyed */
 		return (0);
 	}
-#ifdef SCTP_LOG_CLOSING
 	sctp_log_closing(inp, stcb, 10);
-#endif
 	/* When I reach here, no others want
 	 * to kill the assoc yet.. and I own
 	 * the lock. Now its possible an abort
@@ -5839,9 +5817,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		}
 	}
 	/* destroyed the asoc */
-#ifdef SCTP_LOG_CLOSING
 	sctp_log_closing(inp, NULL, 11);
-#endif
 	return (1);
 }
 

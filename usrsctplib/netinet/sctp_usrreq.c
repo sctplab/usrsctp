@@ -682,14 +682,10 @@ sctp_abort(struct socket *so)
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	NET_EPOCH_ENTER(et);
 #endif
-#ifdef SCTP_LOG_CLOSING
 	sctp_log_closing(inp, NULL, 17);
-#endif
 	if (((inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0)) {
 		inp->sctp_flags |= SCTP_PCB_FLAGS_SOCKET_GONE | SCTP_PCB_FLAGS_CLOSE_IP;
-#ifdef SCTP_LOG_CLOSING
 		sctp_log_closing(inp, NULL, 16);
-#endif
 		SCTP_INP_WUNLOCK(inp);
 		sctp_inpcb_free(inp, SCTP_FREE_SHOULD_USE_ABORT,
 		                SCTP_CALLED_AFTER_CMPSET_OFCLOSE);
@@ -888,9 +884,7 @@ sctp_close(struct socket *so)
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	NET_EPOCH_ENTER(et);
 #endif
-#ifdef SCTP_LOG_CLOSING
 	sctp_log_closing(inp, NULL, 17);
-#endif
 	if ((inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) {
 		inp->sctp_flags |= SCTP_PCB_FLAGS_SOCKET_GONE | SCTP_PCB_FLAGS_CLOSE_IP;
 #if defined(__Userspace__)
@@ -899,16 +893,12 @@ sctp_close(struct socket *so)
 		if (((so->so_options & SO_LINGER) && (so->so_linger == 0)) ||
 #endif
 		    (SCTP_SBAVAIL(&so->so_rcv) > 0)) {
-#ifdef SCTP_LOG_CLOSING
 			sctp_log_closing(inp, NULL, 13);
-#endif
 			SCTP_INP_WUNLOCK(inp);
 			sctp_inpcb_free(inp, SCTP_FREE_SHOULD_USE_ABORT,
 			                SCTP_CALLED_AFTER_CMPSET_OFCLOSE);
 		} else {
-#ifdef SCTP_LOG_CLOSING
 			sctp_log_closing(inp, NULL, 14);
-#endif
 			SCTP_INP_WUNLOCK(inp);
 			sctp_inpcb_free(inp, SCTP_FREE_SHOULD_USE_GRACEFUL_CLOSE,
 			                SCTP_CALLED_AFTER_CMPSET_OFCLOSE);
@@ -952,22 +942,16 @@ sctp_detach(struct socket *so)
 	}
  sctp_must_try_again:
 	flags = inp->sctp_flags;
-#ifdef SCTP_LOG_CLOSING
 	sctp_log_closing(inp, NULL, 17);
-#endif
 	if (((flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
 	    (atomic_cmpset_int(&inp->sctp_flags, flags, (flags | SCTP_PCB_FLAGS_SOCKET_GONE | SCTP_PCB_FLAGS_CLOSE_IP)))) {
 		if (((so->so_options & SO_LINGER) && (so->so_linger == 0)) ||
 		    (SCTP_SBAVAIL(&so->so_rcv) > 0)) {
-#ifdef SCTP_LOG_CLOSING
 			sctp_log_closing(inp, NULL, 13);
-#endif
 			sctp_inpcb_free(inp, SCTP_FREE_SHOULD_USE_ABORT,
 			                SCTP_CALLED_AFTER_CMPSET_OFCLOSE);
 		} else {
-#ifdef SCTP_LOG_CLOSING
 			sctp_log_closing(inp, NULL, 13);
-#endif
 			sctp_inpcb_free(inp, SCTP_FREE_SHOULD_USE_GRACEFUL_CLOSE,
 			                SCTP_CALLED_AFTER_CMPSET_OFCLOSE);
 		}
