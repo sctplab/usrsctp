@@ -91,10 +91,6 @@ endif ()
 # MISC
 #################################################
 
-if (sctp_build_shared_lib)
-	set(BUILD_SHARED_LIBS 1)
-endif ()
-
 find_package(Threads)
 
 #################################################
@@ -182,7 +178,19 @@ list(APPEND usrsctp_sources
 	user_socket.c
 )
 
-add_library(usrsctp ${usrsctp_sources} ${usrsctp_headers})
+add_library(usrsctp STATIC ${usrsctp_sources} ${usrsctp_headers})
+if (sctp_build_shared_lib)
+   add_library(usrsctp-shared SHARED ${usrsctp_sources} ${usrsctp_headers})
+   target_include_directories(usrsctp-shared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+   if(SCTP_USE_MBEDTLS_SHA1)
+    target_include_directories(usrsctp-shared PRIVATE ${MBEDTLS_INCLUDE_DIRS})
+   endif()
+   target_link_libraries(usrsctp-shared ${CMAKE_THREAD_LIBS_INIT})
+   set_target_properties(usrsctp-shared PROPERTIES OUTPUT_NAME "usrsctp")
+   set_target_properties(usrsctp-shared PROPERTIES IMPORT_SUFFIX "_import.lib")
+   set_target_properties(usrsctp-shared PROPERTIES SOVERSION ${SOVERSION_SHORT} VERSION ${SOVERSION_FULL})
+   install(TARGETS usrsctp-shared DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif ()
 
 target_include_directories(usrsctp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

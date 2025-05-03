@@ -1,0 +1,45 @@
+Source: libusrsctp
+Maintainer: Thomas Dreibholz <dreibh@iem.uni-due.de>
+Section: net
+Priority: optional
+Build-Depends: cmake,
+               debhelper (>= 12)
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+Homepage: https://github.com/sctplab/usrsctp
+
+Package: libusrsctp2
+Section: libs
+Architecture: any
+Depends: ${misc:Depends},
+         ${shlibs:Depends}
+Description: Portable SCTP Userland Stack
+ This is a userland SCTP stack supporting
+ FreeBSD, Linux, Mac OS X and Windows.
+ .
+ This package contains the shared library for the
+ Portable SCTP Userland Stack.
+
+Package: libusrsctp-dev
+Section: libdevel
+Architecture: any
+Depends: libusrsctp2 (= ${binary:Version}),
+         ${misc:Depends}
+Description: Portable SCTP Userland Stack (Development Files)
+ This is a userland SCTP stack supporting
+ FreeBSD, Linux, Mac OS X and Windows.
+ .
+ This package contains the development files for the
+ Portable SCTP Userland Stack.
+
+Package: libusrsctp-examples
+Architecture: any
+Depends: libusrsctp2 (= ${binary:Version}),
+         ${misc:Depends},
+         ${shlibs:Depends}
+Description: Portable SCTP Userland Stack (Examples)
+ This is a userland SCTP stack supporting
+ FreeBSD, Linux, Mac OS X and Windows.
+ .
+ This package contains the examples for the
+ Portable SCTP Userland Stack.
