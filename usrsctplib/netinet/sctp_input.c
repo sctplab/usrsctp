@@ -57,6 +57,9 @@
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/smp.h>
 #endif
+#if defined(_WIN32) && defined(__MINGW32__)
+#include <minmax.h>
+#endif
 
 static void
 sctp_stop_all_cookie_timers(struct sctp_tcb *stcb)
