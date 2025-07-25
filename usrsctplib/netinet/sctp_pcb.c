@@ -215,8 +215,9 @@ sctp_allocate_vrf(int vrf_id)
 		/* No memory */
 #ifdef INVARIANTS
 		panic("No memory for VRF:%d", vrf_id);
-#endif
+#else
 		return (NULL);
+#endif
 	}
 	/* setup the VRF */
 	memset(vrf, 0, sizeof(struct sctp_vrf));
@@ -233,9 +234,10 @@ sctp_allocate_vrf(int vrf_id)
 		/* No memory */
 #ifdef INVARIANTS
 		panic("No memory for VRF:%d", vrf_id);
-#endif
+#else
 		SCTP_FREE(vrf, SCTP_M_VRF);
 		return (NULL);
+#endif
 	}
 
 	/* Add it to the hash table */
@@ -441,16 +443,18 @@ sctp_add_addr_to_vrf(uint32_t vrf_id, void *ifn, uint32_t ifn_index,
 	if (new_sctp_ifnp == NULL) {
 #ifdef INVARIANTS
 		panic("No memory for IFN");
-#endif
+#else
 		return (NULL);
+#endif
 	}
 	SCTP_MALLOC(new_sctp_ifap, struct sctp_ifa *, sizeof(struct sctp_ifa), SCTP_M_IFA);
 	if (new_sctp_ifap == NULL) {
 #ifdef INVARIANTS
 		panic("No memory for IFA");
-#endif
+#else
 		SCTP_FREE(new_sctp_ifnp, SCTP_M_IFN);
 		return (NULL);
+#endif
 	}
 
 	SCTP_IPI_ADDR_WLOCK();
@@ -2141,7 +2145,7 @@ sctp_pcb_findep(struct sockaddr *nam, int find_tcp_pool, int have_lock,
 	}
 	head = &SCTP_BASE_INFO(sctp_ephash)[SCTP_PCBHASH_ALLADDR(lport,
 	    SCTP_BASE_INFO(hashmark))];
-	inp = sctp_endpoint_probe(nam, head, lport, vrf_id);
+	inp = sctp_endpoint_probe(nam, head, (uint16_t) lport, vrf_id);
 
 	/*
 	 * If the TCP model exists it could be that the main listening
@@ -2156,7 +2160,7 @@ sctp_pcb_findep(struct sockaddr *nam, int find_tcp_pool, int have_lock,
 	if (inp == NULL && find_tcp_pool) {
 		for (i = 0; i < SCTP_BASE_INFO(hashtcpmark) + 1; i++) {
 			head = &SCTP_BASE_INFO(sctp_tcpephash)[i];
-			inp = sctp_endpoint_probe(nam, head, lport, vrf_id);
+			inp = sctp_endpoint_probe(nam, head, (uint16_t) lport, vrf_id);
 			if (inp) {
 				break;
 			}
@@ -2693,7 +2697,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 		return (ENOBUFS);
 	}
 	SCTP_INCR_EP_COUNT();
-	inp->ip_inp.inp.inp_ip_ttl = MODULE_GLOBAL(ip_defttl);
+	inp->ip_inp.inp.inp_ip_ttl = (u_char) MODULE_GLOBAL(ip_defttl);
 	SCTP_INP_INFO_WUNLOCK();
 
 	so->so_pcb = (caddr_t)inp;
@@ -2840,10 +2844,10 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	m->initial_rto = SCTP_BASE_SYSCTL(sctp_rto_initial_default);
 	m->initial_init_rto_max = SCTP_BASE_SYSCTL(sctp_init_rto_max_default);
 	m->sctp_sack_freq = SCTP_BASE_SYSCTL(sctp_sack_freq_default);
-	m->max_init_times = SCTP_BASE_SYSCTL(sctp_init_rtx_max_default);
-	m->max_send_times = SCTP_BASE_SYSCTL(sctp_assoc_rtx_max_default);
-	m->def_net_failure = SCTP_BASE_SYSCTL(sctp_path_rtx_max_default);
-	m->def_net_pf_threshold = SCTP_BASE_SYSCTL(sctp_path_pf_threshold);
+	m->max_init_times = (uint16_t) SCTP_BASE_SYSCTL(sctp_init_rtx_max_default);
+	m->max_send_times = (uint16_t) SCTP_BASE_SYSCTL(sctp_assoc_rtx_max_default);
+	m->def_net_failure = (uint16_t) SCTP_BASE_SYSCTL(sctp_path_rtx_max_default);
+	m->def_net_pf_threshold = (uint16_t) SCTP_BASE_SYSCTL(sctp_path_pf_threshold);
 	m->sctp_sws_sender = SCTP_SWS_SENDER_DEF;
 	m->sctp_sws_receiver = SCTP_SWS_RECEIVER_DEF;
 	m->max_burst = SCTP_BASE_SYSCTL(sctp_max_burst_default);
@@ -2851,19 +2855,18 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 
 	m->sctp_default_cc_module = SCTP_BASE_SYSCTL(sctp_default_cc_module);
 	m->sctp_default_ss_module = SCTP_BASE_SYSCTL(sctp_default_ss_module);
-	m->max_open_streams_intome = SCTP_BASE_SYSCTL(sctp_nr_incoming_streams_default);
+	m->max_open_streams_intome = (uint16_t) SCTP_BASE_SYSCTL(sctp_nr_incoming_streams_default);
 	/* number of streams to pre-open on a association */
-	m->pre_open_stream_count = SCTP_BASE_SYSCTL(sctp_nr_outgoing_streams_default);
+	m->pre_open_stream_count = (uint16_t) SCTP_BASE_SYSCTL(sctp_nr_outgoing_streams_default);
 
 	m->default_mtu = 0;
 	/* Add adaptation cookie */
 	m->adaptation_layer_indicator = 0;
 	m->adaptation_layer_indicator_provided = 0;
 
-	/* seed random number generator */
-	m->random_counter = 1;
-	m->store_at = SCTP_SIGNATURE_SIZE;
-	SCTP_READ_RANDOM(m->random_numbers, sizeof(m->random_numbers));
+	/* Seed random number generator */
+    SCTP_EP_RANDOM_STORE_LOCK_INIT(m);
+    m->random_store_index = 0;
 	sctp_fill_random_store(m);
 
 	/* Minimum cookie size */
@@ -3427,8 +3430,8 @@ sctp_inpcb_bind_locked(struct sctp_inpcb *inp, struct sockaddr *addr,
 		uint16_t count;
 
 #if defined(__Userspace__)
-		first = MODULE_GLOBAL(ipport_firstauto);
-		last = MODULE_GLOBAL(ipport_lastauto);
+		first = (uint16_t) MODULE_GLOBAL(ipport_firstauto);
+		last = (uint16_t) MODULE_GLOBAL(ipport_lastauto);
 #elif defined(_WIN32)
 		first = 1;
 		last = 0xffff;
@@ -4153,6 +4156,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	SCTP_INP_LOCK_DESTROY(inp);
 	SCTP_INP_READ_LOCK_DESTROY(inp);
 	SCTP_ASOC_CREATE_LOCK_DESTROY(inp);
+    SCTP_EP_RANDOM_STORE_LOCK_DESTROY (&inp->sctp_ep);
 #if !(defined(__APPLE__) && !defined(__Userspace__))
 	SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_ep), inp);
 	SCTP_DECR_EP_COUNT();
@@ -4372,7 +4376,7 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 	default:
 		break;
 	}
-	net->addr_is_local = sctp_is_address_on_local_host(newaddr, stcb->asoc.vrf_id);
+	net->addr_is_local = (uint8_t) sctp_is_address_on_local_host(newaddr, stcb->asoc.vrf_id);
 	if (net->addr_is_local && ((set_scope || (from == SCTP_ADDR_IS_CONFIRMED)))) {
 		stcb->asoc.scope.loopback_scope = 1;
 		stcb->asoc.scope.ipv4_local_scope = 1;
@@ -7090,7 +7094,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 							/* in setup state we abort this guy */
 							SCTP_SNPRINTF(msg, sizeof(msg),
 							              "%s:%d at %s", __FILE__, __LINE__, __func__);
-							op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+							op_err = sctp_generate_cause((uint16_t) SCTP_BASE_SYSCTL(sctp_diag_info_code),
 							         msg);
 							sctp_abort_an_association(stcb_tmp->sctp_ep,
 							                          stcb_tmp, op_err, false,
@@ -7184,7 +7188,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 							/* in setup state we abort this guy */
 							SCTP_SNPRINTF(msg, sizeof(msg),
 							              "%s:%d at %s", __FILE__, __LINE__, __func__);
-							op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+							op_err = sctp_generate_cause((uint16_t) SCTP_BASE_SYSCTL(sctp_diag_info_code),
 							         msg);
 							sctp_abort_an_association(stcb_tmp->sctp_ep,
 							                          stcb_tmp, op_err, false,
@@ -7820,7 +7824,7 @@ sctp_drain_mbufs(struct sctp_tcb *stcb)
 		 * Now do we need to find a new
 		 * asoc->highest_tsn_inside_map?
 		 */
-		asoc->last_revoke_count = cnt;
+		asoc->last_revoke_count = (uint16_t) cnt;
 		sctp_timer_stop(SCTP_TIMER_TYPE_RECV, stcb->sctp_ep, stcb, NULL,
 		                SCTP_FROM_SCTP_PCB + SCTP_LOC_11);
 		/*sa_ignore NO_NULL_CHK*/

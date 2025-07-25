@@ -192,12 +192,12 @@ Start copy: Copied code for __Userspace__ */
 
 /* changed definitions of MALLOC and FREE */
 /* Using memset if flag M_ZERO is specified. Todo: M_WAITOK and M_NOWAIT */
-#define	MALLOC(space, cast, size, type, flags)                          \
-    ((space) = (cast)malloc((u_long)(size)));                           \
-    do {								\
-        if (flags & M_ZERO) {                                            \
-	  memset(space,0,size);                                         \
-	}								\
-    } while (0);
+#define MALLOC(space, cast, size, type, flags)                                 \
+    ((space) = (cast) malloc ((u_long) (size)));                               \
+    do {                                                                       \
+        if ((flags & M_ZERO) != 0) {                                           \
+            memset (space, 0, size);                                           \
+        }                                                                      \
+    } while (0, 0)
 
 #endif /* !_SYS_MALLOC_H_ */
