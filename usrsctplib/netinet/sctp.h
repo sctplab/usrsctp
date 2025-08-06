@@ -38,9 +38,6 @@
 #if defined(__APPLE__) || defined(__linux__)
 #include <stdint.h>
 #endif
-#if defined(__FreeBSD__) && !defined(__Userspace__)
-#include <sys/cdefs.h>
-#endif
 #include <sys/types.h>
 
 #if !defined(_WIN32)

@@ -4215,7 +4215,7 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 		ip->ip_id = htons(SCTP_IP_ID(inp)++);
 #elif defined(__FreeBSD__)
 		/* FreeBSD has a function for ip_id's */
-		ip_fillid(ip);
+		ip_fillid(ip, V_ip_random_id);
 #elif defined(__APPLE__)
 #if RANDOM_IP_ID
 		ip->ip_id = ip_randomid();
@@ -11856,7 +11856,7 @@ sctp_send_resp_msg(struct sockaddr *src, struct sockaddr *dst,
 #if defined(__Userspace__)
 		ip->ip_id = htons(ip_id++);
 #elif defined(__FreeBSD__)
-		ip_fillid(ip);
+		ip_fillid(ip, V_ip_random_id);
 #elif defined(__APPLE__)
 #if RANDOM_IP_ID
 		ip->ip_id = ip_randomid();

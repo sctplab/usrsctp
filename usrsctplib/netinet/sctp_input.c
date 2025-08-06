@@ -6342,7 +6342,11 @@ sctp_input_with_port(struct mbuf *i_pak, int off, uint16_t port)
 	}
 	ecn_bits = ip->ip_tos;
 #if defined(__FreeBSD__) && !defined(__Userspace__)
-	if (m->m_pkthdr.csum_flags & CSUM_SCTP_VALID) {
+	if (m->m_pkthdr.csum_flags & (CSUM_SCTP_VALID | CSUM_IP_SCTP)) {
+		/*
+		 * Packet with CSUM_IP_SCTP were sent from local host using
+		 * checksum offloading. Checksum not required.
+		 */
 		SCTP_STAT_INCR(sctps_recvhwcrc);
 		compute_crc = 0;
 	} else {

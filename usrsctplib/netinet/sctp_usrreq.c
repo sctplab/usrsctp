@@ -604,8 +604,9 @@ sctp_getcred(SYSCTL_HANDLER_ARGS)
 	/* FIX, for non-bsd is this right? */
 	vrf_id = SCTP_DEFAULT_VRFID;
 
+	if (req->newptr == NULL)
+		return (EINVAL);
 	error = priv_check(req->td, PRIV_NETINET_GETCRED);
-
 	if (error)
 		return (error);
 
@@ -5568,19 +5569,22 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			break;
 		}
 		if (send_out) {
+			int cnt;
 			uint16_t strm;
 			if (strrst->srs_number_streams) {
-				for (i = 0; i < strrst->srs_number_streams; i++) {
+				for (i = 0, cnt = 0; i < strrst->srs_number_streams; i++) {
 					strm = strrst->srs_stream_list[i];
 					if (stcb->asoc.strmout[strm].state == SCTP_STREAM_OPEN) {
 						stcb->asoc.strmout[strm].state = SCTP_STREAM_RESET_PENDING;
+						cnt++;
 					}
 				}
 			} else {
 				/* Its all */
-				for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
+				for (i = 0, cnt = 0; i < stcb->asoc.streamoutcnt; i++) {
 					if (stcb->asoc.strmout[i].state == SCTP_STREAM_OPEN) {
 						stcb->asoc.strmout[i].state = SCTP_STREAM_RESET_PENDING;
+						cnt++;
 					}
 				}
 			}
@@ -8888,7 +8892,6 @@ sctp_peeraddr(struct socket *so, struct mbuf *nam)
 	.pr_control =	in_control,				\
 	.pr_close =	sctp_close,				\
 	.pr_detach =	sctp_close,				\
-	.pr_sopoll =	sopoll_generic,				\
 	.pr_flush =	sctp_flush,				\
 	.pr_disconnect = sctp_disconnect,			\
 	.pr_listen =	sctp_listen,				\
