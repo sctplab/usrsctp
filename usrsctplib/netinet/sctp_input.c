@@ -3085,11 +3085,6 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 			SCTP_INP_DECR_REF(inp);
 			/* Switch over to the new guy */
 			*inp_p = inp;
-			sctp_ulp_notify(notification, *stcb, 0, NULL, SCTP_SO_NOT_LOCKED);
-			if (send_int_conf) {
-				sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_CONFIRMED,
-				                (*stcb), 0, (void *)netl, SCTP_SO_NOT_LOCKED);
-			}
 
 			/* Pull it from the incomplete queue and wake the guy */
 #if defined(__APPLE__) && !defined(__Userspace__)
@@ -3103,6 +3098,11 @@ sctp_handle_cookie_echo(struct mbuf *m, int iphlen, int offset,
 			atomic_subtract_int(&(*stcb)->asoc.refcnt, 1);
 			SCTP_SOCKET_UNLOCK(so, 1);
 #endif
+			sctp_ulp_notify(notification, *stcb, 0, NULL, SCTP_SO_NOT_LOCKED);
+			if (send_int_conf) {
+				sctp_ulp_notify(SCTP_NOTIFY_INTERFACE_CONFIRMED,
+				                (*stcb), 0, (void *)netl, SCTP_SO_NOT_LOCKED);
+			}
 			return (m);
 		}
 	}
