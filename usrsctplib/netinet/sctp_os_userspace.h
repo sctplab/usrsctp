@@ -273,7 +273,12 @@ typedef char* caddr_t;
 	((ro)->ro_rt && (ro)->ro_rt->rt_ifp)
 /******************************************/
 
+#if !defined(__Userspace_os_Windows)
 #define SCTP_GET_IF_INDEX_FROM_ROUTE(ro) 1 /* compiles...  TODO use routing socket to determine */
+#else
+#define SCTP_GET_IF_INDEX_FROM_ROUTE(ro) \
+	((ro)->ro_rt != NULL ? ((ro)->ro_rt->rt_ifp != NULL ? ((struct sctp_ifn *)(ro)->ro_rt->rt_ifp)->ifn_index : 1) : 1)
+#endif
 
 #define BIG_ENDIAN 1
 #define LITTLE_ENDIAN 0
@@ -832,6 +837,7 @@ sctp_hashfreedestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask);
 typedef struct sctp_route	sctp_route_t;
 typedef struct sctp_rtentry	sctp_rtentry_t;
 
+#if !defined(__Userspace_os_Windows)
 static inline void sctp_userspace_rtalloc(sctp_route_t *ro)
 {
 	if (ro->ro_rt != NULL) {
@@ -876,6 +882,9 @@ static inline void sctp_userspace_rtfree(sctp_rtentry_t *rt)
 	free(rt);
 }
 #define rtfree(arg1) sctp_userspace_rtfree(arg1)
+#else
+#define SCTP_RTALLOC(ro, vrf_id, fibnum) rtalloc((sctp_route_t *)ro, vrf_id)
+#endif
 
 
 /*************************/
