@@ -275,6 +275,12 @@ typedef char* caddr_t;
 
 #define SCTP_GET_IF_INDEX_FROM_ROUTE(ro) 1 /* compiles...  TODO use routing socket to determine */
 
+#if defined(__APPLE__) && defined(__POWERPC__)
+#ifndef WORDS_BIGENDIAN
+#define WORDS_BIGENDIAN
+#endif
+#endif
+
 #define BIG_ENDIAN 1
 #define LITTLE_ENDIAN 0
 #ifdef WORDS_BIGENDIAN
