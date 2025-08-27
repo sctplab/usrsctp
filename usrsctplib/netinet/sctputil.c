@@ -65,6 +65,9 @@
 #include <netinet/icmp6.h>
 #endif
 #endif
+#if defined(_WIN32) && defined(__MINGW32__)
+#include <minmax.h>
+#endif
 
 #if defined(_WIN32) && !defined(__Userspace__)
 #if !defined(SCTP_LOCAL_TRACE_BUF)
