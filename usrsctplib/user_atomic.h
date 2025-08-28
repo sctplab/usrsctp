@@ -51,7 +51,7 @@
 #define SCTP_DECREMENT_AND_CHECK_REFCOUNT(addr) (InterlockedExchangeAdd((LPLONG)addr, (-1L)) == 1)
 #else
 #include <libkern/OSAtomic.h>
-#define atomic_add_int(addr, val) OSAtomicAdd32Barrier(val, (int32_t *)addr)
+#define atomic_add_int(addr, val) OSAtomicAdd32Barrier (val, (int32_t *) addr)
 #define atomic_fetchadd_int(addr, val) OSAtomicAdd32Barrier(val, (int32_t *)addr)
 #define atomic_subtract_int(addr, val) OSAtomicAdd32Barrier(-val, (int32_t *)addr)
 #define atomic_cmpset_int(dst, exp, src) OSAtomicCompareAndSwapIntBarrier(exp, src, (int *)dst)
@@ -93,7 +93,7 @@ static inline void atomic_init(void) {} /* empty when we are not using atomic_mt
 /*Atomically add V to *P.*/
 #define atomic_add_int(P, V)	 (void) __sync_fetch_and_add(P, V)
 
-/*Atomically subtrace V from *P.*/
+/*Atomically subtract V from *P.*/
 #define atomic_subtract_int(P, V) (void) __sync_fetch_and_sub(P, V)
 
 /*

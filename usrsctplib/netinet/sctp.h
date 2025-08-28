@@ -289,8 +289,10 @@ struct sctp_paramhdr {
 /* workaround for Cygwin on Windows: returns the SOCKET handle */
 #define SCTP_GET_HANDLE			0x0000800d
 #endif
+#ifdef SCTP_DEBUG
 /* Debug things that need to be purged */
 #define SCTP_SET_INITIAL_DBG_SEQ	0x00009f00
+#endif
 
 /* JRS - Supported congestion control modules for pluggable
  * congestion control

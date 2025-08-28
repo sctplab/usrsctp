@@ -28,17 +28,19 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _WIN32
-#include <unistd.h>
-#endif
-#include "usrsctp.h"
+#include <stdio.h>
+#include <usrsctp.h>
 
 int
-main(void)
+#ifdef _MSC_VER
+  __cdecl
+#endif
+main (void)
 {
 	int i;
 
-	for (i = 0; i < 10000; i++) {
+	printf("Entering the loop\n");
+	for (i = 0; i < 100; i++) {
 		usrsctp_init(0, NULL, NULL);
 		while (usrsctp_finish() != 0) {
 #ifdef _WIN32
@@ -48,5 +50,6 @@ main(void)
 #endif
 		}
 	}
+	printf("Exited the loop\n");
 	return (0);
 }

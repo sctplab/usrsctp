@@ -28,16 +28,14 @@
  * SUCH DAMAGE.
  */
 
-#include <stdlib.h>
 #include <stdio.h>
-#include <stdarg.h>
-#ifndef _WIN32
-#include <unistd.h>
-#endif
 #include <usrsctp.h>
 
 int
-main(void) 
+#ifdef _MSC_VER
+  __cdecl
+#endif
+main (void)
 {
 	unsigned int i;
 

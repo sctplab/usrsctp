@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <crtdbg.h>
 #include <sys/timeb.h>
+#include <process.h>
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -412,7 +413,11 @@ client_receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 	return (1);
 }
 
-int main(int argc, char **argv)
+int
+#ifdef _MSC_VER
+__cdecl
+#endif
+main (int argc, char **argv)
 {
 #ifndef _WIN32
 	int c, rc;
@@ -757,8 +762,8 @@ int main(int argc, char **argv)
 					continue;
 				}
 #ifdef _WIN32
-				if ((tid = CreateThread(NULL, 0, &handle_connection, (void *)conn_sock, 0, NULL)) == NULL) {
-					fprintf(stderr, "CreateThread() failed with error: %lu\n", GetLastError());
+				if ((tid = (HANDLE) _beginthreadex(NULL, 0, &handle_connection, (void *)conn_sock, 0, NULL)) == NULL) {
+					fprintf(stderr, "_beginthreadex() failed with error: %lu\n", errno);
 #else
 				if ((rc = pthread_create(&tid, NULL, &handle_connection, (void *)conn_sock)) != 0) {
 					fprintf(stderr, "pthread_create: %s\n", strerror(rc));

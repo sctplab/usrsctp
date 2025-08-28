@@ -61,6 +61,7 @@
 userland_mutex_t accept_mtx;
 userland_cond_t accept_cond;
 #ifdef _WIN32
+HCRYPTPROV crypto_provider = 0;
 #include <time.h>
 #include <sys/timeb.h>
 #endif
@@ -90,6 +91,10 @@ static void init_sync(void) {
 #endif
 	InitializeConditionVariable(&accept_cond);
 	InitializeCriticalSection(&accept_mtx);
+    if (!CryptAcquireContext (&crypto_provider, NULL, NULL, PROV_RSA_FULL, 0)) {
+        SCTP_PRINTF ("CryptAcquireContext failed\n");
+        exit (-1);
+    }
 #else
 	pthread_mutexattr_t mutex_attr;
 
@@ -738,7 +743,7 @@ userspace_sctp_sendmsg(struct socket *so,
 
 	memset(sinfo, 0, sizeof(struct sctp_sndrcvinfo));
 	sinfo->sinfo_ppid = ppid;
-	sinfo->sinfo_flags = flags;
+	sinfo->sinfo_flags = (uint16_t) flags;
 	sinfo->sinfo_stream = stream_no;
 	sinfo->sinfo_timetolive = timetolive;
 	sinfo->sinfo_context = context;
@@ -925,7 +930,7 @@ userspace_sctp_sendmbuf(struct socket *so,
 	ssize_t retval;
 
 	sinfo->sinfo_ppid = ppid;
-	sinfo->sinfo_flags = flags;
+	sinfo->sinfo_flags = (uint16_t) flags;
 	sinfo->sinfo_stream = stream_no;
 	sinfo->sinfo_timetolive = timetolive;
 	sinfo->sinfo_context = context;
@@ -1247,7 +1252,7 @@ socreate(int dom, struct socket **aso, int type, int proto)
 	 */
 	TAILQ_INIT(&so->so_incomp);
 	TAILQ_INIT(&so->so_comp);
-	so->so_type = type;
+	so->so_type = (short) type;
 	so->so_count = 1;
 	so->so_dom = dom;
 	/*
@@ -1521,7 +1526,7 @@ solisten_proto(struct socket *so, int backlog)
 
 	if (backlog < 0 || backlog > somaxconn)
 		backlog = somaxconn;
-	so->so_qlimit = backlog;
+	so->so_qlimit = (u_short) backlog;
 	so->so_options |= SCTP_SO_ACCEPTCONN;
 }
 
@@ -2060,7 +2065,11 @@ usrsctp_finish(void)
 	}
 	sctp_finish();
 #if defined(_WIN32)
-	DeleteConditionVariable(&accept_cond);
+    if (crypto_provider) {
+        CryptReleaseContext (crypto_provider, 0);
+        crypto_provider = 0;
+    }
+    DeleteConditionVariable (&accept_cond);
 	DeleteCriticalSection(&accept_mtx);
 #if defined(INET) || defined(INET6)
 	WSACleanup();
@@ -2689,6 +2698,7 @@ usrsctp_getpaddrs(struct socket *so, sctp_assoc_t id, struct sockaddr **raddrs)
 		errno = EFAULT;
 		return (-1);
 	}
+    *raddrs = NULL;
 	/* When calling getsockopt(), the value contains the assoc_id. */
 	size_of_addresses = (uint32_t)id;
 	opt_len = (socklen_t)sizeof(uint32_t);
@@ -2747,10 +2757,15 @@ usrsctp_getpaddrs(struct socket *so, sctp_assoc_t id, struct sockaddr **raddrs)
 void
 usrsctp_freepaddrs(struct sockaddr *addrs)
 {
+	if (addrs == NULL) {
+		return;
+	}
+
 	/* Take away the hidden association id */
 	void *fr_addr;
 
 	fr_addr = (void *)((caddr_t)addrs - offsetof(struct sctp_getaddresses, addr));
+
 	/* Now free it */
 	free(fr_addr);
 }
@@ -2769,6 +2784,7 @@ usrsctp_getladdrs(struct socket *so, sctp_assoc_t id, struct sockaddr **raddrs)
 		errno = EFAULT;
 		return (-1);
 	}
+    *raddrs = NULL;
 	size_of_addresses = 0;
 	opt_len = (socklen_t)sizeof(uint32_t);
 	if (usrsctp_getsockopt(so, IPPROTO_SCTP, SCTP_GET_LOCAL_ADDR_SIZE, &size_of_addresses, &opt_len) != 0) {
@@ -2826,10 +2842,15 @@ usrsctp_getladdrs(struct socket *so, sctp_assoc_t id, struct sockaddr **raddrs)
 void
 usrsctp_freeladdrs(struct sockaddr *addrs)
 {
+	if (addrs == NULL) {
+		return;
+	}
+
 	/* Take away the hidden association id */
 	void *fr_addr;
 
 	fr_addr = (void *)((caddr_t)addrs - offsetof(struct sctp_getaddresses, addr));
+
 	/* Now free it */
 	free(fr_addr);
 }

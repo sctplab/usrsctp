@@ -1514,9 +1514,12 @@ sctp_set_rtcc_initial_cc_param(struct sctp_tcb *stcb,
 	net->cc_mod.rtcc.bw_tot_time = 0;
 	net->cc_mod.rtcc.bw_bytes = 0;
 	net->cc_mod.rtcc.tls_needs_set = 0;
-	net->cc_mod.rtcc.ret_from_eq = SCTP_BASE_SYSCTL(sctp_rttvar_eqret);
-	net->cc_mod.rtcc.steady_step = SCTP_BASE_SYSCTL(sctp_steady_step);
-	net->cc_mod.rtcc.use_dccc_ecn = SCTP_BASE_SYSCTL(sctp_use_dccc_ecn);
+        net->cc_mod.rtcc.ret_from_eq =
+          (uint8_t) SCTP_BASE_SYSCTL (sctp_rttvar_eqret);
+        net->cc_mod.rtcc.steady_step =
+          (uint16_t) SCTP_BASE_SYSCTL (sctp_steady_step);
+        net->cc_mod.rtcc.use_dccc_ecn =
+          (uint8_t) SCTP_BASE_SYSCTL (sctp_use_dccc_ecn);
 	net->cc_mod.rtcc.step_cnt = 0;
 	net->cc_mod.rtcc.last_step_state = 0;
 }
@@ -1535,7 +1538,8 @@ sctp_cwnd_rtcc_socket_option(struct sctp_tcb *stcb, int setorget,
 				return (EINVAL);
 			}
 			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
-				net->cc_mod.rtcc.ret_from_eq = cc_opt->aid_value.assoc_value;
+                            net->cc_mod.rtcc.ret_from_eq =
+                              (uint8_t) cc_opt->aid_value.assoc_value;
 			}
 		} else if (cc_opt->option == SCTP_CC_OPT_USE_DCCC_ECN) {
 			if ((cc_opt->aid_value.assoc_value != 0) &&
@@ -1543,11 +1547,13 @@ sctp_cwnd_rtcc_socket_option(struct sctp_tcb *stcb, int setorget,
 				return (EINVAL);
 			}
 			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
-				net->cc_mod.rtcc.use_dccc_ecn = cc_opt->aid_value.assoc_value;
+                            net->cc_mod.rtcc.use_dccc_ecn =
+                              (uint8_t) cc_opt->aid_value.assoc_value;
 			}
 		} else if (cc_opt->option == SCTP_CC_OPT_STEADY_STEP) {
 			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
-				net->cc_mod.rtcc.steady_step = cc_opt->aid_value.assoc_value;
+                            net->cc_mod.rtcc.steady_step =
+                              (uint16_t) cc_opt->aid_value.assoc_value;
 			}
 		} else {
 			return (EINVAL);
@@ -1715,7 +1721,7 @@ sctp_hs_cwnd_increase(struct sctp_tcb *stcb, struct sctp_nets *net)
 				break;
 			}
 		}
-		net->last_hs_used = indx;
+                net->last_hs_used = (uint8_t) indx;
 		incr = (((int32_t)sctp_cwnd_adjust[indx].increase) << 10);
 		net->cwnd += incr;
 	}
@@ -1757,7 +1763,7 @@ sctp_hs_cwnd_decrease(struct sctp_tcb *stcb, struct sctp_nets *net)
 					break;
 				}
 			}
-			net->last_hs_used = indx;
+			net->last_hs_used = (uint8_t)indx;
 		}
 	}
 	sctp_enforce_cwnd_limit(&stcb->asoc, net);
@@ -1999,7 +2005,7 @@ measure_achieved_throughput(struct sctp_nets *net)
 	uint32_t now = sctp_get_tick_count();
 
 	if (net->fast_retran_ip == 0)
-		net->cc_mod.htcp_ca.bytes_acked = net->net_ack;
+		net->cc_mod.htcp_ca.bytes_acked = (uint16_t) net->net_ack;
 
 	if (!use_bandwidth_switch)
 		return;
@@ -2049,7 +2055,7 @@ htcp_beta_update(struct htcp *ca, uint32_t minRTT, uint32_t maxRTT)
 	}
 
 	if (ca->modeswitch && minRTT > sctp_msecs_to_ticks(10) && maxRTT) {
-		ca->beta = (minRTT<<7)/maxRTT;
+        ca->beta = (uint8_t) ((minRTT << 7) / maxRTT);
 		if (ca->beta < BETA_MIN)
 			ca->beta = BETA_MIN;
 		else if (ca->beta > BETA_MAX)
@@ -2080,7 +2086,7 @@ htcp_alpha_update(struct htcp *ca)
 			factor = 1;
 	}
 
-	ca->alpha = 2 * factor * ((1 << 7) - ca->beta);
+	ca->alpha = (uint16_t) (2 * factor * ((1 << 7) - ca->beta));
 	if (ca->alpha != 0)
 		ca->alpha = ALPHA_BASE;
 }
@@ -2174,7 +2180,7 @@ htcp_cong_avoid(struct sctp_tcb *stcb, struct sctp_nets *net)
 			}
 		}
 
-		net->cc_mod.htcp_ca.bytes_acked = net->mtu;
+		net->cc_mod.htcp_ca.bytes_acked = (uint16_t) net->mtu;
 	}
 }
 
@@ -2193,7 +2199,7 @@ htcp_init(struct sctp_nets *net)
 	memset(&net->cc_mod.htcp_ca, 0, sizeof(struct htcp));
 	net->cc_mod.htcp_ca.alpha = ALPHA_BASE;
 	net->cc_mod.htcp_ca.beta = BETA_MIN;
-	net->cc_mod.htcp_ca.bytes_acked = net->mtu;
+	net->cc_mod.htcp_ca.bytes_acked = (uint16_t) net->mtu;
 	net->cc_mod.htcp_ca.last_cong = sctp_get_tick_count();
 }
 

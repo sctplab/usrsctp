@@ -674,14 +674,14 @@ MALLOC_DECLARE(SCTP_M_SOCKOPT);
 #define SCTP_MALLOC(var, type, size, name)				\
 	do {								\
 		MALLOC(var, type, size, name, M_NOWAIT);		\
-	} while (0)
+	} while (0,0)
 
 #define SCTP_FREE(var, type)	FREE(var, type)
 
 #define SCTP_MALLOC_SONAME(var, type, size)				\
 	do {								\
 		MALLOC(var, type, size, M_SONAME, (M_WAITOK | M_ZERO));	\
-	} while (0)
+	} while (0,0)
 
 #define SCTP_FREE_SONAME(var)	FREE(var, M_SONAME)
 

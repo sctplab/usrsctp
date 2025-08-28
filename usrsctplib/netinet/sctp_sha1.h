@@ -42,6 +42,16 @@
 #include <openssl/sha.h>
 #endif
 
+#if defined(_WIN32) && defined(__Userspace__)
+#include <wtypes.h>
+#include <basetsd.h>
+#include <wincrypt.h>
+struct sctp_sha1_context
+{
+    HCRYPTHASH hash;
+};
+extern HCRYPTPROV crypto_provider;
+#else
 struct sctp_sha1_context {
 #if defined(SCTP_USE_NSS_SHA1)
 	struct PK11Context *pk11_ctx;
@@ -67,6 +77,7 @@ struct sctp_sha1_context {
 	unsigned int running_total;
 #endif
 };
+#endif
 
 #if (defined(__APPLE__)  && !defined(__Userspace__) && defined(KERNEL))
 #ifndef _KERNEL

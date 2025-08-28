@@ -159,7 +159,7 @@ static const char *bytes2human(uint64_t bytes)
 	char *suffix[] = {"", "K", "M", "G", "T"};
 	char suffix_length = sizeof(suffix) / sizeof(suffix[0]);
 	int i = 0;
-	double human_size = bytes;
+	double human_size = (double) bytes;
 	static char output[200];
 
 	if (bytes > 1024) {
@@ -295,7 +295,7 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 
 			gettimeofday(&time_now, NULL);
 			timersub(&time_now, &tsctp_meta->stat_start, &time_diff);
-			seconds = time_diff.tv_sec + (double)time_diff.tv_usec / 1000000.0;
+			seconds = time_diff.tv_sec + time_diff.tv_usec / 1000000.0f;
 
 			if (tsctp_meta->par_stats_human) {
 				printf("Connection closed - statistics\n");
@@ -306,7 +306,7 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 				printf("\tnotifications : %" PRIu64 "\n", tsctp_meta->stat_notifications);
 				printf("\ttransferred   : %sByte\n", bytes2human(tsctp_meta->stat_message_length * tsctp_meta->stat_messages));
 				printf("\truntime       : %.2f s\n", seconds);
-				printf("\tgoodput       : %sBit/s\n", bytes2human((double) tsctp_meta->stat_message_length * (double) tsctp_meta->stat_messages / seconds * 8));
+				printf("\tgoodput       : %sBit/s\n", bytes2human((uint64_t) (tsctp_meta->stat_message_length * tsctp_meta->stat_messages / seconds * 8.0)));
 
 			} else {
 				printf("%" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %f, %f, %" PRIu64 "\n",
@@ -360,7 +360,7 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 
 		gettimeofday(&time_now, NULL);
 		timersub(&time_now, &tsctp_meta->stat_start, &time_diff);
-		seconds = time_diff.tv_sec + (double)time_diff.tv_usec / 1000000.0;
+		seconds = time_diff.tv_sec + time_diff.tv_usec / 1000000.0f;
 
 		if ((tsctp_meta->par_messages && tsctp_meta->par_messages == tsctp_meta->stat_messages) ||
 			(tsctp_meta->par_runtime && tsctp_meta->par_runtime <= seconds)) {
@@ -380,7 +380,11 @@ handle_upcall(struct socket *upcall_socket, void *upcall_data, int upcall_flags)
 	return;
 }
 
-int main(int argc, char **argv)
+int
+#ifdef _MSC_VER
+  __cdecl
+#endif
+main (int argc, char **argv)
 {
 #ifndef _WIN32
 	int c;

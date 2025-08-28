@@ -138,7 +138,10 @@ static void handle_upcall(struct socket *sock, void *arg, int flgs)
 }
 
 int
-main(int argc, char *argv[])
+#ifdef _MSC_VER
+  __cdecl
+#endif
+main (int argc, char *argv[])
 {
 	struct socket *sock;
 	struct sockaddr *addr;

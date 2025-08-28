@@ -216,5 +216,5 @@ install(FILES usrsctp.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 # GENERATE AND INSTALL PKG-CONFIG FILE
 #################################################
 
-configure_file("${PROJECT_SOURCE_DIR}/usrsctp.pc.in" "${CMAKE_CURRENT_BINARY_DIR}/usrsctp.pc" @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/../usrsctp.pc.in" "${CMAKE_CURRENT_BINARY_DIR}/usrsctp.pc" @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/usrsctp.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
