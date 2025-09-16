@@ -5600,7 +5600,7 @@ sctp_release_pr_sctp_chunk(struct sctp_tcb *stcb, struct sctp_tmit_chunk *tp1,
 	do {
 		ret_sz += tp1->book_size;
 		if (tp1->data != NULL) {
-			if (tp1->sent < SCTP_DATAGRAM_RESEND) {
+			if (tp1->whoTo != NULL && tp1->sent < SCTP_DATAGRAM_RESEND) {
 				sctp_flight_size_decrease(tp1);
 				sctp_total_flight_decrease(stcb, tp1);
 			}

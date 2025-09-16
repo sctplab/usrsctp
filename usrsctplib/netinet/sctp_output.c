@@ -9263,6 +9263,45 @@ again_one_more_time:
 						continue;
 					}
 				}
+
+				if (PR_SCTP_ENABLED(chk->flags)) {
+					if PR_SCTP_TTL_ENABLED(chk->flags){
+						if (*now_filled == 0) {
+							(void)SCTP_GETTIME_TIMEVAL(now);
+							*now_filled = 1;
+						}
+						/*
+						 * Chunk has not been sent but its time is already up
+						 */
+#ifndef __FreeBSD__
+						if (timercmp(now, &chk->rec.data.timetodrop, >)) {
+#else
+						if (timevalcmp(now, &chk->rec.data.timetodrop, >)) {
+#endif
+							/* Yes so drop it */
+							if (chk->data) {
+								if (chk->whoTo == NULL) {
+									chk->whoTo = net;
+									atomic_add_int(&net->ref_count, 1);
+								}
+#ifdef SCTP_DEBUG
+								SCTPDBG(SCTP_DEBUG_OUTPUT4, "found chunk to ABANDON "
+										"TSN:%10lu C:%d S:%d [ %ld.%06ld ] now:[ %ld.%06ld ]\n",
+										ntohl(chk->rec.data.tsn),
+										chk->snd_count, chk->sent,
+										chk->rec.data.timetodrop.tv_sec,
+										chk->rec.data.timetodrop.tv_usec,
+										now->tv_sec, now->tv_usec);
+#endif
+								(void)sctp_release_pr_sctp_chunk(stcb, chk,
+										1, SCTP_SO_LOCKED);
+								/* cnt_abandoned++; TODO */
+							}
+							continue;
+						}
+					}
+				}
+
 				if ((chk->send_size > omtu) && ((chk->flags & CHUNK_FLAGS_FRAGMENT_OK) == 0)) {
 					/*-
 					 * strange, we have a chunk that is
