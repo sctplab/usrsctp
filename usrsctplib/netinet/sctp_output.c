@@ -51,6 +51,8 @@
 #include <netinet/sctp_bsd_addr.h>
 #include <netinet/sctp_input.h>
 #include <netinet/sctp_crc32.h>
+#include <netinet/bbr.h>
+
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <netinet/sctp_kdtrace.h>
 #endif
@@ -4069,7 +4071,7 @@ sctp_handle_no_route(struct sctp_tcb *stcb,
 static int
 sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
     struct sctp_tcb *stcb,	/* may be NULL */
-    struct sctp_nets *net,
+    struct sctp_nets *net, /* this is the one certain net path we decide to send */
     struct sockaddr *to,
     struct mbuf *m,
     uint32_t auth_offset,
@@ -7615,6 +7617,26 @@ sctp_toss_old_asconf(struct sctp_tcb *stcb)
 	}
 }
 
+uint8_t sctp_bbr_check_app_limited(struct sctp_association *asoc, struct sctp_tcb *stcb, struct sctp_nets *net) {
+    struct user_bbr *bbr = &net->bbr;
+	// if we have litte unsent data in queue (less than 1/4 * BDP) 
+	// we think we are app-limited
+    uint32_t unsent_data =((asoc->total_output_queue_size - asoc->total_flight) +
+		   (asoc->stream_queue_cnt * SCTP_DATA_CHUNK_OVERHEAD(stcb))); 
+    uint32_t bdp = ((bbr->full_bw >> USER_BBR_BW_SCALE) * bbr->min_rtt_us) / 1000000;
+    
+    if (unsent_data < (bdp / 4)) {
+		printf("[BBR][APP][APP_LIMITED] unsent_data: %u, bdp/4: %u\n", unsent_data, bdp / 4);
+        return 1;
+    }
+   
+	// or if we were app-limited before and have not sent enough data yet
+    if (bbr->app_limited_until > 0) {
+        return 1;
+    }
+    return 0;
+}
+
 static void
 sctp_clean_up_datalist(struct sctp_tcb *stcb,
     struct sctp_association *asoc,
@@ -7625,7 +7647,27 @@ sctp_clean_up_datalist(struct sctp_tcb *stcb,
 	int i;
 	struct sctp_tmit_chunk *tp1;
 
+	uint64_t bbr_send_time_us = user_bbr_now_usec();
+	// mult chunks is bundled together in one SCTP packet
+	// usually bundle_at is 1
+	uint32_t total_bundle_size = 0;
 	for (i = 0; i < bundle_at; i++) {
+		// exit app-limited on first send after being limited
+    	if (net->bbr.app_limited && net->flight_size> 0) {
+			net->bbr.app_limited = 0;
+			net->bbr.app_limited_until = net->flight_size; //small buffer
+    	}
+
+		data_list[i]->bbr_send_time_us = bbr_send_time_us; 
+        data_list[i]->bbr_delivered_at_send = net->bbr.delivered_bytes; 
+    	data_list[i]->bbr_is_app_limited = net->bbr.app_limited;
+		// printf("[BBR][APP][SEND] TSN: %u, is_app_limited: %u, delivered at send: %llu net %p \n", data_list[i]->rec.data.tsn, data_list[i]->bbr_is_app_limited, data_list[i]->bbr_delivered_at_send, (void*)net);
+    
+    	if (data_list[i]->bbr_is_app_limited && net->bbr.app_limited_until == 0) {
+        	net->bbr.app_limited_until = net->flight_size; 
+    	}
+		total_bundle_size += data_list[i]->send_size;
+
 		/* off of the send queue */
 		TAILQ_REMOVE(&asoc->send_queue, data_list[i], sctp_next);
 		asoc->send_queue_cnt--;
@@ -7702,6 +7744,14 @@ sctp_clean_up_datalist(struct sctp_tcb *stcb,
 			asoc->peers_rwnd = 0;
 		}
 	}
+	// BBR SEND() logic
+	user_bbr_on_packet_sent(&net->bbr, total_bundle_size);
+	// calc next send time by bbr pacing rate
+	uint64_t pacing_rate_bps = user_bbr_get_pacing_rate_bps(&net->bbr);
+	if(pacing_rate_bps != 0) {
+		net->bbr.next_send_time_us = user_bbr_now_usec() + total_bundle_size / pacing_rate_bps;
+	}
+	// printf("[BBR][PACEING] total_bundle_size: %u, pacing_rate_bps: %llu, pkt size: %d bytes, next send time: %llu us\n", total_bundle_size, net->bbr.pacing_rate_bps, total_bundle_size, net->bbr.next_send_time_us);
 	if (asoc->cc_functions.sctp_cwnd_update_packet_transmitted) {
 		(*asoc->cc_functions.sctp_cwnd_update_packet_transmitted)(stcb, net);
 	}
@@ -9249,6 +9299,37 @@ again_one_more_time:
 					*reason_code = 2;
 					break;
 				}
+				if (system_base_info.sctpsysctl.sctp_default_cc_module == 4){
+					/* bbr: we are limited by inflight >= cwnd_gain * bdp) */
+					uint32_t bdp_bytes = user_bbr_bdp_bytes(&net->bbr, net->bbr.bw_latest, net->bbr.cwnd_gain);
+					if(net->bbr.bytes_in_flight >= bdp_bytes){
+						/* skip this net, no room for data ( bbr inflight >= cwnd_gain * bdp )*/
+						*reason_code = 3;
+						printf("[BBR][SEND]send skip net %p, inflight %llu >= cwnd_gain * bdp %u\n",
+					       	(void*)net,
+					       	net->bbr.bytes_in_flight,
+					       	bdp_bytes);
+						break;
+					}
+					/* bbr: we are limited by pacing rate */
+					uint64_t now_usec = user_bbr_now_usec();
+					if (now_usec < net->bbr.next_send_time_us) {
+						/* skip this net, no room for data ( bbr pacing rate control)*/
+						*reason_code = 3;
+						printf("[BBR][SEND][PACEING] pacing skip net %p, pacing rate controled, now %llu < next_send_time_us %llu\n", (void*)net, now_usec, net->bbr.next_send_time_us);
+						break;
+					}
+					// TODO: FoMoGoMan, properly check packet.app_limited 
+					// and  set app_limited_until = inflight  here
+				}else{
+					// debug log 
+					static int bbr_logged = 0;
+					if (bbr_logged == 0) {
+						bbr_logged = 1;
+						printf("[BBR][SEND] CC module is not BBR, inflight and pacing rate check skipped\n");
+					}
+				}
+	
 				if ((chk->whoTo != NULL) &&
 				    (chk->whoTo != net)) {
 					/* Don't send the chunk on this net */
@@ -9504,6 +9585,7 @@ again_one_more_time:
 					net->rto_needed = 0;
 				}
 				SCTP_STAT_INCR_BY(sctps_senddata, bundle_at);
+				// chunk move from send_queue to sent_queue, more accurate to real send time 
 				sctp_clean_up_datalist(stcb, asoc, data_list, bundle_at, net);
 			}
 			if (one_chunk) {
@@ -10810,6 +10892,7 @@ do_it_again:
 	}
 	burst_cnt = 0;
 	do {
+        /* ========== BBR record end =========== */
 		error = sctp_med_chunk_output(inp, stcb, asoc, &num_out,
 		                              &reason_code, 0, from_where,
 		                              &now, &now_filled, frag_point, so_locked);

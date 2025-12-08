@@ -32,6 +32,12 @@
 
 #ifndef _NETINET_SCTP_CALLOUT_
 #define _NETINET_SCTP_CALLOUT_
+#include <stdint.h>
+#if defined(HAVE_SYS_QUEUE_H)
+#include <sys/queue.h>
+#else
+#include <user_queue.h>
+#endif
 
 /*
  * NOTE: the following MACROS are required for locking the callout

@@ -3122,8 +3122,24 @@ sctp_calculate_rto(struct sctp_tcb *stcb,
 		stcb->asoc.sat_network_lockout = 1;
 	}
 	/* bound it, per C6/C7 in Section 5.3.1 */
-	if (new_rto < stcb->asoc.minrto) {
-		new_rto = stcb->asoc.minrto;
+	{
+		/* SRTT is stored scaled; bring it back to ms for the bound */
+		uint32_t srtt_ms = (uint32_t)(net->lastsa >> SCTP_RTT_SHIFT);
+		uint32_t srtt_based_min = srtt_ms;
+
+		if (srtt_based_min > (UINT32_MAX / 2)) {
+			srtt_based_min = UINT32_MAX;
+		} else {
+			srtt_based_min *= 2;
+		}
+
+		if (srtt_based_min < stcb->asoc.minrto) {
+			srtt_based_min = stcb->asoc.minrto;
+		}
+
+		if (new_rto < srtt_based_min) {
+			new_rto = srtt_based_min;
+		}
 	}
 	if (new_rto > stcb->asoc.maxrto) {
 		new_rto = stcb->asoc.maxrto;
