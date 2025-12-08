@@ -45,6 +45,7 @@
 #include <netinet/sctp_timer.h>
 #include <netinet/sctp_auth.h>
 #include <netinet/sctp_asconf.h>
+#include <netinet/bbr.h>
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <netinet/sctp_kdtrace.h>
 #endif
@@ -982,6 +983,7 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 						break;
 					}
 					net->cwnd += incr;
+					printf("[CWND %d", net->cwnd);
 					sctp_enforce_cwnd_limit(asoc, net);
 					if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_CWND_MONITOR_ENABLE) {
 						sctp_log_cwnd(stcb, net, incr,
@@ -1050,6 +1052,7 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 						break;
 					}
 					net->cwnd += incr;
+					printf("[CWND %d", net->cwnd);
 					sctp_enforce_cwnd_limit(asoc, net);
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 					SDT_PROBE5(sctp, cwnd, net, ack,
@@ -2398,6 +2401,265 @@ sctp_htcp_cwnd_update_after_ecn_echo(struct sctp_tcb *stcb,
 	}
 }
 
+
+
+
+/* helpers to get monotonic time in microseconds */
+static uint64_t _sctp_bbr_now_usec(void) {
+	struct timespec ts;
+	/* CLOCK_MONOTONIC gives monotonic time independent of wallclock changes */
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	return (uint64_t)ts.tv_sec * 1000000ULL + (uint64_t)(ts.tv_nsec / 1000ULL);
+}
+
+/* Helper: get bbr pointer from net  */
+static inline struct user_bbr *_sctp_bbr_from_net(struct sctp_nets *net) {
+	if (!net)
+		return NULL;
+	return (struct user_bbr *)&net->bbr; /* net->bbr must be declared in your sctp_nets */
+}
+
+/* Helper: ensure bbr exists for net; create if missing */
+static struct user_bbr *_sctp_bbr_ensure(struct sctp_tcb *stcb, struct sctp_nets *net) {
+	struct user_bbr *b;
+	uint64_t now;
+
+	if (!net)
+		return NULL;
+	/* create with reasonable defaults: MSS from net->mtu (if available),
+	 * init cwnd default to 4*MSS, time now.
+	 */
+	now = _sctp_bbr_now_usec();
+	uint32_t mss = (net && net->mtu) ? (net->mtu - sizeof(struct sctphdr)) : 1460;
+	uint32_t init_cwnd = mss * 4; /* 4 packets default */
+	b = user_bbr_create(mss, init_cwnd, now);
+	if(b){
+		net->bbr = *b;
+	}
+	return b;
+}
+
+
+/* ---------------------------
+ * sctp_bbr_set_initial_cc_param
+ * ---------------------------
+ * Called when the association/path is initialized. We create a BBR instance
+ * for this path and initialize SCTP's cwnd to a BBR-appropriate value.
+ */
+static void sctp_bbr_set_initial_cc_param(struct sctp_tcb *stcb, struct sctp_nets *net) {
+	struct user_bbr *b;
+	uint64_t now_us;
+
+	if (!net)
+		return;
+
+	printf("[BBR] Initializing BBR for new path\n");
+	now_us = _sctp_bbr_now_usec();
+	/* create/assign bbr */
+	b = _sctp_bbr_ensure(stcb, net);
+	if (!b) {
+		/* allocation failed; leave existing cwnd as-is */
+		return;
+	}
+
+	/* Initialize sctp net cwnd to a reasonable starting value if zero */
+	if (net->cwnd == 0) {
+		/* prefer to use 4 * MTU as default cwnd like kernel BBR's 4 packets */
+		uint32_t mss =
+		    (net->mtu > sizeof(struct sctphdr)) ? (net->mtu - sizeof(struct sctphdr)) : 1460;
+		net->cwnd = mss * 4;
+	}
+
+	/* update BBR internal cwnd to reflect SCTP cwnd */
+	/* Note: user_bbr doesn't expose a setter for cwnd directly; we will let
+	 * BBR compute cwnd on first ACK. But keep prior_cwnd for safety if needed.
+	 */
+	sctp_enforce_cwnd_limit(&stcb->asoc, net);
+	(void)now_us;
+}
+
+/* ---------------------------
+ * sctp_bbr_cwnd_update_after_sack
+ * ---------------------------
+ * Called after a SACK has been processed. 
+ * Does nothing for BBR (we use tsn acknowledged cb as Ack).
+ */
+static void sctp_bbr_cwnd_update_after_sack(struct sctp_tcb *stcb, struct sctp_association *asoc,
+                                            int accum_moved, int reneged_all, int will_exit) {
+	// NOTHING TO DO YET
+}
+
+/* ---------------------------
+ * sctp_bbr_cwnd_update_after_fr
+ * ---------------------------
+ * Called when a fast-retransmit (FR) event occurs (duplicate ACK threshold).
+ * Does nothing for BBR.
+ */
+static void sctp_bbr_cwnd_update_after_fr(struct sctp_tcb *stcb, struct sctp_association *asoc) {
+}
+
+/* ---------------------------
+ * sctp_bbr_cwnd_update_after_ecn_echo
+ * ---------------------------
+ * Handles ECN CE echo notifications. If CE marks are present, treat them
+ * as congestion signals; this wrapper currently converts CE into informing
+ * BBR via bw/loss lower bound update by calling user_bbr_on_loss for strong CE,
+ * or by producing an ack sample carrying delivered_ce (better approach).
+ *
+ * Signatures: (struct sctp_tcb *stcb, struct sctp_nets *net, int in_window, int num_pkt_lost)
+ */
+static void sctp_bbr_cwnd_update_after_ecn_echo(struct sctp_tcb *stcb, struct sctp_nets *net,
+                                                int in_window, int num_pkt_lost) {
+// Current minimum implementation does nothing here
+}
+
+/* ---------------------------
+ * sctp_bbr_cwnd_update_after_packet_dropped
+ * ---------------------------
+ * Called when the stack is informed of a packet drop; cp carries info about
+ * the dropped chunk. We update BBR's lower bounds and can return an estimate
+ * of bottleneck bandwidth and on-queue bytes via pointer args (if caller expects).
+ */
+
+static void sctp_bbr_cwnd_update_after_packet_dropped(struct sctp_tcb *stcb, struct sctp_nets *net,
+                                                      struct sctp_pktdrop_chunk *cp,
+                                                      uint32_t *bottle_bw, uint32_t *on_queue) {
+// not necessary in this minimal bbr implementation 
+}
+
+/* ---------------------------
+ * sctp_bbr_cwnd_update_after_output
+ * ---------------------------
+ * Called whenever output/sending occurs. We should inform BBR of packet sends so
+ * that it can maintain its internal bytes_in_flight logic if needed.
+ */
+static void sctp_bbr_cwnd_update_after_output(struct sctp_tcb *stcb, struct sctp_nets *net,
+                                              int burst_limit) {
+
+// nothing to do here because we handle send logic in a more 
+// underlying way in sctpoutput.c (which we can have access to packets that we are about to send)
+}
+
+/* ---------------------------
+ * sctp_bbr_tsn_acknowledged
+ * ---------------------------
+ * Called when a particular TSN/chunk (most of the time a single chunk is equal to a sctp packet)
+ * is acknowledged. We can use per-chunk
+ * send_size and per-chunk send timestamp (if added) to build a precise sample.
+ */
+static void sctp_bbr_tsn_acknowledged(struct sctp_nets *net, struct sctp_tmit_chunk *tp1) {
+	struct user_bbr *b;
+	struct user_bbr_rate_sample rs;
+	uint64_t pkt_send_time;
+	uint64_t delivered_at_pkt_send;	
+	uint32_t pkt_size = tp1->send_size;
+	uint64_t now = user_bbr_now_usec();
+	bool pkt_app_limited;
+	
+	if (!net || !tp1)
+		return;
+
+	b = _sctp_bbr_from_net(net);
+	if (!b)
+		return;
+
+	pkt_send_time = tp1->bbr_send_time_us;
+	delivered_at_pkt_send = tp1->bbr_delivered_at_send;
+	pkt_app_limited = (tp1->bbr_is_app_limited > 0);
+
+	if(net->bbr.app_limited_until > 0){
+		net->bbr.app_limited_until -=  (net->bbr.app_limited_until > pkt_size ? pkt_size : net->bbr.app_limited_until);
+	}
+
+	// printf("[BBR][TSN][Acked] net=%p, chunk=%p, tsn=%ud, bbr_send_time_us = %lld, bbr_delivered_at_send = %lld\n" ,
+	// 		 (void *)net, (void *)tp1, tp1->rec.data.tsn, tp1->bbr_send_time_us, tp1->bbr_delivered_at_send);
+
+	uint64_t now_us = _sctp_bbr_now_usec();
+	memset(&rs, 0, sizeof(rs));
+
+	rs.delivered = pkt_size;
+	rs.delivered_delta = net->bbr.delivered_bytes - delivered_at_pkt_send;
+	rs.interval_us = now - pkt_send_time;
+	if(!pkt_app_limited){
+		rs.rtt_us = (int32_t)rs.interval_us;
+	}else{
+		rs.rtt_us = -1;
+	}
+	rs.tx_in_flight_bytes = net->flight_size;
+	rs.is_app_limited = pkt_app_limited ? 1 : 0;
+	rs.acked_sacked = (int32_t)rs.delivered;
+	rs.prior_delivered_bytes = delivered_at_pkt_send;
+	/* Send sample to BBR */
+	user_bbr_on_ack(b, &rs, now_us);
+
+	uint32_t new_cwnd = user_bbr_get_cwnd_bytes(b);
+	if (new_cwnd > 0) {
+		// printf("[BBR][CWND] ack send new cwnd to %u\n", new_cwnd);
+		net->cwnd = new_cwnd;
+	}
+}
+
+/* ---------------------------
+ * sctp_bbr_new_transmission_begins
+ * ---------------------------
+ * Hook indicating a new transmission cycle began for the path. We can reset
+ * per-cycle counters in BBR if desired. Minimal implementation left here.
+ */
+static void sctp_bbr_new_transmission_begins(struct sctp_tcb *stcb, struct sctp_nets *net) {
+	(void)stcb;
+	(void)net;
+	/* Optionally: call bbr_advance_max_bw_filter() or other cycle bookkeeping,
+	 * but this user_bbr implementation expects ack-driven updates, so keep empty.
+	 */
+}
+
+/* ---------------------------
+ * sctp_bbr_prepare_net_for_sack
+ * ---------------------------
+ * Called before sending SACKs to prepare per-path state; we don't need to do
+ * anything specific for BBR here in the minimal integration.
+ */
+static void sctp_bbr_prepare_net_for_sack(struct sctp_tcb *stcb, struct sctp_nets *net) {
+	(void)stcb;
+	(void)net;
+}
+
+/* ---------------------------
+ * sctp_bbr_socket_option
+ * ---------------------------
+ * Optional socket option handler for BBR specific knobs; currently no options
+ * supported so return 0 (not handled) or appropriate error code.
+ */
+static int sctp_bbr_socket_option(struct sctp_tcb *stcb, int setorget,
+                                  struct sctp_cc_option *cc_opt) {
+	(void)stcb;
+	(void)setorget;
+	(void)cc_opt;
+	/* Not supported: return 0 (success but no-op) or -1/EINVAL .
+	 * Here we return 0 to indicate accepted but no-op.
+	 */
+	return 0;
+}
+
+/* ---------------------------
+ * sctp_bbr_rtt_calculated
+ * ---------------------------
+ * Called by the stack when a new RTT was computed for the path.
+ * We handle the RTT event in ack driven mode to update min_rtt and probe logic.
+ * so nothing to do here.
+ */
+static void sctp_bbr_rtt_calculated(struct sctp_tcb *stcb, struct sctp_nets *net,
+                                    struct timeval *now) { 
+}
+
+/* bbr is not a lost-based cc algorithm, so nothing to do here */
+static void sctp_bbr_cwnd_update_after_timeout(struct sctp_tcb *stcb, struct sctp_nets *net) {
+	printf("[BBR][Timeout] Handling timeout for net=%p\n", (void *)net);
+}
+
+static void sctp_bbr_packet_transmitted(struct sctp_tcb *stcb, struct sctp_nets *net) {
+}
+
 const struct sctp_cc_functions sctp_cc_functions[] = {
 {
 #if defined(_WIN32) && !defined(__MINGW32__)
@@ -2494,5 +2756,15 @@ const struct sctp_cc_functions sctp_cc_functions[] = {
 	.sctp_cwnd_socket_option = sctp_cwnd_rtcc_socket_option,
 	.sctp_rtt_calculated = sctp_rtt_rtcc_calculated
 #endif
-}
-};
+},
+{
+	sctp_bbr_set_initial_cc_param,
+     sctp_bbr_cwnd_update_after_sack, // recv
+     sctp_cwnd_update_exit_pf_common, sctp_bbr_cwnd_update_after_fr,
+     sctp_bbr_cwnd_update_after_timeout, sctp_bbr_cwnd_update_after_ecn_echo,
+     sctp_bbr_cwnd_update_after_packet_dropped,
+     sctp_bbr_cwnd_update_after_output, // send
+     sctp_bbr_packet_transmitted, sctp_bbr_tsn_acknowledged, sctp_bbr_new_transmission_begins,
+     sctp_bbr_prepare_net_for_sack, sctp_bbr_socket_option, sctp_bbr_rtt_calculated
+}};
+
