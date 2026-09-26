@@ -29,8 +29,8 @@
 # SUCH DAMAGE.
 #
 
-project(usrsctplib C)
 cmake_minimum_required(VERSION 3.0...3.10)
+project(usrsctplib C)
 
 # Debug build type as default
 if (NOT CMAKE_BUILD_TYPE)
