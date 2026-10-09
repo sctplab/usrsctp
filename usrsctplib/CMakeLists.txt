@@ -58,6 +58,15 @@ option(SCTP_USE_MBEDTLS_SHA1 "Build with mbedtls sha1 support." OFF)
 add_definitions(-D__Userspace__)
 add_definitions(-DSCTP_SIMPLE_ALLOCATOR)
 add_definitions(-DSCTP_PROCESS_LEVEL_LOCKS)
+# NOTE: a previous "Added LWIP support" patch added an `add_definitions(
+# -D__native_client__)` here when SCTP_USE_LWIP was off. That was wrong
+# — `__native_client__` is the Chrome Native Client toolchain marker,
+# and defining it on a regular Linux/macOS host makes sctp_os_userspace.h
+# enter the Win32/NaCl block which defines its own `struct ip` /
+# `struct iovec` and conflicts with system <netinet/in.h> / <sys/uio.h>.
+# The fork only worked because every consumer set sctp_use_lwip=ON.
+# Removed so the upstream `__APPLE__` / `__linux__` paths can take
+# effect on real host builds; LWIP support stays opt-in via SCTP_USE_LWIP.
 
 if(SCTP_USE_MBEDTLS_SHA1)
 	add_definitions(-DSCTP_USE_MBEDTLS_SHA1)
@@ -129,6 +138,7 @@ list(APPEND usrsctp_netinet_headers
 	netinet/sctp_header.h
 	netinet/sctp_indata.h
 	netinet/sctp_input.h
+	netinet/sctp_ip_port.h
 	netinet/sctp_lock_userspace.h
 	netinet/sctp_os_userspace.h
 	netinet/sctp_os.h
@@ -140,6 +150,8 @@ list(APPEND usrsctp_netinet_headers
 	netinet/sctp_structs.h
 	netinet/sctp_sysctl.h
 	netinet/sctp_timer.h
+	netinet/sctp_udp_port.h
+	netinet/sctp_in_port.h
 	netinet/sctp_uio.h
 	netinet/sctp_var.h
 	netinet/sctputil.h

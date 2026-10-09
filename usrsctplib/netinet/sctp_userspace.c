@@ -98,6 +98,13 @@ sctp_userspace_set_threadname(const char *name)
 int
 sctp_userspace_get_mtu_from_ifn(uint32_t if_index)
 {
+#if defined(SCTP_USE_LWIP)
+	struct netif* net_if = netif_get_by_index(if_index);
+	if(net_if != NULL){
+		return net_if->mtu;
+	}
+	return 0;
+#else
 #if defined(INET) || defined(INET6)
 	struct ifreq ifr;
 	int fd;
@@ -126,6 +133,7 @@ sctp_userspace_get_mtu_from_ifn(uint32_t if_index)
 #endif
 	}
 	return (mtu);
+#endif
 }
 #endif
 

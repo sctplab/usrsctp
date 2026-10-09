@@ -40,8 +40,11 @@
  * All the opt_xxx.h files are placed in the kernel build directory.
  * We will place them in userspace stack build directory.
  */
-
+#if defined(SCTP_USE_LWIP)
+#include "lwip/errno.h"
+#else
 #include <errno.h>
+#endif
 
 #if defined(_WIN32)
 #include <winsock2.h>
@@ -298,6 +301,17 @@ typedef char* caddr_t;
 
 #include <pthread.h>
 
+#if defined(SCTP_USE_LWIP)
+#define IPVERSION  4
+/* Host <sys/socket.h> on glibc/macOS already supplies CMSG_ALIGN; only
+ * provide the lwIP fallback when it's missing (matters for bare-metal /
+ * RTOS targets where <sys/socket.h> is a thin shim). */
+#ifndef CMSG_ALIGN
+#define CMSG_ALIGN(len) (((len) + sizeof (size_t) - 1) \
+                        & (size_t) ~(sizeof (size_t) - 1))
+#endif
+#endif/* */
+
 typedef pthread_mutex_t userland_mutex_t;
 typedef pthread_rwlock_t userland_rwlock_t;
 typedef pthread_cond_t userland_cond_t;
@@ -470,8 +484,10 @@ struct sx {int dummy;};
 #if !defined(_WIN32) && !defined(__native_client__)
 #include <net/if.h>
 #include <netinet/in.h>
+#if !defined(SCTP_USE_LWIP)
 #include <netinet/in_systm.h>
-#include <netinet/ip.h>
+#endif
+#include <netinet/sctp_ip_port.h>
 #endif
 #if defined(HAVE_NETINET_IP_ICMP_H)
 #include <netinet/ip_icmp.h>
@@ -485,9 +501,11 @@ struct sx {int dummy;};
 #include <sys/types.h>
 #if !defined(_WIN32)
 #if defined(INET) || defined(INET6)
+#if !defined(SCTP_USE_LWIP)
 #include <ifaddrs.h>
 #endif
 
+#endif
 /* for ioctl */
 #include <sys/ioctl.h>
 
@@ -520,12 +538,16 @@ struct sx {int dummy;};
 #include <netipsec/ipsec6.h>
 #endif
 #if !defined(_WIN32)
+#if !defined(SCTP_USE_LWIP)
 #include <netinet/ip6.h>
+#endif
 #endif
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__linux__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(_WIN32) || defined(__EMSCRIPTEN__)
 #include "user_ip6_var.h"
 #else
+#if !defined(SCTP_USE_LWIP)
 #include <netinet6/ip6_var.h>
+#endif
 #endif
 #if defined(__FreeBSD__)
 #include <netinet6/in6_pcb.h>

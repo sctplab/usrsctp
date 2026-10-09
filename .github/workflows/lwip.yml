@@ -1,0 +1,177 @@
+name: Build with lwIP backend
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  lwip-options:
+    # Validates the sctp_build_lwip_smoke option machinery (FATAL_ERROR
+    # paths and the basic configure step).  Always runs to completion
+    # and must pass.
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout usrsctp
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake git ca-certificates
+
+      - name: Configure rejects sctp_build_lwip_smoke=ON without sctp_use_lwip
+        run: |
+          set +e
+          mkdir -p /tmp/cfg-noLwip
+          cd /tmp/cfg-noLwip
+          OUT="$(cmake "$GITHUB_WORKSPACE" -Dsctp_build_lwip_smoke=ON 2>&1)"
+          rc=$?
+          echo "$OUT"
+          if [ "$rc" -eq 0 ]; then
+            echo "::error::configure should have FATAL_ERROR'd"
+            exit 1
+          fi
+          echo "$OUT" | grep -q 'sctp_build_lwip_smoke=ON requires sctp_use_lwip=ON'
+
+      - name: Configure rejects bogus LWIP_SRC_DIR
+        run: |
+          set +e
+          mkdir -p /tmp/cfg-bogus
+          cd /tmp/cfg-bogus
+          OUT="$(cmake "$GITHUB_WORKSPACE" \
+              -Dsctp_use_lwip=ON \
+              -Dsctp_build_lwip_smoke=ON \
+              -DLWIP_SRC_DIR=/tmp/bogus \
+              -DLWIP_PORT_DIR=/tmp/bogus 2>&1)"
+          rc=$?
+          echo "$OUT"
+          if [ "$rc" -eq 0 ]; then
+            echo "::error::configure should have FATAL_ERROR'd"
+            exit 1
+          fi
+          echo "$OUT" | grep -q "does not look like a lwIP source tree"
+
+      - name: Configure with sctp_build_lwip_smoke=OFF (default path)
+        run: |
+          mkdir -p /tmp/cfg-default
+          cd /tmp/cfg-default
+          cmake "$GITHUB_WORKSPACE"
+          # Default POSIX build must still compile to prove the new
+          # option doesn't perturb anything when left OFF.
+          make -j$(nproc) usrsctp
+
+  lwip-smoke:
+    # Best-effort: build lwIP unix-port + the smoke test.  vanilla lwIP
+    # + usrsctp's lwIP shim still have a few include-order rough edges
+    # (struct ip6_hdr / IP_HDRINCL etc.) that need lwipopts tuning, so
+    # this job is allowed to fail without blocking the PR.  When it
+    # passes it proves the lwIP backend links cleanly against a real
+    # lwIP archive.
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout usrsctp
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake git ca-certificates
+
+      - name: Clone lwIP (STABLE-2_2_1_RELEASE)
+        run: |
+          git clone --branch STABLE-2_2_1_RELEASE --depth 1 \
+            https://github.com/lwip-tcpip/lwip.git /tmp/lwip
+
+      - name: Clone lwip-contrib (STABLE-2_2_1_RELEASE, fall back to master)
+        run: |
+          set -e
+          if ! git clone --branch STABLE-2_2_1_RELEASE --depth 1 \
+                https://github.com/lwip-tcpip/lwip-contrib.git /tmp/lwip-contrib; then
+            echo "STABLE-2_2_1_RELEASE not found in lwip-contrib, falling back to master"
+            git clone --depth 1 \
+              https://github.com/lwip-tcpip/lwip-contrib.git /tmp/lwip-contrib
+          fi
+
+      - name: Build lwIP unix-port (example_app)
+        id: build_lwip
+        run: |
+          set -e
+          mkdir -p /tmp/lwip-build
+          cd /tmp/lwip-build
+          if [ -f /tmp/lwip-contrib/ports/unix/example_app/CMakeLists.txt ]; then
+            # mdns example tracks an older lwIP API on some tags; build
+            # just the lwIP core archives we actually need.
+            cmake /tmp/lwip-contrib/ports/unix/example_app -DLWIP_DIR=/tmp/lwip
+            make -j$(nproc) lwipcore lwipallapps || \
+              make -j$(nproc) lwipcore
+          else
+            echo "::warning::example_app CMakeLists.txt not found at expected path"
+            ls -R /tmp/lwip-contrib/ports/unix || true
+            exit 1
+          fi
+
+      - name: Locate lwIP archives
+        id: find_archive
+        run: |
+          set -e
+          CORE="$(find /tmp/lwip-build -name 'liblwipcore.a' -print -quit || true)"
+          APPS="$(find /tmp/lwip-build -name 'liblwipallapps.a' -print -quit || true)"
+          if [ -z "$CORE" ]; then
+            echo "::error::liblwipcore.a not found under /tmp/lwip-build"
+            find /tmp/lwip-build -name '*.a' -print
+            exit 1
+          fi
+          ARCHIVES="$CORE"
+          if [ -n "$APPS" ]; then
+            ARCHIVES="$APPS;$CORE"
+          fi
+          echo "Found lwIP archives: $ARCHIVES"
+          echo "lwip_archives=$ARCHIVES" >> "$GITHUB_OUTPUT"
+
+      - name: Configure usrsctp with lwIP smoke test
+        run: |
+          mkdir -p /tmp/usrsctp-build
+          cd /tmp/usrsctp-build
+          cmake "$GITHUB_WORKSPACE" \
+            -Dsctp_use_lwip=ON \
+            -Dsctp_build_lwip_smoke=ON \
+            -Dsctp_build_programs=OFF \
+            -Dsctp_inet6=OFF \
+            -DLWIP_SRC_DIR=/tmp/lwip \
+            -DLWIP_PORT_DIR=/tmp/lwip-contrib/ports/unix \
+            -DLWIP_LIBRARIES="${{ steps.find_archive.outputs.lwip_archives }}"
+
+      - name: Build usrsctp + smoke test
+        run: |
+          cd /tmp/usrsctp-build
+          make -j$(nproc)
+
+      - name: Locate smoke-test binary
+        id: find_smoke
+        run: |
+          BIN="$(find /tmp/usrsctp-build -type f -name lwip_smoke -perm -u+x -print -quit)"
+          if [ -z "$BIN" ]; then
+            echo "::error::lwip_smoke binary not found under /tmp/usrsctp-build"
+            find /tmp/usrsctp-build -type f -name 'lwip_smoke*' -print
+            exit 1
+          fi
+          echo "Found smoke binary: $BIN"
+          echo "smoke_bin=$BIN" >> "$GITHUB_OUTPUT"
+
+      - name: Run smoke test
+        run: |
+          set -o pipefail
+          OUT="$(${{ steps.find_smoke.outputs.smoke_bin }} 2>&1 | tee /tmp/lwip_smoke.out)"
+          echo "$OUT"
+          echo "$OUT" | grep -q 'lwip_smoke: PASS'
