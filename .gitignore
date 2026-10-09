@@ -82,3 +82,9 @@ callgrind.out*
 
 # cmake build
 /build
+
+compile_commands.json
+
+.cache/
+
+.vscode

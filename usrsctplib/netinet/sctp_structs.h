@@ -38,6 +38,7 @@
 #include <netinet/sctp_os.h>
 #include <netinet/sctp_header.h>
 #include <netinet/sctp_auth.h>
+#include <netinet/bbr.h>
 
 struct sctp_timer {
 	sctp_os_timer_t timer;
@@ -445,6 +446,7 @@ struct sctp_nets {
 	uint32_t flowid;
 	uint8_t flowtype;
 #endif
+	struct user_bbr bbr;           /* BBR congestion control state */
 };
 
 struct sctp_data_chunkrec {
@@ -510,6 +512,11 @@ struct sctp_tmit_chunk {
 	uint8_t no_fr_allowed;
 	uint8_t copy_by_ref;
 	uint8_t window_probe;
+
+	/* BBR send record fields */
+    uint64_t bbr_send_time_us;           /*  chunk send time in usec */ 
+    uint64_t bbr_delivered_at_send;      /*  accumulated delivered(acked) bytes at chunk send time */
+	uint8_t bbr_is_app_limited; 	     /*  was sender app-limited at chunk send time ? */
 };
 
 struct sctp_queued_to_read {	/* sinfo structure Pluse more */
@@ -689,7 +696,7 @@ struct sctp_stream_out {
 	 */
 	uint32_t next_mid_ordered;
 	uint32_t next_mid_unordered;
-	uint16_t sid;
+	uint16_t sid; /* stream number */
 	uint8_t last_msg_incomplete;
 	uint8_t state;
 };
