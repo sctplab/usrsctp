@@ -34,6 +34,19 @@
 
 #ifndef _NETINET_SCTP_UTIL_H_
 #define _NETINET_SCTP_UTIL_H_
+#include <stdint.h>
+
+#include <stdint.h>
+#include "sctp_os_userspace.h"
+
+/* macOS / Clang needs these forward declarations */
+struct sctp_inpcb;
+struct sctp_tcb;
+struct sctp_pcb;
+struct sctp_association;
+struct sctp_tmit_chunk;
+struct sctp_queued_to_read;
+struct sctp_abort_chunk;
 
 #if defined(_KERNEL) || defined(__Userspace__)
 
