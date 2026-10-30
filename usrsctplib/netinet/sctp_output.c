@@ -5060,8 +5060,12 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 	}
 }
 
-void
-sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked)
+/*
+ * Sends the INIT chunk and starts its timer or, with initp set, returns the
+ * chunk in *initp instead, for SNAP.
+ */
+static void
+sctp_send_initiate_internal(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked, struct mbuf **initp)
 {
 	struct mbuf *m, *m_last;
 	struct sctp_nets *net;
@@ -5113,8 +5117,10 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked)
 		SCTPDBG(SCTP_DEBUG_OUTPUT4, "Sending INIT - failed timer?\n");
 		return;
 	}
-	/* start the INIT timer */
-	sctp_timer_start(SCTP_TIMER_TYPE_INIT, inp, stcb, net);
+	if (initp == NULL) {
+		/* start the INIT timer */
+		sctp_timer_start(SCTP_TIMER_TYPE_INIT, inp, stcb, net);
+	}
 
 	m = sctp_get_mbuf_for_msg(MCLBYTES, 1, M_NOWAIT, 1, MT_DATA);
 	if (m == NULL) {
@@ -5344,6 +5350,10 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked)
 			return;
 		}
 	}
+	if (initp != NULL) {
+		*initp = m;
+		return;
+	}
 	SCTPDBG(SCTP_DEBUG_OUTPUT4, "Sending INIT - calls lowlevel_output\n");
 	if ((error = sctp_lowlevel_chunk_output(inp, stcb, net,
 	                                        (struct sockaddr *)&net->ro._l_addr,
@@ -5364,6 +5374,12 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked)
 	}
 	SCTP_STAT_INCR_COUNTER64(sctps_outcontrolchunks);
 	(void)SCTP_GETTIME_TIMEVAL(&net->last_sent_time);
+}
+
+void
+sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked)
+{
+	sctp_send_initiate_internal(inp, stcb, so_locked, NULL);
 }
 
 struct mbuf *
