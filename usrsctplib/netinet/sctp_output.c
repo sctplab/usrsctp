@@ -5379,8 +5379,50 @@ sctp_send_initiate_internal(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int s
 void
 sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked)
 {
+#if defined(__Userspace__)
+	/* SNAP: an INIT on the wire ends the out-of-band exchange. */
+	stcb->asoc.snap_prepared = 0;
+#endif
 	sctp_send_initiate_internal(inp, stcb, so_locked, NULL);
 }
+
+#if defined(__Userspace__)
+/*
+ * SNAP: copies the association's INIT chunk into buf, building it on the
+ * first call, without sending it. On ENOBUFS *len is the size needed.
+ */
+int
+sctp_snap_copy_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, void *buf, size_t *len)
+{
+	struct mbuf *m = NULL;
+	uint32_t init_len;
+
+	if (stcb->asoc.snap_init == NULL) {
+		sctp_send_initiate_internal(inp, stcb, SCTP_SO_NOT_LOCKED, &m);
+		if (m == NULL) {
+			return (ENOMEM);
+		}
+		init_len = sctp_calculate_len(m);
+		/* Keep only the chunk, not the cluster it was built in. */
+		stcb->asoc.snap_init = sctp_get_mbuf_for_msg(init_len, 0, M_NOWAIT, 1, MT_DATA);
+		if (stcb->asoc.snap_init == NULL) {
+			sctp_m_freem(m);
+			return (ENOMEM);
+		}
+		m_copydata(m, 0, (int)init_len, mtod(stcb->asoc.snap_init, caddr_t));
+		SCTP_BUF_LEN(stcb->asoc.snap_init) = (int)init_len;
+		sctp_m_freem(m);
+	}
+	init_len = (uint32_t)SCTP_BUF_LEN(stcb->asoc.snap_init);
+	if (*len < init_len) {
+		*len = init_len;
+		return (ENOBUFS);
+	}
+	memcpy(buf, mtod(stcb->asoc.snap_init, caddr_t), init_len);
+	*len = init_len;
+	return (0);
+}
+#endif
 
 struct mbuf *
 sctp_arethere_unrecognized_parameters(struct mbuf *in_initpkt,

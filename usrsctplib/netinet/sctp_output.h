@@ -70,6 +70,9 @@ int sctp_v4src_match_nexthop(struct sctp_ifa *sifa, sctp_route_t *ro);
 #endif
 
 void sctp_send_initiate(struct sctp_inpcb *, struct sctp_tcb *, int);
+#if defined(__Userspace__)
+int sctp_snap_copy_initiate(struct sctp_inpcb *, struct sctp_tcb *, void *, size_t *);
+#endif
 
 void
 sctp_send_initiate_ack(struct sctp_inpcb *, struct sctp_tcb *,

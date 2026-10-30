@@ -1008,6 +1008,17 @@ usrsctp_connectx(struct socket *so,
                  const struct sockaddr *addrs, int addrcnt,
                  sctp_assoc_t *id);
 
+/*
+ * SNAP, the SCTP Negotiation Acceleration Protocol (draft-uberti-tsvwg-warp,
+ * section 4.1), described in Manual.md.
+ */
+int
+usrsctp_snap_prepare(struct socket *so,
+                     struct sockaddr *name,
+                     socklen_t namelen,
+                     void *init,
+                     size_t *init_len);
+
 void
 usrsctp_close(struct socket *so);
 

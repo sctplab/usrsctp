@@ -5742,6 +5742,12 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		asoc->strmin = NULL;
 	}
 	asoc->streamincnt = 0;
+#if defined(__Userspace__)
+	if (asoc->snap_init != NULL) {
+		sctp_m_freem(asoc->snap_init);
+		asoc->snap_init = NULL;
+	}
+#endif
 	TAILQ_FOREACH_SAFE(net, &asoc->nets, sctp_next, nnet) {
 #ifdef INVARIANTS
 		if (SCTP_BASE_INFO(ipi_count_raddr) == 0) {

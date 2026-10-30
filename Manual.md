@@ -303,6 +303,31 @@ usrsctp_recvv(struct socket *so,
 
 `usrsctp_recvv()` returns the number of bytes received, or -1 if an error occurred.  The variable errno is then set appropriately.
 
+## SNAP
+With SNAP, the SCTP Negotiation Acceleration Protocol ([draft-uberti-tsvwg-warp](https://datatracker.ietf.org/doc/draft-uberti-tsvwg-warp/), section 4.1), both endpoints exchange their INIT chunks out-of-band, e.g. in the SDP, instead of running the SCTP handshake.
+It works on one-to-one `AF_CONN` sockets; on one-to-many sockets the functions fail with `EOPNOTSUPP`.
+
+### usrsctp_snap_prepare()
+
+```c
+int
+usrsctp_snap_prepare(struct socket *so,
+                     struct sockaddr *name,
+                     socklen_t namelen,
+                     void *init,
+                     size_t *init_len)
+```
+
+* so: Pointer to the socket as returned by `usrsctp_socket()`.
+* name: Address of the peer.
+* namelen: Size of the peer's address.
+* init: Buffer for the INIT chunk.
+* init_len: Size of `init`; on return, the number of bytes copied.
+
+`usrsctp_snap_prepare()` sets the association up like `usrsctp_connect()`, but copies its INIT chunk into `init` instead of sending it. Later calls copy the same chunk.
+
+`usrsctp_snap_prepare()` returns 0 on success and -1 in case of an error. With `ENOBUFS`, `*init_len` is the size needed.
+
 ## Socket Options
 Socket options are used to change the default behavior of socket calls.
 Their behavior is specified in [RFC 6458](https://tools.ietf.org/html/rfc6458). The functions to get or set them are
