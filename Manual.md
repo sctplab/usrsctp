@@ -306,6 +306,7 @@ usrsctp_recvv(struct socket *so,
 ## SNAP
 With SNAP, the SCTP Negotiation Acceleration Protocol ([draft-uberti-tsvwg-warp](https://datatracker.ietf.org/doc/draft-uberti-tsvwg-warp/), section 4.1), both endpoints exchange their INIT chunks out-of-band, e.g. in the SDP, instead of running the SCTP handshake.
 It works on one-to-one `AF_CONN` sockets; on one-to-many sockets the functions fail with `EOPNOTSUPP`.
+`USRSCTP_HAS_SNAP` is defined when SNAP is available.
 
 ### usrsctp_snap_prepare()
 
@@ -346,6 +347,19 @@ usrsctp_snap_establish(struct socket *so,
 `usrsctp_snap_establish()` applies the peer's INIT chunk and opens the association. Call it once the lower layer can carry packets; the peer's packets that arrive earlier are dropped. `rtt_ms` becomes the first RTT measurement, still bounded by RTO.Min.
 
 `usrsctp_snap_establish()` returns 0 on success and -1 in case of an error: `EINVAL` if `peer_init` is not a valid INIT chunk (the association stays prepared), `ECONNABORTED` if it could not be applied (the association is aborted).
+
+### usrsctp_snap_send_init()
+
+```c
+int
+usrsctp_snap_send_init(struct socket *so)
+```
+
+* so: Pointer to the socket prepared by `usrsctp_snap_prepare()`.
+
+`usrsctp_snap_send_init()` sends the INIT chunk instead, for a peer without SNAP.
+
+`usrsctp_snap_send_init()` returns 0 on success and -1 in case of an error. Both it and `usrsctp_snap_establish()` fail with `EALREADY` once the association no longer waits for them.
 
 ## Socket Options
 Socket options are used to change the default behavior of socket calls.

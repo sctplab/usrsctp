@@ -1012,6 +1012,8 @@ usrsctp_connectx(struct socket *so,
  * SNAP, the SCTP Negotiation Acceleration Protocol (draft-uberti-tsvwg-warp,
  * section 4.1), described in Manual.md.
  */
+#define USRSCTP_HAS_SNAP 1
+
 int
 usrsctp_snap_prepare(struct socket *so,
                      struct sockaddr *name,
@@ -1024,6 +1026,9 @@ usrsctp_snap_establish(struct socket *so,
                        const void *peer_init,
                        size_t peer_init_len,
                        uint32_t rtt_ms);
+
+int
+usrsctp_snap_send_init(struct socket *so);
 
 void
 usrsctp_close(struct socket *so);

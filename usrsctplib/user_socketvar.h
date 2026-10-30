@@ -488,6 +488,7 @@ extern int sctp_connect(struct socket *so, struct sockaddr *addr);
 extern int sctp6_connect(struct socket *so, struct sockaddr *addr);
 extern int sctpconn_connect(struct socket *so, struct sockaddr *addr);
 extern int sctpconn_snap_prepare(struct socket *so, struct sockaddr *addr, void *init, size_t *init_len);
+extern int sctpconn_snap_send_init(struct socket *so);
 extern void sctp_finish(void);
 
 /* ------------------------------------------------ */

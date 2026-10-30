@@ -170,6 +170,16 @@ sctp_handle_init(struct mbuf *m, int iphlen, int offset,
 		sctp_chunk_output(inp, stcb, SCTP_OUTPUT_FROM_CONTROL_PROC, SCTP_SO_NOT_LOCKED);
 	} else {
 		SCTPDBG(SCTP_DEBUG_INPUT3, "sctp_handle_init: sending INIT-ACK\n");
+#if defined(__Userspace__)
+		if ((stcb != NULL) && stcb->asoc.snap_prepared) {
+			/*
+			 * SNAP: the peer started the handshake, which opens the
+			 * association. Time it out like our own INIT.
+			 */
+			stcb->asoc.snap_prepared = 0;
+			sctp_timer_start(SCTP_TIMER_TYPE_INIT, inp, stcb, stcb->asoc.primary_destination);
+		}
+#endif
 		sctp_send_initiate_ack(inp, stcb, net, m, iphlen, offset,
 		                       src, dst, sh, cp,
 #if defined(__FreeBSD__) && !defined(__Userspace__)

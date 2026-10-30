@@ -8341,6 +8341,28 @@ sctpconn_snap_prepare(struct socket *so, struct sockaddr *addr, void *init, size
 	SCTP_TCB_UNLOCK(stcb);
 	return (error);
 }
+
+int
+sctpconn_snap_send_init(struct socket *so)
+{
+	struct sctp_inpcb *inp;
+	struct sctp_tcb *stcb;
+	int error;
+
+	inp = (struct sctp_inpcb *)so->so_pcb;
+	if (inp == NULL) {
+		return (ECONNRESET);
+	}
+	stcb = sctp_snap_prepared_tcb(inp, &error);
+	if (stcb == NULL) {
+		return (error);
+	}
+	/* No RTT sample from the time the INIT waited for this. */
+	(void)SCTP_GETTIME_TIMEVAL(&stcb->asoc.time_entered);
+	sctp_send_initiate(inp, stcb, SCTP_SO_NOT_LOCKED);
+	SCTP_TCB_UNLOCK(stcb);
+	return (0);
+}
 #endif
 int
 #if defined(__Userspace__)

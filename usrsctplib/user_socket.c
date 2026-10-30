@@ -2023,6 +2023,17 @@ usrsctp_snap_establish(struct socket *so, const void *peer_init, size_t peer_ini
 	return (error ? -1 : 0);
 }
 
+int
+usrsctp_snap_send_init(struct socket *so)
+{
+	if (so == NULL) {
+		errno = EINVAL;
+		return (-1);
+	}
+	errno = sctpconn_snap_send_init(so);
+	return (errno ? -1 : 0);
+}
+
 #define SCTP_STACK_BUF_SIZE         2048
 
 void
