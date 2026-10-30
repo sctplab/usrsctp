@@ -170,6 +170,16 @@ sctp_handle_init(struct mbuf *m, int iphlen, int offset,
 		sctp_chunk_output(inp, stcb, SCTP_OUTPUT_FROM_CONTROL_PROC, SCTP_SO_NOT_LOCKED);
 	} else {
 		SCTPDBG(SCTP_DEBUG_INPUT3, "sctp_handle_init: sending INIT-ACK\n");
+#if defined(__Userspace__)
+		if ((stcb != NULL) && stcb->asoc.snap_prepared) {
+			/*
+			 * SNAP: the peer started the handshake, which opens the
+			 * association. Time it out like our own INIT.
+			 */
+			stcb->asoc.snap_prepared = 0;
+			sctp_timer_start(SCTP_TIMER_TYPE_INIT, inp, stcb, stcb->asoc.primary_destination);
+		}
+#endif
 		sctp_send_initiate_ack(inp, stcb, net, m, iphlen, offset,
 		                       src, dst, sh, cp,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
@@ -399,6 +409,37 @@ sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb)
 	return (0);
 }
 
+#if defined(__Userspace__)
+/* Tells the application how much it can send, once the association gets going. */
+static void
+sctp_invoke_send_callback(struct sctp_tcb *stcb)
+{
+	if (stcb->sctp_ep->recv_callback) {
+		if (stcb->sctp_socket) {
+			uint32_t inqueue_bytes, sb_free_now;
+			struct sctp_inpcb *inp;
+
+			inp = stcb->sctp_ep;
+			inqueue_bytes = stcb->asoc.total_output_queue_size - (stcb->asoc.chunks_on_out_queue * sizeof(struct sctp_data_chunk));
+			sb_free_now = SCTP_SB_LIMIT_SND(stcb->sctp_socket) - (inqueue_bytes + stcb->asoc.sb_send_resv);
+
+			/* check if the amount free in the send socket buffer crossed the threshold */
+			if (inp->send_callback &&
+			    (((inp->send_sb_threshold > 0) &&
+			      (sb_free_now >= inp->send_sb_threshold) &&
+			      (stcb->asoc.chunks_on_out_queue <= SCTP_BASE_SYSCTL(sctp_max_chunks_on_queue))) ||
+			     (inp->send_sb_threshold == 0))) {
+				atomic_add_int(&stcb->asoc.refcnt, 1);
+				SCTP_TCB_UNLOCK(stcb);
+				inp->send_callback(stcb->sctp_socket, sb_free_now, inp->ulp_info);
+				SCTP_TCB_LOCK(stcb);
+				atomic_subtract_int(&stcb->asoc.refcnt, 1);
+			}
+		}
+	}
+}
+#endif
+
 /*
  * INIT-ACK message processing/consumption returns value < 0 on error
  */
@@ -550,29 +591,7 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 	stcb->asoc.overall_error_count = 0;
 	net->error_count = 0;
 #if defined(__Userspace__)
-	if (stcb->sctp_ep->recv_callback) {
-		if (stcb->sctp_socket) {
-			uint32_t inqueue_bytes, sb_free_now;
-			struct sctp_inpcb *inp;
-
-			inp = stcb->sctp_ep;
-			inqueue_bytes = stcb->asoc.total_output_queue_size - (stcb->asoc.chunks_on_out_queue * sizeof(struct sctp_data_chunk));
-			sb_free_now = SCTP_SB_LIMIT_SND(stcb->sctp_socket) - (inqueue_bytes + stcb->asoc.sb_send_resv);
-
-			/* check if the amount free in the send socket buffer crossed the threshold */
-			if (inp->send_callback &&
-			    (((inp->send_sb_threshold > 0) &&
-			      (sb_free_now >= inp->send_sb_threshold) &&
-			      (stcb->asoc.chunks_on_out_queue <= SCTP_BASE_SYSCTL(sctp_max_chunks_on_queue))) ||
-			     (inp->send_sb_threshold == 0))) {
-				atomic_add_int(&stcb->asoc.refcnt, 1);
-				SCTP_TCB_UNLOCK(stcb);
-				inp->send_callback(stcb->sctp_socket, sb_free_now, inp->ulp_info);
-				SCTP_TCB_LOCK(stcb);
-				atomic_subtract_int(&stcb->asoc.refcnt, 1);
-			}
-		}
-	}
+	sctp_invoke_send_callback(stcb);
 #endif
 	retval = sctp_send_cookie_echo(m, offset, initack_limit, stcb, net);
 	return (retval);
@@ -3246,6 +3265,143 @@ closed_socket:
 		sctp_timer_start(SCTP_TIMER_TYPE_SEND, stcb->sctp_ep, stcb, chk->whoTo);
 	}
 }
+
+#if defined(__Userspace__)
+/*
+ * SNAP, the SCTP Negotiation Acceleration Protocol (draft-uberti-tsvwg-warp,
+ * section 4.1): opens the association prepared by sctpconn_snap_prepare() from
+ * the peer's INIT chunk, received out-of-band. The INIT is applied as an
+ * INIT-ACK is, and the association opened as by a COOKIE-ACK; only queued data
+ * is sent.
+ */
+int
+sctpconn_snap_establish(struct socket *so, const void *peer_init, size_t len, uint32_t rtt_ms)
+{
+	struct sctp_inpcb *inp;
+	struct sctp_tcb *stcb;
+	struct sctp_nets *net;
+	struct sctp_init_chunk *cp;
+	struct sctp_association *asoc;
+	struct sockaddr_conn src, dst;
+	struct mbuf *m, *op_err;
+	struct sctp_asconf_addr *param, *nparam;
+	int abort_flag = 0, nat_friendly = 0, error = 0;
+	uint16_t chunk_len;
+
+	inp = (struct sctp_inpcb *)so->so_pcb;
+	if (inp == NULL) {
+		return (ECONNRESET);
+	}
+	if ((peer_init == NULL) || (len < sizeof(struct sctp_init_chunk)) || (len > (size_t)MCLBYTES)) {
+		return (EINVAL);
+	}
+	if ((m = sctp_get_mbuf_for_msg((unsigned int)len, 0, M_NOWAIT, 1, MT_DATA)) == NULL) {
+		return (ENOMEM);
+	}
+	memcpy(mtod(m, caddr_t), peer_init, len);
+	SCTP_BUF_LEN(m) = (int)len;
+	cp = mtod(m, struct sctp_init_chunk *);
+	chunk_len = ntohs(cp->ch.chunk_length);
+	/* Check the INIT before applying any of it; it may come padded. */
+	if ((cp->ch.chunk_type != SCTP_INITIATION) ||
+	    (chunk_len < sizeof(struct sctp_init_chunk)) ||
+	    (chunk_len > len) || (len > (size_t)SCTP_SIZE32(chunk_len)) ||
+	    (ntohl(cp->init.initiate_tag) == 0) ||
+	    (ntohl(cp->init.a_rwnd) < SCTP_MIN_RWND) ||
+	    (ntohs(cp->init.num_inbound_streams) == 0) ||
+	    (ntohs(cp->init.num_outbound_streams) == 0) ||
+	    sctp_validate_init_auth_params(m, (int)sizeof(struct sctp_init_chunk), (int)chunk_len)) {
+		sctp_m_freem(m);
+		return (EINVAL);
+	}
+	op_err = sctp_arethere_unrecognized_parameters(m, (int)sizeof(struct sctp_init_chunk),
+	                                               &abort_flag, (struct sctp_chunkhdr *)cp,
+	                                               &nat_friendly, NULL, NULL);
+	if (abort_flag) {
+		if (op_err != NULL) {
+			sctp_m_freem(op_err);
+		}
+		sctp_m_freem(m);
+		return (EINVAL);
+	}
+
+	SCTP_INP_INCR_REF(inp);
+	stcb = sctp_snap_prepared_tcb(inp, &error);
+	if (stcb == NULL) {
+		if (op_err != NULL) {
+			sctp_m_freem(op_err);
+		}
+		goto out;
+	}
+	asoc = &stcb->asoc;
+	net = asoc->primary_destination;
+	asoc->peer_supports_nat = (uint8_t)nat_friendly;
+	memcpy(&src, &net->ro._l_addr.sconn, sizeof(struct sockaddr_conn));
+	memcpy(&dst, &net->ro._l_addr.sconn, sizeof(struct sockaddr_conn));
+	dst.sconn_port = inp->sctp_lport;
+	/* Apply it as sctp_process_init_ack() applies an INIT-ACK. */
+	if (sctp_process_init(cp, stcb) < 0) {
+		if (op_err != NULL) {
+			sctp_m_freem(op_err);
+		}
+		op_err = sctp_generate_cause(SCTP_CAUSE_OUT_OF_RESC, "");
+		goto half_applied;
+	}
+	if (sctp_load_addresses_from_init(stcb, m, (int)sizeof(struct sctp_init_chunk), chunk_len,
+	                                  (struct sockaddr *)&src, (struct sockaddr *)&dst,
+	                                  NULL, asoc->port) < 0) {
+		if (op_err != NULL) {
+			sctp_m_freem(op_err);
+		}
+		op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
+		                             "Problem with address parameters");
+		goto half_applied;
+	}
+	/* if the peer doesn't support asconf, flush the asconf queue */
+	if (asoc->asconf_supported == 0) {
+		TAILQ_FOREACH_SAFE(param, &asoc->asconf_queue, next, nparam) {
+			TAILQ_REMOVE(&asoc->asconf_queue, param, next);
+			SCTP_FREE(param, SCTP_M_ASC_ADDR);
+		}
+	}
+	asoc->peer_hmac_id = sctp_negotiate_hmacid(asoc->peer_hmacs, asoc->local_hmacs);
+	if (op_err != NULL) {
+		/* Report the unrecognized parameters, as for an INIT-ACK. */
+		sctp_queue_op_err(stcb, op_err);
+	}
+	asoc->snap_prepared = 0;
+	/*
+	 * sctp_handle_cookie_ack() samples the RTT since time_entered: make it
+	 * the lower layer's round trip, or skip the sample without one.
+	 */
+	if (rtt_ms > 0) {
+		struct timeval rtt;
+
+		rtt.tv_sec = rtt_ms / 1000;
+		rtt.tv_usec = (rtt_ms % 1000) * 1000;
+		(void)SCTP_GETTIME_TIMEVAL(&asoc->time_entered);
+		timevalsub(&asoc->time_entered, &rtt);
+	} else {
+		asoc->overall_error_count = 1;
+	}
+	/* Open it as a COOKIE-ACK does. */
+	SCTP_SET_STATE(stcb, SCTP_STATE_COOKIE_ECHOED);
+	sctp_handle_cookie_ack(NULL, stcb, net);
+	/* Send what was queued while waiting, e.g. DCEP. */
+	sctp_chunk_output(inp, stcb, SCTP_OUTPUT_FROM_CONTROL_PROC, SCTP_SO_NOT_LOCKED);
+	sctp_invoke_send_callback(stcb);
+	SCTP_TCB_UNLOCK(stcb);
+	goto out;
+half_applied:
+	/* Abort as the handshake would; the peer may be open already. */
+	sctp_abort_an_association(inp, stcb, op_err, false, SCTP_SO_NOT_LOCKED);
+	error = ECONNABORTED;
+out:
+	SCTP_INP_DECR_REF(inp);
+	sctp_m_freem(m);
+	return (error);
+}
+#endif
 
 static void
 sctp_handle_ecn_echo(struct sctp_ecne_chunk *cp,
@@ -5936,6 +6092,15 @@ cksum_validated:
 		}
 	}
 #if defined(__Userspace__)
+	if ((stcb != NULL) && stcb->asoc.snap_prepared &&
+	    (ch->chunk_type != SCTP_INITIATION) &&
+	    (ch->chunk_type != SCTP_ABORT_ASSOCIATION)) {
+		/*
+		 * SNAP: the peer is open already and sent before
+		 * usrsctp_snap_establish(). Drop it, the peer retransmits.
+		 */
+		goto out;
+	}
 	if ((stcb != NULL) &&
 	    ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
 	    (stcb->sctp_socket != NULL)) {

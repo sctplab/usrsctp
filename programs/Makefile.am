@@ -52,6 +52,7 @@ EXTRA_DIST = \
     test_libmgmt.c \
     http_client.c \
     http_client_upcall.c \
+    snap_loop.c \
     st_client.c
 
 noinst_PROGRAMS = \
@@ -76,6 +77,7 @@ noinst_PROGRAMS = \
     test_libmgmt \
     http_client \
     http_client_upcall \
+    snap_loop \
     st_client
 
 test_libmgmt_SOURCES = programs_helper.c test_libmgmt.c
@@ -118,5 +120,7 @@ http_client_SOURCES = programs_helper.c http_client.c
 http_client_LDADD = ../usrsctplib/libusrsctp.la
 http_client_upcall_SOURCES = programs_helper.c http_client_upcall.c
 http_client_upcall_LDADD = ../usrsctplib/libusrsctp.la
+snap_loop_SOURCES = snap_loop.c
+snap_loop_LDADD = ../usrsctplib/libusrsctp.la
 st_client_SOURCES = programs_helper.c st_client.c
 st_client_LDADD = ../usrsctplib/libusrsctp.la

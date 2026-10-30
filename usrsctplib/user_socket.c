@@ -1983,6 +1983,57 @@ int userspace_connect(struct socket *so, struct sockaddr *name, int namelen)
 	return (usrsctp_connect(so, name, namelen));
 }
 
+int
+usrsctp_snap_prepare(struct socket *so, struct sockaddr *name, socklen_t namelen, void *init, size_t *init_len)
+{
+	struct sockaddr *sa = NULL;
+
+	if ((so == NULL) || (name == NULL) || (init == NULL) || (init_len == NULL)) {
+		errno = EINVAL;
+		return (-1);
+	}
+	errno = getsockaddr(&sa, (caddr_t)name, namelen);
+	if (errno) {
+		return (-1);
+	}
+	if (sa->sa_family != AF_CONN) {
+		errno = EAFNOSUPPORT;
+	} else {
+		errno = sctpconn_snap_prepare(so, sa, init, init_len);
+	}
+	FREE(sa, M_SONAME);
+	return (errno ? -1 : 0);
+}
+
+int
+usrsctp_snap_establish(struct socket *so, const void *peer_init, size_t peer_init_len, uint32_t rtt_ms)
+{
+	int error;
+
+	if (so == NULL) {
+		errno = EINVAL;
+		return (-1);
+	}
+	error = sctpconn_snap_establish(so, peer_init, peer_init_len, rtt_ms);
+	/* Opened or aborted outside the input path, which is what calls the upcall. */
+	if (((error == 0) || (error == ECONNABORTED)) && (so->so_upcall != NULL)) {
+		(*so->so_upcall)(so, so->so_upcallarg, M_NOWAIT);
+	}
+	errno = error;
+	return (error ? -1 : 0);
+}
+
+int
+usrsctp_snap_send_init(struct socket *so)
+{
+	if (so == NULL) {
+		errno = EINVAL;
+		return (-1);
+	}
+	errno = sctpconn_snap_send_init(so);
+	return (errno ? -1 : 0);
+}
+
 #define SCTP_STACK_BUF_SIZE         2048
 
 void

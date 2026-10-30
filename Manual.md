@@ -303,6 +303,64 @@ usrsctp_recvv(struct socket *so,
 
 `usrsctp_recvv()` returns the number of bytes received, or -1 if an error occurred.  The variable errno is then set appropriately.
 
+## SNAP
+With SNAP, the SCTP Negotiation Acceleration Protocol ([draft-uberti-tsvwg-warp](https://datatracker.ietf.org/doc/draft-uberti-tsvwg-warp/), section 4.1), both endpoints exchange their INIT chunks out-of-band, e.g. in the SDP, instead of running the SCTP handshake.
+It works on one-to-one `AF_CONN` sockets; on one-to-many sockets the functions fail with `EOPNOTSUPP`.
+`USRSCTP_HAS_SNAP` is defined when SNAP is available.
+
+### usrsctp_snap_prepare()
+
+```c
+int
+usrsctp_snap_prepare(struct socket *so,
+                     struct sockaddr *name,
+                     socklen_t namelen,
+                     void *init,
+                     size_t *init_len)
+```
+
+* so: Pointer to the socket as returned by `usrsctp_socket()`.
+* name: Address of the peer.
+* namelen: Size of the peer's address.
+* init: Buffer for the INIT chunk.
+* init_len: Size of `init`; on return, the number of bytes copied.
+
+`usrsctp_snap_prepare()` sets the association up like `usrsctp_connect()`, but copies its INIT chunk into `init` instead of sending it. Later calls copy the same chunk.
+
+`usrsctp_snap_prepare()` returns 0 on success and -1 in case of an error. With `ENOBUFS`, `*init_len` is the size needed.
+
+### usrsctp_snap_establish()
+
+```c
+int
+usrsctp_snap_establish(struct socket *so,
+                       const void *peer_init,
+                       size_t peer_init_len,
+                       uint32_t rtt_ms)
+```
+
+* so: Pointer to the socket prepared by `usrsctp_snap_prepare()`.
+* peer_init: The peer's INIT chunk.
+* peer_init_len: Size of `peer_init`.
+* rtt_ms: Round-trip time of the lower layer (e.g. ICE) in milliseconds, or 0.
+
+`usrsctp_snap_establish()` applies the peer's INIT chunk and opens the association. Call it once the lower layer can carry packets; the peer's packets that arrive earlier are dropped. `rtt_ms` becomes the first RTT measurement, still bounded by RTO.Min.
+
+`usrsctp_snap_establish()` returns 0 on success and -1 in case of an error: `EINVAL` if `peer_init` is not a valid INIT chunk (the association stays prepared), `ECONNABORTED` if it could not be applied (the association is aborted).
+
+### usrsctp_snap_send_init()
+
+```c
+int
+usrsctp_snap_send_init(struct socket *so)
+```
+
+* so: Pointer to the socket prepared by `usrsctp_snap_prepare()`.
+
+`usrsctp_snap_send_init()` sends the INIT chunk instead, for a peer without SNAP.
+
+`usrsctp_snap_send_init()` returns 0 on success and -1 in case of an error. Both it and `usrsctp_snap_establish()` fail with `EALREADY` once the association no longer waits for them.
+
 ## Socket Options
 Socket options are used to change the default behavior of socket calls.
 Their behavior is specified in [RFC 6458](https://tools.ietf.org/html/rfc6458). The functions to get or set them are

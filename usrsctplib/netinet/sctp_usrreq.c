@@ -8121,8 +8121,13 @@ sctp_connect(struct socket *so, struct mbuf *nam, struct proc *p)
 #endif
 
 #if defined(__Userspace__)
-int
-sctpconn_connect(struct socket *so, struct sockaddr *addr)
+/*
+ * Connects or, with snap_init set, prepares for SNAP, the SCTP Negotiation
+ * Acceleration Protocol (draft-uberti-tsvwg-warp, section 4.1): the INIT chunk
+ * is copied into snap_init instead of being sent.
+ */
+static int
+sctpconn_connect_or_prepare(struct socket *so, struct sockaddr *addr, void *snap_init, size_t *snap_init_len)
 {
 #ifdef SCTP_MVRF
 	int i, fnd = 0;
@@ -8268,7 +8273,15 @@ sctpconn_connect(struct socket *so, struct sockaddr *addr)
 	SCTP_SET_STATE(stcb, SCTP_STATE_COOKIE_WAIT);
 	(void)SCTP_GETTIME_TIMEVAL(&stcb->asoc.time_entered);
 
-	sctp_send_initiate(inp, stcb, SCTP_SO_LOCKED);
+	if (snap_init != NULL) {
+		/* As soconnect() does, which SNAP bypasses. */
+		so->so_error = 0;
+		stcb->asoc.snap_prepared = 1;
+		/* On failure it stays prepared, and the INIT can be asked for again. */
+		error = sctp_snap_copy_initiate(inp, stcb, snap_init, snap_init_len);
+	} else {
+		sctp_send_initiate(inp, stcb, SCTP_SO_LOCKED);
+	}
 	SCTP_TCB_UNLOCK(stcb);
  out_now:
 	if (create_lock_on) {
@@ -8277,6 +8290,78 @@ sctpconn_connect(struct socket *so, struct sockaddr *addr)
 
 	SCTP_INP_DECR_REF(inp);
 	return (error);
+}
+
+int
+sctpconn_connect(struct socket *so, struct sockaddr *addr)
+{
+	return (sctpconn_connect_or_prepare(so, addr, NULL, NULL));
+}
+
+/*
+ * SNAP: sets the association up, or copies its INIT chunk again for a later
+ * offer.
+ */
+int
+sctpconn_snap_prepare(struct socket *so, struct sockaddr *addr, void *init, size_t *init_len)
+{
+	struct sctp_inpcb *inp;
+	struct sctp_tcb *stcb;
+	struct sockaddr_conn *sconn;
+	int error;
+
+	inp = (struct sctp_inpcb *)so->so_pcb;
+	if (inp == NULL) {
+		return (ECONNRESET);
+	}
+	/* The SNAP calls act on the socket's only association. */
+	if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) == 0) {
+		return (EOPNOTSUPP);
+	}
+	SCTP_INP_RLOCK(inp);
+	stcb = LIST_FIRST(&inp->sctp_asoc_list);
+	if (stcb == NULL) {
+		SCTP_INP_RUNLOCK(inp);
+		return (sctpconn_connect_or_prepare(so, addr, init, init_len));
+	}
+	SCTP_TCB_LOCK(stcb);
+	SCTP_INP_RUNLOCK(inp);
+	sconn = (struct sockaddr_conn *)addr;
+	if (stcb->asoc.state & (SCTP_STATE_ABOUT_TO_BE_FREED | SCTP_STATE_WAS_ABORTED)) {
+		error = ENOTCONN;
+	} else if ((stcb->asoc.primary_destination == NULL) ||
+	           !sctp_cmpaddr(addr, &stcb->asoc.primary_destination->ro._l_addr.sa) ||
+	           (sconn->sconn_port != stcb->rport)) {
+		error = EISCONN;
+	} else if ((stcb->asoc.snap_init != NULL) || stcb->asoc.snap_prepared) {
+		error = sctp_snap_copy_initiate(inp, stcb, init, init_len);
+	} else {
+		error = EALREADY;
+	}
+	SCTP_TCB_UNLOCK(stcb);
+	return (error);
+}
+
+int
+sctpconn_snap_send_init(struct socket *so)
+{
+	struct sctp_inpcb *inp;
+	struct sctp_tcb *stcb;
+	int error;
+
+	inp = (struct sctp_inpcb *)so->so_pcb;
+	if (inp == NULL) {
+		return (ECONNRESET);
+	}
+	stcb = sctp_snap_prepared_tcb(inp, &error);
+	if (stcb == NULL) {
+		return (error);
+	}
+	/* No RTT sample from the time the INIT waited for this. */
+	(void)SCTP_GETTIME_TIMEVAL(&stcb->asoc.time_entered);
+	sctp_send_initiate(inp, stcb, SCTP_SO_NOT_LOCKED);
+	SCTP_TCB_UNLOCK(stcb);
+	return (0);
 }
 #endif
 int

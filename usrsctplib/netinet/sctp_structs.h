@@ -1277,6 +1277,12 @@ struct sctp_association {
 	struct timeval discontinuity_time;
 	uint64_t abandoned_unsent[SCTP_PR_SCTP_MAX + 1];
 	uint64_t abandoned_sent[SCTP_PR_SCTP_MAX + 1];
+#if defined(__Userspace__)
+	/* SNAP: the INIT chunk exchanged out-of-band, the same for later offers. */
+	struct mbuf *snap_init;
+	/* SNAP: waiting, with neither its INIT sent nor the peer's applied. */
+	uint8_t snap_prepared;
+#endif
 };
 
 #endif

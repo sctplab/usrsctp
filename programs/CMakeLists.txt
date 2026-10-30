@@ -99,6 +99,7 @@ list(APPEND check_programs
 	http_client.c
 	http_client_upcall.c
 	rtcweb.c
+	snap_loop.c
 	st_client.c
 	test_libmgmt.c
 	test_timer.c
