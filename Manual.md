@@ -328,6 +328,25 @@ usrsctp_snap_prepare(struct socket *so,
 
 `usrsctp_snap_prepare()` returns 0 on success and -1 in case of an error. With `ENOBUFS`, `*init_len` is the size needed.
 
+### usrsctp_snap_establish()
+
+```c
+int
+usrsctp_snap_establish(struct socket *so,
+                       const void *peer_init,
+                       size_t peer_init_len,
+                       uint32_t rtt_ms)
+```
+
+* so: Pointer to the socket prepared by `usrsctp_snap_prepare()`.
+* peer_init: The peer's INIT chunk.
+* peer_init_len: Size of `peer_init`.
+* rtt_ms: Round-trip time of the lower layer (e.g. ICE) in milliseconds, or 0.
+
+`usrsctp_snap_establish()` applies the peer's INIT chunk and opens the association. Call it once the lower layer can carry packets; the peer's packets that arrive earlier are dropped. `rtt_ms` becomes the first RTT measurement, still bounded by RTO.Min.
+
+`usrsctp_snap_establish()` returns 0 on success and -1 in case of an error: `EINVAL` if `peer_init` is not a valid INIT chunk (the association stays prepared), `ECONNABORTED` if it could not be applied (the association is aborted).
+
 ## Socket Options
 Socket options are used to change the default behavior of socket calls.
 Their behavior is specified in [RFC 6458](https://tools.ietf.org/html/rfc6458). The functions to get or set them are

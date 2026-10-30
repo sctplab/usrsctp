@@ -1019,6 +1019,12 @@ usrsctp_snap_prepare(struct socket *so,
                      void *init,
                      size_t *init_len);
 
+int
+usrsctp_snap_establish(struct socket *so,
+                       const void *peer_init,
+                       size_t peer_init_len,
+                       uint32_t rtt_ms);
+
 void
 usrsctp_close(struct socket *so);
 

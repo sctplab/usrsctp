@@ -8016,3 +8016,44 @@ sctp_pcb_add_flags(struct sctp_inpcb *inp, uint32_t flags)
 		new_flags = old_flags | flags;
 	} while (atomic_cmpset_int(&inp->sctp_flags, old_flags, new_flags) == 0);
 }
+
+#if defined(__Userspace__)
+/*
+ * SNAP: returns the association of a one-to-one socket, locked, while it
+ * waits for establish or send_init. Otherwise returns NULL and sets *error.
+ */
+struct sctp_tcb *
+sctp_snap_prepared_tcb(struct sctp_inpcb *inp, int *error)
+{
+	struct sctp_tcb *stcb;
+
+	if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) == 0) {
+		*error = EOPNOTSUPP;
+		return (NULL);
+	}
+	SCTP_INP_RLOCK(inp);
+	stcb = LIST_FIRST(&inp->sctp_asoc_list);
+	if (stcb == NULL) {
+		SCTP_INP_RUNLOCK(inp);
+		*error = ENOTCONN;
+		return (NULL);
+	}
+	SCTP_TCB_LOCK(stcb);
+	SCTP_INP_RUNLOCK(inp);
+	/* An aborted association may wait to be freed while still listed. */
+	if ((inp->sctp_flags & (SCTP_PCB_FLAGS_SOCKET_GONE | SCTP_PCB_FLAGS_SOCKET_ALLGONE)) ||
+	    (stcb->asoc.state & (SCTP_STATE_ABOUT_TO_BE_FREED | SCTP_STATE_WAS_ABORTED))) {
+		SCTP_TCB_UNLOCK(stcb);
+		*error = ENOTCONN;
+		return (NULL);
+	}
+	if ((stcb->asoc.snap_prepared == 0) ||
+	    (SCTP_GET_STATE(stcb) != SCTP_STATE_COOKIE_WAIT) ||
+	    (stcb->asoc.primary_destination == NULL)) {
+		SCTP_TCB_UNLOCK(stcb);
+		*error = EALREADY;
+		return (NULL);
+	}
+	return (stcb);
+}
+#endif

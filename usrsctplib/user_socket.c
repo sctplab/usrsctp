@@ -2005,6 +2005,24 @@ usrsctp_snap_prepare(struct socket *so, struct sockaddr *name, socklen_t namelen
 	return (errno ? -1 : 0);
 }
 
+int
+usrsctp_snap_establish(struct socket *so, const void *peer_init, size_t peer_init_len, uint32_t rtt_ms)
+{
+	int error;
+
+	if (so == NULL) {
+		errno = EINVAL;
+		return (-1);
+	}
+	error = sctpconn_snap_establish(so, peer_init, peer_init_len, rtt_ms);
+	/* Opened or aborted outside the input path, which is what calls the upcall. */
+	if (((error == 0) || (error == ECONNABORTED)) && (so->so_upcall != NULL)) {
+		(*so->so_upcall)(so, so->so_upcallarg, M_NOWAIT);
+	}
+	errno = error;
+	return (error ? -1 : 0);
+}
+
 #define SCTP_STACK_BUF_SIZE         2048
 
 void
