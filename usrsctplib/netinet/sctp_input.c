@@ -5937,16 +5937,15 @@ cksum_validated:
 	}
 #if defined(__Userspace__)
 	if ((stcb != NULL) &&
-	    ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
 	    (stcb->sctp_socket != NULL)) {
 		if (stcb->sctp_socket->so_head != NULL) {
 			upcall_socket = stcb->sctp_socket->so_head;
 		} else {
 			upcall_socket = stcb->sctp_socket;
 		}
-		SOCK_LOCK(upcall_socket);
-		soref(upcall_socket);
-		SOCK_UNLOCK(upcall_socket);
+		if (!sotryref(upcall_socket)) {
+			upcall_socket = NULL;
+		}
 	}
 #endif
 	if (IS_SCTP_CONTROL(ch)) {
@@ -6040,16 +6039,15 @@ cksum_validated:
 	}
 #if defined(__Userspace__)
 	if ((upcall_socket == NULL) &&
-	    ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
 	    (stcb->sctp_socket != NULL)) {
 		if (stcb->sctp_socket->so_head != NULL) {
 			upcall_socket = stcb->sctp_socket->so_head;
 		} else {
 			upcall_socket = stcb->sctp_socket;
 		}
-		SOCK_LOCK(upcall_socket);
-		soref(upcall_socket);
-		SOCK_UNLOCK(upcall_socket);
+		if (!sotryref(upcall_socket)) {
+			upcall_socket = NULL;
+		}
 	}
 #endif
 
