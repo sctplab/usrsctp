@@ -75,6 +75,7 @@ programs/rtcweb
 programs/st_client
 programs/tsctp
 programs/test_libmgmt
+programs/test_partial_delivery_race
 programs/test_timer
 
 # callgrind

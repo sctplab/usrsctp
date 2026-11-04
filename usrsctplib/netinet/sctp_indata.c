@@ -802,6 +802,7 @@ sctp_handle_old_unordered_data(struct sctp_tcb *stcb,
 	uint32_t fsn;
 	struct sctp_queued_to_read *nc;
 	int cnt_added;
+	bool read_locked;
 
 	if (control->first_frag_seen == 0) {
 		/* Nothing we can do, we have not seen the first piece yet */
@@ -821,7 +822,18 @@ restart:
 			}
 			memset(nc, 0, sizeof(struct sctp_queued_to_read));
 			TAILQ_REMOVE(&control->reasm, chk, sctp_next);
-			sctp_add_chk_to_control(control, strm, stcb, asoc, chk, inp_read_lock_held);
+			/*
+			 * Once the control on the read queue is complete,
+			 * the reader may free it, so keep the read queue
+			 * locked while using it.
+			 */
+			read_locked = false;
+			if ((inp_read_lock_held == SCTP_READ_LOCK_NOT_HELD) && control->on_read_q) {
+				SCTP_INP_READ_LOCK(stcb->sctp_ep);
+				read_locked = true;
+			}
+			sctp_add_chk_to_control(control, strm, stcb, asoc, chk,
+			                        read_locked ? SCTP_READ_LOCK_HELD : inp_read_lock_held);
 			fsn++;
 			cnt_added++;
 			chk = NULL;
@@ -884,8 +896,11 @@ restart:
 					sctp_add_to_readq(stcb->sctp_ep, stcb, control,
 							  &stcb->sctp_socket->so_rcv, control->end_added,
 							  inp_read_lock_held, SCTP_SO_NOT_LOCKED);
-#if defined(__Userspace__)
 				} else {
+					if (read_locked) {
+						SCTP_INP_READ_UNLOCK(stcb->sctp_ep);
+					}
+#if defined(__Userspace__)
 					sctp_invoke_recv_callback(stcb->sctp_ep, stcb, control, inp_read_lock_held);
 #endif
 				}
@@ -901,6 +916,9 @@ restart:
 				}
 				return (1);
 			} else {
+				if (read_locked) {
+					SCTP_INP_READ_UNLOCK(stcb->sctp_ep);
+				}
 				sctp_free_a_readq(stcb, nc);
 			}
 		} else {
@@ -1379,6 +1397,7 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	struct sctp_stream_in *strm;
 	int do_wakeup, unordered;
 	uint32_t lenadded;
+	bool read_locked;
 
 	strm = &asoc->strmin[control->sinfo_stream];
 	/*
@@ -1607,6 +1626,14 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	 */
 	if (control->first_frag_seen) {
 		next_fsn = control->fsn_included + 1;
+		/*
+		 * Once the control on the read queue is complete, the reader
+		 * may free it, so keep the read queue locked while using it.
+		 */
+		read_locked = control->on_read_q;
+		if (read_locked) {
+			SCTP_INP_READ_LOCK(stcb->sctp_ep);
+		}
 		TAILQ_FOREACH_SAFE(at, &control->reasm, sctp_next, nat) {
 			if (at->rec.data.fsn == next_fsn) {
 				/* We can add this one now to the control */
@@ -1616,7 +1643,8 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 					at->rec.data.fsn,
 					next_fsn, control->fsn_included);
 				TAILQ_REMOVE(&control->reasm, at, sctp_next);
-				lenadded = sctp_add_chk_to_control(control, strm, stcb, asoc, at, SCTP_READ_LOCK_NOT_HELD);
+				lenadded = sctp_add_chk_to_control(control, strm, stcb, asoc, at,
+				                                   read_locked ? SCTP_READ_LOCK_HELD : SCTP_READ_LOCK_NOT_HELD);
 				if (control->on_read_q) {
 					do_wakeup = 1;
 				} else {
@@ -1645,6 +1673,9 @@ sctp_queue_data_for_reasm(struct sctp_tcb *stcb, struct sctp_association *asoc,
 			} else {
 				break;
 			}
+		}
+		if (read_locked) {
+			SCTP_INP_READ_UNLOCK(stcb->sctp_ep);
 		}
 	}
 	if (do_wakeup) {

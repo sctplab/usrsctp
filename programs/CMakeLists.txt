@@ -81,6 +81,11 @@ find_package(Threads)
 # PROGRAMS
 #################################################
 
+if (NOT WIN32)
+	# POSIX threads and C11 atomics
+	list(APPEND check_programs test_partial_delivery_race.c)
+endif ()
+
 list(APPEND check_programs
 	chargen_server_upcall.c
 	client.c
