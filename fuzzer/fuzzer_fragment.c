@@ -333,6 +333,8 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 		fuzz_packet_buffer = malloc(data_chunk_size + COMMON_HEADER_SIZE);
 		memcpy(fuzz_packet_buffer, data_common_headr, COMMON_HEADER_SIZE); // common header
 		memcpy(fuzz_packet_buffer + COMMON_HEADER_SIZE, data+fuzz_data_count, data_chunk_size);
+		common_header = (struct sctp_common_header*) fuzz_packet_buffer;
+		common_header->verification_tag = assoc_vtag;
 		usrsctp_conninput((void *)1, fuzz_packet_buffer, data_chunk_size + COMMON_HEADER_SIZE, 0);
 		free(fuzz_packet_buffer);
 		fuzz_data_count += data_chunk_size;
