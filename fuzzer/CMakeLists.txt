@@ -86,6 +86,9 @@ target_link_libraries(fuzzer_listen_verbose usrsctp)
 add_executable(fuzzer_fragment fuzzer_fragment.c ../programs/programs_helper.c)
 target_link_libraries(fuzzer_fragment usrsctp)
 
+add_executable(fuzzer_socket_options fuzzer_socket_options.c ../programs/programs_helper.c)
+target_link_libraries(fuzzer_socket_options usrsctp)
+
 add_executable(fuzzer_connect_multi fuzzer_connect.c ../programs/programs_helper.c)
 target_compile_definitions(fuzzer_connect_multi PRIVATE FUZZING_STAGE=0)
 target_link_libraries(fuzzer_connect_multi usrsctp)
