@@ -162,7 +162,8 @@ endif ()
 #################################################
 
 # Determine if compiler is Visual Studio compiler or Clang in MSVC compatible mode
-if (CMAKE_C_COMPILER_ID MATCHES "MSVC" OR CMAKE_C_SIMULATE_ID MATCHES "MSVC")
+# (clang-cl, not clang targeting the MSVC ABI through its GNU-style driver)
+if (CMAKE_C_COMPILER_ID MATCHES "MSVC" OR (CMAKE_C_SIMULATE_ID MATCHES "MSVC" AND NOT CMAKE_C_COMPILER_FRONTEND_VARIANT STREQUAL "GNU"))
   set(C_COMPILER_IS_MSVC_LIKE TRUE)
 endif()
 
