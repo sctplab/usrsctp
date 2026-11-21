@@ -14256,6 +14256,20 @@ skip_preblock:
 				} else {
 					error = ENOTCONN;
 				}
+				if (sp != NULL) {
+					/* Free data copied before the abort. */
+					if (sp->data != NULL) {
+						sctp_m_freem(sp->data);
+						sp->data = NULL;
+					}
+					/* Release the destination reference. */
+					if (sp->net != NULL) {
+						sctp_free_remote_addr(sp->net);
+						sp->net = NULL;
+					}
+					/* Free the pending message structure. */
+					sctp_free_a_strmoq(stcb, sp, SCTP_SO_LOCKED);
+				}
 				goto out;
 			}
 			if (error != 0) {
