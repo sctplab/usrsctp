@@ -1083,7 +1083,9 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header, int how, int a
 /* with the current included files, this is defined in Linux but
  *  in FreeBSD, it is behind a _KERNEL in sys/socket.h ...
  */
-#if defined(__DragonFly__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__native_client__)
+#if defined(__DragonFly__)
+#define CMSG_ALIGN(n)   _CMSG_ALIGN(n)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__native_client__)
 /* stolen from /usr/include/sys/socket.h */
 #define CMSG_ALIGN(n)   _ALIGN(n)
 #elif defined(__NetBSD__)
