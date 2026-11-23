@@ -1132,6 +1132,21 @@ sctp_deliver_reasm_check(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		} else {
 			/* Can we do a PD-API for this un-ordered guy? */
 			if ((control->length >= pd_point) && (strm->pd_api_started == 0)) {
+				/*
+				 * Once on the read queue, the data is accounted
+				 * for by the socket buffer, as for ordered data.
+				 */
+				if (asoc->idata_supported) {
+					if (asoc->size_on_all_streams >= control->length) {
+						asoc->size_on_all_streams -= control->length;
+					} else {
+#ifdef INVARIANTS
+						panic("size_on_all_streams = %u smaller than control length %u", asoc->size_on_all_streams, control->length);
+#else
+						asoc->size_on_all_streams = 0;
+#endif
+					}
+				}
 				strm->pd_api_started = 1;
 				control->pdapi_started = 1;
 				sctp_add_to_readq(stcb->sctp_ep, stcb,
@@ -1333,6 +1348,13 @@ sctp_add_chk_to_control(struct sctp_queued_to_read *control,
 			if (control->on_strm_q == SCTP_ON_UNORDERED) {
 				/* Unordered */
 				TAILQ_REMOVE(&strm->uno_inqueue, control, next_instrm);
+				if (asoc->idata_supported) {
+					/*
+					 * Don't need to decrement size_on_all_streams,
+					 * since control is on the read queue.
+					 */
+					sctp_ucount_decr(asoc->cnt_on_all_streams);
+				}
 				control->on_strm_q = 0;
 			} else if (control->on_strm_q == SCTP_ON_ORDERED) {
 				/* Ordered */
