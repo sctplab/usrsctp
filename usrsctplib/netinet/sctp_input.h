@@ -57,5 +57,9 @@ sctp_reset_in_stream(struct sctp_tcb *stcb, uint32_t number_entries,
 
 int sctp_is_there_unsent_data(struct sctp_tcb *stcb, int so_locked);
 
+#if defined(__Userspace__)
+int sctpconn_snap_establish(struct socket *so, const void *peer_init, size_t len, uint32_t rtt_ms);
+#endif
+
 #endif
 #endif
