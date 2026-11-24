@@ -74,6 +74,7 @@ programs/http_client_upcall
 programs/rtcweb
 programs/st_client
 programs/tsctp
+programs/test_close_race
 programs/test_libmgmt
 programs/test_timer
 

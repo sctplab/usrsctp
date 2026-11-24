@@ -1884,12 +1884,9 @@ sctp_timeout_handler(void *t)
 
 #if defined(__Userspace__)
 	if ((stcb != NULL) &&
-	    ((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&
-	    (stcb->sctp_socket != NULL)) {
+	    (stcb->sctp_socket != NULL) &&
+	    sotryref(stcb->sctp_socket)) {
 		upcall_socket = stcb->sctp_socket;
-		SOCK_LOCK(upcall_socket);
-		soref(upcall_socket);
-		SOCK_UNLOCK(upcall_socket);
 	}
 #endif
 	/* call the handler for the appropriate timer type */

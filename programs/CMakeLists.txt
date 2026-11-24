@@ -106,6 +106,11 @@ list(APPEND check_programs
 	tsctp_upcall.c
 )
 
+if (NOT WIN32)
+	# POSIX threads and C11 atomics
+	list(APPEND check_programs test_close_race.c)
+endif ()
+
 foreach (source_file ${check_programs})
 	get_filename_component(source_file_we ${source_file} NAME_WE)
 	add_executable(
