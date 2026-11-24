@@ -180,6 +180,11 @@ sctp_startup_iterator(void)
 	SCTP_ITERATOR_LOCK_INIT();
 	SCTP_IPI_ITERATOR_WQ_INIT();
 	TAILQ_INIT(&sctp_it_ctl.iteratorhead);
+	/*
+	 * A previous sctp_pcb_finish() left SCTP_ITERATOR_MUST_EXIT and SCTP_ITERATOR_EXITED set:
+	 * a thread started with them would exit at once and never run an iterator.
+	 */
+	sctp_it_ctl.iterator_flags = 0;
 #if defined(__Userspace__)
 	if (sctp_userspace_thread_create(&sctp_it_ctl.thread_proc, &sctp_iterator_thread)) {
 		SCTP_PRINTF("ERROR: Creating sctp_iterator_thread failed.\n");
