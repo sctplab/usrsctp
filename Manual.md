@@ -96,7 +96,10 @@ All system calls start with the prefix `usrsctp_` to distinguish them from the k
 Every application has to start with `usrsctp_init()`. This function calls `sctp_init()` and reserves the memory necessary to administer the data transfer. The function prototype is
 
 ```c
-void usrsctp_init(uint16_t udp_port)
+void usrsctp_init(uint16_t udp_port,
+                  int (*conn_output)(void *addr, void *buffer,
+                                     size_t length, uint8_t tos, uint8_t set_df),
+                  void (*debug_printf)(const char *format, ...))
 ```
 
 As it is not always possible to send data directly over SCTP because not all NAT boxes can process SCTP packets, the data can be sent over UDP. To encapsulate SCTP into UDP a UDP port has to be specified, to which the datagrams can be sent. This local UDP port  is set with the parameter `udp_port`. The default value is 9899, the standard UDP encapsulation port. If UDP encapsulation is not necessary, the UDP port has to be set to 0.
