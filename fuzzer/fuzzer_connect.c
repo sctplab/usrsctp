@@ -314,10 +314,6 @@ LLVMFuzzerTestOneInput(const uint8_t* data, size_t data_size)
 #endif // defined(FUZZ_STREAM_RESET)
 
 #if defined(FUZZ_INTERLEAVING)
-#if !defined(SCTP_INTERLEAVING_SUPPORTED)
-#define SCTP_INTERLEAVING_SUPPORTED 0x00001206
-#endif // !defined(SCTP_INTERLEAVING_SUPPORTED)
-
 	if (data[0] & FUZZ_B_I_DATA_SUPPORT) {
 		optval = 2;
 		result = usrsctp_setsockopt(socket_client, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE, &optval, sizeof(optval));

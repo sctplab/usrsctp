@@ -43,7 +43,6 @@
 #define fuzzer_printf(...)
 #define BUFFER_SIZE 4096
 #define COMMON_HEADER_SIZE 12
-#define SCTP_INTERLEAVING_SUPPORTED 0x00001206
 #define SEND_DATA_SIZE 4096
 static uint32_t assoc_vtag = 0;
 
