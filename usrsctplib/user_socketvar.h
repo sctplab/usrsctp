@@ -403,6 +403,7 @@ void	sofree(struct socket *so);
 
 #define	soref(so) do {							\
 	SOCK_LOCK_ASSERT(so);						\
+	KASSERT((so)->so_count >= 0, ("soref"));			\
 	++(so)->so_count;						\
 	SCTPDBG(SCTP_DEBUG_USR, "soref(%p) -> %d, %s:%s:%d\n",		\
 		(so), (so)->so_count,					\
@@ -417,6 +418,7 @@ void	sofree(struct socket *so);
 		SCTPDBG(SCTP_DEBUG_USR, "sorele(%p) -> %d, %s:%s:%d\n",	\
 			(so), (so)->so_count,				\
 			__func__, __FILE__, __LINE__)			\
+		(so)->so_count = -1;					\
 		sofree(so);						\
 	}								\
 	else {								\
