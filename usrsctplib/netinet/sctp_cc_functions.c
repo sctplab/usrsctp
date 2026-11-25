@@ -141,6 +141,9 @@ sctp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 		if (t_ucwnd_sbw == 0) {
 			t_ucwnd_sbw = 1;
 		}
+		if (t_ssthresh == 0) {
+			t_ssthresh = 1;
+		}
 	}
 
 	/*-
