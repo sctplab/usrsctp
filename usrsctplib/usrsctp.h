@@ -1050,6 +1050,9 @@ int
 usrsctp_get_events(struct socket *so);
 
 
+int
+usrsctp_get_timeout(void);
+
 void
 usrsctp_handle_timers(uint32_t elapsed_milliseconds);
 
