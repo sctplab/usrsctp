@@ -21,6 +21,7 @@ programs = {
     'http_client': files('http_client.c'),
     'http_client_upcall': files('http_client_upcall.c'),
     'rtcweb': files('rtcweb.c'),
+    'test_getaddrs': files('test_getaddrs.c'),
     'test_libmgmt': files('test_libmgmt.c'),
     'test_timer': files('test_timer.c'),
     'tsctp': files('tsctp.c'),

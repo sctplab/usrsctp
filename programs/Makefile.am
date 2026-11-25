@@ -31,6 +31,7 @@
 AM_CPPFLAGS = -I$(srcdir)/../usrsctplib
 EXTRA_DIST = \
     Makefile.nmake \
+    test_getaddrs.c \
     test_libmgmt.c \
     test_timer.c \
     tsctp.c \
@@ -55,6 +56,7 @@ EXTRA_DIST = \
     st_client.c
 
 noinst_PROGRAMS = \
+    test_getaddrs \
     test_libmgmt \
     test_timer \
     tsctp \
@@ -78,6 +80,8 @@ noinst_PROGRAMS = \
     http_client_upcall \
     st_client
 
+test_getaddrs_SOURCES = programs_helper.c test_getaddrs.c
+test_getaddrs_LDADD = ../usrsctplib/libusrsctp.la
 test_libmgmt_SOURCES = programs_helper.c test_libmgmt.c
 test_libmgmt_LDADD = ../usrsctplib/libusrsctp.la
 test_timer_SOURCES = programs_helper.c test_timer.c
