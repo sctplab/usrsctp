@@ -35,7 +35,11 @@
 extern "C" {
 #endif
 
+#if defined(SCTP_USE_LWIP)
+#include "lwip/errno.h"
+#else
 #include <errno.h>
+#endif
 #include <sys/types.h>
 #ifdef _WIN32
 #ifdef _MSC_VER
@@ -120,7 +124,7 @@ struct sctp_common_header {
  * tune with other sockaddr_* structures.
  */
 #if defined(__APPLE__) || defined(__Bitrig__) || defined(__DragonFly__) || \
-    defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
+    defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(SCTP_USE_LWIP)
 struct sockaddr_conn {
 	uint8_t sconn_len;
 	uint8_t sconn_family;

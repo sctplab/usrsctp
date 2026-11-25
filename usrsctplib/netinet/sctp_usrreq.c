@@ -54,7 +54,7 @@
 #if defined(__Userspace__)
 #include <netinet/sctp_callout.h>
 #else
-#include <netinet/udp.h>
+#include <netinet/sctp_udp_port.h>
 #endif
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/eventhandler.h>
@@ -359,13 +359,13 @@ sctp_notify(struct sctp_inpcb *inp,
 		}
 		/* Update the path MTU. */
 		if (net->port) {
-			next_mtu -= sizeof(struct udphdr);
+			next_mtu -= sizeof(STRUCT_UDP_HDR);
 		}
 		if (net->mtu > next_mtu) {
 			net->mtu = next_mtu;
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 			if (net->port) {
-				sctp_hc_set_mtu(&net->ro._l_addr, inp->fibnum, next_mtu + sizeof(struct udphdr));
+				sctp_hc_set_mtu(&net->ro._l_addr, inp->fibnum, next_mtu + sizeof(STRUCT_UDP_HDR));
 			} else {
 				sctp_hc_set_mtu(&net->ro._l_addr, inp->fibnum, next_mtu);
 			}
@@ -390,7 +390,7 @@ sctp_notify(struct sctp_inpcb *inp,
 #if defined(__FreeBSD__)
 void sctp_ctlinput(struct icmp *icmp)
 {
-	struct ip *inner_ip, *outer_ip;
+	STRUCT_IP_HDR *inner_ip, *outer_ip;
 	struct sctphdr *sh;
 	struct sctp_inpcb *inp;
 	struct sctp_tcb *stcb;
@@ -401,19 +401,19 @@ void sctp_ctlinput(struct icmp *icmp)
 	if (icmp_errmap(icmp) == 0)
 		return;
 
-	outer_ip = (struct ip *)((caddr_t)icmp - sizeof(struct ip));
+	outer_ip = (STRUCT_IP_HDR *)((caddr_t)icmp - sizeof(STRUCT_IP_HDR));
 	inner_ip = &icmp->icmp_ip;
-	sh = (struct sctphdr *)((caddr_t)inner_ip + (inner_ip->ip_hl << 2));
+	sh = (struct sctphdr *)((caddr_t)inner_ip + (GET_IP_HDR_LEN_VAL(inner_ip) << 2));
 	memset(&src, 0, sizeof(struct sockaddr_in));
 	src.sin_family = AF_INET;
 	src.sin_len = sizeof(struct sockaddr_in);
 	src.sin_port = sh->src_port;
-	src.sin_addr = inner_ip->ip_src;
+	src.sin_addr = GET_IP_SRC(inner_ip);
 	memset(&dst, 0, sizeof(struct sockaddr_in));
 	dst.sin_family = AF_INET;
 	dst.sin_len = sizeof(struct sockaddr_in);
 	dst.sin_port = sh->dest_port;
-	dst.sin_addr = inner_ip->ip_dst;
+	dst.sin_addr.s_addr = GET_IP_DEST(inner_ip);
 	/*
 	 * 'dst' holds the dest of the packet that failed to be sent.
 	 * 'src' holds our local endpoint address. Thus we reverse
@@ -440,9 +440,9 @@ void sctp_ctlinput(struct icmp *icmp)
 				return;
 			}
 		} else {
-			if (ntohs(outer_ip->ip_len) >=
-			    sizeof(struct ip) +
-			    8 + (inner_ip->ip_hl << 2) + 20) {
+			if (ntohs(GET_IP_LEN(outer_ip)) >=
+			    sizeof(STRUCT_IP_HDR) +
+			    8 + (GET_IP_HDR_LEN_VAL(inner_ip) << 2) + 20) {
 				/*
 				 * In this case we can check if we
 				 * got an INIT chunk and if the
@@ -462,7 +462,7 @@ void sctp_ctlinput(struct icmp *icmp)
 		sctp_notify(inp, stcb, net,
 		            icmp->icmp_type,
 		            icmp->icmp_code,
-		            ntohs(inner_ip->ip_len),
+		            ntohs(GET_IP_LEN(inner_ip)),
 		            (uint32_t)ntohs(icmp->icmp_nextmtu));
 	} else {
 		if ((stcb == NULL) && (inp != NULL)) {
@@ -484,7 +484,7 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip, struct ifnet *ifp SCTP_UN
 sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 #endif
 {
-	struct ip *inner_ip;
+	STRUCT_IP_HDR *inner_ip;
 	struct sctphdr *sh;
 	struct icmp *icmp;
 	struct sctp_inpcb *inp;
@@ -504,24 +504,24 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 		return;
 	}
 	if (vip != NULL) {
-		inner_ip = (struct ip *)vip;
+		inner_ip = (STRUCT_IP_HDR *)vip;
 		icmp = (struct icmp *)((caddr_t)inner_ip -
-		    (sizeof(struct icmp) - sizeof(struct ip)));
-		sh = (struct sctphdr *)((caddr_t)inner_ip + (inner_ip->ip_hl << 2));
+		    (sizeof(struct icmp) - sizeof(STRUCT_IP_HDR)));
+		sh = (struct sctphdr *)((caddr_t)inner_ip + (GET_IP_HDR_LEN_VAL(inner_ip) << 2));
 		memset(&src, 0, sizeof(struct sockaddr_in));
 		src.sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
 		src.sin_len = sizeof(struct sockaddr_in);
 #endif
 		src.sin_port = sh->src_port;
-		src.sin_addr = inner_ip->ip_src;
+		src.sin_addr = GET_IP_SRC(inner_ip);
 		memset(&dst, 0, sizeof(struct sockaddr_in));
 		dst.sin_family = AF_INET;
 #ifdef HAVE_SIN_LEN
 		dst.sin_len = sizeof(struct sockaddr_in);
 #endif
 		dst.sin_port = sh->dest_port;
-		dst.sin_addr = inner_ip->ip_dst;
+		dst.sin_addr.s_addr = GET_IP_DEST(inner_ip);
 		/*
 		 * 'dst' holds the dest of the packet that failed to be sent.
 		 * 'src' holds our local endpoint address. Thus we reverse
@@ -554,7 +554,7 @@ sctp_ctlinput(int cmd, struct sockaddr *sa, void *vip)
 			sctp_notify(inp, stcb, net,
 			            icmp->icmp_type,
 			            icmp->icmp_code,
-			            inner_ip->ip_len,
+			            GET_IP_LEN(inner_ip),
 			            (uint32_t)ntohs(icmp->icmp_nextmtu));
 #if defined(__Userspace__)
 			if (((stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) == 0) &&

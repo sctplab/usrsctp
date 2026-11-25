@@ -380,5 +380,42 @@ finish_random(void)
 	return;
 }
 #else
-#error "Unknown platform. Please provide platform specific RNG."
+void
+init_random(void)
+{
+	struct timeval now;
+	unsigned int seed;
+
+	(void)SCTP_GETTIME_TIMEVAL(&now);
+	seed = 0;
+	seed |= (unsigned int)now.tv_sec;
+	seed |= (unsigned int)now.tv_usec;
+#if !defined(_WIN32) && !defined(__native_client__)
+	seed |= getpid();
+#endif
+	srandom(seed);
+	return;
+}
+
+void
+read_random(void *buf, size_t count)
+{
+	uint32_t randval;
+	int size, i;
+
+	/* Fill buf[] with random(9) output */
+	for (i = 0; i < count; i+= (int)sizeof(uint32_t)) {
+		randval = random();
+		size = MIN(count - i, (int)sizeof(uint32_t));
+		memcpy(&((char *)buf)[i], &randval, (size_t)size);
+	}
+
+	return;
+}
+
+void
+finish_random(void)
+{
+	return;
+}
 #endif

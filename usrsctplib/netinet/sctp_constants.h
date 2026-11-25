@@ -973,12 +973,14 @@ extern void getwintimeofday(struct timeval *tv);
     ((((uint8_t *)&(a)->s_addr)[0] == 192) && \
      (((uint8_t *)&(a)->s_addr)[1] == 168)))
 
+#if 1
 #define IN4_ISLOOPBACK_ADDRESS(a) \
     (((uint8_t *)&(a)->s_addr)[0] == 127)
 
 #define IN4_ISLINKLOCAL_ADDRESS(a) \
     ((((uint8_t *)&(a)->s_addr)[0] == 169) && \
      (((uint8_t *)&(a)->s_addr)[1] == 254))
+#endif
 
 /* Maximum size of optval for IPPROTO_SCTP level socket options. */
 #define SCTP_SOCKET_OPTION_LIMIT (64 * 1024)

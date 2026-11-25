@@ -31,6 +31,8 @@
 #ifndef _USER_IP_ICMP_H_
 #define _USER_IP_ICMP_H_
 
+#include "netinet/sctp_ip_port.h"
+
 /*
  * Interface Control Message Protocol Definitions.
  * Per RFC 792, September 1981.
@@ -122,7 +124,8 @@ struct icmp {
 			uint32_t its_ttime;	/* Transmit */
 		} id_ts;
 		struct id_ip  {
-			struct ip idi_ip;
+			// struct ip idi_ip;
+			STRUCT_IP_HDR idi_ip;
 			/* options and then 64 bits of data */
 		} id_ip;
 		struct icmp_ra_addr id_radv;
