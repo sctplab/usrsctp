@@ -144,6 +144,7 @@ list(APPEND usrsctp_netinet_headers
 	netinet/sctp_var.h
 	netinet/sctputil.h
 	netinet/sctp.h
+	netinet/bbr.h
 )
 
 list(APPEND usrsctp_netinet6_headers
@@ -157,6 +158,7 @@ list(APPEND usrsctp_headers
 )
 
 list(APPEND usrsctp_sources
+	netinet/bbr.c
 	netinet/sctp_asconf.c
 	netinet/sctp_auth.c
 	netinet/sctp_bsd_addr.c
