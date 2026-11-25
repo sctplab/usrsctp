@@ -1,0 +1,73 @@
+# fuzzer_fragment dictionary — SCTP chunk/param tokens traceable to
+# usrsctplib/netinet/sctp.h constants and fuzzer/fuzzer_fragment.c fixtures.
+# The fuzzer input is a length-prefixed list of raw chunks (the harness
+# prepends a 12-byte common header), so the tokens below target chunk
+# headers, flag combinations and parameter headers the parser dispatches on.
+hdr_ports_in="\x13\x89\x13\x88"
+hdr_ports_out="\x13\x88\x13\x89"
+# DATA (0x00): flags B=0x02 E=0x01 U=0x04 I=0x08
+dat_be="\x00\x03"
+dat_b="\x00\x02"
+dat_e="\x00\x01"
+dat_u="\x00\x04"
+dat_be_len4="\x00\x03\x00\x04"
+dat_i_be="\x00\x0b\x00\x04"
+# SACK (0x03) / NR-SACK (0x10)
+sack="\x03\x00\x00\x10"
+nrsack="\x10\x00\x00\x10"
+# HEARTBEAT (0x04) / HEARTBEAT-ACK (0x05) + HB-INFO param (type 1)
+hb="\x04\x00\x00\x08"
+hb_info="\x00\x01\x00\x04"
+hb_ack="\x05\x00\x00\x04"
+# ABORT (0x06) / SHUTDOWN (0x07) / SHUTDOWN-ACK (0x08)
+abort="\x06\x00\x00\x08"
+abort_tcb="\x06\x01\x00\x08"
+shutdown="\x07\x00\x00\x08"
+shutdown_ack="\x08\x00\x00\x04"
+# ERROR (0x09) + cause-code tokens
+err="\x09\x00\x00\x08"
+cause_no_userdata="\x00\x09\x00\x08"
+cause_unrec_chunk="\x00\x06\x00\x08"
+cause_unrec_param="\x00\x08\x00\x08"
+cause_user_abort="\x00\x0c\x00\x04"
+cause_proto_violation="\x00\x0d\x00\x04"
+cause_stale_cookie="\x00\x03\x00\x08"
+cause_invalid_stream="\x00\x01\x00\x08"
+# COOKIE-ECHO (0x0a) / COOKIE-ACK (0x0b)
+cookie_echo="\x0a\x00"
+cookie_ack="\x0b\x00\x00\x04"
+# ECN-ECHO (0x0c) / CWR (0x0d)
+ecne="\x0c\x00\x00\x04"
+cwr="\x0d\x00\x00\x08"
+# SHUTDOWN-COMPLETE (0x0e), T-bit variant
+shdc="\x0e\x00\x00\x08"
+shdc_tcb="\x0e\x01\x00\x08"
+# AUTH (0x0f, RFC 4895): shared key id 0 + HMAC-SHA1 id 1
+auth="\x0f\x00\x00\x0c"
+auth_sha1="\x0f\x00\x00\x10\x00\x00\x00\x01"
+# STREAM_RESET / RE-CONFIG (0x82, RFC 6525) + parameter types
+stream_reset="\x82\x00\x00\x14"
+reset_out_ssn="\x00\x0d\x00\x08"
+reset_in_ssn="\x00\x0e\x00\x08"
+reset_ssn_tsn="\x00\x0f\x00\x10"
+reset_assoc="\x00\x10\x00\x08"
+reset_add_out="\x00\x11\x00\x08"
+# I-DATA (0x40, RFC 8260)
+idata_be="\x40\x03\x00\x08"
+# FORWARD-TSN (0xc0) / I-FORWARD-TSN (0xc2)
+ftsn="\xc0\x00\x00\x08"
+iftsn="\xc2\x00\x00\x08"
+# ASCONF (0xc1) / ASCONF-ACK (0x80, RFC 5061)
+asconf="\xc1\x00\x00\x14"
+asconf_ack="\x80\x00\x00\x08"
+# PACKET-DROPPED (0x81) / PAD (0x84)
+pktdrop="\x81\x00\x00\x08"
+pad="\x84\x00\x00\x04"
+# INIT parameter tokens seen in the harness fixtures
+param_ecn="\x80\x00\x00\x04"
+param_random="\x80\x02\x00\x20"
+param_supported_ext="\x80\x08\x00\x0a"
+ext_list="\xc0\xc2\x0f\xc1\x80\x82\x40"
+# numeric fixtures: a_rwnd from fuzz_init_ack, TSN 1
+a_rwnd="\x00\x1c\x71\xc7"
+tsn_one="\x00\x00\x00\x01"
