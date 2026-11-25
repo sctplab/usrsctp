@@ -128,3 +128,8 @@ struct sctp_rtentry {
 		RTFREE_LOCKED(_rt);				\
 } while (0)
 #endif
+
+#if defined(__Userspace_os_Windows)
+void rtalloc(struct sctp_route *ro, uint32_t vrf_id);
+void rtfree(struct sctp_rtentry *rt);
+#endif
